@@ -1,26 +1,13 @@
 import { createServer, Server } from 'http';
 import { createLogger, createSchema, createYoga } from 'graphql-yoga';
-import nock from 'nock';
-import { beforeAll, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { useHive } from '../src';
-
-beforeAll(() => {
-  nock.cleanAll();
-});
 
 const logger = createLogger('silent');
 
 test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, 'query { hi }');
+  let url: string | undefined;
+  let cdnHeader: string | undefined;
 
   const yoga = createYoga({
     schema: createSchema({
@@ -37,6 +24,11 @@ test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
+          },
+          async fetch(uurl, params) {
+            url = uurl as string;
+            cdnHeader = (params?.headers as Record<string, string>)?.['X-Hive-CDN-Key'];
+            return new Response('query { hi }');
           },
         },
         agent: {
@@ -59,20 +51,13 @@ test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ data: { hi: null } });
 
-  httpScope.done();
+  expect(url).toEqual('http://artifacts-cdn.localhost/apps/client-name/client-version/hash');
+  expect(cdnHeader).toEqual('foo');
 });
 
 test('use persisted documents (GraphQL over HTTP "documentId") real thing', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, 'query { hi }');
+  let url: string | undefined;
+  let cdnHeader: string | undefined;
 
   const yoga = createYoga({
     schema: createSchema({
@@ -89,6 +74,11 @@ test('use persisted documents (GraphQL over HTTP "documentId") real thing', asyn
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
+          },
+          async fetch(uurl, params) {
+            url = uurl as string;
+            cdnHeader = (params?.headers as Record<string, string>)?.['X-Hive-CDN-Key'];
+            return new Response('query { hi }');
           },
         },
         agent: {
@@ -118,21 +108,11 @@ test('use persisted documents (GraphQL over HTTP "documentId") real thing', asyn
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ data: { hi: null } });
 
-  httpScope.done();
+  expect(url).toEqual('http://artifacts-cdn.localhost/apps/client-name/client-version/hash');
+  expect(cdnHeader).toEqual('foo');
 });
 
 test('persisted document not found (GraphQL over HTTP "documentId")', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(404);
-
   const yoga = createYoga({
     schema: createSchema({
       typeDefs: /* GraphQL */ `
@@ -148,6 +128,13 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
+          },
+          fetch() {
+            return Promise.resolve(
+              new Response('', {
+                status: 404,
+              }),
+            );
           },
         },
         agent: {
@@ -178,8 +165,6 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
       },
     ],
   });
-
-  httpScope.done();
 });
 
 test('arbitrary options are rejected with allowArbitraryDocuments=false (GraphQL over HTTP)', async () => {
@@ -267,16 +252,8 @@ test('arbitrary options are allowed with allowArbitraryDocuments=true (GraphQL o
 });
 
 test('use persisted documents for SSE GET (GraphQL over HTTP "documentId")', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, 'subscription { hi }');
+  let url: string | undefined;
+  let cdnHeader: string | undefined;
 
   const yoga = createYoga({
     schema: createSchema({
@@ -306,6 +283,11 @@ test('use persisted documents for SSE GET (GraphQL over HTTP "documentId")', asy
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
+          },
+          async fetch(uurl, params) {
+            url = uurl as string;
+            cdnHeader = (params?.headers as Record<string, string>)?.['X-Hive-CDN-Key'];
+            return new Response('subscription { hi }');
           },
         },
         agent: {
@@ -337,20 +319,13 @@ test('use persisted documents for SSE GET (GraphQL over HTTP "documentId")', asy
     data:
   `);
 
-  httpScope.done();
+  expect(url).toEqual('http://artifacts-cdn.localhost/apps/client-name/client-version/hash');
+  expect(cdnHeader).toEqual('foo');
 });
 
 test('use persisted documents for subscription over SSE (GraphQL over HTTP "documentId")', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, 'subscription { hi }');
+  let url: string | undefined;
+  let cdnHeader: string | undefined;
 
   const yoga = createYoga({
     schema: createSchema({
@@ -380,6 +355,11 @@ test('use persisted documents for subscription over SSE (GraphQL over HTTP "docu
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
+          },
+          async fetch(uurl, params) {
+            url = uurl as string;
+            cdnHeader = (params?.headers as Record<string, string>)?.['X-Hive-CDN-Key'];
+            return new Response('subscription { hi }');
           },
         },
         agent: {
@@ -411,53 +391,13 @@ test('use persisted documents for subscription over SSE (GraphQL over HTTP "docu
     data:
   `);
 
-  httpScope.done();
+  expect(url).toEqual('http://artifacts-cdn.localhost/apps/client-name/client-version/hash');
+  expect(cdnHeader).toEqual('foo');
 });
 
 test('usage reporting for persisted document', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, 'query { hi }');
-
-  const usageScope = nock('http://localhost', {
-    reqheaders: {
-      Authorization: value => {
-        expect(value).toBe('Bearer brrrt');
-        return true;
-      },
-    },
-  })
-    .post('/usage', body => {
-      expect(body.map).toMatchInlineSnapshot(`
-        {
-          ace78a32bbf8a79071356e5d5b13c5c83baf4e14: {
-            fields: [
-              Query.hi,
-            ],
-            operation: {hi},
-            operationName: anonymous,
-          },
-        }
-      `);
-
-      expect(body.operations).toMatchObject([
-        {
-          metadata: {},
-          operationMapKey: 'ace78a32bbf8a79071356e5d5b13c5c83baf4e14',
-          persistedDocumentHash: 'client-name~client-version~hash',
-        },
-      ]);
-
-      return true;
-    })
-    .reply(200);
+  const lookupfetchCallFn = vi.fn();
+  const usageD = Promise.withResolvers<Array<unknown>>();
 
   const yoga = createYoga({
     schema: createSchema({
@@ -477,6 +417,10 @@ test('usage reporting for persisted document', async () => {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
           },
+          async fetch(...args) {
+            lookupfetchCallFn(...args);
+            return new Response('query { hi }');
+          },
         },
         selfHosting: {
           applicationUrl: 'http://localhost/foo',
@@ -489,88 +433,53 @@ test('usage reporting for persisted document', async () => {
         agent: {
           maxSize: 1,
           logger: createLogger('silent'),
+          async fetch(...args) {
+            usageD.resolve(args);
+            return new Response('');
+          },
         },
       }),
     ],
   });
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      resolve();
-    }, 1000);
-    let requestCount = 0;
+  const response = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      documentId: 'client-name~client-version~hash',
+    }),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ data: { hi: null } });
 
-    usageScope.on('request', () => {
-      requestCount = requestCount + 1;
-      if (requestCount === 1) {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
-
-    (async () => {
-      const response = await yoga.fetch('http://localhost/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentId: 'client-name~client-version~hash',
-        }),
-      });
-      expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ data: { hi: null } });
-    })().catch(reject);
+  expect(lookupfetchCallFn.mock.calls).toHaveLength(1);
+  expect(lookupfetchCallFn.mock.calls[0][0]).toEqual(
+    'http://artifacts-cdn.localhost/apps/client-name/client-version/hash',
+  );
+  expect(lookupfetchCallFn.mock.calls[0][1]).toMatchObject({
+    headers: {
+      'X-Hive-CDN-Key': 'foo',
+    },
+    method: 'GET',
   });
 
-  httpScope.done();
-  usageScope.done();
+  const usageResponseArgs = await usageD.promise;
+  expect(usageResponseArgs[0]).toEqual('http://localhost/usage');
+  const body = JSON.parse((usageResponseArgs[1] as any).body);
+  expect(body.map).toEqual({
+    ace78a32bbf8a79071356e5d5b13c5c83baf4e14: {
+      operation: '{hi}',
+      operationName: 'anonymous',
+      fields: ['Query.hi'],
+    },
+  });
 });
 
 test('usage reporting for persisted document (subscription)', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, 'subscription { hi }');
-
-  const usageScope = nock('http://localhost', {
-    reqheaders: {
-      Authorization: value => {
-        expect(value).toBe('Bearer brrrt');
-        return true;
-      },
-    },
-  })
-    .post('/usage', body => {
-      expect(body.map).toMatchInlineSnapshot(`
-        {
-          74cf03b67c3846231d04927b02e1fca45e727223: {
-            fields: [
-              Subscription.hi,
-            ],
-            operation: subscription{hi},
-            operationName: anonymous,
-          },
-        }
-      `);
-
-      expect(body.subscriptionOperations).toMatchObject([
-        {
-          metadata: {},
-          operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
-          persistedDocumentHash: 'client-name~client-version~hash',
-        },
-      ]);
-
-      return true;
-    })
-    .reply(200);
+  const lookupfetchCallFn = vi.fn();
+  const usageD = Promise.withResolvers<Array<unknown>>();
 
   const yoga = createYoga({
     schema: createSchema({
@@ -602,6 +511,10 @@ test('usage reporting for persisted document (subscription)', async () => {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
           },
+          async fetch(...args) {
+            lookupfetchCallFn(...args);
+            return new Response('subscription { hi }');
+          },
         },
         selfHosting: {
           applicationUrl: 'http://localhost/foo',
@@ -614,38 +527,27 @@ test('usage reporting for persisted document (subscription)', async () => {
         agent: {
           maxSize: 1,
           logger: createLogger('silent'),
+          async fetch(...args) {
+            usageD.resolve(args);
+            return new Response('');
+          },
         },
       }),
     ],
   });
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      resolve();
-    }, 1000);
-    let requestCount = 0;
-
-    usageScope.on('request', () => {
-      requestCount = requestCount + 1;
-      if (requestCount === 1) {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
-
-    (async () => {
-      const response = await yoga.fetch('http://localhost/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: JSON.stringify({
-          documentId: 'client-name~client-version~hash',
-        }),
-      });
-      expect(response.status).toBe(200);
-      expect(await response.text()).toMatchInlineSnapshot(`
+  const response = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    },
+    body: JSON.stringify({
+      documentId: 'client-name~client-version~hash',
+    }),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.text()).toMatchInlineSnapshot(`
         :
 
         event: next
@@ -654,27 +556,44 @@ test('usage reporting for persisted document (subscription)', async () => {
         event: complete
         data:
       `);
-    })().catch(reject);
+
+  expect(lookupfetchCallFn.mock.calls).toHaveLength(1);
+  expect(lookupfetchCallFn.mock.calls[0][0]).toEqual(
+    'http://artifacts-cdn.localhost/apps/client-name/client-version/hash',
+  );
+  expect(lookupfetchCallFn.mock.calls[0][1]).toMatchObject({
+    headers: {
+      'X-Hive-CDN-Key': 'foo',
+    },
+    method: 'GET',
   });
 
-  httpScope.done();
-  usageScope.done();
+  const usageResponseArgs = await usageD.promise;
+  expect(usageResponseArgs[0]).toEqual('http://localhost/usage');
+  const body = JSON.parse((usageResponseArgs[1] as any).body);
+  expect(body.map).toMatchInlineSnapshot(`
+        {
+          74cf03b67c3846231d04927b02e1fca45e727223: {
+            fields: [
+              Subscription.hi,
+            ],
+            operation: subscription{hi},
+            operationName: anonymous,
+          },
+        }
+      `);
+
+  expect(body.subscriptionOperations).toMatchObject([
+    {
+      metadata: {},
+      operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
+      persistedDocumentHash: 'client-name~client-version~hash',
+    },
+  ]);
 });
 
 test('deduplication of parallel requests resolving the same document from CDN', async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    // Note: this handler is only invoked for the first call, additional calls will fail.
-    .get('/apps/client-name/client-version/hash')
-    .reply(200, () => {
-      return 'query { hi }';
-    });
+  const lookupfetchCallFn = vi.fn();
 
   const yoga = createYoga({
     schema: createSchema({
@@ -691,6 +610,10 @@ test('deduplication of parallel requests resolving the same document from CDN', 
           cdn: {
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
+          },
+          async fetch(...args) {
+            lookupfetchCallFn(...args);
+            return new Response('query { hi }');
           },
         },
         agent: {
@@ -717,52 +640,11 @@ test('deduplication of parallel requests resolving the same document from CDN', 
   expect(request2.status).toBe(200);
   expect(await request2.json()).toEqual({ data: { hi: null } });
 
-  httpScope.done();
+  expect(lookupfetchCallFn).toHaveBeenCalledOnce();
 });
 
-test('usage reporting with batch execution and persisted documents', { retry: 3 }, async () => {
-  const httpScope = nock('http://artifacts-cdn.localhost', {
-    reqheaders: {
-      'X-Hive-CDN-Key': value => {
-        expect(value).toBe('foo');
-        return true;
-      },
-    },
-  })
-    // Note: this handler is only invoked for the first call, additional calls will fail.
-    .get('/apps/client-name/client-version/a')
-    .reply(200, () => {
-      return 'query { a }';
-    })
-    .get('/apps/client-name/client-version/b')
-    .reply(200, () => {
-      return 'query { b }';
-    });
-
-  const usageReportingScope = nock('http://localhost')
-    .post('/usage', body => {
-      expect(body.map).toMatchInlineSnapshot(`
-        {
-          07188723c7bd37a812cb478cc980f83fe5b4026c: {
-            fields: [
-              Query.a,
-            ],
-            operation: {a},
-            operationName: anonymous,
-          },
-          e8571e61911eea36db5ef7a3ed222aacb0cd5ba1: {
-            fields: [
-              Query.b,
-            ],
-            operation: {b},
-            operationName: anonymous,
-          },
-        }
-      `);
-
-      return true;
-    })
-    .reply(200);
+test('usage reporting with batch execution and persisted documents', async () => {
+  const usageD = Promise.withResolvers<Array<unknown>>();
 
   const yoga = createYoga({
     schema: createSchema({
@@ -783,11 +665,26 @@ test('usage reporting with batch execution and persisted documents', { retry: 3 
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
           },
+          async fetch(url) {
+            if ((url as string).endsWith('/apps/client-name/client-version/a')) {
+              return new Response('query { a }');
+            }
+
+            if ((url as string).endsWith('/apps/client-name/client-version/b')) {
+              return new Response('query { b }');
+            }
+
+            return new Response('', { status: 400 });
+          },
         },
         agent: {
           maxSize: 1,
           logger: createLogger('silent'),
           sendInterval: 1,
+          async fetch(...args) {
+            usageD.resolve(args);
+            return new Response('');
+          },
         },
         selfHosting: {
           applicationUrl: 'http://localhost/foo',
@@ -819,9 +716,25 @@ test('usage reporting with batch execution and persisted documents', { retry: 3 
   expect(request.status).toBe(200);
   expect(await request.json()).toEqual([{ data: { a: null } }, { data: { b: null } }]);
 
-  await new Promise(res => {
-    setTimeout(res, 10);
-  });
-  httpScope.done();
-  usageReportingScope.done();
+  const usageResponseArgs = await usageD.promise;
+
+  const body = JSON.parse((usageResponseArgs[1] as any).body);
+  expect(body.map).toMatchInlineSnapshot(`
+    {
+      07188723c7bd37a812cb478cc980f83fe5b4026c: {
+        fields: [
+          Query.a,
+        ],
+        operation: {a},
+        operationName: anonymous,
+      },
+      e8571e61911eea36db5ef7a3ed222aacb0cd5ba1: {
+        fields: [
+          Query.b,
+        ],
+        operation: {b},
+        operationName: anonymous,
+      },
+    }
+  `);
 });
