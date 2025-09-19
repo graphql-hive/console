@@ -936,6 +936,7 @@ export function TraceSheet(props: TraceSheetProps) {
                             onMouseLeave={() => {
                               setHighlightedEvent(null);
                             }}
+                            className="mb-2 block"
                           >
                             <ExceptionTeaser
                               key={event.id}
@@ -1524,20 +1525,15 @@ function SpanSheet(props: SpanSheetProps) {
                     <div className="px-1 pt-2">
                       {span.events.map(event => {
                         return (
-                          <ExceptionTeaser
-                            type={event.attributes['exception.type'] ?? ''}
-                            message={event.attributes['exception.message'] ?? ''}
-                            stacktrace={event.attributes['exception.stacktrace'] ?? ''}
-                            name={event.name}
-                          />
+                          <div className="mb-2">
+                            <ExceptionTeaser
+                              type={event.attributes['exception.type'] ?? ''}
+                              message={event.attributes['exception.message'] ?? ''}
+                              stacktrace={event.attributes['exception.stacktrace'] ?? ''}
+                              name={event.name}
+                            />
+                          </div>
                         );
-                        // return (
-                        //   <>
-                        //     {Array.from(Object.entries(event.attributes)).map(([key, value]) => (
-                        //       <AttributeRow key={key} attributeKey={key} value={String(value)} />
-                        //     ))}
-                        //   </>
-                        // );
                       })}
                     </div>
                   ) : (
