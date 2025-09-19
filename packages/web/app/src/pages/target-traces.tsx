@@ -651,23 +651,6 @@ function LabelWithColor(props: { className: string; children: ReactNode }) {
   );
 }
 
-// function LabelWithBadge(props: {
-//   children: ReactNode;
-//   badgeText: string;
-//   side?: 'left' | 'right';
-// }) {
-//   return (
-//     <div
-//       className={cn('flex items-center gap-1', props.side === 'right' ? 'flex-row-reverse' : '')}
-//     >
-//       <Badge variant="outline" className="rounded-sm px-1 font-normal">
-//         {props.badgeText}
-//       </Badge>
-//       <span className="text-foreground font-medium">{props.children}</span>
-//     </div>
-//   );
-// }
-
 export const TargetTracesFilterState = z.object({
   period: z.union([z.tuple([z.string(), z.string()]), z.tuple([])]).default([]),
   duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
@@ -1123,14 +1106,24 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         options?.operationType.map(option => ({
           value: option.value,
           searchContent: option.value,
-          label: option.value,
+          label:
+            option.value === '' ? (
+              <span className="text-gray-400">{'<unknown>'}</span>
+            ) : (
+              option.value
+            ),
           count: option.count,
         })) ?? [],
       'graphql.name':
         options?.operationName.map(option => ({
           value: option.value,
           searchContent: option.value,
-          label: option.value,
+          label:
+            option.value === '' ? (
+              <span className="text-gray-400">{'<unknown>'}</span>
+            ) : (
+              option.value
+            ),
           count: option.count,
         })) ?? [],
       'http.status':
@@ -1186,7 +1179,12 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         options?.clientName.map(option => ({
           value: option.value,
           searchContent: option.value,
-          label: option.value,
+          label:
+            option.value === '' ? (
+              <span className="text-gray-400">{'<unknown>'}</span>
+            ) : (
+              option.value
+            ),
           count: option.count,
         })) ?? [],
     };
