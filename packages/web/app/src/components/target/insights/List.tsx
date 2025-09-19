@@ -517,7 +517,8 @@ export function OperationsList({
   projectSlug: string;
   targetSlug: string;
   period: DateRangeInput;
-  operationsFilter: readonly string[];
+  /** Operation IDs to filter on */
+  operationsFilter: string[];
   clientNamesFilter: string[];
   selectedPeriod: null | { to: string; from: string };
 }): ReactElement {
@@ -532,6 +533,7 @@ export function OperationsList({
       },
       period,
       filter: {
+        operationIds: operationsFilter,
         clientNames: clientNamesFilter,
       },
     },
