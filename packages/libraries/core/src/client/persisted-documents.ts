@@ -10,6 +10,7 @@ type HeadersObject = {
 export function createPersistedDocuments(
   config: PersistedDocumentsConfiguration & {
     logger: Logger;
+    fetch?: typeof fetch;
   },
 ): null | {
   resolve(documentId: string): PromiseOrValue<string | null>;
@@ -51,6 +52,7 @@ export function createPersistedDocuments(
           },
           logger: config.logger,
           isRequestOk: response => response.status === 200 || response.status === 404,
+          fetchImplementation: config.fetch,
         })
         .then(async response => {
           if (response.status !== 200) {
