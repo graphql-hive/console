@@ -37,8 +37,10 @@ export const Trace: TraceResolvers = {
     return trace.subgraphNames;
   },
   success(trace) {
+    console.log('BRRR BRRR', trace);
     return (
       (trace.graphqlErrorCodes?.length ?? 0) === 0 &&
+      trace.graphqlErrorCount === 0 &&
       (trace.httpStatusCode.startsWith('2') || trace.httpStatusCode.startsWith('3'))
     );
   },
