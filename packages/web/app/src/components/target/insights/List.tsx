@@ -410,13 +410,6 @@ function OperationsTableContainer({
     const records: Operation[] = [];
     if (operationStats) {
       for (const { node: op } of operationStats.operations.edges) {
-        if (
-          operationsFilter.length > 0 &&
-          op.operationHash &&
-          !operationsFilter.includes(op.operationHash)
-        ) {
-          continue;
-        }
         records.push({
           id: op.id,
           name: op.name,
@@ -434,7 +427,7 @@ function OperationsTableContainer({
     }
 
     return records;
-  }, [operationStats?.operations.edges, operationsFilter]);
+  }, [operationStats?.operations.edges]);
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
