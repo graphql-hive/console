@@ -221,7 +221,7 @@ export const action: Action = async exec => {
       FROM
         "otel_traces"
       WHERE
-        empty("ParentSpanId") AND NOT empty("SpanAttributes"['graphql.operation.type'])
+        empty("ParentSpanId")
     )
   `);
 

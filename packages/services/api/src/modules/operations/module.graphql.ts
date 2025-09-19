@@ -273,7 +273,7 @@ export default gql`
     id: ID!
     timestamp: DateTime!
     operationName: String
-    operationType: GraphQLOperationType!
+    operationType: GraphQLOperationType
     """
     The Hash of the GraphQL operation.
     """
@@ -285,7 +285,7 @@ export default gql`
     """
     The subgraphs called within the trace.
     """
-    subgraphs: [String!]!
+    subgraphs: [String!]
     """
     Wether the trace is successful.
     A trace is a success if no GraphQL errors occured and the HTTP status code is in the 2XX to 3XX range.

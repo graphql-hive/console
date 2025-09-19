@@ -425,9 +425,13 @@ const TracesList = memo(function TracesList(
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-4 text-xs">
                   <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
-                    {row.original.operationType.substring(0, 1).toUpperCase()}
+                    {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                   </span>
-                  <span>{row.getValue('operationName')}</span>
+                  <span>
+                    {row.getValue('operationName') ?? (
+                      <span className="text-gray-400">{'<unknown>'}</span>
+                    )}
+                  </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent
@@ -923,7 +927,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         <SheetHeader className="relative border-b border-gray-800 p-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-medium text-white">
-              {trace?.operationName}
+              {trace?.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
               <span className="text-muted-foreground ml-2 font-mono font-normal">
                 {trace.id.substring(0, 4)}
               </span>

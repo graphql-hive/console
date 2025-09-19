@@ -270,6 +270,7 @@ const traceFields = sql`
   , "client_name" AS "clientName"
   , "client_version" AS "clientVersion"
   , upper("graphql_operation_type") AS "graphqlOperationType"
+  , "graphql_error_count" AS "graphqlErrorCount"
   , "graphql_error_codes" AS "graphqlErrorCodes"
   , "subgraph_names" AS "subgraphNames"
 `;
@@ -289,15 +290,14 @@ const TraceModel = z.object({
     .string()
     .nullable()
     .transform(value => value || null),
-  graphqlOperationType: z.union([
-    z.literal('QUERY'),
-    z.literal('MUTATION'),
-    z.literal('SUBSCRIPTION'),
-  ]),
+  graphqlOperationType: z
+    .union([z.literal('QUERY'), z.literal('MUTATION'), z.literal('SUBSCRIPTION'), z.literal('')])
+    .transform(value => value || null),
   graphqlOperationHash: z.string().nullable(),
   clientName: z.string().nullable(),
   clientVersion: z.string().nullable(),
   graphqlErrorCodes: z.array(z.string()).nullable(),
+  graphqlErrorCount: z.number(),
   subgraphNames: z.array(z.string()).transform(s => (s.length === 1 && s.at(0) === '' ? [] : s)),
 });
 
