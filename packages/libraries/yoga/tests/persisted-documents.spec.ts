@@ -129,12 +129,10 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
             endpoint: 'http://artifacts-cdn.localhost',
             accessToken: 'foo',
           },
-          fetch() {
-            return Promise.resolve(
-              new Response('', {
-                status: 404,
-              }),
-            );
+          async fetch() {
+            return new Response('', {
+              status: 404,
+            });
           },
         },
         agent: {
