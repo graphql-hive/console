@@ -957,7 +957,7 @@ export function TraceSheet(props: TraceSheetProps) {
                           fontSize: 10,
                           minimap: { enabled: false },
                         }}
-                        code={rootSpanUnmasked.spanAttributes['hive.graphql.operation.document']}
+                        code={rootSpanUnmasked.spanAttributes['graphql.document']}
                       />
                     </div>
                   ) : null}
