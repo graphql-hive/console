@@ -39,9 +39,9 @@ function OperationsFilter({
   operationStatsConnection: FragmentType<
     typeof OperationsFilter_OperationStatsValuesConnectionFragment
   >;
-  clientOperationStatsConnection?: FragmentType<
-    typeof OperationsFilter_OperationStatsValuesConnectionFragment
-  > | undefined;
+  clientOperationStatsConnection?:
+    | FragmentType<typeof OperationsFilter_OperationStatsValuesConnectionFragment>
+    | undefined;
   selected?: string[];
 }): ReactElement {
   const operations = useFragment(
@@ -49,10 +49,12 @@ function OperationsFilter({
     operationStatsConnection,
   );
 
-  const clientFilteredOperations = clientOperationStatsConnection ? useFragment(
-    OperationsFilter_OperationStatsValuesConnectionFragment,
-    clientOperationStatsConnection,
-  ) : null;
+  const clientFilteredOperations = clientOperationStatsConnection
+    ? useFragment(
+        OperationsFilter_OperationStatsValuesConnectionFragment,
+        clientOperationStatsConnection,
+      )
+    : null;
 
   function getOperationHashes() {
     const items: string[] = [];
@@ -112,7 +114,9 @@ function OperationsFilter({
   const renderRow = useCallback<ComponentType<ListChildComponentProps>>(
     ({ index, style }) => {
       const operation = visibleOperations[index].node;
-      const clientOpStats = clientFilteredOperations?.edges.find(e => e.node.operationHash === operation.operationHash)?.node;
+      const clientOpStats = clientFilteredOperations?.edges.find(
+        e => e.node.operationHash === operation.operationHash,
+      )?.node;
 
       return (
         <OperationRow
@@ -168,7 +172,11 @@ function OperationsFilter({
             </Button>
           </div>
           <div className="grow pl-1">
-            {clientFilteredOperations && <div className='text-right text-gray-600 text-xs'><span className='text-gray-500'>selected</span> / all clients</div>}
+            {clientFilteredOperations && (
+              <div className="text-right text-xs text-gray-600">
+                <span className="text-gray-500">selected</span> / all clients
+              </div>
+            )}
             <AutoSizer>
               {({ height, width }) =>
                 !height || !width ? (
@@ -210,7 +218,8 @@ const OperationsFilterContainer_OperationStatsQuery = graphql(`
           ...OperationsFilter_OperationStatsValuesConnectionFragment
         }
       }
-      clientOperationStats: operationsStats(period: $period, filter: $filter) @include(if: $hasFilter) {
+      clientOperationStats: operationsStats(period: $period, filter: $filter)
+        @include(if: $hasFilter) {
         operations {
           edges {
             __typename
@@ -241,7 +250,7 @@ function OperationsFilterContainer({
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  clientNames?: string[],
+  clientNames?: string[];
 }): ReactElement | null {
   const [query, refresh] = useQuery({
     query: OperationsFilterContainer_OperationStatsQuery,
@@ -305,14 +314,19 @@ function OperationRow({
 }: {
   operationStats: FragmentType<typeof OperationRow_OperationStatsValuesFragment>;
   /** Stats for the operation filtered by the selected clients */
-  clientOperationStats?: FragmentType<typeof OperationRow_OperationStatsValuesFragment> | null | false;
+  clientOperationStats?:
+    | FragmentType<typeof OperationRow_OperationStatsValuesFragment>
+    | null
+    | false;
   selected: boolean;
   onSelect(id: string, selected: boolean): void;
   style: any;
 }): ReactElement {
   const operation = useFragment(OperationRow_OperationStatsValuesFragment, operationStats);
   const requests = useFormattedNumber(operation.count);
-  const clientsOperation = clientOperationStats ? useFragment(OperationRow_OperationStatsValuesFragment, clientOperationStats) : undefined;
+  const clientsOperation = clientOperationStats
+    ? useFragment(OperationRow_OperationStatsValuesFragment, clientOperationStats)
+    : undefined;
   const hasClientOperation = clientOperationStats !== false;
   const clientsRequests = clientsOperation ? useFormattedNumber(clientsOperation.count) : null;
   const hash = operation.operationHash || '';
@@ -324,11 +338,16 @@ function OperationRow({
 
   const Totals = () => {
     if (hasClientOperation) {
-      return <div className="shrink-0 text-right text-gray-500 flex"><span>{clientsRequests ?? 0}</span><span className='ml-1 truncate text-gray-600'>/ {requests}</span></div>;
+      return (
+        <div className="flex shrink-0 text-right text-gray-500">
+          <span>{clientsRequests ?? 0}</span>
+          <span className="ml-1 truncate text-gray-600">/ {requests}</span>
+        </div>
+      );
     } else {
       return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
     }
-  }
+  };
 
   return (
     <div style={style} className="flex items-center gap-4 truncate">
@@ -338,7 +357,7 @@ function OperationRow({
         className="flex w-full cursor-pointer items-center justify-between gap-4 overflow-hidden"
       >
         <span className="grow overflow-hidden text-ellipsis">{operation.name}</span>
-        <Totals/>
+        <Totals />
       </label>
     </div>
   );
@@ -359,7 +378,7 @@ export function OperationsFilterTrigger({
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  clientNames?: string[],
+  clientNames?: string[];
 }): ReactElement {
   const [isOpen, toggle] = useToggle();
 
