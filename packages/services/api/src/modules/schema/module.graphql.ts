@@ -1078,7 +1078,6 @@ export default gql`
   type GraphQLEnumType implements GraphQLNamedType @tag(name: "public") {
     name: String!
     description: String
-    deprecationReason: String
     values: [GraphQLEnumValue!]!
     usage: SchemaCoordinateUsage!
     """

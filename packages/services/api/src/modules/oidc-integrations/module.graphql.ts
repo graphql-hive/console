@@ -17,7 +17,6 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
-    organization: Organization!
     oidcUserAccessOnly: Boolean!
     defaultMemberRole: MemberRole!
   }
