@@ -33,7 +33,7 @@
     "@sentry/integrations": "7.114.0",
     "@sentry/node": "7.120.2",
     "@swc/core": "1.13.5",
-    "@theguild/federation-composition": "0.20.0",
+    "@theguild/federation-composition": "0.20.1",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "@whatwg-node/server": "0.10.5",
