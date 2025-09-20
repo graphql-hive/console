@@ -31,6 +31,7 @@ function OperationsFilter({
   onFilter,
   operationStatsConnection,
   selected,
+  clientOperationStatsConnection,
 }: {
   onClose(): void;
   onFilter(keys: string[]): void;
@@ -38,12 +39,20 @@ function OperationsFilter({
   operationStatsConnection: FragmentType<
     typeof OperationsFilter_OperationStatsValuesConnectionFragment
   >;
+  clientOperationStatsConnection?: FragmentType<
+    typeof OperationsFilter_OperationStatsValuesConnectionFragment
+  > | undefined;
   selected?: string[];
 }): ReactElement {
   const operations = useFragment(
     OperationsFilter_OperationStatsValuesConnectionFragment,
     operationStatsConnection,
   );
+
+  const clientFilteredOperations = clientOperationStatsConnection ? useFragment(
+    OperationsFilter_OperationStatsValuesConnectionFragment,
+    clientOperationStatsConnection,
+  ) : null;
 
   function getOperationHashes() {
     const items: string[] = [];
@@ -103,12 +112,14 @@ function OperationsFilter({
   const renderRow = useCallback<ComponentType<ListChildComponentProps>>(
     ({ index, style }) => {
       const operation = visibleOperations[index].node;
+      const clientOpStats = clientFilteredOperations?.edges.find(e => e.node.operationHash === operation.operationHash)?.node;
 
       return (
         <OperationRow
           style={style}
           key={operation.id}
           operationStats={operation}
+          clientOperationStats={clientFilteredOperations === null ? false : clientOpStats}
           selected={selectedItems.includes(operation.operationHash || '')}
           onSelect={onSelect}
         />
@@ -157,6 +168,7 @@ function OperationsFilter({
             </Button>
           </div>
           <div className="grow pl-1">
+            {clientFilteredOperations && <div className='text-right text-gray-600 text-xs'><span className='text-gray-500'>selected</span> / all clients</div>}
             <AutoSizer>
               {({ height, width }) =>
                 !height || !width ? (
@@ -185,10 +197,20 @@ const OperationsFilterContainer_OperationStatsQuery = graphql(`
   query OperationsFilterContainer_OperationStatsQuery(
     $targetSelector: TargetSelectorInput!
     $period: DateRangeInput!
+    $filter: OperationStatsFilterInput
+    $hasFilter: Boolean!
   ) {
     target(reference: { bySelector: $targetSelector }) {
       id
       operationsStats(period: $period) {
+        operations {
+          edges {
+            __typename
+          }
+          ...OperationsFilter_OperationStatsValuesConnectionFragment
+        }
+      }
+      clientOperationStats: operationsStats(period: $period, filter: $filter) @include(if: $hasFilter) {
         operations {
           edges {
             __typename
@@ -209,6 +231,7 @@ function OperationsFilterContainer({
   organizationSlug,
   projectSlug,
   targetSlug,
+  clientNames,
 }: {
   onFilter(keys: string[]): void;
   onClose(): void;
@@ -218,6 +241,7 @@ function OperationsFilterContainer({
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  clientNames?: string[],
 }): ReactElement | null {
   const [query, refresh] = useQuery({
     query: OperationsFilterContainer_OperationStatsQuery,
@@ -228,6 +252,8 @@ function OperationsFilterContainer({
         targetSlug,
       },
       period,
+      filter: clientNames ? { clientNames } : undefined,
+      hasFilter: !!clientNames?.length,
     },
   });
 
@@ -250,6 +276,7 @@ function OperationsFilterContainer({
   return (
     <OperationsFilter
       operationStatsConnection={target.operationsStats.operations}
+      clientOperationStatsConnection={target.clientOperationStats?.operations}
       selected={selected}
       isOpen={isOpen}
       onClose={onClose}
@@ -271,23 +298,37 @@ const OperationRow_OperationStatsValuesFragment = graphql(`
 
 function OperationRow({
   operationStats,
+  clientOperationStats,
   selected,
   onSelect,
   style,
 }: {
   operationStats: FragmentType<typeof OperationRow_OperationStatsValuesFragment>;
+  /** Stats for the operation filtered by the selected clients */
+  clientOperationStats?: FragmentType<typeof OperationRow_OperationStatsValuesFragment> | null | false;
   selected: boolean;
   onSelect(id: string, selected: boolean): void;
   style: any;
 }): ReactElement {
   const operation = useFragment(OperationRow_OperationStatsValuesFragment, operationStats);
   const requests = useFormattedNumber(operation.count);
+  const clientsOperation = clientOperationStats ? useFragment(OperationRow_OperationStatsValuesFragment, clientOperationStats) : undefined;
+  const hasClientOperation = clientOperationStats !== false;
+  const clientsRequests = clientsOperation ? useFormattedNumber(clientsOperation.count) : null;
   const hash = operation.operationHash || '';
   const change = useCallback(() => {
     if (hash) {
       onSelect(hash, !selected);
     }
   }, [onSelect, hash, selected]);
+
+  const Totals = () => {
+    if (hasClientOperation) {
+      return <div className="shrink-0 text-right text-gray-500 flex"><span>{clientsRequests ?? 0}</span><span className='ml-1 truncate text-gray-600'>/ {requests}</span></div>;
+    } else {
+      return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
+    }
+  }
 
   return (
     <div style={style} className="flex items-center gap-4 truncate">
@@ -297,7 +338,7 @@ function OperationRow({
         className="flex w-full cursor-pointer items-center justify-between gap-4 overflow-hidden"
       >
         <span className="grow overflow-hidden text-ellipsis">{operation.name}</span>
-        <div className="shrink-0 text-right text-gray-500">{requests}</div>
+        <Totals/>
       </label>
     </div>
   );
@@ -310,6 +351,7 @@ export function OperationsFilterTrigger({
   organizationSlug,
   projectSlug,
   targetSlug,
+  clientNames,
 }: {
   period: DateRangeInput;
   onFilter(keys: string[]): void;
@@ -317,6 +359,7 @@ export function OperationsFilterTrigger({
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  clientNames?: string[],
 }): ReactElement {
   const [isOpen, toggle] = useToggle();
 
@@ -335,6 +378,7 @@ export function OperationsFilterTrigger({
         period={period}
         selected={selected}
         onFilter={onFilter}
+        clientNames={clientNames}
       />
     </>
   );

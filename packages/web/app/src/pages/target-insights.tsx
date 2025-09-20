@@ -54,6 +54,7 @@ function OperationsView({
             period={dateRangeController.resolvedRange}
             selected={selectedOperations}
             onFilter={setSelectedOperations}
+            clientNames={selectedClients}
           />
           <ClientsFilterTrigger
             organizationSlug={organizationSlug}

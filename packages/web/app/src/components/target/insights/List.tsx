@@ -241,7 +241,7 @@ function OperationsTable({
       )}
     >
       <Section.Title>Operations</Section.Title>
-      <Section.Subtitle>List of all operations with their statistics</Section.Subtitle>
+      <Section.Subtitle>List of all operations with their statistics, filtered by selected clients.</Section.Subtitle>
 
       <Table>
         <THead>
