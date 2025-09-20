@@ -344,9 +344,8 @@ function OperationRow({
           <span className="ml-1 truncate text-gray-600">/ {requests}</span>
         </div>
       );
-    } else {
-      return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
     }
+    return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
   };
 
   return (

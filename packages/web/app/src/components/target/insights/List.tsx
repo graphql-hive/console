@@ -384,7 +384,6 @@ const OperationsTableContainer_OperationsStatsFragment = graphql(`
 `);
 
 function OperationsTableContainer({
-  operationsFilter,
   organizationSlug,
   projectSlug,
   targetSlug,
@@ -395,7 +394,6 @@ function OperationsTableContainer({
   ...props
 }: {
   operationStats: FragmentType<typeof OperationsTableContainer_OperationsStatsFragment> | null;
-  operationsFilter: readonly string[];
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -549,7 +547,6 @@ export function OperationsList({
     >
       <OperationsTableContainer
         operationStats={query.data?.target?.operationsStats ?? null}
-        operationsFilter={operationsFilter}
         className={className}
         setClientFilter={setClientFilter}
         clientFilter={clientFilter}
