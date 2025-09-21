@@ -53,7 +53,7 @@ export function prepareEnvironment(input: {
       },
       envoy: {
         replicas: isProduction || isStaging ? 3 : 1,
-        cpuLimit: isProduction ? '1500m' : '150m',
+        cpuLimit: isProduction ? '1500m' : '120m',
         memoryLimit: isProduction ? '2Gi' : '200Mi',
       },
       schemaService: {
@@ -61,13 +61,13 @@ export function prepareEnvironment(input: {
       },
       usageService: {
         replicas: isProduction || isStaging ? 3 : 1,
-        cpuLimit: isProduction ? '1000m' : '300m',
+        cpuLimit: isProduction ? '1000m' : '100m',
         maxReplicas: isProduction || isStaging ? 6 : 1,
         cpuAverageToScale: 60,
       },
       usageIngestorService: {
         replicas: isProduction || isStaging ? 6 : 1,
-        cpuLimit: isProduction ? '1000m' : '300m',
+        cpuLimit: isProduction ? '1000m' : '100m',
         maxReplicas: isProduction || isStaging ? /* numberOfPartitions */ 16 : 2,
         cpuAverageToScale: 60,
       },
