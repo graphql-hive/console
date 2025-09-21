@@ -28,6 +28,10 @@ processors:
       - key: hive.target_id
         from_context: auth.targetId
         action: insert
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
 exporters:
   debug:
     verbosity: detailed
@@ -69,6 +73,7 @@ service:
       processors:
         - attributes
         - batch
+        - memory_limiter
       exporters:
         - clickhouse
         - debug

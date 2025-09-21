@@ -41,6 +41,14 @@ export function deployOTELCollector(args: {
       pdb: true,
       availabilityOnEveryNode: true,
       port: 4318,
+      memoryLimit: args.environment.podsConfig.tracingCollector.memoryLimit,
+      autoScaling: {
+        maxReplicas: args.environment.podsConfig.tracingCollector.maxReplicas,
+        cpu: {
+          limit: args.environment.podsConfig.tracingCollector.cpuLimit,
+          cpuAverageToScale: 80,
+        },
+      },
     },
     [args.clickhouse.deployment, args.clickhouse.service, args.dbMigrations],
   )
