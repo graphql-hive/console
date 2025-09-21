@@ -61,6 +61,8 @@ service:
       encoding: json
       output_paths: ['stdout']
       error_output_paths: ['stderr']
+    metrics:
+      address: '0.0.0.0:10254'
   pipelines:
     traces:
       receivers: [otlp]
