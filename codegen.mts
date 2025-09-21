@@ -41,6 +41,7 @@ const config: CodegenConfig = {
             OrganizationAccessScope: '../modules/auth/providers/scopes#OrganizationAccessScope',
             SupportTicketPriority: '../shared/entities#SupportTicketPriority',
             SupportTicketStatus: '../shared/entities#SupportTicketStatus',
+            SupportCategoryType: '../shared/entities#SupportCategoryType',
           },
           resolversNonOptionalTypename: {
             interfaceImplementingType: true,

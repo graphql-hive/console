@@ -1,9 +1,11 @@
-import { useCallback } from 'react';
+import { SetStateAction, useCallback, useState } from 'react';
 import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { ProjectSelector } from '@/components/layouts/project-selector';
+import { TargetSelector } from '@/components/layouts/target-selector';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +22,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import {
   Sheet,
   SheetContent,
@@ -40,16 +43,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
+import { SupportCategoryType, SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useNotifications, useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 
+const NewTicketQuery = graphql(`
+  query NewTicketQuery {
+    organizations {
+      ...ProjectSelector_OrganizationConnectionFragment
+      ...TargetSelector_OrganizationConnectionFragment
+    }
+  }
+`);
+
 const newTicketFormSchema = z.object({
   subject: z.string().min(2, {
     message: 'Subject must be at least 2 characters.',
   }),
+  category: z.nativeEnum(SupportCategoryType, {
+    required_error: 'A category is required.',
+  }),
+  project: z.string().optional(),
+  target: z.string().optional(),
   priority: z.nativeEnum(SupportTicketPriority, {
     required_error: 'A priority is required.',
   }),
@@ -79,11 +96,19 @@ function NewTicketForm(props: {
   onClose: () => void;
   onSubmit: () => void;
 }) {
+  const [project, setProject] = useState('');
+
+  const [query] = useQuery({
+    query: NewTicketQuery,
+    requestPolicy: 'cache-first',
+  });
+
   const notify = useNotifications();
   const form = useForm<NewTicketFormValues>({
     resolver: zodResolver(newTicketFormSchema),
     defaultValues: {
       subject: '',
+      category: SupportCategoryType.Other,
       priority: SupportTicketPriority.Normal,
       description: '',
     },
@@ -104,6 +129,9 @@ function NewTicketForm(props: {
       const result = await mutate({
         input: {
           organizationSlug: props.organizationSlug,
+          category: data.category,
+          projectId: data.project !== 'empty' ? data.project : undefined,
+          targetId: data.target !== 'empty' ? data.target : undefined,
           subject: data.subject,
           priority: data.priority,
           description: data.description,
@@ -139,7 +167,7 @@ function NewTicketForm(props: {
         }
       }}
     >
-      <SheetContent className="flex h-full w-1/3 max-w-none grow flex-col sm:w-1/2 sm:max-w-none md:w-1/3 md:max-w-[500px]">
+      <SheetContent className="flex h-full w-1/3 max-w-none grow flex-col overflow-y-auto sm:w-1/2 sm:max-w-none md:w-1/3 md:max-w-[500px]">
         <Form {...form}>
           <form
             className="flex h-full grow flex-col justify-between gap-y-4"
@@ -199,6 +227,86 @@ function NewTicketForm(props: {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          defaultValue={SupportCategoryType.Other}
+                        >
+                          <SelectTrigger variant="default" data-cy="category-picker-trigger">
+                            <div className="font-medium" data-cy="category-picker-catgeory">
+                              {field.value}
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(SupportCategoryType).map(category => (
+                              <SelectItem
+                                key={category}
+                                value={category}
+                                data-cy={`category-picker-option-${category}`}
+                              >
+                                {category.charAt(0) +
+                                  category.substring(1).toLowerCase().replace('_', ' ')}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="project"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project (Optional)</FormLabel>
+                      <FormControl>
+                        <ProjectSelector
+                          currentOrganizationSlug={props.organizationSlug}
+                          currentProjectSlug={field.value || ''}
+                          onValueChange={(value: SetStateAction<string>) => {
+                            field.onChange(value);
+                            setProject(value);
+                          }}
+                          organizations={query?.data?.organizations || null}
+                          optional
+                          showOrganization={false}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="target"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target (Optional)</FormLabel>
+                      <FormControl>
+                        <TargetSelector
+                          organizations={query?.data?.organizations || null}
+                          currentOrganizationSlug={props.organizationSlug}
+                          currentProjectSlug={project}
+                          onValueChange={field.onChange}
+                          optional
+                          currentTargetSlug={field.value || ''}
+                          showOrganization={false}
+                          showProject={false}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="subject"
@@ -360,7 +468,7 @@ function Support(props: {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(tickets ?? []).map(ticket => (
+              {tickets?.map(ticket => (
                 <SupportTicketRow
                   key={ticket.id}
                   organizationSlug={organization.slug}
