@@ -196,6 +196,9 @@ export const AuditLogModel = z.union([
     metadata: z.object({
       ticketId: z.string(),
       ticketSubject: z.string(),
+      ticketCategory: z.string().optional(),
+      ticketProject: z.string().optional(),
+      ticketTarget: z.string().optional(),
       ticketDescription: z.string(),
       ticketPriority: z.string(),
     }),
