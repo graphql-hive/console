@@ -656,7 +656,7 @@ export const TargetTracesFilterState = z.object({
   duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
   'trace.id': z.array(z.string()).default([]),
   'graphql.status': z.array(z.string()).default([]),
-  'graphql.kind': z.array(z.string()).default([]),
+  'graphql.kind': z.array(z.string().nullable()).default([]),
   'graphql.subgraph': z.array(z.string()).default([]),
   'graphql.operation': z.array(z.string()).default([]),
   'graphql.client': z.array(z.string()).default([]),
@@ -1104,7 +1104,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         })) ?? [],
       'graphql.kind':
         options?.operationType.map(option => ({
-          value: option.value,
+          value: option.value === '' ? null : option.value.toUpperCase(),
           searchContent: option.value,
           label:
             option.value === '' ? (
