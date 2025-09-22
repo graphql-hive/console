@@ -678,7 +678,7 @@ type FilterKeys = keyof FilterState;
 
 type FilterOptions = {
   [key: string]: Array<{
-    value: string;
+    value: string | null;
     searchContent: string;
     label: ReactNode;
     count: number;
