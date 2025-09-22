@@ -1,23 +1,15 @@
 import type { FastifyInstance } from 'fastify';
-import type Redis from 'ioredis';
-import type { DatabasePool } from 'slonik';
 import type { AuthN } from '@hive/api/modules/auth/lib/authz';
-import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { isUUID } from '@hive/api/shared/is-uuid';
 
 export function createOtelAuthEndpoint(args: {
   server: FastifyInstance;
-  tracing: boolean;
   authN: AuthN;
-  redis: Redis;
-  pgPool: DatabasePool;
+  targetsByIdCache: TargetsByIdCache;
+  targetsBySlugCache: TargetsBySlugCache;
 }) {
-  const prometheusConfig = new PrometheusConfig(args.tracing);
-  const targetsByIdCache = new TargetsByIdCache(args.redis, args.pgPool, prometheusConfig);
-  const targetsBySlugCache = new TargetsBySlugCache(args.redis, args.pgPool, prometheusConfig);
-
   args.server.get('/otel-auth', async (req, reply) => {
     const targetRefHeader = req.headers['x-hive-target-ref'];
 
@@ -44,8 +36,8 @@ export function createOtelAuthEndpoint(args: {
     const session = await args.authN.authenticate({ req, reply });
 
     const target = await (targetRef.kind === 'id'
-      ? targetsByIdCache.get(targetRef.targetId)
-      : targetsBySlugCache.get(targetRef));
+      ? args.targetsByIdCache.get(targetRef.targetId)
+      : args.targetsBySlugCache.get(targetRef));
 
     if (!target) {
       await reply.status(404).send({
