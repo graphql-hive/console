@@ -315,7 +315,7 @@ type TraceFilter = {
   success: ReadonlyArray<boolean> | null;
   errorCodes: ReadonlyArray<string> | null;
   operationNames: ReadonlyArray<string> | null;
-  operationTypes: ReadonlyArray<string> | null;
+  operationTypes: ReadonlyArray<string | null> | null;
   clientNames: ReadonlyArray<string> | null;
   subgraphNames: ReadonlyArray<string> | null;
   httpStatusCodes: ReadonlyArray<string> | null;
@@ -375,7 +375,12 @@ function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) 
   }
 
   if (filter?.operationTypes?.length) {
-    ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
+    ANDs.push(
+      sql`"graphql_operation_type" IN (${sql.array(
+        filter.operationTypes.map(value => (value == null ? '' : value.toLowerCase())),
+        'String',
+      )})`,
+    );
   }
 
   if (filter?.clientNames?.length) {

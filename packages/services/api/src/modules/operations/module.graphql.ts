@@ -362,8 +362,10 @@ export default gql`
     operationNames: [String!]
     """
     Filter based on the operation type.
+
+    A value of 'null' value indicates a unknown operation type.
     """
-    operationTypes: [GraphQLOperationType!]
+    operationTypes: [GraphQLOperationType]
     """
     Filter based on the client name.
     """
