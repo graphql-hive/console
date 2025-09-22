@@ -208,10 +208,16 @@ function createTrace(date: Date, reference: Reference) {
 }
 
 export default function () {
-  const reference = randomArrayItem(references);
-  const tracePayloads = createTrace(new Date(), reference);
+  const data = new Array(50)
+    .fill(null)
+    .map(() => {
+      const reference = randomArrayItem(references);
+      const tracePayloads = createTrace(new Date(), reference);
+      return tracePayloads;
+    })
+    .flatMap(i => i);
 
-  http.post(otelEndpointUrl, JSON.stringify(tracePayloads), {
+  http.post(otelEndpointUrl, JSON.stringify(data), {
     headers: { 'Content-Type': 'application/json' },
   });
 }
