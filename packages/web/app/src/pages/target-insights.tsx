@@ -62,6 +62,7 @@ function OperationsView({
             targetSlug={targetSlug}
             period={dateRangeController.resolvedRange}
             selected={selectedClients}
+            selectedOperationIds={selectedOperations}
             onFilter={setSelectedClients}
           />
           <DateRangePicker
