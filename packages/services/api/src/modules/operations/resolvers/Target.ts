@@ -137,7 +137,12 @@ export const Target: Pick<
     }
 
     if (filter?.operationTypes?.length) {
-      ANDs.push(sql`"graphql_operation_type" IN (${sql.array(filter.operationTypes, 'String')})`);
+      ANDs.push(
+        sql`"graphql_operation_type" IN (${sql.array(
+          filter.operationTypes.map(value => (value == null ? '' : value.toLowerCase())),
+          'String',
+        )})`,
+      );
     }
 
     if (filter?.clientNames?.length) {
