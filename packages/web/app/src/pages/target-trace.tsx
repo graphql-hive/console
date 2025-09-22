@@ -798,7 +798,7 @@ export function TraceSheet(props: TraceSheetProps) {
                 <ActiveSpanIdContext.Provider value={props.activeSpanId}>
                   <TraceView
                     rootSpan={rootSpan}
-                    serviceNames={trace.subgraphs}
+                    serviceNames={trace.subgraphs ?? []}
                     totalTraceDuration={totalTraceDuration}
                     organizationSlug={props.organizationSlug}
                     projectSlug={props.projectSlug}
