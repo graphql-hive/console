@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { AuthN } from '@hive/api/modules/auth/lib/authz';
-import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
-import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
+import type { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
+import type { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { isUUID } from '@hive/api/shared/is-uuid';
 
 export function createOtelAuthEndpoint(args: {
