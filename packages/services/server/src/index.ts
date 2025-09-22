@@ -25,6 +25,8 @@ import {
 } from '@hive/api';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
+import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';
@@ -595,7 +597,12 @@ export async function main() {
       return;
     });
 
-    createOtelAuthEndpoint({ server, authN, redis, pgPool: storage.pool, tracing: !!tracing });
+    createOtelAuthEndpoint({
+      server,
+      authN,
+      targetsBySlugCache: registry.injector.get(TargetsBySlugCache),
+      targetsByIdCache: registry.injector.get(TargetsByIdCache),
+    });
 
     if (env.cdn.providers.api !== null) {
       const s3 = {
