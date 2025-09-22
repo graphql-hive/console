@@ -565,7 +565,7 @@ function getRandomIndex(length: number) {
 }
 
 function randomArrayItem<T>(arr: Array<T>) {
-  return arr[getRandomIndex(appVersions.size)];
+  return arr[getRandomIndex(arr.length)];
 }
 
 const clientNames = ['sales-app', 'product-cron-sync', 'analytics-dashboard'];
