@@ -26,7 +26,6 @@ export function deployOTELCollector(args: {
         HIVE_OTEL_AUTH_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(
           value => value + '/otel-auth',
         ),
-        CLICKHOUSE_PROTOCOL: 'http',
       },
       /**
        * We are using the healthcheck extension.
@@ -56,5 +55,6 @@ export function deployOTELCollector(args: {
     .withSecret('CLICKHOUSE_PORT', args.clickhouse.secret, 'port')
     .withSecret('CLICKHOUSE_USERNAME', args.clickhouse.secret, 'username')
     .withSecret('CLICKHOUSE_PASSWORD', args.clickhouse.secret, 'password')
+    .withSecret('CLICKHOUSE_PROTOCOL', args.clickhouse.secret, 'protocol')
     .deploy();
 }
