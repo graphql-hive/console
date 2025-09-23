@@ -129,7 +129,7 @@ function OperationsFilter({
         />
       );
     },
-    [visibleOperations, selectedItems, onSelect],
+    [visibleOperations, selectedItems, onSelect, clientFilteredOperations],
   );
 
   return (
@@ -416,11 +416,19 @@ function ClientRow({
   ...props
 }: {
   client: FragmentType<typeof ClientRow_ClientStatsValuesFragment>;
+  clientOperationStats:
+    | FragmentType<typeof ClientRow_ClientStatsValuesFragment>
+    | false
+    | undefined;
   selected: boolean;
   onSelect(id: string, selected: boolean): void;
   style: any;
 }): ReactElement {
   const client = useFragment(ClientRow_ClientStatsValuesFragment, props.client);
+  const clientOperation =
+    props.clientOperationStats === false
+      ? false
+      : useFragment(ClientRow_ClientStatsValuesFragment, props.clientOperationStats);
   const requests = useFormattedNumber(client.count);
   const hash = client.name;
   const change = useCallback(() => {
@@ -428,6 +436,18 @@ function ClientRow({
       onSelect(hash, !selected);
     }
   }, [onSelect, hash, selected]);
+
+  const Totals = () => {
+    if (clientOperation !== false) {
+      return (
+        <div className="flex shrink-0 text-right text-gray-500">
+          <span>{clientOperation?.count ?? 0}</span>
+          <span className="ml-1 truncate text-gray-600">/ {requests}</span>
+        </div>
+      );
+    }
+    return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
+  };
 
   return (
     <div style={style} className="flex items-center gap-4 truncate">
@@ -437,7 +457,7 @@ function ClientRow({
         className="flex w-full cursor-pointer items-center justify-between gap-4 overflow-hidden"
       >
         <span className="grow overflow-hidden text-ellipsis">{client.name}</span>
-        <div className="shrink-0 text-right text-gray-500">{requests}</div>
+        <Totals />
       </label>
     </div>
   );
@@ -459,12 +479,16 @@ function ClientsFilter({
   isOpen,
   onFilter,
   clientStatsConnection,
+  operationStatsConnection,
   selected,
 }: {
   onClose(): void;
   onFilter(keys: string[]): void;
   isOpen: boolean;
   clientStatsConnection: FragmentType<typeof ClientsFilter_ClientStatsValuesConnectionFragment>;
+  operationStatsConnection?:
+    | FragmentType<typeof ClientsFilter_ClientStatsValuesConnectionFragment>
+    | undefined;
   selected?: string[];
 }): ReactElement {
   const clientConnection = useFragment(
@@ -520,21 +544,30 @@ function ClientsFilter({
     setSelectedItems([]);
   }, [setSelectedItems]);
 
+  const operationConnection = operationStatsConnection
+    ? useFragment(ClientsFilter_ClientStatsValuesConnectionFragment, operationStatsConnection)
+    : null;
+
   const renderRow = useCallback<ComponentType<ListChildComponentProps>>(
     ({ index, style }) => {
       const client = visibleOperations[index].node;
+      const operationStats =
+        operationConnection == null
+          ? false
+          : operationConnection.edges.find(e => e.node.name === client.name)?.node;
 
       return (
         <ClientRow
           style={style}
           key={client.name}
           client={client}
+          clientOperationStats={operationStats}
           selected={selectedItems.includes(client.name || '')}
           onSelect={onSelect}
         />
       );
     },
-    [visibleOperations, selectedItems, onSelect],
+    [visibleOperations, selectedItems, onSelect, operationConnection],
   );
 
   return (
@@ -577,6 +610,11 @@ function ClientsFilter({
             </Button>
           </div>
           <div className="grow pl-1">
+            {operationStatsConnection && (
+              <div className="text-right text-xs text-gray-600">
+                <span className="text-gray-500">selected</span> / all operations
+              </div>
+            )}
             <AutoSizer>
               {({ height, width }) =>
                 !height || !width ? (
@@ -605,10 +643,23 @@ const ClientsFilterContainer_ClientStatsQuery = graphql(`
   query ClientsFilterContainer_ClientStats(
     $targetSelector: TargetSelectorInput!
     $period: DateRangeInput!
+    $filter: OperationStatsFilterInput
+    $hasFilter: Boolean!
   ) {
     target(reference: { bySelector: $targetSelector }) {
       id
       operationsStats(period: $period) {
+        clients {
+          ...ClientsFilter_ClientStatsValuesConnectionFragment
+          edges {
+            node {
+              __typename
+            }
+          }
+        }
+      }
+      filteredOperationStats: operationsStats(period: $period, filter: $filter)
+        @include(if: $hasFilter) {
         clients {
           ...ClientsFilter_ClientStatsValuesConnectionFragment
           edges {
@@ -628,6 +679,7 @@ function ClientsFilterContainer({
   onClose,
   onFilter,
   selected,
+  selectedOperationIds,
   organizationSlug,
   projectSlug,
   targetSlug,
@@ -640,6 +692,7 @@ function ClientsFilterContainer({
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  selectedOperationIds?: string[];
 }): ReactElement | null {
   const [query, refresh] = useQuery({
     query: ClientsFilterContainer_ClientStatsQuery,
@@ -650,6 +703,8 @@ function ClientsFilterContainer({
         targetSlug,
       },
       period,
+      filter: selectedOperationIds ? { operationIds: selectedOperationIds } : undefined,
+      hasFilter: !!selectedOperationIds?.length,
     },
   });
 
@@ -672,6 +727,7 @@ function ClientsFilterContainer({
   return (
     <ClientsFilter
       clientStatsConnection={query.data.target.operationsStats.clients}
+      operationStatsConnection={query.data.target.filteredOperationStats?.clients}
       selected={selected}
       isOpen={isOpen}
       onClose={onClose}
@@ -689,10 +745,12 @@ export function ClientsFilterTrigger({
   organizationSlug,
   projectSlug,
   targetSlug,
+  selectedOperationIds,
 }: {
   period: DateRangeInput;
   onFilter(keys: string[]): void;
   selected?: string[];
+  selectedOperationIds?: string[];
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -713,6 +771,7 @@ export function ClientsFilterTrigger({
         onClose={toggle}
         period={period}
         selected={selected}
+        selectedOperationIds={selectedOperationIds}
         onFilter={onFilter}
       />
     </>
