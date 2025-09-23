@@ -281,7 +281,7 @@ export default gql`
     """
     Total duration of the trace.
     """
-    duration: Int!
+    duration: SafeInt!
     """
     The subgraphs called within the trace.
     """
