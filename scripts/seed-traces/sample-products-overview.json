@@ -287,7 +287,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query TopProductsOverview($first:Int){__typename topProducts(first:$first){__typename upc name upc price weight}}"
                     }
@@ -447,7 +447,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query TopProductsOverview($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on Product{upc reviews{__typename id id body author{username __typename __typename id id}}}}}"
                     }
@@ -607,7 +607,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query TopProductsOverview($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on User{id name}}}"
                     }
@@ -783,7 +783,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query TopProductsOverview{topProducts{name upc price weight reviews{id body author{id username name}}}}"
                     }
