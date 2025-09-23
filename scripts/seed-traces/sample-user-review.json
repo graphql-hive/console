@@ -287,7 +287,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query UserReview($id:ID!){__typename user(id:$id){__typename id id}}"
                     }
@@ -447,7 +447,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query UserReview($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on User{id reviews{__typename id id product{__typename upc upc}body}}}}"
                     }
@@ -607,7 +607,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query UserReview($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on Product{upc name weight}}}"
                     }
@@ -783,7 +783,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
                     }

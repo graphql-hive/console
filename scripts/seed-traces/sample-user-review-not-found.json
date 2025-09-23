@@ -287,7 +287,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query UserReview($id:ID!){__typename user(id:$id){__typename id id}}"
                     }
@@ -463,7 +463,7 @@
                     }
                   },
                   {
-                    "key": "hive.graphql.operation.document",
+                    "key": "graphql.document",
                     "value": {
                       "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
                     }
