@@ -1,6 +1,11 @@
+import './bru.ts';
+import { expect } from 'https://jslib.k6.io/k6-testing/0.5.0/index.js';
 import { randomIntBetween, randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import * as immer from 'https://unpkg.com/immer@10.1.3/dist/immer.mjs';
 import http from 'k6/http';
+
+// prettier-ignore
+globalThis.process = { env: {} };
 
 // Cardinality Variables Start
 const countUniqueErrorCodes = 1_000;
@@ -25,12 +30,19 @@ if (!HIVE_TARGET_REF) {
 
 // A helper to generate a random 16-byte trace/span ID in hex
 function randomId(bytes: number = 32): string {
-  const chars = 'abcdef0123456789';
-  let out = '';
-  for (let i = 0; i < bytes * 2; i++) {
-    out += chars.charAt(Math.floor(Math.random() * chars.length));
+  let traceId = '';
+  for (let i = 0; i < bytes; i++) {
+    // generate random nibble (0–15)
+    const nibble = Math.floor(Math.random() * 16);
+    traceId += nibble.toString(16);
   }
-  return out;
+
+  // ensure not all zero (very unlikely)
+  if (/^0+$/.test(traceId)) {
+    return randomId(bytes);
+  }
+
+  return traceId;
 }
 
 function toTimeUnixNano(date = new Date()) {
@@ -208,16 +220,20 @@ function createTrace(date: Date, reference: Reference) {
 }
 
 export default function () {
-  const data = new Array(50)
-    .fill(null)
-    .map(() => {
-      const reference = randomArrayItem(references);
-      const tracePayloads = createTrace(new Date(), reference);
-      return tracePayloads;
-    })
-    .flatMap(i => i);
-
-  http.post(otelEndpointUrl, JSON.stringify(data), {
-    headers: { 'Content-Type': 'application/json' },
+  const data = new Array(50).fill(null).flatMap(() => {
+    const reference = randomArrayItem(references);
+    const tracePayloads = createTrace(new Date(), reference);
+    return tracePayloads.flatMap(payload => payload.resourceSpans);
   });
+
+  const response = http.post(otelEndpointUrl, JSON.stringify({ resourceSpans: data }), {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${HIVE_ORGANIZATION_ACCESS_TOKEN}`,
+      'x-hive-target-ref': HIVE_TARGET_REF,
+    },
+  });
+
+  console.log('response', response.body);
+  expect(response.status).toBe(200);
 }
