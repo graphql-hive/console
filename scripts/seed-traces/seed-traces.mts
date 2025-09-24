@@ -492,6 +492,14 @@ const reference = [
                     },
                   },
                   {
+                    key: 'hive.graphql.error.codes',
+                    value: {
+                      arrayValue: {
+                        values: [{ stringValue: 'ERR_NOT_FOUND' }],
+                      },
+                    },
+                  },
+                  {
                     key: 'http.status_code',
                     value: {
                       intValue: 200,
@@ -653,11 +661,15 @@ function mutate(currentTime: Date, reference: Reference) {
               rootTrace.attributes.push(
                 {
                   key: 'hive.graphql.error.codes',
-                  value: { stringValue: errors.join(',') },
+                  value: {
+                    arrayValue: {
+                      values: errors.map(code => ({ stringValue: code })),
+                    },
+                  },
                 },
                 {
                   key: 'hive.graphql.error.count',
-                  value: { stringValue: String(errors.length) },
+                  value: { intValue: errors.length },
                 },
               );
             }

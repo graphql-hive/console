@@ -303,6 +303,12 @@
                     "value": {
                       "stringValue": "miss"
                     }
+                  },
+                  {
+                    "key": "hive.graphql",
+                    "value": {
+                      "boolValue": true
+                    }
                   }
                 ],
                 "droppedAttributesCount": 0,

@@ -232,7 +232,7 @@
                     }
                   },
                   {
-                    "key": "hive.subgraph.name",
+                    "key": "hive.gateway.upstream.subgraph.name",
                     "value": {
                       "stringValue": "products"
                     }
@@ -392,7 +392,7 @@
                     }
                   },
                   {
-                    "key": "hive.subgraph.name",
+                    "key": "hive.gateway.upstream.subgraph.name",
                     "value": {
                       "stringValue": "reviews"
                     }
@@ -552,7 +552,7 @@
                     }
                   },
                   {
-                    "key": "hive.subgraph.name",
+                    "key": "hive.gateway.upstream.subgraph.name",
                     "value": {
                       "stringValue": "users"
                     }
@@ -718,7 +718,13 @@
                   {
                     "key": "hive.gateway.operation.subgraph.names",
                     "value": {
-                      "stringValue": "products,reviews,users"
+                      "arrayValue": {
+                        "values": [
+                          { "stringValue": "users" },
+                          { "stringValue": "reviews" },
+                          { "stringValue": "products" }
+                        ]
+                      }
                     }
                   },
                   {
@@ -755,6 +761,12 @@
                     "key": "gateway.cache.response_cache",
                     "value": {
                       "stringValue": "miss"
+                    }
+                  },
+                  {
+                    "key": "hive.graphql",
+                    "value": {
+                      "boolValue": true
                     }
                   }
                 ],

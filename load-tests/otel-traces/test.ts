@@ -89,7 +89,7 @@ const errorCodes = new Array(countUniqueErrorCodes)
 
 function getRandomErrorCodes() {
   if (randomIntBetween(0, 10) > 3) {
-    return '';
+    return [];
   }
 
   if (randomIntBetween(0, 10) > 3) {
@@ -156,15 +156,19 @@ function mutate(currentTime: Date, reference: Reference) {
 
             const errors = getRandomErrorCodes();
 
-            if (errors) {
+            if (errors.length) {
               rootTrace.attributes.push(
                 {
                   key: 'hive.graphql.error.codes',
-                  value: { stringValue: errors.join(',') },
+                  value: {
+                    arrayValue: {
+                      values: errors.map(code => ({ stringValue: code })),
+                    },
+                  },
                 },
                 {
                   key: 'hive.graphql.error.count',
-                  value: { stringValue: String(errors.length) },
+                  value: { intValue: errors.length },
                 },
               );
             }
