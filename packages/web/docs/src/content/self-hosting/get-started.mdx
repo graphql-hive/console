@@ -2,14 +2,14 @@ import NextImage from 'next/image'
 import { Callout, Cards, Tabs } from '@theguild/components'
 import diagram from '../../../public/docs/pages/self-hosting/diagram.png'
 
-# Self-Hosting Hive
+# Self-Hosting Hive Console
 
-If you are not able to use Hive Cloud service, you can self-host it. The self-hosted version is free
-and open-source. You can find the full
+If you are not able to use the cloud provided Hive Console service, you can self-host it. The
+self-hosted version is free and open-source. You can find the full
 [source code on GitHub](https://github.com/graphql-hive/console).
 
 <Callout>
-  **Self-hosting Hive** does currently not support all of the features as the Cloud version.
+  **Self-hosting Hive Console** does currently not support all of the features as the Cloud version.
 
 The following features are currently unavailable when self-hosting:
 
@@ -18,12 +18,16 @@ The following features are currently unavailable when self-hosting:
 
 </Callout>
 
+If you're interested in hosting one of our gateway solutions, see the documentation for
+[Hive Router](https://github.com/graphql-hive/router?tab=readme-ov-file#hive-router-rust) or
+[Hive Gateway](https://the-guild.dev/graphql/hive/docs/gateway).
+
 ## Pre-Requisites
 
-The easiest way of running GraphQL Hive is using [Docker](https://www.docker.com/) and
+The easiest way of running Hive Console is using [Docker](https://www.docker.com/) and
 [docker-compose](https://docs.docker.com/compose/).
 
-All the services required for running GraphQL Hive are published to the GitHub container registry
+All the services required for running Hive Console are published to the GitHub container registry
 ([GraphQL Hive Docker Images](https://github.com/orgs/graphql-hive/packages)).
 
 Please make sure to install the Docker daemon as well as `docker-compose` on your machine before
@@ -31,7 +35,7 @@ proceeding.
 
 ## Self-Hosting Architecture
 
-When self-hosting GraphQL Hive, you are responsible for running and maintaining the following
+When self-hosting Hive Console, you are responsible for running and maintaining the following
 components:
 
 - [PostgreSQL database](https://www.postgresql.org/)
@@ -56,7 +60,7 @@ ClickHouse) and storage (S3) with managed database/storage (Cloud-based or in-ho
 
 ### Architecture Diagram
 
-The following diagram shows the architecture of a self-hosted GraphQL Hive instance:
+The following diagram shows the architecture of a self-hosted Hive Console instance:
 
 <NextImage
   alt="Self-hosting diagram"
@@ -90,22 +94,22 @@ The following diagram shows the architecture of a self-hosted GraphQL Hive insta
 #### Microservices
 
 - **SuperTokens**: an open-source project used for authentication and authorization.
-- `webapp`: the main GraphQL Hive web application.
-- `server`: the main GraphQL Hive server, responsible for serving the GraphQL API and orchestrating
+- `webapp`: the main Hive Console web application.
+- `server`: the main Hive Console server, responsible for serving the GraphQL API and orchestrating
   calls to other services.
 - **CDN**: a custom CDN service, responsible for serving the GraphQL schema artifacts. In
   self-hosted architecture, the CDN is provided as part of the `server`.
-- `schema`: the GraphQL Hive schema service, responsible for validating, composing and building
+- `schema`: the Hive Console schema service, responsible for validating, composing and building
   GraphQL schemas.
-- `tokens`: the GraphQL Hive tokens service, responsible for generating and validating tokens.
-- `usage`: the GraphQL Hive usage service, responsible for receiving usage data from a running
+- `tokens`: the Hive Console tokens service, responsible for generating and validating tokens.
+- `usage`: the Hive Console usage service, responsible for receiving usage data from a running
   GraphQL server, and prepare them for processing.
-- `usage-ingestor`: the GraphQL Hive usage-ingestor service, responsible for processing usage data
+- `usage-ingestor`: the Hive Console usage-ingestor service, responsible for processing usage data
   and storing them in ClickHouse.
-- `emails`: the GraphQL Hive emails service, responsible for sending emails.
-- `webhooks`: the GraphQL Hive webhooks service, responsible for sending webhooks to external
+- `emails`: the Hive Console emails service, responsible for sending emails.
+- `webhooks`: the Hive Console webhooks service, responsible for sending webhooks to external
   services.
-- `policy`: the GraphQL Hive policy service, responsible for validating and enforcing schema
+- `policy`: the Hive Console policy service, responsible for validating and enforcing schema
   policies.
 
 #### Utility services
@@ -122,7 +126,7 @@ following utility services:
 
 ## Quick Start Video
 
-In this video you will learn how to run GraphQL Hive and publish your first schema on your machine
+In this video you will learn how to run Hive Console and publish your first schema on your machine
 in less than 15 minutes.
 
 <iframe
@@ -130,7 +134,7 @@ in less than 15 minutes.
   title="GraphQL Hive Self-Hosted Quick Start"
 />
 
-## Running GraphQL Hive
+## Running Hive Console
 
 First download the `docker-compose.community.yml` file from the
 [GitHub repository](https://github.com/graphql-hive/console/blob/main/docker/docker-compose.community.yml)
@@ -168,7 +172,7 @@ for running Hive locally in a self hosted environment. But before we can spin it
 to set some environment variables.
 
 <Callout>
-  **Docker images** are built and published for each version of GraphQL Hive and tagged accordingly.
+  **Docker images** are built and published for each version of Hive Console and tagged accordingly.
   You can find all the available versions on the [GitHub Releases page prefixed with `hive@`](https://github.com/graphql-hive/console/releases).
 
 We recommend sticking to a specific version to avoid breaking changes. The `latest` version
@@ -213,7 +217,7 @@ docker compose -f docker-compose.community.yml config > docker-compose.with-env.
 
 </Callout>
 
-After setting the environment variables, pull the required images for GraphQL Hive services. This's
+After setting the environment variables, pull the required images for Hive Console services. This's
 going to take some time if you're doing it for the first time.
 
 ```bash
@@ -222,7 +226,7 @@ docker compose -f docker-compose.community.yml pull
 docker compose -f docker-compose.with-env.yml pull
 ```
 
-After it's done, you can start the GraphQL Hive services using `docker compose`.
+After it's done, you can start the Hive Console services using `docker compose`.
 
 ```bash
 docker compose -f docker-compose.community.yml up
@@ -232,7 +236,7 @@ docker compose -f docker-compose.with-env.yml up
 
 Wait until all the services are up and running.
 
-Congratulations 🥳, you just started your own GraphQL Hive instance.
+Congratulations 🥳, you just started your own Hive Console instance.
 
 You'll notice the folder named `.hive` at your root directory that has been mounted from docker
 representing the volumes for the different storages used by Hive services like `postgres` and
@@ -242,19 +246,19 @@ representing the volumes for the different storages used by Hive services like `
 > Note: deleting this directory will end up with a loss of data, as this directory is acting as a
 > volume for storing the data from Hive dependencies: database and storage
 
-## Testing GraphQL Hive
+## Testing Hive Console
 
-Visit `http://localhost:8080` in your browser and start using GraphQL Hive! The usage reporting
+Visit `http://localhost:8080` in your browser and start using Hive Console! The usage reporting
 endpoint is bound to `http://localhost:8081`. The GraphQL API is bound to `http://localhost:8082`.
 The artifacts bucket is bound to `http://localhost:8083`.
 
-Firstly, you can head to `http://localhost:8080` in your browser and start using GraphQL Hive!
+Firstly, you can head to `http://localhost:8080` in your browser and start using Hive Console!
 You'll need to Sign Up for an account by inputting your email and password. And once you do you'll
 see your personal organization that has been automatically created for you by default.
 
 ### Creating first project and target
 
-Now that we have GraphQL Hive setup locally, signed up and logged into our dashboard. We can start
+Now that we have Hive Console setup locally, signed up and logged into our dashboard. We can start
 creating our first project which we're going to push graphql schemas to.
 
 So you're going to click on the `Create a Project` button on the top right, give it a name and
@@ -351,7 +355,7 @@ the `hive.json` config file then add the following contents, while replacing the
 }
 ```
 
-Now we're all setup to use the GraphQL Hive CLI against our Setup!
+Now we're all setup to use the Hive CLI against our Setup!
 
 We can publish our first schema by using:
 
@@ -372,19 +376,19 @@ Go to the `Schema` tab in your project target and you're going to see your lates
 
 ## Next Steps
 
-After doing your first testing with GraphQL Hive you should consider the following steps:
+After doing your first testing with Hive Console you should consider the following steps:
 
 - Evaluate whether you want to run Databases yourself within Docker or instead use a managed
   database service.
 - Set up backups for your data.
-- Set up a CD pipeline for deploying GraphQL Hive to your Cloud Provider or bare-metal server of
+- Set up a CD pipeline for deploying Hive Console to your Cloud Provider or bare-metal server of
   choice (e.g. a Kubernetes cluster or Docker Swarm)
-- Set up a monitoring solution for your GraphQL Hive instance (leverage healthchecks, sentry error
+- Set up a monitoring solution for your Hive Console instance (leverage healthchecks, sentry error
   reporting, prometheus metrics, etc.).
 - Configure the `emails` service to use a real email provider (by default it uses `sendmail`).
-- Watch and follow the [GraphQL Hive GitHub repository](https://github.com/graphql-hive/console) for
+- Watch and follow the [Hive Console GitHub repository](https://github.com/graphql-hive/console) for
   new releases and updates.
-- Set up a weekly reminder for updating your GraphQL Hive instance to the latest version and
+- Set up a weekly reminder for updating your Hive Console instance to the latest version and
   applying maintenance.
 - Get yourself familiar with SuperTokens and follow their changelogs in order to keep your
   SuperTokens instance up-to-date.
