@@ -27,3 +27,7 @@ extensions:
       v0.122.0
   - gomod:
       github.com/graphql-hive/opentelemetry-collector-contrib/extension/hiveauthextension cd0c57cf22
+
+replaces:
+  - github.com/graphql-hive/opentelemetry-collector-contrib/extension/hiveauthextension =>
+    /build/extension-hiveauth

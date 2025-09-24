@@ -1,6 +1,7 @@
 FROM scratch AS config
 
 COPY builder-config.yaml .
+COPY extension-hiveauth/ ./extension-hiveauth/
 
 FROM golang:1.23.7-bookworm AS builder
 
@@ -12,6 +13,7 @@ RUN go install go.opentelemetry.io/collector/cmd/builder@v${OTEL_VERSION}
 
 # Copy the manifest file and other necessary files
 COPY --from=config builder-config.yaml .
+COPY --from=config extension-hiveauth/ ./extension-hiveauth/
 
 # Build the custom collector
 RUN CGO_ENABLED=0 builder --config=/build/builder-config.yaml
