@@ -138,55 +138,6 @@
             },
             "spans": [
               {
-                "traceId": "1601ed274ede73e8900daf9125e7e1f6",
-                "spanId": "293e53edace6b4a8",
-                "name": "http.fetch",
-                "kind": 3,
-                "startTimeUnixNano": "1751541851833000000",
-                "endTimeUnixNano": "1751541851947102917",
-                "attributes": [],
-                "droppedAttributesCount": 0,
-                "events": [],
-                "droppedEventsCount": 0,
-                "status": {
-                  "code": 0
-                },
-                "links": [],
-                "droppedLinksCount": 0
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "resourceSpans": [
-      {
-        "resource": {
-          "attributes": [
-            {
-              "key": "service.name",
-              "value": {
-                "stringValue": "hive-gateway"
-              }
-            },
-            {
-              "key": "service.version",
-              "value": {
-                "stringValue": "5.13.4"
-              }
-            }
-          ],
-          "droppedAttributesCount": 0
-        },
-        "scopeSpans": [
-          {
-            "scope": {
-              "name": "gateway"
-            },
-            "spans": [
-              {
                 "traceId": "395970847a47f14794c1c1af2499eb94",
                 "spanId": "f567c64730c382b4",
                 "parentSpanId": "49624b099fea77b7",
