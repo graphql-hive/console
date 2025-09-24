@@ -232,7 +232,7 @@
                     }
                   },
                   {
-                    "key": "hive.subgraph.name",
+                    "key": "hive.gateway.upstream.subgraph.name",
                     "value": {
                       "stringValue": "users"
                     }
@@ -398,7 +398,9 @@
                   {
                     "key": "hive.gateway.operation.subgraph.names",
                     "value": {
-                      "stringValue": "users"
+                      "arrayValue": {
+                        "values": [{ "stringValue": "users" }]
+                      }
                     }
                   },
                   {
@@ -435,6 +437,12 @@
                     "key": "gateway.cache.response_cache",
                     "value": {
                       "stringValue": "miss"
+                    }
+                  },
+                  {
+                    "key": "hive.graphql",
+                    "value": {
+                      "boolValue": true
                     }
                   }
                 ],

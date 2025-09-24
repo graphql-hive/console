@@ -222,6 +222,7 @@ export const action: Action = async exec => {
         "otel_traces"
       WHERE
         empty("ParentSpanId")
+        AND notEmpty("SpanAttributes"['hive.graphql'])
     )
   `);
 
@@ -309,7 +310,7 @@ export const action: Action = async exec => {
       FROM
         "otel_traces"
       WHERE
-        startsWith("SpanName", 'subgraph.execute')
+        notEmpty("SpanAttributes"['hive.graphql.subgraph.name'])
     )
   `);
 };
