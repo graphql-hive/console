@@ -658,14 +658,20 @@ export function ResourceSelector(props: {
                   {targetState && (
                     <div className="ml-auto text-xs">
                       <button
-                        className={cn(targetState.selection !== '*' && 'text-orange-500')}
+                        className={cn(
+                          'text-orange-500',
+                          targetState.selection !== '*' && 'underline',
+                        )}
                         onClick={targetState.setGranular}
                       >
                         Select
                       </button>
                       {' / '}
                       <button
-                        className={cn(targetState.selection === '*' && 'text-orange-500')}
+                        className={cn(
+                          'text-orange-500',
+                          targetState.selection === '*' && 'underline',
+                        )}
                         onClick={targetState.setAll}
                       >
                         All
@@ -679,7 +685,8 @@ export function ResourceSelector(props: {
                       <>
                         <button
                           className={cn(
-                            serviceAppsState === ServicesAppsState.service && 'text-orange-500',
+                            'text-orange-500',
+                            serviceAppsState === ServicesAppsState.service && 'underline',
                           )}
                           onClick={() => setServiceAppsState(ServicesAppsState.service)}
                         >
@@ -688,7 +695,8 @@ export function ResourceSelector(props: {
                         /{' '}
                         <button
                           className={cn(
-                            serviceAppsState === ServicesAppsState.apps && 'text-orange-500',
+                            'text-orange-500',
+                            serviceAppsState === ServicesAppsState.apps && 'underline',
                           )}
                           onClick={() => setServiceAppsState(ServicesAppsState.apps)}
                         >
@@ -705,7 +713,10 @@ export function ResourceSelector(props: {
                     serviceAppsState === ServicesAppsState.service && (
                       <div className="ml-auto text-xs">
                         <button
-                          className={cn(serviceState.selection !== '*' && 'text-orange-500')}
+                          className={cn(
+                            'text-orange-500',
+                            serviceState.selection !== '*' && 'underline',
+                          )}
                           onClick={serviceState.setGranular}
                         >
                           Select
@@ -713,8 +724,9 @@ export function ResourceSelector(props: {
                         {' / '}
                         <button
                           className={cn(
+                            'text-orange-500',
                             'mr-1',
-                            serviceState.selection === '*' && 'text-orange-500',
+                            serviceState.selection === '*' && 'underline',
                           )}
                           onClick={serviceState.setAll}
                         >
@@ -726,14 +738,21 @@ export function ResourceSelector(props: {
                   {appsState && serviceAppsState === ServicesAppsState.apps && (
                     <div className="ml-auto text-xs">
                       <button
-                        className={cn(appsState.selection !== '*' && 'text-orange-500')}
+                        className={cn(
+                          'text-orange-500',
+                          appsState.selection !== '*' && 'underline',
+                        )}
                         onClick={appsState.setGranular}
                       >
                         Select
                       </button>
                       {' / '}
                       <button
-                        className={cn('mr-1', appsState.selection === '*' && 'text-orange-500')}
+                        className={cn(
+                          'mr-1',
+                          'text-orange-500',
+                          appsState.selection === '*' && 'underline',
+                        )}
                         onClick={appsState.setAll}
                       >
                         All
