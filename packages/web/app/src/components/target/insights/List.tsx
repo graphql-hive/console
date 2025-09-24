@@ -241,7 +241,9 @@ function OperationsTable({
       )}
     >
       <Section.Title>Operations</Section.Title>
-      <Section.Subtitle>List of all operations with their statistics</Section.Subtitle>
+      <Section.Subtitle>
+        List of all operations with their statistics, filtered by selected clients.
+      </Section.Subtitle>
 
       <Table>
         <THead>
@@ -382,7 +384,6 @@ const OperationsTableContainer_OperationsStatsFragment = graphql(`
 `);
 
 function OperationsTableContainer({
-  operationsFilter,
   organizationSlug,
   projectSlug,
   targetSlug,
@@ -393,7 +394,6 @@ function OperationsTableContainer({
   ...props
 }: {
   operationStats: FragmentType<typeof OperationsTableContainer_OperationsStatsFragment> | null;
-  operationsFilter: readonly string[];
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -410,13 +410,6 @@ function OperationsTableContainer({
     const records: Operation[] = [];
     if (operationStats) {
       for (const { node: op } of operationStats.operations.edges) {
-        if (
-          operationsFilter.length > 0 &&
-          op.operationHash &&
-          !operationsFilter.includes(op.operationHash)
-        ) {
-          continue;
-        }
         records.push({
           id: op.id,
           name: op.name,
@@ -434,7 +427,7 @@ function OperationsTableContainer({
     }
 
     return records;
-  }, [operationStats?.operations.edges, operationsFilter]);
+  }, [operationStats?.operations.edges]);
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
@@ -517,7 +510,8 @@ export function OperationsList({
   projectSlug: string;
   targetSlug: string;
   period: DateRangeInput;
-  operationsFilter: readonly string[];
+  /** Operation IDs to filter on */
+  operationsFilter: string[];
   clientNamesFilter: string[];
   selectedPeriod: null | { to: string; from: string };
 }): ReactElement {
@@ -532,6 +526,7 @@ export function OperationsList({
       },
       period,
       filter: {
+        operationIds: operationsFilter,
         clientNames: clientNamesFilter,
       },
     },
@@ -552,7 +547,6 @@ export function OperationsList({
     >
       <OperationsTableContainer
         operationStats={query.data?.target?.operationsStats ?? null}
-        operationsFilter={operationsFilter}
         className={className}
         setClientFilter={setClientFilter}
         clientFilter={clientFilter}
