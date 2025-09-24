@@ -146,6 +146,21 @@ export default withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/specs/link-specifications',
+      destination: '/docs/api-reference/link-specifications',
+      permanent: true,
+    },
+    {
+      source: '/docs/graphql-api/:path*',
+      destination: '/docs/api-reference/graphql-api/:path*',
+      permanent: true,
+    },
+    {
+      source: '/docs/specs/usage-reports',
+      destination: '/docs/api-reference/usage-reports',
+      permanent: true,
+    },
+    {
       // SEO: Redirect to the new URL
       source: '/docs/self-hosting/federation-2',
       destination: '/docs/self-hosting/external-composition',
