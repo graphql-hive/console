@@ -561,9 +561,9 @@ npm i @graphql-hive/logger
 
 ```diff filename="gateway.config.ts"
 import pino from 'pino'
-import { defineConfig } from '@graphql-hive/gateway'
-import { Logger } from '@graphql-hive/logger'
+- import { defineConfig } from '@graphql-hive/gateway'
 - import { createLoggerFromPino } from '@graphql-hive/logger-pino'
++ import { defineConfig, Logger } from '@graphql-hive/gateway'
 + import { PinoLogWriter } from '@graphql-hive/logger/writers/pino'
 
 const pinoLogger = pino({
@@ -599,9 +599,9 @@ npm i @graphql-hive/logger
 
 ```diff filename="gateway.config.ts"
 import { createLogger, format, transports } from 'winston'
-import { defineConfig } from '@graphql-hive/gateway'
-import { Logger } from '@graphql-hive/logger'
+- import { defineConfig } from '@graphql-hive/gateway'
 - import { createLoggerFromWinston } from '@graphql-hive/winston'
++ import { defineConfig, Logger } from '@graphql-hive/gateway'
 + import { WinstonLogWriter } from '@graphql-hive/logger/writers/winston'
 
 const winstonLogger = createLogger({
