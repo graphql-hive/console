@@ -2,8 +2,6 @@ export default {
   index: 'Introduction',
   'get-started': 'Get Started',
   'schema-registry': 'Schema Registry',
-  'high-availability-cdn': 'High-Availability CDN',
-  dashboard: 'Dashboard',
   gateway: 'Gateway',
   logger: 'Logger',
   management: 'Management',

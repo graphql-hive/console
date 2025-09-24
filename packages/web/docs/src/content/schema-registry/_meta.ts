@@ -1,6 +1,8 @@
 export default {
   index: 'Introduction',
+  dashboard: 'Dashboard',
   'usage-reporting': 'Usage Reporting and Monitoring',
+  'high-availability-cdn': 'High-Availability CDN',
   'schema-policy': 'Schema Policies',
   contracts: 'Schema Contracts',
   'app-deployments': 'App Deployments (Persisted Documents)',

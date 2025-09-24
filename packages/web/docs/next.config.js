@@ -52,12 +52,17 @@ export default withGuildDocs({
     },
     {
       source: '/docs/features/registry-usage',
-      destination: '/docs/high-availability-cdn',
+      destination: '/docs/schema-registry/high-availability-cdn',
       permanent: true,
     },
     {
       source: '/docs/features/high-availability-cdn',
-      destination: '/docs/high-availability-cdn',
+      destination: '/docs/schema-registry/high-availability-cdn',
+      permanent: true,
+    },
+    {
+      source: '/docs/high-availability-cdn',
+      destination: '/docs/schema-registry/high-availability-cdn',
       permanent: true,
     },
     {
@@ -122,7 +127,7 @@ export default withGuildDocs({
     },
     {
       source: '/docs/features/laboratory',
-      destination: '/docs/dashboard/laboratory',
+      destination: '/docs/schema-registry/dashboard/laboratory',
       permanent: true,
     },
     {
@@ -189,7 +194,12 @@ export default withGuildDocs({
     },
     {
       source: '/docs/dashboard',
-      destination: '/docs/dashboard/insights',
+      destination: '/docs/schema-registry/dashboard/insights',
+      permanent: true,
+    },
+    {
+      source: '/docs/dashboard/:path*',
+      destination: '/docs/schema-registry/dashboard/:path*',
       permanent: true,
     },
     {
