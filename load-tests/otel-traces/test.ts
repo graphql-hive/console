@@ -2,6 +2,7 @@ import './bru.ts';
 import { expect } from 'https://jslib.k6.io/k6-testing/0.5.0/index.js';
 import { randomIntBetween, randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import * as immer from 'https://unpkg.com/immer@10.1.3/dist/immer.mjs';
+import { check } from 'k6';
 import http from 'k6/http';
 
 // prettier-ignore
@@ -11,7 +12,21 @@ globalThis.process = { env: {} };
 const countUniqueErrorCodes = 1_000;
 const countUniqueClients = 1_000;
 const appVersionsPerClient = 1_000;
+
 // Cardinality Variables End
+//
+export const options = {
+  scenarios: {
+    constant_rps: {
+      executor: 'constant-arrival-rate',
+      rate: __ENV.REQUESTS_PER_SECOND ?? 10, // requests per second
+      timeUnit: '1s', // 50 requests per 1 second
+      duration: __ENV.DURATION, // how long to run
+      preAllocatedVUs: 10, // number of VUs to pre-allocate
+      maxVUs: 50, // max number of VUs
+    },
+  },
+};
 
 const otelEndpointUrl = __ENV.OTEL_ENDPOINT || 'http://localhost:4318/v1/traces';
 console.log(
@@ -238,6 +253,7 @@ export default function () {
     },
   });
 
-  console.log('response', response.body);
-  expect(response.status).toBe(200);
+  check(response, {
+    'is status 200': r => r.status === 200,
+  });
 }

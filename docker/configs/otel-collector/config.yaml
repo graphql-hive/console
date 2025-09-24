@@ -61,7 +61,7 @@ service:
     - health_check
   telemetry:
     logs:
-      level: INFO
+      level: WARN
       encoding: json
       output_paths: ['stdout']
       error_output_paths: ['stderr']
