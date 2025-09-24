@@ -1328,7 +1328,7 @@ type SpanSheetProps = {
 function SpanSheet(props: SpanSheetProps) {
   const span = useFragment(SpanSheet_SpanFragment, props.span);
   const [activeView, setActiveView] = useState<
-    'span-attributes' | 'resource-attributes' | 'events'
+    'span-attributes' | 'resource-attributes' | 'events' | 'operation'
   >((props.activeTab as 'events') ?? 'span-attributes');
   const clipboard = useClipboard();
 
@@ -1420,7 +1420,7 @@ function SpanSheet(props: SpanSheetProps) {
             </div>
           )}
         </SheetHeader>
-        <div className="overflow-hidden">
+        <div className="h-full overflow-hidden">
           <div className="flex h-full flex-col">
             <div className="sticky top-0 z-10 border-b border-gray-800">
               <div className="flex w-full gap-x-4 px-2 text-xs font-medium">
@@ -1472,9 +1472,19 @@ function SpanSheet(props: SpanSheetProps) {
                     </div>
                   </div>
                 </TabButton>
+                {span.spanAttributes['graphql.document'] && (
+                  <TabButton
+                    isActive={activeView === 'operation'}
+                    onClick={() => setActiveView('operation')}
+                  >
+                    <div className="flex items-center gap-x-2">
+                      <div>GraphQL Operation</div>
+                    </div>
+                  </TabButton>
+                )}
               </div>
             </div>
-            <div className="overflow-y-scroll">
+            <div className="flex-1 overflow-y-scroll">
               {activeView === 'span-attributes' && (
                 <div>
                   {spanAttributes.length > 0 ? (
@@ -1543,6 +1553,16 @@ function SpanSheet(props: SpanSheetProps) {
                     </div>
                   )}
                 </div>
+              )}
+              {activeView === 'operation' && (
+                <GraphQLHighlight
+                  height="100%"
+                  options={{
+                    fontSize: 10,
+                    minimap: { enabled: false },
+                  }}
+                  code={span.spanAttributes['graphql.document']}
+                />
               )}
             </div>
           </div>
