@@ -271,7 +271,11 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
               }
             }}
           >
-            {option.label}
+            {option.label === '' ? (
+              <span className="text-gray-400">{'<unknown>'}</span>
+            ) : (
+              option.label
+            )}
           </FilterOption>
         ))}
       </FilterContent>
