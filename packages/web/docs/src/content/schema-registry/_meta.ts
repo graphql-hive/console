@@ -1,5 +1,5 @@
 export default {
-  index: 'Introduction',
+  index: 'Schema Registry Introduction',
   'get-started': 'Getting Started',
   dashboard: 'Dashboard',
   'usage-reporting': 'Usage Reporting and Monitoring',
