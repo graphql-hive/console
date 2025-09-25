@@ -1106,24 +1106,14 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         options?.operationType.map(option => ({
           value: option.value === '' ? null : option.value.toUpperCase(),
           searchContent: option.value,
-          label:
-            option.value === '' ? (
-              <span className="text-gray-400">{'<unknown>'}</span>
-            ) : (
-              option.value
-            ),
+          label: option.value,
           count: option.count,
         })) ?? [],
       'graphql.name':
         options?.operationName.map(option => ({
           value: option.value,
           searchContent: option.value,
-          label:
-            option.value === '' ? (
-              <span className="text-gray-400">{'<unknown>'}</span>
-            ) : (
-              option.value
-            ),
+          label: option.value,
           count: option.count,
         })) ?? [],
       'http.status':
@@ -1179,12 +1169,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         options?.clientName.map(option => ({
           value: option.value,
           searchContent: option.value,
-          label:
-            option.value === '' ? (
-              <span className="text-gray-400">{'<unknown>'}</span>
-            ) : (
-              option.value
-            ),
+          label: option.value,
           count: option.count,
         })) ?? [],
     };
