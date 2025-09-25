@@ -30,6 +30,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from '@/components/ui/sidebar';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
   TableBody,
@@ -50,6 +51,7 @@ import {
   OnChangeFn,
   useReactTable,
 } from '@tanstack/react-table';
+import * as GraphQLSchema from '../gql/graphql';
 import * as dateMath from '../lib/date-math';
 import {
   CopyIconButton,
@@ -269,6 +271,8 @@ const TracesList = memo(function TracesList(
       traces: FragmentType<typeof TracesList_Trace>[];
       onSelectTraceId: (traceId: string) => void;
       selectedTraceId: string | null;
+      isFetching: boolean;
+      filter: GraphQLSchema.TracesFilterInput;
     },
 ) {
   const router = useRouter();
@@ -579,7 +583,7 @@ const TracesList = memo(function TracesList(
                     <TableHead key={header.id} className="[&:has([role=checkbox])]:pl-3">
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(header.column.columnDef.header, header.getContext())}{' '}
                     </TableHead>
                   );
                 })}
@@ -587,7 +591,15 @@ const TracesList = memo(function TracesList(
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {props.isFetching ? (
+              <tr>
+                <td colSpan={table.options.columns.length}>
+                  <div className="flex h-24 w-full">
+                    <Spinner className="m-auto" />
+                  </div>
+                </td>
+              </tr>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
@@ -1052,6 +1064,26 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
     return dateMath.resolveRange({ from: props.filter.period[0], to: props.filter.period[1] });
   }, [props.filter.period]);
 
+  const filter: GraphQLSchema.TracesFilterInput = {
+    period,
+    duration: {
+      min: props.filter.duration?.[0] ?? null,
+      max: props.filter.duration?.[1] ?? null,
+    },
+    traceIds: props.filter['trace.id'],
+    success: props.filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
+    errorCodes: props.filter['graphql.errorCode'],
+    operationNames: props.filter['graphql.operation'],
+    operationTypes: props.filter['graphql.kind'] as any,
+    clientNames: props.filter['graphql.client'],
+    subgraphNames: props.filter['graphql.subgraph'],
+    httpStatusCodes: props.filter['http.status'],
+    httpMethods: props.filter['http.method'],
+    httpHosts: props.filter['http.host'],
+    httpRoutes: props.filter['http.route'],
+    httpUrls: props.filter['http.url'],
+  };
+
   const [query] = useQuery({
     query: TargetTracesPageQuery,
     variables: {
@@ -1061,25 +1093,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         targetSlug: targetRef.targetSlug,
       },
       filterTopN: 5,
-      filter: {
-        period,
-        duration: {
-          min: props.filter.duration?.[0] ?? null,
-          max: props.filter.duration?.[1] ?? null,
-        },
-        traceIds: props.filter['trace.id'],
-        success: props.filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
-        errorCodes: props.filter['graphql.errorCode'],
-        operationNames: props.filter['graphql.operation'],
-        operationTypes: props.filter['graphql.kind'] as any,
-        clientNames: props.filter['graphql.client'],
-        subgraphNames: props.filter['graphql.subgraph'],
-        httpStatusCodes: props.filter['http.status'],
-        httpMethods: props.filter['http.method'],
-        httpHosts: props.filter['http.host'],
-        httpRoutes: props.filter['http.route'],
-        httpUrls: props.filter['http.url'],
-      },
+      filter,
       first: props.pagination.pageSize,
     },
   });
@@ -1204,6 +1218,8 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
               traces={traces ?? []}
               onSelectTraceId={setSelectedTraceId}
               selectedTraceId={selectedTraceId}
+              isFetching={query.fetching}
+              filter={filter}
             />
           </div>
         </SidebarInset>
