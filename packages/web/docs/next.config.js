@@ -204,17 +204,22 @@ export default withGuildDocs({
     },
     {
       source: '/docs/dashboard',
-      destination: '/docs/schema-registry/insights',
+      destination: '/docs/schema-registry/usage-reporting',
       permanent: true,
     },
     {
       source: '/docs/dashboard/insights',
-      destination: '/docs/schema-registry/insights',
+      destination: '/docs/schema-registry/usage-reporting',
       permanent: true,
     },
     {
       source: '/docs/dashboard/explorer',
       destination: '/docs/schema-registry/explorer',
+      permanent: true,
+    },
+    {
+      source: '/docs/dashboard/laboratory/:path*',
+      destination: '/docs/schema-registry/laboratory/:path*',
       permanent: true,
     },
     {
