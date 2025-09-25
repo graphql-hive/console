@@ -2,9 +2,9 @@ import { Callout, Cards } from '@theguild/components'
 
 # Introduction to Hive
 
-**Hive** is a GraphQL schema registry for managing and collaborating on all your
+**Hive** is an open-source GraphQL platform for managing, collaborating on, and serving all your
 [**GraphQL Federation**](/federation), **Monolithic** or
-**[Schema Stitching](https://the-guild.dev/graphql/stitching)** GraphQL workflows.
+**[Schema Stitching](https://the-guild.dev/graphql/stitching)** projects.
 
 The Hive platform gives the tools you need to gain insights, make decisions, and evolve your GraphQL
 API with confidence.
@@ -21,7 +21,10 @@ API with confidence.
   project](https://github.com/graphql-hive/platform).
 </Callout>
 
-To get started, you can choose between our Hive Cloud service or run it as a self-hosted solution.
+## Hive Console (Schema Registry)
+
+To get started with our schema regitry, you can choose between using our hosted Hive Console or
+opting to run it as a self-hosted solution.
 
 <Cards>
   <Cards.Card
@@ -42,8 +45,19 @@ To get started, you can choose between our Hive Cloud service or run it as a sel
         />
       </svg>
     }
-    title="Hive Cloud"
+    title="Hosted"
     href="/docs/get-started/first-steps"
   />
   <Cards.Card arrow title="Self-Hosted" href="/docs/self-hosting/get-started" />
+</Cards>
+
+## Hive Gateway
+
+Hive Gateway is a fully open-source, MIT-licensed GraphQL router that can act as a GraphQL
+Federation gateway, a subgraph or a proxy gateway for any GraphQL API service.
+
+To get started with your own gateway instance, see the Gateway's Getting Started documentation.
+
+<Cards>
+  <Cards.Card arrow title="Setup Hive Gateway" href="docs/gateway" />
 </Cards>

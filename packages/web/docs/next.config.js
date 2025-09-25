@@ -166,6 +166,11 @@ export default withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/get-started/:path*',
+      destination: '/docs/schema-registry/get-started/:path*',
+      permanent: true,
+    },
+    {
       // SEO: Redirect to the new URL
       source: '/docs/self-hosting/federation-2',
       destination: '/docs/self-hosting/external-composition',
