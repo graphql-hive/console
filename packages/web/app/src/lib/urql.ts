@@ -35,6 +35,7 @@ export const urqlClient = createClient({
       resolvers: {
         Target: {
           appDeployments: relayPagination(),
+          traces: relayPagination(),
         },
         AppDeployment: {
           documents: relayPagination(),

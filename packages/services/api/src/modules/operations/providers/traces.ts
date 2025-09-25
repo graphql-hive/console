@@ -114,13 +114,31 @@ export class Traces {
     first: number | null,
     filter: TraceFilter,
     sort: GraphQLSchema.TracesSortInput | null,
+    cursorStr: string | null,
   ) {
+    function createCursor(trace: Trace) {
+      return Buffer.from(
+        JSON.stringify({
+          timestamp: trace.timestamp,
+          traceId: trace.traceId,
+          duration: sort?.sort === 'DURATION' ? trace.duration : undefined,
+        } satisfies z.TypeOf<typeof PaginatedTraceCursorModel>),
+      ).toString('base64');
+    }
+
+    function parseCursor(cursor: string) {
+      const data = PaginatedTraceCursorModel.parse(
+        JSON.parse(Buffer.from(cursor, 'base64').toString('utf8')),
+      );
+      if (sort?.sort === 'DURATION' && !data.duration) {
+        throw new HiveError('Invalid cursor provided.');
+      }
+      return data;
+    }
+
     await this._guardViewerCanAccessTraces(organizationId);
-    const limit = (first ?? 10) + 1;
-    const sqlConditions = buildTraceFilterSQLConditions(filter);
-    const filterSQLFragment = sqlConditions.length
-      ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
-      : sql``;
+    const limit = first ?? 50;
+    const cursor = cursorStr ? parseCursor(cursorStr) : null;
 
     // By default we order by timestamp DESC
     // In case a custom sort is provided, we order by duration asc/desc or timestamp asc
@@ -130,6 +148,46 @@ export class Traces {
       , "trace_id" DESC
     `;
 
+    let paginationSQLFragmentPart = sql``;
+
+    if (cursor) {
+      if (sort?.sort === 'DURATION') {
+        const operator = sort.direction === 'ASC' ? sql`>` : sql`<`;
+        const durationStr = String(cursor.duration);
+        paginationSQLFragmentPart = sql`
+          AND (
+            "duration" ${operator} ${durationStr}
+            OR (
+              "duration" = ${durationStr}
+              AND "timestamp" < ${cursor.timestamp}
+            )
+            OR (
+              "duration" = ${durationStr}
+              AND "timestamp" = ${cursor.timestamp}
+              AND "trace_id" < ${cursor.traceId}
+            )
+          )
+        `;
+      } /* TIMESTAMP */ else {
+        const operator = sort?.direction === 'ASC' ? sql`>` : sql`<`;
+        paginationSQLFragmentPart = sql`
+          AND (
+            (
+               "timestamp" = ${cursor.timestamp}
+               AND "trace_id" < ${cursor.traceId}
+            )
+            OR "timestamp" ${operator} ${cursor.timestamp}
+          )
+        `;
+      }
+    }
+
+    const sqlConditions = buildTraceFilterSQLConditions(filter, false);
+
+    const filterSQLFragment = sqlConditions.length
+      ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
+      : sql``;
+
     const tracesQuery = await this.clickHouse.query<unknown>({
       query: sql`
         SELECT
@@ -138,41 +196,30 @@ export class Traces {
           "otel_traces_normalized"
         WHERE
           target_id = ${targetId}
+          ${paginationSQLFragmentPart}
           ${filterSQLFragment}
         ORDER BY
           ${orderByFragment}
-        LIMIT ${sql.raw(String(limit))}
+        LIMIT ${sql.raw(String(limit + 1))}
       `,
       queryId: 'traces',
       timeout: 10_000,
     });
 
-    const traces = TraceListModel.parse(tracesQuery.data);
-    let hasNext = false;
-
-    if (traces.length == limit) {
-      hasNext = true;
-      (traces as any).pop();
-    }
+    let traces = TraceListModel.parse(tracesQuery.data);
+    const hasNext = traces.length > limit;
+    traces = traces.slice(0, limit);
 
     return {
-      edges: traces.map(trace => {
-        return {
-          node: trace,
-          cursor: Buffer.from(`${trace.timestamp}|${trace.traceId}`).toString('base64'),
-        };
-      }),
+      edges: traces.map(trace => ({
+        node: trace,
+        cursor: createCursor(trace),
+      })),
       pageInfo: {
         hasNextPage: hasNext,
         hasPreviousPage: false,
-        endCursor: traces.length
-          ? Buffer.from(
-              `${traces[traces.length - 1].timestamp}|${traces[traces.length - 1].traceId}`,
-            ).toString('base64')
-          : '',
-        startCursor: traces.length
-          ? Buffer.from(`${traces[0].timestamp}|${traces[0].traceId}`).toString('base64')
-          : '',
+        endCursor: traces.length ? createCursor(traces[traces.length - 1]) : '',
+        startCursor: traces.length ? createCursor(traces[0]) : '',
       },
     };
   }
@@ -325,7 +372,7 @@ type TraceFilter = {
   httpUrls: ReadonlyArray<string> | null;
 };
 
-function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod = false) {
+function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod: boolean) {
   const ANDs: SqlValue[] = [];
 
   if (filter?.period && !skipPeriod) {
@@ -512,3 +559,12 @@ function getBucketUnitAndCount(startDate: Date, endDate: Date): BucketResult {
 
   return { unit, count };
 }
+
+/**
+ * All sortable fields (duration, timestamp), must be part of the cursor
+ */
+const PaginatedTraceCursorModel = z.object({
+  traceId: z.string(),
+  timestamp: z.string(),
+  duration: z.number().optional(),
+});

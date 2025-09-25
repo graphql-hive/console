@@ -78,7 +78,7 @@ export const Target: Pick<
       schemaCoordinate: args.schemaCoordinate,
     };
   },
-  traces: async (target, { first, filter, sort }, { injector }) => {
+  traces: async (target, { first, filter, sort, after }, { injector }) => {
     return injector.get(Traces).findTracesForTargetId(
       target.orgId,
       target.id,
@@ -105,6 +105,7 @@ export const Target: Pick<
         httpUrls: filter?.httpUrls ?? null,
       },
       sort ?? null,
+      after ?? null,
     );
   },
   tracesFilterOptions: async (target, { filter }, { injector }) => {
