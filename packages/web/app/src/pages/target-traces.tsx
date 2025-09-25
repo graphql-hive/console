@@ -1,9 +1,9 @@
 import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
-import { useQuery } from 'urql';
+import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
@@ -212,21 +212,19 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
 });
 
 const TargetTracesSortShape = z
-  .array(
-    z.object({
-      desc: z.coerce.boolean(),
-      id: z.string(),
-    }),
-  )
-  .default([
-    {
-      desc: true,
-      id: 'timestamp',
-    },
-  ]);
+  .object({
+    desc: z.coerce.boolean(),
+    id: z.union([z.literal('timestamp'), z.literal('duration')]),
+  })
+  .default({
+    desc: true,
+    id: 'timestamp',
+  });
+
 export const TargetTracesSort = {
   shape: TargetTracesSortShape,
 };
+
 type SortState = z.infer<typeof TargetTracesSortShape>;
 type SortProps = {
   sorting: SortState;
@@ -273,23 +271,28 @@ const TracesList = memo(function TracesList(
       selectedTraceId: string | null;
       isFetching: boolean;
       filter: GraphQLSchema.TracesFilterInput;
+      isFetchingMore: boolean;
+      fetchMore: null | (() => void);
     },
 ) {
   const router = useRouter();
   const data = useFragment(TracesList_Trace, props.traces);
 
-  const onSortingChange = useCallback<OnChangeFn<SortState>>(
+  const onSortingChange = useCallback<
+    OnChangeFn<
+      Array<{
+        id: string;
+        desc: boolean;
+      }>
+    >
+  >(
     updater => {
-      const value = typeof updater === 'function' ? updater(props.sorting) : updater;
-      if (JSON.stringify(value) === JSON.stringify(props.sorting)) {
-        return;
-      }
-
+      const value = typeof updater === 'function' ? updater([props.sorting]) : updater;
       void router.navigate({
         search(params) {
           return {
             ...params,
-            sort: value,
+            sort: value[0] as SortState,
           };
         },
       });
@@ -368,7 +371,15 @@ const TracesList = memo(function TracesList(
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             >
               Timestamp
-              <ArrowUpDown className="ml-2 size-4" />
+              {props.sorting.id === 'timestamp' ? (
+                props.sorting.desc ? (
+                  <ArrowDown className="ml-2 size-4" />
+                ) : (
+                  <ArrowUp className="ml-2 size-4" />
+                )
+              ) : (
+                <ArrowUpDown className="ml-2 size-4" />
+              )}
             </Button>
           );
         },
@@ -474,7 +485,15 @@ const TracesList = memo(function TracesList(
                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
               >
                 Duration
-                <ArrowUpDown className="ml-2 size-4" />
+                {props.sorting.id === 'duration' ? (
+                  props.sorting.desc ? (
+                    <ArrowDown className="ml-2 size-4" />
+                  ) : (
+                    <ArrowUp className="ml-2 size-4" />
+                  )
+                ) : (
+                  <ArrowUpDown className="ml-2 size-4" />
+                )}
               </Button>
             </div>
           );
@@ -565,8 +584,9 @@ const TracesList = memo(function TracesList(
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onPaginationChange,
+    manualPagination: true,
     state: {
-      sorting: props.sorting,
+      sorting: [props.sorting],
       pagination: props.pagination,
     },
   });
@@ -591,7 +611,7 @@ const TracesList = memo(function TracesList(
             ))}
           </TableHeader>
           <TableBody>
-            {props.isFetching ? (
+            {props.isFetching && props.traces.length === 0 ? (
               <tr>
                 <td colSpan={table.options.columns.length}>
                   <div className="flex h-24 w-full">
@@ -599,7 +619,7 @@ const TracesList = memo(function TracesList(
                   </div>
                 </td>
               </tr>
-            ) : table.getRowModel().rows?.length ? (
+            ) : data.length ? (
               table.getRowModel().rows.map(row => (
                 <TableRow
                   key={row.id}
@@ -635,18 +655,12 @@ const TracesList = memo(function TracesList(
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => {
+              props.fetchMore?.();
+            }}
+            disabled={props.isFetchingMore || !props.fetchMore}
           >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
+            Load more
           </Button>
         </div>
       </div>
@@ -987,18 +1001,19 @@ const TargetTracesPageQuery = graphql(`
     $first: Int!
     $filter: TracesFilterInput
     $filterTopN: Int!
+    $sort: TracesSortInput
   ) {
     target(reference: { bySelector: $targetRef }) {
       id
-      traces(first: $first, filter: $filter) {
+      traces(first: $first, filter: $filter, sort: $sort) {
         edges {
           node {
             ...TracesList_Trace
           }
-          cursor
         }
         pageInfo {
           hasNextPage
+          endCursor
         }
       }
       tracesFilterOptions(filter: $filter) {
@@ -1054,6 +1069,31 @@ const TargetTracesPageQuery = graphql(`
   }
 `);
 
+const TargetTracesFetchMoreTracesQuery = graphql(`
+  query TargetTracesFetchMoreTracesQuery(
+    $targetRef: TargetSelectorInput!
+    $first: Int!
+    $filter: TracesFilterInput
+    $sort: TracesSortInput
+    $after: String!
+  ) {
+    target(reference: { bySelector: $targetRef }) {
+      id
+      traces(first: $first, filter: $filter, sort: $sort, after: $after) {
+        edges {
+          node {
+            ...TracesList_Trace
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+`);
+
 function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProps) {
   const targetRef = useTargetReference();
 
@@ -1084,6 +1124,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
     httpUrls: props.filter['http.url'],
   };
 
+  const urql = useClient();
   const [query] = useQuery({
     query: TargetTracesPageQuery,
     variables: {
@@ -1092,11 +1133,22 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         projectSlug: targetRef.projectSlug,
         targetSlug: targetRef.targetSlug,
       },
-      filterTopN: 5,
       filter,
       first: props.pagination.pageSize,
+      sort: {
+        sort:
+          props.sorting.id === 'duration'
+            ? GraphQLSchema.TracesSortType.Duration
+            : GraphQLSchema.TracesSortType.Timestamp,
+        direction: props.sorting.desc
+          ? GraphQLSchema.SortDirectionType.Desc
+          : GraphQLSchema.SortDirectionType.Asc,
+      },
+      filterTopN: 5,
     },
   });
+
+  const [isFetchMore, setIsFetchingMore] = useState(false);
 
   const traces = useMemo(
     () => query.data?.target?.traces.edges.map(e => e.node),
@@ -1220,6 +1272,45 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
               selectedTraceId={selectedTraceId}
               isFetching={query.fetching}
               filter={filter}
+              isFetchingMore={isFetchMore}
+              fetchMore={
+                query.data?.target?.traces.pageInfo.hasNextPage
+                  ? () => {
+                      if (
+                        !query.data?.target?.traces.pageInfo.hasNextPage ||
+                        !query.data?.target?.traces.pageInfo.endCursor
+                      ) {
+                        return;
+                      }
+                      setIsFetchingMore(true);
+
+                      urql
+                        .query(TargetTracesFetchMoreTracesQuery, {
+                          targetRef: {
+                            organizationSlug: targetRef.organizationSlug,
+                            projectSlug: targetRef.projectSlug,
+                            targetSlug: targetRef.targetSlug,
+                          },
+                          filter,
+                          first: props.pagination.pageSize,
+                          sort: {
+                            sort:
+                              props.sorting.id === 'duration'
+                                ? GraphQLSchema.TracesSortType.Duration
+                                : GraphQLSchema.TracesSortType.Timestamp,
+                            direction: props.sorting.desc
+                              ? GraphQLSchema.SortDirectionType.Desc
+                              : GraphQLSchema.SortDirectionType.Asc,
+                          },
+                          after: query.data.target.traces.pageInfo.endCursor,
+                        })
+                        .toPromise()
+                        .finally(() => {
+                          setIsFetchingMore(false);
+                        });
+                    }
+                  : null
+              }
             />
           </div>
         </SidebarInset>

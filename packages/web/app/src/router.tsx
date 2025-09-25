@@ -687,7 +687,10 @@ const targetTracesRoute = createRoute({
         duration: [],
         period: [],
       } satisfies FilterState,
-      sort = [],
+      sort = {
+        id: 'timestamp',
+        desc: true,
+      },
       pagination = {
         pageIndex: 0,
         pageSize: 20,
