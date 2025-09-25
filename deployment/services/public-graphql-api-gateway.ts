@@ -14,7 +14,7 @@ import { type Observability } from './observability';
  * Hive Gateway Docker Image Version
  * Bump this to update the used gateway version.
  */
-const dockerImage = 'ghcr.io/graphql-hive/gateway:1.13.6';
+const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.7';
 
 const gatewayConfigDirectory = path.resolve(
   __dirname,
@@ -22,9 +22,12 @@ const gatewayConfigDirectory = path.resolve(
   'config',
   'public-graphql-api-gateway',
 );
-const gatewayConfigPath = path.join(gatewayConfigDirectory, 'gateway.config.ts');
+
 // On global scope to fail early in case of a read error
+const gatewayConfigPath = path.join(gatewayConfigDirectory, 'gateway.config.ts');
 const gwConfigFile = fs.readFileSync(gatewayConfigPath, 'utf-8');
+const gwTelemetryPath = path.join(gatewayConfigDirectory, 'setup-telemetry.ts');
+const gwTelemetryFile = fs.readFileSync(gwTelemetryPath, 'utf-8');
 
 export function deployPublicGraphQLAPIGateway(args: {
   environment: Environment;
@@ -52,6 +55,7 @@ export function deployPublicGraphQLAPIGateway(args: {
   const configMap = new kx.ConfigMap('public-graphql-api-gateway-config', {
     data: {
       'gateway.config.ts': gwConfigFile,
+      'setup-telemetry.ts': gwTelemetryFile,
     },
   });
 

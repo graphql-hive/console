@@ -1,5 +1,5 @@
 // @ts-expect-error not a dependency
-import { createOtlpHttpExporter, defineConfig } from '@graphql-hive/gateway';
+import { defineConfig } from '@graphql-hive/gateway';
 
 const defaultQuery = `#
 # Welcome to the Hive Console GraphQL API.
@@ -34,11 +34,6 @@ export const gatewayConfig = defineConfig({
   openTelemetry: process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']
     ? {
         serviceName: 'public-graphql-api-gateway',
-        exporters: [
-          createOtlpHttpExporter({
-            url: process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'],
-          }),
-        ],
       }
     : false,
   demandControl: {
