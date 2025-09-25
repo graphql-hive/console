@@ -26,8 +26,6 @@ const gatewayConfigDirectory = path.resolve(
 // On global scope to fail early in case of a read error
 const gatewayConfigPath = path.join(gatewayConfigDirectory, 'gateway.config.ts');
 const gwConfigFile = fs.readFileSync(gatewayConfigPath, 'utf-8');
-const gwTelemetryPath = path.join(gatewayConfigDirectory, 'setup-telemetry.ts');
-const gwTelemetryFile = fs.readFileSync(gwTelemetryPath, 'utf-8');
 
 export function deployPublicGraphQLAPIGateway(args: {
   environment: Environment;
@@ -55,7 +53,6 @@ export function deployPublicGraphQLAPIGateway(args: {
   const configMap = new kx.ConfigMap('public-graphql-api-gateway-config', {
     data: {
       'gateway.config.ts': gwConfigFile,
-      'setup-telemetry.ts': gwTelemetryFile,
     },
   });
 
