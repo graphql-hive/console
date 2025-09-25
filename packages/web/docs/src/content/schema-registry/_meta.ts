@@ -1,7 +1,9 @@
 export default {
   index: 'Schema Registry Introduction',
   'get-started': 'Getting Started',
-  dashboard: 'Dashboard',
+  explorer: 'Schema Explorer',
+  insights: 'Usage Insights',
+  laboratory: 'Laboratory / Playground',
   management: 'Management',
   'high-availability-cdn': 'High-Availability CDN',
   'usage-reporting': 'Usage Reporting and Monitoring',

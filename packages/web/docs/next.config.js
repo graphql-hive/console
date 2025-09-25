@@ -126,8 +126,8 @@ export default withGuildDocs({
       permanent: true,
     },
     {
-      source: '/docs/features/laboratory',
-      destination: '/docs/schema-registry/dashboard/laboratory',
+      source: '/docs/features/laboratory/:path*',
+      destination: '/docs/schema-registry/laboratory/:path*',
       permanent: true,
     },
     {
@@ -204,12 +204,17 @@ export default withGuildDocs({
     },
     {
       source: '/docs/dashboard',
-      destination: '/docs/schema-registry/dashboard/insights',
+      destination: '/docs/schema-registry/insights',
       permanent: true,
     },
     {
-      source: '/docs/dashboard/:path*',
-      destination: '/docs/schema-registry/dashboard/:path*',
+      source: '/docs/dashboard/insights',
+      destination: '/docs/schema-registry/insights',
+      permanent: true,
+    },
+    {
+      source: '/docs/dashboard/explorer',
+      destination: '/docs/schema-registry/explorer',
       permanent: true,
     },
     {
