@@ -1,13 +1,13 @@
 import NextImage from 'next/image'
 import { Callout, Cards, FileTree, Steps, Tabs } from '@theguild/components'
-import cdnAccessTokenSettings from '../../../public/docs/pages/get-started/apollo-federation/cdn-access-token-settings.png'
-import createAccessToken from '../../../public/docs/pages/get-started/apollo-federation/create-access-token.png'
-import cdnAccessTokenCreate from '../../../public/docs/pages/get-started/apollo-federation/create-cdn-access-token.png'
-import createdAccessToken from '../../../public/docs/pages/get-started/apollo-federation/created-access-token.png'
-import cdnAccessTokenCreated from '../../../public/docs/pages/get-started/apollo-federation/created-cdn-access-token.png'
-import publishFirstSchemaVersionUi from '../../../public/docs/pages/get-started/apollo-federation/publish-first-schema-version-ui.png'
-import publishSecondSchemaVersionUi from '../../../public/docs/pages/get-started/apollo-federation/publish-second-schema-version-ui.png'
-import publishThirdSchemaVersionUi from '../../../public/docs/pages/get-started/apollo-federation/publish-third-schema-version-ui.png'
+import cdnAccessTokenSettings from '../../../../public/docs/pages/get-started/apollo-federation/cdn-access-token-settings.png'
+import createAccessToken from '../../../../public/docs/pages/get-started/apollo-federation/create-access-token.png'
+import cdnAccessTokenCreate from '../../../../public/docs/pages/get-started/apollo-federation/create-cdn-access-token.png'
+import createdAccessToken from '../../../../public/docs/pages/get-started/apollo-federation/created-access-token.png'
+import cdnAccessTokenCreated from '../../../../public/docs/pages/get-started/apollo-federation/created-cdn-access-token.png'
+import publishFirstSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-first-schema-version-ui.png'
+import publishSecondSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-second-schema-version-ui.png'
+import publishThirdSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-third-schema-version-ui.png'
 
 # Get started with Apollo Federation
 
@@ -116,7 +116,7 @@ Within your organization, open the `Settings` tab and select the `Access Token` 
 
 Click `Create new access token` and enter a name for the access token.
 
-import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
+import accessTokensCreateNewImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
 
 <NextImage
   src={accessTokensCreateNewImage}
@@ -127,7 +127,7 @@ import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/a
 Click `Next` and select `Allowed` for `Check schema/service subgraph`,
 `Publish schema/service/subgraph`, and `Report usage data`.
 
-import accessTokensPermissionsImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
+import accessTokensPermissionsImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
 
 <NextImage
   src={accessTokensPermissionsImage}
@@ -138,7 +138,7 @@ import accessTokensPermissionsImage from '../../../public/docs/pages/get-started
 Click `Next` and in the next step keep the `Full Access` selection for the resources. For the
 purpose of this guide there is no need to further restirct the resources.
 
-import accessTokensResourcesImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
+import accessTokensResourcesImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
 
 <NextImage
   src={accessTokensResourcesImage}
@@ -148,7 +148,7 @@ import accessTokensResourcesImage from '../../../public/docs/pages/get-started/a
 
 One last time click `Next` and review the access token.
 
-import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
+import accessTokensConfirmImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
 
 <NextImage
   src={accessTokensConfirmImage}
@@ -159,7 +159,7 @@ import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apo
 Then click the `Create Access Token` button. A confirmation dialogue will open that shows the you
 generated token.
 
-import accessTokensSuccessImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
+import accessTokensSuccessImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
 
 <NextImage
   src={accessTokensSuccessImage}
@@ -175,7 +175,7 @@ As you may have noticed, Hive has created three targets under your project: `dev
 `staging`, and `production`. Each of these targets represent a different environment. You can remove
 or create new targets as needed, for modelling the different environments of your project.
 
-import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
+import targetOverview from '../../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 <NextImage
   src={targetOverview}
@@ -589,7 +589,7 @@ npx hive-gateway supergraph \
 If you now navigate to `http://localhost:4000`, you should see the Hive Gateway page with
 information about the supergraph and subgraphs.
 
-import HiveGatewayLandingPageImage from '../../../public/docs/pages/get-started/apollo-federation/hive-gateway-landing-page.png'
+import HiveGatewayLandingPageImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-landing-page.png'
 
 <NextImage
   alt="Hive Gateway Landing Page"
@@ -600,7 +600,7 @@ import HiveGatewayLandingPageImage from '../../../public/docs/pages/get-started/
 Now, if you navigate to `http://localhost:4000/graphql`, you should see the GraphiQL interface where
 you can write and execute queries against the supergraph.
 
-import HiveGatewayGraphiqlImage from '../../../public/docs/pages/get-started/apollo-federation/hive-gateway-graphiql.png'
+import HiveGatewayGraphiqlImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-graphiql.png'
 
 <NextImage
   alt="Hive Gateway GraphiQL"
@@ -734,7 +734,7 @@ query TopProductsWithReview {
 After executing the query, a few times, let's switch back to the Hive dashboard and navigate to the
 insights page.
 
-import HiveDashboardInsightsImage from '../../../public/docs/pages/get-started/apollo-federation/hive-dashboard-insights.png'
+import HiveDashboardInsightsImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-dashboard-insights.png'
 
 <NextImage
   alt="Hive Gateway GraphiQL"

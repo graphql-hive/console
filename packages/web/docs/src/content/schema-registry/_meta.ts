@@ -4,6 +4,7 @@ export default {
   dashboard: 'Dashboard',
   'usage-reporting': 'Usage Reporting and Monitoring',
   'high-availability-cdn': 'High-Availability CDN',
+  management: 'Management',
   'schema-policy': 'Schema Policies',
   contracts: 'Schema Contracts',
   'app-deployments': 'App Deployments (Persisted Documents)',
