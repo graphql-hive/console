@@ -22,7 +22,7 @@ receivers:
 processors:
   batch:
     timeout: 5s
-    send_batch_size: 100000
+    send_batch_size: 10000
   attributes:
     actions:
       - key: hive.target_id
@@ -38,7 +38,7 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
   clickhouse:
-    endpoint: ${CLICKHOUSE_PROTOCOL}://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}?dial_timeout=10s&compress=lz4
+    endpoint: ${CLICKHOUSE_PROTOCOL}://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}?dial_timeout=10s&compress=lz4&async_insert=1
     database: default
     async_insert: true
     username: ${CLICKHOUSE_USERNAME}
@@ -61,7 +61,7 @@ service:
     - health_check
   telemetry:
     logs:
-      level: WARN
+      level: INFO
       encoding: json
       output_paths: ['stdout']
       error_output_paths: ['stderr']
@@ -71,9 +71,9 @@ service:
     traces:
       receivers: [otlp]
       processors:
+        - memory_limiter
         - attributes
         - batch
-        - memory_limiter
       exporters:
         - clickhouse
-        - debug
+        # - debug
