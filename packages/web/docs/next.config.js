@@ -107,7 +107,7 @@ export default withGuildDocs({
     },
     {
       source: '/docs/self-hosting/apollo-federation-2',
-      destination: '/docs/self-hosting/external-composition',
+      destination: '/docs/schema-registry/self-hosting/external-composition',
       permanent: true,
     },
     {
@@ -178,7 +178,7 @@ export default withGuildDocs({
     {
       // SEO: Redirect to the new URL
       source: '/docs/self-hosting/federation-2',
-      destination: '/docs/self-hosting/external-composition',
+      destination: '/docs/schema-registry/self-hosting/external-composition',
       permanent: true,
     },
     {
@@ -199,7 +199,7 @@ export default withGuildDocs({
     },
     {
       source: '/docs/self-hosting',
-      destination: '/docs/self-hosting/get-started',
+      destination: '/docs/schema-registry/self-hosting/get-started',
       permanent: true,
     },
     {
@@ -280,6 +280,11 @@ export default withGuildDocs({
     {
       source: '/docs/gateway/other-features/performance/deduplicate-request',
       destination: '/docs/gateway/other-features/performance/deduplicate-inflight-requests',
+      permanent: true,
+    },
+    {
+      source: '/docs/self-hosting/:path*',
+      destination: '/docs/schema-registry/self-hosting/:path*',
       permanent: true,
     },
   ],
