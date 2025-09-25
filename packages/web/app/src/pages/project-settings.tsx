@@ -4,8 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
-import { ExternalCompositionSettings } from '@/components/project/settings/external-composition';
-import { NativeCompositionSettings } from '@/components/project/settings/native-composition';
+import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -309,8 +308,7 @@ const ProjectSettingsPage_OrganizationFragment = graphql(`
   fragment ProjectSettingsPage_OrganizationFragment on Organization {
     id
     slug
-    ...ExternalCompositionSettings_OrganizationFragment
-    ...NativeCompositionSettings_OrganizationFragment
+    ...CompositionSettings_OrganizationFragment
   }
 `);
 
@@ -322,8 +320,7 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
     isProjectNameInGitHubCheckEnabled
     viewerCanDelete
     viewerCanModifySettings
-    ...ExternalCompositionSettings_ProjectFragment
-    ...NativeCompositionSettings_ProjectFragment
+    ...CompositionSettings_ProjectFragment
   }
 `);
 
@@ -406,11 +403,7 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
             ) : null}
 
             {project.type === ProjectType.Federation ? (
-              <ExternalCompositionSettings project={project} organization={organization} />
-            ) : null}
-
-            {project.type === ProjectType.Federation ? (
-              <NativeCompositionSettings project={project} organization={organization} />
+              <CompositionSettings project={project} organization={organization} />
             ) : null}
 
             {project.viewerCanDelete && (
