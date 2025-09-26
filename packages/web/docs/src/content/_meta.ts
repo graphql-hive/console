@@ -1,8 +1,8 @@
 export default {
   index: 'Introduction',
-  'schema-registry': 'Hive Console',
-  gateway: 'Hive Gateway',
-  logger: 'Hive Logger',
+  'schema-registry': 'Console',
+  gateway: 'Gateway',
+  logger: 'Logger',
   'other-integrations': 'Other Integrations',
   'api-reference': 'CLI/API Reference',
   'use-cases': 'Use Cases',

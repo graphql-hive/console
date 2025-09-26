@@ -1,10 +1,10 @@
 export default {
-  index: 'Schema Registry Introduction',
+  index: 'Introduction',
   'get-started': 'Getting Started',
   management: 'Management',
   explorer: 'Schema Explorer',
   'usage-reporting': 'Usage Reporting and Insights',
-  laboratory: 'Laboratory / Playground',
+  laboratory: 'Laboratory',
   'high-availability-cdn': 'High-Availability CDN',
   contracts: 'Schema Contracts',
   'schema-policy': 'Schema Policies',
