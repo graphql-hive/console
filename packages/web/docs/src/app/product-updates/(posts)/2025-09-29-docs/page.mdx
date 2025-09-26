@@ -20,7 +20,7 @@ documentation.
 
 So what caused us to take a closer look at our documentation?
 
-## A fundamental shift in how we think about Hive
+### A fundamental shift in how we think about Hive
 
 Hive started as "only" a schema registry. We weren't sure what direction this would go in the
 future, but thought features would keep being added to the core product. We also knew people needed
@@ -45,7 +45,7 @@ GraphQL ecosystem, work on solutions, and let our work inform our brand. We can 
 building solutions to real problems because of this, but our documentation had some growing pains as
 a result.
 
-## Input from the community
+### Input from the community
 
 Feedback and questions from the community have made the shortcomings of our documentation even more
 clear. There was often confusion around cloud hosting our Gateway (which we don't offer, at least at
@@ -56,32 +56,36 @@ Rather than get annoyed any time a question is asked more than once, it's best t
 cause. 99% of the time it's because the documentation is missing, hard to find, or generally
 unclear.
 
-## Industry changes
+### Industry changes
 
 GraphQL has been changing this whole time as well. As mentioned before, Federation was new when Hive
 was first built. People are much more familiar with the concepts of Federation now and it's been
 gradually shifting from a single company's offering (Apollo Federation) to an
 [open spec](https://open-federation.org/) (GraphQL Federation). So terminology needs updated.
 
-# What we did
+## What we did
 
-1. **Let the products speak.** We updated the
-   [introduction/landing page](https://the-guild.dev/graphql/hive/docs) to instantly showcase our
-   product offerings. This makes it clear that these are modular, pieces of the whole, and gives us
-   a fantastic place to briefly introduce each. Additionally, since Hive Console was the only
-   product in the past, there were a lot of documents that were specific to Hive Console that were
-   still at the root of the Hive documentation. This was solved by creating separate pages for each
-   product and moving these pages inside.
-2. **Collapse when possible.** Previously there were separate root level pages for CLI/API
-   References, Specifications, and our public GraphQL API. This was because we thought each had a
-   separate audience and were conceptually different, but what we've discovered is that if people
-   are looking at reference documentation, then they likely care about all of this. The audience for
-   all of these sections included "power users", who wanted to write custom tools or interfaces for
-   Hive. So we collapsed all of this to a single location, making it easier for power users to
-   browse for what they need. -- And this is just one instance. There were (and probably still are)
-   numerous parts of our documentation that were redundant.
+### Let the products speak
 
-# Conclusion
+We updated the [introduction/landing page](https://the-guild.dev/graphql/hive/docs) to instantly
+showcase our product offerings. This makes it clear that these are modular, pieces of the whole, and
+gives us a fantastic place to briefly introduce each. Additionally, since Hive Console was the only
+product in the past, there were a lot of documents that were specific to Hive Console that were
+still at the root of the Hive documentation. This was solved by creating separate pages for each
+product and moving these pages inside.
+
+### Collapse when possible
+
+Previously there were separate root level pages for CLI/API References, Specifications, and our
+public GraphQL API. This was because we thought each had a separate audience and were conceptually
+different, but what we've discovered is that if people are looking at reference documentation, then
+they likely care about all of this. The audience for all of these sections included "power users",
+who wanted to write custom tools or interfaces for Hive. So we collapsed all of this to a single
+location, making it easier for power users to browse for what they need. -- And this is just one
+instance. There were (and probably still are) numerous parts of our documentation that were
+redundant.
+
+## Conclusion
 
 Much like our code bases, documentation ages. Not only because of UI or API changes, but because the
 entire product or the world around it might change. Staying organized helps since pages are more
