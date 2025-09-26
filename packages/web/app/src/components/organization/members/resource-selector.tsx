@@ -662,6 +662,7 @@ export function ResourceSelector(props: {
                     <div className="ml-auto flex items-center text-xs">
                       <span className="mr-1">All</span>
                       <Checkbox
+                        className="size-4"
                         title="All"
                         checked={targetState.selection === '*'}
                         onClick={() => {
@@ -708,6 +709,7 @@ export function ResourceSelector(props: {
                       <div className="ml-auto flex items-center text-xs">
                         <span className="mr-1">All</span>
                         <Checkbox
+                          className="size-4"
                           title="All"
                           checked={serviceState.selection === '*'}
                           onClick={() => {
@@ -921,7 +923,12 @@ export function ResourceSelector(props: {
 
                   {/** Apps Content */}
                   {organization.isAppDeploymentsEnabled ? (
-                    <div className="my-1 flex items-baseline border-y border-transparent border-y-inherit px-2 py-1">
+                    <div
+                      className={cn(
+                        'flex items-baseline border-b border-transparent border-y-inherit px-2 py-1',
+                        serviceAppsState !== ServicesAppsState.apps && 'border-t',
+                      )}
+                    >
                       <div className="flex grow items-center">
                         <button
                           className="flex items-center text-sm font-bold"
@@ -946,6 +953,7 @@ export function ResourceSelector(props: {
                           <div className="ml-auto flex items-center text-xs">
                             <span className="mr-1">All</span>
                             <Checkbox
+                              className="size-4"
                               title="All"
                               checked={appsState.selection === '*'}
                               onClick={() => {
