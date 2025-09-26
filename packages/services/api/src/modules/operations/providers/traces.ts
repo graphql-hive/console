@@ -238,32 +238,35 @@ export class Traces {
     const endDate = filter.period?.to ?? new Date();
     const startDate = filter.period?.from ?? subDays(endDate, 14);
 
-    const { unit, count: rangeUnits } = getBucketUnitAndCount(startDate, endDate);
+    const d = getBucketUnitAndCountNew(startDate, endDate);
 
-    const bucketFunctionName = {
-      minutes: 'MINUTE',
-      hours: 'HOUR',
-      days: 'DAY',
-      weeks: 'WEEK',
-      months: 'MONTH',
-    };
-
+    const [countStr, unit] = d.candidate.name.split(' ');
     const bucketStepFunctionName = {
-      minutes: 'addMinutes',
-      hours: 'addHours',
-      days: 'addDays',
-      weeks: 'addWeeks',
-      months: 'addMonths',
+      MINUTE: 'addMinutes',
+      HOUR: 'addHours',
+      DAY: 'addDays',
+      WEEK: 'addWeeks',
+      MONTH: 'addMonths',
     };
+
+    const addIntervalFn = sql.raw(
+      bucketStepFunctionName[unit as keyof typeof bucketStepFunctionName],
+    );
 
     const result = await this.clickHouse.query<unknown>({
       query: sql`
         WITH "time_bucket_list" AS (
           SELECT
-            ${sql.raw(bucketStepFunctionName[unit])}(toStartOfInterval(toDateTime(${formatDate(startDate)}, 'UTC'), INTERVAL 1 ${sql.raw(bucketFunctionName[unit])}), "number" + 1) AS "time_bucket"
+            ${addIntervalFn}(
+              toStartOfInterval(
+                toDateTime(${formatDate(startDate)}, 'UTC')
+                , INTERVAL ${sql.raw(d.candidate.name)}
+              )
+              , "number" * ${sql.raw(countStr)}
+            ) AS "time_bucket"
           FROM
             "system"."numbers"
-          WHERE "system"."numbers"."number" < ${String(rangeUnits)}
+          WHERE "system"."numbers"."number" < ${String(d.buckets)}
         )
         SELECT
           replaceOne(concat(toDateTime64("time_bucket_list"."time_bucket", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucket"
@@ -276,7 +279,7 @@ export class Traces {
         LEFT JOIN
         (
           SELECT
-            toStartOfInterval("timestamp", INTERVAL 1 ${sql.raw(bucketFunctionName[unit])}) AS "time_bucket"
+            toStartOfInterval("timestamp", INTERVAL ${sql.raw(d.candidate.name)}) AS "time_bucket"
             , sumIf(1, "graphql_error_count" = 0) AS "ok_count_total"
             , sumIf(1, "graphql_error_count" != 0) AS "error_count_total"
             , sumIf(1, "graphql_error_count" = 0 ${filterSQLFragment}) AS "ok_count_filtered"
@@ -288,11 +291,11 @@ export class Traces {
             AND "otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(startDate)}, 'UTC')
             AND "otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(endDate)}, 'UTC')
           GROUP BY
-          "time_bucket"
+            "time_bucket"
           ) AS "t"
         ON "t"."time_bucket" = "time_bucket_list"."time_bucket"
       `,
-      queryId: `trace_status_breakdown_for_target_id_${unit}_${rangeUnits}`,
+      queryId: `trace_status_breakdown_for_target_id_`,
       timeout: 10_000,
     });
 
@@ -519,45 +522,55 @@ export type Span = z.TypeOf<typeof SpanModel>;
 type BucketResult = {
   unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
   count: number;
+  interval: number;
 };
 
-function getBucketUnitAndCount(startDate: Date, endDate: Date): BucketResult {
-  const MS_IN = {
-    minute: 60 * 1000,
-    hour: 60 * 60 * 1000,
-    day: 24 * 60 * 60 * 1000,
-    week: 7 * 24 * 60 * 60 * 1000,
+type BucketCandidate = {
+  name: string;
+  seconds: number;
+};
+
+const bucketCanditates: Array<BucketCandidate> = [
+  {
+    name: '1 MINUTE',
+    seconds: 60,
+  },
+  {
+    name: '5 MINUTE',
+    seconds: 60 * 5,
+  },
+  { name: '1 HOUR', seconds: 60 * 60 },
+  { name: '4 HOUR', seconds: 60 * 60 * 4 },
+  { name: '6 HOUR', seconds: 60 * 60 * 6 },
+  { name: '1 DAY', seconds: 60 * 60 * 24 },
+  { name: '1 WEEK', seconds: 60 * 60 * 24 * 7 },
+  { name: '1 MONTH', seconds: 60 * 60 * 24 * 30 },
+];
+
+function getBucketUnitAndCountNew(startDate: Date, endDate: Date, targetBuckets: number = 50) {
+  const diffSeconds = Math.floor((endDate.getTime() - startDate.getTime()) / 1000);
+
+  let best = {
+    candidate: bucketCanditates[0],
+    buckets: Math.floor(diffSeconds / bucketCanditates[0].seconds),
   };
 
-  const diffMs = endDate.getTime() - startDate.getTime();
-  const diffMinutes = diffMs / MS_IN.minute;
+  let bestDiff = Number.POSITIVE_INFINITY;
 
-  let unit: BucketResult['unit'];
-  let count: BucketResult['count'];
+  for (const candidate of bucketCanditates) {
+    const buckets = Math.floor(diffSeconds / candidate.seconds);
 
-  if (diffMinutes <= 60) {
-    unit = 'minutes';
-    count = Math.ceil(diffMs / MS_IN.minute);
-  } else if (diffMinutes <= 60 * 24) {
-    unit = 'hours';
-    count = Math.ceil(diffMs / MS_IN.hour);
-  } else if (diffMinutes <= 60 * 24 * 30) {
-    unit = 'days';
-    count = Math.ceil(diffMs / MS_IN.day);
-  } else if (diffMinutes <= 60 * 24 * 30 * 90) {
-    unit = 'weeks';
-    count = Math.ceil(diffMs / MS_IN.week);
-  } else {
-    unit = 'months';
-    // Calculate full months difference:
-    const startYear = startDate.getFullYear();
-    const startMonth = startDate.getMonth();
-    const endYear = endDate.getFullYear();
-    const endMonth = endDate.getMonth();
-    count = (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+    const diff = Math.abs(buckets - targetBuckets);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = {
+        candidate,
+        buckets,
+      };
+    }
   }
 
-  return { unit, count };
+  return best;
 }
 
 /**
