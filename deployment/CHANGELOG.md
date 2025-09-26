@@ -1,5 +1,35 @@
 # hive
 
+## 8.3.0
+
+### Minor Changes
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - add operation counts by selected client to insights
+  filter
+
+- [#7035](https://github.com/graphql-hive/console/pull/7035)
+  [`88ce5d3`](https://github.com/graphql-hive/console/commit/88ce5d3587b880ccba58bd9736042a8a8f1ef81f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add selected counts to insights client filter
+
+### Patch Changes
+
+- [#7033](https://github.com/graphql-hive/console/pull/7033)
+  [`2449790`](https://github.com/graphql-hive/console/commit/2449790e24b807939adf72de13787f7c48719e1b)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Stay in the opened page when switching between
+  targets
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix paginated operations list filtering if there
+  are many operations by passing a list of operation IDs to filter on
+
+- [#7045](https://github.com/graphql-hive/console/pull/7045)
+  [`0f26e42`](https://github.com/graphql-hive/console/commit/0f26e4253de96b3107972993410dc32a659dbcc2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust token creation ui to make toggling
+  all/granular and services/apps more intuitive
+
 ## 8.2.1
 
 ### Patch Changes
