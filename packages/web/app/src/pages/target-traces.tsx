@@ -1278,7 +1278,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         }
       />
       <SidebarProvider className="mt-4">
-        <Sidebar collapsible="none" className="bg-transparent">
+        <Sidebar collapsible="none" className="sticky top-4 bg-transparent">
           <SidebarContent>
             <Filters filter={props.filter} options={filterOptions} />
           </SidebarContent>
