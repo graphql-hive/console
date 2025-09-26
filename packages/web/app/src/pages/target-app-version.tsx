@@ -29,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 
 const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -94,7 +94,6 @@ function TargetAppVersionContent(props: {
       after: null,
     },
   });
-  const router = useRouter();
   const client = useClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
