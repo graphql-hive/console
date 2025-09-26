@@ -22,10 +22,13 @@ import {
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardDescription } from '@/components/ui/card';
 import { Meta } from '@/components/ui/meta';
+import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -36,6 +39,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard } from '@/lib/hooks';
@@ -1010,19 +1014,53 @@ function TargetInsightsNewPageContent(props: {
     },
   });
 
-  if (!result.data?.target?.trace) {
-    return null;
-  }
-
   return (
-    <TraceSheet
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
-      trace={result.data.target.trace}
-      activeSpanId={props.activeSpanId}
-      activeSpanTab={props.activeSpanTab}
-    />
+    <div className="flex h-full flex-col space-y-4 pt-6">
+      <Meta title={`Trace ${props.traceId}`} />
+      <SubPageLayoutHeader
+        subPageTitle={
+          <span className="flex items-center">
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/traces"
+              params={{
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }}
+            >
+              Traces
+            </Link>{' '}
+            <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
+            {result.data?.target?.trace ? (
+              result.data.target.trace.id
+            ) : (
+              <Skeleton className="inline-block h-5 w-[150px]" />
+            )}
+          </span>
+        }
+        description={
+          <>
+            <CardDescription>Insights into the requests made to your GraphQL API.</CardDescription>
+          </>
+        }
+      />
+      {result.data?.target?.trace && (
+        <TraceSheet
+          organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
+          targetSlug={props.targetSlug}
+          trace={result.data.target.trace}
+          activeSpanId={props.activeSpanId}
+          activeSpanTab={props.activeSpanTab}
+        />
+      )}
+      {!result.data?.target?.trace && !result.fetching && (
+        <>
+          <Meta title="Trace Not found" />
+          <NotFoundContent heading="Trace not found." subheading="This trace does not exist." />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1036,7 +1074,6 @@ export function TargetTracePage(props: {
 }) {
   return (
     <>
-      <Meta title={`Trace ${props.traceId}`} />
       <TargetLayout
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
