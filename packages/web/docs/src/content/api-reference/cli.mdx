@@ -1,3 +1,7 @@
+---
+title: 'Hive CLI (Command Line Interface)'
+---
+
 import { Callout, Tabs } from '@theguild/components'
 
 # Hive CLI (Command Line Interface)
@@ -236,9 +240,9 @@ hive schema:publish \
 
 <Callout>
   For most cases, it's recommended to add metadata directly to your schema with the [@meta Link
-  Specification](/docs/specs/link-specifications#meta) instead of using `--metadata`. Directives
-  allow you to enhance specific parts of your schema with this important information, which can be
-  especially useful for large projects with multiple owners.
+  Specification](/docs/schema-registry/link-specifications#meta) instead of using `--metadata`.
+  Directives allow you to enhance specific parts of your schema with this important information,
+  which can be especially useful for large projects with multiple owners.
 </Callout>
 
 You can attach metadata to your schema publication. Metadata files published to Hive must be valid
@@ -271,7 +275,7 @@ hive schema:publish \
 **Further reading:**
 
 - [Fetching Hive Metadata from the CDN](/docs/high-availability-cdn)
-- [Using the @meta Link Specification](/docs/specs/link-specifications#meta)
+- [Using the @meta Link Specification](/docs/schema-registry/link-specifications#meta)
 
 ### Check a Schema
 

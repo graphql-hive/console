@@ -1,10 +1,14 @@
 import NextImage from 'next/image'
 import { Callout, Steps } from '@theguild/components'
-import cdnTokenImage from '../../../public/docs/pages/guides/cdn_token.png'
-import historyImage from '../../../public/docs/pages/guides/history.png'
-import tokenImage from '../../../public/docs/pages/guides/token.png'
+import cdnTokenImage from '../../../../public/docs/pages/guides/cdn_token.png'
+import historyImage from '../../../../public/docs/pages/guides/history.png'
+import tokenImage from '../../../../public/docs/pages/guides/token.png'
 
-# Single Schema Project
+# Get started with a Single Schema / Monorepo
+
+This guide is for projects that do not yet use or require the complexities of GraphQL Federation. A
+single schema project is great for small teams or smaller projects, where one service hosts the
+entire API.
 
 Once you've created a Hive project of type **Single Schema**, you can simply push your GraphQL
 schema to the registry. This guide will guide you through the basics of schema pushing, checking and
@@ -60,7 +64,7 @@ Within your organization, open the `Settings` tab and select the `Access Token` 
 
 Click `Create new access token` and enter a name for the access token.
 
-import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
+import accessTokensCreateNewImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
 
 <NextImage
   src={accessTokensCreateNewImage}
@@ -71,7 +75,7 @@ import accessTokensCreateNewImage from '../../../public/docs/pages/get-started/a
 Click `Next` and select `Allowed` for `Check schema/service subgraph`,
 `Publish schema/service/subgraph`, and `Report usage data`.
 
-import accessTokensPermissionsImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
+import accessTokensPermissionsImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
 
 <NextImage
   src={accessTokensPermissionsImage}
@@ -82,7 +86,7 @@ import accessTokensPermissionsImage from '../../../public/docs/pages/get-started
 Click `Next` and in the next step keep the `Full Access` selection for the resources. For the
 purpose of this guide there is no need to further restirct the resources.
 
-import accessTokensResourcesImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
+import accessTokensResourcesImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
 
 <NextImage
   src={accessTokensResourcesImage}
@@ -92,7 +96,7 @@ import accessTokensResourcesImage from '../../../public/docs/pages/get-started/a
 
 One last time click `Next` and review the access token.
 
-import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
+import accessTokensConfirmImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
 
 <NextImage
   src={accessTokensConfirmImage}
@@ -103,7 +107,7 @@ import accessTokensConfirmImage from '../../../public/docs/pages/get-started/apo
 Then click the `Create Access Token` button. A confirmation dialogue will open that shows the you
 generated token.
 
-import accessTokensSuccessImage from '../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
+import accessTokensSuccessImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
 
 <NextImage
   src={accessTokensSuccessImage}
@@ -119,7 +123,7 @@ As you may have noticed, Hive has created three targets under your project: `dev
 `staging`, and `production`. This guide will use the `development` target to explore the features
 Hive offers.
 
-import targetOverview from '../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
+import targetOverview from '../../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 <NextImage
   src={targetOverview}

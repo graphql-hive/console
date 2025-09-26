@@ -1,17 +1,17 @@
 ---
-title: GraphQL Schema Usage
+title: GraphQL Schema Usage Insights
 ---
 
 import NextImage from 'next/image'
 import { Callout } from '@theguild/components'
-import monitoringViewImage from '../../../public/docs/pages/features/monitoring-view.png'
 import usageClientsImage from '../../../public/docs/pages/features/usage-clients.png'
 import usageLatencyImage from '../../../public/docs/pages/features/usage-latency-over-time.png'
 import usageOperationsOverTimeImage from '../../../public/docs/pages/features/usage-operations-over-time.png'
+import usageOperationsImage from '../../../public/docs/pages/features/usage-operations.png'
 import usageRpmImage from '../../../public/docs/pages/features/usage-rpm-over-time.png'
 import usageStatsImage from '../../../public/docs/pages/features/usage-stats.png'
 
-# Usage Reporting and Monitoring
+# Usage Reporting and Insights
 
 Hive allow you to collect usage data from your GraphQL operations and use the data collected for the
 following purposes:
@@ -50,29 +50,34 @@ The following information is included in usage reporting:
 For additional reading, please refer to the following resources:
 
 - [Usage Reporting with Hive Client](/docs/api-reference/client)
-- [Hive Usage Reporting specification](/docs/specs/usage-reports)
+- [Hive Usage Reporting specification](/docs/api-reference/usage-reports)
 
 ## Monitoring and Observability
 
 Once you have usage reporting enabled, and shipped your usage reports to Hive, you can view the
-usage data in the **Monitoring** view of the target.
+usage data in the target's **Insights** page.
+
+Hive Insights shows a list of all the GraphQL operations executed by your consumers and their
+performance metrics. This can be used to easily find outlying operations that may be slow or that
+have an unacceptable error rate.
+
+By clicking on a specific query, you'll be able to see the full list of fields and arguments used in
+the operation.
 
 <NextImage
-  alt="Monitoring View"
-  src={monitoringViewImage}
-  className="mt-10 max-w-3xl rounded-lg drop-shadow-md"
+  alt="Insights"
+  src={usageOperationsImage}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
-
-This view includes the following information:
 
 ### Usage Statistics
 
-From the usage statistics view, you'll be able to see the following metrics of your GraphQL API:
+From Insights, you'll be able to see the following metrics of your GraphQL API:
 
 1. Total amount of GraphQL executed.
 2. Average RPM (Requests Per Minute)
 3. Total count of unique GraphQL operations
-4. Sucess-rate of the executed operations
+4. Success-rate of the executed operations
 5. Error-rate of the executed operations
 6. Latency (`p99`, `p95` and `p90`)
 

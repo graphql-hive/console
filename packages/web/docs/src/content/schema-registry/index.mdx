@@ -3,14 +3,15 @@ import { Callout, Cards } from '@theguild/components'
 import schemaHistoryDiffImage from '../../../public/docs/pages/features/history-diff.png'
 import schemaHistoryImage from '../../../public/docs/pages/guides/history.png'
 
-# Schema Registry
+# Hive Console
 
-Hive as a schema registry serves the main purpose of preventing breaking changes. This ensures that
-your GraphQL API stays up-to-date and running smoothly. This allows you to plan ahead and make the
-necessary modifications to your schema in a timely manner.
+Hive Console, as a schema registry, serves the main purpose of preventing breaking changes. This
+ensures that your GraphQL API stays up-to-date and running smoothly. This allows you to plan ahead
+and make the necessary modifications to your schema in a timely manner.
 
-> Schema Registry is essential for successfully implementing [federated GraphQL APIs](/federation),
-> as it ensures consistent schema management and type definitions.
+> A Schema Registry is essential for successfully implementing
+> [federated GraphQL APIs](/federation), as it ensures consistent schema management and type
+> definitions.
 
 However, it is important to note that determining what constitutes a breaking change can be a
 complex task. It requires a thorough understanding of your GraphQL API, consumers and real-world
@@ -86,7 +87,7 @@ Hive supports the following project types:
   schema(s), under one or many gateways. You can use either direct
   [Schema Stitching](https://the-guild.dev/graphql/stitching) or [Hive gateway](/docs/gateway) for
   this project type.
-- **Apollo Federation**: a form of remote schema merging developed according to the
+- **GraphQL Federation**: a form of remote schema merging developed according to the
   [Federation specification](https://www.apollographql.com/docs/federation/subgraph-spec/).
 
 If you wish to learn more about how to use Hive with each of these project types, please refer to
@@ -95,7 +96,7 @@ the following guides:
 <Cards>
   <Cards.Card arrow title="Single Schema" href="/docs/get-started/single-project" />
   <Cards.Card arrow title="Schema-Stitching" href="/docs/get-started/schema-stitching" />
-  <Cards.Card arrow title="Apollo Federation" href="/docs/get-started/apollo-federation" />
+  <Cards.Card arrow title="GraphQL Federation" href="/docs/get-started/apollo-federation" />
 </Cards>
 
 ## Actions on schemas
@@ -110,14 +111,14 @@ Publishing a schema is the form of registering a new schema in Hive.
 
 Every schema published to Hive consists of the following data (depends on project type):
 
-|                    | Single Schema | Schema Stitching | Apollo Federation |
-| ------------------ | ------------- | ---------------- | ----------------- |
-| Version Identifier | ✓             | ✓                | ✓                 |
-| Author             | ✓             | ✓                | ✓                 |
-| Schema SDL         | ✓             | ✓                | ✓                 |
-| Hive Metadata      | ✓             | ✓                | ✘                 |
-| Service Name       | ✘             | ✓                | ✓                 |
-| Service URL        | ✘             | ✓                | ✓                 |
+|                    | Single Schema | Schema Stitching | GraphQL Federation |
+| ------------------ | ------------- | ---------------- | ------------------ |
+| Version Identifier | ✓             | ✓                | ✓                  |
+| Author             | ✓             | ✓                | ✓                  |
+| Schema SDL         | ✓             | ✓                | ✓                  |
+| Hive Metadata      | ✓             | ✓                | ✘                  |
+| Service Name       | ✘             | ✓                | ✓                  |
+| Service URL        | ✘             | ✓                | ✓                  |
 
 Here's an overview of what each of these steps means:
 
@@ -129,10 +130,10 @@ Here's an overview of what each of these steps means:
 - **Hive Metadata**: Hive metadata is an optional JSON object you can attach to every published
   schema. You can include any information you wish to include in this JSON object (see
   [Publishing Hive metadata](/docs/api-reference/cli#hive-metadata)).
-- **Service Name**: the name of the service. This is used for Schema-Stitching and Apollo Federation
-  only. A service name is restricted to 64 characters, must start with a letter, and can only
-  contain alphanumeric, `-`, and `_` characters.
-- **Service URL**: the URL of the service. This is used for Schema-Stitching and Apollo Federation
+- **Service Name**: the name of the service. This is used for Schema-Stitching and GraphQL
+  Federation only. A service name is restricted to 64 characters, must start with a letter, and can
+  only contain alphanumeric, `-`, and `_` characters.
+- **Service URL**: the URL of the service. This is used for Schema-Stitching and GraphQL Federation
   only.
 
 Every schema published to Hive is going through a process of validation, the following steps are
@@ -142,8 +143,8 @@ performed to ensure a schema is fully valid:
 2. **SDL Validate** - the schema is validated against the GraphQL specification.
 3. **Metadata validation** - if a metadata was published, a JSON schema validation is performed to
    ensure the metadata is a fully valid JSON object.
-4. **Composition Checks** - if the project type is Schema-Stitching or Apollo Federation, the schema
-   is validated against the composition rules of the project type.
+4. **Composition Checks** - if the project type is Schema-Stitching or GraphQL Federation, the
+   schema is validated against the composition rules of the project type.
 5. **Schema Changes** - A schema `diff` is calculated and compared against the previous schema
    version. If [Conditional Breaking Changes](/docs/management/targets#conditional-breaking-changes)
    is activated, an additional phase of check against collected operations is performed.
@@ -167,8 +168,8 @@ performed to ensure a schema is valid:
 
 1. **SDL Parse** - the schema is parsed and validated against the GraphQL SDL specification.
 2. **SDL Validate** - the schema is validated against the GraphQL specification.
-3. **Composition Checks** - if the project type is Schema-Stitching or Apollo Federation, the schema
-   is validated against the composition rules of the project type.
+3. **Composition Checks** - if the project type is Schema-Stitching or GraphQL Federation, the
+   schema is validated against the composition rules of the project type.
 4. **Schema Changes** - A schema `diff` is calculated and compared against the previous schema
    version. If [Conditional Breaking Changes](/docs/management/targets#conditional-breaking-changes)
    is activated, an additional phase of check against collected operations is performed. If a
@@ -208,7 +209,7 @@ local development. This can be done using the `schema:fetch` command.
 ### Delete a service
 
 <Callout type="info">
-  This action is only available for Schema-Stitching and Apollo Federation projects.
+  This action is only available for Schema-Stitching and GraphQL Federation projects.
 </Callout>
 
 Deleting a service is the form of removing a service from the multi-schema project.
