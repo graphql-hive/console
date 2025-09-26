@@ -17,6 +17,29 @@
     },
     "check:build": {
       "outputs": [""]
+    },
+    "dev:hive": {
+      "with": [
+        "//#graphql:generate:watch",
+        "@hive/server#dev",
+        "@hive/app#dev",
+        "@hive/schema#dev",
+        "@hive/policy#dev",
+        "@hive/commerce#dev",
+        "@hive/cdn-script#dev",
+        "@hive/emails#dev",
+        "@hive/usage#dev",
+        "@hive/usage-ingestor#dev",
+        "@graphql-hive/external-composition#example",
+        "@hive/external-composition-federation-2#dev"
+      ],
+      "outputs": [""],
+      "persistent": true,
+      "cache": false
+    },
+    "//#graphql:generate:watch": {
+      "persistent": true,
+      "cache": false
     }
   }
 }
