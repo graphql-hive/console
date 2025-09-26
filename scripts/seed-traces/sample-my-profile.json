@@ -1,0 +1,788 @@
+[
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "hive-gateway"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "5.13.4"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "gateway"
+            },
+            "spans": [
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "a64ae7143330edd5",
+                "parentSpanId": "53b24c8e7ff72fa4",
+                "name": "graphql.parse",
+                "kind": 1,
+                "startTimeUnixNano": "1751541696992000000",
+                "endTimeUnixNano": "1751541696992404084",
+                "attributes": [
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{me{id username name reviews{id product{upc name}}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "a58c9a61e1c74cee",
+                "parentSpanId": "53b24c8e7ff72fa4",
+                "name": "graphql.validate",
+                "kind": 1,
+                "startTimeUnixNano": "1751541696993000000",
+                "endTimeUnixNano": "1751541696994822625",
+                "attributes": [
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{me{id username name reviews{id product{upc name}}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "8fc953974f3a8242",
+                "parentSpanId": "53b24c8e7ff72fa4",
+                "name": "graphql.context",
+                "kind": 1,
+                "startTimeUnixNano": "1751541696994000000",
+                "endTimeUnixNano": "1751541696994156500",
+                "attributes": [],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "hive-gateway"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "5.13.4"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "gateway"
+            },
+            "spans": [
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "db7a050eb7c01cc6",
+                "parentSpanId": "53e7ea110fc140bc",
+                "name": "http.fetch",
+                "kind": 3,
+                "startTimeUnixNano": "1751541697013000000",
+                "endTimeUnixNano": "1751541697246498001",
+                "attributes": [
+                  {
+                    "key": "http.method",
+                    "value": {
+                      "stringValue": "POST"
+                    }
+                  },
+                  {
+                    "key": "http.url",
+                    "value": {
+                      "stringValue": "https://federation-demo.theguild.workers.dev/users"
+                    }
+                  },
+                  {
+                    "key": "net.host.name",
+                    "value": {
+                      "stringValue": "federation-demo.theguild.workers.dev"
+                    }
+                  },
+                  {
+                    "key": "http.host",
+                    "value": {
+                      "stringValue": "federation-demo.theguild.workers.dev"
+                    }
+                  },
+                  {
+                    "key": "http.route",
+                    "value": {
+                      "stringValue": "/users"
+                    }
+                  },
+                  {
+                    "key": "http.scheme",
+                    "value": {
+                      "stringValue": "https:"
+                    }
+                  },
+                  {
+                    "key": "http.status_code",
+                    "value": {
+                      "intValue": 200
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 1
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "53e7ea110fc140bc",
+                "parentSpanId": "5950033302028628",
+                "name": "subgraph.execute (users)",
+                "kind": 3,
+                "startTimeUnixNano": "1751541697012000000",
+                "endTimeUnixNano": "1751541697247851792",
+                "attributes": [
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{__typename me{__typename id id username name}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "gateway.upstream.subgraph.name",
+                    "value": {
+                      "stringValue": "users"
+                    }
+                  },
+                  {
+                    "key": "hive.gateway.upstream.subgraph.name",
+                    "value": {
+                      "stringValue": "users"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{__typename me{__typename id id username name}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "hive-gateway"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "5.13.4"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "gateway"
+            },
+            "spans": [
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "600df68244bcc074",
+                "parentSpanId": "3fa530a61e87352d",
+                "name": "http.fetch",
+                "kind": 3,
+                "startTimeUnixNano": "1751541697254000000",
+                "endTimeUnixNano": "1751541697287733167",
+                "attributes": [
+                  {
+                    "key": "http.method",
+                    "value": {
+                      "stringValue": "POST"
+                    }
+                  },
+                  {
+                    "key": "http.url",
+                    "value": {
+                      "stringValue": "https://federation-demo.theguild.workers.dev/reviews"
+                    }
+                  },
+                  {
+                    "key": "net.host.name",
+                    "value": {
+                      "stringValue": "federation-demo.theguild.workers.dev"
+                    }
+                  },
+                  {
+                    "key": "http.host",
+                    "value": {
+                      "stringValue": "federation-demo.theguild.workers.dev"
+                    }
+                  },
+                  {
+                    "key": "http.route",
+                    "value": {
+                      "stringValue": "/reviews"
+                    }
+                  },
+                  {
+                    "key": "http.scheme",
+                    "value": {
+                      "stringValue": "https:"
+                    }
+                  },
+                  {
+                    "key": "http.status_code",
+                    "value": {
+                      "intValue": 200
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 1
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "3fa530a61e87352d",
+                "parentSpanId": "5950033302028628",
+                "name": "subgraph.execute (reviews)",
+                "kind": 3,
+                "startTimeUnixNano": "1751541697254000000",
+                "endTimeUnixNano": "1751541697288384625",
+                "attributes": [
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on User{id reviews{__typename id id product{__typename upc upc}}}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "gateway.upstream.subgraph.name",
+                    "value": {
+                      "stringValue": "reviews"
+                    }
+                  },
+                  {
+                    "key": "hive.gateway.upstream.subgraph.name",
+                    "value": {
+                      "stringValue": "reviews"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on User{id reviews{__typename id id product{__typename upc upc}}}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "hive-gateway"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "5.13.4"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "gateway"
+            },
+            "spans": [
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "e6f23702d0c6dca1",
+                "parentSpanId": "01288c4b66e39646",
+                "name": "http.fetch",
+                "kind": 3,
+                "startTimeUnixNano": "1751541697291000000",
+                "endTimeUnixNano": "1751541697328195667",
+                "attributes": [
+                  {
+                    "key": "http.method",
+                    "value": {
+                      "stringValue": "POST"
+                    }
+                  },
+                  {
+                    "key": "http.url",
+                    "value": {
+                      "stringValue": "https://federation-demo.theguild.workers.dev/products"
+                    }
+                  },
+                  {
+                    "key": "net.host.name",
+                    "value": {
+                      "stringValue": "federation-demo.theguild.workers.dev"
+                    }
+                  },
+                  {
+                    "key": "http.host",
+                    "value": {
+                      "stringValue": "federation-demo.theguild.workers.dev"
+                    }
+                  },
+                  {
+                    "key": "http.route",
+                    "value": {
+                      "stringValue": "/products"
+                    }
+                  },
+                  {
+                    "key": "http.scheme",
+                    "value": {
+                      "stringValue": "https:"
+                    }
+                  },
+                  {
+                    "key": "http.status_code",
+                    "value": {
+                      "intValue": 200
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 1
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "01288c4b66e39646",
+                "parentSpanId": "5950033302028628",
+                "name": "subgraph.execute (products)",
+                "kind": 3,
+                "startTimeUnixNano": "1751541697291000000",
+                "endTimeUnixNano": "1751541697328841166",
+                "attributes": [
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on Product{upc name}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "gateway.upstream.subgraph.name",
+                    "value": {
+                      "stringValue": "products"
+                    }
+                  },
+                  {
+                    "key": "hive.gateway.upstream.subgraph.name",
+                    "value": {
+                      "stringValue": "products"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile($representations:[_Any!]!){__typename _entities(representations:$representations){__typename ...on Product{upc name}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "5950033302028628",
+                "parentSpanId": "53b24c8e7ff72fa4",
+                "name": "graphql.execute",
+                "kind": 1,
+                "startTimeUnixNano": "1751541696995000000",
+                "endTimeUnixNano": "1751541697329399042",
+                "attributes": [
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{me{id username name reviews{id product{upc name}}}}"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "53b24c8e7ff72fa4",
+                "parentSpanId": "af9ade51d3bdaa1e",
+                "name": "graphql.operation MyProfile",
+                "kind": 1,
+                "startTimeUnixNano": "1751541696992000000",
+                "endTimeUnixNano": "1751541697329427167",
+                "attributes": [
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{me{id username name reviews{id product{upc name}}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "gateway.cache.response_cache",
+                    "value": {
+                      "stringValue": "miss"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "807b71f8b7b4f9c827ce8220c6540eac",
+                "spanId": "af9ade51d3bdaa1e",
+                "name": "query MyProfile",
+                "kind": 2,
+                "startTimeUnixNano": "1751541696982000000",
+                "endTimeUnixNano": "1751541697329384584",
+                "attributes": [
+                  {
+                    "key": "http.method",
+                    "value": {
+                      "stringValue": "POST"
+                    }
+                  },
+                  {
+                    "key": "http.url",
+                    "value": {
+                      "stringValue": "http://localhost:4000/graphql"
+                    }
+                  },
+                  {
+                    "key": "http.route",
+                    "value": {
+                      "stringValue": "/graphql"
+                    }
+                  },
+                  {
+                    "key": "http.scheme",
+                    "value": {
+                      "stringValue": "http:"
+                    }
+                  },
+                  {
+                    "key": "net.host.name",
+                    "value": {
+                      "stringValue": "localhost"
+                    }
+                  },
+                  {
+                    "key": "http.host",
+                    "value": {
+                      "stringValue": "localhost:4000"
+                    }
+                  },
+                  {
+                    "key": "http.user_agent",
+                    "value": {
+                      "stringValue": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+                    }
+                  },
+                  {
+                    "key": "hive.gateway.operation.subgraph.names",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          { "stringValue": "users" },
+                          { "stringValue": "reviews" },
+                          { "stringValue": "products" }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "MyProfile"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query MyProfile{me{id username name reviews{id product{upc name}}}}"
+                    }
+                  },
+                  {
+                    "key": "hive.graphql.error.count",
+                    "value": {
+                      "intValue": 0
+                    }
+                  },
+                  {
+                    "key": "http.status_code",
+                    "value": {
+                      "intValue": 200
+                    }
+                  },
+                  {
+                    "key": "gateway.cache.response_cache",
+                    "value": {
+                      "stringValue": "miss"
+                    }
+                  },
+                  {
+                    "key": "hive.graphql",
+                    "value": {
+                      "boolValue": true
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 1
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

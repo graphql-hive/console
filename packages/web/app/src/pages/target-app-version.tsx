@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import ghost from '../../public/images/figures/ghost.svg?url';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -29,7 +29,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { Link, useRouter } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 
 const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -94,7 +94,6 @@ function TargetAppVersionContent(props: {
       after: null,
     },
   });
-  const router = useRouter();
   const client = useClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -138,20 +137,10 @@ function TargetAppVersionContent(props: {
     return (
       <>
         <Meta title="App Version Not found" />
-        <div className="flex h-full flex-1 flex-col items-center justify-center gap-2.5 py-6">
-          <img
-            src={ghost}
-            alt="Ghost illustration"
-            width="200"
-            height="200"
-            className="drag-none"
-          />
-          <h2 className="text-xl font-bold">App Version not found.</h2>
-          <h3 className="font-semibold">This app does not seem to exist anymore.</h3>
-          <Button variant="secondary" className="mt-2" onClick={router.history.back}>
-            Go back
-          </Button>
-        </div>
+        <NotFoundContent
+          heading="App Version not found."
+          subheading="This app does not seem to exist anymore."
+        />
       </>
     );
   }
