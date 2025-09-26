@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -82,9 +83,11 @@ export const CompositionSettings = (props: {
             <TabsList variant="content">
               <TabsTrigger variant="content" value="native">
                 Native Federation v2
+                {activeMode === 'native' && <CheckIcon size={16} className="ml-2 inline-block" />}
               </TabsTrigger>
               <TabsTrigger variant="content" value="external">
                 External
+                {activeMode === 'external' && <CheckIcon size={16} className="ml-2 inline-block" />}
               </TabsTrigger>
               <TabsTrigger
                 variant="content"
@@ -95,6 +98,7 @@ export const CompositionSettings = (props: {
                 )}
               >
                 Legacy Federation v1
+                {activeMode === 'legacy' && <CheckIcon size={16} className="ml-2 inline-block" />}
               </TabsTrigger>
             </TabsList>
             <TabsContent variant="content" value="native">
