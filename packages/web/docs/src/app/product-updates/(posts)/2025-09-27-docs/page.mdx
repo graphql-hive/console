@@ -1,0 +1,97 @@
+---
+title: Documentation Update
+description:
+  Documentation is hard. You have to strike a balance between what's useful and what's excessive;
+  and organize it in a way that is equally clear and easy to search.
+date: 2025-09-29
+authors: [jdolle]
+---
+
+It feels a bit silly to be posting an update about documentation, but I think it's important as open
+source developers to treat documentation as a product. Without documentation, people would need to
+review source code, which doesn't often include information about intent or links or other relevant
+portions of the project. And especially for user interface (UI) driven tools, good documentation can
+provide much needed details that would be impossible to convey through the UI without taking
+significant screen real estate -- like text in a Japanese role-playing game (JRPG), getting scrolled
+through time and again every time you have to use the website.
+
+But I don't have to tell you! If you're reading this, I assume you already love and appreciate
+documentation.
+
+So what caused us to take a closer look at our documentation?
+
+## A fundamental shift in how we think about Hive
+
+Hive started as "only" a schema registry. We weren't sure what direction this would go in the
+future, but thought features would keep being added to the core product. We also knew people needed
+to be able to self-host Hive. So this lead to a common industry distinction of "cloud" vs
+"self-hosting" offerings.
+
+At the time, this made sense. GraphQL Federation was still young and GraphQL routers in their
+infancy. But Federation was growing and the need for a powerful and customizable router was clear.
+We knew it needed to work well with our schema registry also, and to make that point clear to
+others, this router was called Hive Gateway. More recently, our offerings have expanded to include a
+Hive Logger, built with our logging needs and best practices in mind, and soon a new Hive Router,
+written in Rust.
+
+**Hive is growing...**
+
+Our suite is growing and it's become confusing to talk about "Hive" as a cloud service, since these
+products span different spaces. What was once called "Hive" is now a part of the whole. The schema
+registry has expanded as expected, but so has the brand. And so we needed to adapt.
+
+This has been a very organic process for us. Which honestly is great because we can find gaps in the
+GraphQL ecosystem, work on solutions, and let our work inform our brand. We can be sure that we're
+building solutions to real problems because of this, but our documentation had some growing pains as
+a result.
+
+## Input from the community
+
+Feedback and questions from the community have made the shortcomings of our documentation even more
+clear. There was often confusion around cloud hosting our Gateway (which we don't offer, at least at
+this time). Additionally, our API Reference documentation was scattered and we'd often get questions
+about how to do certain custom tasks.
+
+Rather than get annoyed any time a question is asked more than once, it's best to take a look at the
+cause. 99% of the time it's because the documentation is missing, hard to find, or generally
+unclear.
+
+## Industry changes
+
+GraphQL has been changing this whole time as well. As mentioned before, Federation was new when Hive
+was first built. People are much more familiar with the concepts of Federation now and it's been
+gradually shifting from a single company's offering (Apollo Federation) to an
+[open spec](https://open-federation.org/) (GraphQL Federation). So terminology needs updated.
+
+# What we did
+
+1. **Let the products speak.** We updated the
+   [introduction/landing page](https://the-guild.dev/graphql/hive/docs) to instantly showcase our
+   product offerings. This makes it clear that these are modular, pieces of the whole, and gives us
+   a fantastic place to briefly introduce each. Additionally, since Hive Console was the only
+   product in the past, there were a lot of documents that were specific to Hive Console that were
+   still at the root of the Hive documentation. This was solved by creating separate pages for each
+   product and moving these pages inside.
+2. **Collapse when possible.** Previously there were separate root level pages for CLI/API
+   References, Specifications, and our public GraphQL API. This was because we thought each had a
+   separate audience and were conceptually different, but what we've discovered is that if people
+   are looking at reference documentation, then they likely care about all of this. The audience for
+   all of these sections included "power users", who wanted to write custom tools or interfaces for
+   Hive. So we collapsed all of this to a single location, making it easier for power users to
+   browse for what they need. -- And this is just one instance. There were (and probably still are)
+   numerous parts of our documentation that were redundant.
+
+# Conclusion
+
+Much like our code bases, documentation ages. Not only because of UI or API changes, but because the
+entire product or the world around it might change. Staying organized helps since pages are more
+searchable, but documentation is often too easy to forget to update.
+
+Hopefully you've found this post interesting and learned a little more about Hive in the process. I
+have no doubt that our documentation will continue to evolve alongside Hive moving forward. And if
+you see something that doesn't make sense, don't hesitate to ask. There's no such thing as a stupid
+question -- there's only neglected documentation.
+
+---
+
+[Check out the latest Hive documentation](/docs)
