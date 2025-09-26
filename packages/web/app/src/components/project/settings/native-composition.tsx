@@ -148,7 +148,7 @@ const NativeCompositionSettings_DisableExternalCompositionMutation = graphql(`
 export function NativeCompositionSettings(props: {
   organization: FragmentType<typeof NativeCompositionSettings_OrganizationFragment>;
   project: FragmentType<typeof NativeCompositionSettings_ProjectFragment>;
-  activeCompositionMode: 'native' | 'external' | 'apollo';
+  activeCompositionMode: 'native' | 'external' | 'legacy';
 }) {
   const organization = useFragment(
     NativeCompositionSettings_OrganizationFragment,

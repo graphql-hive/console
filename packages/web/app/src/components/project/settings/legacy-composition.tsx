@@ -6,22 +6,22 @@ import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 
-const ApolloCompositionSettings_OrganizationFragment = graphql(`
-  fragment ApolloCompositionSettings_OrganizationFragment on Organization {
+const LegacyCompositionSettings_OrganizationFragment = graphql(`
+  fragment LegacyCompositionSettings_OrganizationFragment on Organization {
     id
     slug
   }
 `);
 
-const ApolloCompositionSettings_ProjectFragment = graphql(`
-  fragment ApolloCompositionSettings_ProjectFragment on Project {
+const LegacyCompositionSettings_ProjectFragment = graphql(`
+  fragment LegacyCompositionSettings_ProjectFragment on Project {
     id
     slug
   }
 `);
 
-const ApolloCompositionSettings_UpdateNativeCompositionMutation = graphql(`
-  mutation ApolloCompositionSettings_UpdateNativeCompositionMutation(
+const LegacyCompositionSettings_UpdateNativeCompositionMutation = graphql(`
+  mutation LegacyCompositionSettings_UpdateNativeCompositionMutation(
     $input: UpdateNativeFederationInput!
   ) {
     updateNativeFederation(input: $input) {
@@ -35,8 +35,8 @@ const ApolloCompositionSettings_UpdateNativeCompositionMutation = graphql(`
   }
 `);
 
-const ApolloCompositionSettings_DisableExternalCompositionMutation = graphql(`
-  mutation ApolloCompositionSettings_DisableExternalCompositionMutation(
+const LegacyCompositionSettings_DisableExternalCompositionMutation = graphql(`
+  mutation LegacyCompositionSettings_DisableExternalCompositionMutation(
     $input: DisableExternalSchemaCompositionInput!
   ) {
     disableExternalSchemaComposition(input: $input) {
@@ -48,28 +48,28 @@ const ApolloCompositionSettings_DisableExternalCompositionMutation = graphql(`
   }
 `);
 
-export function ApolloCompositionSettings(props: {
-  organization: FragmentType<typeof ApolloCompositionSettings_OrganizationFragment>;
-  project: FragmentType<typeof ApolloCompositionSettings_ProjectFragment>;
-  activeCompositionMode: 'native' | 'external' | 'apollo';
+export function LegacyCompositionSettings(props: {
+  organization: FragmentType<typeof LegacyCompositionSettings_OrganizationFragment>;
+  project: FragmentType<typeof LegacyCompositionSettings_ProjectFragment>;
+  activeCompositionMode: 'native' | 'external' | 'legacy';
 }) {
   const organization = useFragment(
-    ApolloCompositionSettings_OrganizationFragment,
+    LegacyCompositionSettings_OrganizationFragment,
     props.organization,
   );
-  const project = useFragment(ApolloCompositionSettings_ProjectFragment, props.project);
+  const project = useFragment(LegacyCompositionSettings_ProjectFragment, props.project);
 
   const [updateNativeMutation, updateNative] = useMutation(
-    ApolloCompositionSettings_UpdateNativeCompositionMutation,
+    LegacyCompositionSettings_UpdateNativeCompositionMutation,
   );
   const [disableExternalMutation, disableExternal] = useMutation(
-    ApolloCompositionSettings_DisableExternalCompositionMutation,
+    LegacyCompositionSettings_DisableExternalCompositionMutation,
   );
   const isMutationFetching = updateNativeMutation.fetching || disableExternalMutation.fetching;
 
   const { toast } = useToast();
 
-  const enableApolloComposition = useCallback(async () => {
+  const enableLegacyComposition = useCallback(async () => {
     const previousCompositionMode = props.activeCompositionMode;
     try {
       const updateNativeResult = await updateNative({
@@ -85,7 +85,7 @@ export function ApolloCompositionSettings(props: {
       if (updateNativeError) {
         return toast({
           variant: 'destructive',
-          title: 'Failed to enable Apollo Composition',
+          title: 'Failed to enable legacy composition',
           description: updateNativeError.message,
         });
       }
@@ -103,14 +103,14 @@ export function ApolloCompositionSettings(props: {
         if (disableExternalError != null) {
           return toast({
             variant: 'destructive',
-            title: 'Failed to disable external composition while enabling Apollo Composition',
+            title: 'Failed to disable external composition while enabling legacy composition',
             description: disableExternalError,
           });
         }
       }
 
       toast({
-        title: 'Successfully enabled Apollo Composition (Legacy)',
+        title: 'Successfully enabled legacy composition',
         description: `Your project is no longer using ${
           previousCompositionMode === 'external'
             ? 'external schema composition.'
@@ -118,11 +118,11 @@ export function ApolloCompositionSettings(props: {
         }`,
       });
     } catch (error) {
-      console.log('Failed to enable Apollo Composition');
+      console.log('Failed to enable legacy composition');
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Failed to enable Apollo Composition',
+        title: 'Failed to enable legacy composition',
         description: String(error),
       });
     }
@@ -139,7 +139,7 @@ export function ApolloCompositionSettings(props: {
     <div className="flex flex-col items-start gap-y-6">
       <div>
         <p className="text-muted-foreground text-sm">
-          Legacy. Recommended to migrate towards using native composition.
+          Not recommended. Migrate towards using Native Federation v2.
         </p>
         <ProductUpdatesLink href="2023-10-10-native-federation-2">
           Read the announcement!
@@ -149,18 +149,18 @@ export function ApolloCompositionSettings(props: {
       <div className="flex flex-row items-center gap-x-2">
         <Button
           variant="destructive"
-          onClick={() => enableApolloComposition()}
-          disabled={isMutationFetching || props.activeCompositionMode === 'apollo'}
+          onClick={() => enableLegacyComposition()}
+          disabled={isMutationFetching || props.activeCompositionMode === 'legacy'}
         >
           {isMutationFetching ? (
             <>
               <RefreshCcwIcon className="mr-2 size-4 animate-spin" />
               Please wait
             </>
-          ) : props.activeCompositionMode === 'apollo' ? (
-            'Using Apollo Composition (Legacy)'
+          ) : props.activeCompositionMode === 'legacy' ? (
+            'Using Legacy Composition'
           ) : (
-            'Use Apollo Composition (Legacy)'
+            'Use Legacy Composition'
           )}
         </Button>
       </div>
