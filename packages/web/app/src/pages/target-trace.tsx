@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { formatDate } from 'date-fns';
 import {
   AlertTriangle,
   ArrowUp,
@@ -994,6 +995,31 @@ export function TraceSheet(props: TraceSheetProps) {
   );
 }
 
+const TargetInsightsNewPageContent_TraceQuery = graphql(/* GraphQL */ `
+  query TargetInsightsNewPageContent_TraceQuery(
+    $targetSelector: TargetSelectorInput!
+    $traceId: ID!
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      id
+      trace(traceId: $traceId) {
+        ...TraceSheet_TraceFragment
+        id
+        operationName
+        duration
+        success
+        timestamp
+        spans {
+          id
+          name
+          parentId
+          ...SpanFragment
+        }
+      }
+    }
+  }
+`);
+
 function TargetInsightsNewPageContent(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -1003,7 +1029,7 @@ function TargetInsightsNewPageContent(props: {
   activeSpanTab: string | null;
 }) {
   const [result] = useQuery({
-    query: TargetTraceQuery,
+    query: TargetInsightsNewPageContent_TraceQuery,
     variables: {
       targetSelector: {
         organizationSlug: props.organizationSlug,
@@ -1013,6 +1039,8 @@ function TargetInsightsNewPageContent(props: {
       traceId: props.traceId,
     },
   });
+
+  const trace = result.data?.target?.trace;
 
   return (
     <div className="flex h-full flex-col space-y-4 pt-6">
@@ -1031,8 +1059,13 @@ function TargetInsightsNewPageContent(props: {
               Traces
             </Link>{' '}
             <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
-            {result.data?.target?.trace ? (
-              result.data.target.trace.id
+            {trace ? (
+              <>
+                {trace.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
+                <span className="text-muted-foreground ml-2 font-mono font-normal">
+                  {trace.id.substring(0, 4)}
+                </span>
+              </>
             ) : (
               <Skeleton className="inline-block h-5 w-[150px]" />
             )}
@@ -1040,21 +1073,51 @@ function TargetInsightsNewPageContent(props: {
         }
         description={
           <>
-            <CardDescription>Insights into the requests made to your GraphQL API.</CardDescription>
+            <CardDescription>
+              Trace ID:{' '}
+              {trace?.id ? (
+                <>
+                  <span className="font-mono"> {trace.id}</span>
+                  <CopyIconButton value={trace.id} label="Copy Trace ID" />
+                </>
+              ) : (
+                <Skeleton className="inline-block h-4 w-[200px]" />
+              )}
+            </CardDescription>
+            {trace && (
+              <div className="mt-2 flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-1">
+                  <Clock className="size-3 text-gray-400" />
+                  <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'rounded-sm border-0 px-1 font-medium uppercase',
+                    trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
+                  )}
+                >
+                  {trace.success ? 'Ok' : 'Error'}
+                </Badge>
+                <span className="font-mono uppercase text-gray-300">
+                  {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
+                </span>
+              </div>
+            )}
           </>
         }
       />
-      {result.data?.target?.trace && (
+      {trace && (
         <TraceSheet
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
-          trace={result.data.target.trace}
+          trace={trace}
           activeSpanId={props.activeSpanId}
           activeSpanTab={props.activeSpanTab}
         />
       )}
-      {!result.data?.target?.trace && !result.fetching && (
+      {!trace && !result.fetching && (
         <>
           <Meta title="Trace Not found" />
           <NotFoundContent heading="Trace not found." subheading="This trace does not exist." />
@@ -1094,24 +1157,6 @@ export function TargetTracePage(props: {
     </>
   );
 }
-
-const TargetTraceQuery = graphql(/* GraphQL */ `
-  query TargetTraceQuery($targetSelector: TargetSelectorInput!, $traceId: ID!) {
-    target(reference: { bySelector: $targetSelector }) {
-      id
-      trace(traceId: $traceId) {
-        ...TraceSheet_TraceFragment
-        id
-        spans {
-          id
-          name
-          parentId
-          ...SpanFragment
-        }
-      }
-    }
-  }
-`);
 
 const SpanFragment = graphql(/* GraphQL */ `
   fragment SpanFragment on Span {
