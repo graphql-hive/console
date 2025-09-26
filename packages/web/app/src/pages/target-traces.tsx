@@ -1,7 +1,15 @@
 import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO, parse as parseDate } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { ArrowDown, ArrowUp, ArrowUpDown, Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Clock,
+  ExternalLinkIcon,
+  LoaderCircleIcon,
+  XIcon,
+} from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
@@ -660,7 +668,13 @@ const TracesList = memo(function TracesList(
             }}
             disabled={props.isFetchingMore || !props.fetchMore}
           >
-            Load more
+            {props.isFetchingMore ? (
+              <>
+                <LoaderCircleIcon className="mr-2 inline size-4 animate-spin" /> Loading
+              </>
+            ) : (
+              'Load more'
+            )}
           </Button>
         </div>
       </div>
@@ -1148,7 +1162,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
     },
   });
 
-  const [isFetchMore, setIsFetchingMore] = useState(false);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const traces = useMemo(
     () => query.data?.target?.traces.edges.map(e => e.node),
@@ -1272,7 +1286,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
               selectedTraceId={selectedTraceId}
               isFetching={query.fetching}
               filter={filter}
-              isFetchingMore={isFetchMore}
+              isFetchingMore={isFetchingMore}
               fetchMore={
                 query.data?.target?.traces.pageInfo.hasNextPage
                   ? () => {
@@ -1284,7 +1298,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
                       }
                       setIsFetchingMore(true);
 
-                      urql
+                      void urql
                         .query(TargetTracesFetchMoreTracesQuery, {
                           targetRef: {
                             organizationSlug: targetRef.organizationSlug,

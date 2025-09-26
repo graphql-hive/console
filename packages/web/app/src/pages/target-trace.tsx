@@ -224,6 +224,7 @@ function TreeIcon(props: {
             y1="0"
             y2={index === props.level - 1 && props.isLastChild ? 16 : 32}
             stroke="currentColor"
+            key={`${props.level}_${index}`}
           />
         ) : null,
       )}
@@ -937,9 +938,9 @@ export function TraceSheet(props: TraceSheetProps) {
                               setHighlightedEvent(null);
                             }}
                             className="mb-2 block"
+                            key={event.id}
                           >
                             <ExceptionTeaser
-                              key={event.id}
                               type={String(event.attributes['exception.type'] ?? '')}
                               message={String(event.attributes['exception.message'] ?? '')}
                               stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
@@ -1533,9 +1534,9 @@ function SpanSheet(props: SpanSheetProps) {
                 <div>
                   {span.events.length > 0 ? (
                     <div className="px-1 pt-2">
-                      {span.events.map(event => {
+                      {span.events.map((event, index) => {
                         return (
-                          <div className="mb-2">
+                          <div className="mb-2" key={`${event.name}_${event.date}_${index}`}>
                             <ExceptionTeaser
                               type={event.attributes['exception.type'] ?? ''}
                               message={event.attributes['exception.message'] ?? ''}
