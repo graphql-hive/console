@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { ApolloCompositionSettings } from './apollo-composition';
+import { LegacyCompositionSettings } from './legacy-composition';
 import { ExternalCompositionSettings } from './external-composition';
 import { NativeCompositionSettings } from './native-composition';
 
@@ -22,7 +22,7 @@ const CompositionSettings_OrganizationFragment = graphql(`
     slug
     ...NativeCompositionSettings_OrganizationFragment
     ...ExternalCompositionSettings_OrganizationFragment
-    ...ApolloCompositionSettings_OrganizationFragment
+    ...LegacyCompositionSettings_OrganizationFragment
   }
 `);
 
@@ -35,7 +35,7 @@ const CompositionSettings_ProjectFragment = graphql(`
     }
     ...NativeCompositionSettings_ProjectFragment
     ...ExternalCompositionSettings_ProjectFragment
-    ...ApolloCompositionSettings_ProjectFragment
+    ...LegacyCompositionSettings_ProjectFragment
   }
 `);
 
@@ -62,7 +62,7 @@ export const CompositionSettings = (props: {
     ? 'native'
     : externalCompositionConfig
       ? 'external'
-      : 'apollo';
+      : 'legacy';
   const [selectedMode, setSelectedMode] = useState<string>();
 
   return (
@@ -85,8 +85,8 @@ export const CompositionSettings = (props: {
               <TabsTrigger variant="content" value="external">
                 External
               </TabsTrigger>
-              <TabsTrigger variant="content" value="apollo">
-                Apollo (Legacy)
+              <TabsTrigger variant="content" value="legacy">
+                Legacy Federation v1
               </TabsTrigger>
             </TabsList>
             <TabsContent variant="content" value="native">
@@ -103,8 +103,8 @@ export const CompositionSettings = (props: {
                 activeCompositionMode={activeMode}
               />
             </TabsContent>
-            <TabsContent variant="content" value="apollo">
-              <ApolloCompositionSettings
+            <TabsContent variant="content" value="legacy">
+              <LegacyCompositionSettings
                 project={project}
                 organization={organization}
                 activeCompositionMode={activeMode}

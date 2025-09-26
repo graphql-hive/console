@@ -218,7 +218,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const ExternalCompositionSettings = (props: {
   project: FragmentType<typeof ExternalCompositionSettings_ProjectFragment>;
   organization: FragmentType<typeof ExternalCompositionSettings_OrganizationFragment>;
-  activeCompositionMode: 'native' | 'external' | 'apollo';
+  activeCompositionMode: 'native' | 'external' | 'legacy';
 }) => {
   const project = useFragment(ExternalCompositionSettings_ProjectFragment, props.project);
   const organization = useFragment(
