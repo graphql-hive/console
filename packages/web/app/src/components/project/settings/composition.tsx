@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { LegacyCompositionSettings } from './legacy-composition';
+import { cn } from '@/lib/utils';
 import { ExternalCompositionSettings } from './external-composition';
+import { LegacyCompositionSettings } from './legacy-composition';
 import { NativeCompositionSettings } from './native-composition';
 
 const CompositionSettings_ProjectConfigurationQuery = graphql(`
@@ -85,7 +86,14 @@ export const CompositionSettings = (props: {
               <TabsTrigger variant="content" value="external">
                 External
               </TabsTrigger>
-              <TabsTrigger variant="content" value="legacy">
+              <TabsTrigger
+                variant="content"
+                value="legacy"
+                className={cn(
+                  'hover:opacity-100 data-[state=active]:opacity-100',
+                  activeMode === 'legacy' ? 'opacity-100' : 'opacity-0',
+                )}
+              >
                 Legacy Federation v1
               </TabsTrigger>
             </TabsList>
