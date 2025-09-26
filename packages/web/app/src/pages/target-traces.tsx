@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardDescription } from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
@@ -23,6 +24,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Meta } from '@/components/ui/meta';
+import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import {
   Sheet,
@@ -1267,7 +1269,15 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
 
   return (
     <div className="py-6">
-      <SidebarProvider>
+      <SubPageLayoutHeader
+        subPageTitle="Traces"
+        description={
+          <>
+            <CardDescription>Insights into the requests made to your GraphQL API.</CardDescription>
+          </>
+        }
+      />
+      <SidebarProvider className="mt-4">
         <Sidebar collapsible="none" className="bg-transparent">
           <SidebarContent>
             <Filters filter={props.filter} options={filterOptions} />
