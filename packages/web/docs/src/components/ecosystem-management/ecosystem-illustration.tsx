@@ -187,7 +187,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           <Node
             title="Client"
             description={
-              <span className="[@media(max-width:1438px)]:hidden">GraphQL client of choice</span>
+              <span className="[@media(max-width:1438px)]:hidden">GraphQL Client of Choice</span>
             }
             edges={[1, 2]}
             highlightedEdge={highlightedEdge}
