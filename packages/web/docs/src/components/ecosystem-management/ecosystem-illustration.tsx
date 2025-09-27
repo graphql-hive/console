@@ -113,7 +113,7 @@ export function EcosystemIllustration(props: { className?: string }) {
                 <span className={styles.smHidden}>Hive</span> Gateway
               </>
             }
-            description="GraphQL router"
+            description="GraphQL Router"
             edges={[1, 4, 5]}
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
