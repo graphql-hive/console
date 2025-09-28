@@ -1,6 +1,9 @@
 export default {
+  'graphql-api': 'Public GraphQL API',
   cli: 'Hive CLI',
-  'gateway-config': 'Hive Gateway Configuration',
+  client: 'Hive Client Configuration',
   'gateway-cli': 'Hive Gateway CLI',
-  client: 'Hive Client',
+  'gateway-config': 'Hive Gateway Configuration',
+  'link-specifications': 'Hive GraphQL Link Spec',
+  'usage-reports': 'Usage Report Spec',
 };
