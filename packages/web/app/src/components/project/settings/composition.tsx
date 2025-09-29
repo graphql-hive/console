@@ -94,7 +94,7 @@ export const CompositionSettings = (props: {
                 value="legacy"
                 className={cn(
                   'hover:opacity-100 data-[state=active]:opacity-100',
-                  activeMode === 'legacy' ? 'opacity-100' : 'opacity-0',
+                  activeMode === 'legacy' ? 'opacity-100' : 'opacity-40',
                 )}
               >
                 Legacy Federation v1
