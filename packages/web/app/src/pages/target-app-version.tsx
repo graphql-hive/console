@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ghost from '../../public/images/figures/ghost.svg?url';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
@@ -30,6 +30,7 @@ import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
+import { AppFilter } from '@/components/apps/AppFilter';
 
 const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -40,6 +41,7 @@ const TargetAppsVersionQuery = graphql(`
     $appVersion: String!
     $first: Int
     $after: String
+    $documentsFilter: AppDeploymentDocumentsFilterInput
   ) {
     target(
       reference: {
@@ -56,7 +58,7 @@ const TargetAppsVersionQuery = graphql(`
         id
         name
         version
-        documents(first: $first, after: $after) {
+        documents(first: $first, after: $after, filter: $documentsFilter) {
           pageInfo {
             hasNextPage
             endCursor
@@ -82,6 +84,18 @@ function TargetAppVersionContent(props: {
   appName: string;
   appVersion: string;
 }) {
+  const router = useRouter();
+  const search = typeof router.latestLocation.search.search === 'string' ? router.latestLocation.search.search : '';
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms debounce delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [search]);
   const [data] = useQuery({
     query: TargetAppsVersionQuery,
     variables: {
@@ -92,9 +106,11 @@ function TargetAppVersionContent(props: {
       appVersion: props.appVersion,
       first: 20,
       after: null,
+      documentsFilter: {
+        operationName: debouncedSearch,
+      }
     },
   });
-  const router = useRouter();
   const client = useClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -197,7 +213,9 @@ function TargetAppVersionContent(props: {
                 </CardDescription> */}
             </>
           }
-        />
+        >
+          <AppFilter/>
+        </SubPageLayoutHeader>
         <div className="mt-4" />
         {data.fetching || data.stale ? (
           <div className="flex h-fit flex-1 items-center justify-center">
@@ -208,7 +226,7 @@ function TargetAppVersionContent(props: {
           </div>
         ) : !data.data?.target?.appDeployment?.documents?.edges.length ? (
           <EmptyList
-            title="No documents have been uploaded for this app deployment"
+            title={debouncedSearch ? "No documents found matching that operation name" : "No documents have been uploaded for this app deployment"}
             description="You can upload documents via the Hive CLI"
             docsUrl="/features/schema-registry#app-deplyments"
           />
