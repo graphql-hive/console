@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ghost from '../../public/images/figures/ghost.svg?url';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
+import { AppFilter } from '@/components/apps/AppFilter';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -30,7 +31,6 @@ import { graphql } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
-import { AppFilter } from '@/components/apps/AppFilter';
 
 const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -85,7 +85,10 @@ function TargetAppVersionContent(props: {
   appVersion: string;
 }) {
   const router = useRouter();
-  const search = typeof router.latestLocation.search.search === 'string' ? router.latestLocation.search.search : '';
+  const search =
+    typeof router.latestLocation.search.search === 'string'
+      ? router.latestLocation.search.search
+      : '';
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -108,7 +111,7 @@ function TargetAppVersionContent(props: {
       after: null,
       documentsFilter: {
         operationName: debouncedSearch,
-      }
+      },
     },
   });
   const client = useClient();
@@ -214,7 +217,7 @@ function TargetAppVersionContent(props: {
             </>
           }
         >
-          <AppFilter/>
+          <AppFilter />
         </SubPageLayoutHeader>
         <div className="mt-4" />
         {data.fetching || data.stale ? (
@@ -226,7 +229,11 @@ function TargetAppVersionContent(props: {
           </div>
         ) : !data.data?.target?.appDeployment?.documents?.edges.length ? (
           <EmptyList
-            title={debouncedSearch ? "No documents found matching that operation name" : "No documents have been uploaded for this app deployment"}
+            title={
+              debouncedSearch
+                ? 'No documents found matching that operation name'
+                : 'No documents have been uploaded for this app deployment'
+            }
             description="You can upload documents via the Hive CLI"
             docsUrl="/features/schema-registry#app-deplyments"
           />

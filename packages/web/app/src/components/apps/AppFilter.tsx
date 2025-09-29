@@ -1,6 +1,6 @@
-import { useRouter } from "@tanstack/react-router";
-import { Input } from '@/components/ui/input'
-import { useCallback } from "react";
+import { useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { useRouter } from '@tanstack/react-router';
 
 export function AppFilter() {
   const router = useRouter();
@@ -12,11 +12,12 @@ export function AppFilter() {
       },
       replace: true,
     });
-  }, [])
-  const initialValue = 'search' in router.latestLocation.search &&
+  }, []);
+  const initialValue =
+    'search' in router.latestLocation.search &&
     typeof router.latestLocation.search.search === 'string'
       ? router.latestLocation.search.search
-      : ''
+      : '';
 
   return (
     <Input
