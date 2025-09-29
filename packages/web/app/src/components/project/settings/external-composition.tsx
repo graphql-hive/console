@@ -337,56 +337,58 @@ export const ExternalCompositionSettings = (props: {
       <div className="flex justify-between">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="endpoint"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>HTTP Endpoint</FormLabel>
-                  <FormDescription>A POST request will be sent to that endpoint</FormDescription>
-                  <div className="flex w-full items-center space-x-2">
+            <div className="flex flex-wrap gap-x-12 gap-y-4">
+              <FormField
+                control={form.control}
+                name="endpoint"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>HTTP Endpoint</FormLabel>
+                    <FormDescription>A POST request will be sent to that endpoint</FormDescription>
+                    <div className="flex w-full items-center space-x-2">
+                      <FormControl>
+                        <Input
+                          className="max-w-md shrink-0"
+                          placeholder="Endpoint"
+                          type="text"
+                          autoComplete="off"
+                          {...field}
+                        />
+                      </FormControl>
+                      {!form.formState.isDirty && project.externalSchemaComposition?.endpoint ? (
+                        <ExternalCompositionStatus
+                          projectSlug={project.slug}
+                          organizationSlug={organization.slug}
+                        />
+                      ) : null}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="secret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Secret</FormLabel>
+                    <FormDescription>
+                      The secret is needed to sign and verify the request.
+                    </FormDescription>
                     <FormControl>
                       <Input
-                        className="max-w-md shrink-0"
-                        placeholder="Endpoint"
-                        type="text"
+                        className="w-full max-w-md"
+                        placeholder="Secret"
+                        type="password"
                         autoComplete="off"
                         {...field}
                       />
                     </FormControl>
-                    {!form.formState.isDirty && project.externalSchemaComposition?.endpoint ? (
-                      <ExternalCompositionStatus
-                        projectSlug={project.slug}
-                        organizationSlug={organization.slug}
-                      />
-                    ) : null}
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="secret"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Secret</FormLabel>
-                  <FormDescription>
-                    The secret is needed to sign and verify the request.
-                  </FormDescription>
-                  <FormControl>
-                    <Input
-                      className="w-full max-w-md"
-                      placeholder="Secret"
-                      type="password"
-                      autoComplete="off"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             {mutationError && (
               <div className="mt-2 text-xs text-red-500">{mutationError.message}</div>
             )}
