@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import { produce } from 'immer';
 import { ChevronRightIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { ArrowDownIcon } from '@/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -150,6 +152,14 @@ export function ResourceSelector(props: {
   // whether we show the service or apps in the last tab
   const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
+  const toggleServiceAppsState = () => {
+    const state =
+      serviceAppsState === ServicesAppsState.apps
+        ? ServicesAppsState.service
+        : ServicesAppsState.apps;
+    setServiceAppsState(state);
+  };
+
   const projectState = useMemo(() => {
     if (props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
       return null;
@@ -200,6 +210,7 @@ export function ResourceSelector(props: {
                 targets: [],
               },
             });
+            setBreadcrumb({ projectId: item.id });
           }),
         );
       },
@@ -329,6 +340,7 @@ export function ResourceSelector(props: {
                 services: [],
               },
             });
+            setBreadcrumb({ projectId: project.projectId, targetId: item.id });
           }),
         );
       },
@@ -386,8 +398,7 @@ export function ResourceSelector(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organizationProjectTarget.data?.organization?.project ||
-      serviceAppsState !== ServicesAppsState.service
+      !organizationProjectTarget.data?.organization?.project
     ) {
       return null;
     }
@@ -494,20 +505,13 @@ export function ResourceSelector(props: {
         );
       },
     };
-  }, [
-    targetState?.activeTarget,
-    breadcrumb,
-    projectState?.activeProject,
-    props.selection,
-    serviceAppsState,
-  ]);
+  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject, props.selection]);
 
   const appsState = useMemo(() => {
     if (
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      serviceAppsState !== ServicesAppsState.apps ||
       !organization.isAppDeploymentsEnabled
     ) {
       return null;
@@ -597,7 +601,6 @@ export function ResourceSelector(props: {
       },
     };
   }, [
-    serviceAppsState,
     projectState?.activeProject,
     targetState?.activeTarget,
     breadcrumb?.targetId,
@@ -656,90 +659,73 @@ export function ResourceSelector(props: {
                 <div className="flex flex-1 items-baseline border-l border-t border-transparent border-l-inherit border-t-inherit px-2 py-1">
                   <div className="font-bold">Targets</div>
                   {targetState && (
-                    <div className="ml-auto text-xs">
-                      <button
-                        className={cn(targetState.selection !== '*' && 'text-orange-500')}
-                        onClick={targetState.setGranular}
-                      >
-                        Select
-                      </button>
-                      {' / '}
-                      <button
-                        className={cn(targetState.selection === '*' && 'text-orange-500')}
-                        onClick={targetState.setAll}
-                      >
-                        All
-                      </button>
+                    <div className="ml-auto flex items-center text-xs">
+                      <span className="mr-1">All</span>
+                      <Checkbox
+                        className="size-4"
+                        title="All"
+                        checked={targetState.selection === '*'}
+                        onClick={() => {
+                          const isChecked = targetState.selection === '*';
+                          if (isChecked) {
+                            targetState.setGranular();
+                          } else {
+                            targetState.setAll();
+                          }
+                        }}
+                      />
                     </div>
                   )}
                 </div>
                 <div className="flex flex-1 items-baseline rounded-tr-sm border-x border-t border-transparent border-x-inherit border-t-inherit px-2 py-1">
-                  <span className="font-bold">
-                    {organization.isAppDeploymentsEnabled ? (
-                      <>
-                        <button
-                          className={cn(
-                            serviceAppsState === ServicesAppsState.service && 'text-orange-500',
-                          )}
-                          onClick={() => setServiceAppsState(ServicesAppsState.service)}
-                        >
-                          Services
-                        </button>{' '}
-                        /{' '}
-                        <button
-                          className={cn(
-                            serviceAppsState === ServicesAppsState.apps && 'text-orange-500',
-                          )}
-                          onClick={() => setServiceAppsState(ServicesAppsState.apps)}
-                        >
-                          Apps
-                        </button>
-                      </>
-                    ) : (
-                      <>Services</>
-                    )}
-                  </span>
-                  {/** Service All / Granular Toggle */}
-                  {serviceState &&
-                    serviceState !== 'none' &&
-                    serviceAppsState === ServicesAppsState.service && (
-                      <div className="ml-auto text-xs">
-                        <button
-                          className={cn(serviceState.selection !== '*' && 'text-orange-500')}
-                          onClick={serviceState.setGranular}
-                        >
-                          Select
-                        </button>
-                        {' / '}
-                        <button
-                          className={cn(
-                            'mr-1',
-                            serviceState.selection === '*' && 'text-orange-500',
-                          )}
-                          onClick={serviceState.setAll}
-                        >
-                          All
-                        </button>
+                  <div className="flex grow items-center">
+                    <span className="font-bold">
+                      {organization.isAppDeploymentsEnabled ? (
+                        <>
+                          <button className="flex items-center" onClick={toggleServiceAppsState}>
+                            <ArrowDownIcon
+                              className={cn(
+                                'size-4',
+                                serviceAppsState !== ServicesAppsState.service && '-rotate-90',
+                              )}
+                            />
+                            Services
+                            <span className="ml-1 text-xs font-normal">
+                              {serviceAppsState === ServicesAppsState.apps &&
+                              serviceState &&
+                              serviceState !== 'none' &&
+                              serviceState.selection !== '*'
+                                ? `(${serviceState.selection.selected.length} selected)`
+                                : ''}
+                            </span>
+                          </button>
+                        </>
+                      ) : (
+                        <>Services</>
+                      )}
+                    </span>
+                    {/** Service All / Granular Toggle */}
+                    {serviceState && serviceState !== 'none' && (
+                      <div className="ml-auto flex items-center text-xs">
+                        <span className="mr-1">All</span>
+                        <Checkbox
+                          className="size-4"
+                          title="All"
+                          checked={serviceState.selection === '*'}
+                          onClick={() => {
+                            const isChecked = serviceState.selection === '*';
+                            if (isChecked) {
+                              serviceState.setGranular();
+                            } else {
+                              serviceState.setAll();
+                            }
+                            // expand services area on toggle
+                            setServiceAppsState(ServicesAppsState.service);
+                          }}
+                        />
                       </div>
                     )}
-                  {/** Apps All / Granular Toggle */}
-                  {appsState && serviceAppsState === ServicesAppsState.apps && (
-                    <div className="ml-auto text-xs">
-                      <button
-                        className={cn(appsState.selection !== '*' && 'text-orange-500')}
-                        onClick={appsState.setGranular}
-                      >
-                        Select
-                      </button>
-                      {' / '}
-                      <button
-                        className={cn('mr-1', appsState.selection === '*' && 'text-orange-500')}
-                        onClick={appsState.setAll}
-                      >
-                        All
-                      </button>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
               <div className="mt-0 flex min-h-[250px] flex-wrap rounded-sm">
@@ -857,159 +843,207 @@ export function ResourceSelector(props: {
                   )}
                 </div>
 
-                {/** Services Content */}
-                {serviceAppsState === ServicesAppsState.service && (
-                  <div className="flex flex-1 flex-col border-y border-r pt-2">
-                    {projectState.activeProject?.projectSelection.targets.mode ===
-                    GraphQLSchema.ResourceAssignmentModeType.All ? (
-                      <div className="text-muted-foreground px-2 text-xs">
-                        Access to all services of projects targets granted.
-                      </div>
-                    ) : serviceState === null ? (
-                      <div className="text-muted-foreground px-2 text-xs">
-                        Select a target for adjusting the service access.
-                      </div>
-                    ) : (
-                      <>
-                        {serviceState === 'none' ? (
-                          <div className="text-muted-foreground text-xs">
-                            Project is monolithic and has no services.
-                          </div>
-                        ) : serviceState.selection === '*' ? (
-                          <div className="text-muted-foreground px-2 text-xs">
-                            Access to all services in target granted.
-                          </div>
-                        ) : (
-                          <>
-                            <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
-                              access granted
+                <div className="flex flex-1 flex-col border-y border-r">
+                  {/** Services Content */}
+                  {serviceAppsState === ServicesAppsState.service && (
+                    <div className="py-2">
+                      {projectState.activeProject?.projectSelection.targets.mode ===
+                      GraphQLSchema.ResourceAssignmentModeType.All ? (
+                        <div className="text-muted-foreground px-2 text-xs">
+                          Access to all services of projects targets granted.
+                        </div>
+                      ) : serviceState === null ? (
+                        <div className="text-muted-foreground px-2 text-xs">
+                          Select a target for adjusting the service access.
+                        </div>
+                      ) : (
+                        <>
+                          {serviceState === 'none' ? (
+                            <div className="text-muted-foreground px-2 text-xs">
+                              Project is monolithic and has no services.
                             </div>
-                            {serviceState.selection.selected.length ? (
-                              serviceState.selection.selected.map(service => (
+                          ) : serviceState.selection === '*' ? (
+                            <div className="text-muted-foreground px-2 text-xs">
+                              Access to all services in target granted.
+                            </div>
+                          ) : (
+                            <>
+                              <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                                access granted
+                              </div>
+                              {serviceState.selection.selected.length ? (
+                                serviceState.selection.selected.map(service => (
+                                  <RowItem
+                                    key={service.serviceName}
+                                    title={service.serviceName}
+                                    isActive={false}
+                                    onDelete={() => serviceState.removeService(service.serviceName)}
+                                  />
+                                ))
+                              ) : (
+                                <div className="px-2 text-xs">None</div>
+                              )}
+                              <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                                Not selected
+                              </div>
+                              {serviceState.selection.notSelected.map(serviceName => (
                                 <RowItem
-                                  key={service.serviceName}
-                                  title={service.serviceName}
+                                  key={serviceName}
+                                  title={serviceName}
                                   isActive={false}
-                                  onDelete={() => serviceState.removeService(service.serviceName)}
+                                  onClick={() => serviceState.addService(serviceName)}
                                 />
-                              ))
-                            ) : (
-                              <div className="px-2 text-xs">None</div>
-                            )}
-                            <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
-                              Not selected
-                            </div>
-                            {serviceState.selection.notSelected.map(serviceName => (
-                              <RowItem
-                                key={serviceName}
-                                title={serviceName}
-                                isActive={false}
-                                onClick={() => serviceState.addService(serviceName)}
+                              ))}
+                              <input
+                                placeholder="Add service by name"
+                                className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                                name="serviceName"
+                                onKeyPress={ev => {
+                                  if (ev.key !== 'Enter') {
+                                    return;
+                                  }
+                                  ev.preventDefault();
+                                  const input: HTMLInputElement = ev.currentTarget;
+                                  const serviceName = input.value.trim().toLowerCase();
+
+                                  if (!serviceName) {
+                                    return;
+                                  }
+
+                                  serviceState.addService(serviceName);
+                                  input.value = '';
+                                }}
                               />
-                            ))}
-                            <input
-                              placeholder="Add service by name"
-                              className="mx-2 mt-1 max-w-[70%] border-b text-sm"
-                              name="serviceName"
-                              onKeyPress={ev => {
-                                if (ev.key !== 'Enter') {
-                                  return;
-                                }
-                                ev.preventDefault();
-                                const input: HTMLInputElement = ev.currentTarget;
-                                const serviceName = input.value.trim().toLowerCase();
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
 
-                                if (!serviceName) {
-                                  return;
+                  {/** Apps Content */}
+                  {organization.isAppDeploymentsEnabled ? (
+                    <div
+                      className={cn(
+                        'flex items-baseline border-b border-transparent border-y-inherit px-2 py-1',
+                        serviceAppsState !== ServicesAppsState.apps && 'border-t',
+                      )}
+                    >
+                      <div className="flex grow items-center">
+                        <button
+                          className="flex items-center text-sm font-bold"
+                          onClick={toggleServiceAppsState}
+                        >
+                          <ArrowDownIcon
+                            className={cn(
+                              'size-4',
+                              serviceAppsState !== ServicesAppsState.apps && '-rotate-90',
+                            )}
+                          />
+                          Apps
+                          <span className="ml-1 text-xs font-normal">
+                            {serviceAppsState === ServicesAppsState.service &&
+                            typeof appsState?.selection === 'object'
+                              ? `(${appsState.selection.selected.length} selected)`
+                              : ''}
+                          </span>
+                        </button>
+                        {/** Apps All / Granular Toggle */}
+                        {appsState && (
+                          <div className="ml-auto flex items-center text-xs">
+                            <span className="mr-1">All</span>
+                            <Checkbox
+                              className="size-4"
+                              title="All"
+                              checked={appsState.selection === '*'}
+                              onClick={() => {
+                                const isChecked = appsState.selection === '*';
+                                if (isChecked) {
+                                  appsState.setGranular();
+                                } else {
+                                  appsState.setAll();
                                 }
-
-                                serviceState.addService(serviceName);
-                                input.value = '';
+                                // expand apps area on toggle
+                                setServiceAppsState(ServicesAppsState.apps);
                               }}
                             />
-                          </>
+                          </div>
                         )}
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/** Apps Content */}
-                {serviceAppsState === ServicesAppsState.apps && (
-                  <div className="flex flex-1 flex-col border-y border-r pt-2">
-                    {projectState.activeProject?.projectSelection.targets.mode ===
-                    GraphQLSchema.ResourceAssignmentModeType.All ? (
-                      <div className="text-muted-foreground px-2 text-xs">
-                        Access to all apps of projects targets granted.
                       </div>
-                    ) : appsState === null ? (
-                      <div className="text-muted-foreground px-2 text-xs">
-                        Select a target for adjusting the apps access.
-                      </div>
-                    ) : (
-                      <>
-                        {serviceState === 'none' ? (
-                          <div className="text-muted-foreground text-xs">
-                            Project is monolithic and has no services.
-                          </div>
-                        ) : appsState.selection === '*' ? (
-                          <div className="text-muted-foreground px-2 text-xs">
-                            Access to all apps in target granted.
-                          </div>
-                        ) : (
-                          <>
-                            <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
-                              access granted
+                    </div>
+                  ) : null}
+                  {serviceAppsState === ServicesAppsState.apps && (
+                    <div className="py-2">
+                      {projectState.activeProject?.projectSelection.targets.mode ===
+                      GraphQLSchema.ResourceAssignmentModeType.All ? (
+                        <div className="text-muted-foreground px-2 text-xs">
+                          Access to all apps of projects targets granted.
+                        </div>
+                      ) : appsState === null ? (
+                        <div className="text-muted-foreground px-2 text-xs">
+                          Select a target for adjusting the apps access.
+                        </div>
+                      ) : (
+                        <>
+                          {appsState.selection === '*' ? (
+                            <div className="text-muted-foreground px-2 text-xs">
+                              Access to all apps in target granted.
                             </div>
-                            {appsState.selection.selected.length ? (
-                              appsState.selection.selected.map(app => (
+                          ) : (
+                            <>
+                              <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                                access granted
+                              </div>
+                              {appsState.selection.selected.length ? (
+                                appsState.selection.selected.map(app => (
+                                  <RowItem
+                                    key={app.appDeployment}
+                                    title={app.appDeployment}
+                                    isActive={false}
+                                    onDelete={() => appsState.removeApp(app.appDeployment)}
+                                  />
+                                ))
+                              ) : (
+                                <div className="px-2 text-xs">None</div>
+                              )}
+                              <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                                Not selected
+                              </div>
+                              {appsState.selection.notSelected.map(serviceName => (
                                 <RowItem
-                                  key={app.appDeployment}
-                                  title={app.appDeployment}
+                                  key={serviceName}
+                                  title={serviceName}
                                   isActive={false}
-                                  onDelete={() => appsState.removeApp(app.appDeployment)}
+                                  onClick={() => appsState.addApp(serviceName)}
                                 />
-                              ))
-                            ) : (
-                              <div className="px-2 text-xs">None</div>
-                            )}
-                            <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
-                              Not selected
-                            </div>
-                            {appsState.selection.notSelected.map(serviceName => (
-                              <RowItem
-                                key={serviceName}
-                                title={serviceName}
-                                isActive={false}
-                                onClick={() => appsState.addApp(serviceName)}
+                              ))}
+                              <input
+                                placeholder="Add app by name"
+                                className="mx-2 mt-1 max-w-[70%] border-b text-sm"
+                                name="appName"
+                                onKeyPress={ev => {
+                                  if (ev.key !== 'Enter') {
+                                    return;
+                                  }
+                                  ev.preventDefault();
+                                  const input: HTMLInputElement = ev.currentTarget;
+                                  const appName = input.value.trim().toLowerCase();
+
+                                  if (!appName) {
+                                    return;
+                                  }
+
+                                  appsState.addApp(appName);
+                                  input.value = '';
+                                }}
                               />
-                            ))}
-                            <input
-                              placeholder="Add app by name"
-                              className="mx-2 mt-1 max-w-[70%] border-b text-sm"
-                              name="appName"
-                              onKeyPress={ev => {
-                                if (ev.key !== 'Enter') {
-                                  return;
-                                }
-                                ev.preventDefault();
-                                const input: HTMLInputElement = ev.currentTarget;
-                                const appName = input.value.trim().toLowerCase();
-
-                                if (!appName) {
-                                  return;
-                                }
-
-                                appsState.addApp(appName);
-                                input.value = '';
-                              }}
-                            />
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex h-5 items-center text-sm">

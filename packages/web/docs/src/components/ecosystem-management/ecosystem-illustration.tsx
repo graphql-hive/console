@@ -113,7 +113,7 @@ export function EcosystemIllustration(props: { className?: string }) {
                 <span className={styles.smHidden}>Hive</span> Gateway
               </>
             }
-            description="Gateway"
+            description="GraphQL Router"
             edges={[1, 4, 5]}
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
@@ -131,8 +131,12 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Edge>
           <Node
             className="h-[var(--big-node-h)] w-[var(--node-w)] flex-col text-center"
-            title="Hive"
-            description="Registry and CDN"
+            title={
+              <>
+                <span className={styles.smHidden}>Hive</span> Console
+              </>
+            }
+            description="Schema Registry and CDN"
             edges={[3, 4, 6]}
             highlightedEdge={highlightedEdge}
             onHighlight={onHighlightNode}
@@ -183,7 +187,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           <Node
             title="Client"
             description={
-              <span className="[@media(max-width:1438px)]:hidden">GraphQL client of choice</span>
+              <span className="[@media(max-width:1438px)]:hidden">GraphQL Client of Choice</span>
             }
             edges={[1, 2]}
             highlightedEdge={highlightedEdge}

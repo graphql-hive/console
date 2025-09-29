@@ -52,12 +52,17 @@ export default withGuildDocs({
     },
     {
       source: '/docs/features/registry-usage',
-      destination: '/docs/high-availability-cdn',
+      destination: '/docs/schema-registry/high-availability-cdn',
       permanent: true,
     },
     {
       source: '/docs/features/high-availability-cdn',
-      destination: '/docs/high-availability-cdn',
+      destination: '/docs/schema-registry/high-availability-cdn',
+      permanent: true,
+    },
+    {
+      source: '/docs/high-availability-cdn',
+      destination: '/docs/schema-registry/high-availability-cdn',
       permanent: true,
     },
     {
@@ -102,7 +107,7 @@ export default withGuildDocs({
     },
     {
       source: '/docs/self-hosting/apollo-federation-2',
-      destination: '/docs/self-hosting/external-composition',
+      destination: '/docs/schema-registry/self-hosting/external-composition',
       permanent: true,
     },
     {
@@ -121,8 +126,8 @@ export default withGuildDocs({
       permanent: true,
     },
     {
-      source: '/docs/features/laboratory',
-      destination: '/docs/dashboard/laboratory',
+      source: '/docs/features/laboratory/:path*',
+      destination: '/docs/schema-registry/laboratory/:path*',
       permanent: true,
     },
     {
@@ -146,9 +151,34 @@ export default withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/specs/link-specifications',
+      destination: '/docs/api-reference/link-specifications',
+      permanent: true,
+    },
+    {
+      source: '/docs/graphql-api/:path*',
+      destination: '/docs/api-reference/graphql-api/:path*',
+      permanent: true,
+    },
+    {
+      source: '/docs/specs/usage-reports',
+      destination: '/docs/api-reference/usage-reports',
+      permanent: true,
+    },
+    {
+      source: '/docs/get-started/:path*',
+      destination: '/docs/schema-registry/get-started/:path*',
+      permanent: true,
+    },
+    {
+      source: '/docs/management/:path*',
+      destination: '/docs/schema-registry/management/:path*',
+      permanent: true,
+    },
+    {
       // SEO: Redirect to the new URL
       source: '/docs/self-hosting/federation-2',
-      destination: '/docs/self-hosting/external-composition',
+      destination: '/docs/schema-registry/self-hosting/external-composition',
       permanent: true,
     },
     {
@@ -169,12 +199,27 @@ export default withGuildDocs({
     },
     {
       source: '/docs/self-hosting',
-      destination: '/docs/self-hosting/get-started',
+      destination: '/docs/schema-registry/self-hosting/get-started',
       permanent: true,
     },
     {
       source: '/docs/dashboard',
-      destination: '/docs/dashboard/insights',
+      destination: '/docs/schema-registry/usage-reporting',
+      permanent: true,
+    },
+    {
+      source: '/docs/dashboard/insights',
+      destination: '/docs/schema-registry/usage-reporting',
+      permanent: true,
+    },
+    {
+      source: '/docs/dashboard/explorer',
+      destination: '/docs/schema-registry/explorer',
+      permanent: true,
+    },
+    {
+      source: '/docs/dashboard/laboratory/:path*',
+      destination: '/docs/schema-registry/laboratory/:path*',
       permanent: true,
     },
     {
@@ -245,6 +290,11 @@ export default withGuildDocs({
     {
       source: '/docs/gateway/other-features/performance/deduplicate-request',
       destination: '/docs/gateway/other-features/performance/deduplicate-inflight-requests',
+      permanent: true,
+    },
+    {
+      source: '/docs/self-hosting/:path*',
+      destination: '/docs/schema-registry/self-hosting/:path*',
       permanent: true,
     },
   ],
