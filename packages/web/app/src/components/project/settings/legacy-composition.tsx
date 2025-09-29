@@ -114,7 +114,7 @@ export function LegacyCompositionSettings(props: {
         description: `Your project is no longer using ${
           previousCompositionMode === 'external'
             ? 'external schema composition.'
-            : 'our Open Source composition library for Apollo Federation.'
+            : 'our Open Source composition library for GraphQL Federation.'
         }`,
       });
     } catch (error) {

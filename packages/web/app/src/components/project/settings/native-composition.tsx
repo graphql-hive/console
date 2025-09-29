@@ -218,7 +218,7 @@ export function NativeCompositionSettings(props: {
       toast({
         title: 'Successfully enabled native composition',
         description:
-          'Your project is now using our Open Source composition library for Apollo Federation.',
+          'Your project is now using our Open Source composition library for GraphQL Federation.',
       });
     } catch (error) {
       console.log('Failed to enable native composition');
@@ -242,7 +242,7 @@ export function NativeCompositionSettings(props: {
     <div className="flex flex-col items-start gap-y-6">
       <div>
         <p className="text-muted-foreground text-sm">
-          Recommended for most users. Use native Apollo Federation v2 composition for your project.
+          Recommended for most users. Use native GraphQL Federation v2 composition for your project.
         </p>
       </div>
 
@@ -329,7 +329,7 @@ export function NativeCompositionSettings(props: {
                   >
                     Open Source composition library
                   </a>{' '}
-                  for Apollo Federation.
+                  for GraphQL Federation.
                 </>
               ) : null}
               {projectQuery.data.project.nativeFederationCompatibility.status ===
@@ -391,7 +391,7 @@ export function NativeCompositionSettings(props: {
         <div>
           <Button variant="link" className="text-orange-500" asChild>
             <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
-              Learn more about risks and compatibility with Apollo Composition
+              Learn more about risks and compatibility with other composition libraries
             </a>
           </Button>
         </div>
