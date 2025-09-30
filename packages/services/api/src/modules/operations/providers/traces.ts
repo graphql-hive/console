@@ -241,6 +241,7 @@ export class Traces {
     const d = getBucketUnitAndCountNew(startDate, endDate);
 
     const [countStr, unit] = d.candidate.name.split(' ');
+
     const bucketStepFunctionName = {
       MINUTE: 'addMinutes',
       HOUR: 'addHours',
@@ -269,7 +270,8 @@ export class Traces {
           WHERE "system"."numbers"."number" < ${String(d.buckets)}
         )
         SELECT
-          replaceOne(concat(toDateTime64("time_bucket_list"."time_bucket", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucket"
+          replaceOne(concat(toDateTime64("time_bucket_list"."time_bucket", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucketStart"
+          , replaceOne(concat(toDateTime64("t"."time_bucket_end", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucketEnd"
           , coalesce("t"."ok_count_total", 0) as "okCountTotal"
           , coalesce("t"."error_count_total", 0) as "errorCountTotal"
           , coalesce("t"."ok_count_filtered", 0) as "okCountFiltered"
@@ -279,7 +281,8 @@ export class Traces {
         LEFT JOIN
         (
           SELECT
-            toStartOfInterval("timestamp", INTERVAL ${sql.raw(d.candidate.name)}) AS "time_bucket"
+            toStartOfInterval("timestamp", INTERVAL ${sql.raw(d.candidate.name)}) AS "time_bucket_start"
+            , toStartOfInterval("timestamp", INTERVAL ${sql.raw(d.candidate.name)}) + INTERVAL ${sql.raw(d.candidate.name)} - INTERVAL 1 SECOND AS "time_bucket_end"
             , sumIf(1, "graphql_error_count" = 0) AS "ok_count_total"
             , sumIf(1, "graphql_error_count" != 0) AS "error_count_total"
             , sumIf(1, "graphql_error_count" = 0 ${filterSQLFragment}) AS "ok_count_filtered"
@@ -291,9 +294,10 @@ export class Traces {
             AND "otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(startDate)}, 'UTC')
             AND "otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(endDate)}, 'UTC')
           GROUP BY
-            "time_bucket"
+            "time_bucket_start"
+            , "time_bucket_end"
           ) AS "t"
-        ON "t"."time_bucket" = "time_bucket_list"."time_bucket"
+        ON "t"."time_bucket_start" = "time_bucket_list"."time_bucket"
       `,
       queryId: `trace_status_breakdown_for_target_id_`,
       timeout: 10_000,
@@ -467,7 +471,8 @@ function buildTraceFilterSQLConditions(filter: TraceFilter, skipPeriod: boolean)
 const IntFromString = z.string().transform(value => parseInt(value, 10));
 
 const TraceStatusBreakdownBucket = z.object({
-  timeBucket: z.string(),
+  timeBucketStart: z.string(),
+  timeBucketEnd: z.string(),
   okCountTotal: IntFromString,
   errorCountTotal: IntFromString,
   okCountFiltered: IntFromString,

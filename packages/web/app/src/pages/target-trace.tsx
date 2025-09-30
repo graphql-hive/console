@@ -672,7 +672,6 @@ function SpanNode(props: SpanNodeProps) {
                   >
                     <div className="z-20">
                       <ExceptionTeaser
-                        key={event.id}
                         type={String(event.attributes['exception.type'] ?? '')}
                         message={String(event.attributes['exception.message'] ?? '')}
                         stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
@@ -700,7 +699,7 @@ function SpanNode(props: SpanNodeProps) {
               const isLastChild = i === arr.length - 1;
               return (
                 <SpanNode
-                  key={span.id}
+                  key={uchildSpan.id}
                   span={childSpan}
                   highlightedServiceName={props.highlightedServiceName}
                   leftPanelWidth={props.leftPanelWidth}
