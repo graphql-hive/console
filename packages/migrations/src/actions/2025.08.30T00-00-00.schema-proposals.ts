@@ -66,7 +66,7 @@ export default {
         (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4 ()
           , created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-          -- null if just a comment
+          -- reviews can also be tied to a stage transition event. If the review only contains comments, then this is null
           , stage_transition schema_proposal_stage NOT NULL
           , user_id UUID REFERENCES users (id) ON DELETE SET NULL
           , schema_proposal_id UUID NOT NULL REFERENCES schema_proposals (id) ON DELETE CASCADE
