@@ -15,9 +15,32 @@ import { Spinner } from '@/components/ui/spinner';
 import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
+import { useRedirect } from '@/lib/access/common';
 import { cn } from '@/lib/utils';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { useRouter, useSearch } from '@tanstack/react-router';
+
+const TargetProposalsQuery = graphql(`
+  query TargetProposalsQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        target: targetBySlug(targetSlug: $targetSlug) {
+          id
+          slug
+          viewerCanViewSchemaProposals
+        }
+      }
+    }
+  }
+`);
 
 export function TargetProposalsPage(props: {
   organizationSlug: string;
@@ -27,6 +50,30 @@ export function TargetProposalsPage(props: {
   filterStages?: string[];
   selectedProposalId?: string;
 }) {
+  const [query] = useQuery({
+    query: TargetProposalsQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+    },
+  });
+  const target = query.data?.organization?.project?.target;
+
+  useRedirect({
+    canAccess: target?.viewerCanViewSchemaProposals === true,
+    redirectTo: router => {
+      void router.navigate({
+        to: '/$organizationSlug/$projectSlug/$targetSlug',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      });
+    },
+    entity: target,
+  });
   return (
     <>
       <Meta title="Schema proposals" />
@@ -59,7 +106,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
             }
           />
         </div>
-        <div className="ml-auto mr-0 flex flex-col justify-center">
+        <div className="ml-auto mr-0 flex hidden flex-col justify-center">
+          {/* @todo implement */}
           <Button variant="default">Propose a change</Button>
         </div>
       </div>
@@ -177,11 +225,13 @@ const ProposalsListPage = (props: {
     <>
       {query.fetching ? <Spinner /> : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
-        <div className="mt-8 text-center">
-          <Title>
-            No proposals {hasFilter ? 'match your search criteria' : 'have been created yet'}
-          </Title>
-          <Subtitle>To get started, use the Hive CLI to propose a schema change.</Subtitle>
+        <div className="my-8 flex min-h-48 items-center text-center">
+          <div className="w-full">
+            <Title>
+              No proposals {hasFilter ? 'match your search criteria' : 'have been created yet'}
+            </Title>
+            <Subtitle>To get started, use the Hive CLI to propose a schema change.</Subtitle>
+          </div>
         </div>
       )}
       {query.data?.schemaProposals?.edges?.map(({ node: proposal }) => {

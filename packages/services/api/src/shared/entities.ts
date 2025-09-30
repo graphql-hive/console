@@ -190,6 +190,7 @@ export interface Organization {
      */
     forceLegacyCompositionInTargets: string[];
     appDeployments: boolean;
+    schemaProposals: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */

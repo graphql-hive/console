@@ -68,6 +68,7 @@ const TargetLayoutQuery = graphql(`
           viewerCanViewLaboratory
           viewerCanViewAppDeployments
           viewerCanAccessSettings
+          viewerCanViewSchemaProposals
         }
       }
     }
@@ -231,18 +232,20 @@ export const TargetLayout = ({
                         </Link>
                       </TabsTrigger>
                     )}
-                    <TabsTrigger variant="menu" value={Page.Proposals} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Proposals
-                      </Link>
-                    </TabsTrigger>
+                    {currentTarget.viewerCanViewSchemaProposals && (
+                      <TabsTrigger variant="menu" value={Page.Proposals} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                          }}
+                        >
+                          Proposals
+                        </Link>
+                      </TabsTrigger>
+                    )}
                     {currentTarget.viewerCanAccessSettings && (
                       <TabsTrigger variant="menu" value={Page.Settings} asChild>
                         <Link

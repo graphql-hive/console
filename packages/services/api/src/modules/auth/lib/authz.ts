@@ -430,7 +430,7 @@ const permissionsByLevel = {
     z.literal('appDeployment:publish'),
     z.literal('appDeployment:retire'),
   ],
-  schemaProposal: [z.literal('schemaProposal:modify')],
+  schemaProposal: [z.literal('schemaProposal:describe'), z.literal('schemaProposal:modify')],
 } as const;
 
 export const allPermissions = [
