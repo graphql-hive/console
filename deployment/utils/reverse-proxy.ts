@@ -303,6 +303,9 @@ export class Proxy {
             : undefined,
       },
       contour: {
+        image: {
+          repository: 'bitnamilegacy/contour',
+        },
         podAnnotations: {
           'prometheus.io/scrape': 'true',
           'prometheus.io/port': '8000',
