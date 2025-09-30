@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
@@ -230,7 +230,6 @@ function ChecksPageContent(props: {
   const [paginationVariables, setPaginationVariables] = useState<Array<string | null>>(() => [
     null,
   ]);
-  const [hasSchemaChecks, setHasSchemaChecks] = useState(false);
   const navigate = useNavigate();
   const { schemaCheckId } = useParams({
     strict: false /* allows to read the $schemaCheckId param of its child route */,
@@ -266,9 +265,15 @@ function ChecksPageContent(props: {
     );
   }
 
-  if (!hasSchemaChecks && !!query.data?.target?.schemaChecks?.edges?.length) {
-    setHasSchemaChecks(true);
-  }
+  const [hasSchemaChecks, setHasSchemaChecks] = useState(
+    !!query.data?.target?.schemaChecks?.edges?.length,
+  );
+  useEffect(() => {
+    if (!query.fetching && !query.stale) {
+      setHasSchemaChecks(!!query.data?.target?.schemaChecks?.edges?.length);
+    }
+  }, [query.fetching, query.stale, !query.data?.target?.schemaChecks?.edges?.length]);
+
   const hasFilteredSchemaChecks = !!query.data?.target?.filteredSchemaChecks?.edges?.length;
   const hasActiveSchemaCheck = !!schemaCheckId;
 
@@ -290,9 +295,11 @@ function ChecksPageContent(props: {
     });
   };
 
+  const loadMore = (cursor: string) => setPaginationVariables(cursors => [...cursors, cursor]);
+
   return (
     <>
-      <div>
+      <div className={cn(!hasActiveSchemaCheck && !hasSchemaChecks && 'w-full')}>
         <div className="w-[300px] py-6">
           <Title>Schema Checks</Title>
           <Subtitle>Recently checked schemas.</Subtitle>
@@ -337,14 +344,14 @@ function ChecksPageContent(props: {
                     schemaCheckId={schemaCheckId}
                     after={cursor}
                     isLastPage={index + 1 === paginationVariables.length}
-                    onLoadMore={cursor => setPaginationVariables(cursors => [...cursors, cursor])}
+                    onLoadMore={loadMore}
                     key={cursor ?? 'first'}
                     showOnlyChanged={showOnlyChanged}
                     showOnlyFailed={showOnlyFailed}
                   />
                 ))}
               </div>
-            ) : query.fetching || query.stale ? (
+            ) : query.fetching ? (
               <Spinner />
             ) : (
               <div className="my-4 cursor-default text-center text-sm text-gray-400">
@@ -357,19 +364,18 @@ function ChecksPageContent(props: {
         ) : (
           <div>
             <div className="cursor-default text-sm">
-              {hasActiveSchemaCheck ? (
-                'List is empty'
-              ) : (
+              {!hasActiveSchemaCheck && (
                 <NoSchemaVersion
                   projectType={query.data?.target?.project.type ?? null}
                   recommendedAction="check"
                 />
               )}
             </div>
-            <DocsLink href="/features/schema-registry#check-a-schema">
-              {hasActiveSchemaCheck
-                ? 'Check you first schema'
-                : 'Learn how to check your first schema with Hive CLI'}
+            <DocsLink
+              href="/features/schema-registry#check-a-schema"
+              className="flex flex-row items-center"
+            >
+              Learn how to check your first schema
             </DocsLink>
           </div>
         )}
