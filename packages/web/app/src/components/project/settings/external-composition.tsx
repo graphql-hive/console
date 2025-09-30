@@ -148,7 +148,7 @@ const ExternalCompositionStatus = ({
               onClick={e => e.preventDefault()}
             />
           </TooltipTrigger>
-          <TooltipContent side="left">Connecting...</TooltipContent>
+          <TooltipContent side="bottom">Connecting...</TooltipContent>
         </Tooltip>
       ) : (
         <Tooltip>
@@ -162,7 +162,7 @@ const ExternalCompositionStatus = ({
               }}
             />
           </TooltipTrigger>
-          <TooltipContent side="top" className="mr-1">
+          <TooltipContent side="bottom" className="mr-1">
             Execute test
           </TooltipContent>
         </Tooltip>
@@ -175,7 +175,7 @@ const ExternalCompositionStatus = ({
               onClick={e => e.preventDefault()}
             />
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-sm">
+          <TooltipContent side="bottom" className="max-w-sm">
             {error}
           </TooltipContent>
         </Tooltip>
@@ -188,7 +188,7 @@ const ExternalCompositionStatus = ({
               onClick={e => e.preventDefault()}
             />
           </TooltipTrigger>
-          <TooltipContent side="right" className="max-w-sm">
+          <TooltipContent side="bottom" className="max-w-sm">
             Service is available
           </TooltipContent>
         </Tooltip>
@@ -337,7 +337,7 @@ export const ExternalCompositionSettings = (props: {
       <div className="flex justify-between">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="flex flex-wrap gap-x-12 gap-y-4">
+            <div className="flex flex-wrap gap-x-24 gap-y-4">
               <FormField
                 control={form.control}
                 name="endpoint"
