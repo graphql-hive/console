@@ -361,6 +361,7 @@ function OrganizationPageContent(
             search: event.target.value,
           };
         },
+        replace: true,
       });
     },
     [router],

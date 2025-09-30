@@ -323,6 +323,7 @@ const ProjectsPageContent = (
             search: event.target.value,
           };
         },
+        replace: true,
       });
     },
     [router],
