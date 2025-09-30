@@ -447,7 +447,11 @@ export default gql`
     """
     The time bucket for the data
     """
-    timeBucket: DateTime!
+    timeBucketStart: DateTime!
+    """
+    The end of the time bucket for the data
+    """
+    timeBucketEnd: DateTime!
     """
     Total amount of ok traces in the bucket.
     """

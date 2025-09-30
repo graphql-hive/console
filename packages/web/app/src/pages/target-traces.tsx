@@ -40,6 +40,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from '@/components/ui/sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
@@ -92,7 +93,8 @@ const chartConfig = {
 
 const Traffic_TracesStatusBreakdownBucketFragment = graphql(`
   fragment Traffic_TracesStatusBreakdownBucketFragment on TraceStatusBreakdownBucket {
-    timeBucket
+    timeBucketStart
+    timeBucketEnd
     okCountTotal
     errorCountTotal
     okCountFiltered
@@ -110,7 +112,8 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     ok: b.okCountFiltered,
     error: b.errorCountFiltered,
     remaining: b.okCountTotal + b.errorCountTotal - b.okCountFiltered - b.errorCountFiltered,
-    timeBucket: b.timeBucket.substring(0, 10),
+    timeBucketStart: b.timeBucketStart,
+    timeBucketEnd: b.timeBucketEnd,
   }));
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
@@ -168,6 +171,17 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     setIsSelecting(false);
   }, [refAreaLeft, refAreaRight, navigate]);
 
+  function formatDate(str: string) {
+    return new Date(str).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short', // e.g., "Sep"
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false, // 24-hour format; set true for AM/PM
+    });
+  }
+
   return (
     <ChartContainer
       config={chartConfig}
@@ -183,29 +197,29 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
         data={data}
       >
         <XAxis
-          dataKey="timeBucket"
+          dataKey="timeBucketStart"
           tickLine={false}
           axisLine={false}
           tickMargin={8}
           minTickGap={32}
-          tickFormatter={value => {
-            const date = new Date(value);
-            return date.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-            });
+          tickFormatter={date => {
+            return formatDate(date);
           }}
         />
         <ChartTooltip
           content={
             <ChartTooltipContent
               className="w-[150px]"
-              labelFormatter={value => {
-                return new Date(value).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                });
+              labelFormatter={(_, data) => {
+                const payload = data[0]?.payload;
+
+                if (!payload) {
+                  return null;
+                }
+
+                return (
+                  formatDate(payload.timeBucketStart) + ' - ' + formatDate(payload.timeBucketEnd)
+                );
               }}
             />
           }
@@ -948,38 +962,55 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
 
   return (
     <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
-      {trace && (
-        <SheetHeader className="relative border-b border-gray-800 p-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="text-lg font-medium text-white">
-              {trace?.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
-              <span className="text-muted-foreground ml-2 font-mono font-normal">
-                {trace.id.substring(0, 4)}
+      <SheetHeader className="relative border-b border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <SheetTitle className="text-lg font-medium text-white">
+            {trace ? (
+              <>
+                {trace.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
+                <span className="text-muted-foreground ml-2 font-mono font-normal">
+                  {trace.id.substring(0, 4)}
+                </span>
+              </>
+            ) : (
+              <Skeleton className="inline-block h-5 w-[260px]" />
+            )}
+          </SheetTitle>
+        </div>
+        <SheetDescription className="mt-1 text-xs text-gray-400">
+          Trace ID:{' '}
+          {trace?.id ? (
+            <>
+              <span className="font-mono"> {trace.id}</span>
+              <CopyIconButton value={trace.id} label="Copy Trace ID" />
+            </>
+          ) : (
+            <Skeleton className="inline-block h-4 w-[200px]" />
+          )}
+        </SheetDescription>
+        <div className="mt-2 flex items-center gap-3 text-xs">
+          {trace ? (
+            <>
+              <div className="flex items-center gap-1">
+                <Clock className="size-3 text-gray-400" />
+                <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
+              </div>
+              <Badge
+                variant="outline"
+                className={cn(
+                  'rounded-sm border-0 px-1 font-medium uppercase',
+                  trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
+                )}
+              >
+                {trace.success ? 'Ok' : 'Error'}
+              </Badge>
+              <span className="font-mono uppercase text-gray-300">
+                {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
               </span>
-            </SheetTitle>
-          </div>
-          <SheetDescription className="mt-1 text-xs text-gray-400">
-            Trace ID: <span className="font-mono">{trace.id}</span>
-            <CopyIconButton value={trace.id} label="Copy Trace ID" />
-          </SheetDescription>
-          <div className="mt-2 flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1">
-              <Clock className="size-3 text-gray-400" />
-              <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
-            </div>
-            <Badge
-              variant="outline"
-              className={cn(
-                'rounded-sm border-0 px-1 font-medium uppercase',
-                trace.success ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400',
-              )}
-            >
-              {trace.success ? 'Ok' : 'Error'}
-            </Badge>
-            <span className="font-mono uppercase text-gray-300">
-              {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
-            </span>
-          </div>
+            </>
+          ) : (
+            <Skeleton className="inline-block h-4 w-[150px]" />
+          )}
           <Button asChild variant="outline" size="sm">
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
@@ -995,8 +1026,8 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               Full Trace
             </Link>
           </Button>
-        </SheetHeader>
-      )}
+        </div>
+      </SheetHeader>
       {trace && (
         <ImportedTraceSheet
           activeSpanId={null}
