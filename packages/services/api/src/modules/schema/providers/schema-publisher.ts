@@ -27,6 +27,7 @@ import {
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
+import { SchemaProposalStorage } from '../../proposals/providers/schema-proposal-storage';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -87,7 +88,9 @@ const schemaDeleteCount = new promClient.Counter({
   labelNames: ['model', 'projectType'],
 });
 
-export type CheckInput = Types.SchemaCheckInput;
+export type CheckInput = Types.SchemaCheckInput & {
+  schemaProposalId?: string | null;
+};
 
 export type DeleteInput = Types.SchemaDeleteInput;
 
@@ -142,6 +145,7 @@ export class SchemaPublisher {
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
     private alertsManager: AlertsManager,
+    private schemaProposals: SchemaProposalStorage,
     private gitHubIntegrationManager: GitHubIntegrationManager,
     private distributedCache: DistributedCache,
     private artifactStorageWriter: ArtifactStorageWriter,
@@ -313,7 +317,7 @@ export class SchemaPublisher {
       },
     });
 
-    const [target, project, organization, latestVersion, latestComposableVersion] =
+    const [target, project, organization, latestVersion, latestComposableVersion, schemaProposal] =
       await Promise.all([
         this.storage.getTarget({
           organizationId: selector.organizationId,
@@ -338,7 +342,27 @@ export class SchemaPublisher {
           targetId: selector.targetId,
           onlyComposable: true,
         }),
+        input.schemaProposalId
+          ? this.schemaProposals.getProposal({
+              id: input.schemaProposalId,
+            })
+          : null,
       ]);
+
+    if (input.schemaProposalId && schemaProposal?.targetId !== selector.targetId) {
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message:
+              'Invalid schema proposal reference. No proposal found with that ID for the target.',
+          },
+        ],
+      } as const;
+    }
 
     if (input.service) {
       let serviceExists = false;
@@ -462,6 +486,7 @@ export class SchemaPublisher {
       }
 
       if (github != null) {
+        // @todo should proposals do anything special here?
         const result = await this.createGithubCheckRunStartForSchemaCheck({
           organization,
           project,
@@ -700,6 +725,7 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId,
       });
       this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
@@ -745,6 +771,7 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId,
       });
       this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
@@ -822,6 +849,7 @@ export class SchemaPublisher {
               })),
             )
           : null,
+        schemaProposalId: input.schemaProposalId,
       });
       this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }

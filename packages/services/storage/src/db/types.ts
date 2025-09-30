@@ -11,6 +11,7 @@ export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
+export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
 
 export interface alert_channels {
@@ -276,6 +277,7 @@ export interface schema_checks {
   schema_composition_errors: any | null;
   schema_policy_errors: any | null;
   schema_policy_warnings: any | null;
+  schema_proposal_id: string | null;
   schema_sdl: string | null;
   schema_sdl_store_id: string | null;
   schema_version_id: string | null;
@@ -316,6 +318,39 @@ export interface schema_policy_config {
   resource_id: string;
   resource_type: schema_policy_resource;
   updated_at: Date;
+}
+
+export interface schema_proposal_comments {
+  body: string;
+  created_at: Date;
+  id: string;
+  schema_proposal_review_id: string | null;
+  updated_at: Date;
+  user_id: string | null;
+}
+
+export interface schema_proposal_reviews {
+  created_at: Date;
+  id: string;
+  line_text: string | null;
+  resolved_by_user_id: string | null;
+  schema_coordinate: string | null;
+  schema_proposal_id: string;
+  service_name: string;
+  stage_transition: schema_proposal_stage;
+  user_id: string | null;
+}
+
+export interface schema_proposals {
+  comments_count: number;
+  created_at: Date;
+  description: string;
+  id: string;
+  stage: schema_proposal_stage;
+  target_id: string;
+  title: string;
+  updated_at: Date;
+  user_id: string | null;
 }
 
 export interface schema_version_changes {
@@ -451,6 +486,9 @@ export interface DBTables {
   schema_coordinate_status: schema_coordinate_status;
   schema_log: schema_log;
   schema_policy_config: schema_policy_config;
+  schema_proposal_comments: schema_proposal_comments;
+  schema_proposal_reviews: schema_proposal_reviews;
+  schema_proposals: schema_proposals;
   schema_version_changes: schema_version_changes;
   schema_version_to_log: schema_version_to_log;
   schema_versions: schema_versions;
