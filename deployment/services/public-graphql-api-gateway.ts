@@ -14,7 +14,7 @@ import { type Observability } from './observability';
  * Hive Gateway Docker Image Version
  * Bump this to update the used gateway version.
  */
-const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.7';
+const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.8';
 
 const gatewayConfigDirectory = path.resolve(
   __dirname,
