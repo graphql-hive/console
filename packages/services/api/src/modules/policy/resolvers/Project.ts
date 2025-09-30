@@ -3,7 +3,7 @@ import type { ProjectResolvers } from './../../../__generated__/types';
 
 export const Project: Pick<
   ProjectResolvers,
-  'parentSchemaPolicy' | 'schemaPolicy' | 'viewerCanModifySchemaPolicy' | '__isTypeOf'
+  'parentSchemaPolicy' | 'schemaPolicy' | 'viewerCanModifySchemaPolicy'
 > = {
   schemaPolicy: async (project, _, { injector }) =>
     injector.get(SchemaPolicyProvider).getProjectPolicy({
