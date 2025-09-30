@@ -93,8 +93,8 @@ importers:
         specifier: 2.29.7
         version: 2.29.7(@types/node@22.10.5)
       '@eddeee888/gcg-typescript-resolver-files':
-        specifier: 0.11.0
-        version: 0.11.0(encoding@0.1.13)(graphql@16.9.0)
+        specifier: 0.12.2
+        version: 0.12.2(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-codegen/add':
         specifier: 5.0.3
         version: 5.0.3(graphql@16.9.0)
@@ -3197,11 +3197,11 @@ packages:
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
     engines: {node: '>=10.0.0'}
 
-  '@eddeee888/gcg-server-config@0.2.2':
-    resolution: {integrity: sha512-/yOw8sZMObfZ5Esu8QD5RkcbBApD+QRP1r/syS2nAiUoZr5Nj05tNi8mQnR90suY4UIjEIO3KfkkN/vXpZ/1fA==}
+  '@eddeee888/gcg-server-config@0.2.3':
+    resolution: {integrity: sha512-8JL3tYZ9C0ZjAkMdwQlbwa7QHaOROqKg9IyauEYNjoiGeF7nSggINyBg0T8JkzWHwpHkP3W5nwPGVtSxxkaeWg==}
 
-  '@eddeee888/gcg-typescript-resolver-files@0.11.0':
-    resolution: {integrity: sha512-vrZZbsMhkVBPCVNMwJGpvkoMiN4Vk61wimduwywj3CCgc+i1MULZW34mDfCJEl1KzZIyw4QTUhByO89ZBBUaeA==}
+  '@eddeee888/gcg-typescript-resolver-files@0.12.2':
+    resolution: {integrity: sha512-sTLcf9QNXN03AmO8j3kUR5FNgOjqcXzsbQ0mCuLi70HhxCCURvCSUq6zunQCxzEcapIhR92b74U+QUp//mumRg==}
     peerDependencies:
       graphql: ^15.0.0 || ^16.0.0
 
@@ -18807,7 +18807,7 @@ snapshots:
 
   '@discoveryjs/json-ext@0.5.7': {}
 
-  '@eddeee888/gcg-server-config@0.2.2(encoding@0.1.13)(graphql@16.9.0)':
+  '@eddeee888/gcg-server-config@0.2.3(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
       '@graphql-codegen/typescript': 4.1.6(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-codegen/typescript-resolvers': 4.5.2(encoding@0.1.13)(graphql@16.9.0)
@@ -18818,11 +18818,11 @@ snapshots:
       - graphql-sock
       - supports-color
 
-  '@eddeee888/gcg-typescript-resolver-files@0.11.0(encoding@0.1.13)(graphql@16.9.0)':
+  '@eddeee888/gcg-typescript-resolver-files@0.12.2(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
-      '@eddeee888/gcg-server-config': 0.2.2(encoding@0.1.13)(graphql@16.9.0)
+      '@eddeee888/gcg-server-config': 0.2.3(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-codegen/add': 5.0.3(graphql@16.9.0)
-      '@graphql-codegen/plugin-helpers': 5.1.0(graphql@16.9.0)
+      '@graphql-codegen/plugin-helpers': 5.1.1(graphql@16.9.0)
       '@graphql-codegen/schema-ast': 4.1.0(patch_hash=2280c6d4f2e9268fc118d06dc95deea7e9b58200010db1b332004627d6793a9f)(graphql@16.9.0)
       '@graphql-codegen/typescript': 4.1.6(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-codegen/typescript-resolvers': 4.5.2(encoding@0.1.13)(graphql@16.9.0)
