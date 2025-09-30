@@ -34,8 +34,8 @@ const config: CodegenConfig = {
           contextType: 'GraphQLModules.ModuleContext',
           enumValues: {
             ProjectType: '../shared/entities#ProjectType',
-            NativeFederationCompatibilityStatus:
-              '../shared/entities#NativeFederationCompatibilityStatus',
+            NativeFederationCompatibilityStatusType:
+              '../shared/entities#NativeFederationCompatibilityStatusType',
             TargetAccessScope: '../modules/auth/providers/scopes#TargetAccessScope',
             ProjectAccessScope: '../modules/auth/providers/scopes#ProjectAccessScope',
             OrganizationAccessScope: '../modules/auth/providers/scopes#OrganizationAccessScope',

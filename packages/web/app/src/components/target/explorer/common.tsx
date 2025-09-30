@@ -312,7 +312,7 @@ export function GraphQLTypeCard(props: {
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 ? (
           <div className="flex flex-row items-center text-sm text-gray-500">
-            <div className="mr-2">implements</div>
+            <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
                 <GraphQLTypeAsLink

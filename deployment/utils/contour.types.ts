@@ -796,6 +796,10 @@ export interface ContourValues {
     defaultStorageClass?: string;
     imagePullSecrets?: unknown[];
     imageRegistry?: string;
+    security?: {
+      allowInsecureImages?: boolean;
+      [k: string]: unknown;
+    };
     storageClass?: string;
     [k: string]: unknown;
   };
@@ -858,5 +862,6 @@ export interface ContourValues {
     [k: string]: unknown;
   };
   tlsExistingSecret?: string;
+  useCertManager?: boolean;
   [k: string]: unknown;
 }

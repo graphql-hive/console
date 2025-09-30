@@ -2480,8 +2480,17 @@ export class SchemaPublisher {
     }
   }
 
-  private errorsToMarkdown(errors: ReadonlyArray<{ message: string }>): string {
-    return ['', ...errors.map(error => `- ${bolderize(error.message)}`)].join('\n');
+  private errorsToMarkdown(
+    errors: ReadonlyArray<{ message: string; isSafeBasedOnUsage?: boolean }>,
+  ): string {
+    return [
+      '',
+      ...errors.map(
+        error =>
+          `- ${bolderize(error.message)}` +
+          (error.isSafeBasedOnUsage ? ' (safe based on usage)' : ''),
+      ),
+    ].join('\n');
   }
 
   private warningsToMarkdown(warnings: SchemaCheckWarning[]): string {

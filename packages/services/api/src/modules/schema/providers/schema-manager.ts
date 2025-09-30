@@ -16,7 +16,7 @@ import { SchemaChecksFilter } from '../../../__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
 import {
   DateRange,
-  NativeFederationCompatibilityStatus,
+  NativeFederationCompatibilityStatusType,
   Organization,
   Project,
   ProjectType,
@@ -1136,7 +1136,18 @@ export class SchemaManager {
     return true;
   }
 
-  async getNativeFederationCompatibilityStatus(project: Project) {
+  async getNativeFederationCompatibilityStatus(project: Project): Promise<{
+    status: NativeFederationCompatibilityStatusType;
+    results: Array<null | {
+      schemaVersion: SchemaVersion;
+      target: Target;
+      nativeCompositionResult: {
+        supergraphSdl: string | null;
+        errors: Array<{ message: string }> | null;
+      };
+      currentSupergraphSdl: string;
+    }>;
+  }> {
     this.logger.debug(
       'Get native Federation compatibility status (organization=%s, project=%s)',
       project.orgId,
@@ -1144,7 +1155,10 @@ export class SchemaManager {
     );
 
     if (project.type !== ProjectType.FEDERATION) {
-      return NativeFederationCompatibilityStatus.NOT_APPLICABLE;
+      return {
+        status: NativeFederationCompatibilityStatusType.NOT_APPLICABLE,
+        results: [],
+      };
     }
 
     const targets = await this.targetManager.getTargets({
@@ -1152,48 +1166,39 @@ export class SchemaManager {
       projectId: project.id,
     });
 
-    const possibleVersions = await Promise.all(
-      targets.map(target => this.getMaybeLatestValidVersion(target)),
-    );
+    const results = await Promise.all(
+      targets.map(async target => {
+        const schemaVersion = await this.getMaybeLatestValidVersion(target);
 
-    const versions = possibleVersions.filter((v): v is SchemaVersion => !!v);
+        if (schemaVersion === null) {
+          return null;
+        }
 
-    this.logger.debug('Found %s targets and %s versions', targets.length, versions.length);
+        const currentSupergraphSdl = print(
+          removeDescriptions(
+            sortSDL(
+              parseGraphQLSource(
+                schemaVersion.supergraphSDL!,
+                'parsing native supergraph in getNativeFederationCompatibilityStatus',
+              ),
+            ),
+          ),
+        );
 
-    // If there are no composable versions available, we can't determine the compatibility status.
-    if (
-      versions.length === 0 ||
-      !versions.every(
-        version => version && version.isComposable && typeof version.supergraphSDL === 'string',
-      )
-    ) {
-      this.logger.debug('No composable versions available (status: unknown)');
-      return NativeFederationCompatibilityStatus.UNKNOWN;
-    }
+        const schemas = await this.getSchemasOfVersion({
+          organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
+          versionId: schemaVersion.id,
+        });
 
-    const schemasPerVersion = await Promise.all(
-      versions.map(async version =>
-        this.getSchemasOfVersion({
-          organizationId: version.organizationId,
-          projectId: version.projectId,
-          targetId: version.targetId,
-          versionId: version.id,
-        }),
-      ),
-    );
-
-    this.logger.debug('Checking compatibility of %s versions', versions.length);
-
-    const compatibilityResults = await Promise.all(
-      versions.map(async (version, i) => {
-        if (schemasPerVersion[i].length === 0) {
-          this.logger.debug('No schemas (version=%s)', version.id);
-          return NativeFederationCompatibilityStatus.UNKNOWN;
+        if (schemas.length === 0) {
+          return null;
         }
 
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(
           'federation',
-          ensureCompositeSchemas(schemasPerVersion[i]).map(s =>
+          ensureCompositeSchemas(schemas).map(s =>
             this.schemaHelper.createSchemaObject({
               sdl: s.sdl,
               service_name: s.service_name,
@@ -1209,53 +1214,52 @@ export class SchemaManager {
           },
         );
 
-        if (compositionResult.supergraph) {
-          const sortedExistingSupergraph = print(
-            removeDescriptions(
-              sortSDL(
-                parseGraphQLSource(
-                  compositionResult.supergraph,
-                  'parsing existing supergraph in getNativeFederationCompatibilityStatus',
+        const supergraphSdl = compositionResult.supergraph
+          ? print(
+              removeDescriptions(
+                sortSDL(
+                  parseGraphQLSource(
+                    compositionResult.supergraph,
+                    'parsing native supergraph in getNativeFederationCompatibilityStatus',
+                  ),
                 ),
               ),
-            ),
-          );
-          const sortedNativeSupergraph = print(
-            removeDescriptions(
-              sortSDL(
-                parseGraphQLSource(
-                  version.supergraphSDL!,
-                  'parsing native supergraph in getNativeFederationCompatibilityStatus',
-                ),
-              ),
-            ),
-          );
+            )
+          : null;
 
-          if (sortedNativeSupergraph === sortedExistingSupergraph) {
-            return NativeFederationCompatibilityStatus.COMPATIBLE;
-          }
-
-          this.logger.debug('Produced different supergraph (version=%s)', version.id);
-        } else {
-          this.logger.debug('Failed to produce supergraph (version=%s)', version.id);
-        }
-
-        return NativeFederationCompatibilityStatus.INCOMPATIBLE;
+        return {
+          target,
+          schemaVersion,
+          currentSupergraphSdl,
+          nativeCompositionResult: {
+            supergraphSdl,
+            errors: compositionResult.errors,
+          },
+        };
       }),
     );
 
-    if (compatibilityResults.includes(NativeFederationCompatibilityStatus.UNKNOWN)) {
-      this.logger.debug('One of the versions seems empty (status: unknown)');
-      return NativeFederationCompatibilityStatus.UNKNOWN;
-    }
+    let status = NativeFederationCompatibilityStatusType.INCOMPATIBLE;
 
-    if (compatibilityResults.every(r => r === NativeFederationCompatibilityStatus.COMPATIBLE)) {
+    if (results.every(result => result === null)) {
+      this.logger.debug('No composable versions available (status: unknown)');
+      status = NativeFederationCompatibilityStatusType.UNKNOWN;
+    } else if (
+      results.every(
+        result =>
+          result === null ||
+          (result.nativeCompositionResult &&
+            result.currentSupergraphSdl === result.nativeCompositionResult.supergraphSdl),
+      )
+    ) {
       this.logger.debug('All versions are compatible (status: compatible)');
-      return NativeFederationCompatibilityStatus.COMPATIBLE;
+      status = NativeFederationCompatibilityStatusType.COMPATIBLE;
     }
 
-    this.logger.debug('Some versions are incompatible (status: incompatible)');
-    return NativeFederationCompatibilityStatus.INCOMPATIBLE;
+    return {
+      status,
+      results,
+    };
   }
 
   async getGitHubMetadata(schemaVersion: SchemaVersion): Promise<null | {

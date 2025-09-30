@@ -39,7 +39,7 @@ export const gatewayConfig = defineConfig({
      * Cost based on the operation type.
      * By default, mutations have a cost of 10, queries and subscriptions have a cost of 0.
      */
-    operationCost: operationType => (operationType === 'mutation' ? 10 : 0),
+    operationTypeCost: operationType => (operationType === 'mutation' ? 10 : 0),
     /**
      * Cost based on the field.
      * It is called for each field in the operation, and overrides the `@cost` directive.
@@ -62,8 +62,8 @@ export const gatewayConfig = defineConfig({
 
 When a query is planned by the gateway,
 
-- For each operation, the `operationCost` function is called with the operation type. (By default
-  only mutations have a cost `10`)
+- For each operation, the `operationTypeCost` function is called with the operation type. (By
+  default only mutations have a cost `10`)
 - For each field in the operation, the `fieldCost` function is called with the field node. (By
   default fields have a cost of `0`)
 - For each type in the operation, the `typeCost` function is called with the type. (By default

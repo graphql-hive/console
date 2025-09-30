@@ -148,7 +148,7 @@ import CloudflareKVCacheStorage from '@graphql-mesh/cache-cfw-kv'
 import supergraph from './my-remote-supergraph-config'
 
 export default {
-  fetch(request, env, ctx) {
+  async fetch(request, env, ctx) {
     const gateway = createGatewayRuntime({
       supergraph,
       transports: { http },
@@ -156,12 +156,12 @@ export default {
         session: () => null
       },
       cache: new CloudflareKVCacheStorage({
-        logger,
         namespace: env.NAMESPACE
       })
     })
+    const response = await gateway(request, env, ctx)
     ctx.waitUntil(gateway[Symbol.asyncDispose]())
-    return gateway(request, env, ctx)
+    return response
   }
 }
 ```

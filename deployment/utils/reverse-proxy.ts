@@ -4,7 +4,7 @@ import { ContourValues } from './contour.types';
 import { helmChart } from './helm';
 
 // prettier-ignore
-export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '19.3.1');
+export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '20.0.3');
 
 export class Proxy {
   private lbService: Output<k8s.core.v1.Service> | null = null;
@@ -76,7 +76,7 @@ export class Proxy {
   }
 
   registerService(
-    dns: { record: string; apex?: boolean },
+    dns: { record: string },
     routes: {
       name: string;
       path: string;
@@ -135,7 +135,7 @@ export class Proxy {
               secretName: dns.record,
             },
             corsPolicy: {
-              allowOrigin: ['https://app.graphql-hive.com', 'https://graphql-hive.com'],
+              allowOrigin: [`https://${dns.record}`],
               allowMethods: ['GET', 'POST', 'OPTIONS'],
               allowHeaders: ['*'],
               exposeHeaders: ['*'],
@@ -303,6 +303,9 @@ export class Proxy {
             : undefined,
       },
       contour: {
+        image: {
+          repository: 'bitnamilegacy/contour',
+        },
         podAnnotations: {
           'prometheus.io/scrape': 'true',
           'prometheus.io/port': '8000',

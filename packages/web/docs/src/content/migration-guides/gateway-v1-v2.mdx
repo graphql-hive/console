@@ -1,0 +1,808 @@
+import { Callout, Tabs } from '@theguild/components'
+
+# Migrating Hive Gateway from v1 to v2
+
+This document guides you through the process of migrating your Hive Gateway from version 1 to
+version 2. It outlines the key changes, potential breaking points, and provides step-by-step
+instructions to ensure a smooth transition.
+
+v2 includes several breaking changes and improvements over v1. The most significant changes are:
+
+- [Drop Support for Node v18](#drop-support-for-node-v18)
+- [Multipart Requests are Disabled by Default](#multipart-requests-are-disabled-by-default)
+- [Remove Mocking Plugin from built-ins](#remove-mocking-plugin-from-built-ins)
+- [Disabled Automatic Forking](#disabled-automatic-forking)
+- [Load Schema on CLI Start](#load-schema-on-cli-start)
+- [Inflight Request Deduplication](#inflight-request-deduplication)
+- [Hive Logger](#hive-logger)
+- [OpenTelemetry](#opentelemetry)
+- [Subgraph Name in Execution Request](#subgraph-name-in-execution-request)
+- [Renamed CLI options for Hive Usage Reporting](#renamed-cli-options-for-hive-usage-reporting)
+- [New Hive PubSub interface](#new-hive-pubsub-interface)
+
+## Drop Support for Node v18
+
+Node v18 has reached its end of life (as of 30 Apr 2025), and Hive Gateway v2, with it's
+dependencies, no longer support it. The minimum Node version required to run Hive Gateway is now
+Node v20.
+
+The following packages have been updated to their latest versions, which require Node v20 or higher:
+
+- `@graphql-hive/gateway`
+- `@graphql-hive/gateway-runtime`
+- `@graphql-mesh/fusion-runtime`
+- `@graphql-mesh/hmac-upstream-signature`
+- `@graphql-hive/plugin-deduplicate-request`
+- `@graphql-mesh/transport-http-callback`
+- `@graphql-hive/plugin-opentelemetry`
+- `@graphql-tools/executor-graphql-ws`
+- `@graphql-tools/stitching-directives`
+- `@graphql-mesh/plugin-prometheus`
+- `@graphql-hive/plugin-aws-sigv4`
+- `@graphql-mesh/transport-common`
+- `@graphql-tools/executor-common`
+- `@graphql-mesh/plugin-jwt-auth`
+- `@graphql-mesh/transport-http`
+- `@graphql-tools/batch-delegate`
+- `@graphql-tools/executor-http`
+- `@graphql-tools/batch-execute`
+- `@graphql-mesh/transport-ws`
+- `@graphql-tools/federation`
+- `@graphql-tools/delegate`
+- `@graphql-hive/nestjs`
+- `@graphql-hive/pubsub`
+- `@graphql-tools/stitch`
+- `@graphql-tools/wrap`
+
+## Multipart Requests are Disabled by Default
+
+The only objective of
+[GraphQL multipart request spec](https://github.com/jaydenseric/graphql-multipart-request-spec) is
+to support file uploads; however, file uploads are not native to GraphQL and are generally
+considered an anti-pattern.
+
+To enable file uploads, you need to explicitly enable the multipart support by setting the
+`multipart` Hive Gateway option to `true`.
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
++ multipart: true,
+});
+```
+
+## Remove Mocking Plugin from built-ins
+
+There is no need to provide the `useMock` plugin alongside Hive Gateway built-ins. Not only is the
+mock plugin 2MB in size (minified), but installing and using it is very simple.
+
+Migrating is very simple, start by installing the `@graphql-mesh/plugin-mock` package:
+
+```sh npm2yarn
+npm i @graphql-mesh/plugin-mock
+```
+
+and then use it in your Hive Gateway configuration:
+
+```diff filename="gateway.config.ts"
+import {
+  defineConfig,
+- useMock
+} from '@graphql-hive/gateway';
++ import { useMock } from '@graphql-mesh/plugin-mock'
+
+export const gatewayConfig = defineConfig({
+  plugins: [
+    useMock({
+      mocks: [
+        {
+          apply: 'User.firstName',
+          faker: '{{name.firstName}}'
+        }
+      ]
+    })
+  ]
+})
+```
+
+<Callout type="info">
+  You can read more about the mocking plugin in the [Mocking
+  documentation](/docs/src/content/gateway/other-features/testing/mocking).
+</Callout>
+
+## Load Schema on CLI Start
+
+Hive Gateway runtime is JavaScript environment agnostic, meaning it can run in Node.js, Deno,
+Cloudflare Workers, Bun, and more. To achieve this, the schema loading needed to be handled on first
+request or during the readiness check because the runtime is simply a request handler.
+
+However, the CLI is a complete program that gets ran by the user; meaning, we do not have to load
+the schema on-demand, we can load the schema on start! This helps catch schema issues early and
+provides a better developer experience.
+
+## Disabled Automatic Forking
+
+We were previously forking workers automatically in v1 when detecting `NODE_ENV=production`;
+however, forking workers for concurrent processing is a delicate process and if not done carefully
+can lead to performance degradations. It should be configured with careful consideration by advanced
+users.
+
+In v2, the automatic forking of workers has been disabled by default. This means that the Hive
+Gateway will no longer automatically create child processes to handle concurrent requests. Instead,
+you can manually configure forking if needed.
+
+You can configure forking in your `gateway.config.ts` file by using the `fork` option or using the
+environment variable `FORK`. These options allow you to specify the number of worker processes to
+fork.
+
+## Inflight Request Deduplication
+
+Hive Gateway ships with built-in inflight request deduplication. This means that if multiple
+requests for the same resource are made simultaneously, Hive Gateway will only send one request to
+the upstream service and share the response with all the original requesters.
+
+Previously, you would use the suboptimal `useDeduplicateRequest()` plugin to achieve this
+functionality. The plugin has been removed in v2, and the deduplication is now built-in and enabled
+by default.
+
+To migrate, simply remove the plugin from your configuration and you're good to go!
+
+```diff
+import {
+  defineConfig,
+- useDeduplicateRequest,
+} from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+- plugins: ctx => [useDeduplicateRequest(ctx)]
+})
+```
+
+If you still want to use the deprecated plugin, you need to install it separately and use it as
+before:
+
+```sh
+npm i @graphql-hive/plugin-deduplicate-request
+```
+
+```ts
+import {
+  defineConfig,
+  useDeduplicateRequest,
+  type HTTPTransportOptions, // only for typedefs, otherwise not necessary
+} from '@graphql-hive/gateway'
+import { useDeduplicateRequest } from '@graphql-hive/plugin-deduplicate-request'
+
+export const gatewayConfig = defineConfig({
+  transportEntries: {
+    '*.http': {
+      options: {
+        // disable the built in deduplication
+        deduplicateInflightRequests: false,
+      } as HTTPTransportOptions,
+    },
+  },
+  plugins: ctx => [useDeduplicateRequest(ctx)]
+})
+```
+
+## Hive Logger
+
+The Hive Logger is a new feature in v2 that provides enhanced logging capabilities. It allows you to
+log messages at different levels (info, debug, error) and provides a more structured way to handle
+logs. The logger implementation now consistently uses the new `@graphql-hive/logger` package and
+standardizes the logger prop naming and usage.
+
+<Callout type="info">
+  You can read more about the new logger and its features in the [Hive Logger
+  documentation](/docs/logger) and how it works with Hive Gateway in [Logging and Error Handling
+  documentation](/docs/gateway/logging-and-error-handling).
+</Callout>
+
+### Deprecating the Old Logger
+
+The old logger interface from `@graphql-mesh/types` or `@graphql-mesh/utils`, the `DefaultLogger`
+and the `LogLevel` enum have been deprecated and will be removed in the future, after all components
+are migrated to the new logger.
+
+```diff
+- import { DefaultLogger, LogLevel } from '@graphql-mesh/utils';
+- const logger = new DefaultLogger(undefined, LogLevel.debug);
++ import { Logger } from '@graphql-hive/logger';
++ const log = new Logger({ level: 'debug' });
+```
+
+Logging uses similar methods as before, with two significant changes:
+
+1. The first, optional, argument of the logging methods are now the metadata
+1. The message supports interpolation of all values succeeding the message
+
+```diff
+- logger.debug(`Hello ${'world'}`, { foo: 'bar' });
++ log.debug({ foo: 'bar' }, 'Hello %s', 'world');
+```
+
+### `logging` Configuration Option
+
+The `logging` option has been changed to accept either:
+
+1. `true` to enable and log using the `info` level
+1. `false` to disable logging altogether
+1. A Hive Logger instance
+1. A string log level (e.g., `debug`, `info`, `warn`, `error`)
+
+#### Changing the Log Level
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```diff filename="gateway.config.ts"
+import {
+  defineConfig,
+- LogLevel,
+} from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- logging: LogLevel.debug,
++ logging: 'debug',
+});
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```diff filename="index.ts"
+import {
+  createGatewayRuntime,
+- LogLevel,
+} from '@graphql-hive/runtime-gateway';
+
+export const gateway = createGatewayRuntime({
+- logging: LogLevel.debug,
++ logging: 'debug',
+});
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+##### Dynamically Changing the Log Level
+
+A great new feature of the Hive Logger is the ability to change the log level dynamically at
+runtime. This allows you to adjust the verbosity of logs without restarting the application.
+
+Please advise the
+[Hive Logger documentation](/docs/gateway/logging-and-error-handling#change-dynamically) for more
+details and an example.
+
+#### Using a Custom Logger
+
+<Tabs items={['CLI', 'Programmatic Usage']}>
+
+<Tabs.Tab>
+
+```diff filename="gateway.config.ts"
+import {
+  defineConfig,
+- DefaultLogger,
+- LogLevel,
++ Logger,
+} from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- logging: new DefaultLogger(undefined, LogLevel.debug),
++ logging: new Logger({ level: 'debug' }),
+});
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```diff filename="index.ts"
+import {
+  createGatewayRuntime,
+- DefaultLogger,
+- LogLevel,
++ Logger,
+} from '@graphql-hive/gateway-runtime';
+
+export const gateway = createGatewayRuntime({
+- logging: new DefaultLogger(undefined, LogLevel.debug),
++ logging: new Logger({ level: 'debug' }),
+});
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### The Environment Variable
+
+Hive Logger will continue to support the `DEBUG=1` environment variable for enabling debug logging.
+
+But, additionally, it supports the new `LOG_LEVEL` environment variable for setting a specific log
+level. This allows you to control the log level without modifying the code or configuration files.
+
+For example, setting `LOG_LEVEL=debug` will enable debug logging, while `LOG_LEVEL=warn` will set
+the log level to "warn".
+
+#### Logging in JSON Format
+
+Previously, the Hive Gateway used two different environment variables to trigger loggin in JSON
+format:
+
+- `LOG_FORMAT=json`
+- `NODE_ENV=production`
+
+Both of those variables are now removed and replaced with `LOG_JSON=1`.
+
+#### Pretty Logging
+
+In addition to the JSON format, Hive Gateway had an additional `LOG_FORMAT=pretty` environment
+variable that pretty-printed the logs. This variable has been removed.
+
+When using the default logger, the logs are now pretty-printed by default. This means that the logs
+will be formatted in a human-readable way, making it easier to read and understand.
+
+Additionally, if you're using [the JSON format](#logging-in-json-format), you can use
+`LOG_JSON_PRETTY=1` environment variable to enable pretty-printing the JSON logs.
+
+### Prop Renaming `logger` to `log`
+
+Throughout the codebase, the `logger` prop has been renamed to `log`. This change is part of the
+standardization effort to ensure consistency across all components and plugins. The new `log` prop
+is now used in all APIs, contexts, and plugin options. It's shorter and more intuitive, making it
+easier to understand and use.
+
+#### Context
+
+The context object passed to plugins and hooks now uses `log` instead of `logger`. Basically, the
+`GatewayConfigContext` interface has been changed to:
+
+```diff filename="@graphql-hive/gateway"
+- import type { Logger as LegacyLogger } from '@graphql-mesh/types';
++ import type { Logger as HiveLogger } from '@graphql-hive/logger';
+
+export interface GatewayConfigContext {
+- logger: LegacyLogger;
++ log: HiveLogger;
+  // ...rest of the properties
+}
+```
+
+Same goes for all of the transports' contexts. Each of the transport contexts now has a `log` prop
+instead of `logger`. Additionally, the logger is required and will always be provided.
+
+```diff filename="@graphql-mesh/transport-common"
+- import type { Logger as LegacyLogger } from '@graphql-mesh/types';
++ import type { Logger as HiveLogger } from '@graphql-hive/logger';
+
+export interface TransportContext {
+- logger?: LegacyLogger;
++ log: HiveLogger;
+  // ...rest of the properties
+}
+```
+
+##### Plugin Setup
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+import { myPlugins } from './my-plugins';
+
+export const gatewayConfig = defineConfig({
+  plugins(ctx) {
+-   ctx.logger.info('Loading plugins...');
++   ctx.log.info('Loading plugins...');
+    return [...myPlugins];
+  },
+});
+```
+
+##### Plugin Hooks
+
+Across all plugins, hooks and contexts, the `logger` prop has been renamed to `log` and will always
+be provided.
+
+It is now the highly recommended to use the logger from the context at all times because it contains
+the necessary metadata for increased observability, like the request ID or the execution step.
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- plugins({ log }) {
++ plugins() {
+    return [
+      {
+        onRequest({ serverContext }) {
+-         log.info('Got request...');
++         serverContext.log.info('Got request...');
+        },
+        onParams({ context }) {
+-         log.info('Params...');
++         context.log.info('Params...');
+        },
+        onExecute({ context }) {
+-         log.info('Executing...');
++         context.log.info('Executing...');
+        },
+        onDelegationPlan(context) {
+-         log.info('Creating delegation plan...');
++         context.log.info('Creating delegation plan...');
+        },
+        onSubgraphExecute(context) {
+-         log.info('Executing on subgraph...');
++         context.log.info('Executing on subgraph...');
+        },
+        onFetch({ context }) {
+-         log.info('Fetching data...');
++         context.log.info('Fetching data...');
+        },
+        onResponse({ serverContext }) {
+-         log.info('Responding...');
++         serverContext.log.info('Responding...');
+        },
+      },
+    ];
+  },
+});
+```
+
+Will log with the necessary metadata for increased observability, like this:
+
+```
+2025-04-10T14:00:00.000Z INF Executing...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+2025-04-10T14:00:00.000Z INF Creating delegation plan...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Executing on subgraph...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Fetching data...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+```
+
+#### Affected Plugins
+
+##### Prometheus i.e. `usePrometheus`
+
+The monitoring plugin `usePrometheus` has been updated to use the new logger API. The `logger` prop
+has been replaced with the `log` prop when using Hive Gateway runtime.
+
+```diff filename="index.ts"
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import usePrometheus from '@graphql-mesh/plugin-prometheus'
+
+export const gateway = createGatewayRuntime({
+  plugins: ctx => [
+    usePrometheus({
+      ...ctx,
+-     logger: ctx.logger,
++     log: ctx.log,
+    })
+  ]
+})
+```
+
+If you have been using the `usePrometheus` plugin following the example from
+[Monitoring and Tracing](/docs/gateway/monitoring-tracing#usage-example-1), where the `ctx` argument
+is simply spread to the plugin options - you don't have to change anything.
+
+#### Custom Transport
+
+If you have implemented and been using a custom transport of yours, you will need to update the
+`logger` prop to `log` in the `getSubgraphExecutor` method.
+
+```diff filename="letter-transport.ts"
+import type { Transport } from '@graphql-mesh/transport-common';
+import { letterExecutor } from './my-letter-executor';
+
+export interface LetterTransportOptions {
+  shouldStamp?: boolean;
+}
+
+export default {
+  getSubgraphExecutor(payload) {
+-   payload.logger.info('Creating letter executor...');
++   payload.log.info('Creating letter executor...');
+    return letterExecutor(payload);
+  },
+} satisfies Transport<LetterTransportOptions>;
+```
+
+### Custom Logger Writers
+
+The new Hive Logger is designed to be extensible and allows you to create custom logger adapters by
+implementing "log writers" instead of the complete logger interface. The `LogWriter` is simply:
+
+```ts
+import { Attributes, LogLevel } from '@graphql-hive/logger'
+
+interface LogWriter {
+  write(
+    level: LogLevel,
+    attrs: Attributes | null | undefined,
+    msg: string | null | undefined
+  ): void | Promise<void>
+  flush?(): void | Promise<void>
+}
+```
+
+As you may see, it's very simple and allows you, to not only use your favourite logger like pino or
+winston, but also implement custom writers that send logs to a HTTP consumer or writes to a file.
+
+<Callout type="info">
+  Read more about implementing your own writers in the [Hive Logger documentation](/docs/logger).
+</Callout>
+
+### Pino (Node.js Only)
+
+Use the [Node.js `pino` logger library](https://github.com/pinojs/pino) for writing Hive Logger's
+logs.
+
+`pino` is an optional peer dependency, so you must install it first.
+
+```sh npm2yarn
+npm i pino pino-pretty
+```
+
+Since we're using a custom log writter, you have to install the Hive Logger package too:
+
+```sh npm2yarn
+npm i @graphql-hive/logger
+```
+
+```diff filename="gateway.config.ts"
+import pino from 'pino'
+import { defineConfig } from '@graphql-hive/gateway'
+import { Logger } from '@graphql-hive/logger'
+- import { createLoggerFromPino } from '@graphql-hive/logger-pino'
++ import { PinoLogWriter } from '@graphql-hive/logger/writers/pino'
+
+const pinoLogger = pino({
+  transport: {
+    target: 'pino-pretty'
+  }
+})
+
+export const gatewayConfig = defineConfig({
+- logging: createLoggerFromPino(pinoLogger)
++ logging: new Logger({
++   writers: [new PinoLogWriter(pinoLogger)]
++ })
+})
+```
+
+### Winston (Node.js Only)
+
+Use the [Node.js `winston` logger library](https://github.com/winstonjs/winston) for writing Hive
+Logger's logs.
+
+`winston` is an optional peer dependency, so you must install it first.
+
+```sh
+npm i winston
+```
+
+Since we're using a custom log writter, you have to install the Hive Logger package too:
+
+```sh npm2yarn
+npm i @graphql-hive/logger
+```
+
+```diff filename="gateway.config.ts"
+import { createLogger, format, transports } from 'winston'
+import { defineConfig } from '@graphql-hive/gateway'
+import { Logger } from '@graphql-hive/logger'
+- import { createLoggerFromWinston } from '@graphql-hive/winston'
++ import { WinstonLogWriter } from '@graphql-hive/logger/writers/winston'
+
+const winstonLogger = createLogger({
+  level: 'info',
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [new transports.Console()]
+})
+
+export const gatewayConfig = defineConfig({
+- logging: createLoggerFromWinston(winstonLogger)
++ logging: new Logger({
++   writers: [new WinstonLogWriter(winstonLogger)]
++ })
+})
+```
+
+## OpenTelemetry
+
+OpenTelemetry integration have been re-worked to offer better traces, custom attributes and spans,
+and overall compatiblity with standard OTEL API.
+
+For this features to be possible, we had to break the configuration API of the old plugin and
+release a brand new one `@graphql-**hive**/plugin-opentelemetry`. Everyone that has used the plugin
+directly, you're advised to move away from the now deprecated
+`@graphql-**mesh**/plugin-opentelemetry` and upgrade:
+
+```diff
+- @graphql-mesh/plugin-opentelemetry
++ @graphql-hive/plugin-opentelemetry
+```
+
+To upgrade, please read the new capabilities of the OpenTelemetry Tracing integration in the
+[Hive Monitoring / Tracing documentation](/docs/gateway/monitoring-tracing).
+
+### CLI Options
+
+It is now possible to setup OpenTelemetry without a configuration file, by using the new
+`--opentelemetry <exporter-endpoint>` option.
+
+```bash
+hive-gateway supergraph supergraph.graphql \
+  --opentelemetry "http://localhost:4318"
+```
+
+By default, an HTTP OTLP exporter will be used. You can also use a GRPC one by using
+`--opentelemetry-exporter-type`:
+
+```bash
+hive-gateway supergraph supergraph.graphql \
+  --opentelemetry "http://localhost:4317" \
+  --opentelemetry-exporter-type otlp-grpc
+```
+
+### SDK Setup
+
+The OpenTelemetry SDK setup used to be automatically done by the plugin it self, it is no longer the
+case. You have the choice to either setup it yourself using official `@opentelemetry/*` pacakges
+(like official Node SDK `@opentelemetry/sdk-node`), or to use our cross-plateform setup helper
+(recommended).
+
+Extracting OTEL setup out of the plugin allows to you to decide on the version of `opentelemetry-js`
+SDK you want to use.
+
+Most of OTEL related settings have been moved to `openTelemetrySetup` options.
+
+Please refer to
+[OpenTelemetry Setup documentation](/docs/gateway/monitoring-tracing#opentelemetry-setup) for more
+information.
+
+### Tracing related configuration
+
+All tracing related options has been moved to a `traces` option.
+
+```diff filename="gateway.config"
+import { defineConfig } from '@grahpl-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
++   traces: {
+      tracer: ...,
+      spans: {
+        ...
+      }
++   }
+  }
+})
+```
+
+### Spans filter functions payload
+
+The payload given as a parameter of the span filtering functions have been restrained.
+
+Due to internal changes, the information available at span filtering time has been reduced to only
+include (depending on the span) the GraphQL `context`, the HTTP `request` and the Upstream
+`executionRequest`.
+
+Please refere to [Request Spans documentation](/docs/gateway/monitoring-tracing#request-spans) for
+details of what is availbe for each span filter.
+
+### Span parenting
+
+Spans are now parented correctly. This can have impact on trace queries used in your dashboard.
+
+Please review your queries to not filter against `null` parent span id.
+
+### New GraphQL Operation Span
+
+A new span encapsulating each GraphQL operation has been added.
+
+It is a subspan of the HTTP request span, and encapsulate all the actual GraphQL processing. There
+can be multiple GraphQL operation spans for one HTTP request span if you have enabled graphql
+operation batching over http.
+
+### Root Context
+
+The OpenTelemetry Context is now modified by Hive Gateway. The Context is set with the current phase
+span. This means that if you were creating custom spans in your plugin without explicitly providing
+a parent context, your spans will be considered sub-spans of Hive Gateway's current span.
+
+To maintain your span as a root span, add an explicit parent context a creation time:
+
+```diff
++ import { ROOT_CONTEXT } from '@opentelemetry/api'
+
+export const myPlugin = () => ({
+  onExecute() {
+    myTrace.startActiveSpan(
+      'my-custom-span',
+      { foo: 'bar' },
++     ROOT_CONTEXT,
+      () => {
+        // do something
+      }
+    )
+  }
+})
+```
+
+## Subgraph Name in Execution Request
+
+The targeted subgraph name is now exposed as a field of `ExecutionRequest`, it is no longer needed
+to use `subgraphNameFromExecutionRequest` helper utility to find out which subgraph is targeted by
+an execution request. Therefore, `subgraphNameFromExecutionRequest` has been removed, since it's no
+longer needed.
+
+```diff
+- import { subgraphNameByExecutionRequest } from '@graphql-mesh/fusion-runtime';
+
+const useMyPlugin = () => ({
+  onFetch({ executionRequest }) {
+-   const subgraphName = subgraphNameByExecutionRequest.get(executionRequest)
++   const subgraphName = executionRequest.subgraphName
+  }
+})
+```
+
+## Renamed CLI options for Hive Usage Reporting
+
+To prepare for future observability features of Hive Console, `--hive-usage-target` has been
+deprecated and you're recommended to use `--hive-target`. It will define the target for the
+observability metrics _and_ usage reporting.
+
+In addition to this change, we've added a new option `--hive-access-token` which is used to define
+the token that's to be used for both observability and usage reporting.
+
+```diff
+hive-gateway supergraph \
+  http://cdn.graphql-hive.com/<path>/supergraph \
+  --hive-cdn-key "<hive_cdn_access_key>" \
+- --hive-usage-target "<hive_usage_target>" \
+- --hive-usage-access-token "<hive_usage_access_token>"
++ --hive-target "<hive_usage_target>" \
++ --hive-access-token "<hive_usage_access_token>"
+```
+
+## New Hive PubSub interface
+
+The Hive PubSub package has been rewritten to provide a better developer experience and improved
+support for asynchronous operations. The new interface is more intuitive and easier to use, making
+it simpler to implement pub/sub functionality in your Hive Gateway.
+
+It also unlocks the possibility of having a distributed subscriptions system, read
+[Event-Driven Federated Subscriptions (EDFS)](/docs/gateway/subscriptions#event-driven-federated-subscriptions-edfs)
+for more information.
+
+The only breaking change relating to Hive Gateway is the renaming of `PubSub` to `MemPubSub` to
+better reflect its in-memory nature. In case you have been using `PubSub`, you need to replace it
+with `MemPubSub`:
+
+```diff filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway';
+- import { PubSub } from '@graphql-hive/gateway';
++ import { MemPubSub } from '@graphql-hive/gateway';
+
+export const gatewayConfig = defineConfig({
+- pubsub: new PubSub()
++ pubsub: new MemPubSub()
+});
+```
+
+However, if you have been implementing your own pubsub system by implementing the `HivePubSub`
+interface from `@graphql-hive/pubsub`, you need to update your implementation to match the
+[new `PubSub` interface](/docs/gateway/subscriptions#pubsub). Advise the `@graphql-hive/pubsub`
+changelog for exact migration steps upgrading from v1 to v2.

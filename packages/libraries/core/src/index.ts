@@ -1,4 +1,5 @@
 export * from './normalize/operation.js';
+export { collectSchemaCoordinates } from './client/collect-schema-coordinates.js';
 export type {
   HivePluginOptions,
   HiveClient,

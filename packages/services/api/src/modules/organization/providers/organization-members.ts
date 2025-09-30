@@ -172,7 +172,7 @@ export class OrganizationMembers {
       organization.id,
     );
 
-    const first = args.first ?? 100;
+    const first = args.first;
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
 
     const query = sql`
@@ -199,14 +199,14 @@ export class OrganizationMembers {
         "om"."organization_id" DESC
         , "om"."user_id" DESC
         , "om"."user_id" DESC
-      LIMIT ${first + 1}
+      ${first ? sql`LIMIT ${first + 1}` : sql``}
     `;
 
     const result = await this.pool.any<unknown>(query);
-    const hasNextPage = result.length > first;
+    const hasNextPage = first !== null ? result.length > first : false;
 
     const organizationMembers = result
-      .slice(0, first)
+      .slice(0, first ?? undefined)
       .map(row => RawOrganizationMembershipModel.parse(row));
     const mapping = await this.resolveMemberships(organization, organizationMembers);
 

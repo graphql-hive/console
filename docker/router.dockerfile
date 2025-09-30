@@ -2,7 +2,7 @@
 FROM scratch AS pkg
 FROM scratch AS config
 
-FROM rust:1.85 AS build
+FROM rust:1.87 AS build
 
 # Required by Apollo Router
 RUN apt-get update
@@ -34,7 +34,7 @@ RUN touch ./src/lib.rs
 RUN cargo build --release
 
 # Runtime
-FROM debian:12-slim AS runtime
+FROM debian:bookworm-slim AS runtime
 
 RUN apt-get update
 RUN apt-get -y install ca-certificates

@@ -23,6 +23,9 @@ export function prepareEnvironment(input: {
 
   const appDns = `app.${input.rootDns}`;
   const apiDns = `api.${input.rootDns}`;
+  const isProduction = env === 'production';
+  const isStaging = env === 'staging';
+  const isDev = env === 'dev';
 
   return {
     envVars: {
@@ -33,14 +36,50 @@ export function prepareEnvironment(input: {
       RELEASE: input.release,
     },
     envName: env,
-    isProduction: env === 'production',
-    isStaging: env === 'staging',
-    isDev: env === 'dev',
+    isProduction,
+    isStaging,
+    isDev,
     encryptionSecret,
     release: input.release,
     appDns,
     apiDns,
     rootDns: input.rootDns,
+    podsConfig: {
+      general: {
+        replicas: isProduction || isStaging ? 3 : 1,
+      },
+      supertokens: {
+        replicas: isProduction || isStaging ? 3 : 1,
+      },
+      envoy: {
+        replicas: isProduction || isStaging ? 3 : 1,
+        cpuLimit: isProduction ? '1500m' : '120m',
+        memoryLimit: isProduction ? '2Gi' : '200Mi',
+      },
+      schemaService: {
+        memoryLimit: isProduction || isStaging ? '2Gi' : '1Gi',
+      },
+      usageService: {
+        replicas: isProduction || isStaging ? 3 : 1,
+        cpuLimit: isProduction ? '1000m' : '100m',
+        maxReplicas: isProduction || isStaging ? 6 : 1,
+        cpuAverageToScale: 60,
+      },
+      usageIngestorService: {
+        replicas: isProduction || isStaging ? 6 : 1,
+        cpuLimit: isProduction ? '1000m' : '100m',
+        maxReplicas: isProduction || isStaging ? /* numberOfPartitions */ 16 : 2,
+        cpuAverageToScale: 60,
+      },
+      redis: {
+        memoryLimit: isProduction ? '4Gi' : '100Mi',
+        cpuLimit: isProduction ? '1000m' : '50m',
+      },
+      internalObservability: {
+        cpuLimit: isProduction ? '512m' : '150m',
+        memoryLimit: isProduction ? '1000Mi' : '300Mi',
+      },
+    },
   };
 }
 

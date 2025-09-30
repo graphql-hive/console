@@ -9,6 +9,7 @@ export const Target: Pick<
   | 'documentCollectionOperation'
   | 'documentCollections'
   | 'viewerCanModifyLaboratory'
+  | 'viewerCanModifyPreflightScript'
   | 'viewerCanViewLaboratory'
   | 'viewerCanViewSchemaProposals'
   | '__isTypeOf'
@@ -46,6 +47,17 @@ export const Target: Pick<
   viewerCanModifyLaboratory: (target, _arg, { session }) => {
     return session.canPerformAction({
       action: 'laboratory:modify',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      },
+    });
+  },
+  viewerCanModifyPreflightScript: async (target, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'laboratory:modifyPreflightScript',
       organizationId: target.orgId,
       params: {
         organizationId: target.orgId,

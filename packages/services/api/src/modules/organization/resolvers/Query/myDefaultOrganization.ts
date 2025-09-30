@@ -41,16 +41,14 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
     });
 
     if (orgId) {
-      const org = await organizationManager.getOrganization({
-        organizationId: orgId,
-      });
+      const organization = await organizationManager.getOrganizationOrNull(orgId);
 
-      if (org) {
+      if (organization) {
         return {
           selector: {
-            organizationSlug: org.slug,
+            organizationSlug: organization.slug,
           },
-          organization: org,
+          organization,
         };
       }
     }

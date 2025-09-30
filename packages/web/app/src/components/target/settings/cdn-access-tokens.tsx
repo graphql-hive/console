@@ -98,6 +98,12 @@ function CreateCDNAccessTokenModal(props: {
           onBlur={form.handleBlur}
           disabled={form.isSubmitting}
           isInvalid={form.touched.alias && !!form.errors.alias}
+          onKeyPress={ev => {
+            if (ev.key === 'Enter') {
+              ev.preventDefault();
+              form.handleSubmit();
+            }
+          }}
         />
         {form.touched.alias && form.errors.alias ? (
           <span className="text-sm text-red-500">{form.errors.alias}</span>

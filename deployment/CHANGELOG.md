@@ -1,5 +1,130 @@
 # hive
 
+## 8.2.1
+
+### Patch Changes
+
+- [#6935](https://github.com/graphql-hive/console/pull/6935)
+  [`261daf8`](https://github.com/graphql-hive/console/commit/261daf81c384dc992608431e388836b7dde54336)
+  Thanks [@jdolle](https://github.com/jdolle)! - AppDeployment permissions granted to all if none
+  selected by default in access token UI. Fix app deployments feature flag check
+
+- [#7004](https://github.com/graphql-hive/console/pull/7004)
+  [`07a99f0`](https://github.com/graphql-hive/console/commit/07a99f0f4cd21edae5da734893175e1675c23173)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve usability when creating a registry access
+  token.
+
+## 8.2.0
+
+### Minor Changes
+
+- [#6951](https://github.com/graphql-hive/console/pull/6951)
+  [`f567fbb`](https://github.com/graphql-hive/console/commit/f567fbbf49124e0f7ce54fdf8104acd422c543bb)
+  Thanks [@martyganz](https://github.com/martyganz)! - Add `SchemaVersion.unusedSchema` and
+  `SchemaVersion.deprecatedSchema` to the public API schema.
+
+- [#6960](https://github.com/graphql-hive/console/pull/6960)
+  [`e57b6c0`](https://github.com/graphql-hive/console/commit/e57b6c01987e6be9013923ffe760b0fa4fe390a1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Return all users by default if no `first` value is
+  provided for the `Organization.members` field.
+
+### Patch Changes
+
+- [#6963](https://github.com/graphql-hive/console/pull/6963)
+  [`91e830b`](https://github.com/graphql-hive/console/commit/91e830be6cf9fca238375616a8b79d637ae89e10)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve styling of unused schema parts.
+
+- [#6961](https://github.com/graphql-hive/console/pull/6961)
+  [`a66013d`](https://github.com/graphql-hive/console/commit/a66013d5eaa436c8c8106c6c29b546b76b5e50bc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent editing the base schema showing up for
+  federation projects.
+
+## 8.1.2
+
+### Patch Changes
+
+- [#6924](https://github.com/graphql-hive/console/pull/6924)
+  [`d6cf026`](https://github.com/graphql-hive/console/commit/d6cf02663783076a3ab25d295d1c7a6eb7b2c711)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix selecting "All" app deployments in target when
+  creating an access token
+
+- [#6909](https://github.com/graphql-hive/console/pull/6909)
+  [`d5218b8`](https://github.com/graphql-hive/console/commit/d5218b8d728c37628ee4a83a89e9bc922af84804)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly trim operation name on insights and add
+  popover title
+
+## 8.1.1
+
+### Patch Changes
+
+- [#6867](https://github.com/graphql-hive/console/pull/6867)
+  [`be0d710`](https://github.com/graphql-hive/console/commit/be0d71025b4d1bee06b6059f31bd5039e9709b5d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Only show the "edit preflight script" button in the
+  laboratory when the users has permissions to edit it.
+
+- [#6881](https://github.com/graphql-hive/console/pull/6881)
+  [`f8a1350`](https://github.com/graphql-hive/console/commit/f8a13506f747b297f6c7bfd295fe13af89153380)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `project:create` permission to the acccess
+  token permission selection screen.
+
+- [#6875](https://github.com/graphql-hive/console/pull/6875)
+  [`73864f2`](https://github.com/graphql-hive/console/commit/73864f2b954387406c6d7f3a205d7ee38663e6a4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix default organization resolution and prevent
+  missing permissions error.
+
+- [#6879](https://github.com/graphql-hive/console/pull/6879)
+  [`3779184`](https://github.com/graphql-hive/console/commit/3779184a440743f04bd18943651da7b77f7a43c0)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - Fix schema version browser history
+  navigation.
+
+## 8.1.0
+
+### Minor Changes
+
+- [#6843](https://github.com/graphql-hive/console/pull/6843)
+  [`d175fba`](https://github.com/graphql-hive/console/commit/d175fba8f17f36ce3205e14032eee89222f85f08)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Make `Target.graphqlEndpointUrl` available
+  in public GraphQL API
+
+### Patch Changes
+
+- [#6829](https://github.com/graphql-hive/console/pull/6829)
+  [`e81cea8`](https://github.com/graphql-hive/console/commit/e81cea889c26b3ee0453defbfec5a78ba24e90a6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add pg index for getSchemaVersionByActionId to
+  improve lookup performance
+
+- [#6850](https://github.com/graphql-hive/console/pull/6850)
+  [`faa22bb`](https://github.com/graphql-hive/console/commit/faa22bbe662f0df7cca3b9045a22d495897714ee)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where contract composition marks types
+  occuring in multiple subgraphs as `@inaccessible` despite being used within the public API schema.
+
+- [#6845](https://github.com/graphql-hive/console/pull/6845)
+  [`114e7bc`](https://github.com/graphql-hive/console/commit/114e7bcf6860030b668fb1af7faed3650c278a51)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update `@theguild/federation-composition` to
+  `0.19.0`
+
+  Increases federation composition compatibility.
+
+  - Fix errors raised by `@requires` with union field selection set
+  - Fix incorrectly raised `IMPLEMENTED_BY_INACCESSIBLE` error for inaccessible object fields where
+    the object type is inaccessible.
+  - Add support for `@provides` fragment selection sets on union type fields.
+  - Fix issue where the satisfiability check raised an exception for fields that share different
+    object type and interface definitions across subgraphs.
+  - Fix issue where scalar type marked with `@inaccessible` does not fail the composition if all
+    usages are not marked with `@inaccessible`.
+  - Support composing executable directives from subgraphs into the supergraph
+
+- [#6862](https://github.com/graphql-hive/console/pull/6862)
+  [`6cf18b9`](https://github.com/graphql-hive/console/commit/6cf18b9d9c10dfcbd95d148571dc305eb5c71b4c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show whether a breaking change is safe based on
+  usage within the GitHub check-run summary.
+
+- [#6864](https://github.com/graphql-hive/console/pull/6864)
+  [`35a69a1`](https://github.com/graphql-hive/console/commit/35a69a1064319c74b9b76a521698ce1260383f08)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Validate schema stitching output sdl. Previously,
+  this caused invalid SDL to be promoted as the latest valid schema version.
+
 ## 8.0.0
 
 ### Major Changes

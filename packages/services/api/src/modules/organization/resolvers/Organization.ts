@@ -1,3 +1,4 @@
+import { APP_DEPLOYMENTS_ENABLED } from '../../app-deployments/providers/app-deployments-enabled-token';
 import { Session } from '../../auth/lib/authz';
 import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
 import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
@@ -207,8 +208,14 @@ export const Organization: Pick<
   availableMemberPermissionGroups: () => {
     return OrganizationMemberPermissions.permissionGroups;
   },
-  availableOrganizationAccessTokenPermissionGroups: () => {
-    return OrganizationAccessTokensPermissions.permissionGroups;
+  availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
+    const permissionGroups = OrganizationAccessTokensPermissions.permissionGroups;
+    const isAppDeploymentsEnabled =
+      injector.get<boolean>(APP_DEPLOYMENTS_ENABLED) || organization.featureFlags.appDeployments;
+    if (!isAppDeploymentsEnabled) {
+      return permissionGroups.filter(p => p.id !== 'app-deployments');
+    }
+    return permissionGroups;
   },
   accessTokens: async (organization, args, { injector }) => {
     return injector.get(OrganizationAccessTokens).getPaginated({

@@ -92,7 +92,6 @@ export interface Storage {
     installationId: string;
   }): Promise<Organization | null>;
   getOrganization(_: { organizationId: string }): Promise<Organization | never>;
-  getMyOrganization(_: { userId: string }): Promise<Organization | null>;
   getOrganizations(_: { userId: string }): Promise<readonly Organization[] | never>;
   createOrganization(
     _: Pick<Organization, 'slug'> & {

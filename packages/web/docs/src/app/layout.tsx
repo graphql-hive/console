@@ -108,6 +108,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
       }
       footer={
         <HiveFooter
+          showSecurityBadges
           items={{
             resources: [
               {

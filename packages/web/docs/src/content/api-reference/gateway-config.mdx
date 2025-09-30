@@ -82,7 +82,7 @@ import CloudflareKVCacheStorage from '@graphql-mesh/cache-cfw-kv'
 import supergraph from './my-remote-supergraph-config'
 
 export default {
-  fetch(request, env, ctx) {
+  async fetch(request, env, ctx) {
     const gateway = createGatewayRuntime({
       supergraph,
       pollingInterval: 5_000, // TTL in milliseconds of the remote supergraph
@@ -92,8 +92,9 @@ export default {
         namespace: env.NAMESPACE
       })
     })
+    const response = await gateway(request, env, ctx)
     ctx.waitUntil(gateway[Symbol.asyncDispose]())
-    return gateway(request, env, ctx)
+    return response
   }
 }
 ```
@@ -449,6 +450,54 @@ This is the option to extend your Hive Gateway with plugins. Hive Gateway uses
 different phases of the GraphQL execution to manipulate or track the entire workflow step-by-step.
 
 [See dedicated plugins feature page for more information](/docs/gateway/other-features/custom-plugins)
+
+### `openTelemetry`
+
+This options allows to enable OpenTelemetry integration and customize its behaviour.
+
+[See dedicated Monitoring/Tracing fearure page for more information](/docs/gateway/monitoring-tracing)
+
+#### `useContextManager`
+
+Use standard `@opentelemetry/api` Context Manager to keep track of current span. This is an advanced
+option that should be used carefully, as it can break your custom plugin spans.
+
+#### `inheritContext`
+
+If true (the default), the HTTP span will be created with the active span as parent. If false, the
+HTTP span will always be a root span, which will create it's own trace for each request.
+
+#### `propagateContext`
+
+If true (the default), uses the registered propagators to propagate the active context to upstream
+services.
+
+#### `configureDiagLogger`
+
+If true (the default), setup the standard `@opentelemetry/api` diag API to use the Hive Gatewat
+logger. A child logger is created with the prefix `[opentelemetry][diag] `.
+
+#### `flushOnDispose`
+
+If truthy (the default), the registered span processor will be forcefully flushed when the Hive
+Gateway is about to shutdown. To flush, the `forceFlush` method is called (if it exists), but you
+can change the method to call by providing a string as a value to this option.
+
+#### `traces`
+
+Pass `true` to enable tracing integration with all spans available.
+
+This option can also be an object for more fine grained configuration.
+
+##### `tracer`
+
+The `Tracer` instance to be used. The default is a tracer with the name `gateway`
+
+#### `spans`
+
+An object with each keys being a span name, and the value being either a boolean or a filtering
+function to control which span should be reported.
+[See Reported Spans and Events for details](/docs/gateway/monitoring-tracing#reported-spans).
 
 ### `cors`
 
