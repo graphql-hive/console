@@ -7,11 +7,7 @@ import { execute } from 'testkit/graphql';
 import { getServiceHost } from 'testkit/utils';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
-import {
-  createTarget,
-  enableExternalSchemaComposition,
-  publishSchema,
-} from '../../../testkit/flow';
+import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -2804,13 +2800,15 @@ test('Composition Error (Federation 2) can be served from the database', async (
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2924,13 +2922,15 @@ test('Composition Network Failure (Federation 2)', async () => {
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2965,12 +2965,14 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/no_compose`,
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/no_compose`,
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation, useQuery } from 'urql';
+import { CombinedError, useQuery } from 'urql';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { useNotifications } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckIcon, Cross2Icon, ReloadIcon, UpdateIcon } from '@radix-ui/react-icons';
@@ -37,43 +38,6 @@ const ExternalCompositionStatus_TestQuery = graphql(`
   }
 `);
 
-const ExternalCompositionSettings_EnableMutation = graphql(`
-  mutation ExternalCompositionSettings_EnableMutation(
-    $input: EnableExternalSchemaCompositionInput!
-  ) {
-    enableExternalSchemaComposition(input: $input) {
-      ok {
-        externalSchemaComposition {
-          endpoint
-        }
-        ...CompositionSettings_ProjectFragment
-      }
-      error {
-        message
-        inputErrors {
-          endpoint
-          secret
-        }
-      }
-    }
-  }
-`);
-
-const ExternalCompositionSettings_UpdateNativeCompositionMutation = graphql(`
-  mutation ExternalCompositionSettings_UpdateNativeCompositionMutation(
-    $input: UpdateNativeFederationInput!
-  ) {
-    updateNativeFederation(input: $input) {
-      ok {
-        ...CompositionSettings_ProjectFragment
-      }
-      error {
-        message
-      }
-    }
-  }
-`);
-
 const ExternalCompositionSettings_OrganizationFragment = graphql(`
   fragment ExternalCompositionSettings_OrganizationFragment on Organization {
     slug
@@ -86,6 +50,25 @@ const ExternalCompositionSettings_ProjectFragment = graphql(`
     isNativeFederationEnabled
     externalSchemaComposition {
       endpoint
+    }
+  }
+`);
+
+const ExternalCompositionSettings_UpdateResultFragment = graphql(`
+  fragment ExternalCompositionSettings_UpdateResultFragment on UpdateSchemaCompositionResult {
+    ok {
+      externalSchemaComposition {
+        endpoint
+      }
+    }
+    error {
+      message
+      ... on UpdateSchemaCompositionExternalError {
+        inputErrors {
+          endpoint
+          secret
+        }
+      }
     }
   }
 `);
@@ -219,6 +202,11 @@ export const ExternalCompositionSettings = (props: {
   project: FragmentType<typeof ExternalCompositionSettings_ProjectFragment>;
   organization: FragmentType<typeof ExternalCompositionSettings_OrganizationFragment>;
   activeCompositionMode: 'native' | 'external' | 'legacy';
+  onMutate: (
+    input: UpdateSchemaCompositionInput,
+  ) => Promise<
+    FragmentType<typeof ExternalCompositionSettings_UpdateResultFragment> | CombinedError
+  >;
 }) => {
   const project = useFragment(ExternalCompositionSettings_ProjectFragment, props.project);
   const organization = useFragment(
@@ -226,14 +214,8 @@ export const ExternalCompositionSettings = (props: {
     props.organization,
   );
   const notify = useNotifications();
-  const [enableExternalMutation, enableExternal] = useMutation(
-    ExternalCompositionSettings_EnableMutation,
-  );
-  const [updateNativeMutation, updateNative] = useMutation(
-    ExternalCompositionSettings_UpdateNativeCompositionMutation,
-  );
-  const mutationError = enableExternalMutation.error ?? updateNativeMutation.error;
-  const isMutationFetching = enableExternalMutation.fetching || updateNativeMutation.fetching;
+  const [error, setError] = useState<string>();
+  const [isMutating, setIsMutating] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -242,82 +224,67 @@ export const ExternalCompositionSettings = (props: {
       endpoint: project.externalSchemaComposition?.endpoint ?? '',
       secret: '',
     },
-    disabled: isMutationFetching,
+    disabled: isMutating,
   });
 
   function onSubmit(values: FormValues) {
-    void enableExternal({
-      input: {
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
-        endpoint: values.endpoint,
-        secret: values.secret,
-      },
-    })
-      .then(async result => {
-        return {
-          enableExternalResult: result,
-          updateNativeResult:
-            result.data?.enableExternalSchemaComposition.ok && project.isNativeFederationEnabled
-              ? await updateNative({
-                  input: {
-                    projectSlug: project.slug,
-                    organizationSlug: organization.slug,
-                    enabled: false,
-                  },
-                })
-              : null,
-        };
+    setError(undefined);
+    setIsMutating(true);
+    void props
+      .onMutate({
+        external: {
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+          endpoint: values.endpoint,
+          secret: values.secret,
+        },
       })
-      .then(({ enableExternalResult, updateNativeResult }) => {
-        if (
-          enableExternalResult.data?.enableExternalSchemaComposition.ok &&
-          (!updateNativeResult || updateNativeResult.data?.updateNativeFederation.ok)
-        ) {
-          const endpoint =
-            enableExternalResult.data?.enableExternalSchemaComposition.ok.externalSchemaComposition
-              ?.endpoint;
-
-          notify('External composition enabled.', 'success');
-
-          if (endpoint) {
-            form.reset(
-              {
-                endpoint,
-                secret: '',
-              },
-              {
-                keepDirty: false,
-                keepDirtyValues: false,
-              },
-            );
-          }
+      .then(result => {
+        setIsMutating(false);
+        if (result instanceof CombinedError) {
+          notify(result.message, 'error');
+          setError(result.message);
         } else {
-          const error =
-            enableExternalResult.error ??
-            enableExternalResult.data?.enableExternalSchemaComposition.error ??
-            updateNativeResult?.error ??
-            updateNativeResult?.data?.updateNativeFederation.error;
+          const updateResult = useFragment(
+            ExternalCompositionSettings_UpdateResultFragment,
+            result,
+          );
+          if (updateResult.ok) {
+            const endpoint = updateResult.ok.externalSchemaComposition?.endpoint;
 
-          if (error) {
-            notify(error.message, 'error');
-          }
+            notify('External composition enabled.', 'success');
 
-          const inputErrors =
-            enableExternalResult.data?.enableExternalSchemaComposition.error?.inputErrors;
+            if (endpoint) {
+              form.reset(
+                {
+                  endpoint,
+                  secret: '',
+                },
+                {
+                  keepDirty: false,
+                  keepDirtyValues: false,
+                },
+              );
+            }
+          } else if (updateResult.error) {
+            notify(updateResult.error.message, 'error');
+            setError(updateResult.error.message);
 
-          if (inputErrors?.endpoint) {
-            form.setError('endpoint', {
-              type: 'manual',
-              message: inputErrors.endpoint,
-            });
-          }
+            if (updateResult.error.__typename === 'UpdateSchemaCompositionExternalError') {
+              if (updateResult.error.inputErrors.endpoint) {
+                form.setError('endpoint', {
+                  type: 'manual',
+                  message: updateResult.error.inputErrors.endpoint,
+                });
+              }
 
-          if (inputErrors?.secret) {
-            form.setError('secret', {
-              type: 'manual',
-              message: inputErrors.secret,
-            });
+              if (updateResult.error.inputErrors.secret) {
+                form.setError('secret', {
+                  type: 'manual',
+                  message: updateResult.error.inputErrors.secret,
+                });
+              }
+            }
           }
         }
       });
@@ -389,9 +356,7 @@ export const ExternalCompositionSettings = (props: {
                 )}
               />
             </div>
-            {mutationError && (
-              <div className="mt-2 text-xs text-red-500">{mutationError.message}</div>
-            )}
+            {error && <div className="mt-2 text-xs text-red-500">{error}</div>}
             <div className="flex flex-row items-center gap-x-8">
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {props.activeCompositionMode === 'external'

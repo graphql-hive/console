@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useQuery } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ExternalCompositionSettings } from './external-composition';
 import { LegacyCompositionSettings } from './legacy-composition';
@@ -30,6 +31,7 @@ const CompositionSettings_OrganizationFragment = graphql(`
 
 const CompositionSettings_ProjectFragment = graphql(`
   fragment CompositionSettings_ProjectFragment on Project {
+    id
     slug
     isNativeFederationEnabled
     externalSchemaComposition {
@@ -38,6 +40,19 @@ const CompositionSettings_ProjectFragment = graphql(`
     ...NativeCompositionSettings_ProjectFragment
     ...ExternalCompositionSettings_ProjectFragment
     ...LegacyCompositionSettings_ProjectFragment
+  }
+`);
+
+const CompositionSettings_UpdateMutation = graphql(`
+  mutation CompositionSettings_UpdateMutation($input: UpdateSchemaCompositionInput!) {
+    updateSchemaComposition(input: $input) {
+      ok {
+        ...CompositionSettings_ProjectFragment
+      }
+      ...NativeCompositionSettings_UpdateResultFragment
+      ...ExternalCompositionSettings_UpdateResultFragment
+      ...LegacyCompositionSettings_UpdateResultFragment
+    }
   }
 `);
 
@@ -66,6 +81,13 @@ export const CompositionSettings = (props: {
       ? 'external'
       : 'legacy';
   const [selectedMode, setSelectedMode] = useState<string>();
+
+  const [, mutate] = useMutation(CompositionSettings_UpdateMutation);
+  const onMutate = async (input: UpdateSchemaCompositionInput) => {
+    const result = await mutate({ input });
+    if (result.error) return result.error;
+    return result.data!.updateSchemaComposition;
+  };
 
   return (
     <Card>
@@ -106,6 +128,7 @@ export const CompositionSettings = (props: {
                 project={project}
                 organization={organization}
                 activeCompositionMode={activeMode}
+                onMutate={onMutate}
               />
             </TabsContent>
             <TabsContent variant="content" value="external">
@@ -113,6 +136,7 @@ export const CompositionSettings = (props: {
                 project={project}
                 organization={organization}
                 activeCompositionMode={activeMode}
+                onMutate={onMutate}
               />
             </TabsContent>
             <TabsContent variant="content" value="legacy">
@@ -120,6 +144,7 @@ export const CompositionSettings = (props: {
                 project={project}
                 organization={organization}
                 activeCompositionMode={activeMode}
+                onMutate={onMutate}
               />
             </TabsContent>
           </Tabs>
