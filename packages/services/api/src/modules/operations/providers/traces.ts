@@ -271,7 +271,15 @@ export class Traces {
         )
         SELECT
           replaceOne(concat(toDateTime64("time_bucket_list"."time_bucket", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucketStart"
-          , replaceOne(concat(toDateTime64("t"."time_bucket_end", 9, 'UTC'), 'Z'), ' ', 'T') AS "timeBucketEnd"
+          , replaceOne(concat(
+              toDateTime64(
+                "time_bucket_list"."time_bucket"
+                  + INTERVAL ${sql.raw(d.candidate.name)}
+                  - INTERVAL 1 SECOND
+                , 9
+                , 'UTC'
+              ) , 'Z') , ' ' , 'T'
+            ) AS "timeBucketEnd"
           , coalesce("t"."ok_count_total", 0) as "okCountTotal"
           , coalesce("t"."error_count_total", 0) as "errorCountTotal"
           , coalesce("t"."ok_count_filtered", 0) as "okCountFiltered"
@@ -282,7 +290,6 @@ export class Traces {
         (
           SELECT
             toStartOfInterval("timestamp", INTERVAL ${sql.raw(d.candidate.name)}) AS "time_bucket_start"
-            , toStartOfInterval("timestamp", INTERVAL ${sql.raw(d.candidate.name)}) + INTERVAL ${sql.raw(d.candidate.name)} - INTERVAL 1 SECOND AS "time_bucket_end"
             , sumIf(1, "graphql_error_count" = 0) AS "ok_count_total"
             , sumIf(1, "graphql_error_count" != 0) AS "error_count_total"
             , sumIf(1, "graphql_error_count" = 0 ${filterSQLFragment}) AS "ok_count_filtered"
@@ -295,7 +302,6 @@ export class Traces {
             AND "otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(endDate)}, 'UTC')
           GROUP BY
             "time_bucket_start"
-            , "time_bucket_end"
           ) AS "t"
         ON "t"."time_bucket_start" = "time_bucket_list"."time_bucket"
       `,
