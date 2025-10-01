@@ -8,13 +8,7 @@ export default gql`
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
-    updateNativeFederation(input: UpdateNativeFederationInput!): UpdateNativeFederationResult!
-    enableExternalSchemaComposition(
-      input: EnableExternalSchemaCompositionInput!
-    ): EnableExternalSchemaCompositionResult!
-    disableExternalSchemaComposition(
-      input: DisableExternalSchemaCompositionInput!
-    ): DisableExternalSchemaCompositionResult!
+    updateSchemaComposition(input: UpdateSchemaCompositionInput!): UpdateSchemaCompositionResult!
     """
     Approve a failed schema check with breaking changes.
     """
@@ -43,50 +37,57 @@ export default gql`
     ): TestExternalSchemaCompositionResult!
   }
 
-  input UpdateNativeFederationInput {
-    organizationSlug: String!
-    projectSlug: String!
-    enabled: Boolean!
+  input UpdateSchemaCompositionInput @oneOf {
+    native: UpdateSchemaCompositionNativeInput
+    external: UpdateSchemaCompositionExternalInput
+    legacy: UpdateSchemaCompositionLegacyInput
   }
 
-  """
-  @oneOf
-  """
-  type UpdateNativeFederationResult {
-    ok: Project
-    error: UpdateNativeFederationError
-  }
-
-  type UpdateNativeFederationError implements Error {
-    message: String!
-  }
-
-  input DisableExternalSchemaCompositionInput {
+  input UpdateSchemaCompositionNativeInput {
     organizationSlug: String!
     projectSlug: String!
   }
 
-  """
-  @oneOf
-  """
-  type DisableExternalSchemaCompositionResult {
-    ok: Project
-    error: String
-  }
-
-  input EnableExternalSchemaCompositionInput {
+  input UpdateSchemaCompositionExternalInput {
     organizationSlug: String!
     projectSlug: String!
     endpoint: String!
     secret: String!
   }
 
+  input UpdateSchemaCompositionLegacyInput {
+    organizationSlug: String!
+    projectSlug: String!
+  }
+
   """
   @oneOf
   """
-  type EnableExternalSchemaCompositionResult {
+  type UpdateSchemaCompositionResult {
     ok: Project
-    error: EnableExternalSchemaCompositionError
+    error: UpdateSchemaCompositionError
+  }
+
+  interface UpdateSchemaCompositionError implements Error {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError & Error {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError & Error {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError & Error {
+    message: String!
+    inputErrors: UpdateSchemaCompositionExternalInputErrors!
+  }
+
+  type UpdateSchemaCompositionExternalInputErrors {
+    endpoint: String
+    secret: String
   }
 
   type ExternalSchemaComposition {
@@ -152,19 +153,6 @@ export default gql`
     INCOMPATIBLE
     UNKNOWN
     NOT_APPLICABLE
-  }
-
-  type EnableExternalSchemaCompositionError implements Error {
-    message: String!
-    """
-    The detailed validation error messages for the input fields.
-    """
-    inputErrors: EnableExternalSchemaCompositionInputErrors!
-  }
-
-  type EnableExternalSchemaCompositionInputErrors {
-    endpoint: String
-    secret: String
   }
 
   type UpdateBaseSchemaResult {

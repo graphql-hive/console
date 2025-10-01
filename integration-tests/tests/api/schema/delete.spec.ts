@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { parse, print } from 'graphql';
-import { enableExternalSchemaComposition } from 'testkit/flow';
+import { updateSchemaComposition } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -235,13 +235,15 @@ test.concurrent(
 
       const readToken = await createTargetAccessToken({});
 
-      await enableExternalSchemaComposition(
+      await updateSchemaComposition(
         {
-          endpoint: `http://${await getServiceHost('composition_federation_2', 3069, false)}/compose`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+          external: {
+            endpoint: `http://${await getServiceHost('composition_federation_2', 3069, false)}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
         },
         ownerToken,
       ).then(r => r.expectNoGraphQLErrors());

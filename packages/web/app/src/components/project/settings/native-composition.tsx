@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { FlaskConicalIcon, HeartCrackIcon, PartyPopperIcon, RefreshCcwIcon } from 'lucide-react';
-import { useMutation, useQuery } from 'urql';
+import { CombinedError, useMutation, useQuery } from 'urql';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -8,7 +8,10 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
+import {
+  NativeFederationCompatibilityStatusType,
+  UpdateSchemaCompositionInput,
+} from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
 const IncrementalNativeCompositionSwitch_TargetFragment = graphql(`
@@ -117,30 +120,13 @@ const NativeCompositionSettings_ProjectQuery = graphql(`
   }
 `);
 
-const NativeCompositionSettings_UpdateNativeCompositionMutation = graphql(`
-  mutation NativeCompositionSettings_UpdateNativeCompositionMutation(
-    $input: UpdateNativeFederationInput!
-  ) {
-    updateNativeFederation(input: $input) {
-      ok {
-        ...CompositionSettings_ProjectFragment
-      }
-      error {
-        message
-      }
+const NativeCompositionSettings_UpdateResultFragment = graphql(`
+  fragment NativeCompositionSettings_UpdateResultFragment on UpdateSchemaCompositionResult {
+    ok {
+      __typename
     }
-  }
-`);
-
-const NativeCompositionSettings_DisableExternalCompositionMutation = graphql(`
-  mutation NativeCompositionSettings_DisableExternalCompositionMutation(
-    $input: DisableExternalSchemaCompositionInput!
-  ) {
-    disableExternalSchemaComposition(input: $input) {
-      ok {
-        ...CompositionSettings_ProjectFragment
-      }
-      error
+    error {
+      message
     }
   }
 `);
@@ -149,6 +135,9 @@ export function NativeCompositionSettings(props: {
   organization: FragmentType<typeof NativeCompositionSettings_OrganizationFragment>;
   project: FragmentType<typeof NativeCompositionSettings_ProjectFragment>;
   activeCompositionMode: 'native' | 'external' | 'legacy';
+  onMutate: (
+    input: UpdateSchemaCompositionInput,
+  ) => Promise<FragmentType<typeof NativeCompositionSettings_UpdateResultFragment> | CombinedError>;
 }) {
   const organization = useFragment(
     NativeCompositionSettings_OrganizationFragment,
@@ -165,61 +154,41 @@ export function NativeCompositionSettings(props: {
     },
   });
 
-  const [updateNativeMutation, updateNative] = useMutation(
-    NativeCompositionSettings_UpdateNativeCompositionMutation,
-  );
-  const [disableExternalMutation, disableExternal] = useMutation(
-    NativeCompositionSettings_DisableExternalCompositionMutation,
-  );
-  const isMutationFetching = updateNativeMutation.fetching || disableExternalMutation.fetching;
-
   const { toast } = useToast();
 
+  const [isMutating, setIsMutating] = useState(false);
   const enableNativeComposition = useCallback(async () => {
-    const previousCompositionMode = props.activeCompositionMode;
+    setIsMutating(true);
     try {
-      const updateNativeResult = await updateNative({
-        input: {
+      const result = await props.onMutate({
+        native: {
           organizationSlug: organization.slug,
           projectSlug: project.slug,
-          enabled: true,
         },
       });
 
-      const updateNativeError =
-        updateNativeResult.error ?? updateNativeResult.data?.updateNativeFederation.error;
-      if (updateNativeError) {
-        return toast({
+      if (result instanceof CombinedError) {
+        toast({
           variant: 'destructive',
           title: 'Failed to enable native composition',
-          description: updateNativeError.message,
+          description: result.message,
         });
-      }
-
-      if (previousCompositionMode === 'external') {
-        const disableExternalResult = await disableExternal({
-          input: {
-            organizationSlug: organization.slug,
-            projectSlug: project.slug,
-          },
-        });
-        const disableExternalError =
-          disableExternalResult.error?.message ??
-          disableExternalResult.data?.disableExternalSchemaComposition.error;
-        if (disableExternalError != null) {
-          return toast({
+      } else {
+        const updateResult = useFragment(NativeCompositionSettings_UpdateResultFragment, result);
+        if (updateResult.ok) {
+          toast({
+            title: 'Successfully enabled native composition',
+            description:
+              'Your project is now using our Open Source composition library for GraphQL Federation.',
+          });
+        } else if (updateResult.error) {
+          toast({
             variant: 'destructive',
-            title: 'Failed to disable external composition while enabling native composition',
-            description: disableExternalError,
+            title: 'Failed to enable native composition',
+            description: updateResult.error.message,
           });
         }
       }
-
-      toast({
-        title: 'Successfully enabled native composition',
-        description:
-          'Your project is now using our Open Source composition library for GraphQL Federation.',
-      });
     } catch (error) {
       console.log('Failed to enable native composition');
       console.error(error);
@@ -228,15 +197,10 @@ export function NativeCompositionSettings(props: {
         title: 'Failed to enable native composition',
         description: String(error),
       });
+    } finally {
+      setIsMutating(false);
     }
-  }, [
-    updateNative,
-    disableExternal,
-    toast,
-    props.activeCompositionMode,
-    organization.slug,
-    project.slug,
-  ]);
+  }, [toast, props.onMutate, organization.slug, project.slug]);
 
   return (
     <div className="flex flex-col items-start gap-y-6">
@@ -375,9 +339,9 @@ export function NativeCompositionSettings(props: {
       <div className="flex flex-row items-center gap-x-2">
         <Button
           onClick={() => enableNativeComposition()}
-          disabled={isMutationFetching || props.activeCompositionMode === 'native'}
+          disabled={isMutating || props.activeCompositionMode === 'native'}
         >
-          {isMutationFetching ? (
+          {isMutating ? (
             <>
               <RefreshCcwIcon className="mr-2 size-4 animate-spin" />
               Please wait

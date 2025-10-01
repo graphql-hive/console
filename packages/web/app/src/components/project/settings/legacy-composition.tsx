@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { RefreshCcwIcon } from 'lucide-react';
-import { useMutation } from 'urql';
+import { CombinedError } from 'urql';
 import { Button } from '@/components/ui/button';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 
 const LegacyCompositionSettings_OrganizationFragment = graphql(`
   fragment LegacyCompositionSettings_OrganizationFragment on Organization {
@@ -20,30 +21,13 @@ const LegacyCompositionSettings_ProjectFragment = graphql(`
   }
 `);
 
-const LegacyCompositionSettings_UpdateNativeCompositionMutation = graphql(`
-  mutation LegacyCompositionSettings_UpdateNativeCompositionMutation(
-    $input: UpdateNativeFederationInput!
-  ) {
-    updateNativeFederation(input: $input) {
-      ok {
-        ...CompositionSettings_ProjectFragment
-      }
-      error {
-        message
-      }
+const LegacyCompositionSettings_UpdateResultFragment = graphql(`
+  fragment LegacyCompositionSettings_UpdateResultFragment on UpdateSchemaCompositionResult {
+    ok {
+      __typename
     }
-  }
-`);
-
-const LegacyCompositionSettings_DisableExternalCompositionMutation = graphql(`
-  mutation LegacyCompositionSettings_DisableExternalCompositionMutation(
-    $input: DisableExternalSchemaCompositionInput!
-  ) {
-    disableExternalSchemaComposition(input: $input) {
-      ok {
-        ...CompositionSettings_ProjectFragment
-      }
-      error
+    error {
+      message
     }
   }
 `);
@@ -52,6 +36,9 @@ export function LegacyCompositionSettings(props: {
   organization: FragmentType<typeof LegacyCompositionSettings_OrganizationFragment>;
   project: FragmentType<typeof LegacyCompositionSettings_ProjectFragment>;
   activeCompositionMode: 'native' | 'external' | 'legacy';
+  onMutate: (
+    input: UpdateSchemaCompositionInput,
+  ) => Promise<FragmentType<typeof LegacyCompositionSettings_UpdateResultFragment> | CombinedError>;
 }) {
   const organization = useFragment(
     LegacyCompositionSettings_OrganizationFragment,
@@ -59,64 +46,44 @@ export function LegacyCompositionSettings(props: {
   );
   const project = useFragment(LegacyCompositionSettings_ProjectFragment, props.project);
 
-  const [updateNativeMutation, updateNative] = useMutation(
-    LegacyCompositionSettings_UpdateNativeCompositionMutation,
-  );
-  const [disableExternalMutation, disableExternal] = useMutation(
-    LegacyCompositionSettings_DisableExternalCompositionMutation,
-  );
-  const isMutationFetching = updateNativeMutation.fetching || disableExternalMutation.fetching;
-
   const { toast } = useToast();
 
+  const [isMutating, setIsMutating] = useState(false);
   const enableLegacyComposition = useCallback(async () => {
     const previousCompositionMode = props.activeCompositionMode;
     try {
-      const updateNativeResult = await updateNative({
-        input: {
+      const result = await props.onMutate({
+        legacy: {
           organizationSlug: organization.slug,
           projectSlug: project.slug,
-          enabled: false,
         },
       });
 
-      const updateNativeError =
-        updateNativeResult.error ?? updateNativeResult.data?.updateNativeFederation.error;
-      if (updateNativeError) {
-        return toast({
+      if (result instanceof CombinedError) {
+        toast({
           variant: 'destructive',
           title: 'Failed to enable legacy composition',
-          description: updateNativeError.message,
+          description: result.message,
         });
-      }
-
-      if (previousCompositionMode === 'external') {
-        const disableExternalResult = await disableExternal({
-          input: {
-            organizationSlug: organization.slug,
-            projectSlug: project.slug,
-          },
-        });
-        const disableExternalError =
-          disableExternalResult.error?.message ??
-          disableExternalResult.data?.disableExternalSchemaComposition.error;
-        if (disableExternalError != null) {
-          return toast({
+      } else {
+        const updateResult = useFragment(LegacyCompositionSettings_UpdateResultFragment, result);
+        if (updateResult.ok) {
+          toast({
+            title: 'Successfully enabled legacy composition',
+            description: `Your project is no longer using ${
+              previousCompositionMode === 'external'
+                ? 'external schema composition.'
+                : 'our Open Source composition library for GraphQL Federation.'
+            }`,
+          });
+        } else if (updateResult.error) {
+          toast({
             variant: 'destructive',
-            title: 'Failed to disable external composition while enabling legacy composition',
-            description: disableExternalError,
+            title: 'Failed to enable legacy composition',
+            description: updateResult.error.message,
           });
         }
       }
-
-      toast({
-        title: 'Successfully enabled legacy composition',
-        description: `Your project is no longer using ${
-          previousCompositionMode === 'external'
-            ? 'external schema composition.'
-            : 'our Open Source composition library for GraphQL Federation.'
-        }`,
-      });
     } catch (error) {
       console.log('Failed to enable legacy composition');
       console.error(error);
@@ -125,15 +92,10 @@ export function LegacyCompositionSettings(props: {
         title: 'Failed to enable legacy composition',
         description: String(error),
       });
+    } finally {
+      setIsMutating(false);
     }
-  }, [
-    updateNative,
-    disableExternal,
-    toast,
-    organization.slug,
-    project.slug,
-    props.activeCompositionMode,
-  ]);
+  }, [toast, props.activeCompositionMode, props.onMutate, organization.slug, project.slug]);
 
   return (
     <div className="flex flex-col items-start gap-y-6">
@@ -150,9 +112,9 @@ export function LegacyCompositionSettings(props: {
         <Button
           variant="destructive"
           onClick={() => enableLegacyComposition()}
-          disabled={isMutationFetching || props.activeCompositionMode === 'legacy'}
+          disabled={isMutating || props.activeCompositionMode === 'legacy'}
         >
-          {isMutationFetching ? (
+          {isMutating ? (
             <>
               <RefreshCcwIcon className="mr-2 size-4 animate-spin" />
               Please wait
