@@ -530,12 +530,6 @@ const SpanListModel = z.array(SpanModel);
 
 export type Span = z.TypeOf<typeof SpanModel>;
 
-type BucketResult = {
-  unit: 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
-  count: number;
-  interval: number;
-};
-
 type BucketCandidate = {
   name: string;
   seconds: number;
