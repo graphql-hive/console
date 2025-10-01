@@ -752,7 +752,7 @@ const USAGE_DAYS = process.env.USAGE_DAYS || '14';
 console.log(
   `Seeding usage for the last ${USAGE_DAYS} day(s). (Overwrite using the USAGE_DAYS environment variable)`,
 );
-const USAGE_INTERVAL = process.env.USAGE_INTERVAL || '20';
+const USAGE_INTERVAL = process.env.USAGE_INTERVAL || '1';
 console.log(
   `Seeding every ${USAGE_INTERVAL} minute(s). (Overwrite using the USAGE_INTERVAL environment variable)`,
 );
