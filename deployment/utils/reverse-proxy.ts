@@ -326,6 +326,9 @@ export class Proxy {
         },
       },
       envoy: {
+        image: {
+          repository: 'bitnamilegacy/envoy',
+        },
         resources: {
           limits: {},
         },
