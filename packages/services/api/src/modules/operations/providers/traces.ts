@@ -263,7 +263,7 @@ export class Traces {
                 toDateTime(${formatDate(startDate)}, 'UTC')
                 , INTERVAL ${sql.raw(d.candidate.name)}
               )
-              , "number" * ${sql.raw(countStr)}
+              , ("number" + 1) * ${sql.raw(countStr)}
             ) AS "time_bucket"
           FROM
             "system"."numbers"
