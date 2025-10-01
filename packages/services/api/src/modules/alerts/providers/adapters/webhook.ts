@@ -47,7 +47,13 @@ export class WebhookCommunicationAdapter implements CommunicationAdapter {
         event: input.event,
       });
     } catch (error) {
-      this.logger.error(`Failed to send Webhook notification`, error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to send Webhook notification`, errorText);
     }
   }
 
