@@ -23,6 +23,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
@@ -52,6 +53,7 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { Link, useNavigate, useRouter } from '@tanstack/react-router';
 import {
@@ -63,18 +65,12 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
-import * as dateMath from '../lib/date-math';
 import {
   CopyIconButton,
   formatNanoseconds,
   TraceSheet as ImportedTraceSheet,
 } from './target-trace';
-import {
-  DurationFilter,
-  MultiInputFilter,
-  MultiSelectFilter,
-  TimelineFilter,
-} from './traces/target-traces-filter';
+import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
 
 const chartConfig = {
   ok: {
@@ -154,16 +150,13 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     // Ensure left is always before right
     let left = refAreaLeft;
     let right = refAreaRight;
-    const now = new Date();
 
-    if (
-      parseDate(left, 'yyyy-MM-dd', now).getTime() > parseDate(right, 'yyyy-MM-dd', now).getTime()
-    ) {
+    if (new Date(left).getTime() > new Date(right).getTime()) {
       [left, right] = [right, left];
     }
 
     void navigate({
-      search: (prev: any) => ({ ...prev, filter: { ...prev.filter, period: [left, right] } }),
+      search: (prev: any) => ({ ...prev, from: left, to: right }),
     });
 
     setRefAreaLeft(null);
@@ -226,6 +219,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
         />
         <Bar stackId="all" dataKey="ok" fill="var(--color-ok)" name="Ok" />
         <Bar stackId="all" dataKey="error" fill="var(--color-error)" name="Error" />
+        // TODO: hide this if there is no filter declared
         <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
         {refAreaLeft && refAreaRight && (
           <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
@@ -708,7 +702,6 @@ function LabelWithColor(props: { className: string; children: ReactNode }) {
 }
 
 export const TargetTracesFilterState = z.object({
-  period: z.union([z.tuple([z.string(), z.string()]), z.tuple([])]).default([]),
   duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
   'trace.id': z.array(z.string()).default([]),
   'graphql.status': z.array(z.string()).default([]),
@@ -818,7 +811,6 @@ function Filters(
           </Button>
         ) : null}
       </SidebarGroupLabel>
-      <TimelineFilter value={filterSelector('period')} onChange={updateFilter('period')} />
       <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
       <MultiInputFilter
         key="trace.id"
@@ -1144,15 +1136,14 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
 function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProps) {
   const targetRef = useTargetReference();
 
-  const period = useMemo(() => {
-    if (!props.filter.period?.length) {
-      return null;
-    }
-    return dateMath.resolveRange({ from: props.filter.period[0], to: props.filter.period[1] });
-  }, [props.filter.period]);
+  const dateRangeController = useDateRangeController({
+    // TODO: ressolve retention from account
+    dataRetentionInDays: 365,
+    defaultPreset: presetLast7Days,
+  });
 
   const filter: GraphQLSchema.TracesFilterInput = {
-    period,
+    period: dateRangeController.resolvedRange,
     duration: {
       min: props.filter.duration?.[0] ?? null,
       max: props.filter.duration?.[1] ?? null,
@@ -1302,10 +1293,17 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
     <div className="py-6">
       <SubPageLayoutHeader
         subPageTitle="Traces"
-        description={
-          <>
-            <CardDescription>Insights into the requests made to your GraphQL API.</CardDescription>
-          </>
+        description="Insights into the requests made to your GraphQL API."
+        sideContent={
+          <div className="ml-auto mr-0">
+            <DateRangePicker
+              validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
+              selectedRange={dateRangeController.selectedPreset.range}
+              startDate={dateRangeController.startDate}
+              align="end"
+              onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+            />
+          </div>
         }
       />
       <SidebarProvider className="mt-4">
@@ -1315,7 +1313,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
           </SidebarContent>
         </Sidebar>
         <SidebarInset className="bg-transparent">
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="flex flex-1 flex-col gap-4 pl-4 pt-0">
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>

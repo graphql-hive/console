@@ -32,7 +32,7 @@ function unitToDurationKey(unit: DurationUnit): keyof Duration {
   }
 }
 
-const dateStringFormat = 'yyyy-MM-dd';
+const dateStringFormat = 'yyyy-MM-dd HH:mm';
 
 function parseDateString(input: string) {
   try {

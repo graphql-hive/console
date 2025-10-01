@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { endOfDay, endOfToday, subMonths } from 'date-fns';
+import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
 import { DurationUnit, formatDateToString, parse, units } from '@/lib/date-math';
@@ -32,13 +32,6 @@ export interface DateRangePickerProps {
   validUnits?: DurationUnit[];
 }
 
-const formatDate = (date: Date, locale = 'en-us'): string => {
-  return date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
 interface ResolvedDateRange {
   from: Date;
   to: Date;
@@ -51,7 +44,16 @@ export type Preset = {
 };
 
 export function buildDateRangeString(range: ResolvedDateRange, locale = 'en-us'): string {
-  return `${formatDate(range.from, locale)} - ${formatDate(range.to, locale)}`;
+  const fromDate = formatDate(range.from, 'MMM d');
+  const fromTime = formatDate(range.from, 'HH:mm');
+  const toDate = formatDate(range.to, 'MMM d');
+  const toTime = formatDate(range.to, 'HH:mm');
+
+  if (fromDate === toDate) {
+    return `${fromDate}, ${fromTime} - ${toTime}`;
+  }
+
+  return `${fromDate}, ${fromTime} - ${toDate}, ${toTime}`;
 }
 
 function resolveRange(rawFrom: string, rawTo: string): ResolvedDateRange | null {
@@ -88,8 +90,12 @@ export const presetLast1Day: Preset = {
 
 // Define presets
 export const availablePresets: Preset[] = [
+  { name: 'last15m', label: 'Last 15 minutes', range: { from: 'now-15m', to: 'now' } },
   { name: 'last30m', label: 'Last 30 minutes', range: { from: 'now-30m', to: 'now' } },
   { name: 'last1h', label: 'Last 1 hour', range: { from: 'now-1h', to: 'now' } },
+  { name: 'last3h', label: 'Last 3 hours', range: { from: 'now-3h', to: 'now' } },
+  { name: 'last6h', label: 'Last 6 hours', range: { from: 'now-6h', to: 'now' } },
+  { name: 'last12h', label: 'Last 12 hours', range: { from: 'now-12h', to: 'now' } },
   presetLast1Day,
   presetLast7Days,
   { name: 'last14d', label: 'Last 14 days', range: { from: 'now-14d', to: 'now' } },
@@ -314,25 +320,34 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
         </Button>
       </PopoverTrigger>
       <PopoverContent align={props.align} className="mt-1 flex h-[380px] w-auto p-0">
-        <div className="flex flex-col py-4">
+        <div className="flex flex-col py-2">
           <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
             <div className="flex flex-col gap-1 pl-3">
-              <div className="mb-2 font-bold">Absolute date range</div>
+              <div className="mb-2 text-sm">Absolute date range</div>
               <div className="space-y-2">
                 <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="from">From</Label>
+                  <Label htmlFor="from" className="text-xs text-gray-400">
+                    From
+                  </Label>
                   <div className="flex w-full max-w-sm items-center space-x-2">
-                    <Input
-                      type="text"
-                      id="from"
-                      value={fromValue}
-                      onChange={ev => {
-                        setFromValue(ev.target.value);
-                      }}
-                    />
-                    <Button size="icon" variant="outline" onClick={() => setShowCalendar(true)}>
-                      <CalendarDays className="size-4" />
-                    </Button>
+                    <div className="relative flex w-full">
+                      <Input
+                        type="text"
+                        id="from"
+                        value={fromValue}
+                        onChange={ev => {
+                          setFromValue(ev.target.value);
+                        }}
+                        className="font-mono"
+                      />
+                      <Button
+                        variant="ghost"
+                        className="color-white absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                        onClick={() => setShowCalendar(true)}
+                      >
+                        <CalendarDays className="size-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-red-500">
                     {hasInvalidUnitRegex?.test(fromValue) ? (
@@ -343,19 +358,28 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                   </div>
                 </div>
                 <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="to">To</Label>
+                  <Label htmlFor="to" className="text-xs text-gray-400">
+                    To
+                  </Label>
                   <div className="flex w-full max-w-sm items-center space-x-2">
-                    <Input
-                      type="text"
-                      id="to"
-                      value={toValue}
-                      onChange={ev => {
-                        setToValue(ev.target.value);
-                      }}
-                    />
-                    <Button size="icon" variant="outline" onClick={() => setShowCalendar(true)}>
-                      <CalendarDays className="size-4" />
-                    </Button>
+                    <div className="relative flex w-full">
+                      <Input
+                        type="text"
+                        id="to"
+                        value={toValue}
+                        onChange={ev => {
+                          setToValue(ev.target.value);
+                        }}
+                        className="font-mono"
+                      />
+                      <Button
+                        variant="ghost"
+                        className="color-white absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                        onClick={() => setShowCalendar(true)}
+                      >
+                        <CalendarDays className="size-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-red-500">
                     {hasInvalidUnitRegex?.test(toValue) ? (
@@ -432,7 +456,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
           </div>
         </div>
         {showCalendar && (
-          <div className="absolute left-0 top-0 -translate-x-full">
+          <div className="absolute left-0 top-[4px] -translate-x-full">
             <div className="bg-popover mr-1 rounded-md border p-4">
               <Button
                 variant="ghost"
