@@ -685,7 +685,6 @@ const targetTracesRoute = createRoute({
         'http.url': [],
         'trace.id': [],
         duration: [],
-        period: [],
       } satisfies FilterState,
       sort = {
         id: 'timestamp',
