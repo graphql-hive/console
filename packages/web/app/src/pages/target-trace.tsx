@@ -1039,6 +1039,7 @@ function TargetInsightsNewPageContent(props: {
     },
   });
 
+  const isFetching = result.fetching || result.stale;
   const trace = result.data?.target?.trace;
 
   return (
@@ -1116,7 +1117,7 @@ function TargetInsightsNewPageContent(props: {
           activeSpanTab={props.activeSpanTab}
         />
       )}
-      {!trace && !result.fetching && (
+      {!trace && !isFetching && (
         <>
           <Meta title="Trace Not found" />
           <NotFoundContent heading="Trace not found." subheading="This trace does not exist." />
