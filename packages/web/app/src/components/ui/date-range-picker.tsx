@@ -43,7 +43,7 @@ export type Preset = {
   range: { from: string; to: string };
 };
 
-export function buildDateRangeString(range: ResolvedDateRange, locale = 'en-us'): string {
+export function buildDateRangeString(range: ResolvedDateRange): string {
   const fromDate = formatDate(range.from, 'MMM d');
   const fromTime = formatDate(range.from, 'HH:mm');
   const toDate = formatDate(range.to, 'MMM d');

@@ -1,5 +1,5 @@
 import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
-import { formatDate, formatISO, parse as parseDate } from 'date-fns';
+import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
   ArrowDown,
@@ -218,7 +218,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
         />
         <Bar stackId="all" dataKey="ok" fill="var(--color-ok)" name="Ok" />
         <Bar stackId="all" dataKey="error" fill="var(--color-error)" name="Error" />
-        // TODO: hide this if there is no filter declared
+        {/*TODO: hide this if there is no filter declared */}
         <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
         {refAreaLeft && refAreaRight && (
           <ReferenceArea x1={refAreaLeft} x2={refAreaRight} fill="white" fillOpacity={0.2} />
@@ -245,19 +245,6 @@ export const TargetTracesSort = {
 type SortState = z.infer<typeof TargetTracesSortShape>;
 type SortProps = {
   sorting: SortState;
-};
-
-const TargetTracesPaginationShape = z.object({
-  pageIndex: z.number().min(0).default(0),
-  pageSize: z.number().min(10).max(100).default(20),
-});
-export const TargetTracesPagination = {
-  shape: TargetTracesPaginationShape,
-};
-
-export type PaginationState = z.infer<typeof TargetTracesPaginationShape>;
-type PaginationProps = {
-  pagination: PaginationState;
 };
 
 const TracesList_Trace = graphql(`

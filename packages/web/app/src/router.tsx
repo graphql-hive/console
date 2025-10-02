@@ -80,10 +80,8 @@ import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-setti
 import { TargetTracePage } from './pages/target-trace';
 import {
   FilterState,
-  PaginationState,
   TargetTracesFilterState,
   TargetTracesPage,
-  TargetTracesPagination,
   TargetTracesSort,
 } from './pages/target-traces';
 
