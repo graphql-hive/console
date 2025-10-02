@@ -16,14 +16,13 @@ import { z } from 'zod';
 import { Page, TargetLayout, useTargetReference } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CardDescription } from '@/components/ui/card';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { DateRangePicker, Preset, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
@@ -282,16 +281,15 @@ const TracesList_Trace = graphql(`
 `);
 
 const TracesList = memo(function TracesList(
-  props: SortProps &
-    PaginationProps & {
-      traces: FragmentType<typeof TracesList_Trace>[];
-      onSelectTraceId: (traceId: string) => void;
-      selectedTraceId: string | null;
-      isFetching: boolean;
-      filter: GraphQLSchema.TracesFilterInput;
-      isFetchingMore: boolean;
-      fetchMore: null | (() => void);
-    },
+  props: SortProps & {
+    traces: FragmentType<typeof TracesList_Trace>[];
+    onSelectTraceId: (traceId: string) => void;
+    selectedTraceId: string | null;
+    isFetching: boolean;
+    filter: GraphQLSchema.TracesFilterInput;
+    isFetchingMore: boolean;
+    fetchMore: null | (() => void);
+  },
 ) {
   const router = useRouter();
   const data = useFragment(TracesList_Trace, props.traces);
@@ -311,26 +309,6 @@ const TracesList = memo(function TracesList(
           return {
             ...params,
             sort: value[0] as SortState,
-          };
-        },
-      });
-    },
-    [router],
-  );
-
-  const onPaginationChange = useCallback<OnChangeFn<PaginationState>>(
-    updater => {
-      const value = typeof updater === 'function' ? updater(props.pagination) : updater;
-
-      if (JSON.stringify(value) === JSON.stringify(props.pagination)) {
-        return;
-      }
-
-      void router.navigate({
-        search(params) {
-          return {
-            ...params,
-            pagination: value,
           };
         },
       });
@@ -601,11 +579,9 @@ const TracesList = memo(function TracesList(
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onPaginationChange,
     manualPagination: true,
     state: {
       sorting: [props.sorting],
-      pagination: props.pagination,
     },
   });
 
@@ -1133,13 +1109,19 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
   }
 `);
 
-function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProps) {
+function TargetTracesPageContent(
+  props: SortProps &
+    FilterProps & {
+      range: Preset['range'] | null;
+    },
+) {
   const targetRef = useTargetReference();
 
   const dateRangeController = useDateRangeController({
     // TODO: ressolve retention from account
     dataRetentionInDays: 365,
     defaultPreset: presetLast7Days,
+    range: props.range || undefined,
   });
 
   const filter: GraphQLSchema.TracesFilterInput = {
@@ -1162,6 +1144,8 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
     httpUrls: props.filter['http.url'],
   };
 
+  const paginationSize = 50;
+
   const urql = useClient();
   const [query] = useQuery({
     query: TargetTracesPageQuery,
@@ -1172,7 +1156,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
         targetSlug: targetRef.targetSlug,
       },
       filter,
-      first: props.pagination.pageSize,
+      first: paginationSize,
       sort: {
         sort:
           props.sorting.id === 'duration'
@@ -1319,7 +1303,6 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
             </div>
             <TracesList
               sorting={props.sorting}
-              pagination={props.pagination}
               traces={traces ?? []}
               onSelectTraceId={setSelectedTraceId}
               selectedTraceId={selectedTraceId}
@@ -1345,7 +1328,7 @@ function TargetTracesPageContent(props: SortProps & PaginationProps & FilterProp
                             targetSlug: targetRef.targetSlug,
                           },
                           filter,
-                          first: props.pagination.pageSize,
+                          first: paginationSize,
                           sort: {
                             sort:
                               props.sorting.id === 'duration'
@@ -1394,8 +1377,8 @@ export function TargetTracesPage(
     organizationSlug: string;
     projectSlug: string;
     targetSlug: string;
+    range: Preset['range'] | null;
   } & SortProps &
-    PaginationProps &
     FilterProps,
 ) {
   return (
@@ -1409,8 +1392,8 @@ export function TargetTracesPage(
       >
         <TargetTracesPageContent
           sorting={props.sorting}
-          pagination={props.pagination}
           filter={props.filter}
+          range={props.range}
         />
       </TargetLayout>
     </>

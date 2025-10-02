@@ -1,4 +1,4 @@
-import { lazy, useCallback, useEffect } from 'react';
+import { lazy, useCallback, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
@@ -661,7 +661,8 @@ const targetInsightsRoute = createRoute({
 const TargetTracesRouteSearch = z.object({
   filter: TargetTracesFilterState.optional(),
   sort: TargetTracesSort.shape.optional(),
-  pagination: TargetTracesPagination.shape.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 const targetTracesRoute = createRoute({
@@ -690,11 +691,11 @@ const targetTracesRoute = createRoute({
         id: 'timestamp',
         desc: true,
       },
-      pagination = {
-        pageIndex: 0,
-        pageSize: 20,
-      } satisfies PaginationState,
+      from,
+      to,
     } = targetTracesRoute.useSearch();
+
+    const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
 
     return (
       <TargetTracesPage
@@ -702,8 +703,8 @@ const targetTracesRoute = createRoute({
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         sorting={sort}
-        pagination={pagination}
         filter={filter}
+        range={range}
       />
     );
   },
