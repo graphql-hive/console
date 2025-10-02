@@ -89,7 +89,13 @@ export class AuditLogRecorder {
         queryId: 'create-audit-log',
       });
     } catch (error) {
-      this.logger.error('Failed to create audit log event', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error('Failed to create audit log event (error=%s)', errorText);
       captureException(error, {
         extra: {
           data,
