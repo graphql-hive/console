@@ -922,36 +922,42 @@ export function TraceSheet(props: TraceSheetProps) {
                   {activeView === 'events' ? (
                     <div className="p-4">
                       <div className="space-y-2">
-                        {events.map(event => (
-                          <Link
-                            to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: props.targetSlug,
-                              traceId: trace.id,
-                            }}
-                            search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
-                            onMouseOver={() =>
-                              setHighlightedEvent({
-                                spanId: event.spanId,
-                                eventId: event.id,
-                              })
-                            }
-                            onMouseLeave={() => {
-                              setHighlightedEvent(null);
-                            }}
-                            className="mb-2 block"
-                            key={event.id}
-                          >
-                            <ExceptionTeaser
-                              type={String(event.attributes['exception.type'] ?? '')}
-                              message={String(event.attributes['exception.message'] ?? '')}
-                              stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
-                              name={event.name}
-                            />
-                          </Link>
-                        ))}
+                        {!events.length ? (
+                          <div className="text-sm text-gray-600">
+                            No events occured during this trace.
+                          </div>
+                        ) : (
+                          events.map(event => (
+                            <Link
+                              to="/$organizationSlug/$projectSlug/$targetSlug/trace/$traceId"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                traceId: trace.id,
+                              }}
+                              search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
+                              onMouseOver={() =>
+                                setHighlightedEvent({
+                                  spanId: event.spanId,
+                                  eventId: event.id,
+                                })
+                              }
+                              onMouseLeave={() => {
+                                setHighlightedEvent(null);
+                              }}
+                              className="mb-2 block"
+                              key={event.id}
+                            >
+                              <ExceptionTeaser
+                                type={String(event.attributes['exception.type'] ?? '')}
+                                message={String(event.attributes['exception.message'] ?? '')}
+                                stacktrace={String(event.attributes['exception.stacktrace'] ?? '')}
+                                name={event.name}
+                              />
+                            </Link>
+                          ))
+                        )}
                       </div>
                     </div>
                   ) : null}
