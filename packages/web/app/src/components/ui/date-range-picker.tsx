@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
@@ -122,10 +122,10 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     ? new RegExp(`[0-9]+(${disallowedUnits.join('|')})`)
     : null;
 
-  let presets = props.presets ?? availablePresets;
+  let staticPresets = props.presets ?? availablePresets;
 
   if (hasInvalidUnitRegex) {
-    presets = presets.filter(
+    staticPresets = staticPresets.filter(
       preset =>
         !hasInvalidUnitRegex.test(preset.range.from) && !hasInvalidUnitRegex.test(preset.range.to),
     );
@@ -153,7 +153,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
       !hasInvalidUnitRegex?.test(props.selectedRange.from) &&
       !hasInvalidUnitRegex?.test(props.selectedRange.to)
     ) {
-      preset = findMatchingPreset(props.selectedRange, presets);
+      preset = findMatchingPreset(props.selectedRange, staticPresets);
 
       if (preset) {
         return preset;
@@ -169,7 +169,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
       }
     }
 
-    return presets.at(0) ?? null;
+    return staticPresets.at(0) ?? null;
   }
 
   const [activePreset, setActivePreset] = useResetState<Preset | null>(getInitialPreset, [
@@ -241,9 +241,9 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     );
   };
 
-  const [dynamicPresets, setDynamicPresets] = useState<Preset[]>([]);
-  useEffect(() => {
+  const dynamicPresets = useMemo(() => {
     const number = parseInt(quickRangeFilter.replace(/\D/g, ''), 10);
+
     const dynamicPresets: Preset[] = [
       {
         name: `last${number}min`,
@@ -278,7 +278,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     ];
 
     const uniqueDynamicPresets = dynamicPresets.filter(
-      preset => !presets.some(p => p.name === preset.name),
+      preset => !staticPresets.some(p => p.name === preset.name),
     );
 
     const validDynamicPresets = uniqueDynamicPresets.filter(
@@ -288,17 +288,11 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     );
 
     if (number > 0 && validDynamicPresets.length > 0) {
-      setDynamicPresets(validDynamicPresets);
+      return validDynamicPresets;
     } else {
-      setDynamicPresets([]);
+      return [];
     }
   }, [quickRangeFilter, validUnits]);
-  presets = [...presets, ...dynamicPresets].sort((a, b) => {
-    const aWeight = calculateWeight(a);
-    const bWeight = calculateWeight(b);
-
-    return aWeight - bWeight;
-  });
 
   return (
     <Popover
@@ -448,7 +442,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                     preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
                   )
                   .map(preset => <PresetButton key={preset.name} preset={preset} />)
-              : presets
+              : staticPresets
                   .filter(preset =>
                     preset.label.toLowerCase().includes(quickRangeFilter.toLowerCase().trim()),
                   )
