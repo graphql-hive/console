@@ -66,16 +66,6 @@ function resolveRange(rawFrom: string, rawTo: string): ResolvedDateRange | null 
   return null;
 }
 
-function calculateWeight(preset: Preset): number {
-  const from = parse(preset.range.from);
-  const to = parse(preset.range.to);
-  if (from && to) {
-    const durationInMinutes = Math.round((to.getTime() - from.getTime()) / (1000 * 60));
-    return durationInMinutes;
-  }
-  return 0;
-}
-
 export const presetLast7Days: Preset = {
   name: 'last7d',
   label: 'Last 7 days',
@@ -175,6 +165,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
   const [activePreset, setActivePreset] = useResetState<Preset | null>(getInitialPreset, [
     props.selectedRange,
   ]);
+
   const [fromValue, setFromValue] = useState(activePreset?.range.from ?? '');
   const [toValue, setToValue] = useState(activePreset?.range.to ?? '');
   const [range, setRange] = useState<DateRange | undefined>(undefined);
@@ -289,9 +280,9 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
 
     if (number > 0 && validDynamicPresets.length > 0) {
       return validDynamicPresets;
-    } else {
-      return [];
     }
+
+    return [];
   }, [quickRangeFilter, validUnits]);
 
   return (
@@ -336,7 +327,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                       />
                       <Button
                         variant="ghost"
-                        className="color-white absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                        className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
                         onClick={() => setShowCalendar(true)}
                       >
                         <CalendarDays className="size-3.5" />
@@ -368,7 +359,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                       />
                       <Button
                         variant="ghost"
-                        className="color-white absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
+                        className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
                         onClick={() => setShowCalendar(true)}
                       >
                         <CalendarDays className="size-3.5" />
