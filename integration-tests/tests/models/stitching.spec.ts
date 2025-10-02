@@ -472,7 +472,7 @@ describe('publish', () => {
         expect(message).toMatch('Str');
       });
 
-      test.concurrent('rejected: not composable, breaking changes', async () => {
+      test.concurrent('rejected: not composable, breaking changes (syntax error)', async () => {
         const {
           cli: { publish, check },
         } = await prepare(ffs);
@@ -508,8 +508,49 @@ describe('publish', () => {
           expect: 'rejected',
         });
 
-        expect(message).toMatch('topProduct');
         expect(message).toMatch('Expected Name');
+      });
+
+      test.concurrent('rejected: object type passed to input argument', async () => {
+        const {
+          cli: { publish, check },
+        } = await prepare(ffs);
+
+        await publish({
+          sdl: /* GraphQL */ `
+            type Query {
+              topProduct: Product
+            }
+
+            type Product @key(selectionSet: "{ id }") {
+              id: ID!
+              name: String
+            }
+          `,
+          serviceName: 'products',
+          serviceUrl: 'http://products:3000/graphql',
+          expect: 'latest-composable',
+        });
+
+        await check({
+          sdl: /* GraphQL */ `
+            type Query {
+              topProduct(filter: TopProductFilter): Product
+            }
+
+            type Product @key(selectionSet: "{ id }") {
+              id: ID!
+              name: String
+            }
+
+            type TopProductFilter {
+              year: Int
+              category: String
+            }
+          `,
+          serviceName: 'products',
+          expect: 'rejected',
+        });
       });
     });
   });

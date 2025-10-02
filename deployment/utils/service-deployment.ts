@@ -192,8 +192,8 @@ export class ServiceDeployment {
       // and ensure that we are not exposed to downtime issues caused by node failures/restarts:
       topologySpreadConstraints.push({
         maxSkew: 1,
-        topologyKey: 'topology.kubernetes.io/zone',
-        whenUnsatisfiable: 'DoNotSchedule',
+        topologyKey: 'kubernetes.io/hostname',
+        whenUnsatisfiable: 'ScheduleAnyway',
         labelSelector: {
           matchLabels: {
             app: this.name,

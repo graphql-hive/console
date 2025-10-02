@@ -151,11 +151,9 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     } else if (envName && env[envName] !== undefined) {
       value = env[envName] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
     } else {
-      const configValue = this._userConfig!.get(key) as NonNullable<
-        GetConfigurationValueType<TKey>
-      >;
+      const configValue = this._userConfig!.get(key) as GetConfigurationValueType<TKey>;
 
-      if (configValue !== undefined) {
+      if (configValue != null) {
         value = configValue;
       } else if (defaultValue) {
         value = defaultValue;

@@ -107,7 +107,7 @@ export function deployGraphQL({
       {
         imagePullSecret: docker.secret,
         image,
-        replicas: environment.isProduction ? 3 : 1,
+        replicas: environment.podsConfig.general.replicas,
         pdb: true,
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',

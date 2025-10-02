@@ -7,8 +7,8 @@ import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
-  GithubAuthorRequiredError,
-  GithubCommitRequiredError,
+  AuthorRequiredError,
+  CommitRequiredError,
   InvalidSDLError,
   InvalidTargetError,
   MissingEndpointError,
@@ -239,11 +239,11 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       }
 
       if (!author) {
-        throw new GithubAuthorRequiredError();
+        throw new AuthorRequiredError();
       }
 
       if (!commit) {
-        throw new GithubCommitRequiredError();
+        throw new CommitRequiredError();
       }
 
       if (usesGitHubApp) {

@@ -1,10 +1,9 @@
 import { buildSchema, DocumentNode, GraphQLError, Kind, parse, TypeInfo, validate } from 'graphql';
 import PromiseQueue from 'p-queue';
 import { z } from 'zod';
-import { collectSchemaCoordinates } from '@graphql-hive/core/src/client/collect-schema-coordinates';
+import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
 import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
 import { ServiceLogger } from '@hive/service-common';
-import { normalizeOperation } from '@hive/usage-ingestor/src/normalize-operation';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Config } from '../../shared/providers/s3-config';
 
@@ -186,7 +185,7 @@ export class PersistedDocumentIngester {
 
       const operationName = operationNames[0] ?? null;
 
-      const coordinates = collectSchemaCoordinates({
+      const schemaCoordinates = collectSchemaCoordinates({
         documentNode,
         processVariables: false,
         variables: null,
@@ -194,10 +193,10 @@ export class PersistedDocumentIngester {
         typeInfo,
       });
 
-      const normalizedOperation = normalizeOperation({
-        document: operation.body,
-        fields: coordinates,
+      const normalizedOperation = preprocessOperation({
+        document: documentNode,
         operationName,
+        schemaCoordinates,
       });
 
       documents.push({
@@ -206,7 +205,7 @@ export class PersistedDocumentIngester {
         internalHash: normalizedOperation?.hash ?? operation.hash,
         body: operation.body,
         operationName,
-        schemaCoordinates: Array.from(coordinates),
+        schemaCoordinates: Array.from(schemaCoordinates),
       });
 
       index++;

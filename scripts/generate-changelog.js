@@ -30,12 +30,7 @@ for (const file of files) {
       .replace(/\/page$/, '');
 
     changelogRecords.push({
-      date: new Date(data.date).toLocaleDateString(undefined, {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        calendar: 'gregory',
-      }),
+      date: new Date(data.date).toISOString().split('T')[0],
       href: `https://the-guild.dev/graphql/hive/product-updates/${pathname}`,
       title: data.title,
       description: data.description || '',

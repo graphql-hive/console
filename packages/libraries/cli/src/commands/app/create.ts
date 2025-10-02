@@ -119,10 +119,18 @@ export default class AppCreate extends Command<typeof AppCreate> {
       return;
     }
 
+    const totalDocuments = Object.keys(validationResult.data).length;
+
+    this.log(
+      `App deployment "${flags['name']}@${flags['version']}" is created pending document upload. Uploading documents...`,
+    );
+
     let buffer: Array<{ hash: string; body: string }> = [];
 
+    let counter = 0;
+
     const flush = async (force = false) => {
-      if (buffer.length >= 100 || force) {
+      if (buffer.length >= 100 || (force && buffer.length > 0)) {
         const result = await this.registryApi(endpoint, accessToken).request({
           operation: AddDocumentsToAppDeploymentMutation,
           variables: {
@@ -159,15 +167,20 @@ export default class AppCreate extends Command<typeof AppCreate> {
           throw new APIError(result.addDocumentsToAppDeployment.error.message);
         }
         buffer = [];
+
+        // don't bother showing 100% since there's another log line when it's done. And for deployments with just a few docs, showing this progress is unnecessary.
+        if (counter !== totalDocuments) {
+          this.log(
+            `${counter} / ${totalDocuments} (${Math.round((100.0 * counter) / totalDocuments)}%) documents uploaded...`,
+          );
+        }
       }
     };
 
-    let counter = 0;
-
     for (const [hash, body] of Object.entries(validationResult.data)) {
       buffer.push({ hash, body });
-      await flush();
       counter++;
+      await flush();
     }
 
     await flush(true);

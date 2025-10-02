@@ -1,7 +1,7 @@
 import { CdnProvider } from '../providers/cdn.provider';
 import type { TargetResolvers } from './../../../__generated__/types';
 
-export const Target: Pick<TargetResolvers, 'cdnAccessTokens' | 'cdnUrl' | '__isTypeOf'> = {
+export const Target: Pick<TargetResolvers, 'cdnAccessTokens' | 'cdnUrl'> = {
   cdnAccessTokens: async (target, args, context) => {
     const result = await context.injector.get(CdnProvider).getPaginatedCDNAccessTokensForTarget({
       targetId: target.id,

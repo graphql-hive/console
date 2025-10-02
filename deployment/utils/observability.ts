@@ -90,10 +90,12 @@ export class Observability {
                 user: this.config.loki.username,
                 password: this.config.loki.password,
               },
+              // Based on https://vector.dev/docs/reference/configuration/sources/kubernetes_logs/#output-types
               labels: {
                 namespace: '{{`{{ kubernetes.pod_namespace }}`}}',
+                pod_name: '{{`{{ kubernetes.pod_name }}`}}',
+                node: '{{`{{ kubernetes.pod_node_name }}`}}',
                 container_name: '{{`{{ kubernetes.container_name }}`}}',
-                env: this.environment.envName,
               },
               encoding: {
                 codec: 'text',
@@ -112,8 +114,8 @@ export class Observability {
       replicaCount: 1,
       resources: {
         limits: {
-          cpu: this.environment.isProduction ? '512m' : '150m',
-          memory: this.environment.isProduction ? '1000Mi' : '300Mi',
+          cpu: this.environment.podsConfig.internalObservability.cpuLimit,
+          memory: this.environment.podsConfig.internalObservability.memoryLimit,
         },
       },
       podAnnotations: {

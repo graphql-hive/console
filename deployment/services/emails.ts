@@ -59,7 +59,7 @@ export function deployEmails({
       startupProbe: '/_health',
       exposesMetrics: true,
       image,
-      replicas: environment.isProduction ? 3 : 1,
+      replicas: environment.podsConfig.general.replicas,
     },
     [redis.deployment, redis.service],
   )

@@ -11,8 +11,6 @@ import { Callout, ContactTextLink, Tabs } from '@theguild/components'
   <div>
     App deployments are currently in preview. If you would like to try them out, please{' '}
     <ContactTextLink>reach out to us</ContactTextLink>
-    {/* If we move the dot out of the quotations/brackets, it will be a new paragraph... */}
-    {'.'}
   </div>
 </Callout>
 
@@ -190,6 +188,10 @@ import detailAppImage from '../../../public/docs/pages/features/app-deployments/
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
 
+**Further reading**:
+
+- [`app:create` API Reference](https://github.com/graphql-hive/console/tree/main/packages/libraries/cli#hive-appcreate-file)
+
 ## Publish an App Deployment
 
 A app deployment will be in the pending state until you publish it. By publishing the app
@@ -222,6 +224,10 @@ import activeAppImage from '../../../public/docs/pages/features/app-deployments/
   src={activeAppImage}
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
+
+**Further reading**:
+
+- [`app:publish` API Reference](https://github.com/graphql-hive/console/tree/main/packages/libraries/cli#hive-apppublish)
 
 ## Persisted Documents on GraphQL Server and Gateway
 

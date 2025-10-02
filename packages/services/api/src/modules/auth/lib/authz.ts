@@ -281,16 +281,22 @@ function isActionMatch(actionContainingWildcard: string, action: string) {
   if (actionContainingWildcard === '*') {
     return true;
   }
+
   // exact match
   if (actionContainingWildcard === action) {
     return true;
   }
 
-  const [actionScope] = action.split(':');
+  const [actionScope, actionId] = action.split(':');
   const [userSpecifiedActionScope, userSpecifiedActionId] = actionContainingWildcard.split(':');
 
   // wildcard match "scope:*"
   if (actionScope === userSpecifiedActionScope && userSpecifiedActionId === '*') {
+    return true;
+  }
+
+  // wildcard match "*:scope"
+  if (userSpecifiedActionScope === '*' && userSpecifiedActionId === actionId) {
     return true;
   }
 
@@ -500,7 +506,7 @@ type ActionDefinitionMap = {
   [key: `${string}:${string}`]: (args: any) => Array<string>;
 };
 
-const actionDefinitions = {
+export const actionDefinitions = {
   ...objectFromEntries(permissionsByLevel['organization'].map(t => [t.value, defaultOrgIdentity])),
   ...objectFromEntries(permissionsByLevel['project'].map(t => [t.value, defaultProjectIdentity])),
   ...objectFromEntries(permissionsByLevel['target'].map(t => [t.value, defaultTargetIdentity])),
@@ -514,7 +520,7 @@ const actionDefinitions = {
 
 type Actions = keyof typeof actionDefinitions;
 
-type ActionStrings = Actions | '*';
+type ActionStrings = Actions | '*' | '*:describe';
 
 /** Unauthenticated session that is returned by default. */
 class UnauthenticatedSession extends Session {

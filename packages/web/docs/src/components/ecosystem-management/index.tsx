@@ -27,6 +27,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
           </Heading>
           <ul className="mx-auto flex list-none flex-col gap-y-4 text-white/80 lg:gap-y-6">
             {[
+              // eslint-disable-next-line react/jsx-key
               <div className="text-white">
                 A complete ecosystem covering all your dev and production needs.
               </div>,

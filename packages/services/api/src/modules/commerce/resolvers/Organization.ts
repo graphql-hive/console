@@ -10,7 +10,6 @@ export const Organization: Pick<
   | 'rateLimit'
   | 'viewerCanDescribeBilling'
   | 'viewerCanModifyBilling'
-  | '__isTypeOf'
 > = {
   plan: org => (org.billingPlan || 'HOBBY') as BillingPlanType,
   billingConfiguration: async (org, _args, { injector }) => {
@@ -60,7 +59,10 @@ export const Organization: Pick<
       organizationId: billingRecord.organizationId,
     });
 
+    const logger = injector.get(Logger);
+
     if (!subscriptionInfo) {
+      logger.info('No active subscription for organization (id=%s)', org.id);
       return {
         hasActiveSubscription: false,
         canUpdateSubscription: true,
@@ -84,6 +86,10 @@ export const Organization: Pick<
     const hasPaymentIssues = invoices?.some(
       i => i.charge !== null && typeof i.charge === 'object' && i.charge?.failure_code !== null,
     );
+
+    if (!subscriptionInfo.paymentMethod) {
+      logger.warn('Active subscription found but is missing a payment method (id=%s)', org.id);
+    }
 
     return {
       hasActiveSubscription: subscriptionInfo.subscription !== null,

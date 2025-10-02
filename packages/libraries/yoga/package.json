@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/yoga",
-  "version": "0.42.1",
+  "version": "0.42.2",
   "type": "module",
   "description": "GraphQL Hive + GraphQL Yoga",
   "repository": {
@@ -51,7 +51,7 @@
     "@graphql-yoga/plugin-persisted-operations": "^3.9.0"
   },
   "devDependencies": {
-    "@graphql-tools/schema": "10.0.23",
+    "@graphql-tools/schema": "10.0.25",
     "@graphql-yoga/plugin-defer-stream": "3.7.0",
     "@graphql-yoga/plugin-disable-introspection": "2.7.0",
     "@graphql-yoga/plugin-graphql-sse": "3.7.0",
@@ -59,8 +59,8 @@
     "@whatwg-node/fetch": "0.10.6",
     "graphql-ws": "5.16.1",
     "graphql-yoga": "5.13.3",
-    "nock": "14.0.0",
-    "vitest": "3.1.1",
+    "nock": "14.0.10",
+    "vitest": "3.2.4",
     "ws": "8.18.0"
   },
   "publishConfig": {

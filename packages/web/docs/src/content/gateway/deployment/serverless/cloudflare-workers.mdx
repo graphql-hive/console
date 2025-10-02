@@ -18,10 +18,7 @@ See [Bundling Problems](/docs/gateway/deployment/serverless#bundling-problem) fo
 how to load the supergraph and `transports` option.
 
 In the following example, we showcase how Hive Gateway can be used in a serverless environment with
-Cloudflare Workers. Notice how the implementation leverages the `using` sytax for
-[Explicit Resource Management](https://developers.cloudflare.com/workers/runtime-apis/rpc/lifecycle/#explicit-resource-management),
-this makes sure that the Hive Gateway is gracefully and properly disposed before completing the
-worker.
+Cloudflare Workers.
 
 ```ts filename="index.js"
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
@@ -29,7 +26,7 @@ import http from '@graphql-mesh/transport-http'
 import supergraph from './supergraph'
 
 export default {
-  fetch(request, env, ctx) {
+  async fetch(request, env, ctx) {
     const gateway = createGatewayRuntime({
       // All options available in `gateway.config.ts` configuration can also be passed here.
       supergraph,
@@ -37,8 +34,9 @@ export default {
         http // http transport is required for subgraphs using standard GraphQL over HTTP.
       }
     })
+    const response = await gateway(request, env, ctx)
     ctx.waitUntil(gateway[Symbol.asyncDispose]())
-    return gateway(request, env, ctx)
+    return response
   }
 }
 ```
@@ -50,6 +48,11 @@ export default /* GraphQL */ `
 ```
 
 <Callout>
+  The example above does not support streaming responses because Hive Gateway is being disposed
+  immediatelly after assembling a response with `ctx.waitUntil(gateway[Symbol.asyncDispose]())`.
+</Callout>
+
+<Callout type="info">
   If you want to use [Cloudflare KV
   Cache](https://developers.cloudflare.com/workers/runtime-apis/kv) as a distributed cache, [see
   here for Hive Gateway integration](/docs/gateway/other-features/performance#cloudflare-workers-kv)

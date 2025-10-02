@@ -8,15 +8,15 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "4.20241230.0",
+    "@cloudflare/workers-types": "4.20250913.0",
     "@types/service-worker-mock": "2.0.4",
     "@whatwg-node/server": "0.10.5",
-    "esbuild": "0.25.0",
+    "esbuild": "0.25.9",
     "itty-router": "4.2.2",
     "toucan-js": "4.1.0",
-    "undici": "6.21.2",
-    "vitest": "3.1.1",
+    "undici": "6.21.3",
+    "vitest": "3.2.4",
     "workers-loki-logger": "0.1.15",
-    "zod": "3.24.1"
+    "zod": "3.25.76"
   }
 }

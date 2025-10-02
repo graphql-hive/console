@@ -1,5 +1,13 @@
 # 16.10.2024
 
+## 2.1.3
+
+### Patch Changes
+
+- [#6753](https://github.com/graphql-hive/console/pull/6753)
+  [`7ef800e`](https://github.com/graphql-hive/console/commit/7ef800e8401a4e3fda4e8d1208b940ad6743449e)
+  Thanks [@Intellicode](https://github.com/Intellicode)! - fix tmp dir filename
+
 ## 2.1.2
 
 ### Patch Changes

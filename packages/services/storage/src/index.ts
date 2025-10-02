@@ -1335,13 +1335,6 @@ export async function createStorage(
         ),
       );
     },
-    async getMyOrganization({ userId: user }) {
-      const org = await pool.maybeOne<Slonik<organizations>>(
-        sql`/* getMyOrganization */ SELECT * FROM organizations WHERE user_id = ${user} AND type = ${'PERSONAL'} LIMIT 1`,
-      );
-
-      return org ? transformOrganization(org) : null;
-    },
     async getOrganizations({ userId: user }) {
       const results = await pool.query<Slonik<organizations>>(
         sql`/* getOrganizations */

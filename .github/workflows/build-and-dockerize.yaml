@@ -64,6 +64,8 @@ jobs:
       - name: build packages and applications
         if: ${{ inputs.build }}
         run: pnpm build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=14336' # GitHub Actions gives us 16GB, it's ok to use 80%
 
       - name: test ESM & CJS exports integrity
         if: ${{ inputs.build }}
@@ -127,7 +129,7 @@ jobs:
         name: sanitize branch name
         if: ${{ inputs.dockerize }}
         with:
-          pattern: '[+\/@|-]'
+          pattern: '[+\/><@|-]'
           flags: 'g'
           string: ${{ github.head_ref || github.ref_name }}
           replace-with: '_'
@@ -185,7 +187,7 @@ jobs:
 
             <details>
               <summary>Docker Bake metadata</summary>
-              
+
               ```json
               ${{ steps.docker-bake.outputs.metadata }}
               ```
