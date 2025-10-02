@@ -96,7 +96,6 @@ export class Observability {
                 pod_name: '{{`{{ kubernetes.pod_name }}`}}',
                 node: '{{`{{ kubernetes.pod_node_name }}`}}',
                 container_name: '{{`{{ kubernetes.container_name }}`}}',
-                env: this.environment.envName,
               },
               encoding: {
                 codec: 'text',
