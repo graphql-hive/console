@@ -348,10 +348,6 @@ function OrganizationPageContent(
       });
   }, [projectsConnection, props.search, sortKey, sortOrder]);
 
-  if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
-  }
-
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       void router.navigate({
@@ -391,6 +387,10 @@ function OrganizationPageContent(
       },
     });
   }, [router, props.sortOrder]);
+
+  if (query.error) {
+    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+  }
 
   return (
     <OrganizationLayout
