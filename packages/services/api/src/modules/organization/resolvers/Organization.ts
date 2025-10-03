@@ -34,11 +34,7 @@ export const Organization: Pick<
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
   | 'viewerCanTransferOwnership'
-  | '__isTypeOf'
 > = {
-  __isTypeOf: organization => {
-    return !!organization.id;
-  },
   owner: async (organization, _, { injector }) => {
     const owner = await injector.get(OrganizationManager).findOrganizationOwner(organization);
     if (!owner) {

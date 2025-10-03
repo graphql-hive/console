@@ -10,7 +10,6 @@ export const Target: Pick<
   | 'requestsOverTime'
   | 'schemaCoordinateStats'
   | 'totalRequests'
-  | '__isTypeOf'
 > = {
   totalRequests: (target, { period }, { injector }) => {
     return injector.get(OperationsManager).countRequests({

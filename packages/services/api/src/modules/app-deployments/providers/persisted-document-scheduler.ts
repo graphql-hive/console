@@ -36,8 +36,13 @@ export class PersistedDocumentScheduler {
     const tasks = new Map<string, PendingTaskRecord>();
 
     worker.on('error', error => {
-      console.error(error);
-      this.logger.error('Worker error %s', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error('Worker error (error=%s)', errorText);
     });
 
     worker.on('exit', code => {

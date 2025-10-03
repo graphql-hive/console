@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { BadgeCheck, ChevronDown, GitCompareIcon, Loader2 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
@@ -281,20 +281,20 @@ function ConditionalBreakingChangesMetadataSection(props: {
         {numberOfTargets <= 3 && (
           <>
             {allTargets.map((target, index) => (
-              <>
+              <Fragment key={target.slug}>
                 <span className="text-white">{target.slug}</span>
                 {index === allTargets.length - 1 ? null : ', '}
-              </>
+              </Fragment>
             ))}
           </>
         )}
         {numberOfTargets > 3 && (
           <>
             {truncatedTargets.map((target, index) => (
-              <>
+              <Fragment key={target.slug}>
                 <span className="text-white">{target.slug}</span>
                 {index === truncatedTargets.length - 1 ? null : ', '}
-              </>
+              </Fragment>
             ))}
             {' and '}
             <Popover>
@@ -319,7 +319,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
               </PopoverContent>
             </Popover>
           </>
-        )}{' '}
+        )}
         . <br />
         Usage data ranges from{' '}
         <span className="text-white">

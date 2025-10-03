@@ -118,11 +118,14 @@ export class TokenStorage {
 
       return tokenInfo;
     } catch (error: any) {
-      if (!(error instanceof HiveError)) {
-        this.logger.error(error);
-      }
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
 
-      this.logger.error('Failed to fetch token', error);
+      this.logger.error('Failed to fetch token (error=%s)', errorText);
       throw new HiveError('Invalid token provided', {
         originalError: error,
       });

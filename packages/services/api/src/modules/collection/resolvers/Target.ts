@@ -12,7 +12,6 @@ export const Target: Pick<
   | 'viewerCanModifyPreflightScript'
   | 'viewerCanViewLaboratory'
   | 'viewerCanViewSchemaProposals'
-  | '__isTypeOf'
 > = {
   documentCollections: (target, args, { injector }) =>
     injector.get(CollectionProvider).getCollections(target, args.first, args.after),

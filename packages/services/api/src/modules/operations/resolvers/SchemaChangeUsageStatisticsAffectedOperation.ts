@@ -3,7 +3,7 @@ import { OperationsReader } from '../providers/operations-reader';
 
 export const SchemaChangeUsageStatisticsAffectedOperation: Pick<
   SchemaChangeUsageStatisticsAffectedOperationResolvers,
-  'operation' | '__isTypeOf'
+  'operation'
 > = {
   operation: (affectedOperation, _, { injector }) => {
     return injector.get(OperationsReader).readOperation({

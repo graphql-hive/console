@@ -302,6 +302,12 @@ export class Proxy {
               }
             : undefined,
       },
+      // Needed because we override the `contour.image.repository` field.
+      global: {
+        security: {
+          allowInsecureImages: true,
+        },
+      },
       contour: {
         image: {
           repository: 'bitnamilegacy/contour',
@@ -320,6 +326,9 @@ export class Proxy {
         },
       },
       envoy: {
+        image: {
+          repository: 'bitnamilegacy/envoy',
+        },
         resources: {
           limits: {},
         },

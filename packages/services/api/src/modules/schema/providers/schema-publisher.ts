@@ -234,7 +234,13 @@ export class SchemaPublisher {
         failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
       };
     } catch (error: unknown) {
-      this.logger.error(`Failed to get settings`, error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to get settings (error=%s)`, errorText);
       throw error;
     }
   }
@@ -2047,8 +2053,14 @@ export class SchemaPublisher {
           errors,
           initial,
         })
-        .catch(err => {
-          this.logger.error('Failed to trigger schema change notifications', err);
+        .catch(error => {
+          const errorText =
+            error instanceof Error
+              ? error.toString()
+              : typeof error === 'string'
+                ? error
+                : JSON.stringify(error);
+          this.logger.error('Failed to trigger schema change notifications (error=%s)', errorText);
         });
     }
 
