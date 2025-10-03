@@ -1,5 +1,13 @@
 # @graphql-hive/cli
 
+## 0.50.5
+
+### Patch Changes
+
+- [#7046](https://github.com/graphql-hive/console/pull/7046)
+  [`8c49615`](https://github.com/graphql-hive/console/commit/8c4961549f265946edcf744c6180b76b2217c4a3)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add progress log to app:create
+
 ## 0.50.4
 
 ### Patch Changes
