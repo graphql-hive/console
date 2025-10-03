@@ -5,7 +5,11 @@ export default gql`
     id: ID!
     name: String!
     version: String!
-    documents(first: Int, after: String): GraphQLDocumentConnection
+    documents(
+      first: Int
+      after: String
+      filter: AppDeploymentDocumentsFilterInput
+    ): GraphQLDocumentConnection
     totalDocumentCount: Int!
     status: AppDeploymentStatus!
     """
@@ -52,6 +56,10 @@ export default gql`
   type AppDeploymentEdge {
     cursor: String!
     node: AppDeployment!
+  }
+
+  input AppDeploymentDocumentsFilterInput {
+    operationName: String
   }
 
   extend type Target {

@@ -537,6 +537,20 @@ function HowFederationWorks(props: { className?: string }) {
                 JSON Web Tokens (JWT), role-based access control (RBAC), and a good observability
                 story. It should be able to handle a large amount of requests.
               </p>
+              <p>
+                The Guild maintains a reproducible{' '}
+                <strong>performance benchmark of leading GraphQL gateways</strong>- covering
+                throughput (RPS), latency (p95/p99.9), CPU, memory and resilience to failures.
+                <br />
+                <a
+                  title="GraphQL federation gateway performance benchmark: methodology and results"
+                  aria-label="Open the GraphQL federation gateway performance benchmark"
+                  href="/graphql/hive/federation-gateway-performance"
+                >
+                  See results and methodology
+                </a>
+                .
+              </p>
               <h4>Specification Compliance</h4>
               <p>
                 A critical yet{' '}

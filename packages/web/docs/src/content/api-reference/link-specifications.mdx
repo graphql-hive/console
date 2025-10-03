@@ -1,0 +1,120 @@
+---
+title: 'Hive GraphQL Federated Link Specifications'
+---
+
+import NextImage from 'next/image'
+import { Tabs } from '@theguild/components'
+
+# Hive GraphQL Federated Link Specifications
+
+Federation `@link` compliant features for GraphQL Hive.
+
+---
+
+## Introduction
+
+Links are a feature in Federation 2.x that allow external specifications to be referenced and used
+by a subgraph. Hive uses links to allow schemas to opt in to schema related features, such as
+metadata.
+
+### Importing via `@link`
+
+A preqrequisite is that the subgraph is using Federation 2.x:
+
+```graphql
+extend schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/federation/v2.3")
+```
+
+Then the Hive features can be imported like:
+
+```graphql
+extend schema @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+```
+
+Be sure to import and add definitions for all resources you intend to use.
+
+### Subgraph schema additions
+
+```graphql
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+```
+
+## Features
+
+### @meta
+
+<Tabs items={["v1.0"]}>
+<Tabs.Tab>
+
+Use this directive to enhance schema types with additional data, visible via the Hive Console. _This
+intentionally does not appear in the API Schema to avoid bloat. But if you want this directive to be
+returned to your gateway, then you can use `@composeDirective`_
+
+```graphql
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+```
+
+Metadata is useful for indicating ownership, contact information, importance, domain, or more. It
+can be viewed from Hive's explorer page:
+
+import explorerMetadataViewImage from '../../../public/docs/pages/schema-registry/link-specifications/explorer_metadata-view.png'
+
+<NextImage
+  alt="Explorer with Metadata Visible"
+  src={explorerMetadataViewImage}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
+/>
+
+And can be used in Hive's explorer page to filter the list of elements:
+
+import explorerMetadataFilterImage from '../../../public/docs/pages/schema-registry/link-specifications/explorer_metadata-filter.png'
+
+<NextImage
+  alt="Explorer with Metadata Filter"
+  src={explorerMetadataFilterImage}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
+/>
+
+#### Usage
+
+```graphql
+extend schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/federation/v2.3")
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "noreply@the-guild.dev")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+type Query {
+  user: User @meta(name: "domain", content: "accounts") @meta(name: "priority", content: "tier-1")
+}
+
+type User {
+  id: ID!
+  ssn: String @meta(name: "classification", content: "pii")
+}
+```
+
+`@meta` can be applied to schemas, types, interfaces, and fields. A field's metadata is a union of
+all applied metadata. This is applied using the following rules:
+
+1. meta on a schema applies to every field in the schema.
+2. meta on a type applies to every field in that exact type.
+3. meta on an interface applies to every field in that interface on every implemented type.
+4. meta on a field applies only to that field for that type.
+5. meta is additive and will not override other applied or repeated directives.
+
+</Tabs.Tab>
+</Tabs>

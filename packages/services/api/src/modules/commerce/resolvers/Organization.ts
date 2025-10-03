@@ -10,7 +10,6 @@ export const Organization: Pick<
   | 'rateLimit'
   | 'viewerCanDescribeBilling'
   | 'viewerCanModifyBilling'
-  | '__isTypeOf'
 > = {
   plan: org => (org.billingPlan || 'HOBBY') as BillingPlanType,
   billingConfiguration: async (org, _args, { injector }) => {

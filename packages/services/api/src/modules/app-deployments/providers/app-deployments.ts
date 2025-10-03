@@ -690,9 +690,11 @@ export class AppDeployments {
     appDeploymentId: string;
     cursor: string | null;
     first: number | null;
+    operationName: string;
   }) {
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const cursor = args.cursor ? decodeHashBasedCursor(args.cursor) : null;
+    const operationName = args.operationName.trim();
     const result = await this.clickhouse.query({
       query: cSql`
         SELECT
@@ -705,7 +707,8 @@ export class AppDeployments {
         WHERE
           "app_deployment_id" = ${args.appDeploymentId}
           ${cursor?.id ? cSql`AND "document_hash" > ${cursor.id}` : cSql``}
-        ORDER BY "app_deployment_id", "document_hash"
+          ${operationName.length ? cSql`AND "operation_name" ILIKE CONCAT('%', ${operationName}, '%')` : cSql``}
+        ORDER BY "app_deployment_id", ${operationName.length ? cSql`positionCaseInsensitive("operation_name", ${operationName}) ASC, "operation_name" ASC` : cSql`"document_hash"`}
         LIMIT 1 BY "app_deployment_id", "document_hash"
         LIMIT ${cSql.raw(String(limit + 1))}
       `,

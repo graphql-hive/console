@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useRef } from 'react';
+import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
 import { endOfDay, formatISO, startOfDay } from 'date-fns';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
@@ -352,6 +352,46 @@ function OrganizationPageContent(
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
   }
 
+  const onSearchChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      void router.navigate({
+        search(params) {
+          return {
+            ...params,
+            search: event.target.value,
+          };
+        },
+        replace: true,
+      });
+    },
+    [router],
+  );
+
+  const onRequestsValueChange = useCallback(
+    (value: string) => {
+      void router.navigate({
+        search(params) {
+          return {
+            ...params,
+            sortBy: value,
+          };
+        },
+      });
+    },
+    [router],
+  );
+
+  const onSortClick = useCallback(() => {
+    void router.navigate({
+      search(params) {
+        return {
+          ...params,
+          sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
+        };
+      },
+    });
+  }, [router, props.sortOrder]);
+
   return (
     <OrganizationLayout
       page={Page.Overview}
@@ -372,34 +412,13 @@ function OrganizationPageContent(
                   <Input
                     type="search"
                     placeholder="Search..."
-                    value={props.search}
-                    onChange={event => {
-                      void router.navigate({
-                        search(params) {
-                          return {
-                            ...params,
-                            search: event.target.value,
-                          };
-                        },
-                      });
-                    }}
+                    defaultValue={props.search}
+                    onChange={onSearchChange}
                     className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
                   />
                 </div>
                 <Separator orientation="vertical" className="mx-4 h-8" />
-                <Select
-                  value={props.sortBy ?? 'requests'}
-                  onValueChange={value => {
-                    void router.navigate({
-                      search(params) {
-                        return {
-                          ...params,
-                          sortBy: value,
-                        };
-                      },
-                    });
-                  }}
-                >
+                <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
                   <SelectTrigger className="hover:bg-accent bg-transparent">
                     {props.sortBy === 'versions'
                       ? 'Schema Versions'
@@ -426,21 +445,7 @@ function OrganizationPageContent(
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  className="shrink-0"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    void router.navigate({
-                      search(params) {
-                        return {
-                          ...params,
-                          sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
-                        };
-                      },
-                    });
-                  }}
-                >
+                <Button className="shrink-0" variant="outline" size="icon" onClick={onSortClick}>
                   {props.sortOrder === 'asc' ? (
                     <MoveUpIcon className="size-4" />
                   ) : (

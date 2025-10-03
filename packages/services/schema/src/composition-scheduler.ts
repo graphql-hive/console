@@ -104,7 +104,13 @@ export class CompositionScheduler {
 
     // catch uncaught exception from worker thread. Worker thread gets terminated.
     worker.on('error', error => {
-      this.logger.error('Worker error %s', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error('Worker error (error=%s)', errorText);
       Sentry.captureException(error, {
         extra: {
           requestId: workerState?.args.requestId ?? '',

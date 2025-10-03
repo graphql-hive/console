@@ -67,6 +67,18 @@ export class SuperTokensCookieBasedSession extends Session {
         organizationId,
       );
 
+      // Allow admins to use all describe actions within foreign organizations
+      // This makes it much more pleasant to debug.
+      if (user.isAdmin) {
+        return [
+          {
+            action: '*:describe',
+            effect: 'allow',
+            resource: `hrn:${organizationId}:organization/${organizationId}`,
+          },
+        ];
+      }
+
       return [];
     }
 

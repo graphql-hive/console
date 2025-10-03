@@ -295,8 +295,9 @@ function TargetAppsView(props: {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.data?.target?.appDeployments?.edges.map(edge => (
+                {data.data?.target?.appDeployments?.edges.map((edge, i) => (
                   <AppTableRow
+                    key={i}
                     organizationSlug={props.organizationSlug}
                     projectSlug={props.projectSlug}
                     targetSlug={props.targetSlug}

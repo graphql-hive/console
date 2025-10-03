@@ -146,7 +146,13 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
         err.statusCode,
       );
     } else {
-      this.logger.error(`Failed to send Slack notification (message=%s)`, err.message);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to send Slack notification (message=%s)`, errorText);
     }
   }
 }

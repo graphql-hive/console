@@ -1,5 +1,58 @@
 # hive
 
+## 8.2.1
+
+### Patch Changes
+
+- [#6935](https://github.com/graphql-hive/console/pull/6935)
+  [`261daf8`](https://github.com/graphql-hive/console/commit/261daf81c384dc992608431e388836b7dde54336)
+  Thanks [@jdolle](https://github.com/jdolle)! - AppDeployment permissions granted to all if none
+  selected by default in access token UI. Fix app deployments feature flag check
+
+- [#7004](https://github.com/graphql-hive/console/pull/7004)
+  [`07a99f0`](https://github.com/graphql-hive/console/commit/07a99f0f4cd21edae5da734893175e1675c23173)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve usability when creating a registry access
+  token.
+
+## 8.2.0
+
+### Minor Changes
+
+- [#6951](https://github.com/graphql-hive/console/pull/6951)
+  [`f567fbb`](https://github.com/graphql-hive/console/commit/f567fbbf49124e0f7ce54fdf8104acd422c543bb)
+  Thanks [@martyganz](https://github.com/martyganz)! - Add `SchemaVersion.unusedSchema` and
+  `SchemaVersion.deprecatedSchema` to the public API schema.
+
+- [#6960](https://github.com/graphql-hive/console/pull/6960)
+  [`e57b6c0`](https://github.com/graphql-hive/console/commit/e57b6c01987e6be9013923ffe760b0fa4fe390a1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Return all users by default if no `first` value is
+  provided for the `Organization.members` field.
+
+### Patch Changes
+
+- [#6963](https://github.com/graphql-hive/console/pull/6963)
+  [`91e830b`](https://github.com/graphql-hive/console/commit/91e830be6cf9fca238375616a8b79d637ae89e10)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve styling of unused schema parts.
+
+- [#6961](https://github.com/graphql-hive/console/pull/6961)
+  [`a66013d`](https://github.com/graphql-hive/console/commit/a66013d5eaa436c8c8106c6c29b546b76b5e50bc)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent editing the base schema showing up for
+  federation projects.
+
+## 8.1.2
+
+### Patch Changes
+
+- [#6924](https://github.com/graphql-hive/console/pull/6924)
+  [`d6cf026`](https://github.com/graphql-hive/console/commit/d6cf02663783076a3ab25d295d1c7a6eb7b2c711)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix selecting "All" app deployments in target when
+  creating an access token
+
+- [#6909](https://github.com/graphql-hive/console/pull/6909)
+  [`d5218b8`](https://github.com/graphql-hive/console/commit/d5218b8d728c37628ee4a83a89e9bc922af84804)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly trim operation name on insights and add
+  popover title
+
 ## 8.1.1
 
 ### Patch Changes

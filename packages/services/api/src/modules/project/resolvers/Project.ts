@@ -16,7 +16,6 @@ export const Project: Pick<
   | 'viewerCanDelete'
   | 'viewerCanModifyAlerts'
   | 'viewerCanModifySettings'
-  | '__isTypeOf'
 > = {
   experimental_nativeCompositionPerTarget: async (project, _, { injector }) => {
     if (project.type !== ProjectType.FEDERATION) {

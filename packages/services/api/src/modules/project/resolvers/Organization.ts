@@ -4,7 +4,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
-  'projectBySlug' | 'projects' | 'viewerCanCreateProject' | '__isTypeOf'
+  'projectBySlug' | 'projects' | 'viewerCanCreateProject'
 > = {
   projects: async (organization, _, { injector }) => {
     const projects = await injector

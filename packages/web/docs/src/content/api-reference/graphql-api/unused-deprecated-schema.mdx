@@ -1,0 +1,315 @@
+---
+title: Lookup Unused and Deprecated Schema Parts via the GraphQL API
+description:
+  Learn how to lookup unused and deprecated schema parts via the Hive Console GraphQL API.
+---
+
+# Lookup Unused Schema Parts via the GraphQL API
+
+You can find unused types, fields and values within you GraphQL API by using the
+`Schemaversion.unusedSchema` field.
+
+The returned `UnusedSchemaExplorer` type will contain a list of types and their unused fields and
+values.
+
+The `SchemaVersion.unusedSchema(period:)` argument specifies the period to look at in order to
+identify whether a schema part is unused. If the argument is omitted a period of the last 30 days is
+used.
+
+```graphql filename="Example: Retrieve a list of unused schema parts"
+query UnusedSchemaQuery(
+  $organizationSlug: String!
+  $projectSlug: String!
+  $targetSlug: String!
+  $period: DateRangeInput!
+) {
+  target(
+    reference: {
+      bySelector: {
+        organizationSlug: $organizationSlug
+        projectSlug: $projectSlug
+        targetSlug: $targetSlug
+      }
+    }
+  ) {
+    id
+    latestValidSchemaVersion {
+      id
+      unusedSchema(period: { absoluteRange: $period }) {
+        types {
+          name
+          description
+          supergraphMetadata {
+            ownedByServiceNames
+          }
+          ... on GraphQLObjectType {
+            interfaces
+            fields {
+              name
+              type
+              description
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+              args {
+                name
+                type
+                description
+                defaultValue
+                isDeprecated
+                deprecationReason
+              }
+            }
+          }
+          ... on GraphQLInterfaceType {
+            interfaces
+            fields {
+              name
+              type
+              description
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+              args {
+                name
+                type
+                defaultValue
+                isDeprecated
+                deprecationReason
+              }
+            }
+          }
+          ... on GraphQLUnionType {
+            members {
+              name
+            }
+          }
+          ... on GraphQLInputObjectType {
+            fields {
+              name
+              type
+              description
+              defaultValue
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+            }
+          }
+          ... on GraphQLEnumType {
+            deprecationReason
+            values {
+              name
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+# Lookup Deprecated Schema Parts via the GraphQL API
+
+You can find deprecated types, fields and values within you GraphQL API by using the
+`Schemaversion.deprecatedSchema` field.
+
+The returned `DeprecatedSchemaExplorer` type will contain a list of types and their unused fields
+and values.
+
+The `SchemaVersion.deprecatedSchema(period:)` argument specifies the period to for attaching
+contextual schema usage data in order to determine while the deprecated field is still being used or
+can be removed safely. If the argument is omitted a period of the last 30 days is used.
+
+```graphql filename="Example: Retrieve a list of deprecated schema parts with statistics about usage"
+query DeprecatedSchemaQuery(
+  $organizationSlug: String!
+  $projectSlug: String!
+  $targetSlug: String!
+  $period: DateRangeInput!
+) {
+  target(
+    reference: {
+      bySelector: {
+        organizationSlug: $organizationSlug
+        projectSlug: $projectSlug
+        targetSlug: $targetSlug
+      }
+    }
+  ) {
+    id
+    latestValidSchemaVersion {
+      id
+      deprecatedSchema(period: { absoluteRange: $period }) {
+        types {
+          name
+          description
+          usage {
+            isUsed
+            usedByClients
+            total
+            topOperations(limit: 5) {
+              hash
+              name
+              count
+            }
+          }
+          supergraphMetadata {
+            ownedByServiceNames
+          }
+          ... on GraphQLObjectType {
+            interfaces
+            fields {
+              name
+              type
+              description
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+              args {
+                name
+                type
+                description
+                defaultValue
+                isDeprecated
+                deprecationReason
+                usage {
+                  isUsed
+                  usedByClients
+                  total
+                  topOperations(limit: 5) {
+                    hash
+                    name
+                    count
+                  }
+                }
+              }
+              usage {
+                isUsed
+                usedByClients
+                total
+                topOperations(limit: 5) {
+                  hash
+                  name
+                  count
+                }
+              }
+            }
+          }
+          ... on GraphQLInterfaceType {
+            interfaces
+            fields {
+              name
+              type
+              description
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+              usage {
+                isUsed
+                usedByClients
+                total
+                topOperations(limit: 5) {
+                  hash
+                  name
+                  count
+                }
+              }
+              args {
+                name
+                type
+                defaultValue
+                isDeprecated
+                deprecationReason
+                usage {
+                  isUsed
+                  usedByClients
+                  total
+                  topOperations(limit: 5) {
+                    hash
+                    name
+                    count
+                  }
+                }
+              }
+            }
+          }
+          ... on GraphQLUnionType {
+            members {
+              name
+              usage {
+                isUsed
+                usedByClients
+                total
+                topOperations(limit: 5) {
+                  hash
+                  name
+                  count
+                }
+              }
+            }
+          }
+          ... on GraphQLInputObjectType {
+            fields {
+              name
+              type
+              description
+              defaultValue
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+              usage {
+                isUsed
+                usedByClients
+                total
+                topOperations(limit: 5) {
+                  hash
+                  name
+                  count
+                }
+              }
+            }
+          }
+          ... on GraphQLEnumType {
+            deprecationReason
+            values {
+              name
+              isDeprecated
+              deprecationReason
+              supergraphMetadata {
+                ownedByServiceNames
+              }
+              usage {
+                isUsed
+                usedByClients
+                total
+                topOperations(limit: 5) {
+                  hash
+                  name
+                  count
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```

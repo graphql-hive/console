@@ -1,0 +1,145 @@
+import { Callout, Cards, Steps, Tabs } from '@theguild/components'
+import { Screenshot } from '../../../components/screenshot'
+
+# First Steps with Hive Console
+
+<Steps>
+
+### Create Hive Account
+
+To get started with Hive, first sign up and create your Hive account if you haven't already.
+[You can use this page to login or sign up](https://app.graphql-hive.com/auth).
+
+<Screenshot>![Login/Signup view](/docs/pages/first-steps/signup.png)</Screenshot>
+
+<Callout type="info">
+  At the moment, Hive Cloud supports GitHub and Google authentication, or you can use a plain
+  email/password combination.
+</Callout>
+
+Once you have your Hive account, you can create your Hive organization.
+
+### Create Hive Organization
+
+A Hive organization is a group of users who share a common set of permissions, or who collaborate on
+GraphQL APIs. Hive organizations are used to manage access, integrations, and billing.
+
+To create a new organization, [you use this page](https://app.graphql-hive.com/org/new).
+
+<Screenshot>![Create Organization Form](/docs/pages/first-steps/org.png)</Screenshot>
+
+Once you've successfully created your organization, you'll be able to expand your organization by
+inviting other members to join and collaborate on projects.
+
+<Callout type="info">
+
+You can create as many organizations as you want, and you can be a member of multiple organizations.
+
+</Callout>
+
+### Install Hive CLI
+
+Hive CLI is a command-line tool for managing your Hive projects and schemas from the terminal. It
+will be used for publishing schemas and apps to the Hive registry.
+
+<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+
+{/* Binary */}
+
+<Tabs.Tab>
+
+If you are running a non-JavaScript project, you can download the prebuilt binary of Hive CLI using
+the following command:
+
+```bash
+curl -sSL https://graphql-hive.com/install.sh | sh
+```
+
+To download a specific version, follow instructions from the
+["Hive CLI installation"](/docs/api-reference/cli#specific-version) chapter.
+
+Run the following command to verify the installation:
+
+```bash
+hive --version
+```
+
+</Tabs.Tab>
+
+{/* NodeJS */}
+
+<Tabs.Tab>
+
+If you are running a JavaScript/NodeJS project, you can install Hive CLI from the `npm` registry:
+
+```sh npm2yarn
+npm i -D @graphql-hive/cli
+```
+
+<Callout type="info">
+  We recommend installing Hive CLI as part of your project, under `devDependencies`, instead of
+  using a global installation.
+</Callout>
+
+Verify the downloaded image by running the following command:
+
+```bash
+npx hive --version
+```
+
+</Tabs.Tab>
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+For a docker-based project, you can use the official Hive CLI Docker image.
+
+```bash
+docker pull ghcr.io/graphql-hive/cli
+```
+
+Verify the downloaded image by running the following command:
+
+```bash
+docker run --name graphql-hive-cli --rm ghcr.io/graphql-hive/cli --version
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Create Hive Project
+
+A Hive **project** represents a GraphQL API project running a GraphQL schema, created under an
+organization.
+
+Hive supports the following project types:
+
+- **Apollo Federation**: composition of multiple GraphQL services following the
+  [Apollo Federation specification](https://www.apollographql.com/docs/federation/subgraph-spec/)
+  into a single unified graph.
+- **Single Schema**: a simple monolithic GraphQL schema
+- **Schema Stitching**: a form of remote schema merging allowing developers to merge any GraphQL
+  schema(s), under one or many gateways using
+  [Schema Stitching](https://the-guild.dev/graphql/stitching)
+
+<Callout>
+  Please note that a **project** type cannot be changed once it is created. However, you can always
+  create an unlimited number of projects under your organization.
+</Callout>
+
+To get started with your Hive **project**, click on **Create Project +** button from the
+organization's main page:
+
+<Screenshot>![Create Project Form](/docs/pages/first-steps/project.png)</Screenshot>
+
+Continue with one of the following guide based on the type of project you selected.
+
+<Cards>
+  <Cards.Card arrow title="Apollo Federation" href="/docs/get-started/apollo-federation" />
+  <Cards.Card arrow title="Single Schema" href="/docs/get-started/single-project" />
+  <Cards.Card arrow title="Schema-Stitching" href="/docs/get-started/schema-stitching" />
+</Cards>
+
+</Steps>

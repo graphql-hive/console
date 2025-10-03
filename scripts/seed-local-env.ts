@@ -20,6 +20,7 @@ const usageReportingEndpoint =
     : envName === 'dev'
       ? 'https://app.dev.graphql-hive.com/usage'
       : 'http://localhost:4001';
+const target = process.env.TARGET;
 
 console.log(`
   Environment:                ${envName}
@@ -55,6 +56,7 @@ const createInstance = (
       : false,
     usage: isUsageReportingEnabled
       ? {
+          target: target || undefined,
           clientInfo: () => ({
             name: 'Fake Hive Client',
             version: '1.1.1',
@@ -348,6 +350,7 @@ async function federation() {
           sdl: schemaInventory,
           service: 'Inventory',
           url: 'https://inventory.localhost/graphql',
+          target: target ? { byId: target } : null,
         },
       },
     }),
@@ -369,6 +372,7 @@ async function federation() {
           sdl: schemaPandas,
           service: 'Panda',
           url: 'https://panda.localhost/graphql',
+          target: target ? { byId: target } : null,
         },
       },
     }),
@@ -391,6 +395,7 @@ async function federation() {
           sdl: schemaProducts,
           service: 'Products',
           url: 'https://products.localhost/graphql',
+          target: target ? { byId: target } : null,
         },
       },
     }),
@@ -413,6 +418,7 @@ async function federation() {
           sdl: schemaReviews,
           service: 'Reviews',
           url: 'https://reviews.localhost/graphql',
+          target: target ? { byId: target } : null,
         },
       },
     }),
@@ -435,6 +441,7 @@ async function federation() {
           sdl: schemaUsers,
           service: 'Users',
           url: 'https://users.localhost/graphql',
+          target: target ? { byId: target } : null,
         },
       },
     }),

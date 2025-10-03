@@ -192,12 +192,14 @@ export class AppDeploymentsManager {
     args: {
       cursor: string | null;
       first: number | null;
+      operationName: string;
     },
   ) {
     return await this.appDeployments.getPaginatedGraphQLDocuments({
       appDeploymentId: appDeployment.id,
       cursor: args.cursor,
       first: args.first,
+      operationName: args.operationName,
     });
   }
 

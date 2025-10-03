@@ -234,22 +234,28 @@ const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
   usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
 });
 
-const publishGraphQLSchemaCommand = publishGraphQLSchema({
-  graphql,
-  registry: {
-    endpoint: `https://${environment.appDns}/registry`,
-    accessToken: hiveConfigSecret.raw.usageAccessToken,
-    target: hiveConfig.require('target'),
-  },
-  version: {
-    commit: imagesTag,
-  },
-  schemaPath: graphqlSchemaAbsolutePath,
-});
+// You can change this to `false` in cases when you don't want to publish commands.
+// For example, if the entire env is down or if you are having SSL issues.
+const RUN_PUBLISH_COMMANDS: boolean = true;
+
+const publishGraphQLSchemaCommand = RUN_PUBLISH_COMMANDS
+  ? publishGraphQLSchema({
+      graphql,
+      registry: {
+        endpoint: `https://${environment.appDns}/registry`,
+        accessToken: hiveConfigSecret.raw.usageAccessToken,
+        target: hiveConfig.require('target'),
+      },
+      version: {
+        commit: imagesTag,
+      },
+      schemaPath: graphqlSchemaAbsolutePath,
+    })
+  : null;
 
 let publishAppDeploymentCommand: pulumi.Resource | undefined;
 
-if (hiveAppPersistedDocumentsAbsolutePath) {
+if (hiveAppPersistedDocumentsAbsolutePath && RUN_PUBLISH_COMMANDS) {
   publishAppDeploymentCommand = publishAppDeployment({
     appName: 'hive-app',
     registry: {
@@ -268,7 +274,7 @@ if (hiveAppPersistedDocumentsAbsolutePath) {
           dockerSecret: docker.secret,
         },
     // We need to wait until the new GraphQL schema is published before we can publish the app deployment.
-    dependsOn: [publishGraphQLSchemaCommand],
+    dependsOn: publishGraphQLSchemaCommand ? [publishGraphQLSchemaCommand] : [],
   });
 }
 
@@ -315,18 +321,6 @@ deployCloudFlareSecurityTransform({
     '/server',
     '/api/github',
     '/api/slack',
-  ],
-  ignoredHosts: [
-    // Ignore CSP for Production CDN
-    'cdn.graphql-hive.com',
-    // Staging
-    'staging.graphql-hive.com',
-    'app.staging.graphql-hive.com',
-    'cdn.staging.graphql-hive.com',
-    // Dev
-    'dev.graphql-hive.com',
-    'app.dev.graphql-hive.com',
-    'cdn.dev.graphql-hive.com',
   ],
 });
 

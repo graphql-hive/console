@@ -233,6 +233,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
       ? createPersistedDocuments({
           ...options.experimental__persistedDocuments,
           logger,
+          fetch: options.experimental__persistedDocuments.fetch,
         })
       : null,
   };

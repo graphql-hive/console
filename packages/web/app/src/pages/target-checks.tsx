@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { BadgeRounded } from '@/components/ui/badge';
@@ -230,7 +230,6 @@ function ChecksPageContent(props: {
   const [paginationVariables, setPaginationVariables] = useState<Array<string | null>>(() => [
     null,
   ]);
-  const [hasSchemaChecks, setHasSchemaChecks] = useState(false);
   const navigate = useNavigate();
   const { schemaCheckId } = useParams({
     strict: false /* allows to read the $schemaCheckId param of its child route */,
@@ -266,9 +265,17 @@ function ChecksPageContent(props: {
     );
   }
 
-  if (!hasSchemaChecks && !!query.data?.target?.schemaChecks?.edges?.length) {
-    setHasSchemaChecks(true);
-  }
+  const [isLoading] = useDebouncedLoader(query.fetching || query.stale);
+
+  const [hasSchemaChecks, setHasSchemaChecks] = useState(
+    !!query.data?.target?.schemaChecks?.edges?.length,
+  );
+  useEffect(() => {
+    if (!query.stale && !query.fetching) {
+      setHasSchemaChecks(!!query.data?.target?.schemaChecks?.edges?.length);
+    }
+  }, [query.fetching, query.stale, !query.data?.target?.schemaChecks?.edges?.length]);
+
   const hasFilteredSchemaChecks = !!query.data?.target?.filteredSchemaChecks?.edges?.length;
   const hasActiveSchemaCheck = !!schemaCheckId;
 
@@ -290,9 +297,11 @@ function ChecksPageContent(props: {
     });
   };
 
+  const loadMore = (cursor: string) => setPaginationVariables(cursors => [...cursors, cursor]);
+
   return (
     <>
-      <div>
+      <div className={cn(!hasActiveSchemaCheck && !hasSchemaChecks && 'w-full')}>
         <div className="w-[300px] py-6">
           <Title>Schema Checks</Title>
           <Subtitle>Recently checked schemas.</Subtitle>
@@ -337,40 +346,46 @@ function ChecksPageContent(props: {
                     schemaCheckId={schemaCheckId}
                     after={cursor}
                     isLastPage={index + 1 === paginationVariables.length}
-                    onLoadMore={cursor => setPaginationVariables(cursors => [...cursors, cursor])}
+                    onLoadMore={loadMore}
                     key={cursor ?? 'first'}
                     showOnlyChanged={showOnlyChanged}
                     showOnlyFailed={showOnlyFailed}
                   />
                 ))}
               </div>
-            ) : query.fetching || query.stale ? (
-              <Spinner />
             ) : (
-              <div className="my-4 cursor-default text-center text-sm text-gray-400">
-                No schema checks found with the current filters
-              </div>
+              !query.fetching &&
+              !query.stale && (
+                <div className="my-4 cursor-default text-center text-sm text-gray-400">
+                  No schema checks found with the current filters
+                </div>
+              )
             )}
           </div>
-        ) : query.fetching ? (
-          <Spinner />
         ) : (
-          <div>
-            <div className="cursor-default text-sm">
-              {hasActiveSchemaCheck ? (
-                'List is empty'
-              ) : (
-                <NoSchemaVersion
-                  projectType={query.data?.target?.project.type ?? null}
-                  recommendedAction="check"
-                />
-              )}
+          !query.fetching &&
+          !query.stale && (
+            <div>
+              <div className="cursor-default text-sm">
+                {!hasActiveSchemaCheck && (
+                  <NoSchemaVersion
+                    projectType={query.data?.target?.project.type ?? null}
+                    recommendedAction="check"
+                  />
+                )}
+              </div>
+              <DocsLink
+                href="/features/schema-registry#check-a-schema"
+                className="flex flex-row items-center"
+              >
+                Learn how to check your first schema
+              </DocsLink>
             </div>
-            <DocsLink href="/features/schema-registry#check-a-schema">
-              {hasActiveSchemaCheck
-                ? 'Check you first schema'
-                : 'Learn how to check your first schema with Hive CLI'}
-            </DocsLink>
+          )
+        )}
+        {isLoading && (
+          <div className="mt-4 flex w-full grow flex-col items-center">
+            <Spinner />
           </div>
         )}
       </div>
@@ -410,3 +425,28 @@ export function TargetChecksPage(props: {
     </>
   );
 }
+
+const useDebouncedLoader = (isLoading: boolean, delay = 500) => {
+  const [showLoadingIcon, setShowLoadingIcon] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    if (isLoading) {
+      // Start a timer to show the loading icon after the delay
+      timerRef.current = setTimeout(() => {
+        setShowLoadingIcon(true);
+      }, delay);
+    } else {
+      // If loading finishes, clear any pending timer and hide the icon
+      clearTimeout(timerRef.current);
+      setShowLoadingIcon(false);
+    }
+
+    // Cleanup function to clear the timer on unmount or if isLoading changes
+    return () => {
+      clearTimeout(timerRef.current);
+    };
+  }, [isLoading, delay]);
+
+  return [showLoadingIcon];
+};

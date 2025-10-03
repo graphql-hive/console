@@ -12,7 +12,7 @@ import type { SchemaChangeUsageStatisticsAffectedOperationResolvers } from './..
  */
 export const SchemaChangeUsageStatisticsAffectedOperation: Pick<
   SchemaChangeUsageStatisticsAffectedOperationResolvers,
-  'count' | 'countFormatted' | 'hash' | 'name' | 'percentage' | 'percentageFormatted' | '__isTypeOf'
+  'count' | 'countFormatted' | 'hash' | 'name' | 'percentage' | 'percentageFormatted'
 > = {
   countFormatted: async (operation, _arg, _ctx) => {
     return formatNumber(operation.count);

@@ -15,7 +15,7 @@
     "@hive/tokens": "workspace:*",
     "@hive/usage-common": "workspace:*",
     "@sentry/node": "7.120.2",
-    "@sinclair/typebox": "0.34.15",
+    "@sinclair/typebox": "0.34.41",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
     "ajv": "8.17.1",
@@ -28,6 +28,6 @@
     "p-limit": "6.2.0",
     "pino-pretty": "11.3.0",
     "reflect-metadata": "0.2.2",
-    "zod": "3.24.1"
+    "zod": "3.25.76"
   }
 }

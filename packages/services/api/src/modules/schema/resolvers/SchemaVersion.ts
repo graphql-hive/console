@@ -119,7 +119,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
       },
     };
   },
-  unusedSchema: async (version, { usage }, { injector }) => {
+  unusedSchema: async (version, args, { injector }) => {
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
       injector.get(SchemaVersionHelper).getSupergraphAst(version),
@@ -129,11 +129,15 @@ export const SchemaVersion: SchemaVersionResolvers = {
       return null;
     }
 
+    const period = args.period?.absoluteRange
+      ? parseDateRangeInput(args.period.absoluteRange)
+      : createPeriod('30d');
+
     const usedCoordinates = await injector.get(OperationsManager).getReportedSchemaCoordinates({
       targetId: version.targetId,
       projectId: version.projectId,
       organizationId: version.organizationId,
-      period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+      period,
     });
 
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
@@ -141,7 +145,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return {
       sdl: stripUsedSchemaCoordinatesFromDocumentNode(schemaAst, usedCoordinates),
       usage: {
-        period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+        period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
@@ -158,7 +162,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
       },
     };
   },
-  deprecatedSchema: async (version, { usage }, { injector }) => {
+  deprecatedSchema: async (version, args, { injector }) => {
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
       injector.get(SchemaVersionHelper).getSupergraphAst(version),
@@ -170,10 +174,14 @@ export const SchemaVersion: SchemaVersionResolvers = {
 
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
 
+    const period = args.period?.absoluteRange
+      ? parseDateRangeInput(args.period.absoluteRange)
+      : createPeriod('30d');
+
     return {
       sdl: onlyDeprecatedDocumentNode(schemaAst),
       usage: {
-        period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+        period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,

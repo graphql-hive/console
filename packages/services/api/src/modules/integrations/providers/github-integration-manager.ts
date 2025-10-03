@@ -303,7 +303,19 @@ export class GitHubIntegrationManager {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to create check-run', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(
+        'Failed to create check-run (owner=%s, name=%s, sha=%s, error=%s)',
+        input.repositoryOwner,
+        input.repositoryName,
+        input.sha,
+        errorText,
+      );
 
       if (isOctokitRequestError(error)) {
         this.logger.debug(
@@ -447,7 +459,19 @@ export class GitHubIntegrationManager {
         url: result.data.url,
       } as const;
     } catch (error) {
-      this.logger.error('Failed to update check-run', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(
+        'Failed to update check-run (owner=%s, name=%s, checkId=%s, error=%s)',
+        args.checkRun.owner,
+        args.checkRun.repository,
+        args.checkRun.checkRunId,
+        errorText,
+      );
 
       if (isOctokitRequestError(error)) {
         this.logger.debug(

@@ -171,6 +171,14 @@ export function CreateAccessTokenSheetContent(
       }
       return;
     }
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'An error occured',
+        description: 'Something went wrong. Try again later.',
+      });
+      return;
+    }
   }
 
   return (
@@ -316,6 +324,16 @@ export function CreateAccessTokenSheetContent(
                                       Granted on {permissionLevelToResourceName(group.level)}:
                                     </p>
                                     <ul className="flex list-none flex-wrap gap-1">
+                                      {!resolvedResources[group.level]?.length && (
+                                        <li>
+                                          <Badge
+                                            className="px-3 py-1 font-mono text-xs text-red-500"
+                                            variant="outline"
+                                          >
+                                            No {group.level} selected.
+                                          </Badge>
+                                        </li>
+                                      )}
                                       {resolvedResources[group.level].map(id => (
                                         <li key={id}>
                                           <Badge

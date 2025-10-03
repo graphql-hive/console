@@ -2,12 +2,12 @@ import { Callout, Cards } from '@theguild/components'
 
 # Introduction to Hive
 
-**Hive** is a GraphQL schema registry for managing and collaborating on all your
-[**GraphQL Federation**](/federation), **Monolithic** or
-**[Schema Stitching](https://the-guild.dev/graphql/stitching)** GraphQL workflows.
+**Hive** is a **MIT open-source** GraphQL platform for managing, collaborating on, and serving all
+your GraphQL projects. Hive is fully compatible with [**GraphQL Federation**](/federation),
+**Monolithic**, or [**Schema Stitching**](https://the-guild.dev/graphql/stitching) projects.
 
-The Hive platform gives the tools you need to gain insights, make decisions, and evolve your GraphQL
-API with confidence.
+Our best in class tools give what you need so that you can gain insights, make decisions, and evolve
+your GraphQL API with confidence.
 
 - Track the evolution of your GraphQL schema
 - Analytics and Observability on how your GraphQL API is being used
@@ -16,12 +16,12 @@ API with confidence.
 - Enforce schema design best practices
 - Secure your GraphQL API with the Hive Gateway
 
-<Callout type="info">
-  Hive and all of its components are developed and managed as an [MIT open-source
-  project](https://github.com/graphql-hive/platform).
-</Callout>
+## Hive Console
 
-To get started, you can choose between our Hive Cloud service or run it as a self-hosted solution.
+Hive Console is our [schema registry](/docs/schema-registry). To get started with Hive Console, you
+can choose between using our hosted version or opt to self-host if your company does not allow cloud
+solutions. For most cases, the hosted solution is significantly simpler and very affordable. See
+[Pricing](/pricing) for details.
 
 <Cards>
   <Cards.Card
@@ -42,8 +42,29 @@ To get started, you can choose between our Hive Cloud service or run it as a sel
         />
       </svg>
     }
-    title="Hive Cloud"
-    href="/docs/get-started/first-steps"
+    title="Hosted"
+    href="/docs/schema-registry/get-started/first-steps"
   />
-  <Cards.Card arrow title="Self-Hosted" href="/docs/self-hosting/get-started" />
+  <Cards.Card arrow title="Self-Hosted" href="/docs/schema-registry/self-hosting/get-started" />
+</Cards>
+
+## Hive Gateway
+
+Hive Gateway is a GraphQL router that can act as a GraphQL Federation gateway, a subgraph, or a
+proxy gateway -- making it suitable for any GraphQL API. It can be ran as a Docker image, binary, or
+JavaScript package with minimal configuration, or
+[customized](/docs/gateway/other-features/custom-plugins) to meet your needs.
+
+<Cards>
+  <Cards.Card arrow title="Get Started" href="/docs/gateway" />
+</Cards>
+
+## Hive Logger
+
+Hive Logger is a lightweight and customizable logging utility designed for use within the GraphQL
+Hive ecosystem. It works seamlessly in all JavaScript environments, including Node.js, browsers, and
+serverless platforms.
+
+<Cards>
+  <Cards.Card arrow title="Improve Your Logs" href="/docs/logger" />
 </Cards>

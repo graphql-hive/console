@@ -3,7 +3,7 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
-  'schemaPolicy' | 'viewerCanModifySchemaPolicy' | '__isTypeOf'
+  'schemaPolicy' | 'viewerCanModifySchemaPolicy'
 > = {
   schemaPolicy: async (org, _, { injector }) =>
     injector.get(SchemaPolicyProvider).getOrganizationPolicy({

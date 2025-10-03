@@ -1,0 +1,125 @@
+# GQLGen (GoLang)
+
+## Getting started
+
+### Install
+
+```sh
+go get github.com/enisdenjo/go-gqlhive@v2
+```
+
+### Set up usage reporting in Hive Console
+
+First you have to set up
+[usage reporting and monitoring Hive Console](/docs/schema-registry/usage-reporting), define your
+target and acquire the access token.
+
+### Use
+
+Then, after [getting started with gqlgen](https://gqlgen.com/getting-started/), add the tracer to
+the server.
+
+```go
+package main
+
+import (
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/enisdenjo/go-gqlhive"
+)
+
+const defaultPort = "8080"
+
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
+	}
+
+	srv := handler.New(NewExecutableSchema(graph.Config{Resolvers: &resolvers{}}))
+	srv.AddTransport(transport.POST{})
+
+	srv.Use(gqlhive.NewTracer(
+		"<TARGET_ID> or <ORGANIZATION>/<PROJECT>/<TARGET>",
+		"<ACCESS_TOKEN>",
+	))
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+```
+
+### Configure
+
+See [traceroptions.go](https://github.com/enisdenjo/go-gqlhive/blob/main/traceroptions.go) for
+configuring the tracer.
+
+For example:
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/domonda/go-types/nullable"
+	"github.com/enisdenjo/go-gqlhive"
+)
+
+const defaultPort = "8080"
+
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
+	}
+
+	srv := handler.New(NewExecutableSchema(graph.Config{Resolvers: &resolvers{}}))
+	srv.AddTransport(transport.POST{})
+
+	srv.Use(gqlhive.NewTracer(
+		"<TARGET_ID> or <ORGANIZATION>/<PROJECT>/<TARGET>",
+		"<ACCESS_TOKEN>",
+		gqlhive.WithEndpoint("http://localhost"),
+		gqlhive.WithGenerateID(func(operation string, operationName nullable.TrimmedString) string {
+			return "<custom unique ID generation for operations>"
+		}),
+		gqlhive.WithSendReportTimeout(5*time.Second),
+		gqlhive.WithSendReport(func(ctx context.Context, endpoint, token string, report *gqlhive.Report) error {
+			// custom report sender for queued reports
+			return nil
+		}),
+		gqlhive.WithLogger(
+			// custom logger for tracing errors (this is the default one)
+			log.New(log.Writer(), "[gqlhive] ", log.LstdFlags|log.Lmsgprefix),
+		)
+	))
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+```
+
+---
+
+## Additional Resources
+
+- [`go-gqlhive` Repository](https://github.com/enisdenjo/go-gqlhive)

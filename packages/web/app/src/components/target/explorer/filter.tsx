@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { ChangeEvent, useCallback, useMemo } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
@@ -111,24 +111,33 @@ export function TypeFilter(props: {
     [allNamedTypes],
   );
 
+  const onChange = useCallback(
+    (option: SelectOption | null) => {
+      void router.navigate({
+        search: router.latestLocation.search,
+        to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+          typename: option?.value ?? '',
+        },
+      });
+    },
+    [router],
+  );
+
+  const defaultValue = useMemo(() => {
+    return props.typename ? { value: props.typename, label: props.typename } : null;
+  }, [props.typename]);
+
   return (
     <Autocomplete
       className="min-w-[200px] grow cursor-text"
       placeholder="Search for a type"
-      defaultValue={props.typename ? { value: props.typename, label: props.typename } : null}
+      defaultValue={defaultValue}
       options={types}
-      onChange={(option: SelectOption | null) => {
-        void router.navigate({
-          search: router.latestLocation.search,
-          to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
-          params: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
-            typename: option?.value ?? '',
-          },
-        });
-      }}
+      onChange={onChange}
       loading={query.fetching}
     />
   );
@@ -137,37 +146,48 @@ export function TypeFilter(props: {
 export function FieldByNameFilter() {
   const router = useRouter();
 
+  const onChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      void router.navigate({
+        search: {
+          ...router.latestLocation.search,
+          search: e.target.value === '' ? undefined : e.target.value,
+        },
+        replace: true,
+      });
+    },
+    [router],
+  );
+
+  const initialValue =
+    'search' in router.latestLocation.search &&
+    typeof router.latestLocation.search.search === 'string'
+      ? router.latestLocation.search.search
+      : '';
+
   return (
     <Input
       className="w-[200px] grow cursor-text"
       placeholder="Filter by field name"
-      onChange={e => {
-        void router.navigate({
-          search: {
-            ...router.latestLocation.search,
-            search: e.target.value === '' ? undefined : e.target.value,
-          },
-        });
-      }}
-      value={
-        'search' in router.latestLocation.search &&
-        typeof router.latestLocation.search.search === 'string'
-          ? router.latestLocation.search.search
-          : ''
-      }
+      onChange={onChange}
+      defaultValue={initialValue}
     />
   );
 }
 
 export function DateRangeFilter() {
   const periodSelector = usePeriodSelector();
+  const onUpdate = useCallback(
+    (value: { preset: { range: { from: string; to: string } } }) => {
+      periodSelector.setPeriod(value.preset.range);
+    },
+    [periodSelector],
+  );
 
   return (
     <DateRangePicker
       validUnits={['y', 'M', 'w', 'd']}
-      onUpdate={value => {
-        periodSelector.setPeriod(value.preset.range);
-      }}
+      onUpdate={onUpdate}
       selectedRange={periodSelector.period}
       startDate={periodSelector.startDate}
       align="end"

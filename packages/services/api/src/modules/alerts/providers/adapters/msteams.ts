@@ -72,7 +72,13 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         }),
       );
     } catch (error) {
-      this.logger.error(`Failed to send Microsoft Teams notification`, error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to send Microsoft Teams notification (error=%s)`, errorText);
     }
   }
 
@@ -108,7 +114,13 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
 
       await this.sendTeamsMessage(webhookUrl, message);
     } catch (error) {
-      this.logger.error(`Failed to send Microsoft Teams notification`, error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to send Microsoft Teams notification`, errorText);
     }
   }
 

@@ -145,7 +145,7 @@ export enum ProjectType {
   SINGLE = 'SINGLE',
 }
 
-export enum NativeFederationCompatibilityStatus {
+export enum NativeFederationCompatibilityStatusType {
   COMPATIBLE = 'COMPATIBLE',
   INCOMPATIBLE = 'INCOMPATIBLE',
   UNKNOWN = 'UNKNOWN',

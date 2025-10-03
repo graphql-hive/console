@@ -235,7 +235,9 @@ export class ResourceAssignments {
                   mode: 'granular',
                   appDeployments:
                     targetRecord.appDeployments.appDeployments
-                      ?.filter(name => AppDeploymentNameModel.safeParse(name).success)
+                      ?.filter(
+                        ({ appDeployment: name }) => AppDeploymentNameModel.safeParse(name).success,
+                      )
                       .map(record => ({
                         type: 'appDeployment',
                         appName: record.appDeployment,

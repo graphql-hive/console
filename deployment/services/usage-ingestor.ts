@@ -29,10 +29,6 @@ export function deployUsageIngestor({
   sentry: Sentry;
 }) {
   const clickHouseConfig = new pulumi.Config('clickhouse');
-  const numberOfPartitions = 16;
-  const replicas = environment.isProduction ? 6 : 1;
-  const cpuLimit = environment.isProduction ? '600m' : '300m';
-  const maxReplicas = environment.isProduction ? numberOfPartitions : 2;
 
   // Require migrationV2DataIngestionStartDate only in production and staging
   // Remove it once we are done with migration.
@@ -46,7 +42,7 @@ export function deployUsageIngestor({
     {
       image,
       imagePullSecret: docker.secret,
-      replicas,
+      replicas: environment.podsConfig.usageIngestorService.replicas,
       readinessProbe: '/_readiness',
       livenessProbe: '/_health',
       availabilityOnEveryNode: true,
@@ -67,10 +63,10 @@ export function deployUsageIngestor({
       pdb: true,
       autoScaling: {
         cpu: {
-          cpuAverageToScale: 60,
-          limit: cpuLimit,
+          cpuAverageToScale: environment.podsConfig.usageIngestorService.cpuAverageToScale,
+          limit: environment.podsConfig.usageIngestorService.cpuLimit,
         },
-        maxReplicas,
+        maxReplicas: environment.podsConfig.usageIngestorService.maxReplicas,
       },
     },
     [clickhouse.deployment, clickhouse.service, dbMigrations].filter(Boolean),

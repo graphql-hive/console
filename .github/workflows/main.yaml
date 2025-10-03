@@ -65,10 +65,6 @@ jobs:
   code-style:
     uses: ./.github/workflows/lint.yaml
 
-  # CodeQL
-  static-analysis:
-    uses: ./.github/workflows/codeql-analysis.yml
-
   # TypeScript Typecheck and compiler checks
   typescript:
     uses: ./.github/workflows/typescript-typecheck.yaml

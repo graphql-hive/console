@@ -152,11 +152,15 @@ export function useArgumentListToggle() {
 }
 
 export function usePeriodSelector() {
-  const { period, setPeriod, startDate, refreshResolvedPeriod } = useSchemaExplorerContext();
-  return {
-    setPeriod,
-    period,
-    startDate,
-    refreshResolvedPeriod,
-  };
+  const ctx = useSchemaExplorerContext();
+  const selector = useMemo(() => {
+    const { period, setPeriod, startDate, refreshResolvedPeriod } = ctx;
+    return {
+      setPeriod,
+      period,
+      startDate,
+      refreshResolvedPeriod,
+    };
+  }, [ctx]);
+  return selector;
 }

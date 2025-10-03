@@ -1,16 +1,10 @@
 export default {
   index: 'Introduction',
-  'get-started': 'Get Started',
-  'schema-registry': 'Schema Registry',
-  'high-availability-cdn': 'High-Availability CDN',
-  dashboard: 'Dashboard',
+  'schema-registry': 'Console',
   gateway: 'Gateway',
-  management: 'Management',
+  logger: 'Logger',
   'other-integrations': 'Other Integrations',
   'api-reference': 'CLI/API Reference',
-  specs: 'Specifications',
-  'graphql-api': 'GraphQL API',
   'use-cases': 'Use Cases',
   'migration-guides': 'Migration Guides',
-  'self-hosting': 'Self-Hosting',
 };

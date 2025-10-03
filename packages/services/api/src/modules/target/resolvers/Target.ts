@@ -19,7 +19,6 @@ export const Target: Pick<
   | 'viewerCanModifyCDNAccessToken'
   | 'viewerCanModifySettings'
   | 'viewerCanModifyTargetAccessToken'
-  | '__isTypeOf'
 > = {
   project: (target, _args, { injector }) =>
     injector.get(ProjectManager).getProject({

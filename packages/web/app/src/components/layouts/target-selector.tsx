@@ -87,10 +87,7 @@ export function TargetSelector(props: {
             value={props.currentTargetSlug}
             onValueChange={id => {
               void router.navigate({
-                to: '/$organizationSlug/$projectSlug/$targetSlug',
                 params: {
-                  organizationSlug: props.currentOrganizationSlug,
-                  projectSlug: props.currentProjectSlug,
                   targetSlug: id,
                 },
               });

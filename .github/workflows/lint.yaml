@@ -59,9 +59,6 @@ jobs:
             exit 1 \
           )
 
-      - name: Generate Types
-        run: pnpm graphql:generate
-
       - name: Operation Check
         run: |
           npx graphql-inspector validate \

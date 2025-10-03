@@ -9,7 +9,6 @@ export const Organization: Pick<
   | 'hasSlackIntegration'
   | 'viewerCanModifyGitHubIntegration'
   | 'viewerCanModifySlackIntegration'
-  | '__isTypeOf'
 > = {
   gitHubIntegration: async (organization, _, { injector }) => {
     const repositories = await injector.get(GitHubIntegrationManager).getRepositories({

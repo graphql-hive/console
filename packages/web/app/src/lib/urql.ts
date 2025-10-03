@@ -51,6 +51,7 @@ export const urqlClient = createClient({
         ClientStats: noKey,
         ClientStatsValues: noKey,
         OperationsStats: noKey,
+        OperationStatsValues: noKey,
         DurationValues: noKey,
         OrganizationPayload: noKey,
         SchemaChange: noKey,
