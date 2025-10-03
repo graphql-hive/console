@@ -77,6 +77,7 @@ import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
 import { TargetProposalsPage } from './pages/target-proposals';
+import { TargetProposalsNewPage } from './pages/target-proposals-new';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 
 SuperTokens.init(frontendConfig());
@@ -866,6 +867,21 @@ const targetProposalsRoute = createRoute({
   },
 });
 
+const targetProposalsNewRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals/new',
+  component: function TargetProposalRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetProposalsNewRoute.useParams();
+    return (
+      <TargetProposalsNewPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
 const targetProposalsSingleRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/$proposalId',
@@ -947,7 +963,7 @@ const routeTree = root.addChildren([
       targetChecksRoute.addChildren([targetChecksSingleRoute]),
       targetAppVersionRoute,
       targetAppsRoute,
-      targetProposalsRoute.addChildren([targetProposalsSingleRoute]),
+      targetProposalsRoute.addChildren([targetProposalsNewRoute, targetProposalsSingleRoute]),
     ]),
   ]),
 ]);

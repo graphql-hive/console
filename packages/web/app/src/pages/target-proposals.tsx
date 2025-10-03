@@ -18,7 +18,7 @@ import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { cn } from '@/lib/utils';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
-import { useRouter, useSearch } from '@tanstack/react-router';
+import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 
 const TargetProposalsQuery = graphql(`
   query TargetProposalsQuery(
@@ -91,6 +91,17 @@ export function TargetProposalsPage(props: {
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
+  const navigate = useNavigate();
+  const proposeChange = () => {
+    navigate({
+      to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/new',
+      params: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: props.targetSlug,
+      },
+    });
+  };
   return (
     <>
       <div className="flex py-6">
@@ -106,9 +117,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
             }
           />
         </div>
-        <div className="ml-auto mr-0 flex hidden flex-col justify-center">
-          {/* @todo implement */}
-          <Button variant="default">Propose a change</Button>
+        <div className="ml-auto mr-0 flex flex-col justify-center">
+          <Button variant="default" onClick={proposeChange}>
+            Propose a change
+          </Button>
         </div>
       </div>
       <TargetProposalsList {...props} />
