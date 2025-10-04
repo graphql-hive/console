@@ -258,8 +258,6 @@ export interface Storage {
     },
   ): Promise<Project>;
 
-  disableExternalSchemaComposition(_: ProjectSelector): Promise<Project>;
-
   enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
 
   getTargetId(_: {

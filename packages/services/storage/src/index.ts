@@ -1482,7 +1482,10 @@ export async function createStorage(
         await pool.one<projects>(sql`/* updateNativeSchemaComposition */
           UPDATE projects
           SET
-            native_federation = ${enabled}
+            native_federation = ${enabled},
+            external_composition_enabled = FALSE,
+            external_composition_endpoint = NULL,
+            external_composition_secret = NULL
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1493,22 +1496,10 @@ export async function createStorage(
         await pool.one<Slonik<projects>>(sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
+            native_federation = FALSE,
             external_composition_enabled = TRUE,
             external_composition_endpoint = ${endpoint},
             external_composition_secret = ${encryptedSecret}
-          WHERE id = ${project}
-          RETURNING *
-        `),
-      );
-    },
-    async disableExternalSchemaComposition({ projectId: project }) {
-      return transformProject(
-        await pool.one<Slonik<projects>>(sql`/* disableExternalSchemaComposition */
-          UPDATE projects
-          SET
-            external_composition_enabled = FALSE,
-            external_composition_endpoint = NULL,
-            external_composition_secret = NULL
           WHERE id = ${project}
           RETURNING *
         `),

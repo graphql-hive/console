@@ -1,5 +1,5 @@
 import { ProjectType } from 'testkit/gql/graphql';
-import { enableExternalSchemaComposition } from '../../../testkit/flow';
+import { updateSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 import { generateUnique, getServiceHost } from '../../../testkit/utils';
 
@@ -38,19 +38,20 @@ test.concurrent('call an external service to compose and validate services', asy
   expect(publishUsersResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
   // enable external composition
-  const externalCompositionResult = await enableExternalSchemaComposition(
+  const externalCompositionResult = await updateSchemaComposition(
     {
-      endpoint: `http://${dockerAddress}/compose`,
-      // eslint-disable-next-line no-process-env
-      secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-      projectSlug: project.slug,
-      organizationSlug: organization.slug,
+      external: {
+        endpoint: `http://${dockerAddress}/compose`,
+        // eslint-disable-next-line no-process-env
+        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+        projectSlug: project.slug,
+        organizationSlug: organization.slug,
+      },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    externalCompositionResult.enableExternalSchemaComposition.ok?.externalSchemaComposition
-      ?.endpoint,
+    externalCompositionResult.updateSchemaComposition.ok?.externalSchemaComposition?.endpoint,
   ).toBe(`http://${dockerAddress}/compose`);
   // Disable Native Federation v2 composition to allow the external composition to take place
   await setNativeFederation(false);
