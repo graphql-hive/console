@@ -16,8 +16,12 @@ import { useRouter } from '@tanstack/react-router';
 import { useResetState } from './use-reset-state';
 
 export function useDateRangeController(args: {
+  /** the data retention aka minimum time range. */
   dataRetentionInDays: number;
+  /** the default preset to pick if no range is provided. */
   defaultPreset: Preset;
+  /** controlled input range */
+  range?: Preset['range'];
 }) {
   const router = useRouter();
 
@@ -25,11 +29,10 @@ export function useDateRangeController(args: {
     () => subDays(new Date(), args.dataRetentionInDays),
     [args.dataRetentionInDays],
   );
-
   const searchParams = router.latestLocation.search;
-  // const params = new URLSearchParams(urlParameter);
-  const fromRaw = (('from' in searchParams && searchParams.from) ?? '') as string;
-  const toRaw = (('to' in searchParams && searchParams.to) ?? 'now') as string;
+  const fromRaw =
+    args.range?.from ?? ((('from' in searchParams && searchParams.from) ?? '') as string);
+  const toRaw = args.range?.to ?? ((('to' in searchParams && searchParams.to) ?? 'now') as string);
 
   const [selectedPreset] = useResetState(() => {
     const preset = availablePresets.find(p => p.range.from === fromRaw && p.range.to === toRaw);

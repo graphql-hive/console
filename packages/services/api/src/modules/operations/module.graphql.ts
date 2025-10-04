@@ -259,6 +259,217 @@ export default gql`
     body: String! @tag(name: "public")
   }
 
+  type TraceConnection {
+    edges: [TraceEdge!]!
+    pageInfo: PageInfo!
+  }
+
+  type TraceEdge {
+    node: Trace!
+    cursor: String!
+  }
+
+  type Trace {
+    id: ID!
+    timestamp: DateTime!
+    operationName: String
+    operationType: GraphQLOperationType
+    """
+    The Hash of the GraphQL operation.
+    """
+    operationHash: ID
+    """
+    Total duration of the trace.
+    """
+    duration: SafeInt!
+    """
+    The subgraphs called within the trace.
+    """
+    subgraphs: [String!]
+    """
+    Wether the trace is successful.
+    A trace is a success if no GraphQL errors occured and the HTTP status code is in the 2XX to 3XX range.
+    """
+    success: Boolean!
+    """
+    The client name.
+    Usually this is the 'x-graphql-client-name' header sent to the gateway.
+    """
+    clientName: String
+    """
+    The client version.
+    Usually this is the 'x-graphql-client-version' header sent to the gateway.
+    """
+    clientVersion: String
+    httpStatusCode: String
+    httpMethod: String
+    httpHost: String
+    httpRoute: String
+    httpUrl: String
+
+    spans: [Span!]!
+  }
+
+  type SpanEvent {
+    date: DateTime64!
+    name: String!
+    attributes: JSONObject!
+  }
+
+  type Span {
+    id: ID!
+    traceId: ID!
+    parentId: ID
+    name: String!
+    startTime: DateTime64!
+    duration: SafeInt!
+    endTime: DateTime64!
+    resourceAttributes: JSONObject!
+    spanAttributes: JSONObject!
+    events: [SpanEvent!]!
+  }
+
+  input DurationInput {
+    min: SafeInt
+    max: SafeInt
+  }
+
+  input TracesFilterInput {
+    """
+    Time range filter for the traces.
+    """
+    period: DateRangeInput
+    """
+    Duration filter for the traces.
+    """
+    duration: DurationInput
+    """
+    Filter based on trace ID.
+    """
+    traceIds: [ID!]
+    """
+    Filter based on whether the operation is a success.
+    A operation is successful if no GraphQL error has occured and the result is within the 2XX or 3XX range.
+    """
+    success: [Boolean!]
+    """
+    Filter based on GraphQL error codes (error.extensions.code).
+    """
+    errorCodes: [String!]
+    """
+    Filter based on the operation name.
+    """
+    operationNames: [String!]
+    """
+    Filter based on the operation type.
+
+    A value of 'null' value indicates a unknown operation type.
+    """
+    operationTypes: [GraphQLOperationType]
+    """
+    Filter based on the client name.
+    """
+    clientNames: [String!]
+    """
+    Filter based on the HTTP status code of the request.
+    """
+    httpStatusCodes: [String!]
+    """
+    Filter based on the HTTP method of the request.
+    """
+    httpMethods: [String!]
+    """
+    Filter based on the HTTP host of the request.
+    """
+    httpHosts: [String!]
+    """
+    Filter based on the HTTP route of the request.
+    """
+    httpRoutes: [String!]
+    """
+    Filter based on the HTTP URL of the request.
+    """
+    httpUrls: [String!]
+    """
+    Filter based on called subgraphs.
+    """
+    subgraphNames: [String!]
+  }
+
+  type TracesFilterOptions {
+    success: [FilterBooleanOption!]!
+    """
+    Filter based on GraphQL error code.
+    """
+    errorCode(top: Int): [FilterStringOption!]!
+    operationType: [FilterStringOption!]!
+    operationName(top: Int): [FilterStringOption!]!
+    clientName(top: Int): [FilterStringOption!]!
+    httpStatusCode(top: Int): [FilterStringOption!]!
+    httpMethod(top: Int): [FilterStringOption!]!
+    httpHost(top: Int): [FilterStringOption!]!
+    httpRoute(top: Int): [FilterStringOption!]!
+    httpUrl(top: Int): [FilterStringOption!]!
+    subgraphs(top: Int): [FilterStringOption!]!
+  }
+
+  type FilterStringOption {
+    value: String!
+    count: Int!
+  }
+
+  type FilterBooleanOption {
+    value: Boolean!
+    count: Int!
+  }
+
+  type FilterIntOption {
+    value: Int!
+    count: Int!
+  }
+
+  enum SortDirectionType {
+    ASC
+    DESC
+  }
+
+  enum TracesSortType {
+    DURATION
+    TIMESTAMP
+  }
+
+  input TracesSortInput {
+    sort: TracesSortType!
+    direction: SortDirectionType!
+  }
+
+  type TraceStatusBreakdownBucket {
+    """
+    The time bucket for the data
+    """
+    timeBucketStart: DateTime!
+    """
+    The end of the time bucket for the data
+    """
+    timeBucketEnd: DateTime!
+    """
+    Total amount of ok traces in the bucket.
+    """
+    okCountTotal: SafeInt!
+    """
+    Total amount of error traces in the bucket.
+    """
+    errorCountTotal: SafeInt!
+    """
+    Total amount of ok traces in the bucket based on the filter.
+    """
+    okCountFiltered: SafeInt!
+    """
+    Total mount of error traces in the bucket based on the filter.
+    """
+    errorCountFiltered: SafeInt!
+  }
+
   extend type Target {
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
     totalRequests(period: DateRangeInput!): SafeInt!
@@ -266,6 +477,20 @@ export default gql`
     Retrieve an operation via it's hash.
     """
     operation(hash: ID! @tag(name: "public")): Operation @tag(name: "public")
+
+    """
+    Whether the viewer can access OTEL traces
+    """
+    viewerCanAccessTraces: Boolean!
+    traces(
+      first: Int
+      after: String
+      filter: TracesFilterInput
+      sort: TracesSortInput
+    ): TraceConnection!
+    tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
+    tracesStatusBreakdown(filter: TracesFilterInput): [TraceStatusBreakdownBucket!]!
+    trace(traceId: ID!): Trace
   }
 
   extend type Project {

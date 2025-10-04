@@ -1,0 +1,330 @@
+[
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "hive-gateway"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "5.13.4"
+              }
+            }
+          ],
+          "droppedAttributesCount": 0
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "gateway"
+            },
+            "spans": [
+              {
+                "traceId": "b05d5ce706fe45f33fd02f12ff2b538c",
+                "spanId": "0424db5a14505873",
+                "parentSpanId": "80d07c2b29e6a98f",
+                "name": "graphql.parse",
+                "kind": 1,
+                "startTimeUnixNano": "1751541923666000000",
+                "endTimeUnixNano": "1751541923666275959",
+                "attributes": [
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "UserReview"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "b05d5ce706fe45f33fd02f12ff2b538c",
+                "spanId": "c2b0e3a5107b7d8d",
+                "parentSpanId": "80d07c2b29e6a98f",
+                "name": "graphql.validate",
+                "kind": 1,
+                "startTimeUnixNano": "1751541923666000000",
+                "endTimeUnixNano": "1751541923666099959",
+                "attributes": [
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "UserReview"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "b05d5ce706fe45f33fd02f12ff2b538c",
+                "spanId": "51a8cf06eab30356",
+                "parentSpanId": "80d07c2b29e6a98f",
+                "name": "graphql.context",
+                "kind": 1,
+                "startTimeUnixNano": "1751541923666000000",
+                "endTimeUnixNano": "1751541923666065666",
+                "attributes": [],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "b05d5ce706fe45f33fd02f12ff2b538c",
+                "spanId": "262de13a78519369",
+                "parentSpanId": "80d07c2b29e6a98f",
+                "name": "graphql.execute",
+                "kind": 1,
+                "startTimeUnixNano": "1751541923666000000",
+                "endTimeUnixNano": "1751541923667922500",
+                "attributes": [
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "UserReview"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.error.count",
+                    "value": {
+                      "intValue": 1
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [
+                  {
+                    "attributes": [
+                      {
+                        "key": "exception.type",
+                        "value": {
+                          "stringValue": "GraphQLError"
+                        }
+                      },
+                      {
+                        "key": "exception.message",
+                        "value": {
+                          "stringValue": "Variable \"$id\" of required type \"ID!\" was not provided."
+                        }
+                      },
+                      {
+                        "key": "exception.stacktrace",
+                        "value": {
+                          "stringValue": "GraphQLError: Variable \"$id\" of required type \"ID!\" was not provided.\n    at createGraphQLError (file:///node_modules/.chunk/abortSignalAny-BG8Lg0X_.mjs:29:12)\n    at coerceVariableValues (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:566:25)\n    at getVariableValues (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:533:25)\n    at buildExecutionContext (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:746:35)\n    at execute (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:615:24)\n    at file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:1960:37\n    at Promise.then (file:///node_modules/.chunk/index-DYl9M8N-.mjs:31:40)\n    at handleMaybePromise (file:///node_modules/.chunk/index-DYl9M8N-.mjs:10:33)\n    at normalizedExecutor (file:///node_modules/.chunk/normalizedExecutor-C4nYkuV1.mjs:1960:12)\n    at _4.args (file:///node_modules/.chunk/use-engine-CPlZaEw6.mjs:580:17)"
+                        }
+                      }
+                    ],
+                    "name": "exception",
+                    "timeUnixNano": "1751541923667636834",
+                    "droppedAttributesCount": 0
+                  }
+                ],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 2,
+                  "message": "Variable \"$id\" of required type \"ID!\" was not provided."
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "b05d5ce706fe45f33fd02f12ff2b538c",
+                "spanId": "80d07c2b29e6a98f",
+                "parentSpanId": "86ebca8621ea012f",
+                "name": "graphql.operation UserReview",
+                "kind": 1,
+                "startTimeUnixNano": "1751541923665000000",
+                "endTimeUnixNano": "1751541923667755750",
+                "attributes": [
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "UserReview"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "gateway.cache.response_cache",
+                    "value": {
+                      "stringValue": "miss"
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 0
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              },
+              {
+                "traceId": "b05d5ce706fe45f33fd02f12ff2b538c",
+                "spanId": "86ebca8621ea012f",
+                "name": "query UserReview",
+                "kind": 2,
+                "startTimeUnixNano": "1751541923662000000",
+                "endTimeUnixNano": "1751541923668269583",
+                "attributes": [
+                  {
+                    "key": "http.method",
+                    "value": {
+                      "stringValue": "POST"
+                    }
+                  },
+                  {
+                    "key": "http.url",
+                    "value": {
+                      "stringValue": "http://localhost:4000/graphql"
+                    }
+                  },
+                  {
+                    "key": "http.route",
+                    "value": {
+                      "stringValue": "/graphql"
+                    }
+                  },
+                  {
+                    "key": "http.scheme",
+                    "value": {
+                      "stringValue": "http:"
+                    }
+                  },
+                  {
+                    "key": "net.host.name",
+                    "value": {
+                      "stringValue": "localhost"
+                    }
+                  },
+                  {
+                    "key": "http.host",
+                    "value": {
+                      "stringValue": "localhost:4000"
+                    }
+                  },
+                  {
+                    "key": "http.user_agent",
+                    "value": {
+                      "stringValue": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  },
+                  {
+                    "key": "graphql.operation.name",
+                    "value": {
+                      "stringValue": "UserReview"
+                    }
+                  },
+                  {
+                    "key": "graphql.document",
+                    "value": {
+                      "stringValue": "query UserReview($id:ID!){user(id:$id){id reviews{id product{upc name weight}body}}}"
+                    }
+                  },
+                  {
+                    "key": "hive.graphql.error.count",
+                    "value": {
+                      "intValue": 1
+                    }
+                  },
+                  {
+                    "key": "http.status_code",
+                    "value": {
+                      "intValue": 400
+                    }
+                  },
+                  {
+                    "key": "gateway.cache.response_cache",
+                    "value": {
+                      "stringValue": "miss"
+                    }
+                  },
+                  {
+                    "key": "hive.graphql",
+                    "value": {
+                      "boolValue": true
+                    }
+                  }
+                ],
+                "droppedAttributesCount": 0,
+                "events": [],
+                "droppedEventsCount": 0,
+                "status": {
+                  "code": 2,
+                  "message": "Bad Request"
+                },
+                "links": [],
+                "droppedLinksCount": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

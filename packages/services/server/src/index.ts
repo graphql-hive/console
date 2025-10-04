@@ -25,6 +25,8 @@ import {
 } from '@hive/api';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
+import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';
@@ -65,6 +67,7 @@ import { asyncStorage } from './async-storage';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
+import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
@@ -459,6 +462,10 @@ export async function main() {
       handler: graphql,
     });
 
+    const authN = new AuthN({
+      strategies: [organizationAccessTokenStrategy],
+    });
+
     server.route({
       method: ['GET', 'POST'],
       url: '/graphql-public',
@@ -466,9 +473,7 @@ export async function main() {
         registry,
         logger: logger as any,
         hiveUsageConfig: env.hive,
-        authN: new AuthN({
-          strategies: [organizationAccessTokenStrategy],
-        }),
+        authN,
         tracing,
       }),
     });
@@ -590,6 +595,13 @@ export async function main() {
 
       void res.status(result.status).send(result);
       return;
+    });
+
+    createOtelAuthEndpoint({
+      server,
+      authN,
+      targetsBySlugCache: registry.injector.get(TargetsBySlugCache),
+      targetsByIdCache: registry.injector.get(TargetsByIdCache),
     });
 
     if (env.cdn.providers.api !== null) {
