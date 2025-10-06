@@ -459,7 +459,7 @@ function LaboratoryPageContent(props: {
           <Title>Laboratory</Title>
           <Subtitle>Explore your GraphQL schema and run queries against your GraphQL API.</Subtitle>
           <p>
-            <DocsLink className="text-muted-foreground text-sm" href="/features/laboratory">
+            <DocsLink className="text-muted-foreground text-sm" href="/schema-registry/laboratory">
               Learn more about the Laboratory
             </DocsLink>
           </p>
