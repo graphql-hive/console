@@ -907,15 +907,6 @@ export class OperationsManager {
       typename: string;
     } & TargetSelector,
   ) {
-    await this.session.assertPerformAction({
-      action: 'project:describe',
-      organizationId: args.organizationId,
-      params: {
-        organizationId: args.organizationId,
-        projectId: args.projectId,
-      },
-    });
-
     const loader = this.getClientNamesPerCoordinateOfTypeLoader({
       target: args.targetId,
       period: args.period,

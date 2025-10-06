@@ -2140,6 +2140,8 @@ export class OperationsReader {
   }
 
   async countCoordinatesOfTarget({ target, period }: { target: string; period: DateRange }) {
+    this.logger.debug('Count coordinates of target. (targetId=%s, period=%o)', target, period);
+
     const result = await this.clickHouse.query<{
       coordinate: string;
       total: number;
@@ -2158,6 +2160,8 @@ export class OperationsReader {
         period,
       }),
     );
+
+    this.logger.debug('%d rows found. (targetId=%s, period=%o)', result.rows, target, period);
 
     return result.data.map(row => ({
       coordinate: row.coordinate,
