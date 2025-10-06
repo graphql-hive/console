@@ -1,4 +1,5 @@
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { Logger } from '../../shared/providers/logger';
 import { buildGraphQLTypesFromSDL, withUsedByClients } from '../utils';
 import type { DeprecatedSchemaExplorerResolvers } from './../../../__generated__/types';
 

@@ -1118,6 +1118,14 @@ export class OperationsManager {
   }: {
     period: DateRange;
   } & TargetSelector) {
+    this.logger.debug(
+      'Count coordinates of target. (organizationId=%s, projectId=%s, targetId=%s, period=%o)',
+      organization,
+      project,
+      target,
+      period,
+    );
+
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId: organization,
@@ -1131,6 +1139,15 @@ export class OperationsManager {
       target,
       period,
     });
+
+    this.logger.debug(
+      '%d coordinates found. (organizationId=%s, projectId=%s, targetId=%s, period=%o)',
+      rows.length,
+      organization,
+      project,
+      target,
+      period,
+    );
 
     const records: {
       [coordinate: string]: {
