@@ -29,7 +29,6 @@ export const SchemaChange: Pick<
   | 'severityLevel'
   | 'severityReason'
   | 'usageStatistics'
-  | '__isTypeOf'
 > = {
   message: (change, args) => {
     return args.withSafeBasedOnUsageNote && change.isSafeBasedOnUsage === true

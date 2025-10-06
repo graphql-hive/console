@@ -6,7 +6,7 @@ export function toTitleCase(str: string) {
   });
 }
 
-export const SchemaChange: Pick<SchemaChangeResolvers, 'meta' | '__isTypeOf'> = {
+export const SchemaChange: Pick<SchemaChangeResolvers, 'meta'> = {
   meta: ({ meta, type }, _arg, _ctx) => {
     // @todo consider validating
     return {
