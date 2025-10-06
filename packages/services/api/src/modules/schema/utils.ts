@@ -385,3 +385,20 @@ export function stringifyDefaultValue(value: unknown): string | null {
   }
   return null;
 }
+
+export function memo<R, A, K>(fn: (arg: A) => R, cacheKeyFn: (arg: A) => K): (arg: A) => R {
+  let memoizedResult: R | null = null;
+  let memoizedKey: K | null = null;
+
+  return (arg: A) => {
+    const currentKey = cacheKeyFn(arg);
+    if (memoizedKey === currentKey) {
+      return memoizedResult!;
+    }
+
+    memoizedKey = currentKey;
+    memoizedResult = fn(arg);
+
+    return memoizedResult;
+  };
+}

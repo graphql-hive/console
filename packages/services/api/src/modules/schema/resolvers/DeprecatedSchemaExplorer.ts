@@ -1,23 +1,6 @@
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { buildGraphQLTypesFromSDL, withUsedByClients } from '../utils';
+import { buildGraphQLTypesFromSDL, memo, withUsedByClients } from '../utils';
 import type { DeprecatedSchemaExplorerResolvers } from './../../../__generated__/types';
-
-function memo<R, A, K>(fn: (arg: A) => R, cacheKeyFn: (arg: A) => K): (arg: A) => R {
-  let memoizedResult: R | null = null;
-  let memoizedKey: K | null = null;
-
-  return (arg: A) => {
-    const currentKey = cacheKeyFn(arg);
-    if (memoizedKey === currentKey) {
-      return memoizedResult!;
-    }
-
-    memoizedKey = currentKey;
-    memoizedResult = fn(arg);
-
-    return memoizedResult;
-  };
-}
 
 export const DeprecatedSchemaExplorer: DeprecatedSchemaExplorerResolvers = {
   types: ({ sdl, supergraph, usage }, _, { injector }) => {
