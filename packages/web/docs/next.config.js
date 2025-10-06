@@ -194,7 +194,7 @@ export default withGuildDocs({
     {
       source: '/docs/integrations',
       destination: '/docs/other-integrations',
-      permanent: false,
+      permanent: true,
     },
     {
       source: '/docs/integrations/:path*',
