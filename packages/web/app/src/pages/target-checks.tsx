@@ -271,22 +271,13 @@ function ChecksPageContent(props: {
     },
   });
 
-  if (query.error) {
-    return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={query.error}
-        showLogoutButton={false}
-      />
-    );
-  }
-
   const isLoading = query.fetching || query.stale;
   const renderLoading = useDebouncedLoader(isLoading);
 
   const [hasSchemaChecks, setHasSchemaChecks] = useState(
     !!query.data?.target?.schemaChecks?.edges?.length,
   );
+
   useEffect(() => {
     if (!isLoading) {
       setHasSchemaChecks(!!query.data?.target?.schemaChecks?.edges?.length);
@@ -298,7 +289,18 @@ function ChecksPageContent(props: {
   const [paginationVariables, setPaginationVariables] = useState<Array<string | null>>(() => [
     null,
   ]);
+
   const onLoadMore = (cursor: string) => setPaginationVariables(cursors => [...cursors, cursor]);
+
+  if (query.error) {
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
+  }
 
   return (
     <>

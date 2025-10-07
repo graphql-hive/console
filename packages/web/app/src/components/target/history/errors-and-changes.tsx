@@ -130,13 +130,23 @@ export function ChangesBlock(
       }
   ),
 ): ReactElement | null {
-  const changes = props.changesWithUsage ?? props.changes;
-
   return (
     <div>
       <h2 className="mb-3 font-bold text-gray-900 dark:text-white">{props.title}</h2>
       <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
-        {changes.map((change, key) => (
+        {props.changesWithUsage?.map((change, key) => (
+          <ChangeItem
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            targetSlug={props.targetSlug}
+            schemaCheckId={props.schemaCheckId}
+            key={key}
+            change={null}
+            changeWithUsage={change}
+            conditionBreakingChangeMetadata={props.conditionBreakingChangeMetadata ?? null}
+          />
+        ))}
+        {props.changes?.map((change, key) => (
           <ChangeItem
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}
@@ -144,6 +154,7 @@ export function ChangesBlock(
             schemaCheckId={props.schemaCheckId}
             key={key}
             change={change}
+            changeWithUsage={null}
             conditionBreakingChangeMetadata={props.conditionBreakingChangeMetadata ?? null}
           />
         ))}
@@ -152,32 +163,34 @@ export function ChangesBlock(
   );
 }
 
-// Obviously I'm not proud of this...
-// But I didn't want to spend too much time on this
-function isChangesBlock_SchemaChangeWithUsageFragment(
-  fragment: any,
-): fragment is FragmentType<typeof ChangesBlock_SchemaChangeWithUsageFragment> {
-  return (
-    !!fragment[' $fragmentRefs'] &&
-    'ChangesBlock_SchemaChangeWithUsageFragment' in fragment[' $fragmentRefs']
+function ChangeItem(
+  props: {
+    conditionBreakingChangeMetadata: FragmentType<
+      typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
+    > | null;
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+    schemaCheckId: string;
+  } & (
+    | {
+        change: FragmentType<typeof ChangesBlock_SchemaChangeFragment>;
+        changeWithUsage: null;
+      }
+    | {
+        change: null;
+        changeWithUsage: FragmentType<typeof ChangesBlock_SchemaChangeWithUsageFragment>;
+      }
+  ),
+) {
+  const cchange = useFragment(ChangesBlock_SchemaChangeFragment, props.change);
+  const cchangeWithUsage = useFragment(
+    ChangesBlock_SchemaChangeWithUsageFragment,
+    props.changeWithUsage,
   );
-}
 
-function ChangeItem(props: {
-  change:
-    | FragmentType<typeof ChangesBlock_SchemaChangeWithUsageFragment>
-    | FragmentType<typeof ChangesBlock_SchemaChangeFragment>;
-  conditionBreakingChangeMetadata: FragmentType<
-    typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
-  > | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaCheckId: string;
-}) {
-  const change = isChangesBlock_SchemaChangeWithUsageFragment(props.change)
-    ? useFragment(ChangesBlock_SchemaChangeWithUsageFragment, props.change)
-    : useFragment(ChangesBlock_SchemaChangeFragment, props.change);
+  // at least one prop must be provided :)
+  const change = (cchange ?? cchangeWithUsage)!;
 
   const metadata = useFragment(
     ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,

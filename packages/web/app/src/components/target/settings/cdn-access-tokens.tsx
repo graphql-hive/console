@@ -11,18 +11,8 @@ import { AlertTriangleIcon, TrashIcon } from '@/components/ui/icon';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Input, Modal, Table, Tag, TBody, Td, TimeAgo, Tr } from '@/components/v2';
 import { InlineCode } from '@/components/v2/inline-code';
-import { graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { Link, useRouter } from '@tanstack/react-router';
-
-const CDNAccessTokeRowFragment = graphql(`
-  fragment CDNAccessTokens_CdnAccessTokenRowFragment on CdnAccessToken {
-    id
-    firstCharacters
-    lastCharacters
-    alias
-    createdAt
-  }
-`);
 
 const CDNAccessTokenCreateMutation = graphql(`
   mutation CDNAccessTokens_CDNAccessTokenCreateMutation($input: CreateCdnAccessTokenInput!) {
@@ -407,38 +397,9 @@ export function CDNAccessTokens(props: {
       </div>
       <Table>
         <TBody>
-          {target?.data?.target?.cdnAccessTokens.edges?.map(edge => {
-            const node = useFragment(CDNAccessTokeRowFragment, edge.node);
-
-            return (
-              <Tr key={node.id}>
-                <Td>
-                  {node.firstCharacters + new Array(10).fill('•').join('') + node.lastCharacters}
-                </Td>
-                <Td>{node.alias}</Td>
-                <Td align="right">
-                  created <TimeAgo date={node.createdAt} />
-                </Td>
-                <Td align="right">
-                  <Button
-                    className="hover:text-red-500"
-                    variant="ghost"
-                    onClick={() => {
-                      void router.navigate({
-                        search: {
-                          page: 'cdn',
-                          cdn: 'delete',
-                          id: node.id,
-                        },
-                      });
-                    }}
-                  >
-                    <TrashIcon />
-                  </Button>
-                </Td>
-              </Tr>
-            );
-          })}
+          {target?.data?.target?.cdnAccessTokens.edges?.map(edge => (
+            <CDNAccessTokenRow cdnAccessToken={edge.node} key={edge.node.id} />
+          ))}
         </TBody>
       </Table>
 
@@ -501,5 +462,51 @@ export function CDNAccessTokens(props: {
         />
       ) : null}
     </SubPageLayout>
+  );
+}
+
+const CDNAccessTokenRowFragment = graphql(`
+  fragment CDNAccessTokens_CdnAccessTokenRowFragment on CdnAccessToken {
+    id
+    firstCharacters
+    lastCharacters
+    alias
+    createdAt
+  }
+`);
+
+type CDNAccessTokenRowProps = {
+  cdnAccessToken: FragmentType<typeof CDNAccessTokenRowFragment>;
+};
+
+function CDNAccessTokenRow(props: CDNAccessTokenRowProps): React.ReactNode {
+  const node = useFragment(CDNAccessTokenRowFragment, props.cdnAccessToken);
+  const router = useRouter();
+
+  return (
+    <Tr key={node.id}>
+      <Td>{node.firstCharacters + new Array(10).fill('•').join('') + node.lastCharacters}</Td>
+      <Td>{node.alias}</Td>
+      <Td align="right">
+        created <TimeAgo date={node.createdAt} />
+      </Td>
+      <Td align="right">
+        <Button
+          className="hover:text-red-500"
+          variant="ghost"
+          onClick={() => {
+            void router.navigate({
+              search: {
+                page: 'cdn',
+                cdn: 'delete',
+                id: node.id,
+              },
+            });
+          }}
+        >
+          <TrashIcon />
+        </Button>
+      </Td>
+    </Tr>
   );
 }
