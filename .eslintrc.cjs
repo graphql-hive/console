@@ -206,13 +206,12 @@ module.exports = {
         },
       },
     },
-    // {
-    //   files: ['packages/web/app/**'],
-    //   excludedFiles: ['packages/web/app/src/pages/**'],
-    //   rules: {
-    //     'import/no-unused-modules': ['error', { unusedExports: true }],
-    //   },
-    // },
+    {
+      files: ['packages/web/app/**/*.stories.tsx', 'packages/web/docs/**'],
+      rules: {
+        'react-hooks/rules-of-hooks': 'off',
+      },
+    },
     {
       files: ['packages/web/docs/**'],
       settings: {
