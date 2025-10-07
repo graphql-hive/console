@@ -1,5 +1,66 @@
 # hive
 
+## 8.3.0
+
+### Minor Changes
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - add operation counts by selected client to insights
+  filter
+
+- [#7060](https://github.com/graphql-hive/console/pull/7060)
+  [`93967de`](https://github.com/graphql-hive/console/commit/93967de720fb4f74780d6d5cf760d54eadba8de4)
+  Thanks [@jdolle](https://github.com/jdolle)! - add search to app deployment version by operation
+  name
+
+- [#7035](https://github.com/graphql-hive/console/pull/7035)
+  [`88ce5d3`](https://github.com/graphql-hive/console/commit/88ce5d3587b880ccba58bd9736042a8a8f1ef81f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add selected counts to insights client filter
+
+- [#7050](https://github.com/graphql-hive/console/pull/7050)
+  [`d1ec149`](https://github.com/graphql-hive/console/commit/d1ec149b9e0178f1ead24a6f79d9c9848f72a762)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Refine schema composition settings UI
+
+### Patch Changes
+
+- [#7033](https://github.com/graphql-hive/console/pull/7033)
+  [`2449790`](https://github.com/graphql-hive/console/commit/2449790e24b807939adf72de13787f7c48719e1b)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Stay in the opened page when switching between
+  targets
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix paginated operations list filtering if there
+  are many operations by passing a list of operation IDs to filter on
+
+- [#7067](https://github.com/graphql-hive/console/pull/7067)
+  [`7a39b32`](https://github.com/graphql-hive/console/commit/7a39b323d9167664a6e499dce3bb6f40caaf2e52)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix input cursor reset for org and project
+
+- [#7045](https://github.com/graphql-hive/console/pull/7045)
+  [`0f26e42`](https://github.com/graphql-hive/console/commit/0f26e4253de96b3107972993410dc32a659dbcc2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust token creation ui to make toggling
+  all/granular and services/apps more intuitive
+
+- [#7066](https://github.com/graphql-hive/console/pull/7066)
+  [`58658a4`](https://github.com/graphql-hive/console/commit/58658a49b5ef23f2d884c4a6966e4dca30b1a1b1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix first schema check landing width; fix
+  flickering sidenav on schema check loading"
+
+- [#7061](https://github.com/graphql-hive/console/pull/7061)
+  [`5cac244`](https://github.com/graphql-hive/console/commit/5cac2441fd475aff2d38faac5ebf51a7e08baf58)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix explorer field input cursor reset
+
+- [#7071](https://github.com/graphql-hive/console/pull/7071)
+  [`1b7c7b5`](https://github.com/graphql-hive/console/commit/1b7c7b5506eca9e78fee1a4fef150562e73873c5)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix error printing in logs
+
+- [#7074](https://github.com/graphql-hive/console/pull/7074)
+  [`8eb9e14`](https://github.com/graphql-hive/console/commit/8eb9e144b7e9a452b2d596776d75d136540207ff)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent potential resource exhaustion in the
+  deprecated schema explorer for large schemas.
+
 ## 8.2.1
 
 ### Patch Changes
