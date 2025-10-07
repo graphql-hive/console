@@ -95,6 +95,56 @@ export const availablePresets: Preset[] = [
   { name: 'last1y', label: 'Last 1 year', range: { from: 'now-364d', to: 'now' } },
 ];
 
+function createQuickRangePresets(number: number, validUnits: DurationUnit[]): Preset[] {
+  const presets: Preset[] = [];
+
+  if (validUnits.includes('m')) {
+    presets.push({
+      name: `last${number}min`,
+      label: `Last ${number} minutes`,
+      range: { from: `now-${number}m`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('h')) {
+    presets.push({
+      name: `last${number}h`,
+      label: `Last ${number} hours`,
+      range: { from: `now-${number}h`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('d')) {
+    presets.push({
+      name: `last${number}d`,
+      label: `Last ${number} days`,
+      range: { from: `now-${number}d`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('w')) {
+    presets.push({
+      name: `last${number}w`,
+      label: `Last ${number} weeks`,
+      range: { from: `now-${number}w`, to: 'now' },
+    });
+  }
+  if (validUnits.includes('M')) {
+    presets.push({
+      name: `last${number}M`,
+      label: `Last ${number} months`,
+      range: { from: `now-${number}M`, to: 'now' },
+    });
+  }
+
+  if (validUnits.includes('y')) {
+    presets.push({
+      name: `last${number}y`,
+      label: `Last ${number} years`,
+      range: { from: `now-${number}y`, to: 'now' },
+    });
+  }
+
+  return presets;
+}
+
 export function findMatchingPreset(
   range: Preset['range'],
   availablePresets: Preset[],
@@ -137,29 +187,53 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
   const [showCalendar, setShowCalendar] = useState(false);
 
   function getInitialPreset() {
-    let preset: Preset | undefined;
+    const fallbackPreset = staticPresets.at(0) ?? null;
+
     if (
-      props.selectedRange &&
-      !hasInvalidUnitRegex?.test(props.selectedRange.from) &&
-      !hasInvalidUnitRegex?.test(props.selectedRange.to)
+      !props.selectedRange ||
+      hasInvalidUnitRegex?.test(props.selectedRange.from) ||
+      hasInvalidUnitRegex?.test(props.selectedRange.to)
     ) {
-      preset = findMatchingPreset(props.selectedRange, staticPresets);
+      return fallbackPreset;
+    }
 
-      if (preset) {
-        return preset;
-      }
+    // Attempt to find preset from out pre-defined presets first
+    const preset = findMatchingPreset(props.selectedRange, staticPresets);
 
-      const resolvedRange = resolveRange(props.selectedRange.from, props.selectedRange.to);
-      if (resolvedRange) {
-        return {
-          name: `${props.selectedRange.from}_${props.selectedRange.to}`,
-          label: buildDateRangeString(resolvedRange),
-          range: props.selectedRange,
-        };
+    if (preset) {
+      return preset;
+    }
+
+    // attempt to find the preset based on dynamic presets (so we show something like "last x days" instead of 10. September - 12.September for `now-2d`)
+    if (props.selectedRange.from.startsWith('now-')) {
+      const number = parseInt(props.selectedRange.from.replace(/\D/g, ''), 10);
+      if (!Number.isNaN(number)) {
+        const quickRangPresets = createQuickRangePresets(number, validUnits);
+
+        const preset = quickRangPresets.find(
+          preset =>
+            preset.range.from === props.selectedRange?.from &&
+            preset.range.to === props.selectedRange.to,
+        );
+
+        if (preset) {
+          return preset;
+        }
       }
     }
 
-    return staticPresets.at(0) ?? null;
+    // if everything else fails we show an absolute range!
+
+    const resolvedRange = resolveRange(props.selectedRange.from, props.selectedRange.to);
+    if (resolvedRange) {
+      return {
+        name: `${props.selectedRange.from}_${props.selectedRange.to}`,
+        label: buildDateRangeString(resolvedRange),
+        range: props.selectedRange,
+      };
+    }
+
+    return fallbackPreset;
   }
 
   const [activePreset, setActivePreset] = useResetState<Preset | null>(getInitialPreset, [
@@ -202,71 +276,53 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
     setActivePreset(getInitialPreset());
   };
 
-  const PresetButton = ({ preset }: { preset: Preset }): JSX.Element => {
-    let isDisabled = false;
+  const PresetButton = useMemo(
+    () =>
+      function PresetButton({ preset }: { preset: Preset }): React.ReactNode {
+        let isDisabled = false;
 
-    if (props.startDate) {
-      const from = parse(preset.range.from);
-      if (from && from.getTime() < props.startDate.getTime()) {
-        isDisabled = true;
-      }
-    }
+        if (props.startDate) {
+          const from = parse(preset.range.from);
+          const time = from?.getTime();
+          const startTime = props.startDate?.getTime();
 
-    return (
-      <Button
-        variant="ghost"
-        onClick={() => {
-          setActivePreset(preset);
-          setFromValue(preset.range.from);
-          setToValue(preset.range.to);
-          setRange(undefined);
-          setShowCalendar(false);
-          setIsOpen(false);
-          setQuickRangeFilter('');
-        }}
-        disabled={isDisabled}
-        className="w-full justify-start text-left"
-      >
-        {preset.label}
-      </Button>
-    );
-  };
+          if (
+            !time ||
+            !startTime ||
+            Number.isNaN(time) ||
+            Number.isNaN(startTime) ||
+            time < props.startDate.getTime()
+          ) {
+            isDisabled = true;
+          }
+        }
+
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setActivePreset(preset);
+              setFromValue(preset.range.from);
+              setToValue(preset.range.to);
+              setRange(undefined);
+              setShowCalendar(false);
+              setIsOpen(false);
+              setQuickRangeFilter('');
+            }}
+            disabled={isDisabled}
+            className="w-full justify-start text-left"
+          >
+            {preset.label}
+          </Button>
+        );
+      },
+    [props.startDate],
+  );
 
   const dynamicPresets = useMemo(() => {
     const number = parseInt(quickRangeFilter.replace(/\D/g, ''), 10);
 
-    const dynamicPresets: Preset[] = [
-      {
-        name: `last${number}min`,
-        label: `Last ${number} minutes`,
-        range: { from: `now-${number}m`, to: 'now' },
-      },
-      {
-        name: `last${number}h`,
-        label: `Last ${number} hours`,
-        range: { from: `now-${number}h`, to: 'now' },
-      },
-      {
-        name: `last${number}d`,
-        label: `Last ${number} days`,
-        range: { from: `now-${number}d`, to: 'now' },
-      },
-      {
-        name: `last${number}w`,
-        label: `Last ${number} weeks`,
-        range: { from: `now-${number}w`, to: 'now' },
-      },
-      {
-        name: `last${number}M`,
-        label: `Last ${number} months`,
-        range: { from: `now-${number}M`, to: 'now' },
-      },
-      {
-        name: `last${number}y`,
-        label: `Last ${number} years`,
-        range: { from: `now-${number}y`, to: 'now' },
-      },
-    ];
+    const dynamicPresets = createQuickRangePresets(number, validUnits);
 
     const uniqueDynamicPresets = dynamicPresets.filter(
       preset => !staticPresets.some(p => p.name === preset.name),
