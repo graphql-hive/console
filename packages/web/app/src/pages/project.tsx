@@ -304,16 +304,6 @@ const ProjectsPageContent = (
     return 100;
   }, [targetConnection?.edges]);
 
-  if (query.error) {
-    return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={query.error}
-        showLogoutButton={false}
-      />
-    );
-  }
-
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       void router.navigate({
@@ -353,6 +343,16 @@ const ProjectsPageContent = (
       },
     });
   }, [router, props.sortOrder]);
+
+  if (query.error) {
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
+  }
 
   return (
     <div className="grow">
