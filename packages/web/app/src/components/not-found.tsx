@@ -1,5 +1,4 @@
 import ghost from '../../public/images/figures/ghost.svg?url';
-import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { captureMessage } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
@@ -25,24 +24,6 @@ export function NotFound() {
         <Button variant="secondary" onClick={router.history.back}>
           Go back
         </Button>
-
-        <Helmet>
-          <style key="not-found-styles">
-            {`
-            html {
-              background:
-                url(/images/bg-top-shine.svg) no-repeat left top,
-                url(/images/bg-bottom-shine.svg) no-repeat right bottom,
-                #0b0d11;
-            }
-
-            body {
-              background: transparent !important;
-              color: #fcfcfc !important;
-            }
-          `}
-          </style>
-        </Helmet>
       </div>
     </>
   );
