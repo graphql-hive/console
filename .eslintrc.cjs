@@ -179,7 +179,7 @@ module.exports = {
         'react/jsx-no-useless-fragment': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-empty-function': 'off',
-        'react-hooks/rules-of-hooks': 'off',
+        'react-hooks/rules-of-hooks': 'error',
         'react-hooks/exhaustive-deps': 'off',
         'unicorn/filename-case': 'off',
         'import/no-default-export': 'off',
