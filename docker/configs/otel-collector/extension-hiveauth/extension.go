@@ -162,7 +162,7 @@ func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targ
 			resp.Body.Close()
 
 			select {
-			case <-time.After(retryDelay):
+			case <-time.After(retryDelay * time.Duration(attempt + 1)):
 				// Continue to next attempt.
 			case <-ctx.Done():
 				return "", ctx.Err()
