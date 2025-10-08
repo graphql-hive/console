@@ -166,6 +166,11 @@ function SchemaView(props: {
     });
   };
 
+  const schemas = useFragment(
+    SchemaView_SchemaFragment,
+    target.latestSchemaVersion?.schemas?.edges?.map(edge => edge.node),
+  );
+
   const isDistributed =
     project.type === ProjectType.Federation || project.type === ProjectType.Stitching;
 
@@ -178,10 +183,6 @@ function SchemaView(props: {
     return noSchema;
   }
 
-  const schemas = useFragment(
-    SchemaView_SchemaFragment,
-    target.latestSchemaVersion?.schemas?.edges?.map(edge => edge.node),
-  );
   const compositeSchemas = schemas?.filter(isCompositeSchema) as CompositeSchema[];
   const singleSchema = schemas?.filter(schema => !isCompositeSchema(schema))[0] as
     | SingleSchema

@@ -49,12 +49,10 @@ function OperationsFilter({
     operationStatsConnection,
   );
 
-  const clientFilteredOperations = clientOperationStatsConnection
-    ? useFragment(
-        OperationsFilter_OperationStatsValuesConnectionFragment,
-        clientOperationStatsConnection,
-      )
-    : null;
+  const clientFilteredOperations = useFragment(
+    OperationsFilter_OperationStatsValuesConnectionFragment,
+    clientOperationStatsConnection,
+  );
 
   function getOperationHashes() {
     const items: string[] = [];
@@ -324,11 +322,12 @@ function OperationRow({
 }): ReactElement {
   const operation = useFragment(OperationRow_OperationStatsValuesFragment, operationStats);
   const requests = useFormattedNumber(operation.count);
-  const clientsOperation = clientOperationStats
-    ? useFragment(OperationRow_OperationStatsValuesFragment, clientOperationStats)
-    : undefined;
+  const clientsOperation = useFragment(
+    OperationRow_OperationStatsValuesFragment,
+    clientOperationStats || null,
+  );
   const hasClientOperation = clientOperationStats !== false;
-  const clientsRequests = clientsOperation ? useFormattedNumber(clientsOperation.count) : null;
+  const clientsRequests = useFormattedNumber(clientsOperation?.count);
   const hash = operation.operationHash || '';
   const change = useCallback(() => {
     if (hash) {
@@ -340,7 +339,7 @@ function OperationRow({
     if (hasClientOperation) {
       return (
         <div className="flex shrink-0 text-right text-gray-500">
-          <span>{clientsRequests ?? 0}</span>
+          <span>{clientsRequests === '-' ? 0 : clientsRequests}</span>
           <span className="ml-1 truncate text-gray-600">/ {requests}</span>
         </div>
       );
@@ -425,10 +424,10 @@ function ClientRow({
   style: any;
 }): ReactElement {
   const client = useFragment(ClientRow_ClientStatsValuesFragment, props.client);
-  const clientOperation =
-    props.clientOperationStats === false
-      ? false
-      : useFragment(ClientRow_ClientStatsValuesFragment, props.clientOperationStats);
+  const clientOperation = useFragment(
+    ClientRow_ClientStatsValuesFragment,
+    props.clientOperationStats || null,
+  );
   const requests = useFormattedNumber(client.count);
   const hash = client.name;
   const change = useCallback(() => {
@@ -438,7 +437,7 @@ function ClientRow({
   }, [onSelect, hash, selected]);
 
   const Totals = () => {
-    if (clientOperation !== false) {
+    if (props.clientOperationStats !== false) {
       return (
         <div className="flex shrink-0 text-right text-gray-500">
           <span>{clientOperation?.count ?? 0}</span>
@@ -544,9 +543,10 @@ function ClientsFilter({
     setSelectedItems([]);
   }, [setSelectedItems]);
 
-  const operationConnection = operationStatsConnection
-    ? useFragment(ClientsFilter_ClientStatsValuesConnectionFragment, operationStatsConnection)
-    : null;
+  const operationConnection = useFragment(
+    ClientsFilter_ClientStatsValuesConnectionFragment,
+    operationStatsConnection ?? null,
+  );
 
   const renderRow = useCallback<ComponentType<ListChildComponentProps>>(
     ({ index, style }) => {
