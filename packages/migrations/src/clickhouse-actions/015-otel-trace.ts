@@ -9,7 +9,7 @@ export const action: Action = async exec => {
       , "SpanId" String CODEC(ZSTD(1))
       , "ParentSpanId" String CODEC(ZSTD(1))
       , "TraceState" String CODEC(ZSTD(1))
-      , "SpanName" LowCardinality(String) CODEC(ZSTD(1))
+      , "SpanName" String CODEC(ZSTD(1))
       , "SpanKind" LowCardinality(String) CODEC(ZSTD(1))
       , "ServiceName" LowCardinality(String) CODEC(ZSTD(1))
       , "ResourceAttributes" Map(LowCardinality(String), String) CODEC(ZSTD(1))
