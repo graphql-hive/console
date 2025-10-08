@@ -15,7 +15,7 @@ realistic trace data.
 Then run the following script:
 
 ```
-HIVE_ORGANIZATION_ACCESS_TOKEN=hvo1/NWZmMGJjZmItODQxZS00ZmRiLWE4OTUtMzE3NDc2OWNhMGUwOjY2ZmM1NDI3ODRmYjFiMGYwODUyMWYwYmUyYjc1Yzk5NWM1ZTk0YWVlMzA4MTkxZGQ0NTFmZjcwNTRmM2IyMWY= \
+HIVE_ORGANIZATION_ACCESS_TOKEN=hvo1/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx= \
 HIVE_TARGET_REF=the-guild/otel-demo/development \
 node --experimental-strip-types seed-traces.mts
 ```
