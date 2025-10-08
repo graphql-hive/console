@@ -303,6 +303,7 @@ const TracesList = memo(function TracesList(
     [router],
   );
 
+  const targetRef = useTargetReference();
   const table = useReactTable({
     data,
     columns: [
@@ -310,7 +311,6 @@ const TracesList = memo(function TracesList(
         accessorKey: 'id',
         header: () => <div className="pl-2 text-left">Trace ID</div>,
         cell: ({ row }) => {
-          const targetRef = useTargetReference();
           const traceId = row.getValue('id') as string;
 
           return (

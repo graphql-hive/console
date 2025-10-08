@@ -689,6 +689,7 @@ function SpanNode(props: SpanNodeProps) {
         ? null
         : props.span.children.length
           ? props.span.children.map((childSpan, i, arr) => {
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const uchildSpan = useFragment(SpanFragment, childSpan.span);
 
               const serviceName: string | null =
@@ -1198,6 +1199,7 @@ type SpanEvent = {
 };
 
 type SpanFragmentWithChildren = {
+  id: string;
   span: FragmentType<typeof SpanFragment>;
   children: Array<SpanFragmentWithChildren>;
   events: Array<SpanEvent>;
@@ -1213,9 +1215,11 @@ function createSpanTreeStructure(fragments: Array<FragmentType<typeof SpanFragme
 
   let rootSpan: SpanFragmentWithChildren | null = null;
   for (const fragment of fragments) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const ufragment = useFragment(SpanFragment, fragment);
 
     const fragmentWithChildren: SpanFragmentWithChildren = {
+      id: ufragment.id,
       span: fragment,
       children: [],
       durationNs: differenceInNanoseconds(ufragment.endTime, ufragment.startTime),
@@ -1236,19 +1240,20 @@ function createSpanTreeStructure(fragments: Array<FragmentType<typeof SpanFragme
     throw new Error('No root found.');
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const uroot = useFragment(SpanFragment, rootSpan.span);
   const startNS = parseRFC3339ToEpochNanos(uroot.startTime);
 
-  // TODO: this should probably be provided be the backend
   let eventIdCounter = 0;
 
   for (const item of spansById.values()) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const uitem = useFragment(SpanFragment, item.span);
 
     for (const event of uitem.events) {
       eventIdCounter++;
       const spanEvent: SpanEvent = {
-        id: String(eventIdCounter),
+        id: uitem.id + '_' + String(eventIdCounter),
         spanId: uitem.id,
         name: event.name,
         attributes: event.attributes,
