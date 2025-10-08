@@ -1,4 +1,5 @@
 import Dataloader from 'dataloader';
+import stableJSONStringify from 'fast-json-stable-stringify';
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { ClickHouse, sql } from '../providers/clickhouse-client';
 import { OperationsManager } from '../providers/operations-manager';
@@ -231,7 +232,7 @@ export const Target: Pick<
         return inputs.map(input => rowsGroupedByKey[input.key] ?? []);
       },
       {
-        cacheKeyFn: JSON.stringify,
+        cacheKeyFn: stableJSONStringify,
       },
     );
 
