@@ -73,7 +73,7 @@ export function createOtelAuthEndpoint(args: {
 
 // TODO: https://github.com/open-telemetry/opentelemetry-collector/blob/ae0b83b94cc4d4cd90a73a2f390d23c25f848aec/config/confighttp/confighttp.go#L551C4-L551C84
 //       swallows the error and returns 401 Unauthorized to the OTel SDK.
-const invalidTaretRefError =
+const invalidTargetRefError =
   'Invalid slug or ID provided for target reference. ' +
   'Must match target slug "$organization_slug/$project_slug/$target_slug" (e.g. "the-guild/graphql-hive/staging") ' +
   'or UUID (e.g. c8164307-0b42-473e-a8c5-2860bb4beff6).';
@@ -85,7 +85,7 @@ function parseTargetRef(targetRef: string) {
     if (parts.length !== 3) {
       return {
         ok: false,
-        error: invalidTaretRefError,
+        error: invalidTargetRefError,
       } as const;
     }
 
@@ -105,7 +105,7 @@ function parseTargetRef(targetRef: string) {
   if (!isUUID(targetRef)) {
     return {
       ok: false,
-      error: invalidTaretRefError,
+      error: invalidTargetRefError,
     } as const;
   }
 
