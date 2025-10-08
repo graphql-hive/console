@@ -985,20 +985,6 @@ export const router = createRouter({
   routeTree,
   parseSearch: parseSearchWith(jsUrlParse),
   stringifySearch: stringifySearchWith(jsUrlStringify),
-  // parseSearch: parseSearchWith(value =>
-  //   qs.parse(value, {
-  //     parseNumbers: true,
-  //     parseBooleans: true,
-  //     arrayFormat: 'bracket-separator',
-  //     arrayFormatSeparator: '|',
-  //   }),
-  // ),
-  // stringifySearch: stringifySearchWith(value =>
-  //   qs.stringify(value, {
-  //     arrayFormat: 'bracket-separator',
-  //     arrayFormatSeparator: '|',
-  //   }),
-  // ),
 });
 
 router.history.subscribe(() => {
