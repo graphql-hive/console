@@ -10,6 +10,7 @@ import { loadStripe } from '@stripe/stripe-js/pure';
 import { getStripePublicKey } from './stripe-public-key';
 
 export const HiveStripeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
+  const [blocked, setBlocked] = useState(false);
   // eslint-disable-next-line react/hook-use-state -- we don't need setter
   const [stripe] = useState<ReturnType<typeof loadStripe> | void>(async () => {
     if (env.nodeEnv !== 'production') {
@@ -25,6 +26,7 @@ export const HiveStripeWrapper: FC<{ children: ReactNode }> = ({ children }) => 
     try {
       return await loadStripe(stripePublicKey);
     } catch (e) {
+      setBlocked(true);
       const message =
         e instanceof Error ? e.message : typeof e === 'string' ? e : 'Failed to load Stripe.js';
       captureMessage(message, {
@@ -33,6 +35,18 @@ export const HiveStripeWrapper: FC<{ children: ReactNode }> = ({ children }) => 
       return null;
     }
   });
+
+  if (blocked) {
+    return (
+      <div>
+        <p>We couldn’t load Stripe. This might be caused by an ad blocker or privacy extension.</p>
+        <p>
+          Please try disabling ad blocking for this site or allow requests to{' '}
+          <code>js.stripe.com</code>, then refresh the page.
+        </p>
+      </div>
+    );
+  }
 
   if (!stripe) {
     return children;
