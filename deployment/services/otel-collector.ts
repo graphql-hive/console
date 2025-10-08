@@ -36,7 +36,7 @@ export function deployOTELCollector(args: {
       livenessProbe: '/',
       startupProbe: '/',
       exposesMetrics: true,
-      replicas: args.environment.isProduction ? 3 : 1,
+      replicas: args.environment.podsConfig.tracingCollector.maxReplicas,
       pdb: true,
       availabilityOnEveryNode: true,
       port: 4318,
