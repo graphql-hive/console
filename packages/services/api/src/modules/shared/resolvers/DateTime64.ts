@@ -81,7 +81,6 @@ const parseDateTime = (dateTime: string) => dateTime;
 
 export const DateTime64 = new GraphQLScalarType({
   name: 'DateTime64',
-  description: 'TODO',
   serialize(value) {
     if (value instanceof Date) {
       if (validateJSDate(value)) {
