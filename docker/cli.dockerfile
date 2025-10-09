@@ -17,8 +17,8 @@ LABEL org.opencontainers.image.vendor="Kamil Kisiela"
 LABEL org.opencontainers.image.url="https://github.com/graphql-hive/platform"
 LABEL org.opencontainers.image.source="https://github.com/graphql-hive/platform"
 
-ENV ENVIRONMENT production
-ENV RELEASE $RELEASE
+ENV ENVIRONMENT=production
+ENV RELEASE=$RELEASE
 RUN hive --version
 
 ENTRYPOINT ["hive"]

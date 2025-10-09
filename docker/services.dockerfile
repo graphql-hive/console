@@ -17,9 +17,9 @@ LABEL org.opencontainers.image.vendor="Kamil Kisiela"
 LABEL org.opencontainers.image.url="https://github.com/graphql-hive/platform"
 LABEL org.opencontainers.image.source="https://github.com/graphql-hive/platform"
 
-ENV ENVIRONMENT production
-ENV RELEASE $RELEASE
-ENV PORT $PORT
+ENV ENVIRONMENT=production
+ENV RELEASE=$RELEASE
+ENV PORT=$PORT
 
 HEALTHCHECK --interval=5s \
   --timeout=5s \
