@@ -1435,25 +1435,14 @@ export class OperationsReader {
     return coordinateToTopOperations;
   }
 
-  async getClientNamesPerCoordinateOfType(args: {
-    targetId: string;
-    period: DateRange;
-    typename: string;
-  }): Promise<Map<string, Set<string>>> {
-    // The Explorer page is the only consumer of this method.
-    // It displays:
-    // - a list of fields of a given (interface, input object, object) type (in this case we can use Type.*)
-    // - a list of fields of root types (in this case we can use Query.*, Mutation.*, Subscription.*)
-    // - enums (in this case we can use Enum.* + Enum)
-    // - union (in this case we can use Union.* + Union)
-    // - scalar (in this case we can use Scalar)
-    // We clearly over-fetch here as we fetch all coordinates of a given type,
-    // even though some coordinates may no longer be used in the schema.
-    // But it's a fine tradeoff for the sake of simplicity.
-
+  async getClientNamesPerCoorinateOfTypes(
+    targetId: string,
+    period: DateRange,
+    coordinates: readonly string[],
+  ): Promise<Map<string, Set<string>>> {
     const dbResult = await this.clickHouse.query(
       this.pickAggregationByPeriod({
-        queryId: aggregation => `get_hashes_for_schema_coordinates_${aggregation}`,
+        queryId: aggregation => `get_client_names_for_schema_coordinates_${aggregation}`,
         // KAMIL: I know this query is a bit weird, but it's the best I could come up with.
         // It processed 27x less rows than the previous version.
         // It's 30x faster.
@@ -1483,13 +1472,9 @@ export class OperationsReader {
               co.hash
             FROM ${aggregationTableName('coordinates')} AS co
             ${this.createFilter({
-              target: args.targetId,
-              period: args.period,
-              extra: [
-                sql`( co.coordinate = ${args.typename} OR co.coordinate LIKE ${
-                  args.typename + '.%'
-                } )`,
-              ],
+              target: targetId,
+              period: period,
+              extra: [sql`co.coordinate IN (${sql.array(coordinates, 'String')})`],
               namespace: 'co',
             })}
             GROUP BY co.coordinate, co.hash
@@ -1501,8 +1486,8 @@ export class OperationsReader {
                 cl.hash AS hash
               FROM ${aggregationTableName('clients')} AS cl
               ${this.createFilter({
-                target: args.targetId,
-                period: args.period,
+                target: targetId,
+                period: period,
                 namespace: 'cl',
               })}
               GROUP BY cl.hash
@@ -1511,7 +1496,7 @@ export class OperationsReader {
           SETTINGS join_algorithm = 'parallel_hash'
         `,
         timeout: 15_000,
-        period: args.period,
+        period,
       }),
     );
 

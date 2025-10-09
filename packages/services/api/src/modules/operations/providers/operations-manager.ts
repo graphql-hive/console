@@ -869,25 +869,26 @@ export class OperationsManager {
 
   private clientNamesPerCoordinateOfTypeDataLoaderCache = new Map<
     string,
-    DataLoader<string, Map<string, Set<string>>>
+    DataLoader<string, Set<string>>
   >();
 
-  private getClientNamesPerCoordinateOfTypeLoader(args: { target: string; period: DateRange }) {
+  private getClientNamesPerCoordinateLoader(args: { target: string; period: DateRange }) {
     // Stores a DataLoader per target and date range
     // A many type names can share the same DataLoader as long as they share the same target and date range.
     const cacheKey = [args.target, args.period.from, args.period.to].join('__');
     let loader = this.clientNamesPerCoordinateOfTypeDataLoaderCache.get(cacheKey);
 
     if (loader == null) {
-      loader = new DataLoader<string, Map<string, Set<string>>>(typenames => {
+      loader = new DataLoader<string, Set<string>>(coordinates => {
+        const promise = this.reader.getClientNamesPerCoorinateOfTypes(
+          args.target,
+          args.period,
+          coordinates,
+        );
         return Promise.all(
-          typenames.map(typename => {
-            return this.reader.getClientNamesPerCoordinateOfType({
-              targetId: args.target,
-              period: args.period,
-              typename,
-            });
-          }),
+          coordinates.map(coordinate =>
+            promise.then(res => res.get(coordinate) ?? new Set<string>()),
+          ),
         );
       });
       this.clientNamesPerCoordinateOfTypeDataLoaderCache.set(cacheKey, loader);
@@ -904,17 +905,14 @@ export class OperationsManager {
     args: {
       period: DateRange;
       schemaCoordinate: string;
-      typename: string;
     } & TargetSelector,
   ) {
-    const loader = this.getClientNamesPerCoordinateOfTypeLoader({
+    const loader = this.getClientNamesPerCoordinateLoader({
       target: args.targetId,
       period: args.period,
     });
 
-    const clientNamesCoordinateMap = await loader.load(args.typename);
-
-    return Array.from(clientNamesCoordinateMap.get(args.schemaCoordinate) ?? []);
+    return Array.from(await loader.load(args.schemaCoordinate));
   }
 
   private topOperationForTypeDataLoaderCache = new Map<
