@@ -152,19 +152,25 @@ function ProposalsNewContent(
       <TabsList
         variant="content"
         className={cn(
-          'flex h-full w-[15vw] min-w-[120px] flex-col items-start',
-          '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-1 [&>*]:py-4',
+          'flex h-full w-[15vw] min-w-[140px] flex-col items-start border-0',
+          '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-3',
         )}
       >
-        <TabsTrigger variant="content" value="overview" asChild>
+        <TabsTrigger variant="menu" value="overview" asChild>
           <Link>Overview</Link>
         </TabsTrigger>
-        <TabsTrigger variant="content" value="editor" asChild>
+        <TabsTrigger variant="menu" value="editor" asChild>
           <Link>Editor</Link>
         </TabsTrigger>
-        <TabsTrigger variant="content" value="changes" asChild>
+        <TabsTrigger variant="menu" value="changes" asChild className="mb-2">
           <Link>Changes</Link>
         </TabsTrigger>
+        {/* @todo disable if proposal is invalid */}
+        <div className="mt-6">
+          <Button variant="ghost" className="mt-2 w-full justify-center font-bold">
+            Submit Proposal
+          </Button>
+        </div>
       </TabsList>
       <div className="w-full flex-col items-start overflow-x-hidden pl-8 [&>*]:pt-0">
         <OverviewTab
@@ -441,9 +447,6 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
             }
           }}
         />
-        <div>
-          <Button variant="default">Submit</Button>
-        </div>
       </div>
       {(activeService || serviceTabs.length > 0) && (
         <Tabs
