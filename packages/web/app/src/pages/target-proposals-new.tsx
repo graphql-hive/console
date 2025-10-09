@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { parse, print } from 'graphql';
+import { editor } from 'monaco-editor';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
@@ -17,9 +19,18 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { DotFilledIcon, GearIcon } from '@radix-ui/react-icons';
+import { DotFilledIcon, GearIcon, MagicWandIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import { SchemaEditor } from '@theguild/editor';
+
+function prettier(source: string) {
+  try {
+    return print(parse(source));
+  } catch (e) {
+    console.warn(e);
+    return source;
+  }
+}
 
 const ProposalsNewProposalEditorQuery = graphql(`
   query ProposalsNewProposalEditorQuery($targetReference: TargetReferenceInput!) {
@@ -152,7 +163,7 @@ function ProposalsNewContent(
       <TabsList
         variant="content"
         className={cn(
-          'flex h-full w-[15vw] min-w-[140px] flex-col items-start border-0',
+          'flex h-full w-[20vw] min-w-[160px] flex-col items-start border-0',
           '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-3',
         )}
       >
@@ -167,7 +178,7 @@ function ProposalsNewContent(
         </TabsTrigger>
         {/* @todo disable if proposal is invalid */}
         <div className="mt-6">
-          <Button variant="ghost" className="mt-2 w-full justify-center font-bold">
+          <Button variant="ghost" className="mt-2 w-full justify-center px-3 font-bold">
             Submit Proposal
           </Button>
         </div>
@@ -318,6 +329,7 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
       }
     });
   };
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (serviceTabs.length - 1 < activeTab) {
@@ -377,7 +389,10 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
       const addedService = schemaEdges.find(edge => edge.node.id === serviceId);
       if (addedService) {
         // clone the node so that we can modify the sdl and url without impacting the original
-        setServiceTabs([...serviceTabs, { ...addedService.node }]);
+        setServiceTabs([
+          ...serviceTabs,
+          { ...addedService.node, source: prettier(addedService.node.source) },
+        ]);
         // select the new last element in the serviceTabs list
         setActiveTabAndScroll(serviceTabs.length);
       }
@@ -407,12 +422,17 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
   }, [serviceTabs]);
 
   const setActiveTabSource = useCallback(
-    (source: string) => {
-      serviceTabs[activeTab].source = source;
-      setServiceTabs(serviceTabs);
+    (source: string | undefined) => {
+      serviceTabs[activeTab] = { ...serviceTabs[activeTab], source: source ?? '' };
+      setServiceTabs([...serviceTabs]);
     },
     [activeTab, serviceTabs],
   );
+  const onToggleTabSettings = () => {
+    setShowSettings(!showSettings);
+  };
+  /** A reference to the monaco editor so we can force set the value on prettify */
+  const [editor, setEditor] = useState<editor.IStandaloneCodeEditor | null>(null);
 
   if (query.fetching) {
     return <Spinner />;
@@ -442,7 +462,7 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
               onAddNewService({
                 type,
                 serviceName: 'new service',
-                serviceUrl: 'https://localhost:3000',
+                serviceUrl: '',
               });
             }
           }}
@@ -493,21 +513,18 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
                                 setServiceTabs([...serviceTabs]);
                               }}
                             />
-                            {service.unpublished &&
-                              schemaEdges.some(
-                                s => (s.node as any).service === service.service,
-                              ) && (
-                                <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <AlertTriangleIcon className="size-4 text-red-600" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      New service name cannot match an existing service name
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
+                            {schemaEdges.some(s => (s.node as any).service === service.service) && (
+                              <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <AlertTriangleIcon className="size-4 text-red-600" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    New service name cannot match an existing service name
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </>
                         ) : (
                           schemaTitle(service)
@@ -526,16 +543,29 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
                 );
               })}
             </TabsList>
-            {
-              <div className="flex flex-row items-center justify-end">
-                <div className="ml-2 cursor-pointer p-1" title="settings">
-                  <GearIcon />
-                </div>
-                {/* <div className="ml-2 cursor-pointer p-1" title="save">
-                <SaveIcon className="size-4" />
-              </div> */}
-              </div>
-            }
+            <div className="flex flex-row items-center justify-end">
+              <Link
+                className="ml-2 cursor-pointer p-1 hover:text-orange-500"
+                title="Prettify schema"
+                onClick={() => {
+                  const prettierSource = prettier(activeService?.source ?? '');
+                  setActiveTabSource(prettierSource);
+                  editor?.setValue(prettierSource);
+                }}
+              >
+                <MagicWandIcon className="size-4" />
+              </Link>
+              <Link
+                className={cn(
+                  'ml-2 cursor-pointer p-1 hover:text-orange-500',
+                  showSettings && 'border-b-2 border-orange-500',
+                )}
+                title="Edit schema settings"
+                onClick={onToggleTabSettings}
+              >
+                <GearIcon />
+              </Link>
+            </div>
           </div>
           {serviceTabs.map((service, idx) => {
             return (
@@ -546,15 +576,32 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
                     ? `new-${idx}`
                     : `tab-${service.id}`
                 }
-                className="mt-0 py-0"
+                className="relative mt-0 py-0"
               >
                 <SchemaEditor
                   theme="vs-dark"
                   height={400}
                   className="border"
                   schema={service.source ?? ''}
+                  onMount={setEditor}
                   onChange={setActiveTabSource}
                 />
+                {showSettings && service.__typename === 'CompositeSchema' && (
+                  <div className="absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border bg-black p-4 pt-6 text-sm">
+                    {!!service.service && (
+                      <SubPageLayoutHeader
+                        subPageTitle="Settings"
+                        description={
+                          <CardDescription className="pb-4">
+                            Additional service configuration
+                          </CardDescription>
+                        }
+                      />
+                    )}
+                    <div className="my-2 font-semibold">Service URL</div>
+                    <Input value={service.url ?? ''} className="text-xs" />
+                  </div>
+                )}
               </TabsContent>
             );
           })}
