@@ -203,3 +203,11 @@
 .hive-badge-is-changed:after {
   @apply absolute right-2 size-1.5 rounded-full border border-orange-600 bg-orange-400 content-[''];
 }
+
+#root {
+  background-color: rgb(3 7 17 / var(--tw-bg-opacity, 1)) !important;
+}
+
+#root > * {
+  background-color: rgb(3 7 17 / var(--tw-bg-opacity, 1)) !important;
+}

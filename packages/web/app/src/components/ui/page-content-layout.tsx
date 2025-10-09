@@ -34,8 +34,12 @@ type PageLayoutContentProps = {
 const PageLayoutContent = forwardRef<HTMLDivElement, PageLayoutContentProps>(
   ({ children, mainTitlePage, ...props }, ref) => (
     <div ref={ref} className={cn('grow', props.className)} {...props}>
-      <h1 className="mb-2 text-2xl font-semibold">{mainTitlePage}</h1>
-      {mainTitlePage ? <div className="mb-3 h-[1px] w-full bg-gray-700" /> : null}
+      {mainTitlePage ? (
+        <>
+          <h1 className="mb-2 text-2xl font-semibold">{mainTitlePage}</h1>
+          <div className="mb-3 h-[1px] w-full bg-gray-700" />
+        </>
+      ) : null}
       {children}
     </div>
   ),
