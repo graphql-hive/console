@@ -2,6 +2,7 @@ import { addMinutes, format } from 'date-fns';
 import { Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
+import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import { batch, batchBy } from '../../../shared/helpers';
 import { Logger } from '../../shared/providers/logger';
@@ -2124,6 +2125,11 @@ export class OperationsReader {
     }));
   }
 
+  @traceFn('OperationReader.countCoordinatesOfTarget', {
+    initAttributes: input => ({
+      'hive.target.id': input.target,
+    }),
+  })
   async countCoordinatesOfTarget({ target, period }: { target: string; period: DateRange }) {
     this.logger.debug('Count coordinates of target. (targetId=%s, period=%o)', target, period);
 

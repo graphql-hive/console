@@ -1,6 +1,7 @@
 import DataLoader from 'dataloader';
 import { Injectable, Scope } from 'graphql-modules';
 import LRU from 'lru-cache';
+import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import type { Listify, Optional } from '../../../shared/helpers';
 import { cache } from '../../../shared/helpers';
@@ -1099,6 +1100,13 @@ export class OperationsManager {
       period: DateRange;
     } & TargetSelector
   >(selector => JSON.stringify(selector))
+  @traceFn('OperationManager.countCoordinatesOfTarget', {
+    initAttributes: input => ({
+      'hive.organization.id': input.organizationId,
+      'hive.project.id': input.projectId,
+      'hive.target.id': input.targetId,
+    }),
+  })
   async countCoordinatesOfTarget({
     period,
     targetId: target,
