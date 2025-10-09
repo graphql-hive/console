@@ -983,8 +983,18 @@ const routeTree = root.addChildren([
 
 export const router = createRouter({
   routeTree,
-  parseSearch: parseSearchWith(jsUrlParse),
-  stringifySearch: stringifySearchWith(jsUrlStringify),
+  parseSearch: parseSearchWith(str => {
+    if (window.location.pathname.endsWith('/traces')) {
+      return jsUrlParse(str);
+    }
+    return JSON.parse(str);
+  }),
+  stringifySearch: stringifySearchWith(search => {
+    if (window.location.pathname.endsWith('/traces')) {
+      return jsUrlStringify(search);
+    }
+    return JSON.stringify(search);
+  }),
 });
 
 router.history.subscribe(() => {
