@@ -1,5 +1,25 @@
 # hive
 
+## 8.4.0
+
+### Minor Changes
+
+- [#7085](https://github.com/graphql-hive/console/pull/7085)
+  [`e5aa9bd`](https://github.com/graphql-hive/console/commit/e5aa9bde3e8e2c4fad87bfa26e2841ce92629bb2)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - add user message when stripe is blocked
+
+### Patch Changes
+
+- [#7090](https://github.com/graphql-hive/console/pull/7090)
+  [`0d1cf80`](https://github.com/graphql-hive/console/commit/0d1cf80f2894c0e01bb8df4cd3aee31c23b3d975)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Further improve the performance of loading the
+  deprecated schema view for large schemas.
+
+- [#7079](https://github.com/graphql-hive/console/pull/7079)
+  [`cbbd5e5`](https://github.com/graphql-hive/console/commit/cbbd5e52b6b4f538b33e213ff393766c523be08c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix dashboard background using different shades of
+  black.
+
 ## 8.3.0
 
 ### Minor Changes
