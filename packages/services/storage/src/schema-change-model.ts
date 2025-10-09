@@ -16,6 +16,32 @@ import {
   DirectiveLocationAddedChange,
   DirectiveLocationRemovedChange,
   DirectiveRemovedChange,
+  DirectiveUsageArgumentAddedChange,
+  DirectiveUsageArgumentDefinitionAddedChange,
+  DirectiveUsageArgumentDefinitionRemovedChange,
+  DirectiveUsageArgumentRemovedChange,
+  DirectiveUsageEnumAddedChange,
+  DirectiveUsageEnumRemovedChange,
+  DirectiveUsageEnumValueAddedChange,
+  DirectiveUsageEnumValueRemovedChange,
+  DirectiveUsageFieldAddedChange,
+  DirectiveUsageFieldDefinitionAddedChange,
+  DirectiveUsageFieldDefinitionRemovedChange,
+  DirectiveUsageFieldRemovedChange,
+  DirectiveUsageInputFieldDefinitionAddedChange,
+  DirectiveUsageInputFieldDefinitionRemovedChange,
+  DirectiveUsageInputObjectAddedChange,
+  DirectiveUsageInputObjectRemovedChange,
+  DirectiveUsageInterfaceAddedChange,
+  DirectiveUsageInterfaceRemovedChange,
+  DirectiveUsageObjectAddedChange,
+  DirectiveUsageObjectRemovedChange,
+  DirectiveUsageScalarAddedChange,
+  DirectiveUsageScalarRemovedChange,
+  DirectiveUsageSchemaAddedChange,
+  DirectiveUsageSchemaRemovedChange,
+  DirectiveUsageUnionMemberAddedChange,
+  DirectiveUsageUnionMemberRemovedChange,
   EnumValueAddedChange,
   EnumValueDeprecationReasonAddedChange,
   EnumValueDeprecationReasonChangedChange,
@@ -56,6 +82,7 @@ import {
   TypeDescriptionChangedChange,
   TypeDescriptionRemovedChange,
   TypeKindChangedChange,
+  TypeOfChangeType,
   TypeRemovedChange,
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
@@ -66,109 +93,161 @@ import {
 } from './schema-change-meta';
 
 // prettier-ignore
-const FieldArgumentDescriptionChangedLiteral = z.literal("FIELD_ARGUMENT_DESCRIPTION_CHANGED" satisfies `${ChangeType.FieldArgumentDescriptionChanged}`)
+const FieldArgumentDescriptionChangedLiteral = z.literal("FIELD_ARGUMENT_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.FieldArgumentDescriptionChanged}`)
 // prettier-ignore
-const FieldArgumentDefaultChangedLiteral =  z.literal("FIELD_ARGUMENT_DEFAULT_CHANGED" satisfies `${ChangeType.FieldArgumentDefaultChanged}`)
+const FieldArgumentDefaultChangedLiteral =  z.literal("FIELD_ARGUMENT_DEFAULT_CHANGED" satisfies `${typeof ChangeType.FieldArgumentDefaultChanged}`)
 // prettier-ignore
-const FieldArgumentTypeChangedLiteral =  z.literal("FIELD_ARGUMENT_TYPE_CHANGED" satisfies `${ChangeType.FieldArgumentTypeChanged}`)
+const FieldArgumentTypeChangedLiteral =  z.literal("FIELD_ARGUMENT_TYPE_CHANGED" satisfies `${typeof ChangeType.FieldArgumentTypeChanged}`)
 // prettier-ignore
-const DirectiveRemovedLiteral =  z.literal("DIRECTIVE_REMOVED" satisfies `${ChangeType.DirectiveRemoved}`)
+const DirectiveRemovedLiteral =  z.literal("DIRECTIVE_REMOVED" satisfies `${typeof ChangeType.DirectiveRemoved}`)
 // prettier-ignore
-const DirectiveAddedLiteral =  z.literal("DIRECTIVE_ADDED" satisfies `${ChangeType.DirectiveAdded}`)
+const DirectiveAddedLiteral =  z.literal("DIRECTIVE_ADDED" satisfies `${typeof ChangeType.DirectiveAdded}`)
 // prettier-ignore
-const DirectiveDescriptionChangedLiteral =  z.literal("DIRECTIVE_DESCRIPTION_CHANGED" satisfies `${ChangeType.DirectiveDescriptionChanged}`)
+const DirectiveDescriptionChangedLiteral =  z.literal("DIRECTIVE_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.DirectiveDescriptionChanged}`)
 // prettier-ignore
-const DirectiveLocationAddedLiteral =  z.literal("DIRECTIVE_LOCATION_ADDED" satisfies `${ChangeType.DirectiveLocationAdded}`)
+const DirectiveLocationAddedLiteral =  z.literal("DIRECTIVE_LOCATION_ADDED" satisfies `${typeof ChangeType.DirectiveLocationAdded}`)
 // prettier-ignore
-const DirectiveLocationRemovedLiteral =  z.literal("DIRECTIVE_LOCATION_REMOVED" satisfies `${ChangeType.DirectiveLocationRemoved}`)
+const DirectiveLocationRemovedLiteral =  z.literal("DIRECTIVE_LOCATION_REMOVED" satisfies `${typeof ChangeType.DirectiveLocationRemoved}`)
 // prettier-ignore
-const DirectiveArgumentAddedLiteral =  z.literal("DIRECTIVE_ARGUMENT_ADDED" satisfies `${ChangeType.DirectiveArgumentAdded}`)
+const DirectiveArgumentAddedLiteral =  z.literal("DIRECTIVE_ARGUMENT_ADDED" satisfies `${typeof ChangeType.DirectiveArgumentAdded}`)
 // prettier-ignore
-const DirectiveArgumentRemovedLiteral =  z.literal("DIRECTIVE_ARGUMENT_REMOVED" satisfies `${ChangeType.DirectiveArgumentRemoved}`)
+const DirectiveArgumentRemovedLiteral =  z.literal("DIRECTIVE_ARGUMENT_REMOVED" satisfies `${typeof ChangeType.DirectiveArgumentRemoved}`)
 // prettier-ignore
-const DirectiveArgumentDescriptionChangedLiteral =  z.literal("DIRECTIVE_ARGUMENT_DESCRIPTION_CHANGED" satisfies `${ChangeType.DirectiveArgumentDescriptionChanged}`)
+const DirectiveArgumentDescriptionChangedLiteral =  z.literal("DIRECTIVE_ARGUMENT_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.DirectiveArgumentDescriptionChanged}`)
 // prettier-ignore
-const DirectiveArgumentDefaultValueChangedLiteral =  z.literal("DIRECTIVE_ARGUMENT_DEFAULT_VALUE_CHANGED" satisfies `${ChangeType.DirectiveArgumentDefaultValueChanged}`)
+const DirectiveArgumentDefaultValueChangedLiteral =  z.literal("DIRECTIVE_ARGUMENT_DEFAULT_VALUE_CHANGED" satisfies `${typeof ChangeType.DirectiveArgumentDefaultValueChanged}`)
 // prettier-ignore
-const DirectiveArgumentTypeChangedLiteral =  z.literal("DIRECTIVE_ARGUMENT_TYPE_CHANGED" satisfies `${ChangeType.DirectiveArgumentTypeChanged}`)
+const DirectiveArgumentTypeChangedLiteral =  z.literal("DIRECTIVE_ARGUMENT_TYPE_CHANGED" satisfies `${typeof ChangeType.DirectiveArgumentTypeChanged}`)
 // prettier-ignore
-const EnumValueRemovedLiteral =  z.literal("ENUM_VALUE_REMOVED" satisfies `${ChangeType.EnumValueRemoved}`)
+const DirectiveUsageUnionMemberAddedLiteral = z.literal('DIRECTIVE_USAGE_UNION_MEMBER_ADDED' satisfies `${typeof ChangeType.DirectiveUsageUnionMemberAdded}`)
 // prettier-ignore
-const EnumValueAddedLiteral =  z.literal("ENUM_VALUE_ADDED" satisfies `${ChangeType.EnumValueAdded}`)
+const DirectiveUsageUnionMemberRemovedLiteral = z.literal('DIRECTIVE_USAGE_UNION_MEMBER_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageUnionMemberRemoved}`)
 // prettier-ignore
-const EnumValueDescriptionChangedLiteral =  z.literal("ENUM_VALUE_DESCRIPTION_CHANGED" satisfies `${ChangeType.EnumValueDescriptionChanged}`)
+const DirectiveUsageEnumAddedLiteral = z.literal('DIRECTIVE_USAGE_ENUM_ADDED' satisfies `${typeof ChangeType.DirectiveUsageEnumAdded}`)
 // prettier-ignore
-const EnumValueDeprecationReasonChangedLiteral =  z.literal("ENUM_VALUE_DEPRECATION_REASON_CHANGED" satisfies `${ChangeType.EnumValueDeprecationReasonChanged}`)
+const DirectiveUsageEnumRemovedLiteral = z.literal('DIRECTIVE_USAGE_ENUM_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageEnumRemoved}`)
 // prettier-ignore
-const EnumValueDeprecationReasonAddedLiteral =  z.literal("ENUM_VALUE_DEPRECATION_REASON_ADDED" satisfies `${ChangeType.EnumValueDeprecationReasonAdded}`)
+const DirectiveUsageEnumValueAddedLiteral = z.literal('DIRECTIVE_USAGE_ENUM_VALUE_ADDED' satisfies `${typeof ChangeType.DirectiveUsageEnumValueAdded}`)
 // prettier-ignore
-const EnumValueDeprecationReasonRemovedLiteral =  z.literal("ENUM_VALUE_DEPRECATION_REASON_REMOVED" satisfies `${ChangeType.EnumValueDeprecationReasonRemoved}`)
+const DirectiveUsageEnumValueRemovedLiteral = z.literal('DIRECTIVE_USAGE_ENUM_VALUE_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageEnumValueRemoved}`)
 // prettier-ignore
-const FieldRemovedLiteral =  z.literal("FIELD_REMOVED" satisfies `${ChangeType.FieldRemoved}`)
+const DirectiveUsageInputObjectAddedLiteral = z.literal('DIRECTIVE_USAGE_INPUT_OBJECT_ADDED' satisfies `${typeof ChangeType.DirectiveUsageInputObjectAdded}`)
 // prettier-ignore
-const FieldAddedLiteral =  z.literal("FIELD_ADDED" satisfies `${ChangeType.FieldAdded}`)
+const DirectiveUsageInputObjectRemovedLiteral = z.literal('DIRECTIVE_USAGE_INPUT_OBJECT_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageInputObjectRemoved}`)
 // prettier-ignore
-const FieldDescriptionChangedLiteral =  z.literal("FIELD_DESCRIPTION_CHANGED" satisfies `${ChangeType.FieldDescriptionChanged}`)
+const DirectiveUsageFieldAddedLiteral = z.literal('DIRECTIVE_USAGE_FIELD_ADDED' satisfies `${typeof ChangeType.DirectiveUsageFieldAdded}`)
 // prettier-ignore
-const FieldDescriptionAddedLiteral =  z.literal("FIELD_DESCRIPTION_ADDED" satisfies `${ChangeType.FieldDescriptionAdded}`)
+const DirectiveUsageFieldRemovedLiteral = z.literal('DIRECTIVE_USAGE_FIELD_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageFieldRemoved}`)
 // prettier-ignore
-const FieldDescriptionRemovedLiteral =  z.literal("FIELD_DESCRIPTION_REMOVED" satisfies `${ChangeType.FieldDescriptionRemoved}`)
+const DirectiveUsageScalarAddedLiteral = z.literal('DIRECTIVE_USAGE_SCALAR_ADDED' satisfies `${typeof ChangeType.DirectiveUsageScalarAdded}`)
 // prettier-ignore
-const FieldDeprecationAddedLiteral =  z.literal("FIELD_DEPRECATION_ADDED" satisfies `${ChangeType.FieldDeprecationAdded}`)
+const DirectiveUsageScalarRemovedLiteral = z.literal('DIRECTIVE_USAGE_SCALAR_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageScalarRemoved}`)
 // prettier-ignore
-const FieldDeprecationRemovedLiteral =  z.literal("FIELD_DEPRECATION_REMOVED" satisfies `${ChangeType.FieldDeprecationRemoved}`)
+const DirectiveUsageObjectAddedLiteral = z.literal('DIRECTIVE_USAGE_OBJECT_ADDED' satisfies `${typeof ChangeType.DirectiveUsageObjectAdded}`)
 // prettier-ignore
-const FieldDeprecationReasonChangedLiteral =  z.literal("FIELD_DEPRECATION_REASON_CHANGED" satisfies `${ChangeType.FieldDeprecationReasonChanged}`)
+const DirectiveUsageObjectRemovedLiteral = z.literal('DIRECTIVE_USAGE_OBJECT_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageObjectRemoved}`)
 // prettier-ignore
-const FieldDeprecationReasonAddedLiteral =  z.literal("FIELD_DEPRECATION_REASON_ADDED" satisfies `${ChangeType.FieldDeprecationReasonAdded}`)
+const DirectiveUsageInterfaceAddedLiteral = z.literal('DIRECTIVE_USAGE_INTERFACE_ADDED' satisfies `${typeof ChangeType.DirectiveUsageInterfaceAdded}`)
 // prettier-ignore
-const FieldDeprecationReasonRemovedLiteral =  z.literal("FIELD_DEPRECATION_REASON_REMOVED" satisfies `${ChangeType.FieldDeprecationReasonRemoved}`)
+const DirectiveUsageInterfaceRemovedLiteral = z.literal('DIRECTIVE_USAGE_INTERFACE_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageInterfaceRemoved}`)
 // prettier-ignore
-const FieldTypeChangedLiteral =  z.literal("FIELD_TYPE_CHANGED" satisfies `${ChangeType.FieldTypeChanged}`)
+const DirectiveUsageArgumentDefinitionAddedLiteral = z.literal('DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED' satisfies `${typeof ChangeType.DirectiveUsageArgumentDefinitionAdded}`)
 // prettier-ignore
-const FieldArgumentAddedLiteral =  z.literal("FIELD_ARGUMENT_ADDED" satisfies `${ChangeType.FieldArgumentAdded}`)
+const DirectiveUsageArgumentDefinitionRemovedLiteral = z.literal('DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageArgumentDefinitionRemoved}`)
 // prettier-ignore
-const FieldArgumentRemovedLiteral =  z.literal("FIELD_ARGUMENT_REMOVED" satisfies `${ChangeType.FieldArgumentRemoved}`)
+const DirectiveUsageSchemaAddedLiteral = z.literal('DIRECTIVE_USAGE_SCHEMA_ADDED' satisfies `${typeof ChangeType.DirectiveUsageSchemaAdded}`)
 // prettier-ignore
-const InputFieldRemovedLiteral =  z.literal("INPUT_FIELD_REMOVED" satisfies `${ChangeType.InputFieldRemoved}`)
+const DirectiveUsageSchemaRemovedLiteral = z.literal('DIRECTIVE_USAGE_SCHEMA_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageSchemaRemoved}`)
 // prettier-ignore
-const InputFieldAddedLiteral =  z.literal("INPUT_FIELD_ADDED" satisfies `${ChangeType.InputFieldAdded}`)
+const DirectiveUsageFieldDefinitionAddedLiteral = z.literal('DIRECTIVE_USAGE_FIELD_DEFINITION_ADDED' satisfies `${typeof ChangeType.DirectiveUsageFieldDefinitionAdded}`)
 // prettier-ignore
-const InputFieldDescriptionAddedLiteral =  z.literal("INPUT_FIELD_DESCRIPTION_ADDED" satisfies `${ChangeType.InputFieldDescriptionAdded}`)
+const DirectiveUsageFieldDefinitionRemovedLiteral = z.literal('DIRECTIVE_USAGE_FIELD_DEFINITION_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageFieldDefinitionRemoved}`)
 // prettier-ignore
-const InputFieldDescriptionRemovedLiteral =  z.literal("INPUT_FIELD_DESCRIPTION_REMOVED" satisfies `${ChangeType.InputFieldDescriptionRemoved}`)
+const DirectiveUsageInputFieldDefinitionAddedLiteral = z.literal('DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED' satisfies `${typeof ChangeType.DirectiveUsageInputFieldDefinitionAdded}`)
 // prettier-ignore
-const InputFieldDescriptionChangedLiteral =  z.literal("INPUT_FIELD_DESCRIPTION_CHANGED" satisfies `${ChangeType.InputFieldDescriptionChanged}`)
+const DirectiveUsageInputFieldDefinitionRemovedLiteral = z.literal('DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageInputFieldDefinitionRemoved}`)
 // prettier-ignore
-const InputFieldDefaultValueChangedLiteral =  z.literal("INPUT_FIELD_DEFAULT_VALUE_CHANGED" satisfies `${ChangeType.InputFieldDefaultValueChanged}`)
+const DirectiveUsageArgumentAddedLiteral = z.literal('DIRECTIVE_USAGE_ARGUMENT_ADDED' satisfies `${typeof ChangeType.DirectiveUsageArgumentAdded}`)
 // prettier-ignore
-const InputFieldTypeChangedLiteral =  z.literal("INPUT_FIELD_TYPE_CHANGED" satisfies `${ChangeType.InputFieldTypeChanged}`)
+const DirectiveUsageArgumentRemovedLiteral = z.literal('DIRECTIVE_USAGE_ARGUMENT_REMOVED' satisfies `${typeof ChangeType.DirectiveUsageArgumentRemoved}`)
 // prettier-ignore
-const ObjectTypeInterfaceAddedLiteral =  z.literal("OBJECT_TYPE_INTERFACE_ADDED" satisfies `${ChangeType.ObjectTypeInterfaceAdded}`)
+const EnumValueRemovedLiteral =  z.literal("ENUM_VALUE_REMOVED" satisfies `${typeof ChangeType.EnumValueRemoved}`)
 // prettier-ignore
-const ObjectTypeInterfaceRemovedLiteral =  z.literal("OBJECT_TYPE_INTERFACE_REMOVED" satisfies `${ChangeType.ObjectTypeInterfaceRemoved}`)
+const EnumValueAddedLiteral =  z.literal("ENUM_VALUE_ADDED" satisfies `${typeof ChangeType.EnumValueAdded}`)
 // prettier-ignore
-const SchemaQueryTypeChangedLiteral =  z.literal("SCHEMA_QUERY_TYPE_CHANGED" satisfies `${ChangeType.SchemaQueryTypeChanged}`)
+const EnumValueDescriptionChangedLiteral =  z.literal("ENUM_VALUE_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.EnumValueDescriptionChanged}`)
 // prettier-ignore
-const SchemaMutationTypeChangedLiteral =  z.literal("SCHEMA_MUTATION_TYPE_CHANGED" satisfies `${ChangeType.SchemaMutationTypeChanged}`)
+const EnumValueDeprecationReasonChangedLiteral =  z.literal("ENUM_VALUE_DEPRECATION_REASON_CHANGED" satisfies `${typeof ChangeType.EnumValueDeprecationReasonChanged}`)
 // prettier-ignore
-const SchemaSubscriptionTypeChangedLiteral =  z.literal("SCHEMA_SUBSCRIPTION_TYPE_CHANGED" satisfies `${ChangeType.SchemaSubscriptionTypeChanged}`)
+const EnumValueDeprecationReasonAddedLiteral =  z.literal("ENUM_VALUE_DEPRECATION_REASON_ADDED" satisfies `${typeof ChangeType.EnumValueDeprecationReasonAdded}`)
 // prettier-ignore
-const TypeRemovedLiteral =  z.literal("TYPE_REMOVED" satisfies `${ChangeType.TypeRemoved}`)
+const EnumValueDeprecationReasonRemovedLiteral =  z.literal("ENUM_VALUE_DEPRECATION_REASON_REMOVED" satisfies `${typeof ChangeType.EnumValueDeprecationReasonRemoved}`)
 // prettier-ignore
-const TypeAddedLiteral =  z.literal("TYPE_ADDED" satisfies `${ChangeType.TypeAdded}`)
+const FieldRemovedLiteral =  z.literal("FIELD_REMOVED" satisfies `${typeof ChangeType.FieldRemoved}`)
 // prettier-ignore
-const TypeKindChangedLiteral =  z.literal("TYPE_KIND_CHANGED" satisfies `${ChangeType.TypeKindChanged}`)
+const FieldAddedLiteral =  z.literal("FIELD_ADDED" satisfies `${typeof ChangeType.FieldAdded}`)
 // prettier-ignore
-const TypeDescriptionChangedLiteral =  z.literal("TYPE_DESCRIPTION_CHANGED" satisfies `${ChangeType.TypeDescriptionChanged}`)
+const FieldDescriptionChangedLiteral =  z.literal("FIELD_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.FieldDescriptionChanged}`)
 // prettier-ignore
-const TypeDescriptionRemovedLiteral =  z.literal("TYPE_DESCRIPTION_REMOVED" satisfies `${ChangeType.TypeDescriptionRemoved}`)
+const FieldDescriptionAddedLiteral =  z.literal("FIELD_DESCRIPTION_ADDED" satisfies `${typeof ChangeType.FieldDescriptionAdded}`)
 // prettier-ignore
-const TypeDescriptionAddedLiteral =  z.literal("TYPE_DESCRIPTION_ADDED" satisfies `${ChangeType.TypeDescriptionAdded}`)
+const FieldDescriptionRemovedLiteral =  z.literal("FIELD_DESCRIPTION_REMOVED" satisfies `${typeof ChangeType.FieldDescriptionRemoved}`)
 // prettier-ignore
-const UnionMemberRemovedLiteral =  z.literal("UNION_MEMBER_REMOVED" satisfies `${ChangeType.UnionMemberRemoved}`)
+const FieldDeprecationAddedLiteral =  z.literal("FIELD_DEPRECATION_ADDED" satisfies `${typeof ChangeType.FieldDeprecationAdded}`)
 // prettier-ignore
-const UnionMemberAddedLiteral =  z.literal("UNION_MEMBER_ADDED" satisfies `${ChangeType.UnionMemberAdded}`)
+const FieldDeprecationRemovedLiteral =  z.literal("FIELD_DEPRECATION_REMOVED" satisfies `${typeof ChangeType.FieldDeprecationRemoved}`)
+// prettier-ignore
+const FieldDeprecationReasonChangedLiteral =  z.literal("FIELD_DEPRECATION_REASON_CHANGED" satisfies `${typeof ChangeType.FieldDeprecationReasonChanged}`)
+// prettier-ignore
+const FieldDeprecationReasonAddedLiteral =  z.literal("FIELD_DEPRECATION_REASON_ADDED" satisfies `${typeof ChangeType.FieldDeprecationReasonAdded}`)
+// prettier-ignore
+const FieldDeprecationReasonRemovedLiteral =  z.literal("FIELD_DEPRECATION_REASON_REMOVED" satisfies `${typeof ChangeType.FieldDeprecationReasonRemoved}`)
+// prettier-ignore
+const FieldTypeChangedLiteral =  z.literal("FIELD_TYPE_CHANGED" satisfies `${typeof ChangeType.FieldTypeChanged}`)
+// prettier-ignore
+const FieldArgumentAddedLiteral =  z.literal("FIELD_ARGUMENT_ADDED" satisfies `${typeof ChangeType.FieldArgumentAdded}`)
+// prettier-ignore
+const FieldArgumentRemovedLiteral =  z.literal("FIELD_ARGUMENT_REMOVED" satisfies `${typeof ChangeType.FieldArgumentRemoved}`)
+// prettier-ignore
+const InputFieldRemovedLiteral =  z.literal("INPUT_FIELD_REMOVED" satisfies `${typeof ChangeType.InputFieldRemoved}`)
+// prettier-ignore
+const InputFieldAddedLiteral =  z.literal("INPUT_FIELD_ADDED" satisfies `${typeof ChangeType.InputFieldAdded}`)
+// prettier-ignore
+const InputFieldDescriptionAddedLiteral =  z.literal("INPUT_FIELD_DESCRIPTION_ADDED" satisfies `${typeof ChangeType.InputFieldDescriptionAdded}`)
+// prettier-ignore
+const InputFieldDescriptionRemovedLiteral =  z.literal("INPUT_FIELD_DESCRIPTION_REMOVED" satisfies `${typeof ChangeType.InputFieldDescriptionRemoved}`)
+// prettier-ignore
+const InputFieldDescriptionChangedLiteral =  z.literal("INPUT_FIELD_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.InputFieldDescriptionChanged}`)
+// prettier-ignore
+const InputFieldDefaultValueChangedLiteral =  z.literal("INPUT_FIELD_DEFAULT_VALUE_CHANGED" satisfies `${typeof ChangeType.InputFieldDefaultValueChanged}`)
+// prettier-ignore
+const InputFieldTypeChangedLiteral =  z.literal("INPUT_FIELD_TYPE_CHANGED" satisfies `${typeof ChangeType.InputFieldTypeChanged}`)
+// prettier-ignore
+const ObjectTypeInterfaceAddedLiteral =  z.literal("OBJECT_TYPE_INTERFACE_ADDED" satisfies `${typeof ChangeType.ObjectTypeInterfaceAdded}`)
+// prettier-ignore
+const ObjectTypeInterfaceRemovedLiteral =  z.literal("OBJECT_TYPE_INTERFACE_REMOVED" satisfies `${typeof ChangeType.ObjectTypeInterfaceRemoved}`)
+// prettier-ignore
+const SchemaQueryTypeChangedLiteral =  z.literal("SCHEMA_QUERY_TYPE_CHANGED" satisfies `${typeof ChangeType.SchemaQueryTypeChanged}`)
+// prettier-ignore
+const SchemaMutationTypeChangedLiteral =  z.literal("SCHEMA_MUTATION_TYPE_CHANGED" satisfies `${typeof ChangeType.SchemaMutationTypeChanged}`)
+// prettier-ignore
+const SchemaSubscriptionTypeChangedLiteral =  z.literal("SCHEMA_SUBSCRIPTION_TYPE_CHANGED" satisfies `${typeof ChangeType.SchemaSubscriptionTypeChanged}`)
+// prettier-ignore
+const TypeRemovedLiteral =  z.literal("TYPE_REMOVED" satisfies `${typeof ChangeType.TypeRemoved}`)
+// prettier-ignore
+const TypeAddedLiteral =  z.literal("TYPE_ADDED" satisfies `${typeof ChangeType.TypeAdded}`)
+// prettier-ignore
+const TypeKindChangedLiteral =  z.literal("TYPE_KIND_CHANGED" satisfies `${typeof ChangeType.TypeKindChanged}`)
+// prettier-ignore
+const TypeDescriptionChangedLiteral =  z.literal("TYPE_DESCRIPTION_CHANGED" satisfies `${typeof ChangeType.TypeDescriptionChanged}`)
+// prettier-ignore
+const TypeDescriptionRemovedLiteral =  z.literal("TYPE_DESCRIPTION_REMOVED" satisfies `${typeof ChangeType.TypeDescriptionRemoved}`)
+// prettier-ignore
+const TypeDescriptionAddedLiteral =  z.literal("TYPE_DESCRIPTION_ADDED" satisfies `${typeof ChangeType.TypeDescriptionAdded}`)
+// prettier-ignore
+const UnionMemberRemovedLiteral =  z.literal("UNION_MEMBER_REMOVED" satisfies `${typeof ChangeType.UnionMemberRemoved}`)
+// prettier-ignore
+const UnionMemberAddedLiteral =  z.literal("UNION_MEMBER_ADDED" satisfies `${typeof ChangeType.UnionMemberAdded}`)
 
 /**
  * @source https://github.com/colinhacks/zod/issues/372#issuecomment-1280054492
@@ -180,7 +259,7 @@ type Implements<Model> = {
       : z.ZodOptionalType<z.ZodType<Model[key]>>
     : null extends Model[key]
       ? z.ZodNullableType<z.ZodType<Model[key]>>
-      : Model[key] extends ChangeType
+      : Model[key] extends TypeOfChangeType
         ? z.ZodLiteral<`${Model[key]}`>
         : z.ZodType<Model[key]>;
 };
@@ -245,7 +324,11 @@ export const DirectiveAddedModel = implement<DirectiveAddedChange>().with({
   type: DirectiveAddedLiteral,
   meta: z.object({
     addedDirectiveName: z.string(),
-  }),
+    // for backwards compatibility
+    addedDirectiveRepeatable: z.boolean().default(false), // boolean;
+    addedDirectiveLocations: z.array(z.string()).default([]), // string[];
+    addedDirectiveDescription: z.string().nullable().default(null), // string | null;
+  }) as any, // @todo fix typing
 });
 
 export const DirectiveDescriptionChangedModel = implement<DirectiveDescriptionChangedChange>().with(
@@ -281,7 +364,11 @@ export const DirectiveArgumentAddedModel = implement<DirectiveArgumentAddedChang
     directiveName: z.string(),
     addedDirectiveArgumentName: z.string(),
     addedDirectiveArgumentTypeIsNonNull: z.boolean(),
-  }),
+    addedDirectiveArgumentType: z.string().optional(),
+    addedToNewDirective: z.boolean().optional(), // boolean;
+    addedDirectiveArgumentDescription: z.string().nullable().optional(), // string | null;
+    addedDirectiveDefaultValue: z.string().optional(), //? string;
+  }) as any, // @todo fix typing
 });
 
 export const DirectiveArgumentRemovedModel = implement<DirectiveArgumentRemovedChange>().with({
@@ -326,6 +413,255 @@ export const DirectiveArgumentTypeChangedModel =
     }),
   });
 
+export const DirectiveUsageUnionMemberAddedModel =
+  implement<DirectiveUsageUnionMemberAddedChange>().with({
+    type: DirectiveUsageUnionMemberAddedLiteral,
+    meta: z.object({
+      addedUnionMember: z.string(),
+      unionName: z.string(),
+      addedUnionMemberTypeName: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageUnionMemberRemovedModel =
+  implement<DirectiveUsageUnionMemberRemovedChange>().with({
+    type: DirectiveUsageUnionMemberRemovedLiteral,
+    meta: z.object({
+      unionName: z.string(),
+      removedUnionMemberTypeName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageEnumAddedModel = implement<DirectiveUsageEnumAddedChange>().with({
+  type: DirectiveUsageEnumAddedLiteral,
+  meta: z.object({
+    enumName: z.string(),
+    addedDirectiveName: z.string(),
+    addedToNewType: z.boolean(),
+  }),
+});
+export const DirectiveUsageEnumRemovedModel = implement<DirectiveUsageEnumRemovedChange>().with({
+  type: DirectiveUsageEnumRemovedLiteral,
+  meta: z.object({
+    enumName: z.string(),
+    removedDirectiveName: z.string(),
+  }),
+});
+export const DirectiveUsageEnumValueAddedModel =
+  implement<DirectiveUsageEnumValueAddedChange>().with({
+    type: DirectiveUsageEnumValueAddedLiteral,
+    meta: z.object({
+      enumName: z.string(),
+      enumValueName: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageEnumValueRemovedModel =
+  implement<DirectiveUsageEnumValueRemovedChange>().with({
+    type: DirectiveUsageEnumValueRemovedLiteral,
+    meta: z.object({
+      enumName: z.string(),
+      enumValueName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageInputObjectAddedModel =
+  implement<DirectiveUsageInputObjectAddedChange>().with({
+    type: DirectiveUsageInputObjectAddedLiteral,
+    meta: z.object({
+      inputObjectName: z.string(),
+      addedInputFieldName: z.string(),
+      isAddedInputFieldTypeNullable: z.boolean(),
+      addedInputFieldType: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageInputObjectRemovedModel =
+  implement<DirectiveUsageInputObjectRemovedChange>().with({
+    type: DirectiveUsageInputObjectRemovedLiteral,
+    meta: z.object({
+      inputObjectName: z.string(),
+      removedInputFieldName: z.string(),
+      isRemovedInputFieldTypeNullable: z.boolean(),
+      removedInputFieldType: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageFieldAddedModel = implement<DirectiveUsageFieldAddedChange>().with({
+  type: DirectiveUsageFieldAddedLiteral,
+  meta: z.object({
+    typeName: z.string(),
+    fieldName: z.string(),
+    addedDirectiveName: z.string(),
+  }),
+});
+export const DirectiveUsageFieldRemovedModel = implement<DirectiveUsageFieldRemovedChange>().with({
+  type: DirectiveUsageFieldRemovedLiteral,
+  meta: z.object({
+    typeName: z.string(),
+    fieldName: z.string(),
+    removedDirectiveName: z.string(),
+  }),
+});
+export const DirectiveUsageScalarAddedModel = implement<DirectiveUsageScalarAddedChange>().with({
+  type: DirectiveUsageScalarAddedLiteral,
+  meta: z.object({
+    scalarName: z.string(),
+    addedDirectiveName: z.string(),
+    addedToNewType: z.boolean(),
+  }),
+});
+export const DirectiveUsageScalarRemovedModel = implement<DirectiveUsageScalarRemovedChange>().with(
+  {
+    type: DirectiveUsageScalarRemovedLiteral,
+    meta: z.object({
+      scalarName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  },
+);
+export const DirectiveUsageObjectAddedModel = implement<DirectiveUsageObjectAddedChange>().with({
+  type: DirectiveUsageObjectAddedLiteral,
+  meta: z.object({
+    objectName: z.string(),
+    addedDirectiveName: z.string(),
+    addedToNewType: z.boolean(),
+  }),
+});
+export const DirectiveUsageObjectRemovedModel = implement<DirectiveUsageObjectRemovedChange>().with(
+  {
+    type: DirectiveUsageObjectRemovedLiteral,
+    meta: z.object({
+      objectName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  },
+);
+export const DirectiveUsageInterfaceAddedModel =
+  implement<DirectiveUsageInterfaceAddedChange>().with({
+    type: DirectiveUsageInterfaceAddedLiteral,
+    meta: z.object({
+      interfaceName: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageInterfaceRemovedModel =
+  implement<DirectiveUsageInterfaceRemovedChange>().with({
+    type: DirectiveUsageInterfaceRemovedLiteral,
+    meta: z.object({
+      interfaceName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageArgumentDefinitionAddedModel =
+  implement<DirectiveUsageArgumentDefinitionAddedChange>().with({
+    type: DirectiveUsageArgumentDefinitionAddedLiteral,
+    meta: z.object({
+      typeName: z.string(),
+      fieldName: z.string(),
+      argumentName: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageArgumentDefinitionRemovedModel =
+  implement<DirectiveUsageArgumentDefinitionRemovedChange>().with({
+    type: DirectiveUsageArgumentDefinitionRemovedLiteral,
+    meta: z.object({
+      typeName: z.string(),
+      fieldName: z.string(),
+      argumentName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAddedChange>().with({
+  type: DirectiveUsageSchemaAddedLiteral,
+  meta: z.object({
+    addedDirectiveName: z.string(),
+    schemaTypeName: z.string(),
+    addedToNewType: z.boolean(),
+  }),
+});
+export const DirectiveUsageSchemaRemovedModel = implement<DirectiveUsageSchemaRemovedChange>().with(
+  {
+    type: DirectiveUsageSchemaRemovedLiteral,
+    meta: z.object({
+      removedDirectiveName: z.string(),
+      schemaTypeName: z.string(),
+    }),
+  },
+);
+export const DirectiveUsageFieldDefinitionAddedModel =
+  implement<DirectiveUsageFieldDefinitionAddedChange>().with({
+    type: DirectiveUsageFieldDefinitionAddedLiteral,
+    meta: z.object({
+      typeName: z.string(),
+      fieldName: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageFieldDefinitionRemovedModel =
+  implement<DirectiveUsageFieldDefinitionRemovedChange>().with({
+    type: DirectiveUsageFieldDefinitionRemovedLiteral,
+    meta: z.object({
+      typeName: z.string(),
+      fieldName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageInputFieldDefinitionAddedModel =
+  implement<DirectiveUsageInputFieldDefinitionAddedChange>().with({
+    type: DirectiveUsageInputFieldDefinitionAddedLiteral,
+    meta: z.object({
+      inputObjectName: z.string(),
+      inputFieldName: z.string(),
+      inputFieldType: z.string(),
+      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean(),
+    }),
+  });
+export const DirectiveUsageInputFieldDefinitionRemovedModel =
+  implement<DirectiveUsageInputFieldDefinitionRemovedChange>().with({
+    type: DirectiveUsageInputFieldDefinitionRemovedLiteral,
+    meta: z.object({
+      inputObjectName: z.string(),
+      inputFieldName: z.string(),
+      removedDirectiveName: z.string(),
+    }),
+  });
+export const DirectiveUsageArgumentAddedModel = implement<DirectiveUsageArgumentAddedChange>().with(
+  {
+    type: DirectiveUsageArgumentAddedLiteral,
+    meta: z.object({
+      directiveName: z.string(),
+      addedArgumentName: z.string(),
+      addedArgumentValue: z.string(),
+      oldArgumentValue: z.string().nullable(),
+      parentTypeName: z.string().nullable(),
+      parentFieldName: z.string().nullable(),
+      parentArgumentName: z.string().nullable(),
+      parentEnumValueName: z.string().nullable(),
+    }),
+  },
+);
+export const DirectiveUsageArgumentRemovedModel =
+  implement<DirectiveUsageArgumentRemovedChange>().with({
+    type: DirectiveUsageArgumentRemovedLiteral,
+    meta: z.object({
+      directiveName: z.string(),
+      removedArgumentName: z.string(),
+      parentTypeName: z.string().nullable(),
+      parentFieldName: z.string().nullable(),
+      parentArgumentName: z.string().nullable(),
+      parentEnumValueName: z.string().nullable(),
+    }),
+  });
+
 // Enum
 
 export const EnumValueRemovedModel = implement<EnumValueRemovedChange>().with({
@@ -337,12 +673,14 @@ export const EnumValueRemovedModel = implement<EnumValueRemovedChange>().with({
   }),
 });
 
-export const EnumValueAdded = implement<EnumValueAddedChange>().with({
+export const EnumValueAddedModel = implement<EnumValueAddedChange>().with({
   type: EnumValueAddedLiteral,
   meta: z.object({
     enumName: z.string(),
     addedEnumValueName: z.string(),
-  }),
+    addedToNewType: z.boolean().default(false), // default for backwards compatibility
+    addedDirectiveDescription: z.string().nullable().optional(),
+  }) as any, // @todo fix typing complaint
 });
 
 export const EnumValueDescriptionChangedModel = implement<EnumValueDescriptionChangedChange>().with(
@@ -405,8 +743,9 @@ export const FieldAddedModel = implement<FieldAddedChange>().with({
   meta: z.object({
     typeName: z.string(),
     addedFieldName: z.string(),
+    addedFieldReturnType: z.string().optional(), // optional for backwards compatibility
     typeType: z.string(),
-  }),
+  }) as any, // @todo fix typing
 });
 
 export const FieldDescriptionChangedModel = implement<FieldDescriptionChangedChange>().with({
@@ -441,7 +780,8 @@ export const FieldDeprecationAddedModel = implement<FieldDeprecationAddedChange>
   meta: z.object({
     typeName: z.string(),
     fieldName: z.string(),
-  }),
+    deprecationReason: z.string().optional(), // for backwards compatibility
+  }) as any, // @todo fix typing
 });
 
 export const FieldDeprecationRemovedModel = implement<FieldDeprecationRemovedChange>().with({
@@ -503,7 +843,8 @@ export const FieldArgumentAddedModel = implement<FieldArgumentAddedChange>().wit
     addedArgumentType: z.string(),
     hasDefaultValue: z.boolean(),
     isAddedFieldArgumentBreaking: z.boolean(),
-  }),
+    addedToNewField: z.boolean().optional(), // for backwards compatibility
+  }) as any, // @todo fix typing
 });
 
 export const FieldArgumentRemovedModel = implement<FieldArgumentRemovedChange>().with({
@@ -534,7 +875,9 @@ export const InputFieldAddedModel = implement<InputFieldAddedChange>().with({
     addedInputFieldName: z.string(),
     isAddedInputFieldTypeNullable: z.boolean(),
     addedInputFieldType: z.string(),
-  }),
+    addedToNewType: z.boolean().default(false), // default to make backwards compatible
+    addedFieldDefault: z.string().optional(),
+  }) as any, // @todo fix typing
 });
 
 export const InputFieldDescriptionAddedModel = implement<InputFieldDescriptionAddedChange>().with({
@@ -596,7 +939,8 @@ export const ObjectTypeInterfaceAddedModel = implement<ObjectTypeInterfaceAddedC
   meta: z.object({
     objectTypeName: z.string(),
     addedInterfaceName: z.string(),
-  }),
+    addedToNewType: z.boolean().optional(), // optional for backwards compatibility
+  }) as any, // @todo fix typing
 });
 
 export const ObjectTypeInterfaceRemovedModel = implement<ObjectTypeInterfaceRemovedChange>().with({
@@ -604,6 +948,7 @@ export const ObjectTypeInterfaceRemovedModel = implement<ObjectTypeInterfaceRemo
   meta: z.object({
     objectTypeName: z.string(),
     removedInterfaceName: z.string(),
+    addedToNewType: z.boolean().optional(), // optional for backwards compatibility
   }),
 });
 
@@ -646,7 +991,8 @@ export const TypeAddedModel = implement<TypeAddedChange>().with({
   type: TypeAddedLiteral,
   meta: z.object({
     addedTypeName: z.string(),
-  }),
+    addedTypeKind: z.string().optional(), // optional for backwards compatibility
+  }) as any, // @todo fix typing
 });
 
 export const TypeKindChangedModel = implement<TypeKindChangedChange>().with({
@@ -697,7 +1043,8 @@ export const UnionMemberAddedModel = implement<UnionMemberAddedChange>().with({
   meta: z.object({
     unionName: z.string(),
     addedUnionMemberTypeName: z.string(),
-  }),
+    addedToNewType: z.boolean().default(false), // default for backwards compatibility
+  }) as any, // @todo fix typing
 });
 
 // Service Registry Url Change
@@ -727,62 +1074,89 @@ export const RegistryServiceUrlChangeModel =
 // TODO: figure out a way to make sure that all the changes are included in the union
 // Similar to implement().with() but for unions
 export const SchemaChangeModel = z.union([
-  FieldArgumentDescriptionChangedModel,
-  FieldArgumentDefaultChangedModel,
-  FieldArgumentTypeChangedModel,
-  DirectiveRemovedModel,
   DirectiveAddedModel,
+  DirectiveArgumentAddedModel,
+  DirectiveArgumentDefaultValueChangedModel,
+  DirectiveArgumentDescriptionChangedModel,
+  DirectiveArgumentRemovedModel,
   DirectiveDescriptionChangedModel,
   DirectiveLocationAddedModel,
   DirectiveLocationRemovedModel,
-  DirectiveArgumentAddedModel,
-  DirectiveArgumentRemovedModel,
-  DirectiveArgumentDescriptionChangedModel,
-  DirectiveArgumentDefaultValueChangedModel,
+  DirectiveRemovedModel,
+  DirectiveUsageArgumentAddedModel,
+  DirectiveUsageArgumentDefinitionAddedModel,
+  DirectiveUsageArgumentDefinitionRemovedModel,
+  DirectiveUsageArgumentRemovedModel,
+  DirectiveUsageEnumAddedModel,
+  DirectiveUsageEnumRemovedModel,
+  DirectiveUsageEnumValueAddedModel,
+  DirectiveUsageEnumValueRemovedModel,
+  DirectiveUsageFieldAddedModel,
+  DirectiveUsageFieldDefinitionAddedModel,
+  DirectiveUsageFieldDefinitionRemovedModel,
+  DirectiveUsageFieldRemovedModel,
+  DirectiveUsageInputFieldDefinitionAddedModel,
+  DirectiveUsageInputFieldDefinitionRemovedModel,
+  DirectiveUsageInputObjectAddedModel,
+  DirectiveUsageInputObjectRemovedModel,
+  DirectiveUsageInterfaceAddedModel,
+  DirectiveUsageInterfaceRemovedModel,
+  DirectiveUsageObjectAddedModel,
+  DirectiveUsageObjectRemovedModel,
+  DirectiveUsageScalarAddedModel,
+  DirectiveUsageScalarRemovedModel,
+  DirectiveUsageSchemaAddedModel,
+  DirectiveUsageSchemaRemovedModel,
+  DirectiveUsageUnionMemberAddedModel,
+  DirectiveUsageUnionMemberRemovedModel,
   DirectiveArgumentTypeChangedModel,
-  EnumValueRemovedModel,
-  EnumValueAdded,
-  EnumValueDescriptionChangedModel,
-  EnumValueDeprecationReasonChangedModel,
+  EnumValueAddedModel,
   EnumValueDeprecationReasonAddedModel,
+  EnumValueDeprecationReasonChangedModel,
   EnumValueDeprecationReasonRemovedModel,
-  FieldRemovedModel,
+  EnumValueDescriptionChangedModel,
+  EnumValueRemovedModel,
   FieldAddedModel,
-  FieldDescriptionChangedModel,
-  FieldDescriptionAddedModel,
-  FieldDescriptionRemovedModel,
-  FieldDeprecationAddedModel,
-  FieldDeprecationRemovedModel,
-  FieldDeprecationReasonChangedModel,
-  FieldDeprecationReasonAddedModel,
-  FieldDeprecationReasonRemovedModel,
-  FieldTypeChangedModel,
   FieldArgumentAddedModel,
+  FieldArgumentDefaultChangedModel,
   FieldArgumentRemovedModel,
-  InputFieldRemovedModel,
+  FieldArgumentTypeChangedModel,
+  FieldDeprecationAddedModel,
+  FieldDeprecationReasonAddedModel,
+  FieldDeprecationReasonChangedModel,
+  FieldDeprecationReasonRemovedModel,
+  FieldDeprecationRemovedModel,
+  FieldDescriptionAddedModel,
+  FieldDescriptionChangedModel,
+  FieldDescriptionRemovedModel,
+  FieldRemovedModel,
+  FieldTypeChangedModel,
   InputFieldAddedModel,
-  InputFieldDescriptionAddedModel,
-  InputFieldDescriptionRemovedModel,
-  InputFieldDescriptionChangedModel,
   InputFieldDefaultValueChangedModel,
+  InputFieldDescriptionAddedModel,
+  InputFieldDescriptionChangedModel,
+  InputFieldDescriptionRemovedModel,
+  InputFieldRemovedModel,
   InputFieldTypeChangedModel,
   ObjectTypeInterfaceAddedModel,
   ObjectTypeInterfaceRemovedModel,
-  SchemaQueryTypeChangedModel,
   SchemaMutationTypeChangedModel,
+  SchemaQueryTypeChangedModel,
   SchemaSubscriptionTypeChangedModel,
-  TypeRemovedModel,
   TypeAddedModel,
-  TypeKindChangedModel,
-  TypeDescriptionChangedModel,
   TypeDescriptionAddedModel,
+  TypeDescriptionChangedModel,
   TypeDescriptionRemovedModel,
-  UnionMemberRemovedModel,
+  TypeKindChangedModel,
+  TypeRemovedModel,
   UnionMemberAddedModel,
+  UnionMemberRemovedModel,
+  // @here >?
   // Hive Federation/Stitching Specific
   RegistryServiceUrlChangeModel,
 ]);
 
+// @todo figure out what this is doing...
 ({}) as SerializableChange satisfies z.TypeOf<typeof SchemaChangeModel>;
 
 export type Change = z.infer<typeof SchemaChangeModel>;
@@ -877,7 +1251,11 @@ export const HiveSchemaChangeModel = z
       } | null;
       readonly breakingChangeSchemaCoordinate: string | null;
     } => {
-      const change = schemaChangeFromSerializableChange(rawChange as any);
+      let change = schemaChangeFromSerializableChange(rawChange as any);
+      // @todo figure out more permanent solution for unhandled change types.
+      if (!change) {
+        throw new Error(`Cannot deserialize change "${rawChange.type}"`);
+      }
 
       /** The schema coordinate used for detecting whether something is a breaking change can be different based on the change type. */
       let breakingChangeSchemaCoordinate: string | null = null;
@@ -887,9 +1265,9 @@ export const HiveSchemaChangeModel = z
 
         if (
           isInputFieldAddedChange(rawChange) &&
-          rawChange.meta.isAddedInputFieldTypeNullable === false
+          change.meta.isAddedInputFieldTypeNullable === false
         ) {
-          breakingChangeSchemaCoordinate = rawChange.meta.inputName;
+          breakingChangeSchemaCoordinate = change.meta.inputName;
         }
       }
 
@@ -978,6 +1356,7 @@ const SchemaCheckSharedOutputFields = {
   githubRepository: z.string().nullable(),
   githubSha: z.string().nullable(),
   contextId: z.string().nullable(),
+  schemaProposalId: z.string().nullable().optional(),
 };
 
 const SchemaCheckSharedInputFields = {

@@ -44,7 +44,7 @@ export class SchemaCheckManager {
   }
 
   getAllSchemaChanges(schemaCheck: SchemaCheck) {
-    if (!schemaCheck.safeSchemaChanges?.length || !schemaCheck.breakingSchemaChanges?.length) {
+    if (!schemaCheck.safeSchemaChanges?.length && !schemaCheck.breakingSchemaChanges?.length) {
       return null;
     }
 

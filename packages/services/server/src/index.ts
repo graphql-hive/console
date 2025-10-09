@@ -400,6 +400,7 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       prometheus: env.prometheus,
     });
 

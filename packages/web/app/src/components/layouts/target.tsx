@@ -41,6 +41,7 @@ export enum Page {
   Insights = 'insights',
   Laboratory = 'laboratory',
   Apps = 'apps',
+  Proposals = 'proposals',
   Settings = 'settings',
 }
 
@@ -67,6 +68,7 @@ const TargetLayoutQuery = graphql(`
           viewerCanViewLaboratory
           viewerCanViewAppDeployments
           viewerCanAccessSettings
+          viewerCanViewSchemaProposals
           latestSchemaVersion {
             id
           }
@@ -232,6 +234,20 @@ export const TargetLayout = ({
                           }}
                         >
                           Laboratory
+                        </Link>
+                      </TabsTrigger>
+                    )}
+                    {currentTarget.viewerCanViewSchemaProposals && (
+                      <TabsTrigger variant="menu" value={Page.Proposals} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                          }}
+                        >
+                          Proposals
                         </Link>
                       </TabsTrigger>
                     )}
