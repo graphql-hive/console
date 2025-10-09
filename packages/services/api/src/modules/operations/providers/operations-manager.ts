@@ -880,15 +880,12 @@ export class OperationsManager {
 
     if (loader == null) {
       loader = new DataLoader<string, Map<string, Set<string>>>(typenames => {
-        return Promise.all(
-          typenames.map(typename => {
-            return this.reader.getClientNamesPerCoordinateOfType({
-              targetId: args.target,
-              period: args.period,
-              typename,
-            });
-          }),
+        const promise = this.reader.getClientNamesPerCoorinateOfTypes(
+          args.target,
+          args.period,
+          typenames,
         );
+        return Promise.all(typenames.map(_ => promise));
       });
       this.clientNamesPerCoordinateOfTypeDataLoaderCache.set(cacheKey, loader);
     }
