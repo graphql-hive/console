@@ -1438,25 +1438,11 @@ export class OperationsReader {
   async getClientNamesPerCoorinateOfTypes(
     targetId: string,
     period: DateRange,
-    typenames: readonly string[],
+    coordinates: readonly string[],
   ): Promise<Map<string, Set<string>>> {
-    const extraFilter = sql`
-      ${sql.join(
-        typenames.map(
-          typename =>
-            sql`
-              (
-                 co.coordinate = ${typename}
-                 OR co.coordinate LIKE ${typename + '.%'}
-              )
-            `,
-        ),
-        'OR ',
-      )}`;
-
     const dbResult = await this.clickHouse.query(
       this.pickAggregationByPeriod({
-        queryId: aggregation => `get_hashes_for_schema_coordinates_${aggregation}`,
+        queryId: aggregation => `get_client_names_for_schema_coordinates_${aggregation}`,
         // KAMIL: I know this query is a bit weird, but it's the best I could come up with.
         // It processed 27x less rows than the previous version.
         // It's 30x faster.
@@ -1488,7 +1474,7 @@ export class OperationsReader {
             ${this.createFilter({
               target: targetId,
               period: period,
-              extra: [extraFilter],
+              extra: [sql`co.coordinate IN (${sql.array(coordinates, 'String')})`],
               namespace: 'co',
             })}
             GROUP BY co.coordinate, co.hash

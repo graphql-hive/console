@@ -872,20 +872,20 @@ export class OperationsManager {
     DataLoader<string, Map<string, Set<string>>>
   >();
 
-  private getClientNamesPerCoordinateOfTypeLoader(args: { target: string; period: DateRange }) {
+  private getClientNamesPerCoordinateLoader(args: { target: string; period: DateRange }) {
     // Stores a DataLoader per target and date range
     // A many type names can share the same DataLoader as long as they share the same target and date range.
     const cacheKey = [args.target, args.period.from, args.period.to].join('__');
     let loader = this.clientNamesPerCoordinateOfTypeDataLoaderCache.get(cacheKey);
 
     if (loader == null) {
-      loader = new DataLoader<string, Map<string, Set<string>>>(typenames => {
+      loader = new DataLoader<string, Map<string, Set<string>>>(coordinates => {
         const promise = this.reader.getClientNamesPerCoorinateOfTypes(
           args.target,
           args.period,
-          typenames,
+          coordinates,
         );
-        return Promise.all(typenames.map(_ => promise));
+        return Promise.all(coordinates.map(_ => promise));
       });
       this.clientNamesPerCoordinateOfTypeDataLoaderCache.set(cacheKey, loader);
     }
@@ -904,13 +904,12 @@ export class OperationsManager {
       typename: string;
     } & TargetSelector,
   ) {
-    const loader = this.getClientNamesPerCoordinateOfTypeLoader({
+    const loader = this.getClientNamesPerCoordinateLoader({
       target: args.targetId,
       period: args.period,
     });
 
-    const clientNamesCoordinateMap = await loader.load(args.typename);
-
+    const clientNamesCoordinateMap = await loader.load(args.schemaCoordinate);
     return Array.from(clientNamesCoordinateMap.get(args.schemaCoordinate) ?? []);
   }
 
