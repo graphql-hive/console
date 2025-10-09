@@ -93,7 +93,7 @@ export function TargetProposalsPage(props: {
 const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
   const navigate = useNavigate();
   const proposeChange = () => {
-    navigate({
+    void navigate({
       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/new',
       params: {
         organizationSlug: props.organizationSlug,

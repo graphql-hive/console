@@ -5,7 +5,6 @@ import { models as schemaModels } from '../schema/providers/models';
 import { CompositionOrchestrator } from '../schema/providers/orchestrator/composition-orchestrator';
 import { RegistryChecks } from '../schema/providers/registry-checks';
 import { SchemaPublisher } from '../schema/providers/schema-publisher';
-import { Storage } from '../shared/providers/storage';
 import { SchemaProposalManager } from './providers/schema-proposal-manager';
 import { SchemaProposalStorage } from './providers/schema-proposal-storage';
 import { resolvers } from './resolvers.generated';

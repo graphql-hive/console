@@ -100,9 +100,7 @@ function CheckItem(props: {
         <CalendarIcon className="h-3" />
         <TimeAgo date={props.createdAt} />
       </div>
-      <div className="truncate pr-4 text-right text-gray-500">
-        {props.author ? props.author : ''}
-      </div>
+      <div className="truncate pr-4 text-right text-gray-500">{props.author ?? ''}</div>
     </Link>
   );
 }

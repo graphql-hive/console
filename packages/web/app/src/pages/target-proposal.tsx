@@ -297,6 +297,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           serviceName: '',
                         },
                       });
+                      console.log('@todo ', review);
                       refreshProposal();
                     }}
                   />

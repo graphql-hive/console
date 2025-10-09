@@ -84,7 +84,7 @@ export class SchemaProposalStorage {
       args.userId,
     );
 
-    this.assertSchemaProposalsEnabled({
+    await this.assertSchemaProposalsEnabled({
       organizationId: args.organizationId,
       targetId: args.targetId,
       proposalId: undefined,
@@ -147,7 +147,7 @@ export class SchemaProposalStorage {
       args.stage,
     );
 
-    this.assertSchemaProposalsEnabled({
+    await this.assertSchemaProposalsEnabled({
       organizationId: args.organizationId,
       targetId: args.targetId,
       proposalId: undefined,

@@ -1,4 +1,4 @@
-import { SchemaCheckManager } from '../../schema/providers/schema-check-manager';
+// import { SchemaCheckManager } from '../../schema/providers/schema-check-manager';
 import { SchemaManager } from '../../schema/providers/schema-manager';
 import { toGraphQLSchemaCheckCurry } from '../../schema/to-graphql-schema-check';
 import { Storage } from '../../shared/providers/storage';
@@ -81,14 +81,19 @@ export const SchemaProposal: SchemaProposalResolvers = {
       });
     return schemaChecks;
   },
-  async rebasedSupergraphSDL(proposal, args, { injector }) {
+  async rebasedSupergraphSDL(proposal, args) {
+    // @todo
+    console.log(proposal.id, args);
     return '';
   },
   async reviews(proposal, args, { injector }) {
-    injector.get(SchemaProposalManager).getPaginatedReviews({
+    // @todo
+    await injector.get(SchemaProposalManager).getPaginatedReviews({
       proposalId: proposal.id,
       after: args.after ?? '',
       first: args.first,
+      stages: [], // @todo
+      authors: [], // @todo
     });
     return proposal.reviews ?? null;
   },

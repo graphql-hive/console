@@ -58,7 +58,8 @@ export const AnnotatedContext = createContext({
 }>);
 
 export function AnnotatedProvider(props: { children: ReactNode }) {
-  const [context] = useState({ annotatedCoordinates: new Set<string>() });
+  // eslint-disable-next-line react/hook-use-state
+  const [context, _] = useState({ annotatedCoordinates: new Set<string>() });
   return <AnnotatedContext.Provider value={context}>{props.children}</AnnotatedContext.Provider>;
 }
 
@@ -113,7 +114,7 @@ export function ChangeRow(props: {
         : 'newdoc';
   const annotation = !!props.coordinate && props.annotations?.(props.coordinate);
 
-  if (!!annotation) {
+  if (annotation) {
     ctx.annotatedCoordinates?.add(props.coordinate!);
   }
 

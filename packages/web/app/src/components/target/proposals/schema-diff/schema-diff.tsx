@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 import { ReactElement, useMemo } from 'react';
 import type { GraphQLSchema } from 'graphql';
 import { isIntrospectionType, isSpecifiedDirective } from 'graphql';

@@ -34,8 +34,8 @@ export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) =>
             <ScrollArea className="relative max-h-screen">
               <CommandItem
                 key="all"
-                value={''}
-                onSelect={selectedStage => {
+                value=""
+                onSelect={_ => {
                   const allSelected = stages.every(s => selectedStages.includes(s));
                   let updated: string[] | undefined;
                   if (allSelected) {

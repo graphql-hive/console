@@ -3,9 +3,9 @@
  */
 import { Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
-import { HiveError } from '@hive/api/shared/errors';
 import { SchemaChangeType } from '@hive/storage';
 import { SchemaProposalCheckInput, SchemaProposalStage } from '../../../__generated__/types';
+import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { SchemaPublisher } from '../../schema/providers/schema-publisher';
 import { IdTranslator } from '../../shared/providers/id-translator';
@@ -83,7 +83,7 @@ export class SchemaProposalManager {
     });
 
     // @todo handle errors... rollback?
-    const checks = await Promise.all(checkPromises);
+    await Promise.all(checkPromises);
 
     // @todo consider mapping this here vs using the nested resolver... This is more efficient but riskier bc logic lives in two places.
     // const checkEdges = checks.map(check => ({
