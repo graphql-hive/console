@@ -54,33 +54,29 @@ export function parse(text: string, now = new UTCDate()): Date | undefined {
     return undefined;
   }
 
-  let mathString = '';
-
-  if (text.substring(0, 3) === 'now') {
-    mathString = text.substring('now'.length);
-  } else {
-    // yyyy-MM-dd
+  if (!text.startsWith('now')) {
+    // Try parsing as yyyy-MM-dd HH:mm
     const date = parseDateString(text);
-
-    if (date && !Number.isNaN(date?.getTime())) {
+    if (date && !Number.isNaN(date.getTime())) {
       return date;
     }
 
-    // ISO
+    // Try parsing as ISO
     const isoDate = parseISO(text);
-
-    if (isoDate && !Number.isNaN(isoDate?.getTime())) {
+    if (isoDate && !Number.isNaN(isoDate.getTime())) {
       return isoDate;
     }
+
+    return undefined;
   }
 
-  if (!mathString.length) {
+  const mathExpression = text.slice('now'.length);
+  if (!mathExpression) {
     return now;
   }
 
-  // formular
-
-  return parseDateMath(mathString, now);
+  // Handle "now" with date math (e.g., "now+1d")
+  return parseDateMath(mathExpression, now);
 }
 
 /**
