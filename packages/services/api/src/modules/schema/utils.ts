@@ -62,7 +62,6 @@ export function withUsedByClients<
           return deps.operationsManager.getClientNamesPerCoordinateOfType({
             ...deps.selector,
             period: deps.period,
-            typename: deps.typename,
             schemaCoordinate,
           });
         },

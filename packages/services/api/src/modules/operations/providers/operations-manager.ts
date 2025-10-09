@@ -869,7 +869,7 @@ export class OperationsManager {
 
   private clientNamesPerCoordinateOfTypeDataLoaderCache = new Map<
     string,
-    DataLoader<string, Map<string, Set<string>>>
+    DataLoader<string, Set<string>>
   >();
 
   private getClientNamesPerCoordinateLoader(args: { target: string; period: DateRange }) {
@@ -879,13 +879,17 @@ export class OperationsManager {
     let loader = this.clientNamesPerCoordinateOfTypeDataLoaderCache.get(cacheKey);
 
     if (loader == null) {
-      loader = new DataLoader<string, Map<string, Set<string>>>(coordinates => {
+      loader = new DataLoader<string, Set<string>>(coordinates => {
         const promise = this.reader.getClientNamesPerCoorinateOfTypes(
           args.target,
           args.period,
           coordinates,
         );
-        return Promise.all(coordinates.map(_ => promise));
+        return Promise.all(
+          coordinates.map(coordinate =>
+            promise.then(res => res.get(coordinate) ?? new Set<string>()),
+          ),
+        );
       });
       this.clientNamesPerCoordinateOfTypeDataLoaderCache.set(cacheKey, loader);
     }
@@ -901,7 +905,6 @@ export class OperationsManager {
     args: {
       period: DateRange;
       schemaCoordinate: string;
-      typename: string;
     } & TargetSelector,
   ) {
     const loader = this.getClientNamesPerCoordinateLoader({
@@ -909,8 +912,7 @@ export class OperationsManager {
       period: args.period,
     });
 
-    const clientNamesCoordinateMap = await loader.load(args.schemaCoordinate);
-    return Array.from(clientNamesCoordinateMap.get(args.schemaCoordinate) ?? []);
+    return Array.from(await loader.load(args.schemaCoordinate));
   }
 
   private topOperationForTypeDataLoaderCache = new Map<
