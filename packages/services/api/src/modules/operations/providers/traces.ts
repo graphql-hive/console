@@ -1,3 +1,5 @@
+import DataLoader from 'dataloader';
+import stableJSONStringify from 'fast-json-stable-stringify';
 import { Injectable } from 'graphql-modules';
 import { z } from 'zod';
 import { subDays } from '@/lib/date-time';
@@ -310,6 +312,248 @@ export class Traces {
     });
 
     return TraceStatusBreakdownBucketList.parse(result.data);
+  }
+
+  async getTraceFilterOptions(targetId: string, filter: GraphQLSchema.TracesFilterInput | null) {
+    return new TraceBreakdownLoader(this.logger, this.clickHouse, targetId, filter);
+  }
+}
+
+export class TraceBreakdownLoader {
+  private logger: Logger;
+  private conditions: SqlValue[];
+  private loader = new DataLoader<
+    {
+      key: string;
+      columnExpression: string;
+      limit: number | null;
+      arrayJoinColumn: string | null;
+    },
+    { value: string; count: number }[],
+    string
+  >(
+    async inputs => {
+      const statements: SqlValue[] = [];
+
+      for (const { key, columnExpression, limit, arrayJoinColumn } of inputs) {
+        statements.push(sql`
+        SELECT
+          ${key} AS "key",
+          toString(${sql.raw(columnExpression)}) AS "value",
+          count(*) AS "count"
+        FROM "otel_traces_normalized"
+        ${sql.raw(arrayJoinColumn ? `ARRAY JOIN ${arrayJoinColumn} AS "value"` : '')}
+        WHERE ${sql.join(this.conditions, ' AND ')}
+        GROUP BY value
+        ORDER BY count DESC
+        ${sql.raw(limit ? `LIMIT ${limit}` : '')}
+      `);
+      }
+
+      const results = await this.clickhouse.query<{
+        key: string;
+        value: string;
+        count: number;
+      }>({
+        query: sql`
+        ${sql.join(statements, ' UNION ALL ')}
+      `,
+        queryId: 'traces_filter_options',
+        timeout: 10_000,
+      });
+
+      const rowsGroupedByKey = results.data.reduce(
+        (acc, row) => {
+          if (!acc[row.key]) {
+            acc[row.key] = [];
+          }
+          acc[row.key].push({ value: row.value, count: row.count });
+          return acc;
+        },
+        {} as Record<string, { value: string; count: number }[]>,
+      );
+
+      return inputs.map(input => rowsGroupedByKey[input.key] ?? []);
+    },
+    {
+      cacheKeyFn: stableJSONStringify,
+    },
+  );
+
+  constructor(
+    logger: Logger,
+    private clickhouse: ClickHouse,
+    targetId: string,
+    filter: GraphQLSchema.TracesFilterInput | null,
+  ) {
+    this.logger = logger.child({ source: 'TraceBreakdownLoader' });
+
+    this.conditions = [sql`target_id = ${targetId}`];
+
+    if (filter?.traceIds?.length) {
+      this.conditions.push(sql`"trace_id" IN (${sql.array(filter.traceIds, 'String')})`);
+    }
+
+    if (filter?.success?.length) {
+      const hasSuccess = filter.success.includes(true);
+      const hasError = filter.success.includes(false);
+
+      if (hasSuccess && !hasError) {
+        this.conditions.push(
+          sql`"graphql_error_count" = 0`,
+          sql`substring("http_status_code", 1, 1) IN (${sql.array(['2', '3'], 'String')})`,
+        );
+      } else if (hasError && !hasSuccess) {
+        this.conditions.push(
+          sql`"graphql_error_count" > 0`,
+          sql`substring("http_status_code", 1, 1) NOT IN (${sql.array(['2', '3'], 'String')})`,
+        );
+      }
+    }
+
+    if (filter?.operationNames?.length) {
+      this.conditions.push(
+        sql`"graphql_operation_name" IN (${sql.array(filter.operationNames, 'String')})`,
+      );
+    }
+
+    if (filter?.operationTypes?.length) {
+      this.conditions.push(
+        sql`"graphql_operation_type" IN (${sql.array(
+          filter.operationTypes.map(value => (value == null ? '' : value.toLowerCase())),
+          'String',
+        )})`,
+      );
+    }
+
+    if (filter?.clientNames?.length) {
+      this.conditions.push(sql`"client_name" IN (${sql.array(filter.clientNames, 'String')})`);
+    }
+
+    if (filter?.subgraphNames?.length) {
+      this.conditions.push(
+        sql`hasAny("subgraph_names", (${sql.array(filter.subgraphNames.flat(), 'String')}))`,
+      );
+    }
+
+    if (filter?.httpStatusCodes?.length) {
+      this.conditions.push(
+        sql`"http_status_code" IN (${sql.array(filter.httpStatusCodes.map(String), 'UInt16')})`,
+      );
+    }
+
+    if (filter?.httpMethods?.length) {
+      this.conditions.push(sql`"http_method" IN (${sql.array(filter.httpMethods, 'String')})`);
+    }
+
+    if (filter?.httpHosts?.length) {
+      this.conditions.push(sql`"http_host" IN (${sql.array(filter.httpHosts, 'String')})`);
+    }
+
+    if (filter?.httpRoutes?.length) {
+      this.conditions.push(sql`"http_route" IN (${sql.array(filter.httpRoutes, 'String')})`);
+    }
+
+    if (filter?.httpUrls?.length) {
+      this.conditions.push(sql`"http_url" IN (${sql.array(filter.httpUrls, 'String')})`);
+    }
+  }
+
+  httpHost(top: number | null) {
+    return this.loader.load({
+      key: 'http_host',
+      columnExpression: 'http_host',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
+  }
+  httpMethod(top: number | null) {
+    return this.loader.load({
+      key: 'http_method',
+      columnExpression: 'http_method',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
+  }
+  httpRoute(top: number | null) {
+    return this.loader.load({
+      key: 'http_route',
+      columnExpression: 'http_route',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
+  }
+  httpStatusCode(top: number | null) {
+    return this.loader.load({
+      key: 'http_status_code',
+      columnExpression: 'http_status_code',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
+  }
+  httpUrl(top: number | null) {
+    return this.loader.load({
+      key: 'http_url',
+      columnExpression: 'http_url',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
+  }
+  operationName(top: number | null) {
+    return this.loader.load({
+      key: 'graphql_operation_name',
+      columnExpression: 'graphql_operation_name',
+      limit: top ?? 5,
+      arrayJoinColumn: null,
+    });
+  }
+  operationType() {
+    return this.loader.load({
+      key: 'graphql_operation_type',
+      columnExpression: 'graphql_operation_type',
+      limit: null,
+      arrayJoinColumn: null,
+    });
+  }
+  subgraphs(top: number | null) {
+    return this.loader.load({
+      key: 'subgraph_names',
+      columnExpression: 'value',
+      limit: top ?? 5,
+      arrayJoinColumn: 'subgraph_names',
+    });
+  }
+  success() {
+    return this.loader
+      .load({
+        key: 'success',
+        columnExpression:
+          'if((toUInt16OrZero(http_status_code) >= 200 AND toUInt16OrZero(http_status_code) < 300), true, false) AND "graphql_error_count" = 0',
+        limit: null,
+        arrayJoinColumn: null,
+      })
+      .then(data =>
+        data.map(({ value, count }) => ({
+          value: value === 'true' ? true : false,
+          count,
+        })),
+      );
+  }
+  errorCode(top: number | null) {
+    return this.loader.load({
+      key: 'errorCode',
+      columnExpression: 'value',
+      limit: top ?? 10,
+      arrayJoinColumn: 'graphql_error_codes',
+    });
+  }
+  clientName(top: number | null) {
+    return this.loader.load({
+      key: 'client_name',
+      columnExpression: 'client_name',
+      limit: top ?? 10,
+      arrayJoinColumn: null,
+    });
   }
 }
 

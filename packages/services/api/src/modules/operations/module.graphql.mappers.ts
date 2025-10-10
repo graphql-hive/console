@@ -1,7 +1,7 @@
 import type Dataloader from 'dataloader';
 import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
-import { Span, Trace } from './providers/traces';
+import type { Span, Trace, TraceBreakdownLoader } from './providers/traces';
 
 // import { SqlValue } from './providers/sql';
 
@@ -46,19 +46,7 @@ export interface DurationValuesMapper {
   p99: number | null;
 }
 
-export type TracesFilterOptionsMapper = {
-  // ANDs: readonly SqlValue[];
-  loader: Dataloader<
-    {
-      key: string;
-      columnExpression: string;
-      limit: number | null;
-      arrayJoinColumn: string | null;
-    },
-    { value: string; count: number }[],
-    string
-  >;
-};
+export type TracesFilterOptionsMapper = TraceBreakdownLoader;
 
 export type TraceMapper = Trace;
 export type SpanMapper = Span;
