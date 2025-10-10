@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { parse, print } from 'graphql';
+import { buildSchema, parse, print } from 'graphql';
 import { editor } from 'monaco-editor';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { CardDescription } from '@/components/ui/card';
@@ -19,9 +20,46 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
-import { DotFilledIcon, GearIcon, MagicWandIcon } from '@radix-ui/react-icons';
+import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
+import {
+  DotFilledIcon,
+  ExclamationTriangleIcon,
+  GearIcon,
+  MagicWandIcon,
+} from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import { SchemaEditor } from '@theguild/editor';
+
+type Service =
+  | {
+      __typename: 'CompositeSchema';
+      id: string;
+      source: string;
+      service?: string | null;
+      url?: string | null;
+    }
+  | {
+      __typename: 'SingleSchema';
+      id: string;
+      source: string;
+    };
+
+type ServiceTab =
+  | {
+      readonly __typename: 'CompositeSchema';
+      readonly id: string;
+      source: string;
+      service?: string | null;
+      url?: string | null;
+      // indicates that the schema is brand new and never been published.
+      // this sets some unique conditions like allowing editing the service name.
+      unpublished?: true;
+    }
+  | {
+      readonly __typename: 'SingleSchema';
+      readonly id: string;
+      source: string;
+    };
 
 function prettier(source: string) {
   try {
@@ -32,10 +70,11 @@ function prettier(source: string) {
   }
 }
 
-const ProposalsNewProposalEditorQuery = graphql(`
-  query ProposalsNewProposalEditorQuery($targetReference: TargetReferenceInput!) {
+const ProposalsNewProposalQuery = graphql(`
+  query ProposalsNewProposalQuery($targetReference: TargetReferenceInput!) {
     target(reference: $targetReference) {
       ...Proposals_SelectFragment
+      ...Proposals_TargetProjectTypeFragment
       id
       slug
       project {
@@ -149,6 +188,21 @@ function schemaTitle(
 function ProposalsNewContent(
   props: Parameters<typeof TargetProposalsNewPage>[0] & { page?: string },
 ) {
+  const [query] = useQuery({
+    query: ProposalsNewProposalQuery,
+    variables: {
+      targetReference: {
+        bySelector: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      },
+    },
+  });
+  const existingServices = useMemo(() => {
+    return query.data?.target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
+  }, [query.data]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [page, setPage] = useState('overview');
@@ -158,6 +212,18 @@ function ProposalsNewContent(
     }
     // @todo
   }, [page]);
+  const [changedServices, setChangedServices] = useState<Array<ServiceTab>>([]);
+
+  if (query.error) {
+    return (
+      <Callout type="error" className="mx-auto w-2/3">
+        <b>Oops, something went wrong.</b>
+        <br />
+        {query.error.message}
+      </Callout>
+    );
+  }
+
   return (
     <Tabs orientation="vertical" className="flex" value={page} onValueChange={setPage}>
       <TabsList
@@ -191,16 +257,193 @@ function ProposalsNewContent(
           setDescription={setDescription}
           onNextPage={onNextPage}
         />
-        <EditorTab
-          organizationSlug={props.organizationSlug}
-          projectSlug={props.projectSlug}
-          targetSlug={props.targetSlug}
-        />
-        <TabsContent value="changes">TODO</TabsContent>
+        {query.fetching ? (
+          <Spinner />
+        ) : (
+          <>
+            <EditorTab
+              organizationSlug={props.organizationSlug}
+              projectSlug={props.projectSlug}
+              targetSlug={props.targetSlug}
+              changedServices={changedServices}
+              setChangedServices={setChangedServices}
+              existingServices={existingServices ?? []}
+              projectTypeFragment={query.data?.target ?? undefined}
+              selectFragment={query.data?.target ?? undefined}
+            />
+            <ChangesTab
+              changedServices={changedServices}
+              existingServices={existingServices ?? []}
+            />
+          </>
+        )}
       </div>
     </Tabs>
   );
 }
+
+function ChangesTab(props: {
+  changedServices: Array<ServiceTab>;
+  existingServices: Array<Service>;
+}) {
+  return (
+    <TabsContent value="changes">
+      <ServiceChanges
+        changedServices={props.changedServices}
+        existingServices={props.existingServices}
+      />
+    </TabsContent>
+  );
+}
+
+function ServiceChanges(props: {
+  changedServices: Array<ServiceTab>;
+  existingServices: Array<Service>;
+}) {
+  const [changes, setChanges] = useState<
+    { service: ServiceTab; changes: Change<any>[]; error?: string }[]
+  >([]);
+  const [calculatingChanges, setCalculatingChanges] = useState(false);
+
+  useEffect(() => {
+    let canceled = false;
+
+    const diffSchemas = async () => {
+      let idx = 0;
+      const _changes = [...changes];
+      for (const s of props.changedServices) {
+        let change: (typeof changes)[number];
+        const existingService = props.existingServices.find(existing => existing.id === s.id);
+        if (existingService) {
+          try {
+            const existingSchema = buildSchema(existingService.source, {
+              assumeValid: true,
+              assumeValidSDL: true,
+            });
+            const proposedSchema = buildSchema(s.source, {
+              // @todo consider not assuming valid...
+              // this is a workaround for missing federation directive definitions
+              assumeValid: true,
+              assumeValidSDL: true,
+            });
+            // @todo calculate from the supergraph...
+            change = { service: s, changes: await diff(existingSchema, proposedSchema) };
+          } catch (e: unknown) {
+            change = { service: s, changes: [], error: e instanceof Error ? e.message : String(e) };
+            console.warn(e);
+          }
+        } else {
+          try {
+            // check that schema is valid
+            buildSchema(s.source);
+            change = {
+              service: s,
+              changes: [
+                {
+                  criticality: {
+                    level: CriticalityLevel.NonBreaking,
+                    reason: 'Adding a new service is safe.',
+                  },
+                  type: '',
+                  meta: null,
+                  message: `Schema "${schemaTitle(s)}" added`,
+                },
+              ],
+            };
+          } catch (e: unknown) {
+            change = { service: s, changes: [], error: e instanceof Error ? e.message : String(e) };
+            console.warn(e);
+          }
+        }
+
+        if (_changes[idx]) {
+          _changes[idx] = change;
+        } else {
+          _changes.push(change);
+        }
+
+        if (canceled) {
+          return;
+        }
+        setChanges(_changes);
+        idx++;
+      }
+      if (_changes.length > props.changedServices.length) {
+        _changes.slice(0, Math.max(props.changedServices.length - 1, 0));
+      }
+
+      if (canceled) {
+        return;
+      }
+      setChanges(_changes);
+      setCalculatingChanges(false);
+    };
+
+    setCalculatingChanges(true);
+    void diffSchemas();
+
+    return () => {
+      canceled = true;
+    };
+  }, [props.changedServices]);
+
+  const changeElements = useMemo(() => {
+    return changes.map((c, idx) => {
+      return (
+        <div key={c.service.id.length ? `changes-${c.service.id}` : `new-${idx}`}>
+          <h2 className="mb-2 flex items-center font-bold text-gray-900 dark:text-white">
+            {schemaTitle(c.service)}
+          </h2>
+          <div className="mb-6">
+            {c.error ? (
+              <div className="flex items-center text-red-500">
+                <ExclamationTriangleIcon className="mr-2" />
+                {c.error}
+              </div>
+            ) : (
+              c.changes.length === 0 && 'No changes.'
+            )}
+            {c.changes.map((change, changeIndex) => {
+              return (
+                <ProposalChangeDetail
+                  change={change}
+                  key={`${change.type}-${change.path ?? changeIndex}`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      );
+    });
+  }, [changes]);
+  return (
+    <>
+      {calculatingChanges && (
+        <div className="text-xs">
+          Calculating latest changes... <Spinner />
+        </div>
+      )}
+      {changeElements.length === 0 && (
+        <div className="mt-8 text-center">
+          <h2 className="mb-2 text-3xl font-bold">No changes</h2>
+          <h3 className="text-xl font-semibold">
+            Use the "Editor" to make modifications to your schema(s)
+          </h3>
+        </div>
+      )}
+      {changeElements}
+    </>
+  );
+}
+
+const Proposals_TargetProjectTypeFragment = graphql(`
+  fragment Proposals_TargetProjectTypeFragment on Target {
+    project {
+      id
+      type
+    }
+  }
+`);
 
 const Proposals_SelectFragment = graphql(`
   fragment Proposals_SelectFragment on Target {
@@ -282,39 +525,17 @@ function ServiceSelect(props: {
   ) : null;
 }
 
-type ServiceTab =
-  | {
-      readonly __typename: 'CompositeSchema';
-      readonly id: string;
-      source: string;
-      service?: string | null;
-      url?: string | null;
-      // indicates that the schema is brand new and never been published.
-      // this sets some unique conditions like allowing editing the service name.
-      unpublished?: true;
-    }
-  | {
-      readonly __typename: 'SingleSchema';
-      readonly id: string;
-      source: string;
-    };
-
-function EditorTab(props: { organizationSlug: string; projectSlug: string; targetSlug: string }) {
-  const [query] = useQuery({
-    query: ProposalsNewProposalEditorQuery,
-    variables: {
-      targetReference: {
-        bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-        },
-      },
-    },
-  });
-  // note: schemas is not paginated for some reason...
-  const schemaEdges = query.data?.target?.latestValidSchemaVersion?.schemas.edges ?? [];
-  const [serviceTabs, setServiceTabs] = useState<Array<ServiceTab>>([]);
+function EditorTab(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  projectTypeFragment: FragmentType<typeof Proposals_TargetProjectTypeFragment> | undefined;
+  selectFragment: FragmentType<typeof Proposals_SelectFragment> | undefined;
+  changedServices: Array<ServiceTab>;
+  setChangedServices: (s: Array<ServiceTab>) => void;
+  existingServices: Array<Service>;
+}) {
+  const { changedServices, setChangedServices } = props;
   const [activeTab, setActiveTab] = useState<number>(0);
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const setActiveTabAndScroll = (tab: number) => {
@@ -332,12 +553,12 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    if (serviceTabs.length - 1 < activeTab) {
-      setActiveTab(serviceTabs.length - 1);
+    if (changedServices.length - 1 < activeTab) {
+      setActiveTab(changedServices.length - 1);
     }
-  }, [serviceTabs, activeTab]);
+  }, [changedServices, activeTab]);
 
-  const activeService = serviceTabs[activeTab] as ServiceTab | undefined;
+  const activeService = changedServices[activeTab] as ServiceTab | undefined;
 
   const onAddNewService = useCallback(
     (
@@ -350,14 +571,14 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
           },
     ) => {
       if (schema.type === ProjectType.Single) {
-        if (serviceTabs.length === 0) {
-          setServiceTabs([{ __typename: 'SingleSchema', id: '', source: '' }]);
+        if (changedServices.length === 0) {
+          setChangedServices([{ __typename: 'SingleSchema', id: '', source: '' }]);
           setActiveTab(0);
         }
         return;
       }
-      const hasConflictingName = schemaEdges.some(
-        s => s.node.__typename === 'CompositeSchema' && s.node.service === schema.serviceName,
+      const hasConflictingName = props.existingServices.some(
+        s => s.__typename === 'CompositeSchema' && s.service === schema.serviceName,
       );
       if (hasConflictingName) {
         // @todo show error and ask for rename
@@ -371,91 +592,88 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
         url: schema.serviceUrl,
         unpublished: true,
       };
-      setServiceTabs([...serviceTabs, newService]);
-      setActiveTabAndScroll(serviceTabs.length);
+      setChangedServices([...changedServices, newService]);
+      setActiveTabAndScroll(changedServices.length);
     },
-    [serviceTabs],
+    [changedServices],
   );
 
   const onAddService = useCallback(
     (serviceId: string) => {
       // check the tab list to be extra safe
-      const existing = serviceTabs.findIndex(s => s.id === serviceId);
+      const existing = changedServices.findIndex(s => s.id === serviceId);
       if (existing >= 0) {
         setActiveTabAndScroll(existing);
         return;
       }
 
-      const addedService = schemaEdges.find(edge => edge.node.id === serviceId);
+      const addedService = props.existingServices.find(edge => edge.id === serviceId);
       if (addedService) {
         // clone the node so that we can modify the sdl and url without impacting the original
-        setServiceTabs([
-          ...serviceTabs,
-          { ...addedService.node, source: prettier(addedService.node.source) },
+        setChangedServices([
+          ...changedServices,
+          { ...addedService, source: prettier(addedService.source) },
         ]);
-        // select the new last element in the serviceTabs list
-        setActiveTabAndScroll(serviceTabs.length);
+        // select the new last element in the changedServices list
+        setActiveTabAndScroll(changedServices.length);
       }
     },
-    [schemaEdges, serviceTabs],
+    [props.existingServices, changedServices],
   );
 
   const onRemoveTab = useCallback(
     (index: number) => {
       // @todo if changed, add confirmation, "Remove "___" from your proposal?"
-      const tabs = serviceTabs.toSpliced(index, 1);
-      setServiceTabs(tabs);
+      const tabs = changedServices.toSpliced(index, 1);
+      setChangedServices(tabs);
       setActiveTabAndScroll(Math.min(index, tabs.length - 1));
     },
-    [serviceTabs],
+    [changedServices],
   );
 
   useEffect(() => {
-    if (schemaEdges?.length === 1 && serviceTabs.length === 0) {
-      const oneAndOnlySchema = schemaEdges[0].node;
+    if (props.existingServices.length === 1 && changedServices.length === 0) {
+      const oneAndOnlySchema = props.existingServices[0];
       onAddService(oneAndOnlySchema.id);
     }
-  }, [schemaEdges, onAddService]);
+  }, [props.existingServices, onAddService]);
 
   const serviceTabIds = useMemo(() => {
-    return serviceTabs.map(s => s.id);
-  }, [serviceTabs]);
+    return changedServices.map(s => s.id);
+  }, [changedServices]);
 
   const setActiveTabSource = useCallback(
     (source: string | undefined) => {
-      serviceTabs[activeTab] = { ...serviceTabs[activeTab], source: source ?? '' };
-      setServiceTabs([...serviceTabs]);
+      changedServices[activeTab] = { ...changedServices[activeTab], source: source ?? '' };
+      setChangedServices([...changedServices]);
     },
-    [activeTab, serviceTabs],
+    [activeTab, changedServices],
+  );
+  const setActiveTabUrl = useCallback(
+    (url: string | undefined) => {
+      if (changedServices[activeTab].__typename === 'CompositeSchema') {
+        changedServices[activeTab] = { ...changedServices[activeTab], url: url ?? '' };
+        setChangedServices([...changedServices]);
+      }
+    },
+    [activeTab, changedServices],
   );
   const onToggleTabSettings = () => {
     setShowSettings(!showSettings);
   };
   /** A reference to the monaco editor so we can force set the value on prettify */
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor | null>(null);
-
-  if (query.fetching) {
-    return <Spinner />;
-  }
-  if (query.error) {
-    return (
-      <Callout type="error" className="mx-auto w-2/3">
-        <b>Oops, something went wrong.</b>
-        <br />
-        {query.error.message}
-      </Callout>
-    );
-  }
+  const projectType = useFragment(Proposals_TargetProjectTypeFragment, props.projectTypeFragment);
 
   return (
     <TabsContent value="editor">
       <div className="flex grow border-b pb-4 pl-2">
         <ServiceSelect
-          targetFragment={query.data?.target ?? undefined}
+          targetFragment={props.selectFragment ?? undefined}
           onSelect={onAddService}
           selected={serviceTabIds}
           onSelectNew={() => {
-            const type = query.data?.target?.project.type;
+            const type = projectType?.project.type;
             if (type === ProjectType.Single) {
               onAddNewService({ type: ProjectType.Single });
             } else if (type) {
@@ -468,7 +686,7 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
           }}
         />
       </div>
-      {(activeService || serviceTabs.length > 0) && (
+      {(activeService || changedServices.length > 0) && (
         <Tabs
           value={`${activeTab}`}
           onValueChange={idx => {
@@ -484,13 +702,20 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
               ref={tabsRef}
               className="no-scrollbar [&>*:not:(:first-child)]:mr-2 mr-auto max-w-full justify-normal overflow-x-auto whitespace-nowrap rounded-b-none p-2 pb-0 text-sm"
             >
-              {serviceTabs.map((service, idx) => {
+              {changedServices.map((service, idx) => {
                 const isActiveTab = idx === activeTab;
                 if (service.__typename === 'SingleSchema') {
                   return (
-                    <div className="p-2" key={`tab-${service.id}`}>
-                      <Link className="font-bold">{query.data?.target?.slug ?? 'monolith'}</Link>
-                    </div>
+                    <TabsTrigger
+                      variant="default"
+                      value={`${idx}`}
+                      asChild
+                      key={service.id.length ? `changed-${service.id}` : `tab-${idx}`}
+                    >
+                      <div className="p-2">
+                        <Link className="font-bold">single schema</Link>
+                      </div>
+                    </TabsTrigger>
                   );
                 }
                 return (
@@ -510,10 +735,13 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
                               value={schemaTitle(service)}
                               onChange={e => {
                                 service.service = e.target.value;
-                                setServiceTabs([...serviceTabs]);
+                                setChangedServices([...changedServices]);
                               }}
                             />
-                            {schemaEdges.some(s => (s.node as any).service === service.service) && (
+                            {props.existingServices.some(
+                              s =>
+                                s.__typename === 'CompositeSchema' && s.service === service.service,
+                            ) && (
                               <TooltipProvider delayDuration={0} skipDelayDuration={0}>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -559,6 +787,7 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
                 className={cn(
                   'ml-2 cursor-pointer p-1 hover:text-orange-500',
                   showSettings && 'border-b-2 border-orange-500',
+                  projectType?.project.type === ProjectType.Single && 'hidden',
                 )}
                 title="Edit schema settings"
                 onClick={onToggleTabSettings}
@@ -567,7 +796,7 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
               </Link>
             </div>
           </div>
-          {serviceTabs.map((service, idx) => {
+          {changedServices.map((service, idx) => {
             return (
               <TabsContent
                 value={`${idx}`}
@@ -599,7 +828,11 @@ function EditorTab(props: { organizationSlug: string; projectSlug: string; targe
                       />
                     )}
                     <div className="my-2 font-semibold">Service URL</div>
-                    <Input value={service.url ?? ''} className="text-xs" />
+                    <Input
+                      value={service.url ?? ''}
+                      onChange={ev => setActiveTabUrl(ev.target.value)}
+                      className="text-xs"
+                    />
                   </div>
                 )}
               </TabsContent>

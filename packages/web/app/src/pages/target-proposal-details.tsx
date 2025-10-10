@@ -1,12 +1,9 @@
-import { Fragment, ReactNode, useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
-import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
+import { ChangeBlock } from '@/components/target/proposals/change-detail';
 import { ServiceHeading } from '@/components/target/proposals/service-heading';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FragmentType } from '@/gql';
 import { Change, CriticalityLevel } from '@graphql-inspector/core';
-import { ComponentNoneIcon, ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import type { ServiceProposalDetails } from './target-proposal-types';
 
 export enum MergeStatus {
@@ -111,70 +108,5 @@ export function TargetProposalDetailsPage(props: {
         );
       })}
     </div>
-  );
-}
-
-function ChangeBlock(props: {
-  title: string;
-  info: string;
-  changes: Array<{
-    change: Change;
-    error?: Error;
-    mergeStatus?: MergeStatus;
-  }>;
-}) {
-  return (
-    props.changes.length !== 0 && (
-      <>
-        <h2 className="mb-2 mt-6 flex items-center font-bold text-gray-900 dark:text-white">
-          {props.title}
-          {props.info && <ChangesBlockTooltip info={props.info} />}
-        </h2>
-        <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
-          {props.changes.map(({ change, error, mergeStatus }) => {
-            let icon: ReactNode | undefined;
-            if (mergeStatus === MergeStatus.CONFLICT) {
-              icon = (
-                <span className="flex items-center justify-end pl-4 text-red-400">
-                  <ExclamationTriangleIcon className="mr-2" />
-                  CONFLICT
-                </span>
-              );
-            } else if (mergeStatus === MergeStatus.IGNORED) {
-              icon = (
-                <span className="flex items-center justify-end pl-4 text-gray-400">
-                  <ComponentNoneIcon className="mr-2" /> NO CHANGE
-                </span>
-              );
-            }
-            return (
-              <ProposalChangeDetail
-                icon={icon}
-                change={change}
-                key={`${change.type}-${change.path}`}
-                error={error}
-              />
-            );
-          })}
-        </div>
-      </>
-    )
-  );
-}
-
-function ChangesBlockTooltip(props: { info: string }) {
-  return (
-    <TooltipProvider>
-      <Tooltip delayDuration={200}>
-        <TooltipTrigger>
-          <Button variant="ghost" size="icon-sm" className="ml-1 text-gray-400">
-            <InfoCircledIcon className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-md p-4 font-normal">
-          <p>{props.info}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }
