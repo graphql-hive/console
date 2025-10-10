@@ -473,8 +473,8 @@ export function traceFn<This extends Object, TArgs extends any[], TResult>(
   options?: FunctionTraceOptions<TArgs, Awaited<TResult>>,
 ) {
   return function (
-    target: This,
-    key: PropertyKey,
+    _target: This,
+    _key: PropertyKey,
     descriptor: TypedPropertyDescriptor<(...args: TArgs) => TResult>,
   ) {
     const originalMethod = descriptor.value;

@@ -13,63 +13,98 @@ import {
 } from './module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
 import { ConstDirectiveNode, DEFAULT_DEPRECATION_REASON, DocumentNode, Kind, print } from 'graphql';
+import { traceInlineSync } from '@hive/service-common';
 import type { DateRange } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import { OperationsManager } from '../operations/providers/operations-manager';
 import { TargetSelector } from '../shared/providers/storage';
 import { SuperGraphInformation } from './lib/federation-super-graph';
 
-export function withUsedByClients<
-  T extends {
-    isUsed: boolean;
-  },
->(
-  input: Record<string, T>,
-  deps: {
-    operationsManager: OperationsManager;
-    selector: TargetSelector;
-    period: DateRange;
-    typename: string;
-  },
-): Record<
-  string,
-  T & {
-    usedByClients: () => PromiseOrValue<Array<string>>;
-    period: DateRange;
-    organizationId: string;
-    projectId: string;
-    targetId: string;
-    typename: string;
-  }
-> {
-  return Object.fromEntries(
-    Object.entries(input).map(([schemaCoordinate, record]) => [
-      schemaCoordinate,
-      {
-        selector: deps.selector,
-        period: deps.period,
-        typename: deps.typename,
-        organizationId: deps.selector.organizationId,
-        projectId: deps.selector.projectId,
-        targetId: deps.selector.targetId,
-        ...record,
-        usedByClients() {
-          if (record.isUsed === false) {
-            return [];
-          }
+export const withUsedByClients = traceInlineSync(
+  'withUsedByClients',
+  {},
+  function withUsedByClients<
+    T extends {
+      isUsed: boolean;
+    },
+  >(
+    input: Record<string, T>,
+    deps: {
+      operationsManager: OperationsManager;
+      selector: TargetSelector;
+      period: DateRange;
+      typename: string;
+    },
+  ): Record<
+    string,
+    T & {
+      usedByClients: () => PromiseOrValue<Array<string>>;
+      period: DateRange;
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+      typename: string;
+    }
+  > {
+    // input can contain ALLLLLLLLLL the schema coordinates.
+    // in order to be more efficient we lazily create the properties here as we could accidentially create way tooo much stuff!
+    return new Proxy(input, {
+      get(target, property, receiver) {
+        if (
+          typeof property !== 'string' ||
+          /** some code might check if this is a promise :D */
+          property === 'then'
+        ) {
+          return Reflect.get(target, property, receiver);
+        }
 
-          // It's using DataLoader under the hood so it's safe to call it multiple times for different coordinates
-          return deps.operationsManager.getClientNamesPerCoordinateOfType({
-            ...deps.selector,
-            period: deps.period,
-            typename: deps.typename,
-            schemaCoordinate,
-          });
-        },
+        // Guard against trying to look up properties that do not belong to this typename!
+        if (!property.startsWith(deps.typename)) {
+          return undefined;
+        }
+
+        const schemaCoordinate = property;
+        const record = input[property];
+
+        if (!record) {
+          return undefined;
+        }
+
+        return {
+          selector: deps.selector,
+          period: deps.period,
+          typename: deps.typename,
+          organizationId: deps.selector.organizationId,
+          projectId: deps.selector.projectId,
+          targetId: deps.selector.targetId,
+          ...record,
+          usedByClients() {
+            if (record.isUsed === false) {
+              return [];
+            }
+
+            // It's using DataLoader under the hood so it's safe to call it multiple times for different coordinates
+            return deps.operationsManager.getClientNamesPerCoordinateOfType({
+              ...deps.selector,
+              period: deps.period,
+              schemaCoordinate,
+            });
+          },
+        };
       },
-    ]),
-  );
-}
+    }) as Record<
+      string,
+      T & {
+        usedByClients: () => PromiseOrValue<Array<string>>;
+        period: DateRange;
+        organizationId: string;
+        projectId: string;
+        targetId: string;
+        typename: string;
+      }
+    >;
+  },
+);
 
 function deprecationReasonFromDirectives(directives: readonly ConstDirectiveNode[] | undefined) {
   if (!directives) {
