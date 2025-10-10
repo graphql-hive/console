@@ -71,10 +71,8 @@ export function LegacyCompositionSettings(props: {
           toast({
             title: 'Successfully enabled legacy composition',
             description: `Your project is no longer using ${
-              previousCompositionMode === 'external'
-                ? 'external schema composition.'
-                : 'our Open Source composition library for GraphQL Federation.'
-            }`,
+              previousCompositionMode
+            } schema composition.`,
           });
         } else if (updateResult.error) {
           toast({
