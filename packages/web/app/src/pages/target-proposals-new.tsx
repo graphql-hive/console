@@ -864,6 +864,7 @@ function OverviewTab(props: {
           className="mt-2"
           value={props.title}
           onChange={e => props.setTitle(e.currentTarget.value)}
+          maxLength={72}
         />
       </div>
       <div className="pb-10">
@@ -874,9 +875,12 @@ function OverviewTab(props: {
           aria-label="description"
           id="proposal-description"
           name="proposal-description"
-          className="mt-2"
+          // @ts-expect-error: because fieldSizing doesnt exist on the current version
+          style={{ fieldSizing: 'content' }}
+          className="mt-2 h-auto min-h-40 resize-none"
           value={props.description}
           onChange={e => props.setDescription(e.currentTarget.value)}
+          maxLength={5000}
         />
       </div>
       {props.onNextPage !== undefined && (
