@@ -1,4 +1,5 @@
 module github.com/graphql-hive/console/docker/configs/otel-collector/extension-hiveauth
+
 go 1.23.0
 
 require (

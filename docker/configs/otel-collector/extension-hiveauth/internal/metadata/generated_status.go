@@ -8,7 +8,7 @@ import (
 
 var (
 	Type      = component.MustNewType("hiveauth")
-	ScopeName = "github.com/graphql-hive/opentelemetry-collector-contrib/extension/hiveauthextension"
+	ScopeName = "github.com/graphql-hive/console/docker/configs/otel-collector/extension-hiveauth"
 )
 
 const (
