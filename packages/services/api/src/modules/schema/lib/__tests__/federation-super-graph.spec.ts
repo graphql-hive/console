@@ -1,4 +1,5 @@
 import { parse } from 'graphql';
+import { composeServices } from '@theguild/federation-composition';
 import { extractSuperGraphInformation } from '../federation-super-graph.js';
 
 const federation2SDL = parse(/* GraphQL */ `
@@ -479,4 +480,66 @@ describe('extractSuperGraphInformation', () => {
       }
     `);
   });
+});
+
+test('subgraph ownership for external fields is correct', () => {
+  const a = parse(/* GraphQL */ `
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"])
+
+    type Product @key(fields: "id") {
+      id: ID!
+      weight: ProductWeight!
+    }
+
+    type ProductWeight {
+      id: ID!
+      weight: Int!
+    }
+
+    type Query {
+      a: Product!
+      g: ProductWeight!
+    }
+  `);
+
+  const b = parse(/* GraphQL */ `
+    extend schema
+      @link(
+        url: "https://specs.apollo.dev/federation/v2.3"
+        import: ["@key", "@external", "@requires"]
+      )
+
+    type Product @key(fields: "id") {
+      id: ID!
+      weight: ProductWeight! @external
+      shippingCosts: Int! @requires(fields: "weight { id }")
+    }
+
+    type ProductWeight @external {
+      id: ID!
+    }
+
+    type Query {
+      c: Product!
+    }
+  `);
+
+  const result = composeServices([
+    {
+      name: 'a',
+      typeDefs: a,
+    },
+    {
+      name: 'b',
+      typeDefs: b,
+    },
+  ]);
+
+  const supergraphInfo = extractSuperGraphInformation(parse(result.supergraphSdl!));
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('Product.weight')).toEqual(['a']);
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('ProductWeight.id')).toEqual(['a']);
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('ProductWeight')).toEqual(['a', 'b']);
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('Product.shippingCosts')).toEqual([
+    'b',
+  ]);
 });
