@@ -25,3 +25,6 @@ extensions:
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
       v0.122.0
+  - gomod: github.com/graphql-hive/console/docker/configs/otel-collector/extension-hiveauth v0.0.0
+    path: ./extension-hiveauth
+    name: hiveauthextension # when using local extensions, package name is required, therwise you get "missing import path"
