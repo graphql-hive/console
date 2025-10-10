@@ -20,3 +20,8 @@ exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.122.0
   - gomod:
       github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.122.0
+
+extensions:
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
+      v0.122.0
