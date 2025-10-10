@@ -601,9 +601,11 @@ export class SchemaManager {
       const message = 'Schema composition is supported only by Federation projects';
       if (input.mode === 'native') {
         return { error: { __typename: 'UpdateSchemaCompositionNativeError', message } } as const;
-      } else if (input.mode === 'legacy') {
+      }
+      if (input.mode === 'legacy') {
         return { error: { __typename: 'UpdateSchemaCompositionLegacyError', message } } as const;
-      } else if (input.mode === 'external') {
+      }
+      if (input.mode === 'external') {
         return { error: { __typename: 'UpdateSchemaCompositionExternalError', message } } as const;
       }
     }

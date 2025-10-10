@@ -174,6 +174,8 @@ export function NativeCompositionSettings(props: {
           description: result.message,
         });
       } else {
+        // actually not a hook
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         const updateResult = useFragment(NativeCompositionSettings_UpdateResultFragment, result);
         if (updateResult.ok) {
           toast({

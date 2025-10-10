@@ -245,6 +245,8 @@ export const ExternalCompositionSettings = (props: {
           notify(result.message, 'error');
           setError(result.message);
         } else {
+          // actually not a hook
+          // eslint-disable-next-line react-hooks/rules-of-hooks
           const updateResult = useFragment(
             ExternalCompositionSettings_UpdateResultFragment,
             result,
