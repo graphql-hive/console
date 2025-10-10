@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
 
-	"github.com/graphql-hive/opentelemetry-collector-contrib/extension/hiveauthextension/internal/metadata"
+	"github.com/graphql-hive/console/docker/configs/otel-collector/extension-hiveauth/internal/metadata"
 )
 
 // NewFactory creates a factory for the static bearer token Authenticator extension.
