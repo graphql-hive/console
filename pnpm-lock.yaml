@@ -869,8 +869,8 @@ importers:
         specifier: 17.5.0
         version: 17.5.0
       supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
+        specifier: 16.7.6
+        version: 16.7.6(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1338,8 +1338,8 @@ importers:
         specifier: 0.0.4
         version: 0.0.4
       supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
+        specifier: 16.7.6
+        version: 16.7.6(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1421,7 +1421,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 5.1.0-alpha-20231208113249-34700c8a
-        version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.11.0)
+        version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -2032,8 +2032,8 @@ importers:
         specifier: 8.4.7
         version: 8.4.7(prettier@3.4.2)
       supertokens-auth-react:
-        specifier: 0.38.0
-        version: 0.38.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0)
+        specifier: 0.50.0
+        version: 0.50.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0)
       supertokens-web-js:
         specifier: 0.9.0
         version: 0.9.0
@@ -3660,7 +3660,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -7409,6 +7408,10 @@ packages:
   '@sigstore/verify@1.1.0':
     resolution: {integrity: sha512-1fTqnqyTBWvV7cftUUFtDcHPdSox0N3Ub7C0lRyReYx4zZUlNTZjCV+HPy4Lre+r45dV7Qx5JLKvqqsgxuyYfg==}
     engines: {node: ^16.14.0 || >=18.0.0}
+
+  '@simplewebauthn/types@12.0.0':
+    resolution: {integrity: sha512-q6y8MkoV8V8jB4zzp18Uyj2I7oFp2/ONL8c3j8uT06AOWu3cIChc1au71QYHrP2b+xDapkGTiv+9lX7xkTlAsA==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
@@ -14723,6 +14726,9 @@ packages:
     resolution: {integrity: sha512-pMpnA0qRdFp32b1sJl1wOJNxZLQ2cbQx+k6tjNtZ8CpvVhNqEPRgivZ2WOUev2YMajecdH7ctUPDvEe87nariQ==}
     engines: {node: '>=6.0.0'}
 
+  qr.js@0.0.0:
+    resolution: {integrity: sha512-c4iYnWb+k2E+vYpRimHqSu575b1/wKl4XFeJGpFmrJQz5I88v9aY2czh7s0w36srfCM1sXgC/xpoJz5dJfq+OQ==}
+
   qs@6.13.0:
     resolution: {integrity: sha512-+38qI9SOr8tfZ4QmJNplMUxqjbe7LKvvZgWdExBOmd+egZTtjLB67Gu0HRX3u/XOq7UU2Nx6nsjvS16Z9uwfpg==}
     engines: {node: '>=0.6'}
@@ -14870,6 +14876,11 @@ packages:
     resolution: {integrity: sha512-mAIPHfioD7yxO0GNYVFD1303QFtI3lyyQZLY229UEAp/a10cSW+hPcakg0Keq8uWJxT2OiT/4Gt+Lc9bD6bJmQ==}
     peerDependencies:
       react: '>=16.6.0'
+
+  react-qr-code@2.0.18:
+    resolution: {integrity: sha512-v1Jqz7urLMhkO6jkgJuBYhnqvXagzceg3qJUWayuCK/c6LTIonpWbwxR1f1APGd4xrW/QcQEovNrAojbUz65Tg==}
+    peerDependencies:
+      react: '*'
 
   react-refresh@0.14.2:
     resolution: {integrity: sha512-jCvmsr+1IUSMUyzOkRcvnVbX3ZYC6g9TDrDbFuFmRDq7PD4yaGbLKNQL6k2jnArV8hjYxh7hVhAZB6s9HDGpZA==}
@@ -15904,19 +15915,19 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  supertokens-auth-react@0.38.0:
-    resolution: {integrity: sha512-MOFSZtmcbpp65hEXeCmn3hwiPVLnkcpW97U9J36osbqRH9eI6MD0HiRkKG8KvA+vV+FIaC2xiCu9OOLmyZk1EA==}
+  supertokens-auth-react@0.50.0:
+    resolution: {integrity: sha512-XEjpDY2kOhwoC7PNzjFZI/7XhABrzWVF90fS6LcsGiKQEGMqCKl9qGUqN+PrH6X8h1OLYxCGrlRBdVwKUgu4JA==}
     engines: {node: '>=16.0.0', npm: '>=8'}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
-      supertokens-web-js: ^0.9.0
+      supertokens-web-js: ^0.16.0
 
   supertokens-js-override@0.0.4:
     resolution: {integrity: sha512-r0JFBjkMIdep3Lbk3JA+MpnpuOtw4RSyrlRAbrzMcxwiYco3GFWl/daimQZ5b1forOiUODpOlXbSOljP/oyurg==}
 
-  supertokens-node@16.7.5:
-    resolution: {integrity: sha512-xrVwi0GfgLIqHKaWXEp7fCgmVQ2wTiJTHG2CQGLkGMvrO9dUcxY+H6qozn3EvyXxbkm1BmflYD8N7ILNSIbR1g==}
+  supertokens-node@16.7.6:
+    resolution: {integrity: sha512-2yqoF6vvpfJEd66Ug261I2IsVrHO3D2XPaY3Xeo5A3CL3V/LIQ9zGfcgS0fDdx49F6Ep2DDqQ35zzgqVRMPaXg==}
 
   supertokens-web-js@0.9.0:
     resolution: {integrity: sha512-7DucVUWxImrcjckza0oW6tkPfMzScj8V/qiQNZeUT/EfCqIbslNSO8holBHc9Eykc0vG/CC0d9ne5TRhAmRcxg==}
@@ -19955,13 +19966,6 @@ snapshots:
     dependencies:
       dependency-graph: 0.11.0
       graphql: 16.9.0
-      object-inspect: 1.12.3
-      tslib: 2.6.2
-
-  '@graphql-inspector/core@5.1.0-alpha-20231208113249-34700c8a(graphql@16.11.0)':
-    dependencies:
-      dependency-graph: 0.11.0
-      graphql: 16.11.0
       object-inspect: 1.12.3
       tslib: 2.6.2
 
@@ -24696,6 +24700,8 @@ snapshots:
       '@sigstore/bundle': 2.2.0
       '@sigstore/core': 1.0.0
       '@sigstore/protobuf-specs': 0.3.0
+
+  '@simplewebauthn/types@12.0.0': {}
 
   '@sinclair/typebox@0.27.8': {}
 
@@ -33674,6 +33680,8 @@ snapshots:
 
   pvutils@1.1.3: {}
 
+  qr.js@0.0.0: {}
+
   qs@6.13.0:
     dependencies:
       side-channel: 1.0.6
@@ -33832,6 +33840,12 @@ snapshots:
       prop-types: 15.8.1
       react: 19.0.0
       react-fast-compare: 3.2.2
+
+  react-qr-code@2.0.18(react@18.3.1):
+    dependencies:
+      prop-types: 15.8.1
+      qr.js: 0.0.0
+      react: 18.3.1
 
   react-refresh@0.14.2: {}
 
@@ -35154,18 +35168,20 @@ snapshots:
       pirates: 4.0.5
       ts-interface-checker: 0.1.13
 
-  supertokens-auth-react@0.38.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0):
+  supertokens-auth-react@0.50.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(supertokens-web-js@0.9.0):
     dependencies:
+      '@simplewebauthn/types': 12.0.0
       intl-tel-input: 17.0.19
       prop-types: 15.8.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+      react-qr-code: 2.0.18(react@18.3.1)
       supertokens-js-override: 0.0.4
       supertokens-web-js: 0.9.0
 
   supertokens-js-override@0.0.4: {}
 
-  supertokens-node@16.7.5(encoding@0.1.13):
+  supertokens-node@16.7.6(encoding@0.1.13):
     dependencies:
       content-type: 1.0.5
       cookie: 0.7.2
