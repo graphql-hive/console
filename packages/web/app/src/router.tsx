@@ -1,4 +1,5 @@
-import { lazy, useCallback, useEffect } from 'react';
+import { lazy, useCallback, useEffect, useMemo } from 'react';
+import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
@@ -19,6 +20,8 @@ import {
   createRouter,
   Navigate,
   Outlet,
+  parseSearchWith,
+  stringifySearchWith,
   useNavigate,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
@@ -74,6 +77,13 @@ import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
+import { TargetTracePage } from './pages/target-trace';
+import {
+  FilterState,
+  TargetTracesFilterState,
+  TargetTracesPage,
+  TargetTracesSort,
+} from './pages/target-traces';
 
 SuperTokens.init(frontendConfig());
 if (env.sentry) {
@@ -646,6 +656,85 @@ const targetInsightsRoute = createRoute({
   },
 });
 
+const TargetTracesRouteSearch = z.object({
+  filter: TargetTracesFilterState.optional(),
+  sort: TargetTracesSort.shape.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
+const targetTracesRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'traces',
+  validateSearch: TargetTracesRouteSearch.parse,
+  component: function TargetTracesRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
+    const {
+      filter = {
+        'graphql.client': [],
+        'graphql.errorCode': [],
+        'graphql.kind': [],
+        'graphql.operation': [],
+        'graphql.status': [],
+        'graphql.subgraph': [],
+        'http.host': [],
+        'http.method': [],
+        'http.route': [],
+        'http.status': [],
+        'http.url': [],
+        'trace.id': [],
+        duration: [],
+      } satisfies FilterState,
+      sort = {
+        id: 'timestamp',
+        desc: true,
+      },
+      from,
+      to,
+    } = targetTracesRoute.useSearch();
+
+    const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
+
+    return (
+      <TargetTracesPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        sorting={sort}
+        filter={filter}
+        range={range}
+      />
+    );
+  },
+});
+
+const TargetTraceRouteSearchModel = z.object({
+  activeSpanId: z.string().optional(),
+  activeSpanTab: z.string().optional(),
+});
+
+const targetTraceRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  validateSearch(search) {
+    return TargetTraceRouteSearchModel.parse(search);
+  },
+  path: 'trace/$traceId',
+  component: function TargetTraceRoute() {
+    const { organizationSlug, projectSlug, targetSlug, traceId } = targetTraceRoute.useParams();
+    const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();
+    return (
+      <TargetTracePage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        traceId={traceId}
+        activeSpanId={activeSpanId ?? null}
+        activeSpanTab={activeSpanTab ?? null}
+      />
+    );
+  },
+});
+
 const targetInsightsCoordinateRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights/schema-coordinate/$coordinate',
@@ -876,6 +965,8 @@ const routeTree = root.addChildren([
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
+      targetTraceRoute,
+      targetTracesRoute,
       targetInsightsCoordinateRoute,
       targetInsightsClientRoute,
       targetInsightsOperationsRoute,
@@ -890,7 +981,21 @@ const routeTree = root.addChildren([
   ]),
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  parseSearch: parseSearchWith(str => {
+    if (window.location.pathname.endsWith('/traces')) {
+      return jsUrlParse(str);
+    }
+    return JSON.parse(str);
+  }),
+  stringifySearch: stringifySearchWith(search => {
+    if (window.location.pathname.endsWith('/traces')) {
+      return jsUrlStringify(search);
+    }
+    return JSON.stringify(search);
+  }),
+});
 
 router.history.subscribe(() => {
   gtag.pageview(router.history.location.href);

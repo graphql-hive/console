@@ -19,7 +19,7 @@ const CoordinateClientNamesGroupModel = z.array(
   }),
 );
 
-function formatDate(date: Date): string {
+export function formatDate(date: Date): string {
   return format(addMinutes(date, date.getTimezoneOffset()), 'yyyy-MM-dd HH:mm:ss');
 }
 

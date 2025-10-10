@@ -1,5 +1,8 @@
 import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
+import type { Span, Trace, TraceBreakdownLoader } from './providers/traces';
+
+// import { SqlValue } from './providers/sql';
 
 type Connection<TNode> = {
   pageInfo: PageInfo;
@@ -41,3 +44,8 @@ export interface DurationValuesMapper {
   p95: number | null;
   p99: number | null;
 }
+
+export type TracesFilterOptionsMapper = TraceBreakdownLoader;
+
+export type TraceMapper = Trace;
+export type SpanMapper = Span;

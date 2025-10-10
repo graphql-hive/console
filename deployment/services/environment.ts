@@ -79,6 +79,11 @@ export function prepareEnvironment(input: {
         cpuLimit: isProduction ? '512m' : '150m',
         memoryLimit: isProduction ? '1000Mi' : '300Mi',
       },
+      tracingCollector: {
+        cpuLimit: isProduction ? '1000m' : '100m',
+        memoryLimit: isProduction ? '2000Mi' : '200Mi',
+        maxReplicas: isProduction || isStaging ? 3 : 1,
+      },
     },
   };
 }

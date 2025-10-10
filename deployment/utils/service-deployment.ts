@@ -40,6 +40,8 @@ export class ServiceDeployment {
       args?: kx.types.Container['args'];
       image: string;
       port?: number;
+      /** Port to use for liveness, startup and readiness probes. */
+      probePort?: number;
       serviceAccountName?: pulumi.Output<string>;
       livenessProbe?: string | ProbeConfig;
       readinessProbe?: string | ProbeConfig;
@@ -107,6 +109,7 @@ export class ServiceDeployment {
 
   createPod(asJob: boolean) {
     const port = this.options.port || 3000;
+    const probePort = this.options.probePort ?? port;
     const additionalEnv: any[] = normalizeEnv(this.options.env);
     const secretsEnv: any[] = normalizeEnvSecrets(this.envSecrets);
 
@@ -125,14 +128,14 @@ export class ServiceDeployment {
               timeoutSeconds: 5,
               httpGet: {
                 path: this.options.livenessProbe,
-                port,
+                port: probePort,
               },
             }
           : {
               ...this.options.livenessProbe,
               httpGet: {
                 path: this.options.livenessProbe.endpoint,
-                port,
+                port: probePort,
               },
             };
     }
@@ -147,14 +150,14 @@ export class ServiceDeployment {
               timeoutSeconds: 5,
               httpGet: {
                 path: this.options.readinessProbe,
-                port,
+                port: probePort,
               },
             }
           : {
               ...this.options.readinessProbe,
               httpGet: {
                 path: this.options.readinessProbe.endpoint,
-                port,
+                port: probePort,
               },
             };
     }
@@ -169,14 +172,14 @@ export class ServiceDeployment {
               timeoutSeconds: 10,
               httpGet: {
                 path: this.options.startupProbe,
-                port,
+                port: probePort,
               },
             }
           : {
               ...this.options.startupProbe,
               httpGet: {
                 path: this.options.startupProbe.endpoint,
-                port,
+                port: probePort,
               },
             };
     }

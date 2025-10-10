@@ -1,0 +1,79 @@
+extensions:
+  hiveauth:
+    endpoint: ${HIVE_OTEL_AUTH_ENDPOINT}
+  health_check:
+    endpoint: '0.0.0.0:13133'
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        include_metadata: true
+        endpoint: '0.0.0.0:4317'
+        auth:
+          authenticator: hiveauth
+      http:
+        cors:
+          allowed_origins: ['*']
+          allowed_headers: ['*']
+        include_metadata: true
+        endpoint: '0.0.0.0:4318'
+        auth:
+          authenticator: hiveauth
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 10000
+  attributes:
+    actions:
+      - key: hive.target_id
+        from_context: auth.targetId
+        action: insert
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+exporters:
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+  clickhouse:
+    endpoint: ${CLICKHOUSE_PROTOCOL}://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}?dial_timeout=10s&compress=lz4&async_insert=1
+    database: default
+    async_insert: true
+    username: ${CLICKHOUSE_USERNAME}
+    password: ${CLICKHOUSE_PASSWORD}
+    create_schema: false
+    ttl: 720h
+    compress: lz4
+    logs_table_name: otel_logs
+    traces_table_name: otel_traces
+    metrics_table_name: otel_metrics
+    timeout: 5s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+service:
+  extensions:
+    - hiveauth
+    - health_check
+  telemetry:
+    logs:
+      level: INFO
+      encoding: json
+      output_paths: ['stdout']
+      error_output_paths: ['stderr']
+    metrics:
+      address: '0.0.0.0:10254'
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors:
+        - memory_limiter
+        - attributes
+        - batch
+      exporters:
+        - clickhouse
+        # - debug
