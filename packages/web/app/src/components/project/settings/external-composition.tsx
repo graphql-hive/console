@@ -271,14 +271,14 @@ export const ExternalCompositionSettings = (props: {
             setError(updateResult.error.message);
 
             if (updateResult.error.__typename === 'UpdateSchemaCompositionExternalError') {
-              if (updateResult.error.inputErrors.endpoint) {
+              if (updateResult.error.inputErrors?.endpoint) {
                 form.setError('endpoint', {
                   type: 'manual',
                   message: updateResult.error.inputErrors.endpoint,
                 });
               }
 
-              if (updateResult.error.inputErrors.secret) {
+              if (updateResult.error.inputErrors?.secret) {
                 form.setError('secret', {
                   type: 'manual',
                   message: updateResult.error.inputErrors.secret,
