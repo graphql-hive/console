@@ -82,7 +82,7 @@ export default gql`
 
   type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError & Error {
     message: String!
-    inputErrors: UpdateSchemaCompositionExternalInputErrors!
+    inputErrors: UpdateSchemaCompositionExternalInputErrors
   }
 
   type UpdateSchemaCompositionExternalInputErrors {
