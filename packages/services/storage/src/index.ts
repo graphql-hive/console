@@ -1483,9 +1483,7 @@ export async function createStorage(
           UPDATE projects
           SET
             native_federation = ${enabled},
-            external_composition_enabled = FALSE,
-            external_composition_endpoint = NULL,
-            external_composition_secret = NULL
+            external_composition_enabled = FALSE
           WHERE id = ${project}
           RETURNING *
         `),
