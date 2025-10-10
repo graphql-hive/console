@@ -1,4 +1,3 @@
-import type Dataloader from 'dataloader';
 import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
 import type { Span, Trace, TraceBreakdownLoader } from './providers/traces';
