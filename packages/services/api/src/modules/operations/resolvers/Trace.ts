@@ -12,15 +12,6 @@ import type { TraceResolvers } from './../../../__generated__/types';
  */
 export const Trace: TraceResolvers = {
   /* Implement Trace resolver logic here */
-  clientName(trace) {
-    return trace.clientName;
-  },
-  clientVersion(trace) {
-    return trace.clientVersion;
-  },
-  httpStatusCode(trace) {
-    return trace.httpStatusCode;
-  },
   id(trace) {
     return trace.traceId;
   },
@@ -43,7 +34,7 @@ export const Trace: TraceResolvers = {
       (trace.httpStatusCode.startsWith('2') || trace.httpStatusCode.startsWith('3'))
     );
   },
-  operationHash: async trace => {
+  operationHash(trace) {
     return trace.graphqlOperationHash;
   },
 };
