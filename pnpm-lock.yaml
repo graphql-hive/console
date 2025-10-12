@@ -93,8 +93,8 @@ importers:
         specifier: 2.29.7
         version: 2.29.7(@types/node@22.10.5)
       '@eddeee888/gcg-typescript-resolver-files':
-        specifier: 0.13.0
-        version: 0.13.0(encoding@0.1.13)(graphql@16.9.0)
+        specifier: 0.0.0-pr397-run750-1-20251012110523
+        version: 0.0.0-pr397-run750-1-20251012110523(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-codegen/add':
         specifier: 6.0.0
         version: 6.0.0(graphql@16.9.0)
@@ -217,7 +217,7 @@ importers:
         version: 5.7.3
       vite-tsconfig-paths:
         specifier: 5.1.4
-        version: 5.1.4(typescript@5.7.3)(vite@7.1.5(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0))
+        version: 5.1.4(typescript@5.7.3)(vite@6.3.5(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0))
       vitest:
         specifier: 3.2.4
         version: 3.2.4(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -1421,7 +1421,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 5.1.0-alpha-20231208113249-34700c8a
-        version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.11.0)
+        version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -3232,8 +3232,8 @@ packages:
   '@eddeee888/gcg-server-config@0.3.0':
     resolution: {integrity: sha512-ym4wzmtb3CJFm8Z7X1pcTg/oUTINrI8bxF3q7AnbFDE9R+6Ldi/VI17yZfUqxyC/u5QcvDRGBI1WxEZnkkhqXA==}
 
-  '@eddeee888/gcg-typescript-resolver-files@0.13.0':
-    resolution: {integrity: sha512-4n4/RhtMI5oLNwpJiRJK7bpo4F0Ob+W9Cq9pd/TZzQ1oiFb3/r6+zmaW/xIiw4zKJmMF06ik3vu3o6z7MHROWw==}
+  '@eddeee888/gcg-typescript-resolver-files@0.0.0-pr397-run750-1-20251012110523':
+    resolution: {integrity: sha512-lp2+AVDcCV30bXuVZWoa8waGpPt0KQCYt60BAUgfCGqk3A26czDlL40k7Hxx+qhg1BZEIqJn1lueQWGt437TGA==}
     peerDependencies:
       graphql: ^15.0.0 || ^16.0.0
 
@@ -3660,7 +3660,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -17591,8 +17590,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -17699,11 +17698,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -17742,6 +17741,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -17875,11 +17875,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -17918,7 +17918,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -18032,7 +18031,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -18151,7 +18150,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -18326,7 +18325,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -19099,7 +19098,7 @@ snapshots:
       - graphql-sock
       - supports-color
 
-  '@eddeee888/gcg-typescript-resolver-files@0.13.0(encoding@0.1.13)(graphql@16.9.0)':
+  '@eddeee888/gcg-typescript-resolver-files@0.0.0-pr397-run750-1-20251012110523(encoding@0.1.13)(graphql@16.9.0)':
     dependencies:
       '@eddeee888/gcg-server-config': 0.3.0(encoding@0.1.13)(graphql@16.9.0)
       '@graphql-codegen/add': 6.0.0(graphql@16.9.0)
@@ -19955,13 +19954,6 @@ snapshots:
     dependencies:
       dependency-graph: 0.11.0
       graphql: 16.9.0
-      object-inspect: 1.12.3
-      tslib: 2.6.2
-
-  '@graphql-inspector/core@5.1.0-alpha-20231208113249-34700c8a(graphql@16.11.0)':
-    dependencies:
-      dependency-graph: 0.11.0
-      graphql: 16.11.0
       object-inspect: 1.12.3
       tslib: 2.6.2
 
@@ -36094,6 +36086,17 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  vite-tsconfig-paths@5.1.4(typescript@5.7.3)(vite@6.3.5(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)):
+    dependencies:
+      debug: 4.3.7(supports-color@8.1.1)
+      globrex: 0.1.2
+      tsconfck: 3.0.3(typescript@5.7.3)
+    optionalDependencies:
+      vite: 6.3.5(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   vite-tsconfig-paths@5.1.4(typescript@5.7.3)(vite@7.1.5(@types/node@22.10.5)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)):
     dependencies:

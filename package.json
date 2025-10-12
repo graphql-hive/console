@@ -59,7 +59,7 @@
     "@actions/core": "1.11.1",
     "@changesets/changelog-github": "0.5.1",
     "@changesets/cli": "2.29.7",
-    "@eddeee888/gcg-typescript-resolver-files": "0.13.0",
+    "@eddeee888/gcg-typescript-resolver-files": "0.0.0-pr397-run750-1-20251012110523",
     "@graphql-codegen/add": "6.0.0",
     "@graphql-codegen/cli": "6.0.0",
     "@graphql-codegen/client-preset": "5.0.2",
