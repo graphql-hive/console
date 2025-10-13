@@ -343,7 +343,7 @@ export class TraceBreakdownLoader {
       const statements: SqlValue[] = [];
       const arrJoinColumnAlias = 'arr_join_column_value';
 
-      const (let { key, columnExpression, limit, arrayJoinColumn } of inputs) {
+      for (const { key, columnExpression, limit, arrayJoinColumn } of inputs) {
         statements.push(sql`
           SELECT
             '${sql.raw(key)}' AS "key"
