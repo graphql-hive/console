@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
+import { PolicySettings } from '@/components/policy/policy-settings';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -31,7 +32,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
-import { graphql, useFragment } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
@@ -336,6 +337,129 @@ function ProjectDelete(props: { organizationSlug: string; projectSlug: string })
   );
 }
 
+const ProjectPolicySettings_ProjectFragment = graphql(`
+  fragment ProjectPolicySettings_ProjectFragment on Project {
+    id
+    slug
+    schemaPolicy {
+      id
+      updatedAt
+      ...PolicySettings_SchemaPolicyFragment
+    }
+    parentSchemaPolicy {
+      id
+      updatedAt
+      allowOverrides
+      rules {
+        rule {
+          id
+        }
+      }
+    }
+    viewerCanModifySchemaPolicy
+  }
+`);
+
+const UpdateSchemaPolicyForProject = graphql(`
+  mutation UpdateSchemaPolicyForProject(
+    $selector: ProjectSelectorInput!
+    $policy: SchemaPolicyInput!
+  ) {
+    updateSchemaPolicyForProject(selector: $selector, policy: $policy) {
+      error {
+        message
+      }
+      ok {
+        project {
+          id
+          schemaPolicy {
+            id
+            updatedAt
+            ...PolicySettings_SchemaPolicyFragment
+          }
+        }
+      }
+    }
+  }
+`);
+
+function ProjectPolicySettings(props: {
+  organizationSlug: string;
+  project: FragmentType<typeof ProjectPolicySettings_ProjectFragment>;
+}) {
+  const [mutation, mutate] = useMutation(UpdateSchemaPolicyForProject);
+  const { toast } = useToast();
+
+  const currentProject = useFragment(ProjectPolicySettings_ProjectFragment, props.project);
+
+  return (
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Rules"
+        description={
+          <>
+            <CardDescription>
+              At the project level, policies can be defined to affect all targets, and override
+              policy configuration defined at the organization level.
+            </CardDescription>
+            <CardDescription>
+              <DocsLink href="/features/schema-policy" className="text-muted-foreground text-sm">
+                Learn more
+              </DocsLink>
+            </CardDescription>
+          </>
+        }
+      />
+      {currentProject.parentSchemaPolicy === null ||
+      currentProject.parentSchemaPolicy?.allowOverrides ? (
+        <PolicySettings
+          saving={mutation.fetching}
+          rulesInParent={currentProject.parentSchemaPolicy?.rules.map(r => r.rule.id)}
+          error={
+            mutation.error?.message || mutation.data?.updateSchemaPolicyForProject.error?.message
+          }
+          onSave={
+            currentProject?.viewerCanModifySchemaPolicy
+              ? async newPolicy => {
+                  await mutate({
+                    selector: {
+                      organizationSlug: props.organizationSlug,
+                      projectSlug: currentProject.slug,
+                    },
+                    policy: newPolicy,
+                  }).then(result => {
+                    if (result.error || result.data?.updateSchemaPolicyForProject.error) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Error',
+                        description:
+                          result.error?.message ||
+                          result.data?.updateSchemaPolicyForProject.error?.message,
+                      });
+                    } else {
+                      toast({
+                        variant: 'default',
+                        title: 'Success',
+                        description: 'Policy updated successfully',
+                      });
+                    }
+                  });
+                }
+              : null
+          }
+          currentState={currentProject.schemaPolicy}
+        />
+      ) : (
+        <div className="pl-1 text-sm font-bold text-gray-400">
+          <p className="mr-4 inline-block text-orange-500">!</p>
+          Organization settings does not allow projects to override policy. Please consult your
+          organization administrator.
+        </div>
+      )}
+    </SubPageLayout>
+  );
+}
+
 const ProjectSettingsPage_OrganizationFragment = graphql(`
   fragment ProjectSettingsPage_OrganizationFragment on Organization {
     id
@@ -353,6 +477,7 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
     viewerCanDelete
     viewerCanModifySettings
     ...CompositionSettings_ProjectFragment
+    ...ProjectPolicySettings_ProjectFragment
   }
 `);
 
@@ -409,19 +534,26 @@ function ProjectSettingsContent(props: {
     const pages: Array<{
       key: ProjectSettingsSubPage;
       title: string;
-    }> = [
-      {
+    }> = [];
+
+    if (project?.viewerCanModifySettings) {
+      pages.push({
         key: 'general',
         title: 'General',
-      },
-    ];
+      });
+    }
+
+    pages.push({
+      key: 'policy',
+      title: 'Policy',
+    });
 
     return pages;
-  }, []);
+  }, [project]);
 
   const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
 
-  if (project?.viewerCanModifySettings === false || !resolvedPage || !organization || !project) {
+  if (!resolvedPage || !organization || !project) {
     return null;
   }
 
@@ -486,13 +618,16 @@ function ProjectSettingsContent(props: {
               ) : null}
             </>
           ) : null}
+          {resolvedPage.key === 'policy' ? (
+            <ProjectPolicySettings organizationSlug={organization.slug} project={project} />
+          ) : null}
         </div>
       </PageLayoutContent>
     </PageLayout>
   );
 }
 
-export const ProjectSettingsPageEnum = z.enum(['general']);
+export const ProjectSettingsPageEnum = z.enum(['general', 'policy']);
 
 export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
 

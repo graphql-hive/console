@@ -29,7 +29,6 @@ import { ProjectSelector } from './project-selector';
 export enum Page {
   Targets = 'targets',
   Alerts = 'alerts',
-  Policy = 'policy',
   Settings = 'settings',
 }
 
@@ -52,7 +51,6 @@ const ProjectLayoutQuery = graphql(`
         viewerCanModifySchemaPolicy
         viewerCanCreateTarget
         viewerCanModifyAlerts
-        viewerCanModifySettings
       }
     }
   }
@@ -142,30 +140,17 @@ export function ProjectLayout({
                         </Link>
                       </TabsTrigger>
                     )}
-                    <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                    <TabsTrigger variant="menu" value={Page.Settings} asChild>
                       <Link
-                        to="/$organizationSlug/$projectSlug/view/policy"
+                        to="/$organizationSlug/$projectSlug/view/settings"
                         params={{
                           organizationSlug: props.organizationSlug,
                           projectSlug: props.projectSlug,
                         }}
                       >
-                        Policy
+                        Settings
                       </Link>
                     </TabsTrigger>
-                    {currentProject.viewerCanModifySettings && (
-                      <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/view/settings"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                          }}
-                        >
-                          Settings
-                        </Link>
-                      </TabsTrigger>
-                    )}
                   </TabsList>
                 </Tabs>
               ) : (

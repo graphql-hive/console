@@ -6,8 +6,10 @@ import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
+import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -484,17 +486,144 @@ const OrganizationSettingsContent = (props: {
   );
 };
 
+const OrganizationPolicySettings_OrganizationFragment = graphql(`
+  fragment OrganizationPolicySettings_OrganizationFragment on Organization {
+    id
+    slug
+    schemaPolicy {
+      id
+      updatedAt
+      ...PolicySettings_SchemaPolicyFragment
+    }
+    viewerCanModifySchemaPolicy
+  }
+`);
+
+const UpdateSchemaPolicyForOrganization = graphql(`
+  mutation UpdateSchemaPolicyForOrganization(
+    $selector: OrganizationSelectorInput!
+    $policy: SchemaPolicyInput!
+    $allowOverrides: Boolean!
+  ) {
+    updateSchemaPolicyForOrganization(
+      selector: $selector
+      policy: $policy
+      allowOverrides: $allowOverrides
+    ) {
+      error {
+        message
+      }
+      ok {
+        organization {
+          id
+          schemaPolicy {
+            id
+            updatedAt
+            allowOverrides
+            ...PolicySettings_SchemaPolicyFragment
+          }
+        }
+      }
+    }
+  }
+`);
+
+function OrganizationPolicySettings(props: {
+  organization: FragmentType<typeof OrganizationPolicySettings_OrganizationFragment>;
+}) {
+  const [mutation, mutate] = useMutation(UpdateSchemaPolicyForOrganization);
+  const { toast } = useToast();
+
+  const currentOrganization = useFragment(
+    OrganizationPolicySettings_OrganizationFragment,
+    props.organization,
+  );
+
+  return (
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Rules"
+        description={
+          <CardDescription>
+            At the organizational level, policies can be defined to affect all projects and targets.
+            <br />
+            At the project level, policies can be overridden or extended.
+            <br />
+            <DocsLink className="text-muted-foreground" href="/features/schema-policy">
+              Learn more
+            </DocsLink>
+          </CardDescription>
+        }
+      />
+      <PolicySettings
+        saving={mutation.fetching}
+        error={
+          mutation.error?.message || mutation.data?.updateSchemaPolicyForOrganization.error?.message
+        }
+        onSave={
+          currentOrganization.viewerCanModifySchemaPolicy
+            ? async (newPolicy, allowOverrides) => {
+                await mutate({
+                  selector: {
+                    organizationSlug: currentOrganization.slug,
+                  },
+                  policy: newPolicy,
+                  allowOverrides,
+                })
+                  .then(result => {
+                    if (result.data?.updateSchemaPolicyForOrganization.error || result.error) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Error',
+                        description:
+                          result.data?.updateSchemaPolicyForOrganization.error?.message ||
+                          result.error?.message,
+                      });
+                    } else {
+                      toast({
+                        variant: 'default',
+                        title: 'Success',
+                        description: 'Policy updated successfully',
+                      });
+                    }
+                  })
+                  .catch();
+              }
+            : null
+        }
+        currentState={currentOrganization.schemaPolicy}
+      >
+        {form => (
+          <div className="flex items-center pl-1 pt-2">
+            <Checkbox
+              id="allowOverrides"
+              checked={form.values.allowOverrides}
+              value="allowOverrides"
+              onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
+              disabled={!currentOrganization.viewerCanModifySchemaPolicy}
+            />
+            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-gray-300">
+              Allow projects to override or disable rules
+            </label>
+          </div>
+        )}
+      </PolicySettings>
+    </SubPageLayout>
+  );
+}
+
 const OrganizationSettingsPageQuery = graphql(`
   query OrganizationSettingsPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...SettingsPageRenderer_OrganizationFragment
+      ...OrganizationPolicySettings_OrganizationFragment
       viewerCanAccessSettings
       viewerCanManageAccessTokens
     }
   }
 `);
 
-export const OrganizationSettingsPageEnum = z.enum(['general', 'access-tokens']);
+export const OrganizationSettingsPageEnum = z.enum(['general', 'policy', 'access-tokens']);
 export type OrganizationSettingsSubPage = z.TypeOf<typeof OrganizationSettingsPageEnum>;
 
 function SettingsPageContent(props: {
@@ -523,6 +652,11 @@ function SettingsPageContent(props: {
         title: 'General',
       });
     }
+
+    pages.push({
+      key: 'policy',
+      title: 'Policy',
+    });
 
     if (currentOrganization?.viewerCanManageAccessTokens) {
       pages.push({
@@ -597,6 +731,9 @@ function SettingsPageContent(props: {
                 organizationSlug={props.organizationSlug}
                 organization={currentOrganization}
               />
+            ) : null}
+            {resolvedPage.key === 'policy' ? (
+              <OrganizationPolicySettings organization={currentOrganization} />
             ) : null}
             {resolvedPage.key === 'access-tokens' ? (
               <AccessTokensSubPage organizationSlug={props.organizationSlug} />
