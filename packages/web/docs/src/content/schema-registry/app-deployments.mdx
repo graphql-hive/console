@@ -229,6 +229,35 @@ import activeAppImage from '../../../public/docs/pages/features/app-deployments/
 
 - [`app:publish` API Reference](https://github.com/graphql-hive/console/tree/main/packages/libraries/cli#hive-apppublish)
 
+## Retire an App Deployment
+
+An app deployment can be retired, which means it is no longer active and the persisted documents are
+no longer available on the Hive CDN. This is useful when you want to deprecate an old version of
+your app.
+
+To retire an app deployment, you can run the following command. Make sure you utilize the same
+`--name` and `--version` parameters as you used when creating the app deployment.
+
+```bash filename="Retire an App Deployment via CLI"
+hive app:retire \
+  --registry.accessToken "<ACCESS_TOKEN>" \
+  --target "<ORGANIZATION>/<PROJECT>/<TARGET>" \
+  --name "my-app" \
+  --version "1.0.0"
+```
+
+| Parameter   | Description                        |
+| ----------- | ---------------------------------- |
+| `--name`    | The name of the app deployment.    |
+| `--version` | The version of the app deployment. |
+
+After retiring the app deployment, the status of the app deployment on the Hive dashboard will
+change to **retired**.
+
+**Further reading**:
+
+- [`app:retire` API Reference](https://github.com/graphql-hive/console/tree/main/packages/libraries/cli#hive-appretire)
+
 ## Persisted Documents on GraphQL Server and Gateway
 
 Persisted documents can be used on your GraphQL server or Gateway to reduce the payload size of your

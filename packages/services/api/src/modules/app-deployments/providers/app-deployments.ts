@@ -484,7 +484,7 @@ export class AppDeployments {
       version: string;
     };
   }) {
-    this.logger.debug('activate app deployment (targetId=%s, appName=%s, appVersion=%s)');
+    this.logger.debug('retire app deployment (targetId=%s, appName=%s, appVersion=%s)');
 
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
@@ -510,7 +510,7 @@ export class AppDeployments {
 
     if (appDeployment === null) {
       this.logger.debug(
-        'activate app deployment failed as it does not exist. (targetId=%s, appName=%s, appVersion=%s)',
+        'retire app deployment failed as it does not exist. (targetId=%s, appName=%s, appVersion=%s)',
         args.targetId,
         args.appDeployment.name,
         args.appDeployment.version,
@@ -523,7 +523,7 @@ export class AppDeployments {
 
     if (appDeployment.activatedAt === null) {
       this.logger.debug(
-        'activate app deployment failed as it was never active. (targetId=%s, appDeploymentId=%s)',
+        'retire app deployment failed as it was never active. (targetId=%s, appDeploymentId=%s)',
         args.targetId,
         appDeployment.id,
       );
@@ -535,7 +535,7 @@ export class AppDeployments {
 
     if (appDeployment.retiredAt !== null) {
       this.logger.debug(
-        'activate app deployment failed as it is already retired. (targetId=%s, appDeploymentId=%s)',
+        'retire app deployment failed as it is already retired. (targetId=%s, appDeploymentId=%s)',
         args.targetId,
         appDeployment.id,
       );
@@ -598,7 +598,7 @@ export class AppDeployments {
         );
       `,
       timeout: 10000,
-      queryId: 'app-deployment-activate',
+      queryId: 'app-deployment-retire',
     });
 
     const updatedAppDeployment = await this.pool

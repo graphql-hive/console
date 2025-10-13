@@ -7,7 +7,7 @@ export const retireAppDeployment: NonNullable<MutationResolvers['retireAppDeploy
   { injector },
 ) => {
   const result = await injector.get(AppDeploymentsManager).retireAppDeployment({
-    targetId: input.targetId,
+    reference: input.target ?? null,
     appDeployment: {
       name: input.appName,
       version: input.appVersion,
