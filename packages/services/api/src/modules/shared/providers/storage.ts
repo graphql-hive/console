@@ -363,8 +363,6 @@ export interface Storage {
 
   getMaybeLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | null | never>;
 
-  getLatestVersion(_: TargetSelector): Promise<SchemaVersion | never>;
-
   getMaybeLatestVersion(_: TargetSelector): Promise<SchemaVersion | null>;
 
   /** Find the version before a schema version */

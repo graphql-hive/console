@@ -2034,31 +2034,17 @@ export async function createStorage(
 
       return SchemaVersionModel.parse(version);
     },
-    async getLatestVersion(args) {
-      const version = await pool.maybeOne<unknown>(
-        sql`/* getLatestVersion */
-          SELECT
-            ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
-          LIMIT 1
-        `,
-      );
-
-      return SchemaVersionModel.parse(version);
-    },
-
     async getMaybeLatestVersion(args) {
       const version = await pool.maybeOne<unknown>(
         sql`/* getMaybeLatestVersion */
           SELECT
             ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
+          FROM
+            "schema_versions" AS "sv"
+          WHERE
+            "sv"."target_id" = ${args.targetId}
+          ORDER BY
+            "sv"."created_at" DESC
           LIMIT 1
         `,
       );

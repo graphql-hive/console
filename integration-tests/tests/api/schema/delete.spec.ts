@@ -3,7 +3,7 @@ import { parse, print } from 'graphql';
 import { enableExternalSchemaComposition } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
-import { getServiceHost } from 'testkit/utils';
+import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createStorage } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
@@ -171,18 +171,19 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toMatchInlineSnapshot(`
         type Query {
           ping: String
         }
       `);
-      expect(latestVersion.schemaCompositionErrors).toEqual(null);
+      expect(latestVersion!.schemaCompositionErrors).toEqual(null);
       expect(latestVersion.hasPersistedSchemaChanges).toEqual(true);
       expect(latestVersion.isComposable).toEqual(true);
 
@@ -300,11 +301,12 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toEqual(null);
       expect(latestVersion.schemaCompositionErrors).toMatchInlineSnapshot(`
