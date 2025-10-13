@@ -7,14 +7,7 @@ import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +21,13 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { GitHubIcon, SlackIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
+import {
+  NavLayout,
+  PageLayout,
+  PageLayoutContent,
+  SubPageLayout,
+  SubPageLayoutHeader,
+} from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
@@ -201,7 +200,7 @@ const SlugFormSchema = z.object({
 
 type SlugFormValues = z.infer<typeof SlugFormSchema>;
 
-const SettingsPageRenderer = (props: {
+const OrganizationSettingsContent = (props: {
   organization: FragmentType<typeof SettingsPageRenderer_OrganizationFragment>;
   organizationSlug: string;
 }) => {
@@ -263,208 +262,223 @@ const SettingsPageRenderer = (props: {
   );
 
   return (
-    <div className="flex flex-col gap-y-4">
+    <div className="space-y-12">
       <ResourceDetails id={organization.id} />
       {organization.viewerCanModifySlug && (
         <Form {...slugForm}>
           <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Organization Slug</CardTitle>
-                <CardDescription>
-                  This is your organization's URL namespace on GraphQL Hive. Changing it{' '}
-                  <span className="font-bold">will</span> invalidate any existing links to your
-                  organization.
-                  <br />
-                  <DocsLink
-                    className="text-muted-foreground text-sm"
-                    href="/management/organizations#change-slug-of-organization"
-                  >
-                    You can read more about it in the documentation
-                  </DocsLink>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <FormField
-                  control={slugForm.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <div className="flex items-center">
-                          <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
-                            {env.appBaseUrl.replace(/https?:\/\//i, '')}/
-                          </div>
-                          <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
+            <SubPageLayout>
+              <SubPageLayoutHeader
+                subPageTitle="Organization Slug"
+                description={
+                  <>
+                    <CardDescription>
+                      This is your organization's URL namespace on GraphQL Hive. Changing it{' '}
+                      <span className="font-bold">will</span> invalidate any existing links to your
+                      organization.
+                    </CardDescription>
+                    <CardDescription>
+                      <DocsLink
+                        className="text-muted-foreground text-sm"
+                        href="/management/organizations#change-slug-of-organization"
+                      >
+                        You can read more about it in the documentation
+                      </DocsLink>
+                    </CardDescription>
+                  </>
+                }
+              />
+              <FormField
+                control={slugForm.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="flex items-center">
+                        <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                          {env.appBaseUrl.replace(/https?:\/\//i, '')}/
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
-                  Save
-                </Button>
-              </CardFooter>
-            </Card>
+                        <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
+                Save
+              </Button>
+            </SubPageLayout>
           </form>
         </Form>
       )}
 
       {organization.viewerCanManageOIDCIntegration && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Single Sign On Provider</CardTitle>
-            <CardDescription>
-              Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
-              Entra ID via OpenID Connect.
-              <br />
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/management/sso-oidc-provider"
-              >
-                Instructions for connecting your provider.
-              </DocsLink>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-y-4 text-gray-500">
-              <OIDCIntegrationSection organization={organization} />
-            </div>
-          </CardContent>
-        </Card>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Single Sign On Provider"
+            description={
+              <>
+                <CardDescription>
+                  Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
+                  Entra ID via OpenID Connect.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    className="text-muted-foreground text-sm"
+                    href="/management/sso-oidc-provider"
+                  >
+                    Instructions for connecting your provider.
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <div className="text-gray-500">
+            <OIDCIntegrationSection organization={organization} />
+          </div>
+        </SubPageLayout>
       )}
 
       {organization.viewerCanModifySlackIntegration && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Slack Integration</CardTitle>
-            <CardDescription>
-              Link your Hive organization with Slack for schema change notifications.
-              <br />
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/management/organizations#slack"
-              >
-                Learn more.
-              </DocsLink>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SlackIntegrationSection organization={organization} />
-          </CardContent>
-        </Card>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Slack Integration"
+            description={
+              <>
+                <CardDescription>
+                  Link your Hive organization with Slack for schema change notifications.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    className="text-muted-foreground text-sm"
+                    href="/management/organizations#slack"
+                  >
+                    Learn more.
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <SlackIntegrationSection organization={organization} />
+        </SubPageLayout>
       )}
 
       {organization.viewerCanModifyGitHubIntegration && (
-        <Card>
-          <CardHeader>
-            <CardTitle>GitHub Integration</CardTitle>
-            <CardDescription>
-              Link your Hive organization with GitHub.
-              <br />
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/management/organizations#github"
-              >
-                Learn more.
-              </DocsLink>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <GitHubIntegrationSection organization={organization} />
-          </CardContent>
-        </Card>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="GitHub Integration"
+            description={
+              <>
+                <CardDescription>Link your Hive organization with GitHub.</CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    className="text-muted-foreground text-sm"
+                    href="/management/organizations#github"
+                  >
+                    Learn more.
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <GitHubIntegrationSection organization={organization} />
+        </SubPageLayout>
       )}
 
       {organization.viewerCanTransferOwnership && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Transfer Ownership</CardTitle>
-            <CardDescription>
-              <strong>You are currently the owner of the organization.</strong> You can transfer the
-              organization to another member of the organization, or to an external user.
-              <br />
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/management/organizations#transfer-ownership"
-              >
-                Learn more about the process
-              </DocsLink>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
-                  Transfer Ownership
-                </Button>
-                <TransferOrganizationOwnershipModal
-                  isOpen={isTransferModalOpen}
-                  toggleModalOpen={toggleTransferModalOpen}
-                  organization={organization}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Transfer Ownership"
+            description={
+              <>
+                <CardDescription>
+                  <strong>You are currently the owner of the organization.</strong> You can transfer
+                  the organization to another member of the organization, or to an external user.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    className="text-muted-foreground text-sm"
+                    href="/management/organizations#transfer-ownership"
+                  >
+                    Learn more about the process
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <Button variant="destructive" onClick={toggleTransferModalOpen} className="px-5">
+            Transfer Ownership
+          </Button>
+          <TransferOrganizationOwnershipModal
+            isOpen={isTransferModalOpen}
+            toggleModalOpen={toggleTransferModalOpen}
+            organization={organization}
+          />
+        </SubPageLayout>
       )}
 
       {organization.viewerCanDelete && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Delete Organization</CardTitle>
-            <CardDescription>
-              Deleting an organization will delete all the projects, targets, schemas and data
-              associated with it.
-              <br />
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/management/organizations#delete-an-organization"
-              >
-                <strong>This action is not reversible!</strong> You can find more information about
-                this process in the documentation
-              </DocsLink>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
-              Delete Organization
-            </Button>
-            <DeleteOrganizationModal
-              organizationSlug={props.organizationSlug}
-              isOpen={isDeleteModalOpen}
-              toggleModalOpen={toggleDeleteModalOpen}
-            />
-          </CardContent>
-        </Card>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Delete Organization"
+            description={
+              <>
+                <CardDescription>
+                  Deleting an organization will delete all the projects, targets, schemas and data
+                  associated with it.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink
+                    className="text-muted-foreground text-sm"
+                    href="/management/organizations#delete-an-organization"
+                  >
+                    <span>
+                      <strong>This action is not reversible!</strong> You can find more information
+                      about this process in the documentation
+                    </span>
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <Button variant="destructive" onClick={toggleDeleteModalOpen} className="px-5">
+            Delete Organization
+          </Button>
+          <DeleteOrganizationModal
+            organizationSlug={props.organizationSlug}
+            isOpen={isDeleteModalOpen}
+            toggleModalOpen={toggleDeleteModalOpen}
+          />
+        </SubPageLayout>
       )}
 
       {organization.viewerCanExportAuditLogs && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Audit Logs</CardTitle>
-            <CardDescription>
-              View a history of changes made to the organization settings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
-                  Export Audit Logs
-                </Button>
-                <AuditLogsOrganizationModal
-                  organizationSlug={organization.slug}
-                  isOpen={isAuditLogsModalOpen}
-                  toggleModalOpen={toggleAuditLogsModalOpen}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Audit Logs"
+            description={
+              <>
+                <CardDescription>
+                  View a history of changes made to the organization settings.
+                </CardDescription>
+                <CardDescription>
+                  <DocsLink className="text-muted-foreground text-sm" href="/management/audit-logs">
+                    Learn more.
+                  </DocsLink>
+                </CardDescription>
+              </>
+            }
+          />
+          <Button variant="default" onClick={toggleAuditLogsModalOpen} className="px-5">
+            Export Audit Logs
+          </Button>
+          <AuditLogsOrganizationModal
+            organizationSlug={organization.slug}
+            isOpen={isAuditLogsModalOpen}
+            toggleModalOpen={toggleAuditLogsModalOpen}
+          />
+        </SubPageLayout>
       )}
     </div>
   );
@@ -577,15 +591,17 @@ function SettingsPageContent(props: {
           })}
         </NavLayout>
         <PageLayoutContent>
-          {resolvedPage.key === 'general' ? (
-            <SettingsPageRenderer
-              organizationSlug={props.organizationSlug}
-              organization={currentOrganization}
-            />
-          ) : null}
-          {resolvedPage.key === 'access-tokens' ? (
-            <AccessTokensSubPage organizationSlug={props.organizationSlug} />
-          ) : null}
+          <div className="space-y-12">
+            {resolvedPage.key === 'general' ? (
+              <OrganizationSettingsContent
+                organizationSlug={props.organizationSlug}
+                organization={currentOrganization}
+              />
+            ) : null}
+            {resolvedPage.key === 'access-tokens' ? (
+              <AccessTokensSubPage organizationSlug={props.organizationSlug} />
+            ) : null}
+          </div>
         </PageLayoutContent>
       </PageLayout>
     </OrganizationLayout>
