@@ -365,8 +365,6 @@ export class TraceBreakdownLoader {
         ${sql.join(statements, ' UNION ALL ')}
       `;
 
-      console.log(query.sql);
-
       const results = await this.clickhouse.query<{
         key: string;
         value: string;
