@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.51.0
+
+### Minor Changes
+
+- [#7100](https://github.com/graphql-hive/console/pull/7100)
+  [`2cbdced`](https://github.com/graphql-hive/console/commit/2cbdcedb79cfbe225dbdafe6122cdc12305d5aaf)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - add `hive app:retire` command for retiring an app
+  deployment
+
 ## 0.50.5
 
 ### Patch Changes
