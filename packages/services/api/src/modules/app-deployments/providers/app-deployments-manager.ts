@@ -44,12 +44,12 @@ export class AppDeploymentsManager {
   }
 
   getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
-    if (appDeployment.activatedAt) {
-      return 'active';
-    }
-
     if (appDeployment.retiredAt) {
       return 'retired';
+    }
+
+    if (appDeployment.activatedAt) {
+      return 'active';
     }
 
     return 'pending';

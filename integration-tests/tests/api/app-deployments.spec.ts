@@ -1149,7 +1149,7 @@ test('activate app deployment fails if app deployment is retired', async () => {
         retiredAppDeployment: {
           id: expect.any(String),
           name: 'my-app',
-          status: 'active',
+          status: 'retired',
           version: '1.0.0',
         },
       },
@@ -1294,7 +1294,7 @@ test('retire app deployment succeeds if app deployment is active', async () => {
       retiredAppDeployment: {
         id: expect.any(String),
         name: 'my-app',
-        status: 'active',
+        status: 'retired',
         version: '1.0.0',
       },
     },
