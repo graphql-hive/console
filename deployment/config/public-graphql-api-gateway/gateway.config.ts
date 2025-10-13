@@ -1,24 +1,41 @@
 // @ts-expect-error not a dependency
 import { defineConfig } from '@graphql-hive/gateway';
 // @ts-expect-error not a dependency
-import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup';
+import { hiveTracingSetup } from '@graphql-hive/plugin-opentelemetry/setup';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { MultiSpanProcessor } from '@opentelemetry/sdk-trace-base/build/src/MultiSpanProcessor';
 
-openTelemetrySetup({
-  // Mandatory: It depends on the available API in your runtime.
-  // We recommend AsyncLocalStorage based manager when possible.
-  // `@opentelemetry/context-zone` is also available for other runtimes.
-  // Pass `false` to disable context manager usage.
-  contextManager: new AsyncLocalStorageContextManager(),
-
-  traces: {
-    // Define your exporter, most of the time the OTLP HTTP one. Traces are batched by default.
-    exporter: new OTLPTraceExporter({ url: process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']! }),
-    // You can easily enable a console exporter for quick debug
-    console: process.env['DEBUG_TRACES'] === '1',
-  },
-});
+if (process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_TRACING_ACCESS_TOKEN']) {
+  hiveTracingSetup({
+    contextManager: new AsyncLocalStorageContextManager(),
+    processor: new MultiSpanProcessor([
+      ...(process.env['HIVE_TRACING_ACCESS_TOKEN']
+        ? [
+            new BatchSpanProcessor(
+              new OTLPTraceExporter({
+                url: process.env['HIVE_TRACING_ENDPOINT'],
+                headers: {
+                  Authorization: `Bearer ${process.env['HIVE_TRACING_ACCESS_TOKEN']}`,
+                  'X-Hive-Target-Ref': process.env.HIVE_TRACING_TARGET!,
+                },
+              }),
+            ),
+          ]
+        : []),
+      ...(process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']
+        ? [
+            new BatchSpanProcessor(
+              new OTLPTraceExporter({
+                url: process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']!,
+              }),
+            ),
+          ]
+        : []),
+    ]),
+  });
+}
 
 const defaultQuery = `#
 # Welcome to the Hive Console GraphQL API.
@@ -50,11 +67,13 @@ export const gatewayConfig = defineConfig({
   },
   disableWebsockets: true,
   prometheus: true,
-  openTelemetry: process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']
-    ? {
-        serviceName: 'public-graphql-api-gateway',
-      }
-    : false,
+  openTelemetry:
+    process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_TRACING_ACCESS_TOKEN']
+      ? {
+          traces: true,
+          serviceName: 'public-graphql-api-gateway',
+        }
+      : undefined,
   demandControl: {
     maxCost: 1000,
     includeExtensionMetadata: true,
