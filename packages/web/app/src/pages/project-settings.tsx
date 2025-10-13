@@ -1,4 +1,4 @@
-import { ReactElement, useCallback } from 'react';
+import { ReactElement, useCallback, useMemo } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
@@ -6,14 +6,7 @@ import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +20,13 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { HiveLogo } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
-import { Subtitle, Title } from '@/components/ui/page';
+import {
+  NavLayout,
+  PageLayout,
+  PageLayoutContent,
+  SubPageLayout,
+  SubPageLayoutHeader,
+} from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
@@ -37,6 +36,7 @@ import { ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useNotifications, useToggle } from '@/lib/hooks';
+import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -91,82 +91,76 @@ function GitHubIntegration(props: {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Use project's name in GitHub Check</CardTitle>
-        <CardDescription>
-          Prevents GitHub Check name collisions when running{' '}
-          <a href={docksLink}>
-            <span className="mx-1 text-orange-700 hover:underline hover:underline-offset-4">
-              $ hive schema:check --github
-            </span>
-          </a>
-          for more than one project.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="text-muted-foreground mb-4 flex flex-row items-center justify-between gap-x-4 rounded-sm text-sm">
-          <div className="space-y-2">
-            <div>
-              <div className="mb-4">Here's how it will look like in your CI pipeline.</div>
-              <div className="flex items-center gap-x-2 pl-1">
-                <CheckIcon className="size-4 text-emerald-500" />
-                <div className="flex size-6 items-center justify-center rounded-sm bg-white">
-                  <HiveLogo className="size-4/5" />
-                </div>
-
-                <div className="font-semibold text-[#adbac7]">
-                  {props.organizationSlug} &gt; schema:check &gt; staging
-                </div>
-                <div className="text-gray-500">— No changes</div>
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Use project's name in GitHub Check"
+        description={
+          <CardDescription>
+            Prevents GitHub Check name collisions when running{' '}
+            <a href={docksLink}>
+              <span className="mx-1 text-orange-700 hover:underline hover:underline-offset-4">
+                $ hive schema:check --github
+              </span>
+            </a>
+            for more than one project.
+          </CardDescription>
+        }
+      />
+      <div>
+        <div className="text-muted-foreground text-sm">
+          <div>Here's how it will look like in your CI pipeline.</div>
+          <div className="my-8 flex w-fit flex-col gap-y-1">
+            <div className="flex items-center gap-x-2 pl-1">
+              <CheckIcon className="size-4 text-emerald-500" />
+              <div className="flex size-6 items-center justify-center rounded-sm bg-white">
+                <HiveLogo className="size-4/5" />
               </div>
-            </div>
-            <div>
-              <ArrowBigDownDashIcon className="size-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-x-2 pl-1">
-                <CheckIcon className="size-4 text-emerald-500" />
-                <div className="flex size-6 items-center justify-center rounded-sm bg-white">
-                  <HiveLogo className="size-4/5" />
-                </div>
 
-                <div className="font-semibold text-[#adbac7]">
-                  {props.organizationSlug} &gt; schema:check &gt; {props.projectSlug} &gt; staging
-                </div>
-                <div className="text-gray-500">— No changes</div>
+              <div className="font-semibold text-[#adbac7]">
+                {props.organizationSlug} &gt; schema:check &gt; staging
               </div>
+              <div className="text-gray-500">— No changes</div>
             </div>
-          </div>
-          <div className="pr-6">
-            <Button
-              disabled={ghCheckMutation.fetching}
-              onClick={() => {
-                void ghCheckMutate({
-                  input: {
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                  },
-                }).then(
-                  result => {
-                    if (result.error) {
-                      notify('Failed to enable', 'error');
-                    } else {
-                      notify('Migration completed', 'success');
-                    }
-                  },
-                  _ => {
-                    notify('Failed to enable', 'error');
-                  },
-                );
-              }}
-            >
-              I want to migrate
-            </Button>
+            <ArrowBigDownDashIcon className="size-6 self-center" />
+            <div className="flex items-center gap-x-2 pl-1">
+              <CheckIcon className="size-4 text-emerald-500" />
+              <div className="flex size-6 items-center justify-center rounded-sm bg-white">
+                <HiveLogo className="size-4/5" />
+              </div>
+
+              <div className="font-semibold text-[#adbac7]">
+                {props.organizationSlug} &gt; schema:check &gt; {props.projectSlug} &gt; staging
+              </div>
+              <div className="text-gray-500">— No changes</div>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        <Button
+          disabled={ghCheckMutation.fetching}
+          onClick={() => {
+            void ghCheckMutate({
+              input: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+              },
+            }).then(
+              result => {
+                if (result.error) {
+                  notify('Failed to enable', 'error');
+                } else {
+                  notify('Migration completed', 'success');
+                }
+              },
+              _ => {
+                notify('Failed to enable', 'error');
+              },
+            );
+          }}
+        >
+          I want to migrate
+        </Button>
+      </div>
+    </SubPageLayout>
   );
 }
 
@@ -259,22 +253,25 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
   return (
     <Form {...slugForm}>
       <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Slug</CardTitle>
-            <CardDescription>
-              This is your project's URL namespace on Hive. Changing it{' '}
-              <span className="font-bold">will</span> invalidate any existing links to your project.
-              <br />
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/management/projects#change-slug-of-a-project"
-              >
-                You can read more about it in the documentation
-              </DocsLink>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <SubPageLayout>
+          <SubPageLayoutHeader
+            subPageTitle="Project Slug"
+            description={
+              <CardDescription>
+                This is your project's URL namespace on Hive. Changing it{' '}
+                <span className="font-bold">will</span> invalidate any existing links to your
+                project.
+                <br />
+                <DocsLink
+                  className="text-muted-foreground text-sm"
+                  href="/management/projects#change-slug-of-a-project"
+                >
+                  You can read more about it in the documentation
+                </DocsLink>
+              </CardDescription>
+            }
+          />
+          <div>
             <FormField
               control={slugForm.control}
               name="slug"
@@ -292,15 +289,50 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
                 </FormItem>
               )}
             />
-          </CardContent>
-          <CardFooter className="flex justify-between">
             <Button disabled={slugForm.formState.isSubmitting} className="px-10" type="submit">
               Save
             </Button>
-          </CardFooter>
-        </Card>
+          </div>
+        </SubPageLayout>
       </form>
     </Form>
+  );
+}
+
+function ProjectDelete(props: { organizationSlug: string; projectSlug: string }) {
+  const [isModalOpen, toggleModalOpen] = useToggle();
+
+  return (
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle="Delete Project"
+        description={
+          <>
+            <CardDescription>
+              Deleting an project will delete all the targets, schemas and data associated with it.
+            </CardDescription>
+            <CardDescription>
+              <DocsLink
+                className="text-muted-foreground text-sm"
+                href="/management/projects#delete-a-project"
+              >
+                <strong>This action is not reversible!</strong> You can find more information about
+                this process in the documentation
+              </DocsLink>
+            </CardDescription>
+          </>
+        }
+      />
+      <Button variant="destructive" onClick={toggleModalOpen}>
+        Delete Project
+      </Button>
+      <DeleteProjectModal
+        projectSlug={props.projectSlug}
+        organizationSlug={props.organizationSlug}
+        isOpen={isModalOpen}
+        toggleModalOpen={toggleModalOpen}
+      />
+    </SubPageLayout>
   );
 }
 
@@ -336,8 +368,12 @@ const ProjectSettingsPageQuery = graphql(`
   }
 `);
 
-function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: string }) {
-  const [isModalOpen, toggleModalOpen] = useToggle();
+function ProjectSettingsContent(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  page?: ProjectSettingsSubPage;
+}) {
+  const router = useRouter();
   const [query] = useQuery({
     query: ProjectSettingsPageQuery,
     variables: {
@@ -369,7 +405,23 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
     entity: project,
   });
 
-  if (project?.viewerCanModifySettings === false) {
+  const subPages = useMemo(() => {
+    const pages: Array<{
+      key: ProjectSettingsSubPage;
+      title: string;
+    }> = [
+      {
+        key: 'general',
+        title: 'General',
+      },
+    ];
+
+    return pages;
+  }, []);
+
+  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+
+  if (project?.viewerCanModifySettings === false || !resolvedPage || !organization || !project) {
     return null;
   }
 
@@ -384,66 +436,71 @@ function ProjectSettingsContent(props: { organizationSlug: string; projectSlug: 
   }
 
   return (
-    <div>
-      <div className="py-6">
-        <Title>Settings</Title>
-        <Subtitle>Manage your project settings</Subtitle>
-      </div>
-      <div className="flex flex-col gap-y-4">
-        {project && organization ? (
-          <>
-            <ResourceDetails id={project.id} />
-            <ProjectSettingsPage_SlugForm
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-            />
-            {query.data?.isGitHubIntegrationFeatureEnabled &&
-            !project.isProjectNameInGitHubCheckEnabled ? (
-              <GitHubIntegration organizationSlug={organization.slug} projectSlug={project.slug} />
-            ) : null}
-
-            {project.type === ProjectType.Federation ? (
-              <CompositionSettings project={project} organization={organization} />
-            ) : null}
-
-            {project.viewerCanDelete && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Delete Project</CardTitle>
-                  <CardDescription>
-                    Deleting an project will delete all the targets, schemas and data associated
-                    with it.
-                    <br />
-                    <DocsLink
-                      className="text-muted-foreground text-sm"
-                      href="/management/projects#delete-a-project"
-                    >
-                      <strong>This action is not reversible!</strong> You can find more information
-                      about this process in the documentation
-                    </DocsLink>
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button variant="destructive" onClick={toggleModalOpen}>
-                    Delete Project
-                  </Button>
-                </CardFooter>
-              </Card>
+    <PageLayout>
+      <NavLayout>
+        {subPages.map(subPage => (
+          <Button
+            key={subPage.key}
+            variant="ghost"
+            onClick={() => {
+              void router.navigate({
+                search: {
+                  page: subPage.key,
+                },
+              });
+            }}
+            className={cn(
+              resolvedPage.key === subPage.key
+                ? 'bg-muted hover:bg-muted'
+                : 'hover:bg-transparent hover:underline',
+              'w-full justify-start text-left',
             )}
-            <DeleteProjectModal
-              projectSlug={props.projectSlug}
-              organizationSlug={props.organizationSlug}
-              isOpen={isModalOpen}
-              toggleModalOpen={toggleModalOpen}
-            />
-          </>
-        ) : null}
-      </div>
-    </div>
+          >
+            {subPage.title}
+          </Button>
+        ))}
+      </NavLayout>
+      <PageLayoutContent>
+        <div className="space-y-12">
+          {resolvedPage.key === 'general' ? (
+            <>
+              <ResourceDetails id={project.id} />
+              <ProjectSettingsPage_SlugForm
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+              />
+              {query.data?.isGitHubIntegrationFeatureEnabled &&
+              !project.isProjectNameInGitHubCheckEnabled ? (
+                <GitHubIntegration
+                  organizationSlug={organization.slug}
+                  projectSlug={project.slug}
+                />
+              ) : null}
+
+              {project.type === ProjectType.Federation ? (
+                <CompositionSettings project={project} organization={organization} />
+              ) : null}
+
+              {project.viewerCanDelete ? (
+                <ProjectDelete projectSlug={project.slug} organizationSlug={organization.slug} />
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      </PageLayoutContent>
+    </PageLayout>
   );
 }
 
-export function ProjectSettingsPage(props: { organizationSlug: string; projectSlug: string }) {
+export const ProjectSettingsPageEnum = z.enum(['general']);
+
+export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
+
+export function ProjectSettingsPage(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  page?: ProjectSettingsSubPage;
+}) {
   return (
     <>
       <Meta title="Project settings" />
@@ -456,6 +513,7 @@ export function ProjectSettingsPage(props: { organizationSlug: string; projectSl
         <ProjectSettingsContent
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
+          page={props.page}
         />
       </ProjectLayout>
     </>

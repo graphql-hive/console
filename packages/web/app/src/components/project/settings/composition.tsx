@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardDescription } from '@/components/ui/card';
 import { CheckIcon } from '@/components/ui/icon';
+import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -90,14 +91,12 @@ export const CompositionSettings = (props: {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <a id="composition">Schema Composition</a>
-        </CardTitle>
-        <CardDescription>Configure how your schemas are composed.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <SubPageLayout>
+      <SubPageLayoutHeader
+        subPageTitle={<a id="composition">Schema Composition</a>}
+        description={<CardDescription>Configure how your schemas are composed.</CardDescription>}
+      />
+      <div>
         {projectQuery.fetching ? (
           <Spinner />
         ) : (
@@ -149,7 +148,7 @@ export const CompositionSettings = (props: {
             </TabsContent>
           </Tabs>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </SubPageLayout>
   );
 };

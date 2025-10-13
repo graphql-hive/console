@@ -59,7 +59,7 @@ import { OrganizationTransferPage } from './pages/organization-transfer';
 import { ProjectIndexRouteSearch, ProjectPage } from './pages/project';
 import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectPolicyPage } from './pages/project-policy';
-import { ProjectSettingsPage } from './pages/project-settings';
+import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
 import { TargetAppsPage } from './pages/target-apps';
@@ -516,12 +516,27 @@ const projectIndexRoute = createRoute({
   },
 });
 
+const ProjectSettingsRouteSearch = z.object({
+  page: ProjectSettingsPageEnum.default('general').optional(),
+});
+
 const projectSettingsRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: 'view/settings',
+  validateSearch(search) {
+    return ProjectSettingsRouteSearch.parse(search);
+  },
   component: function ProjectSettingsRoute() {
     const { organizationSlug, projectSlug } = projectSettingsRoute.useParams();
-    return <ProjectSettingsPage organizationSlug={organizationSlug} projectSlug={projectSlug} />;
+    const { page } = projectSettingsRoute.useSearch();
+
+    return (
+      <ProjectSettingsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        page={page}
+      />
+    );
   },
 });
 
