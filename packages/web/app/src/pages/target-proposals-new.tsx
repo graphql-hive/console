@@ -304,6 +304,7 @@ function ProposalsNewContent(
         setFormError(error.issues[0]?.message);
         // go to overview page because that's where the issue is
         setPage('overview');
+        return;
       }
     }
 
