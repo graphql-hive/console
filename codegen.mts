@@ -17,7 +17,6 @@ const config: CodegenConfig = {
             append: '\n\n directive @oneOf on INPUT_OBJECT',
           },
         },
-        fixObjectTypeResolvers: 'fast',
         resolverGeneration: 'minimal',
         resolverMainFileMode: 'modules',
         resolverTypesPath: './__generated__/types.ts',
