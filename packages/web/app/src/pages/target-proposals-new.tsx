@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildSchema, parse, print } from 'graphql';
 import { editor } from 'monaco-editor';
 import { useQuery } from 'urql';
+import z from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox, Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -185,6 +187,84 @@ function schemaTitle(
   return '';
 }
 
+type Confirmation = { name: string; type: 'removal'; reason: string };
+
+const ProposalForm = z.strictObject({
+  title: z.string().min(1, 'Proposals must have a title'),
+  description: z.optional(z.string()).default(() => ''),
+});
+
+function ConfirmationModal(props: {
+  confirmations: Confirmation[];
+  setConfirmations: (c: Confirmation[]) => void;
+}) {
+  const [confirmed, setConfirmed] = useState(props.confirmations.map(_ => false));
+  useEffect(() => {
+    setConfirmed(props.confirmations.map(_ => false));
+  }, [props.confirmations]);
+  return (
+    <Modal
+      open={props.confirmations.length > 0}
+      onOpenChange={isOpen => {
+        if (isOpen === false) {
+          props.setConfirmations([]);
+        }
+      }}
+      className="w-[90vw]"
+    >
+      <SubPageLayoutHeader
+        subPageTitle="Issues Found"
+        description={
+          <CardDescription className="pb-4">
+            The proposed changes are invalid but can be automatically corrected.
+          </CardDescription>
+        }
+      />
+      <Table>
+        <THead>
+          <Th className="px-0 text-center">confirm</Th>
+          <Th>schema</Th>
+          <Th>explanation</Th>
+        </THead>
+        <TBody>
+          {props.confirmations.map((c, idx) => {
+            return (
+              <Tr key={idx}>
+                <Td>
+                  <Checkbox
+                    className="mx-auto"
+                    checked={confirmed[idx]}
+                    onClick={_ => {
+                      confirmed[idx] = !confirmed[idx];
+                      setConfirmed([...confirmed]);
+                    }}
+                  />
+                </Td>
+                <Td className="truncate">{c.name}</Td>
+                <Td className="break-normal">{c.reason}</Td>
+              </Tr>
+            );
+          })}
+        </TBody>
+      </Table>
+      <div className="mt-4 text-right">
+        <Button
+          disabled={!confirmed.every(c => c)}
+          onClick={() => {
+            const allConfirmed = confirmed.every(c => c);
+            if (allConfirmed) {
+              props.setConfirmations([]);
+              // submit api call
+            }
+          }}
+        >
+          Confirm Changes
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 function ProposalsNewContent(
   props: Parameters<typeof TargetProposalsNewPage>[0] & { page?: string },
 ) {
@@ -200,12 +280,14 @@ function ProposalsNewContent(
       },
     },
   });
+  const [formError, setFormError] = useState('');
   const existingServices = useMemo(() => {
     return query.data?.target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
   }, [query.data]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [page, setPage] = useState('overview');
+  const [confirmations, setConfirmations] = useState<Array<Confirmation>>([]);
   const onNextPage = useCallback(() => {
     if (page === 'overview') {
       setPage('editor');
@@ -213,6 +295,59 @@ function ProposalsNewContent(
     // @todo
   }, [page]);
   const [changedServices, setChangedServices] = useState<Array<ServiceTab>>([]);
+  const onSubmitProposal = useCallback(() => {
+    let payload: { title: string; description: string } | undefined;
+    try {
+      payload = ProposalForm.parse({ title, description });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setFormError(error.issues[0]?.message);
+        // go to overview page because that's where the issue is
+        setPage('overview');
+      }
+    }
+
+    const confs: typeof confirmations = [];
+    for (const changed of changedServices) {
+      if (changed.id?.length) {
+        const existing = existingServices?.find(e => e.id === changed.id);
+        if (existing?.source === changed.source) {
+          // no changes
+          confs.push({
+            type: 'removal',
+            name: schemaTitle(existing),
+            reason: 'No changes found.',
+          });
+        }
+      } else if (changed.source.length === 0) {
+        // no changes..
+        confs.push({
+          type: 'removal',
+          name: schemaTitle(changed),
+          reason: 'This new schema does not contain any definitions. This change will be ignored.',
+        });
+      }
+    }
+    setConfirmations(confs);
+
+    // nothing to confirm
+    if (confs.length === 0) {
+      console.log(payload);
+      // submit
+    }
+  }, [changedServices, title, description, existingServices]);
+  useEffect(() => {
+    if (formError) {
+      try {
+        ProposalForm.parse({ title, description });
+        setFormError('');
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setFormError(error.issues[0]?.message);
+        }
+      }
+    }
+  }, [title, description]);
 
   if (query.error) {
     return (
@@ -225,60 +360,75 @@ function ProposalsNewContent(
   }
 
   return (
-    <Tabs orientation="vertical" className="flex" value={page} onValueChange={setPage}>
-      <TabsList
-        variant="content"
-        className={cn(
-          'flex h-full w-[20vw] min-w-[160px] flex-col items-start border-0',
-          '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-3',
-        )}
-      >
-        <TabsTrigger variant="menu" value="overview" asChild>
-          <Link>Overview</Link>
-        </TabsTrigger>
-        <TabsTrigger variant="menu" value="editor" asChild>
-          <Link>Editor</Link>
-        </TabsTrigger>
-        <TabsTrigger variant="menu" value="changes" asChild className="mb-2">
-          <Link>Changes</Link>
-        </TabsTrigger>
-        {/* @todo disable if proposal is invalid */}
-        <div className="mt-6">
-          <Button variant="ghost" className="mt-2 w-full justify-center px-3 font-bold">
-            Submit Proposal
-          </Button>
+    <>
+      <ConfirmationModal confirmations={confirmations} setConfirmations={setConfirmations} />
+      <Tabs orientation="vertical" className="flex" value={page} onValueChange={setPage}>
+        <TabsList
+          variant="content"
+          className={cn(
+            'flex h-full w-[20vw] min-w-[160px] flex-col items-start border-0',
+            '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-3',
+          )}
+        >
+          <TabsTrigger variant="menu" value="overview" asChild>
+            <Link>Overview</Link>
+          </TabsTrigger>
+          <TabsTrigger variant="menu" value="editor" asChild>
+            <Link>Editor</Link>
+          </TabsTrigger>
+          <TabsTrigger variant="menu" value="changes" asChild className="mb-2">
+            <Link>Changes</Link>
+          </TabsTrigger>
+          {/* @todo disable if proposal is invalid */}
+          <div className="mt-6">
+            <Button
+              variant="ghost"
+              className="mt-2 w-full justify-center px-3 font-bold"
+              disabled={query.fetching}
+              onClick={onSubmitProposal}
+            >
+              Submit Proposal
+            </Button>
+          </div>
+        </TabsList>
+        <div className="w-full flex-col items-start overflow-x-hidden pl-8 [&>*]:pt-0">
+          <OverviewTab
+            title={title}
+            description={description}
+            setTitle={setTitle}
+            setDescription={setDescription}
+            onNextPage={onNextPage}
+            error={
+              formError.length > 0 && (
+                <Callout type="error" className="mb-6 w-full text-sm">
+                  {formError}
+                </Callout>
+              )
+            }
+          />
+          {query.fetching ? (
+            <Spinner />
+          ) : (
+            <>
+              <EditorTab
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                changedServices={changedServices}
+                setChangedServices={setChangedServices}
+                existingServices={existingServices ?? []}
+                projectTypeFragment={query.data?.target ?? undefined}
+                selectFragment={query.data?.target ?? undefined}
+              />
+              <ChangesTab
+                changedServices={changedServices}
+                existingServices={existingServices ?? []}
+              />
+            </>
+          )}
         </div>
-      </TabsList>
-      <div className="w-full flex-col items-start overflow-x-hidden pl-8 [&>*]:pt-0">
-        <OverviewTab
-          title={title}
-          description={description}
-          setTitle={setTitle}
-          setDescription={setDescription}
-          onNextPage={onNextPage}
-        />
-        {query.fetching ? (
-          <Spinner />
-        ) : (
-          <>
-            <EditorTab
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-              changedServices={changedServices}
-              setChangedServices={setChangedServices}
-              existingServices={existingServices ?? []}
-              projectTypeFragment={query.data?.target ?? undefined}
-              selectFragment={query.data?.target ?? undefined}
-            />
-            <ChangesTab
-              changedServices={changedServices}
-              existingServices={existingServices ?? []}
-            />
-          </>
-        )}
-      </div>
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
 
@@ -401,7 +551,7 @@ function ServiceChanges(props: {
                 {c.error}
               </div>
             ) : (
-              c.changes.length === 0 && 'No changes.'
+              c.changes.length === 0 && <div className="italic">No changes to schema yet.</div>
             )}
             {c.changes.map((change, changeIndex) => {
               return (
@@ -850,9 +1000,11 @@ function OverviewTab(props: {
   description: string;
   setDescription: (description: string) => void;
   onNextPage?: () => void;
+  error?: false | ReactElement;
 }) {
   return (
     <TabsContent className="max-w-[600px]" value="overview">
+      {props.error}
       <div className="pb-10">
         <Label htmlFor="proposal-title" className="p-1">
           Title
