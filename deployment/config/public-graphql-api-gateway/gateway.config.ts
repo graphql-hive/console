@@ -126,7 +126,7 @@ export const gatewayConfig = defineConfig({
   disableWebsockets: true,
   prometheus: true,
   openTelemetry:
-    process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_TRACING_ACCESS_TOKEN']
+    process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_TRACE_ACCESS_TOKEN']
       ? {
           traces: true,
           serviceName: 'public-graphql-api-gateway',
