@@ -102,3 +102,12 @@ export function generateUnique() {
     capitalize: false,
   });
 }
+
+export function assertNonNull<T>(
+  value: T | null,
+  message = 'Expected non-null value.',
+): asserts value is T {
+  if (value === null) {
+    throw new Error(message);
+  }
+}
