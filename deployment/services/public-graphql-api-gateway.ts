@@ -79,7 +79,7 @@ export function deployPublicGraphQLAPIGateway(args: {
 
         // Hive Console OTEL Tracing configuration
         HIVE_TRACING_ENDPOINT: serviceLocalEndpoint(args.otelCollector.service).apply(
-          value => `${value}/otel/v1/traces`,
+          value => `${value}/v1/traces`,
         ),
         HIVE_TARGET: hiveConfig.require('target'),
         // HIVE_TRACE_ACCESS_TOKEN is a secret
