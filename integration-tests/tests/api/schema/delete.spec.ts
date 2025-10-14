@@ -183,7 +183,7 @@ test.concurrent(
           ping: String
         }
       `);
-      expect(latestVersion!.schemaCompositionErrors).toEqual(null);
+      expect(latestVersion.schemaCompositionErrors).toEqual(null);
       expect(latestVersion.hasPersistedSchemaChanges).toEqual(true);
       expect(latestVersion.isComposable).toEqual(true);
 
