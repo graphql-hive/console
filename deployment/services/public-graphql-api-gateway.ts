@@ -114,7 +114,7 @@ export function deployPublicGraphQLAPIGateway(args: {
     [args.graphql.deployment, args.graphql.service],
   )
     .withSecret('HIVE_CDN_ACCESS_TOKEN', publicGraphQLAPISecret, 'cdnAccessKeyId')
-    .withSecret('HIVE_TRACE_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
+    .withSecret('HIVE_TRACING_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
     .deploy();
 }
 
