@@ -19,6 +19,8 @@ import (
 	"go.opentelemetry.io/collector/extension/extensionauth"
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var _ extensionauth.Server = (*hiveAuthExtension)(nil)
@@ -48,10 +50,26 @@ type hiveAuthExtension struct {
 	client *http.Client
 	group  singleflight.Group
 	cache  *cache.Cache
+
+	telemetrySettings component.TelemetrySettings
+	requestDuration metric.Float64Histogram
+    requestCount    metric.Int64Counter
 }
 
 func (h *hiveAuthExtension) Start(_ context.Context, _ component.Host) error {
 	h.logger.Info("Starting hive auth extension", zap.String("endpoint", h.config.Endpoint), zap.Duration("timeout", h.config.Timeout))
+	meter := h.telemetrySettings.MeterProvider.Meter("hiveauth")
+
+	h.requestDuration, _ = meter.Float64Histogram(
+		"hive_auth_request_duration_milliseconds",
+		metric.WithDescription("Duration of outbound authentication requests"),
+	)
+
+	h.requestCount, _ = meter.Int64Counter(
+		"hive_auth_requests_total",
+		metric.WithDescription("Total number of authentication requests"),
+	)
+
 	return nil
 }
 
@@ -116,6 +134,16 @@ type authResult struct {
 }
 
 func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targetRef string) (string, error) {
+	start := time.Now()
+	statusLabel := "error"
+
+	defer func() {
+		h.logger.Warn("scurrr scurrr")
+		h.requestDuration.Record(ctx, time.Since(start).Milliseconds(),
+			metric.WithAttributes(attribute.String("status", statusLabel)))
+		h.requestCount.Add(ctx, 1, metric.WithAttributes(attribute.String("status", statusLabel)))
+	}()
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.config.Endpoint, nil)
 	if err != nil {
 		h.logger.Error("failed to create auth request", zap.Error(err))
@@ -151,6 +179,7 @@ func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targ
 				return "", err
 			}
 			h.logger.Debug("authentication succeeded", zap.String("targetId", result.TargetId))
+			statusLabel = "success"
 			return result.TargetId, nil
 		}
 
@@ -236,6 +265,7 @@ func (h *hiveAuthExtension) Authenticate(ctx context.Context, headers map[string
 func newHiveAuthExtension(
 	logger *zap.Logger,
 	cfg component.Config,
+	telemetrySettings component.TelemetrySettings,
 ) (extensionauth.Server, error) {
 	c, ok := cfg.(*Config)
 	if !ok {
@@ -252,6 +282,7 @@ func newHiveAuthExtension(
 		client: &http.Client{
 			Timeout: c.Timeout,
 		},
-		cache: cache.New(30*time.Second, time.Minute),
+		cache: cache.New(500*time.Second, time.Minute),
+		telemetrySettings: telemetrySettings,
 	}, nil
 }
