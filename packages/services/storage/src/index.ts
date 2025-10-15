@@ -4482,6 +4482,7 @@ export async function createStorage(
               "schema_log"."project_id" = ${args.projectId}
               AND "schema_log"."target_id" = ${args.targetId}
               AND "schema_log"."commit" = ${args.actionId}
+            ORDER BY "schema_log"."created_at" DESC
           )
         LIMIT 1
       `);
