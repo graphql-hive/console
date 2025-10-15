@@ -12,6 +12,7 @@ import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
+import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
@@ -280,7 +281,10 @@ function ProposalsNewContent(
       },
     },
   });
-  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // overview error
+  const [overviewError, setOverviewError] = useState('');
+  const [editorError, setEditorError] = useState('');
   const existingServices = useMemo(() => {
     return query.data?.target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
   }, [query.data]);
@@ -288,67 +292,172 @@ function ProposalsNewContent(
   const [description, setDescription] = useState('');
   const [page, setPage] = useState('overview');
   const [confirmations, setConfirmations] = useState<Array<Confirmation>>([]);
-  const onNextPage = useCallback(() => {
-    if (page === 'overview') {
-      setPage('editor');
-    }
-    // @todo
-  }, [page]);
   const [changedServices, setChangedServices] = useState<Array<ServiceTab>>([]);
+  // @todo consider calculating from the supergraph?
+  const [serviceDiff, setServiceDiff] = useState<Array<{
+    title: string;
+    changes: Change[];
+    error?: string;
+  }> | null>(null);
   const onSubmitProposal = useCallback(() => {
-    let payload: { title: string; description: string } | undefined;
-    try {
-      payload = ProposalForm.parse({ title, description });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setFormError(error.issues[0]?.message);
-        // go to overview page because that's where the issue is
-        setPage('overview');
-        return;
+    setIsSubmitting(true);
+    setTimeout(() => {
+      let payload: { title: string; description: string } | undefined;
+      try {
+        payload = ProposalForm.parse({ title, description });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setOverviewError(error.issues[0]?.message);
+          // go to overview page because that's where the issue is
+          setPage('overview');
+          return setIsSubmitting(false);
+        }
       }
-    }
 
-    const confs: typeof confirmations = [];
-    for (const changed of changedServices) {
-      if (changed.id?.length) {
-        const existing = existingServices?.find(e => e.id === changed.id);
-        if (existing?.source === changed.source) {
+      if (!serviceDiff) {
+        // this shouldn't happen
+        return setIsSubmitting(false);
+      }
+
+      // if the proposal has real, tangible changes
+      let hasChanges = false;
+
+      // @todo how to make sure "serviceDiff" is done calculating before we use it?
+      const confs: typeof confirmations = [];
+      for (const diff of serviceDiff) {
+        if (diff.error) {
+          console.log('Found an error in the diff...');
+          setEditorError(`"${diff.title}" has an error: ${diff.error}`);
+          setPage('editor');
+          return setIsSubmitting(false);
+        }
+
+        if (diff.changes.length === 0) {
           // no changes
           confs.push({
             type: 'removal',
-            name: schemaTitle(existing),
+            name: diff.title,
             reason: 'No changes found.',
           });
+        } else {
+          hasChanges = true;
         }
-      } else if (changed.source.length === 0) {
-        // no changes..
-        confs.push({
-          type: 'removal',
-          name: schemaTitle(changed),
-          reason: 'This new schema does not contain any definitions. This change will be ignored.',
-        });
       }
-    }
-    setConfirmations(confs);
 
-    // nothing to confirm
-    if (confs.length === 0) {
-      console.log(payload);
-      // submit
-    }
-  }, [changedServices, title, description, existingServices]);
+      if (!hasChanges) {
+        setEditorError('No changes found. Select a service to change or create a new one.');
+        setPage('editor');
+        return setIsSubmitting(false);
+      }
+
+      setEditorError('');
+      setConfirmations(confs);
+
+      // if nothing to confirm, then publish
+      if (confs.length === 0) {
+        console.log(payload);
+        // @todo submit
+      }
+      return setIsSubmitting(false);
+    });
+  }, [changedServices, title, description, existingServices, serviceDiff]);
   useEffect(() => {
-    if (formError) {
+    if (overviewError) {
       try {
         ProposalForm.parse({ title, description });
-        setFormError('');
+        setOverviewError('');
       } catch (error) {
         if (error instanceof z.ZodError) {
-          setFormError(error.issues[0]?.message);
+          setOverviewError(error.issues[0]?.message);
         }
       }
     }
   }, [title, description]);
+
+  useEffect(() => {
+    // @todo only run when we have to show changes
+    // but also run on submit???? for the approval??
+    // if (page !== 'changes') {
+    //   return;
+    // }
+    const resultPromises = changedServices.map(
+      (
+        changedService,
+      ):
+        | NonNullable<typeof serviceDiff>[number]
+        | Promise<NonNullable<typeof serviceDiff>[number]> => {
+        // if not a new service with blank ID
+        if (changedService.id.length !== 0) {
+          const existingService = existingServices?.find(
+            existing => existing.id === changedService.id,
+          );
+          if (existingService) {
+            try {
+              const existingSchema = buildSchema(existingService.source, {
+                assumeValid: true,
+                assumeValidSDL: true,
+              });
+              const proposedSchema = buildSchema(changedService.source, {
+                // @todo consider not assuming valid...
+                // this is a workaround for missing federation directive definitions
+                assumeValid: true,
+                assumeValidSDL: true,
+              });
+
+              return diff(existingSchema, proposedSchema)
+                .then(result => ({ title: schemaTitle(changedService), changes: result }))
+                .catch((e: unknown) => {
+                  return {
+                    title: schemaTitle(changedService),
+                    changes: [],
+                    error: e instanceof Error ? e.message : String(e),
+                  };
+                });
+            } catch (e) {
+              return {
+                title: schemaTitle(changedService),
+                changes: [],
+                error: e instanceof Error ? e.message : String(e),
+              };
+            }
+          }
+        }
+
+        try {
+          if (changedService.source.length) {
+            // check that schema is valid
+            buildSchema(changedService.source);
+            return {
+              title: schemaTitle(changedService),
+              changes: [
+                {
+                  criticality: {
+                    level: CriticalityLevel.NonBreaking,
+                    reason: 'Adding a new service is safe.',
+                  },
+                  type: '',
+                  meta: null,
+                  message: `Schema "${schemaTitle(changedService)}" added`,
+                },
+              ],
+            };
+          }
+          return { title: schemaTitle(changedService), changes: [] };
+        } catch (e: unknown) {
+          return {
+            title: schemaTitle(changedService),
+            changes: [],
+            error: e instanceof Error ? e.message : String(e),
+          };
+        }
+      },
+    );
+    Promise.all(resultPromises)
+      .then(result => {
+        setServiceDiff(result);
+      })
+      .catch(_ => setServiceDiff(null));
+  }, [changedServices, existingServices, page]);
 
   if (query.error) {
     return (
@@ -388,7 +497,7 @@ function ProposalsNewContent(
               disabled={query.fetching}
               onClick={onSubmitProposal}
             >
-              Submit Proposal
+              {isSubmitting ? <Spinner /> : 'Submit Proposal'}
             </Button>
           </div>
         </TabsList>
@@ -398,11 +507,10 @@ function ProposalsNewContent(
             description={description}
             setTitle={setTitle}
             setDescription={setDescription}
-            onNextPage={onNextPage}
             error={
-              formError.length > 0 && (
+              overviewError.length > 0 && (
                 <Callout type="error" className="mb-6 w-full text-sm">
-                  {formError}
+                  {overviewError}
                 </Callout>
               )
             }
@@ -420,11 +528,15 @@ function ProposalsNewContent(
                 existingServices={existingServices ?? []}
                 projectTypeFragment={query.data?.target ?? undefined}
                 selectFragment={query.data?.target ?? undefined}
+                error={
+                  editorError.length > 0 && (
+                    <Callout type="error" className="mb-6 w-full text-sm">
+                      {editorError}
+                    </Callout>
+                  )
+                }
               />
-              <ChangesTab
-                changedServices={changedServices}
-                existingServices={existingServices ?? []}
-              />
+              <ChangesTab diffs={serviceDiff} />
             </>
           )}
         </div>
@@ -434,156 +546,42 @@ function ProposalsNewContent(
 }
 
 function ChangesTab(props: {
-  changedServices: Array<ServiceTab>;
-  existingServices: Array<Service>;
+  diffs: Array<{ title: string; changes: Change[]; error?: string }> | null;
 }) {
   return (
     <TabsContent value="changes">
-      <ServiceChanges
-        changedServices={props.changedServices}
-        existingServices={props.existingServices}
-      />
+      {props.diffs === null && <Spinner />}
+      {props.diffs?.length === 0 && (
+        <div className="mt-8 text-center">
+          <Title className="text-center">No changes</Title>
+          <Subtitle className="text-center">
+            Use the "Editor" to make modifications to your schema(s)
+          </Subtitle>
+        </div>
+      )}
+      {props.diffs?.map((changeProps, idx) => <DiffService key={idx} {...changeProps} />)}
     </TabsContent>
   );
 }
 
-function ServiceChanges(props: {
-  changedServices: Array<ServiceTab>;
-  existingServices: Array<Service>;
-}) {
-  const [changes, setChanges] = useState<
-    { service: ServiceTab; changes: Change<any>[]; error?: string }[]
-  >([]);
-  const [calculatingChanges, setCalculatingChanges] = useState(false);
-
-  useEffect(() => {
-    let canceled = false;
-
-    const diffSchemas = async () => {
-      let idx = 0;
-      const _changes = [...changes];
-      for (const s of props.changedServices) {
-        let change: (typeof changes)[number];
-        const existingService = props.existingServices.find(existing => existing.id === s.id);
-        if (existingService) {
-          try {
-            const existingSchema = buildSchema(existingService.source, {
-              assumeValid: true,
-              assumeValidSDL: true,
-            });
-            const proposedSchema = buildSchema(s.source, {
-              // @todo consider not assuming valid...
-              // this is a workaround for missing federation directive definitions
-              assumeValid: true,
-              assumeValidSDL: true,
-            });
-            // @todo calculate from the supergraph...
-            change = { service: s, changes: await diff(existingSchema, proposedSchema) };
-          } catch (e: unknown) {
-            change = { service: s, changes: [], error: e instanceof Error ? e.message : String(e) };
-            console.warn(e);
-          }
-        } else {
-          try {
-            // check that schema is valid
-            buildSchema(s.source);
-            change = {
-              service: s,
-              changes: [
-                {
-                  criticality: {
-                    level: CriticalityLevel.NonBreaking,
-                    reason: 'Adding a new service is safe.',
-                  },
-                  type: '',
-                  meta: null,
-                  message: `Schema "${schemaTitle(s)}" added`,
-                },
-              ],
-            };
-          } catch (e: unknown) {
-            change = { service: s, changes: [], error: e instanceof Error ? e.message : String(e) };
-            console.warn(e);
-          }
-        }
-
-        if (_changes[idx]) {
-          _changes[idx] = change;
-        } else {
-          _changes.push(change);
-        }
-
-        if (canceled) {
-          return;
-        }
-        setChanges(_changes);
-        idx++;
-      }
-      if (_changes.length > props.changedServices.length) {
-        _changes.slice(0, Math.max(props.changedServices.length - 1, 0));
-      }
-
-      if (canceled) {
-        return;
-      }
-      setChanges(_changes);
-      setCalculatingChanges(false);
-    };
-
-    setCalculatingChanges(true);
-    void diffSchemas();
-
-    return () => {
-      canceled = true;
-    };
-  }, [props.changedServices]);
-
-  const changeElements = useMemo(() => {
-    return changes.map((c, idx) => {
-      return (
-        <div key={c.service.id.length ? `changes-${c.service.id}` : `new-${idx}`}>
-          <h2 className="mb-2 flex items-center font-bold text-gray-900 dark:text-white">
-            {schemaTitle(c.service)}
-          </h2>
-          <div className="mb-6">
-            {c.error ? (
-              <div className="flex items-center text-red-500">
-                <ExclamationTriangleIcon className="mr-2" />
-                {c.error}
-              </div>
-            ) : (
-              c.changes.length === 0 && <div className="italic">No changes to schema yet.</div>
-            )}
-            {c.changes.map((change, changeIndex) => {
-              return (
-                <ProposalChangeDetail
-                  change={change}
-                  key={`${change.type}-${change.path ?? changeIndex}`}
-                />
-              );
-            })}
-          </div>
-        </div>
-      );
-    });
-  }, [changes]);
+function DiffService(props: { title: string; changes: Change<any>[]; error?: string }) {
   return (
-    <>
-      {calculatingChanges && (
-        <div className="text-xs">
-          Calculating latest changes... <Spinner />
-        </div>
-      )}
-      {changeElements.length === 0 && (
-        <div className="mt-8 text-center">
-          <h2 className="mb-2 text-3xl font-bold">No changes</h2>
-          <h3 className="text-xl font-semibold">
-            Use the "Editor" to make modifications to your schema(s)
-          </h3>
-        </div>
-      )}
-      {changeElements}
-    </>
+    <div>
+      <Title>{props.title}</Title>
+      <div className="mb-6">
+        {props.error ? (
+          <div className="flex items-center text-red-500">
+            <ExclamationTriangleIcon className="mr-2" />
+            {props.error}
+          </div>
+        ) : (
+          props.changes.length === 0 && <div className="italic">No changes to schema yet.</div>
+        )}
+        {props.changes.map((c, changeIndex) => {
+          return <ProposalChangeDetail change={c} key={`${c.type}-${c.path ?? changeIndex}`} />;
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -685,6 +683,7 @@ function EditorTab(props: {
   changedServices: Array<ServiceTab>;
   setChangedServices: (s: Array<ServiceTab>) => void;
   existingServices: Array<Service>;
+  error?: false | ReactElement;
 }) {
   const { changedServices, setChangedServices } = props;
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -818,6 +817,7 @@ function EditorTab(props: {
 
   return (
     <TabsContent value="editor">
+      {props.error}
       <div className="flex grow border-b pb-4 pl-2">
         <ServiceSelect
           targetFragment={props.selectFragment ?? undefined}
@@ -1000,7 +1000,6 @@ function OverviewTab(props: {
   setTitle: (title: string) => void;
   description: string;
   setDescription: (description: string) => void;
-  onNextPage?: () => void;
   error?: false | ReactElement;
 }) {
   return (
@@ -1036,13 +1035,6 @@ function OverviewTab(props: {
           maxLength={5000}
         />
       </div>
-      {props.onNextPage !== undefined && (
-        <div className="text-right">
-          <Button variant="outline" className="mb-10" onClick={props.onNextPage}>
-            Next
-          </Button>
-        </div>
-      )}
     </TabsContent>
   );
 }
