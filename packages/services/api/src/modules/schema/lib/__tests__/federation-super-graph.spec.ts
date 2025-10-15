@@ -265,7 +265,7 @@ describe('extractSuperGraphInformation', () => {
             reviews,
           ],
           Product.dimensions => [
-            inventory,
+            products,
           ],
           Product.delivery => [
             inventory,

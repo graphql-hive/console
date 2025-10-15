@@ -89,11 +89,15 @@ export const extractSuperGraphInformation = traceInlineSync(
             directive.name.value === joinFieldDirectiveName &&
             !directive.arguments?.find(
               arg =>
-                arg.name.value === 'usedOverridden' &&
-                arg.value.kind === Kind.BOOLEAN &&
-                arg.value.value === true,
+                (arg.name.value === 'usedOverridden' &&
+                  arg.value.kind === Kind.BOOLEAN &&
+                  arg.value.value === true) ||
+                (arg.name.value === 'external' &&
+                  arg.value.kind === Kind.BOOLEAN &&
+                  arg.value.value === true),
             ),
         );
+
         const graphArg = joinField?.arguments?.find(arg => arg.name.value === 'graph');
 
         if (graphArg === undefined) {
