@@ -257,27 +257,33 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
         {props.name}
       </FilterTitle>
       <FilterContent>
-        {!props.hideSearch && <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />}
-        {filteredOptions.map((option, index) => (
-          <FilterOption
-            key={index}
-            selected={props.selectedValues.includes(option.value)}
-            count={option.count}
-            onClick={() => {
-              if (props.selectedValues.includes(option.value)) {
-                props.onChange(props.selectedValues.filter(val => val !== option.value));
-              } else {
-                props.onChange(props.selectedValues.concat(option.value));
-              }
-            }}
-          >
-            {option.label === '' ? (
-              <span className="text-gray-400">{'<unknown>'}</span>
-            ) : (
-              option.label
-            )}
-          </FilterOption>
-        ))}
+        {!props.hideSearch && !!filteredOptions.length && (
+          <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
+        )}
+        {filteredOptions.length === 0 ? (
+          <div className="text-center text-sm text-gray-600">No option available</div>
+        ) : (
+          filteredOptions.map((option, index) => (
+            <FilterOption
+              key={index}
+              selected={props.selectedValues.includes(option.value)}
+              count={option.count}
+              onClick={() => {
+                if (props.selectedValues.includes(option.value)) {
+                  props.onChange(props.selectedValues.filter(val => val !== option.value));
+                } else {
+                  props.onChange(props.selectedValues.concat(option.value));
+                }
+              }}
+            >
+              {option.label === '' ? (
+                <span className="text-gray-400">{'<unknown>'}</span>
+              ) : (
+                option.label
+              )}
+            </FilterOption>
+          ))
+        )}
       </FilterContent>
     </Filter>
   );

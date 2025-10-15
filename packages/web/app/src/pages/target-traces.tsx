@@ -1,4 +1,13 @@
-import { Fragment, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import {
+  Fragment,
+  memo,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import {
@@ -8,6 +17,7 @@ import {
   Clock,
   ExternalLinkIcon,
   LoaderCircleIcon,
+  RefreshCw,
   XIcon,
 } from 'lucide-react';
 import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
@@ -1134,7 +1144,7 @@ function TargetTracesPageContent(
   const paginationSize = 50;
 
   const urql = useClient();
-  const [query] = useQuery({
+  const [query, refetch] = useQuery({
     query: TargetTracesPageQuery,
     variables: {
       targetRef: {
@@ -1155,7 +1165,18 @@ function TargetTracesPageContent(
       },
       filterTopN: 5,
     },
+    requestPolicy: 'network-only',
   });
+
+  useEffect(() => {
+    // query.fetching and query.stale are not dependencies as this effect should only trigger if dateRangeController.resolvedRange has changed
+    // in case `JSON.stringify(dateRangeController.resolvedRange)` is still the same, but the object got re-created (by pressing on the refresh button)
+    // we still want to refetch as new data might be available
+    if (query.fetching || query.stale) {
+      return;
+    }
+    refetch();
+  }, [dateRangeController.resolvedRange]);
 
   const [isFetchingMore, setIsFetchingMore] = useState(false);
 
@@ -1260,13 +1281,15 @@ function TargetTracesPageContent(
     );
   }
 
+  const isLoading = query.stale || query.fetching;
+
   return (
     <div className="py-6">
       <SubPageLayoutHeader
         subPageTitle="Traces"
         description="Insights into the requests made to your GraphQL API."
         sideContent={
-          <div className="ml-auto mr-0">
+          <div className="flex flex-1 justify-end gap-x-4">
             <DateRangePicker
               validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
               selectedRange={dateRangeController.selectedPreset.range}
@@ -1274,6 +1297,17 @@ function TargetTracesPageContent(
               align="end"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
+            <Button
+              variant="outline"
+              onClick={() => {
+                dateRangeController.refreshResolvedRange();
+              }}
+              disabled={isLoading}
+            >
+              <RefreshCw
+                className={cn('size-4', isLoading && 'animate-spin [animation-duration:0.45s]')}
+              />
+            </Button>
           </div>
         }
       />
