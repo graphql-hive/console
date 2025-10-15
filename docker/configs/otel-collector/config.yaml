@@ -67,6 +67,7 @@ service:
       error_output_paths: ['stderr']
     metrics:
       address: '0.0.0.0:10254'
+      level: detailed
   pipelines:
     traces:
       receivers: [otlp]
