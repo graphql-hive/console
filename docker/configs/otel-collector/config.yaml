@@ -22,7 +22,7 @@ receivers:
 processors:
   batch:
     timeout: 5s
-    send_batch_size: 10000
+    send_batch_size: 5000
   attributes:
     actions:
       - key: hive.target_id
@@ -61,7 +61,7 @@ service:
     - health_check
   telemetry:
     logs:
-      level: INFO
+      level: DEBUG
       encoding: json
       output_paths: ['stdout']
       error_output_paths: ['stderr']
