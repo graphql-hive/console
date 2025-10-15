@@ -81,7 +81,7 @@ export function prepareEnvironment(input: {
       },
       tracingCollector: {
         cpuLimit: isProduction ? '1000m' : '100m',
-        memoryLimit: isProduction ? '2000Mi' : '200Mi',
+        memoryLimit: isProduction ? '4000Mi' : '200Mi',
         maxReplicas: isProduction || isStaging ? 3 : 1,
       },
     },
