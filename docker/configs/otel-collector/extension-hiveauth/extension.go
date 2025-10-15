@@ -52,7 +52,7 @@ type hiveAuthExtension struct {
 	cache  *cache.Cache
 
 	telemetrySettings component.TelemetrySettings
-	requestDuration metric.Float64Histogram
+	requestDuration metric.Int64Histogram
     requestCount    metric.Int64Counter
 }
 
@@ -60,7 +60,7 @@ func (h *hiveAuthExtension) Start(_ context.Context, _ component.Host) error {
 	h.logger.Info("Starting hive auth extension", zap.String("endpoint", h.config.Endpoint), zap.Duration("timeout", h.config.Timeout))
 	meter := h.telemetrySettings.MeterProvider.Meter("hiveauth")
 
-	h.requestDuration, _ = meter.Float64Histogram(
+	h.requestDuration, _ = meter.Int64Histogram(
 		"hive_auth_request_duration_milliseconds",
 		metric.WithDescription("Duration of outbound authentication requests"),
 	)
@@ -134,11 +134,14 @@ type authResult struct {
 }
 
 func (h *hiveAuthExtension) doAuthRequest(ctx context.Context, auth string, targetRef string) (string, error) {
+	h.logger.Debug("authenticate token for target",
+	    zap.String("targetRef", targetRef),
+	    zap.String("accessToken", auth[:10]))
+
 	start := time.Now()
 	statusLabel := "error"
 
 	defer func() {
-		h.logger.Warn("scurrr scurrr")
 		h.requestDuration.Record(ctx, time.Since(start).Milliseconds(),
 			metric.WithAttributes(attribute.String("status", statusLabel)))
 		h.requestCount.Add(ctx, 1, metric.WithAttributes(attribute.String("status", statusLabel)))
