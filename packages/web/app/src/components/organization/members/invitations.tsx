@@ -398,8 +398,12 @@ function Invitation(props: {
         ) : null}
       </AlertDialog>
       <tr>
-        <td className="py-3 text-sm font-medium">{invitation.email}</td>
-        <td className="py-3 text-center text-sm">{invitation.role.name}</td>
+        <td className="truncate py-3 text-sm font-medium" title={invitation.email}>
+          {invitation.email}
+        </td>
+        <td className="truncate py-3 text-center text-sm" title={invitation.role.name}>
+          {invitation.role.name}
+        </td>
         <td className="py-3 text-center text-sm text-gray-400">
           {DateFormatter.format(new Date(invitation.expiresAt))}
         </td>
@@ -471,16 +475,16 @@ export function OrganizationInvitations(props: {
         />
       </SubPageLayoutHeader>
       {organization.invitations.edges.length > 0 ? (
-        <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
+        <table className="w-full table-fixed divide-y-[1px] divide-gray-500/20">
           <thead>
             <tr>
-              <th className="py-3 text-left text-sm font-semibold">Email</th>
-              <th className="w-64 py-3 text-center text-sm font-semibold">Assigned role</th>
+              <th className="w-[100px] py-3 text-left text-sm font-semibold sm:w-auto">Email</th>
+              <th className="w-32 py-3 text-center text-sm font-semibold lg:w-64">Assigned role</th>
               <th className="w-32 py-3 text-center text-sm font-semibold">Expiration date</th>
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
           </thead>
-          <tbody className="divide-y-[1px] divide-gray-500/20">
+          <tbody className="max-w-full divide-y-[1px] divide-gray-500/20">
             {organization.invitations.edges.map(edge => (
               <Invitation
                 key={edge.node.id}
