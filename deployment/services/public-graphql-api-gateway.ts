@@ -78,10 +78,10 @@ export function deployPublicGraphQLAPIGateway(args: {
         OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint ?? '',
 
         // Hive Console OTEL Tracing configuration
-        HIVE_TRACE_ENDPOINT: serviceLocalEndpoint(args.otelCollector.service).apply(
+        HIVE_HIVE_TRACE_ENDPOINT: serviceLocalEndpoint(args.otelCollector.service).apply(
           value => `${value}/v1/traces`,
         ),
-        HIVE_TARGET: hiveConfig.require('target'),
+        HIVE_HIVE_TARGET: hiveConfig.require('target'),
         // HIVE_TRACE_ACCESS_TOKEN is a secret
       },
       port: 4000,
@@ -114,7 +114,7 @@ export function deployPublicGraphQLAPIGateway(args: {
     [args.graphql.deployment, args.graphql.service],
   )
     .withSecret('HIVE_CDN_ACCESS_TOKEN', publicGraphQLAPISecret, 'cdnAccessKeyId')
-    .withSecret('HIVE_TRACE_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
+    .withSecret('HIVE_HIVE_TRACE_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
     .deploy();
 }
 

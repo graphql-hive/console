@@ -61,22 +61,25 @@ class MultiSpanProcessor implements SpanProcessor {
   }
 }
 
-if (process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_TRACE_ACCESS_TOKEN']) {
+if (
+  process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] ||
+  process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']
+) {
   hiveTracingSetup({
     // Noop is only there to not raise an exception in case we do not hive console tracing.
-    target: process.env['HIVE_TARGET'] ?? 'noop',
+    target: process.env['HIVE_HIVE_TARGET'] ?? 'noop',
     contextManager: new AsyncLocalStorageContextManager(),
     processor: new MultiSpanProcessor([
-      ...(process.env['HIVE_TRACE_ACCESS_TOKEN'] &&
-      process.env['HIVE_TRACE_ENDPOINT'] &&
-      process.env['HIVE_TARGET']
+      ...(process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN'] &&
+      process.env['HIVE_HIVE_TRACE_ENDPOINT'] &&
+      process.env['HIVE_HIVE_TARGET']
         ? [
             new BatchSpanProcessor(
               new OTLPTraceExporter({
-                url: process.env['HIVE_TRACE_ENDPOINT'],
+                url: process.env['HIVE_HIVE_TRACE_ENDPOINT'],
                 headers: {
-                  Authorization: `Bearer ${process.env['HIVE_TRACE_ACCESS_TOKEN']}`,
-                  'X-Hive-Target-Ref': process.env['HIVE_TARGET'],
+                  Authorization: `Bearer ${process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']}`,
+                  'X-Hive-Target-Ref': process.env['HIVE_HIVE_TARGET'],
                 },
               }),
             ),
@@ -126,7 +129,7 @@ export const gatewayConfig = defineConfig({
   disableWebsockets: true,
   prometheus: true,
   openTelemetry:
-    process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_TRACE_ACCESS_TOKEN']
+    process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']
       ? {
           traces: true,
           serviceName: 'public-graphql-api-gateway',
