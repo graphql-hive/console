@@ -46,7 +46,6 @@ import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organiza
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
-import { OrganizationPolicyPage } from './pages/organization-policy';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -58,8 +57,7 @@ import { OrganizationSupportTicketPage } from './pages/organization-support-tick
 import { OrganizationTransferPage } from './pages/organization-transfer';
 import { ProjectIndexRouteSearch, ProjectPage } from './pages/project';
 import { ProjectAlertsPage } from './pages/project-alerts';
-import { ProjectPolicyPage } from './pages/project-policy';
-import { ProjectSettingsPage } from './pages/project-settings';
+import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
 import { TargetAppsPage } from './pages/target-apps';
@@ -433,15 +431,6 @@ const organizationSubscriptionManageRoute = createRoute({
   },
 });
 
-const organizationPolicyRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  path: 'view/policy',
-  component: function OrganizationPolicyRoute() {
-    const { organizationSlug } = organizationPolicyRoute.useParams();
-    return <OrganizationPolicyPage organizationSlug={organizationSlug} />;
-  },
-});
-
 const OrganizationSettingRouteSearch = z.object({
   page: OrganizationSettingsPageEnum.default('general').optional(),
 });
@@ -516,21 +505,27 @@ const projectIndexRoute = createRoute({
   },
 });
 
+const ProjectSettingsRouteSearch = z.object({
+  page: ProjectSettingsPageEnum.default('general').optional(),
+});
+
 const projectSettingsRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: 'view/settings',
+  validateSearch(search) {
+    return ProjectSettingsRouteSearch.parse(search);
+  },
   component: function ProjectSettingsRoute() {
     const { organizationSlug, projectSlug } = projectSettingsRoute.useParams();
-    return <ProjectSettingsPage organizationSlug={organizationSlug} projectSlug={projectSlug} />;
-  },
-});
+    const { page } = projectSettingsRoute.useSearch();
 
-const projectPolicyRoute = createRoute({
-  getParentRoute: () => projectRoute,
-  path: 'view/policy',
-  component: function ProjectPolicyRoute() {
-    const { organizationSlug, projectSlug } = projectPolicyRoute.useParams();
-    return <ProjectPolicyPage organizationSlug={organizationSlug} projectSlug={projectSlug} />;
+    return (
+      <ProjectSettingsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        page={page}
+      />
+    );
   },
 });
 
@@ -950,15 +945,9 @@ const routeTree = root.addChildren([
       organizationSubscriptionManageRoute,
       organizationSubscriptionManageLegacyRoute,
       organizationMembersRoute,
-      organizationPolicyRoute,
       organizationSettingsRoute,
     ]),
-    projectRoute.addChildren([
-      projectIndexRoute,
-      projectSettingsRoute,
-      projectPolicyRoute,
-      projectAlertsRoute,
-    ]),
+    projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),
     targetRoute.addChildren([
       targetIndexRoute,
       targetSettingsRoute,
