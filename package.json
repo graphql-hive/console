@@ -144,7 +144,8 @@
       "bentocache": "patches/bentocache.patch",
       "nextra": "patches/nextra.patch",
       "nextra-theme-docs": "patches/nextra-theme-docs.patch",
-      "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch"
+      "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch",
+      "@better-auth/core": "patches/@better-auth__core.patch"
     }
   }
 }

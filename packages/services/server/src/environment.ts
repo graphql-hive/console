@@ -1,5 +1,5 @@
 import zod from 'zod';
-import { OpenTelemetryConfigurationModel } from '@hive/service-common';
+import { OpenTelemetryConfigurationModel } from '@hive/service-common/src/index';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -93,11 +93,6 @@ const RedisModel = zod.object({
   REDIS_PORT: NumberFromString,
   REDIS_PASSWORD: emptyString(zod.string().optional()),
   REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-});
-
-const SuperTokensModel = zod.object({
-  SUPERTOKENS_CONNECTION_URI: zod.string().url(),
-  SUPERTOKENS_API_KEY: zod.string(),
 });
 
 const GitHubModel = zod.union([
@@ -265,7 +260,6 @@ const configs = {
   postgres: PostgresModel.safeParse(processEnv),
   clickhouse: ClickHouseModel.safeParse(processEnv),
   redis: RedisModel.safeParse(processEnv),
-  supertokens: SuperTokensModel.safeParse(processEnv),
   authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
   authGoogle: AuthGoogleConfigSchema.safeParse(processEnv),
   authOkta: AuthOktaConfigSchema.safeParse(processEnv),
@@ -311,7 +305,6 @@ const postgres = extractConfig(configs.postgres);
 const sentry = extractConfig(configs.sentry);
 const clickhouse = extractConfig(configs.clickhouse);
 const redis = extractConfig(configs.redis);
-const supertokens = extractConfig(configs.supertokens);
 const authGithub = extractConfig(configs.authGithub);
 const authGoogle = extractConfig(configs.authGoogle);
 const authOkta = extractConfig(configs.authOkta);
@@ -404,10 +397,6 @@ export const env = {
     port: redis.REDIS_PORT,
     password: redis.REDIS_PASSWORD ?? '',
     tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
-  },
-  supertokens: {
-    connectionURI: supertokens.SUPERTOKENS_CONNECTION_URI,
-    apiKey: supertokens.SUPERTOKENS_API_KEY,
   },
   auth: {
     github:

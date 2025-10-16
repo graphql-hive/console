@@ -1,20 +1,20 @@
 import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { Button } from '@/components/ui/button';
+import { authClient } from '@/lib/auth';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
 
 export function ErrorComponent(props: { error: any; message?: string }) {
   const router = useRouter();
-  const session = useSessionContext();
+  const session = authClient.useSession();
 
   useEffect(() => {
     captureException(props.error);
     void flush(2000);
   }, []);
 
-  const isLoggedIn = !session.loading && session.doesSessionExist;
+  const isLoggedIn = !session.isPending && session.data != null;
 
   return (
     <div className="flex size-full items-center justify-center">

@@ -2,13 +2,10 @@ import { lazy, useCallback, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
-import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
-import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Toaster } from '@/components/ui/toaster';
-import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
 import * as gtag from '@/lib/gtag';
 import { urqlClient } from '@/lib/urql';
@@ -29,6 +26,7 @@ import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { authClient } from './lib/auth';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
 import { AuthOIDCPage } from './pages/auth-oidc';
@@ -83,7 +81,6 @@ import {
   TargetTracesSort,
 } from './pages/target-traces';
 
-SuperTokens.init(frontendConfig());
 if (env.sentry) {
   init({
     dsn: env.sentry.dsn,
@@ -110,12 +107,11 @@ function identifyOnSentry(userId: string, email: string): void {
 
 function RootComponent() {
   useEffect(() => {
-    void Session.doesSessionExist().then(async doesExist => {
-      if (!doesExist) {
+    void authClient.getSession().then(async session => {
+      if (!session.data) {
         return;
       }
-      const payload = await Session.getAccessTokenPayloadSecurely();
-      identifyOnSentry(payload.superTokensUserId, payload.email);
+      identifyOnSentry(session.data.user.id, session.data.user.email);
     });
   }, []);
 
@@ -140,14 +136,12 @@ function RootComponent() {
         </Helmet>
       )}
       <Toaster />
-      <SuperTokensWrapper>
-        <QueryClientProvider client={queryClient}>
-          <UrqlProvider value={urqlClient}>
-            <LoadingAPIIndicator />
-            <Outlet />
-          </UrqlProvider>
-        </QueryClientProvider>
-      </SuperTokensWrapper>
+      <QueryClientProvider client={queryClient}>
+        <UrqlProvider value={urqlClient}>
+          <LoadingAPIIndicator />
+          <Outlet />
+        </UrqlProvider>
+      </QueryClientProvider>
       <ToastContainer hideProgressBar />
       {/* eslint-disable-next-line no-process-env */}
       {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}

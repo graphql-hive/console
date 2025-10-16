@@ -2,9 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaRegUserCircle } from 'react-icons/fa';
 import { SiGithub, SiGoogle, SiOkta } from 'react-icons/si';
-import { sendVerificationEmail } from 'supertokens-auth-react/recipe/emailverification';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { emailPasswordSignUp } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import z from 'zod';
 import {
   AuthCard,
@@ -27,10 +24,11 @@ import { Meta } from '@/components/ui/meta';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
+import { authClient } from '@/lib/auth';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
 import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
-import { exhaustiveGuard } from '@/lib/utils';
+import { BASE_ERROR_CODES } from '@better-auth/core/error';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
@@ -56,10 +54,10 @@ type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
 export function AuthSignUpPage(props: { redirectToPath: string }) {
   const [lastAuthMethod] = useLastAuthMethod();
   const router = useRouter();
-  const session = useSessionContext();
+  const session = authClient.useSession();
 
   const sendVerificationEmailMutation = useMutation({
-    mutationFn: () => sendVerificationEmail(),
+    mutationFn: (email: string) => authClient.sendVerificationEmail({ email }),
     onSuccess() {
       void router.navigate({
         to: '/auth/verify-email',
@@ -77,41 +75,46 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
   });
 
   const signUp = useMutation({
-    mutationFn: emailPasswordSignUp,
-    onSuccess(data) {
-      const status = data.status;
+    mutationFn: (params: { email: string; password: string; name: string }) =>
+      authClient.signUp.email({ ...params }),
+    onSuccess({ data, error }) {
+      if (data?.user) {
+        if (env.auth.requireEmailVerification) {
+          sendVerificationEmailMutation.mutate(data.user.email);
+        } else {
+          void router.navigate({
+            to: props.redirectToPath,
+          });
+        }
+      }
 
-      switch (status) {
-        case 'OK': {
-          if (env.auth.requireEmailVerification) {
-            sendVerificationEmailMutation.mutate();
-          } else {
-            void router.navigate({
-              to: props.redirectToPath,
-            });
-          }
+      switch (error?.message) {
+        case BASE_ERROR_CODES.INVALID_EMAIL:
+          form.setError('email', {
+            type: 'manual',
+            message: error.message,
+          });
           break;
-        }
-        case 'FIELD_ERROR': {
-          for (const field of data.formFields) {
-            form.setError(field.id as keyof SignUpFormValues, {
-              type: 'manual',
-              message: field.error,
-            });
-          }
+        case BASE_ERROR_CODES.PASSWORD_TOO_SHORT:
+        case BASE_ERROR_CODES.PASSWORD_TOO_LONG:
+          form.setError('password', {
+            type: 'manual',
+            message: error.message,
+          });
           break;
-        }
-        case 'SIGN_UP_NOT_ALLOWED': {
+        case BASE_ERROR_CODES.USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:
           toast({
-            title: 'Sign up not allowed',
-            description: 'Please contact support for assistance.',
+            title: 'Email already in use',
+            description: 'Please use a different email address.',
             variant: 'destructive',
           });
           break;
-        }
-        default: {
-          exhaustiveGuard(status);
-        }
+        default:
+          toast({
+            title: 'Failed to sign up',
+            description: 'Please contact support for assistance.',
+            variant: 'destructive',
+          });
       }
     },
     onError(error) {
@@ -161,35 +164,20 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
     (data: SignUpFormValues) => {
       signUp.reset();
       signUp.mutate({
-        formFields: [
-          {
-            id: 'email',
-            value: data.email,
-          },
-          {
-            id: 'password',
-            value: data.password,
-          },
-          {
-            id: 'firstName',
-            value: data.firstName,
-          },
-          {
-            id: 'lastName',
-            value: data.lastName,
-          },
-        ],
+        email: data.email,
+        password: data.password,
+        name: `${data.firstName} ${data.lastName}`,
       });
     },
     [signUp.mutate],
   );
 
-  if (session.loading) {
+  if (session.isPending) {
     // AuthPage component already shows a loading state
     return null;
   }
 
-  if (session.doesSessionExist) {
+  if (session.data) {
     // Redirect to the home page if the user is already signed in
     return <Navigate to="/" />;
   }
@@ -270,7 +258,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                     )}
                   />
                   <Button type="submit" className="w-full" disabled={isPending}>
-                    {signUp.isSuccess && signUp.data.status === 'OK' && isVerificationSettled
+                    {signUp.isSuccess && signUp.data.data && isVerificationSettled
                       ? 'Redirecting...'
                       : signUp.isPending
                         ? 'Creating account...'

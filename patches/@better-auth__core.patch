@@ -1,0 +1,58 @@
+diff --git a/package.json b/package.json
+index 23ae9e5f5f48702456e7c4d737f672422a8c9980..5662e6bf77d032709d50f7d3e68a45af47fa5d19 100644
+--- a/package.json
++++ b/package.json
+@@ -109,35 +109,38 @@
+   },
+   "typesVersions": {
+     "*": {
+-      "index": [
++      ".": [
+         "dist/index.d.ts"
+       ],
+       "async_hooks": [
+-        "dist/async_hooks.d.ts"
++        "dist/async_hooks/index.d.ts"
+       ],
+-      "db": [
+-        "dist/db.d.ts"
+-      ],
+-      "db/adapter": [
+-        "dist/db/adapter/index.d.ts"
++      "context": [
++        "dist/context/index.d.ts"
+       ],
+       "env": [
+-        "dist/env.d.ts"
++        "dist/env/index.d.ts"
+       ],
+       "error": [
+-        "dist/error.d.ts"
++        "dist/error/index.d.ts"
+       ],
+       "middleware": [
+-        "dist/middleware.d.ts"
++        "dist/middleware/index.d.ts"
+       ],
+-      "oauth2": [
+-        "dist/oauth2.d.ts"
++      "utils": [
++        "dist/utils/index.d.ts"
+       ],
+       "social-providers": [
+-        "dist/social-providers.d.ts"
++        "dist/social-providers/index.d.ts"
+       ],
+-      "utils": [
+-        "dist/utils.d.ts"
++      "db": [
++        "dist/db/index.d.ts"
++      ],
++      "db/adapter": [
++        "dist/db/adapter/index.d.ts"
++      ],
++      "oauth2": [
++        "dist/oauth2/index.d.ts"
+       ]
+     }
+   },

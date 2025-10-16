@@ -44,10 +44,6 @@ export interface GraphQLHandlerOptions {
   registry: Registry;
   signature: string;
   tracing?: TracingInstance;
-  supertokens: {
-    connectionUri: string;
-    apiKey: string;
-  };
   isProduction: boolean;
   hiveUsageConfig: HiveUsageConfig;
   hivePersistedDocumentsConfig: HivePersistedDocumentsConfig;
@@ -147,12 +143,14 @@ export function useHiveSentry() {
       });
     },
     appendTags: ({ contextValue }) => {
-      const supertokens_user_id = extractUserId(contextValue as any);
+      const better_auth_user_id = extractUserId(contextValue as any);
       const request_id = (contextValue as Context).requestId;
 
       return {
-        supertokens_user_id,
+        better_auth_user_id,
         request_id,
+        // for backward compat
+        supertokens_user_id: better_auth_user_id,
       };
     },
     skip(args) {

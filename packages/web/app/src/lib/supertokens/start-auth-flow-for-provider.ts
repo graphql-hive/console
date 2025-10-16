@@ -1,5 +1,6 @@
 import { getAuthorisationURLWithQueryParamsAndSetState } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import { env } from '@/env/frontend';
+import { authClient } from '../auth';
 import { updateLastAuthMethod } from './last-auth-method';
 
 /**
@@ -21,6 +22,10 @@ export const startAuthFlowForProvider = async (
     redirectToPath && providersWithRedirectPartSupport.includes(thirdPartyId)
       ? `?redirectToPath=${encodeURIComponent(redirectToPath)}`
       : '';
+  // const result = await authClient.signIn.social({
+  //   provider: thirdPartyId,
+  //   callbackURL: `${env.appBaseUrl}/auth/callback/${thirdPartyId}${redirectPart}`,
+  // });
   const authUrl = await getAuthorisationURLWithQueryParamsAndSetState({
     thirdPartyId,
     frontendRedirectURI: `${env.appBaseUrl}/auth/callback/${thirdPartyId}${redirectPart}`,
