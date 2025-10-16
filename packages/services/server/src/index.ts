@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 import got from 'got';
 import { GraphQLError, stripIgnoredCharacters } from 'graphql';
-import supertokens from 'supertokens-node';
-import {
-  errorHandler as supertokensErrorHandler,
-  plugin as supertokensFastifyPlugin,
-} from 'supertokens-node/framework/fastify/index.js';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
@@ -23,6 +18,7 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
+import { BetterAuthUserAuthNStrategy } from '@hive/api/modules/auth/lib/better-auth-strategy';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -58,18 +54,17 @@ import {
 import { createServerAdapter } from '@whatwg-node/server';
 import { AuthN } from '../../api/src/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
-import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/supertokens-strategy';
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
+import { createAuth, oidcIdLookup } from './auth';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
-import { initSupertokens, oidcIdLookup } from './supertokens';
 
 export async function main() {
   let tracing: TracingInstance | undefined;
@@ -128,6 +123,8 @@ export async function main() {
     await server.register(...tracing.instrumentFastify());
   }
 
+  const authInstance = createAuth();
+
   server.addContentTypeParser(
     'application/graphql+json',
     { parseAs: 'string' },
@@ -146,7 +143,6 @@ export async function main() {
     },
   );
 
-  server.setErrorHandler(supertokensErrorHandler());
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
       if (req.headers.origin?.startsWith(env.hiveServices.webApp.url)) {
@@ -161,7 +157,9 @@ export async function main() {
             'graphql-client-version',
             'graphql-client-name',
             'x-request-id',
-            ...supertokens.getAllCORSHeaders(),
+            // Better Auth headers
+            'authorization',
+            'x-requested-with',
           ],
         });
         return;
@@ -404,6 +402,7 @@ export async function main() {
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
       prometheus: env.prometheus,
+      authInstance,
     });
 
     const organizationAccessTokenStrategy = (logger: Logger) =>
@@ -422,10 +421,6 @@ export async function main() {
       graphiqlEndpoint: graphqlPath,
       registry,
       signature,
-      supertokens: {
-        connectionUri: env.supertokens.connectionURI,
-        apiKey: env.supertokens.apiKey,
-      },
       isProduction: env.environment !== 'development',
       release: env.release,
       hiveUsageConfig: env.hive,
@@ -435,7 +430,7 @@ export async function main() {
       authN: new AuthN({
         strategies: [
           (logger: Logger) =>
-            new SuperTokensUserAuthNStrategy({
+            new BetterAuthUserAuthNStrategy({
               logger,
               storage,
               organizationMembers: new OrganizationMembers(
@@ -443,6 +438,7 @@ export async function main() {
                 new OrganizationMemberRoles(storage.pool, logger),
                 logger,
               ),
+              auth: authInstance,
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>
@@ -493,20 +489,81 @@ export async function main() {
 
     const crypto = new CryptoProvider(env.encryptionSecret);
 
-    initSupertokens({
-      storage,
-      crypto,
-      logger: server.log,
-      broadcastLog(id, message) {
-        pubSub.publish('oidcIntegrationLogs', id, {
-          timestamp: new Date().toISOString(),
-          message,
+    await server.register(formDataPlugin);
+
+    const oidcIdLookupSchema = z.object({
+      slug: z.string({
+        required_error: 'Slug is required',
+      }),
+    });
+    server.post('/auth-api/oidc-id-lookup', async (req, res) => {
+      const inputResult = oidcIdLookupSchema.safeParse(req.body);
+
+      if (!inputResult.success) {
+        captureException(inputResult.error, {
+          extra: {
+            path: '/auth-api/oidc-id-lookup',
+            body: req.body,
+          },
         });
-      },
+        void res.status(400).send({
+          ok: false,
+          title: 'Invalid input',
+          description: 'Failed to resolve SSO information due to invalid input.',
+          status: 400,
+        } satisfies Awaited<ReturnType<typeof oidcIdLookup>>);
+        return;
+      }
+
+      const result = await oidcIdLookup(inputResult.data.slug, storage, req.log);
+
+      if (result.ok) {
+        void res.status(200).send(result);
+        return;
+      }
+
+      void res.status(result.status).send(result);
+      return;
     });
 
-    await server.register(formDataPlugin);
-    await server.register(supertokensFastifyPlugin);
+    server.route({
+      method: ['GET', 'POST'],
+      url: '/auth-api/*',
+      async handler(request, reply) {
+        try {
+          const url = new URL(request.url, `http://${request.headers.host}`);
+          const headers = new Headers();
+          for (const [key, value] of Object.entries(request.headers)) {
+            if (Array.isArray(value)) {
+              for (const v of value) {
+                headers.append(key, v);
+              }
+            } else if (value != null) {
+              headers.append(key, value);
+            }
+          }
+
+          const response = await authInstance.handler(
+            new Request(url.toString(), {
+              method: request.method,
+              headers,
+              body: request.body ? JSON.stringify(request.body) : undefined,
+            }),
+          );
+
+          reply.status(response.status);
+          for (const [key, value] of response.headers.entries()) {
+            reply.header(key, value);
+          }
+          reply.send(response.body ? await response.text() : null);
+        } catch (error) {
+          server.log.error(error);
+          reply.status(500).send({
+            message: 'Internal authentication error',
+          });
+        }
+      },
+    });
 
     await registerTRPC(server, {
       router: internalApiRouter,
@@ -560,41 +617,6 @@ export async function main() {
         reportReadiness(false);
         res.status(400).send(); // eslint-disable-line @typescript-eslint/no-floating-promises -- false positive, FastifyReply.then returns void
       },
-    });
-
-    const oidcIdLookupSchema = z.object({
-      slug: z.string({
-        required_error: 'Slug is required',
-      }),
-    });
-    server.post('/auth-api/oidc-id-lookup', async (req, res) => {
-      const inputResult = oidcIdLookupSchema.safeParse(req.body);
-
-      if (!inputResult.success) {
-        captureException(inputResult.error, {
-          extra: {
-            path: '/auth-api/oidc-id-lookup',
-            body: req.body,
-          },
-        });
-        void res.status(400).send({
-          ok: false,
-          title: 'Invalid input',
-          description: 'Failed to resolve SSO information due to invalid input.',
-          status: 400,
-        } satisfies Awaited<ReturnType<typeof oidcIdLookup>>);
-        return;
-      }
-
-      const result = await oidcIdLookup(inputResult.data.slug, storage, req.log);
-
-      if (result.ok) {
-        void res.status(200).send(result);
-        return;
-      }
-
-      void res.status(result.status).send(result);
-      return;
     });
 
     createOtelAuthEndpoint({

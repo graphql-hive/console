@@ -10,6 +10,7 @@ import { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recor
 import { AuditLogS3Config } from './modules/audit-logs/providers/audit-logs-manager';
 import { authModule } from './modules/auth';
 import { Session } from './modules/auth/lib/authz';
+import { AuthInstance, provideAuthInstance } from './modules/auth/providers/auth-instance';
 import { cdnModule } from './modules/cdn';
 import { AwsClient } from './modules/cdn/providers/aws';
 import { CDN_CONFIG, CDNConfig } from './modules/cdn/providers/tokens';
@@ -114,6 +115,7 @@ export function createRegistry({
   pubSub,
   appDeploymentsEnabled,
   prometheus,
+  authInstance,
 }: {
   logger: Logger;
   storage: Storage;
@@ -158,6 +160,7 @@ export function createRegistry({
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
   prometheus: null | Record<string, unknown>;
+  authInstance: AuthInstance;
 }) {
   const s3Config: S3Config = [
     {
@@ -298,6 +301,7 @@ export function createRegistry({
     encryptionSecretProvider(encryptionSecret),
     provideSchemaModuleConfig(schemaConfig),
     provideCommerceConfig(commerce),
+    provideAuthInstance(authInstance),
     {
       provide: Session,
       useFactory(context: { session: Session }) {

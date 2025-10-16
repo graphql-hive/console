@@ -405,7 +405,7 @@ export interface users {
   id: string;
   is_admin: boolean | null;
   oidc_integration_id: string | null;
-  supertoken_user_id: string | null;
+  better_auth_user_id: string | null;
   zendesk_user_id: string | null;
 }
 

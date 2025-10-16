@@ -1,10 +1,10 @@
 import type { Plugin } from '@envelop/types';
 import * as Sentry from '@sentry/node';
 
-export function extractUserId(context?: { user?: { superTokensUserId: string } }) {
-  const superTokensUserId = context?.user?.superTokensUserId;
+export function extractUserId(context?: { user?: { betterAuthUserId: string } }) {
+  const betterAuthUserId = context?.user?.betterAuthUserId;
 
-  return superTokensUserId ?? null;
+  return betterAuthUserId ?? null;
 }
 
 export const useSentryUser = (): Plugin<{

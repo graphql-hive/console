@@ -1,0 +1,23 @@
+diff --git a/package.json b/package.json
+index ca19315e7f63624effca605e7eff075fb5e68a13..48caccc160b339c68a0702c4c623e0f453e463db 100644
+--- a/package.json
++++ b/package.json
+@@ -49,15 +49,9 @@
+   },
+   "typesVersions": {
+     "*": {
+-      "index": [
+-        "dist/index.d.ts"
+-      ],
+-      "async_hooks": [
+-        "dist/async_hooks.d.ts"
+-      ],
+-      "db": [
+-        "dist/db.d.ts"
+-      ]
++      ".": ["dist/index.d.ts"],
++      "async_hooks": ["dist/async_hooks/index.d.ts"],
++      "db": ["dist/db/index.d.ts"]
+     }
+   },
+   "devDependencies": {

@@ -70,7 +70,7 @@ export interface Storage {
   destroy(): Promise<void>;
   isReady(): Promise<boolean>;
   ensureUserExists(_: {
-    superTokensUserId: string;
+    betterAuthUserId: string;
     email: string;
     oidcIntegration: null | {
       id: string;
@@ -80,7 +80,7 @@ export interface Storage {
     lastName: string | null;
   }): Promise<'created' | 'no_action'>;
 
-  getUserBySuperTokenId(_: { superTokensUserId: string }): Promise<User | null>;
+  getUserByBetterAuthId(_: { betterAuthUserId: string }): Promise<User | null>;
   getUserById(_: { id: string }): Promise<User | null>;
 
   updateUser(_: { id: string; fullName: string; displayName: string }): Promise<User | never>;

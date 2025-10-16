@@ -5,5 +5,5 @@ module.exports = {
   conn: cn('registry'),
   // Prettier v3 is not supported here yet, but we don't really need it.
   prettier: false,
-  skipPrefix: ['supertokens_'],
+  skipPrefix: ['better_auth_'],
 };

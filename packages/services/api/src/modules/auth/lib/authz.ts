@@ -92,7 +92,7 @@ export abstract class Session {
 
   /**
    * Retrieve the Viewer of the session.
-   * A viewer can only be a {User} aka {SuperTokensSessions{}.
+   * A viewer can only be a {User}.
    * If the session does not have a user an exception is raised.
    */
   public async getViewer(): Promise<User> {
@@ -539,7 +539,7 @@ class UnauthenticatedSession extends Session {
 
 /**
  * Strategy to authenticate a session from an incoming request.
- * E.g. SuperTokens, JWT, etc.
+ * E.g. Better Auth, JWT, etc.
  */
 export abstract class AuthNStrategy<TSession extends Session> {
   /**
