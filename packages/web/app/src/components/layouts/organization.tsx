@@ -45,7 +45,6 @@ export enum Page {
   Overview = 'overview',
   Members = 'members',
   Settings = 'settings',
-  Policy = 'policy',
   Support = 'support',
   Subscription = 'subscription',
 }
@@ -54,11 +53,9 @@ const OrganizationLayout_OrganizationFragment = graphql(`
   fragment OrganizationLayout_OrganizationFragment on Organization {
     id
     slug
-    viewerCanModifySchemaPolicy
     viewerCanCreateProject
     viewerCanManageSupportTickets
     viewerCanDescribeBilling
-    viewerCanAccessSettings
     viewerCanSeeMembers
     ...ProPlanBilling_OrganizationFragment
     ...RateLimitWarn_OrganizationFragment
@@ -156,24 +153,14 @@ export function OrganizationLayout({
                     </Link>
                   </TabsTrigger>
                 )}
-                <TabsTrigger variant="menu" value={Page.Policy} asChild>
+                <TabsTrigger variant="menu" value={Page.Settings} asChild>
                   <Link
-                    to="/$organizationSlug/view/policy"
+                    to="/$organizationSlug/view/settings"
                     params={{ organizationSlug: currentOrganization.slug }}
                   >
-                    Policy
+                    Settings
                   </Link>
                 </TabsTrigger>
-                {currentOrganization.viewerCanAccessSettings && (
-                  <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                    <Link
-                      to="/$organizationSlug/view/settings"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Settings
-                    </Link>
-                  </TabsTrigger>
-                )}
                 {currentOrganization.viewerCanManageSupportTickets && (
                   <TabsTrigger variant="menu" value={Page.Support} asChild>
                     <Link

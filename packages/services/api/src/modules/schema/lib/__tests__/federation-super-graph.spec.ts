@@ -265,7 +265,7 @@ describe('extractSuperGraphInformation', () => {
             reviews,
           ],
           Product.dimensions => [
-            inventory,
+            products,
           ],
           Product.delivery => [
             inventory,
@@ -536,6 +536,94 @@ test('subgraph ownership for external fields is correct', () => {
   ]);
 
   const supergraphInfo = extractSuperGraphInformation(parse(result.supergraphSdl!));
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('Product.weight')).toEqual(['a']);
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('ProductWeight.id')).toEqual(['a']);
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('ProductWeight')).toEqual(['a', 'b']);
+  expect(supergraphInfo.schemaCoordinateServicesMappings.get('Product.shippingCosts')).toEqual([
+    'b',
+  ]);
+});
+
+test('subgraph ownership picks first non external "join__field" annotation', () => {
+  // See Product.weight within the schema
+  // B is picked as the owner even though it is external
+  const supergraphSdl = /* GraphQL */ `
+    schema
+      @link(url: "https://specs.apollo.dev/link/v1.0")
+      @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION) {
+      query: Query
+    }
+
+    directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
+    directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+    directive @join__field(
+      graph: join__Graph
+      requires: join__FieldSet
+      provides: join__FieldSet
+      type: String
+      external: Boolean
+      override: String
+      usedOverridden: Boolean
+    ) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+    directive @join__implements(
+      graph: join__Graph!
+      interface: String!
+    ) repeatable on OBJECT | INTERFACE
+
+    directive @join__type(
+      graph: join__Graph!
+      key: join__FieldSet
+      extension: Boolean! = false
+      resolvable: Boolean! = true
+      isInterfaceObject: Boolean! = false
+    ) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+    directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
+
+    scalar join__FieldSet
+
+    directive @link(
+      url: String
+      as: String
+      for: link__Purpose
+      import: [link__Import]
+    ) repeatable on SCHEMA
+
+    scalar link__Import
+
+    enum link__Purpose {
+      SECURITY
+      EXECUTION
+    }
+
+    enum join__Graph {
+      A @join__graph(name: "a", url: "")
+      B @join__graph(name: "b", url: "")
+    }
+
+    type Product @join__type(graph: A, key: "id") @join__type(graph: B, key: "id") {
+      id: ID!
+      # THIS IS THE RELEVANT FIELD FOR THIS TEST
+      weight: ProductWeight! @join__field(graph: B, external: true) @join__field(graph: A)
+      shippingCosts: Int! @join__field(graph: B, requires: "weight{id}")
+    }
+
+    type ProductWeight @join__type(graph: A) @join__type(graph: B) {
+      id: ID! @join__field(graph: A) @join__field(graph: B, external: true)
+      weight: Int! @join__field(graph: A)
+    }
+
+    type Query @join__type(graph: A) @join__type(graph: B) {
+      a: Product! @join__field(graph: A)
+      g: ProductWeight! @join__field(graph: A)
+      c: Product! @join__field(graph: B)
+    }
+  `;
+
+  const supergraphInfo = extractSuperGraphInformation(parse(supergraphSdl!));
   expect(supergraphInfo.schemaCoordinateServicesMappings.get('Product.weight')).toEqual(['a']);
   expect(supergraphInfo.schemaCoordinateServicesMappings.get('ProductWeight.id')).toEqual(['a']);
   expect(supergraphInfo.schemaCoordinateServicesMappings.get('ProductWeight')).toEqual(['a', 'b']);
