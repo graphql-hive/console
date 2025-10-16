@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
+import { MailIcon, MailQuestionIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -263,7 +264,9 @@ export function MemberInvitationButton(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Invite a new member</Button>
+        <Button className="ml-4 min-w-[140px]">
+          <MailIcon size={14} className="mr-2" /> Send Invite
+        </Button>
       </DialogTrigger>
       {open ? (
         <MemberInvitationForm
@@ -451,8 +454,16 @@ export function OrganizationInvitations(props: {
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
-        subPageTitle="Pending invitations"
-        description="Active invitations to join this organization. Invitations expire after 7 days."
+        subPageTitle="Member Invitations"
+        description={
+          <CardDescription className="pb-4">
+            Send an invite to add a new non-OIDC member to your Organization. Invitations expire
+            after 7 days.
+            <br />
+            <br />
+            To accept, the user must have an account and log in before using the sent link.
+          </CardDescription>
+        }
       >
         <MemberInvitationButton
           refetchInvitations={props.refetchInvitations}
