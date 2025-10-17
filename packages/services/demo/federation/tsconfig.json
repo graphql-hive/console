@@ -5,5 +5,5 @@
     "module": "esnext",
     "rootDir": "../../.."
   },
-  "include": ["./src/main.ts"]
+  "include": ["./src/**/*.ts"]
 }
