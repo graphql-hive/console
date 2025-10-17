@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 // Reason: this script is executed directly via `node --experimental-strip-types`
 // which allows running `.ts` files without transpilation. TypeScript doesn’t
