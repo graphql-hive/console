@@ -134,13 +134,6 @@ export class SlackIntegrationManager {
           selector.organizationId,
           selector.context,
         );
-        await this.session.assertPerformAction({
-          action: 'slackIntegration:modify',
-          organizationId: selector.organizationId,
-          params: {
-            organizationId: selector.organizationId,
-          },
-        });
         break;
       }
       case IntegrationsAccessContext.ChannelConfirmation: {
