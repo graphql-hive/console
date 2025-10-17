@@ -1,0 +1,50 @@
+---
+title: 'Traffic Shaping'
+---
+
+# Traffic Shaping
+
+Hive Router includes a traffic-shaping executor that gives you fine-grained control over how requests are sent to your subgraph services. Proper traffic shaping is crucial for maintaining the stability and performance of your federated graph, preventing individual subgraphs from becoming overloaded.
+
+By managing connection pools and deduplicating requests, the router can significantly improve efficiency and resilience.
+
+## Configuration
+
+You can configure traffic shaping settings in your `router.config.yaml` file under the `traffic_shaping` key.
+
+```yaml filename="router.config.yaml"
+traffic_shaping:
+  dedupe_enabled: true
+  max_connections_per_host: 100
+  pool_idle_timeout_seconds: 90
+```
+
+### `dedupe_enabled`
+
+| Type      | Default |
+| :-------- | :------ |
+| `boolean` | `true`  |
+
+This flag enables or disables in-flight request deduplication. When enabled, if the router receives multiple identical GraphQL requests (matching subgraph, URL, headers, query, and variables) at the same time, it will send only one request to the subgraph. The response from that single request is then shared with all the waiting clients.
+
+This feature is particularly effective for reducing load during "thundering herd" scenarios, where many clients request the same data simultaneously.
+
+### `max_connections_per_host`
+
+| Type      | Default |
+| :-------- | :------ |
+| `integer` | `100`   |
+
+This setting limits the maximum number of concurrent connections the router will open to a single subgraph host. It acts as a client-side circuit breaker, preventing the router from overwhelming a subgraph with too many simultaneous requests.
+
+If the number of in-flight requests to a subgraph exceeds this limit, subsequent requests will be queued until a connection becomes available. Adjusting this value can help you protect subgraphs that have limited capacity.
+
+### `pool_idle_timeout_seconds`
+
+| Type      | Default |
+| :-------- | :------ |
+| `integer` | `50`    |
+
+This property controls the timeout (in seconds) for idle connections in the connection pool. The router maintains a pool of keep-alive HTTP connections to each subgraph to reduce the latency associated with establishing new connections for each request.
+
+If a connection in the pool remains idle for longer than this timeout, it will be closed. Setting this value appropriately can help manage resource consumption on both the router and the subgraph services. The default of 50 seconds is generally a safe value.

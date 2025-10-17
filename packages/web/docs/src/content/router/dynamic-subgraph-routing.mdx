@@ -1,0 +1,74 @@
+---
+title: 'Dynamic Subgraph Routing'
+---
+
+# Dynamic Subgraph Routing
+
+Hive Router's `override_subgraph_urls` feature provides a powerful mechanism to dynamically change the URL of a subgraph at runtime. By using [VRL](https://vrl.dev) (Vector Remodeling Language), you can implement sophisticated routing logic based on incoming request data, such as headers, cookies, or even JWT claims.
+
+This capability is essential for advanced operational patterns like canary deployments, regional routing, and A/B testing, allowing you to control traffic flow without needing to recompose your supergraph.
+
+## The Core Concept
+
+The `override_subgraph_urls` configuration allows you to specify a new URL for any subgraph defined in your supergraph schema. Instead of a static URL, you can provide a VRL `expression`. This expression is evaluated for each request and must return a string, which will be used as the subgraph URL for that specific request.
+
+Within the VRL expression, you have access to two key variables:
+- `.request`: The upstream HTTP request object, including its headers (`.request.headers`).
+- `.original_url`: The original URL of the subgraph as defined in the supergraph schema.
+
+---
+
+## Scenario 1: Canary Deployments
+
+You are rolling out a new version of your `products` subgraph. To minimize risk, you want to direct a small amount of traffic to the new "canary" instance first. You can achieve this by routing requests that contain a specific HTTP header.
+
+**Goal:** If a request has the `X-Deploy-Track: canary` header, send it to the canary instance of the `products` subgraph. All other traffic should go to the stable instance.
+
+**Solution:** Use a VRL expression to check for the header.
+
+```yaml filename="router.config.yaml"
+override_subgraph_urls:
+  products:
+    url:
+      expression: |
+        if .request.headers."x-deploy-track" == "canary" {
+          "https://products-canary.internal.svc.cluster.local/"
+        } else {
+          .original_url
+        }
+```
+
+With this configuration, your QA team or a CI/CD pipeline can test the new deployment by simply adding the `X-Deploy-Track: canary` header to their requests.
+
+---
+
+## Scenario 2: Regional Routing for Lower Latency
+
+Your application is deployed globally, and you have instances of your `reviews` subgraph in multiple geographic regions (e.g., US and EU). To reduce latency, you want to route users to the subgraph instance closest to them. You can use a header like `X-User-Region` to determine the user's location.
+
+**Goal:** Route requests to the appropriate regional `reviews` subgraph based on the `X-User-Region` header.
+
+**Solution:** Use a VRL `if/else if` chain to map region codes to subgraph URLs.
+
+```yaml filename="router.config.yaml"
+override_subgraph_urls:
+  reviews:
+    url:
+      expression: |
+        if .request.headers."x-user-region" == "us-east" {
+          "https://reviews.us.api.example.com/graphql"
+        } else if .request.headers."x-user-region" == "eu-west" {
+          "https://reviews.eu.api.example.com/graphql"
+        } else {
+          # Default to the primary region if the header is missing or unknown
+          .original_url
+        }
+```
+
+This powerful pattern allows for fine-grained, user-aware routing logic managed entirely at the router level.
+
+## Best Practices
+
+- **Always Provide a Fallback:** Your VRL expression should always have a final `else` block that returns `.original_url`. This ensures that requests will always be routed correctly, even if the conditions in your expression are not met.
+- **Keep Expressions Simple:** VRL is highly efficient, but complex expressions can be harder to debug. Prefer simple, clear logic.
+- **Test Thoroughly:** Use tools like `curl` to send requests with different headers to validate that your routing logic is working as expected.

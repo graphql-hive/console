@@ -1,0 +1,143 @@
+---
+title: 'Configuration Reference'
+---
+
+# Configuration Reference
+
+This document provides a comprehensive reference for all configuration options available in the Hive Router. You can configure the router using a YAML file (e.g., `router.config.yaml`) or through environment variables.
+
+For a quick start, refer to the [Getting Started](./index) guide.
+
+## Top-Level Configuration
+
+### Security
+
+Security-related configurations are crucial for protecting your GraphQL API.
+
+-   **`jwt`**: Configures JWT-based authentication.
+    -   [See the full Authentication (JWT) documentation](./security/authentication).
+-   **`cors`**: Manages Cross-Origin Resource Sharing policies.
+    -   [See the full CORS documentation](./security/cors).
+-   **`csrf`**: Enables and configures Cross-Site Request Forgery prevention.
+    -   [See the full CSRF documentation](./security/csrf).
+
+### Observability
+
+-   **`log`**: Controls the logging behavior of the router.
+    -   [See the full Logging documentation](./observability-logging/logging).
+
+### Performance
+
+-   **`traffic_shaping`**: Manages how requests are sent to subgraphs, including connection pooling and request deduplication.
+    -   [See the full Traffic Shaping documentation](./performance-scaling/traffic-shaping).
+
+---
+
+## Other Configurations
+
+### `http`
+
+Configuration for the HTTP server/listener.
+
+| Name   | Type      | Description                                                                                                                                                           |
+| :----- | :-------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host` | `string`  | The host address to bind the HTTP server to. Defaults to `"0.0.0.0"`.                                                                                                 |
+| `port` | `integer` | The port to bind the HTTP server to. If you are running the router inside a Docker container, ensure that the port is exposed correctly. Defaults to `4000`. |
+
+### `supergraph`
+
+Configuration for the Federation supergraph source. The router needs to know where to load the supergraph schema from. By default, it will look for a local file named `supergraph.graphql`.
+
+```yaml
+supergraph:
+  source: file
+  path: ./supergraph.graphql
+```
+
+-   **`source`**: The type of source. Currently, only `file` is supported.
+-   **`path`**: The path to the supergraph schema file. Can be absolute or relative.
+
+### `query_planner`
+
+Configuration for the query planner.
+
+| Name             | Type      | Description                                                                                                                                                                                           |
+| :--------------- | :-------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `allow_expose`   | `boolean` | A flag to allow exposing the query plan in the GraphQL response for debugging. When set to `true` and a request includes the `hive-expose-query-plan: true` header, the query plan will be returned in the `extensions` field. Defaults to `false`. |
+| `timeout`        | `string`  | The maximum time allowed for the query planner to create an execution plan (e.g., `"10s"`, `"500ms"`). This prevents complex or malicious queries from degrading server performance. Defaults to `"10s"`.                                   |
+
+### `headers`
+
+Configuration for manipulating HTTP headers between the client, the router, and the subgraphs. This allows you to propagate, remove, or insert headers at different stages.
+
+| Name        | Type     | Description                                               |
+| :---------- | :------- | :-------------------------------------------------------- |
+| **`all`**       | `object` | Rules applied globally to all subgraph requests/responses.      |
+| **`subgraphs`** | `object` | Rules applied to individual subgraphs, keyed by subgraph name. |
+
+Rules defined at the `subgraphs` level are applied *after* global `all` rules and can override them.
+
+#### Header Rules
+
+You can define rules for both the `request` (router to subgraph) and `response` (subgraph to client) paths.
+
+**`propagate`**: Forwards headers.
+```yaml
+# Forward the Authorization header to all subgraphs
+all:
+  request:
+    - propagate:
+        named: Authorization
+```
+
+**`remove`**: Removes headers.
+```yaml
+# Remove a legacy header before sending to subgraphs
+all:
+  request:
+    - remove:
+        matching: ^x-legacy-.*
+```
+
+**`insert`**: Adds or overwrites a header with a static or dynamic value.
+```yaml
+# Insert a static header
+- insert:
+    name: x-router-version
+    value: v1.2.3
+
+# Insert a header with a value derived from the request
+- insert:
+    name: x-auth-scheme
+    expression: 'split(.request.headers.authorization, " ")[0] ?? "none"'
+```
+
+### `override_subgraph_urls`
+
+Configuration for dynamically overriding the URL of a subgraph at runtime. This is useful for routing requests to different subgraph environments (e.g., based on a header) without changing the supergraph schema.
+
+You can provide a static URL or a dynamic VRL expression.
+
+The expression has access to:
+-   `.request`: The incoming HTTP request.
+-   `.original_url`: The original URL of the subgraph from the supergraph schema.
+
+**Static Override Example:**
+```yaml
+override_subgraph_urls:
+  accounts:
+    url: https://accounts.staging.example.com/graphql
+```
+
+**Dynamic Override Example:**
+```yaml
+override_subgraph_urls:
+  products:
+    url:
+      expression: |
+        if .request.headers."x-environment" == "canary" {
+          "https://products-canary.example.com/graphql"
+        } else {
+          .original_url
+        }
+```

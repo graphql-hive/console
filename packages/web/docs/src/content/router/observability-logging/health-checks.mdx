@@ -1,0 +1,51 @@
+---
+title: 'Health Checks'
+---
+
+# Health Checks
+
+To effectively manage the Hive Router in a production environment, especially within container orchestration systems like Kubernetes, it's crucial to configure health checks. Health checks allow the orchestrator to understand the state of the router instances, enabling automated recovery and safe deployments.
+
+Hive Router exposes an HTTP endpoint that can be used for both liveness and readiness probes.
+
+## Liveness Probes
+
+A liveness probe is used by Kubernetes to determine if a container needs to be restarted. If the router becomes unresponsive - for example, due to a deadlock or running out of memory - the liveness probe will fail, and Kubernetes will automatically restart the container to attempt recovery.
+
+**When to use:** You should always configure a liveness probe to ensure your router instances are automatically recovered from unrecoverable states.
+
+### Example Kubernetes Configuration
+
+```yaml filename="deployment.yaml"
+# ... inside your container spec
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 4000 # The default HTTP port for the router
+  initialDelaySeconds: 15
+  periodSeconds: 20
+```
+
+## Readiness Probes
+
+A readiness probe is used by Kubernetes to determine if a container is ready to start accepting traffic. A probe will fail if the router has not yet loaded its supergraph or is not yet ready to process GraphQL requests for any other reason.
+
+**When to use:** A readiness probe is essential for achieving zero-downtime deployments. When you deploy a new version of the router, Kubernetes will wait for the readiness probe on the new pods to succeed before it terminates the old ones. This ensures that traffic is only sent to router instances that are fully prepared to handle it.
+
+### Example Kubernetes Configuration
+
+```yaml filename="deployment.yaml"
+# ... inside your container spec
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 4000 # The default HTTP port for the router
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+## Health Check Response
+
+When the health check endpoint is called:
+- A successful response with a `200 OK` status code indicates that the router is healthy and ready.
+- Any other status code (e.g., `503 Service Unavailable`) or a connection failure will be considered a failure by the probe.

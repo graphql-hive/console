@@ -1,0 +1,92 @@
+---
+title: 'Cross-Origin Resource Sharing (CORS)'
+---
+
+# Cross-Origin Resource Sharing (CORS)
+
+Cross-Origin Resource Sharing (CORS) is a security mechanism that controls how web applications in one domain can request and interact with resources in another domain. Hive Router provides a flexible and powerful way to configure CORS policies to secure your GraphQL API from unauthorized cross-origin requests.
+
+## Configuration
+
+You can manage CORS settings under the `cors` key in your `router.config.yaml` file.
+
+```yaml filename="router.config.yaml"
+cors:
+  enabled: true
+  allow_any_origin: false
+  allow_credentials: true
+  policies:
+    - origins:
+        - 'https://my-app.com'
+        - 'https://staging.my-app.com'
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+      allow_headers:
+        - Content-Type
+        - Authorization
+      max_age: 3600 # 1 hour
+```
+
+### Top-Level CORS Properties
+
+These properties define the global CORS behavior. They can be selectively overridden by individual policies.
+
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| **`enabled`** | `boolean` | Enables or disables CORS. Defaults to `false`. |
+| **`allow_any_origin`** | `boolean` | If `true`, allows requests from any origin. This is insecure for production environments. The `policies` array is ignored if this is `true`. Defaults to `false`. |
+| **`allow_credentials`** | `boolean` | If `true`, allows credentials (e.g., cookies, authorization headers) in cross-origin requests by setting the `Access-Control-Allow-Credentials` header to `true`. Defaults to `false`. |
+| **`allow_headers`** | `string[]` | A list of headers the server allows the client to send. Sets the `Access-Control-Allow-Headers` header. If not set, the router reflects the `Access-Control-Request-Headers` from the request. |
+| **`expose_headers`** | `string[]` | A list of headers the client is allowed to access from the response. Sets the `Access-Control-Expose-Headers` header. |
+| **`max_age`** | `integer` | The maximum time (in seconds) a preflight request can be cached by the client. Sets the `Access-Control-Max-Age` header. |
+| **`methods`** | `string[]` | A list of HTTP methods allowed for cross-origin requests. Sets the `Access-Control-Allow-Methods` header. If not set, the router reflects the `Access-Control-Request-Method` from the request. |
+| **`policies`** | `object[]` | A list of specific CORS policies. The first policy that matches the request's origin will be applied. This is required if `allow_any_origin` is `false`. |
+
+### CORS Policies
+
+The `policies` array allows you to define granular CORS rules for different origins. When a request is received, the router checks its `Origin` header against each policy in the list. The first matching policy is applied.
+
+A policy can match an origin in two ways:
+*   **`origins`**: An exact match against a list of origin URLs.
+*   **`match_origin`**: A regular expression match against the origin URL.
+
+#### Example: Multiple Policies
+
+You can define different rules for different environments, such as allowing credentials for a specific partner's domain while having stricter rules for others.
+
+```yaml
+cors:
+  enabled: true
+  allow_credentials: false # Global default
+  policies:
+    # Policy for a trusted partner, allowing credentials
+    - origins:
+        - 'https://partner-app.com'
+      allow_credentials: true
+      allow_headers:
+        - Content-Type
+        - Authorization
+        - X-Partner-Token
+    # Policy for your own web app
+    - match_origin:
+        - '^https://.*\.my-app\.com$'
+      allow_credentials: true
+    # A more restrictive fallback for other origins
+    - origins:
+        - 'https://public-access.com'
+```
+
+#### Policy Inheritance Rules
+
+If a setting is not specified within a policy, the corresponding global CORS setting is used as a fallback. This allows you to define a default behavior and override it only where necessary.
+
+-   **`allow_credentials` and `max_age`**: If omitted in a policy, the global value is used.
+-   **`allow_headers` and `expose_headers`**:
+    -   If a policy provides a list (e.g., `['Content-Type']`), it completely overrides the global list.
+    -   If a policy provides an empty list (`[]`), it inherits the headers from the global configuration.
+-   **`methods`**:
+    -   If `methods` is not specified (`null`), the policy inherits the global methods.
+    -   If an empty list (`[]`) is provided, no methods are allowed for that policy.
+    -   If a list with specific methods is provided (e.g., `['GET', 'POST']`), it overrides the global list.

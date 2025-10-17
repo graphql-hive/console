@@ -1,0 +1,84 @@
+---
+title: 'Advanced Header Manipulation'
+---
+
+# Advanced Header Manipulation
+
+The Hive Router's header manipulation capabilities go beyond simple header propagation. By combining global and subgraph-specific rules, and leveraging the power of expressions, you can implement complex logic to enforce security policies, enrich subgraph requests with context, and manage how headers flow through your entire federated graph.
+
+This guide explores advanced use cases that demonstrate how to make the most of this feature.
+
+## Understanding Rule Precedence
+
+Before diving into advanced examples, it's crucial to remember the execution order of header rules:
+
+1. **Global rules (`all`) are applied first** - These rules set the baseline behavior for all requests to all subgraphs.
+2. **Subgraph-specific rules (`subgraphs`) are applied second** - These rules can modify or override the result of the global rules for a particular subgraph.
+
+This two-tiered system is the key to creating conditional and targeted header logic.
+
+---
+
+## Scenario 1: Conditional Propagation by Subgraph
+
+Imagine you have a header, `X-Internal-Session-ID`, that is sent by an internal client. You want this header to be propagated to sensitive subgraphs like `accounts` and `inventory`, but you must ensure it's stripped from requests going to a subgraph like `products`.
+
+**Goal:** Propagate `X-Internal-Session-ID` to `accounts` and `inventory`, but not to `products`.
+
+**Solution:** First, propagate the header globally. Then, create a specific rule for the `products` subgraph to remove it.
+
+```yaml filename="router.config.yaml"
+headers:
+  # 1. Global Rule: Propagate the header to ALL subgraphs by default.
+  all:
+    request:
+      - propagate:
+          named: X-Internal-Session-ID
+
+  # 2. Subgraph-specific Rule: Override the global rule for the 'products' subgraph.
+  subgraphs:
+    products:
+      request:
+        # This rule executes *after* the global one, removing the header
+        # only for requests destined for the 'products' subgraph.
+        - remove:
+            named: X-Internal-Session-ID
+```
+
+This pattern allows you to maintain a "default-allow" or "default-deny" stance at the global level and then specify exceptions for individual subgraphs.
+
+---
+
+## Scenario 2: Combining Multiple Rules for Robustness
+
+Let's combine these ideas. You want to forward the `X-Trace-ID` header from the client. If the client doesn't provide it, the router should generate a default value. However, one specific legacy subgraph, `reviews`, cannot handle this header and requests will fail if it's present.
+
+**Goal:**
+1.  Propagate `X-Trace-ID` if present.
+2.  If not present, insert a default `X-Trace-ID`.
+3.  Remove `X-Trace-ID` for the `reviews` subgraph only.
+
+**Solution:** Chain multiple rules in the correct order.
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    request:
+      # Rule 1: Propagate the header from the client if it exists.
+      # The 'default' value here acts as our fallback. If the 'X-Trace-ID'
+      # header is not found on the incoming request, this rule will insert it
+      # with the value 'default-trace-id'.
+      - propagate:
+          named: X-Trace-ID
+          default: 'default-trace-id'
+
+  subgraphs:
+    reviews:
+      request:
+        # Rule 2: For the 'reviews' subgraph, explicitly remove the header,
+        # regardless of whether it came from the client or was added by the default.
+        - remove:
+            named: X-Trace-ID
+```
+
+This example demonstrates the declarative power of the rule system. By defining a sequence of simple actions, you can implement sophisticated request processing logic directly within the router's configuration.
