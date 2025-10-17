@@ -3,8 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "deploy": "node --experimental-strip-types ./src/generate-supergraph.ts && wrangler deploy src/main.ts",
-    "dev": "wrangler dev src/main.ts"
+    "deploy": "node --experimental-strip-types ./src/generate-supergraph.ts && wrangler deploy src/main.ts"
   },
   "dependencies": {
     "@apollo/subgraph": "2.9.3",
