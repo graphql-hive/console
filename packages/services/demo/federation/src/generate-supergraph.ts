@@ -1,3 +1,9 @@
+// @ts-nocheck
+// Reason: this script is executed directly via `node --experimental-strip-types`
+// which allows running `.ts` files without transpilation. TypeScript doesn’t
+// allow `.ts` import specifiers unless `allowImportingTsExtensions` is enabled,
+// which we don’t want globally. Disabling type checking here avoids TS5097
+// while keeping the rest of the project strict.
 import { writeFileSync } from 'node:fs';
 import { assertCompositionSuccess, composeServices } from '@theguild/federation-composition';
 import { typeDefs as productsTypeDefs, yoga as yogaProducts } from './products.ts';
