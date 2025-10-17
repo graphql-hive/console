@@ -10,14 +10,14 @@ import bcrypt from 'bcryptjs';
  * Payload within the access token.
  */
 type DecodedAccessKey = {
-  /** UUID as stored within the database ("organization_access_tokens"."id") */
+  /** UUID as stored within the database ("personal_access_tokens"."id") */
   id: string;
   /** string to compare against the hash within the database ("personal_access_tokens"."hash") */
   privateKey: string;
 };
 
 /**
- * Prefix for the organization access key.
+ * Prefix for the personal access key.
  * We use this prefix so we can quickly identify whether an organization access token.
  *
  * **hv** -> Hive
@@ -69,7 +69,7 @@ export function decode(
 }
 
 /**
- * Creates a new organization access key/token for a provided UUID.
+ * Creates a new personal access key/token for a provided UUID.
  */
 export async function create(id: string) {
   const secret = Crypto.createHash('sha256')
@@ -88,8 +88,8 @@ export async function create(id: string) {
 }
 
 /**
- * Verify whether a organization access key private key matches the
- * hash stored within the "organization_access_tokens"."hash" table.
+ * Verify whether a personal access key private key matches the
+ * hash stored within the "personal_access_tokens"."hash" table.
  */
 export async function verify(secret: string, hash: string) {
   return await bcrypt.compare(secret, hash);
