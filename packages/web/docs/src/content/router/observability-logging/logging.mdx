@@ -1,0 +1,49 @@
+---
+title: 'Logging'
+---
+
+# Logging
+
+Hive Router provides structured logging to give you insight into its operations, performance, and potential errors. The logging system is configurable, allowing you to adjust the level of detail and the format of the output to fit your needs.
+
+## Configuration
+
+You can configure the router's logging behavior in your `router.config.yaml` file under the `log` key.
+
+```yaml filename="router.config.yaml"
+log:
+  level: 'info' # Can be 'trace', 'debug', 'info', 'warn', 'error'
+  format: 'json' # Can be 'json', 'pretty-tree', or 'pretty-compact'
+```
+
+### Log Level
+
+The `level` property controls the verbosity of the logs. By default, the router is configured to be mostly silent at the `info` level, emitting only important messages, warnings, and errors.
+
+The available log levels, from most verbose to least, are:
+-   **`trace`**: Highly detailed diagnostic information.
+-   **`debug`**: Detailed information useful for debugging.
+-   **`info`**: General operational information (e.g., server startup). This is the default.
+-   **`warn`**: Potentially harmful situations or warnings.
+-   **`error`**: Error events that might still allow the application to continue running.
+
+### Log Format
+
+The `format` property determines how the logs are structured.
+
+-   **`json`** (Default): Outputs logs in a structured JSON format. This is the recommended format for production environments as it allows for easy parsing, filtering, and ingestion by log management systems (e.g., Datadog, Splunk, ELK stack).
+-   **`pretty-tree`**: A human-readable, tree-like format that is useful for local development and debugging. It is not recommended for production.
+-   **`pretty-compact`**: A more compact, human-readable format.
+
+### Log Filtering
+
+The `filter` property allows you to control which log messages are emitted based on their origin (e.g., a specific module within the router). This is an advanced feature that can be used to reduce noise or focus on a particular area of the router. For most use cases, adjusting the `level` is sufficient.
+
+```yaml
+log:
+  level: 'debug'
+  # Example: Show debug logs only for the query planner
+  filter: 'hive_router::query_planner=debug,info'
+```
+
+This configuration sets the default log level to `info` but enables more verbose `debug` logging specifically for the query planner component.

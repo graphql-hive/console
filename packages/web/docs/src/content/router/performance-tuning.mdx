@@ -1,0 +1,68 @@
+---
+title: 'Performance Tuning & Traffic Shaping'
+---
+
+# Performance Tuning & Traffic Shaping
+
+The Hive Router is designed for high performance out of the box. However, every system is unique, and fine-tuning the router's behavior to match your specific workload and subgraph capabilities can unlock even greater throughput and resilience.
+
+This guide provides an in-depth look at the `traffic_shaping` configuration, explaining the trade-offs of each setting and offering a strategy for benchmarking and optimizing your deployment.
+
+## Understanding Traffic Shaping
+
+The `traffic_shaping` configuration block controls how the router manages connections and requests to your subgraphs. It acts as a client-side load management system, protecting your downstream services from being overwhelmed.
+
+```yaml filename="router.config.yaml"
+traffic_shaping:
+  dedupe_enabled: true
+  max_connections_per_host: 100
+  pool_idle_timeout_seconds: 50
+```
+
+---
+
+## `max_connections_per_host`
+
+This is one of the most critical settings for performance and stability. It limits the maximum number of concurrent HTTP connections the router will open to a single subgraph host (e.g., `products.api.example.com`).
+
+- **Default Value:** `100`
+
+### The Trade-Offs
+
+Choosing the right value is a balance between maximizing throughput and protecting your subgraphs.
+
+**Value is Too Low:**
+- The router itself can become a bottleneck. Even if your subgraphs are healthy and have spare capacity, a low connection limit will cause requests to be queued up inside the router, increasing overall latency.
+- Your subgraph services may sit idle while the router is artificially throttling traffic.
+
+**Value is Too High:**
+- During a traffic spike, the router might open a huge number of connections, potentially overwhelming a subgraph's connection pool, CPU, or memory. This can lead to slow responses, increased error rates, or even a complete service outage.
+- A high limit can exacerbate "thundering herd" problems, where a sudden surge of requests floods a downstream service.
+- Port exhaustion can occur if many connections are opened rapidly, especially in environments with limited ephemeral ports.
+
+---
+
+## `pool_idle_timeout_seconds`
+
+The router maintains a pool of reusable HTTP connections to each subgraph to avoid the overhead of establishing a new TCP/TLS connection for every request. This setting controls how long an idle (unused) connection is kept alive in the pool before being closed.
+
+- **Default Value:** `50` seconds
+
+### The Trade-Offs
+
+**Value is Too Low:**
+- **Increased Latency:** The router will close idle connections more frequently. When a new request comes in, it will have to re-establish the connection, adding TCP and TLS handshake latency to the request time.
+
+**Value is Too High:**
+- **Resource Exhaustion:** Keeping a large number of idle connections open consumes memory and file descriptors on both the router and the subgraph servers.
+- **Firewall/Load Balancer Issues:** Many network devices (like load balancers, NAT gateways, or firewalls) have their own idle connection timeouts. If the router's timeout is higher than the network's timeout, the network device might silently drop the connection. When the router tries to use this "zombie" connection, the request will fail.
+
+The default of `50` seconds is generally a robust choice that works well with common load balancer defaults (often 60 seconds).
+
+---
+
+## `dedupe_enabled`
+
+This setting enables or disables in-flight request deduplication. When enabled, if multiple identical GraphQL requests are about to be preformed by the router at the same time, it sends only one request to the subgraph and shares the response with the other waiting requests.
+
+This is almost always beneficial to keep `true` (the default), as it significantly reduces load on your subgraphs during scenarios where many identical requests occur.

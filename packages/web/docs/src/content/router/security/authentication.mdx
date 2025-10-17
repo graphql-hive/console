@@ -1,0 +1,100 @@
+---
+title: 'Authentication (JWT)'
+---
+
+# Authentication (JWT)
+
+Hive Router supports JWT-based authentication to secure your GraphQL API. You can configure the router to validate JWTs from incoming requests, ensuring that only authenticated and authorized clients can access your services.
+
+## Configuration
+
+To enable JWT authentication, you need to configure the `jwt` section in your `router.config.yaml` file.
+
+| Name                                        | Type      | Description                                                                                                                                                             | Required |
+| :------------------------------------------ | :-------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- |
+| **`allowed_algorithms`**                    | `string[]`  | List of allowed algorithms for verifying the JWT signature.<br/>Default: `["HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "ES256", "ES384", "PS256", "PS384", "PS512", "EdDSA"]` | No       |
+| **`audiences`**                             | `string[]`  | The list of [JWT audiences](https://tools.ietf.org/html/rfc7519#section-4.1.3) that are allowed to access.                                                               | No       |
+| **`forward_claims_to_upstream_extensions`** | `object`  | Forward the JWT claims to the upstream service using GraphQL's `.extensions`.<br/>Default: `{"enabled":false,"field_name":"jwt"}`                                           | Yes      |
+| **`issuers`**                               | `string[]`  | Specify the [principal](https://tools.ietf.org/html/rfc7519#section-4.1.1) that issued the JWT, usually a URL or an email address.                                        | No       |
+| **`jwks_providers`**                        | `array`   | A list of JWKS providers to use for verifying the JWT signature.                                                                                                        | Yes      |
+| **`lookup_locations`**                      | `array`   | A list of locations to look for the JWT token in the incoming HTTP request.<br/>Default: `[{"name":"authorization","prefix":"Bearer ","source":"header"}]`                | No       |
+| **`require_authentication`**                | `boolean` | If set to `true`, the entire request will be rejected if the JWT token is not present in the request.                                                                   | No       |
+
+### `jwks_providers`
+
+You must specify a list of JWKS (JSON Web Key Set) providers to verify the JWT signature. The router supports fetching JWKS from a local file or a remote URL.
+
+#### Local File Provider
+
+Loads a JWKS from a file on the local filesystem. The file is read once on startup and cached.
+
+```yaml
+jwt:
+  jwks_providers:
+    - source: file
+      path: ./path/to/your/jwks.json
+```
+
+#### Remote Provider
+
+Fetches the JWKS from a remote URL. The JWKS is fetched and cached, with a configurable polling interval to check for updates.
+
+```yaml
+jwt:
+  jwks_providers:
+    - source: remote
+      url: https://your-auth-server.com/.well-known/jwks.json
+      polling_interval: '10m' # Optional, defaults to 10 minutes
+      prefetch: true # Optional, fetches on startup
+```
+
+### `lookup_locations`
+
+You can configure where the router should look for the JWT in an incoming request. The default location is the `Authorization` header with a `Bearer` prefix. You can specify multiple locations, and the first one found will be used.
+
+```yaml
+jwt:
+  lookup_locations:
+    - source: header
+      name: authorization
+      prefix: 'Bearer ' # Note the trailing space
+    - source: cookies
+      name: auth_token
+```
+
+### `forward_claims_to_upstream_extensions`
+
+When enabled, the router will parse the JWT claims and forward them to subgraph services within the `extensions` field of the GraphQL request. This is useful for passing user information to your backend services.
+
+```yaml
+jwt:
+  forward_claims_to_upstream_extensions:
+    enabled: true
+    field_name: 'jwt_claims' # Optional, defaults to 'jwt'
+```
+
+### Example Configuration
+
+Here is a complete example of a JWT configuration:
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: true
+  audiences:
+    - 'https://my-api.com'
+  issuers:
+    - 'https://my-auth-provider.com/'
+  allowed_algorithms:
+    - RS256
+  lookup_locations:
+    - source: header
+      name: authorization
+      prefix: 'Bearer '
+  jwks_providers:
+    - source: remote
+      url: https://my-auth-provider.com/.well-known/jwks.json
+      polling_interval: '5m'
+  forward_claims_to_upstream_extensions:
+    enabled: true
+    field_name: 'auth'
+```

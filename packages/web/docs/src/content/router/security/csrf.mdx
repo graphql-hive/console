@@ -1,0 +1,46 @@
+---
+title: 'Cross-Site Request Forgery (CSRF) Prevention'
+---
+
+# Cross-Site Request Forgery (CSRF) Prevention
+
+Cross-Site Request Forgery (CSRF or XSRF) is an attack that forces an end user to execute unwanted actions on a web application in which they are currently authenticated. Hive Router includes built-in CSRF prevention to protect your GraphQL endpoint from such vulnerabilities.
+
+## How It Works
+
+When CSRF prevention is enabled, the router inspects incoming requests to the `/graphql` endpoint. It ensures that requests are legitimate by requiring them to include specific indicators that a browser would not automatically add to a cross-origin request. This typically involves checking for certain HTTP headers.
+
+If a request does not meet the required criteria, the router will reject it with a `403 Forbidden` status code, preventing the execution of the GraphQL operation.
+
+By default, the router considers a request safe if **one** of the following conditions is met:
+
+1.  The request includes a `Content-Type` header with a value other than:
+    *   `text/plain`
+    *   `application/x-www-form-urlencoded`
+    *   `multipart/form-data`
+    Modern GraphQL clients typically use `application/json`, which satisfies this condition.
+
+2.  The request includes at least one of the headers specified in the `required_headers` configuration list. This is a robust way to ensure the request is intentional, as custom headers cannot be added to cross-origin requests without a preflight check.
+
+## Configuration
+
+You can configure CSRF prevention in your `router.config.yaml` file under the `csrf` key.
+
+| Name                 | Type       | Description                                                                                             |
+| :------------------- | :--------- | :------------------------------------------------------------------------------------------------------ |
+| **`enabled`**        | `boolean`  | Enables or disables CSRF prevention. Defaults to `false`. We strongly recommend enabling this in production. |
+| **`required_headers`** | `string[]` | A list of header names that must be present in the request for it to be considered safe. Header names are case-insensitive. |
+
+### Example Configuration
+
+Here is an example of how to enable CSRF protection and require a specific header:
+
+```yaml filename="router.config.yaml"
+csrf:
+  enabled: true
+  required_headers:
+    - 'X-CSRF-Token' # A common header name for CSRF tokens
+    - 'apollographql-client-name' # Example for Apollo Client
+```
+
+In this setup, any GraphQL request must include either the `X-CSRF-Token` header or the `apollographql-client-name` header to pass the CSRF check (unless its `Content-Type` is already considered safe). Your client-side application would be responsible for fetching a token and including this header in its GraphQL requests.
