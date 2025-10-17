@@ -4,7 +4,7 @@ import * as OrganizationAccessKey from '../../organization/lib/organization-acce
 import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
 import { OrganizationAccessTokensCache } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
-import { OrganizationAccessTokenValidationCache } from '../providers/organization-access-token-validation-cache';
+import { AccessTokenValidationCache } from '../providers/access-token-validation-cache';
 import {
   AuthNStrategy,
   AuthorizationPolicyStatement,
@@ -58,17 +58,17 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
   private logger: Logger;
 
   private organizationAccessTokenCache: OrganizationAccessTokensCache;
-  private organizationAccessTokenValidationCache: OrganizationAccessTokenValidationCache;
+  private accessTokenValidationCache: AccessTokenValidationCache;
 
   constructor(deps: {
     logger: Logger;
     organizationAccessTokensCache: OrganizationAccessTokensCache;
-    organizationAccessTokenValidationCache: OrganizationAccessTokenValidationCache;
+    accessTokenValidationCache: AccessTokenValidationCache;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'OrganizationAccessTokenStrategy' });
     this.organizationAccessTokenCache = deps.organizationAccessTokensCache;
-    this.organizationAccessTokenValidationCache = deps.organizationAccessTokenValidationCache;
+    this.accessTokenValidationCache = deps.accessTokenValidationCache;
   }
 
   async parse(args: {
@@ -112,7 +112,7 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
 
     // let's hash it so we do not store the plain private key in memory
     const key = hashToken(accessToken);
-    const isHashMatch = await this.organizationAccessTokenValidationCache.getOrSetForever({
+    const isHashMatch = await this.accessTokenValidationCache.getOrSetForever({
       factory: () =>
         OrganizationAccessKey.verify(result.accessKey.privateKey, organizationAccessToken.hash),
       key,
