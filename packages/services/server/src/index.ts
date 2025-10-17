@@ -60,7 +60,7 @@ import { AuthN } from '../../api/src/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
 import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/supertokens-strategy';
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
-import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
+import { AccessTokenValidationCache } from '../../api/src/modules/auth/providers/access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
@@ -410,9 +410,7 @@ export async function main() {
       new OrganizationAccessTokenStrategy({
         logger,
         organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
-        organizationAccessTokenValidationCache: registry.injector.get(
-          OrganizationAccessTokenValidationCache,
-        ),
+        accessTokenValidationCache: registry.injector.get(AccessTokenValidationCache),
       });
 
     const graphqlPath = '/graphql';
