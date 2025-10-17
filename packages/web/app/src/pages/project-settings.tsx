@@ -548,6 +548,13 @@ function ProjectSettingsContent(props: {
       title: 'Policy',
     });
 
+    if (project?.type === ProjectType.Federation) {
+      pages.push({
+        key: 'composition',
+        title: 'Composition',
+      });
+    }
+
     return pages;
   }, [project]);
 
@@ -609,10 +616,6 @@ function ProjectSettingsContent(props: {
                 />
               ) : null}
 
-              {project.type === ProjectType.Federation ? (
-                <CompositionSettings project={project} organization={organization} />
-              ) : null}
-
               {project.viewerCanDelete ? (
                 <ProjectDelete projectSlug={project.slug} organizationSlug={organization.slug} />
               ) : null}
@@ -621,13 +624,16 @@ function ProjectSettingsContent(props: {
           {resolvedPage.key === 'policy' ? (
             <ProjectPolicySettings organizationSlug={organization.slug} project={project} />
           ) : null}
+          {resolvedPage.key === 'composition' ? (
+            <CompositionSettings project={project} organization={organization} />
+          ) : null}
         </div>
       </PageLayoutContent>
     </PageLayout>
   );
 }
 
-export const ProjectSettingsPageEnum = z.enum(['general', 'policy']);
+export const ProjectSettingsPageEnum = z.enum(['general', 'policy', 'composition']);
 
 export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
 
