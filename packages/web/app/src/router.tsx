@@ -338,7 +338,7 @@ const manageRoute = createRoute({
 });
 
 const joinOrganizationRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
+  getParentRoute: () => root,
   path: 'join/$inviteCode',
   component: function JoinOrganizationRoute() {
     const { inviteCode } = joinOrganizationRoute.useParams();

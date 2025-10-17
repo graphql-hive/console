@@ -1,14 +1,17 @@
 import { useCallback } from 'react';
 import { LogOutIcon } from 'lucide-react';
+import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation, useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { HiveLogo } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
+import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/use-toast';
 import { DataWrapper } from '@/components/v2/data-wrapper';
 import { graphql } from '@/gql';
+import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import { Link, useRouter } from '@tanstack/react-router';
 
 const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
@@ -47,6 +50,7 @@ const JoinOrganizationPage_OrganizationInvitationQuery = graphql(`
 
 export function JoinOrganizationPage(props: { inviteCode: string }) {
   const router = useRouter();
+  const session = useSessionContext();
   const { toast } = useToast();
   const code = props.inviteCode;
   const [query] = useQuery({
@@ -88,86 +92,109 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
       ? query.data.organizationByInviteCode.name
       : null;
 
-  return (
-    <>
-      <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
-      <DottedBackground className="min-h-[100vh]">
-        <Button
-          variant="outline"
-          onClick={() => router.navigate({ to: '/logout' })}
-          className="absolute right-6 top-6"
-        >
-          <LogOutIcon className="mr-2 size-4" /> Sign out
-        </Button>
-        <Link href="/" className="absolute left-6 top-6">
-          <HiveLogo className="size-10" />
-        </Link>
-        <div className="container md:w-3/5 lg:w-1/2">
-          <DataWrapper query={query} organizationSlug={null}>
-            {({ data }) => {
-              if (data.organizationByInviteCode == null) {
-                return null;
-              }
-              const invitation = data.organizationByInviteCode;
+  if (session.loading) {
+    return <Spinner className="m-auto mt-6" />;
+  }
 
-              if (invitation.__typename === 'OrganizationInvitationError') {
+  if (!session.loading && !session.doesSessionExist) {
+    toast({
+      title: 'Account Required',
+      description:
+        'To accept an organization invite, you must first have an account, log in, and then use the invitation.',
+      variant: 'default',
+      duration: 10_000,
+    });
+    void router.navigate({
+      to: '/auth/sign-in',
+      search: {
+        redirectToPath: router.latestLocation.pathname,
+      },
+    });
+    return <></>;
+  }
+
+  return (
+    <SessionAuth>
+      <HiveStripeWrapper>
+        <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
+        <DottedBackground className="min-h-[100vh]">
+          <Button
+            variant="outline"
+            onClick={() => router.navigate({ to: '/logout' })}
+            className="absolute right-6 top-6"
+          >
+            <LogOutIcon className="mr-2 size-4" /> Sign out
+          </Button>
+          <Link href="/" className="absolute left-6 top-6">
+            <HiveLogo className="size-10" />
+          </Link>
+          <div className="container md:w-3/5 lg:w-1/2">
+            <DataWrapper query={query} organizationSlug={null}>
+              {({ data }) => {
+                if (data.organizationByInviteCode == null) {
+                  return null;
+                }
+                const invitation = data.organizationByInviteCode;
+
+                if (invitation.__typename === 'OrganizationInvitationError') {
+                  return (
+                    <div className="bg-black">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Invitation Error</CardTitle>
+                        </CardHeader>
+                        <CardContent>{invitation.message}</CardContent>
+                        <CardFooter>
+                          <Button className="w-full" onClick={goBack}>
+                            Back to Hive
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="bg-black">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Invitation Error</CardTitle>
+                        <CardTitle>Join "{invitation.name}" organization</CardTitle>
                       </CardHeader>
-                      <CardContent>{invitation.message}</CardContent>
-                      <CardFooter>
-                        <Button className="w-full" onClick={goBack}>
-                          Back to Hive
+                      <CardContent>
+                        <p>
+                          You've been invited to become a member of{' '}
+                          <span className="font-semibold">{invitation.name}</span>.
+                        </p>
+                        <p className="text-muted-foreground mt-2">
+                          By accepting the invitation, you will be able to collaborate with other
+                          members of this organization.
+                        </p>
+                      </CardContent>
+                      <CardFooter className="flex flex-col gap-y-4 md:flex-row md:justify-evenly md:gap-x-4 md:gap-y-0">
+                        <Button
+                          className="w-full md:flex-1"
+                          variant="outline"
+                          disabled={mutation.fetching}
+                          onClick={goBack}
+                        >
+                          Ignore
+                        </Button>
+                        <Button
+                          className="w-full md:flex-1"
+                          onClick={accept}
+                          disabled={mutation.fetching}
+                        >
+                          Accept
                         </Button>
                       </CardFooter>
                     </Card>
                   </div>
                 );
-              }
-
-              return (
-                <div className="bg-black">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Join "{invitation.name}" organization</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>
-                        You've been invited to become a member of{' '}
-                        <span className="font-semibold">{invitation.name}</span>.
-                      </p>
-                      <p className="text-muted-foreground mt-2">
-                        By accepting the invitation, you will be able to collaborate with other
-                        members of this organization.
-                      </p>
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-y-4 md:flex-row md:justify-evenly md:gap-x-4 md:gap-y-0">
-                      <Button
-                        className="w-full md:flex-1"
-                        variant="outline"
-                        disabled={mutation.fetching}
-                        onClick={goBack}
-                      >
-                        Ignore
-                      </Button>
-                      <Button
-                        className="w-full md:flex-1"
-                        onClick={accept}
-                        disabled={mutation.fetching}
-                      >
-                        Accept
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </div>
-              );
-            }}
-          </DataWrapper>
-        </div>
-      </DottedBackground>
-    </>
+              }}
+            </DataWrapper>
+          </div>
+        </DottedBackground>
+      </HiveStripeWrapper>
+    </SessionAuth>
   );
 }
