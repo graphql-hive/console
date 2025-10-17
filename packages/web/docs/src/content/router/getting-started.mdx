@@ -6,11 +6,13 @@ import { Tabs } from '@theguild/components'
 
 # Getting Started
 
-This guide will walk you through the process of installing and running the Hive Router for the first time.
+This guide provides a walkthrough of setting up the Hive Router. We'll cover everything from the initial installation to running a live, queryable GraphQL API on your local machine. By the end, you'll have a running instance of the router that serves a federated supergraph composed of several subgraphs.
+
 
 ## Installation
 
-Hive Router can be installed in different ways depending on your preference.
+Hive Router is distributed as a self-contained binary and a Docker image, giving you the flexibility to run it in any environment. For local development or quick tests, the binary is often the fastest way to get started. For production or containerized environments, the Docker image is the recommended approach.
+
 
 <Tabs items={["Binary", "Docker"]} >
 
@@ -44,6 +46,22 @@ docker pull ghcr.io/graphql-hive/router
 
 For a full list of releases and specific versions, see the [GitHub Releases](https://github.com/graphql-hive/router/releases) page.
 
+## Supergraph Schema
+
+To follow this guide, you will need to download a sample supergraph schema. This schema is the same one used in the ["Get Started with GraphQL Federation"](docs/schema-registry/get-started/apollo-federation#prerequisites) guide.
+
+It is composed of three publicly available subgraphs: [users](https://federation-demo.theguild.workers.dev/users), [products](https://federation-demo.theguild.workers.dev/products) and [reviews](https://federation-demo.theguild.workers.dev/reviews).
+
+To download the supergraph schema, run the following command in your terminal:
+
+```sh
+curl -sSL https://federation-demo.theguild.workers.dev/supergraph.graphql > supergraph.graphql
+```
+
+Once downloaded, you will provide this schema file to the router.
+
+> **What is a supergraph?** A supergraph is a special schema that combines all of your individual subgraph schemas into a single, federated graph. The router uses this supergraph to understand how to route incoming requests to the appropriate subgraphs.
+
 ## Basic Configuration
 
 The router needs to know where to find your supergraph schema file. Create a simple configuration file named `router.config.yaml` in your project directory.
@@ -54,9 +72,7 @@ supergraph:
   path: ./supergraph.graphql
 ```
 
-> **What is a supergraph?** A supergraph is a special schema that combines all of your individual subgraph schemas into a single, federated graph. The router uses this supergraph to understand how to route incoming requests to the appropriate subgraphs.
-
-{/* TODO: add instructions on how to fetch supergraph.graphql from the workers demo */}
+Now you have a basic configuration that tells the router to load the supergraph schema from the `supergraph.graphql` file that you downloaded earlier.
 
 ## Running the Router
 
@@ -95,6 +111,22 @@ docker run \
 </Tabs>
 
 If the router starts successfully, you will see log output indicating that the server is listening on port `4000`.
+
+You can now explore the API using the built-in GraphQL IDE. Open `http://localhost:4000` in your browser and try running the following query to see the router in action.
+
+```graphql
+query TopProducts {
+  topProducts {
+    name
+    reviews {
+      body
+      author {
+        name
+      }
+    }
+  }
+}
+```
 
 ## Next Steps
 
