@@ -21,7 +21,7 @@
     "dotenv": "16.4.7",
     "ioredis": "5.4.2",
     "mjml": "4.14.0",
-    "nodemailer": "6.9.16",
+    "nodemailer": "7.0.7",
     "p-timeout": "6.1.4",
     "pino-pretty": "11.3.0",
     "sendmail": "1.6.1",
