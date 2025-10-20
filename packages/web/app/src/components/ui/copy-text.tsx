@@ -9,7 +9,7 @@ export function CopyText(props: { children: ReactNode; copy?: string; className?
   const copyToClipboard = useClipboard();
   const ref = useRef<HTMLDivElement>(null);
   return (
-    <div className={cn('flex items-center', props.className)}>
+    <div className={cn('group flex items-center', props.className)}>
       <div ref={ref} className="truncate">
         {props.children}
       </div>
@@ -17,7 +17,7 @@ export function CopyText(props: { children: ReactNode; copy?: string; className?
         <Tooltip>
           <TooltipTrigger>
             <Button
-              className="-my-3 p-2 py-3"
+              className="invisible -my-3 p-2 py-3 group-hover:visible"
               variant="link"
               onClick={async () => {
                 await copyToClipboard(props.copy ?? ref.current?.innerText ?? '');
