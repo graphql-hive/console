@@ -319,7 +319,11 @@ export const TargetLayout = ({
                   connect
                 ) : isCDNEnabled ? (
                   <>
-                    <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
+                    <Button
+                      onClick={toggleModalOpen}
+                      variant="link"
+                      className="whitespace-nowrap text-orange-500"
+                    >
                       <LinkIcon size={16} className="mr-2" />
                       Connect to CDN
                     </Button>

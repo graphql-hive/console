@@ -6,6 +6,7 @@ import {
   CompositionErrorsSection,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
+import { CopyText } from '@/components/ui/copy-text';
 import { DiffIcon } from '@/components/ui/icon';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Spinner } from '@/components/ui/spinner';
@@ -90,43 +91,49 @@ function SchemaVersionView(props: {
         <Subtitle>Detailed view of the schema version</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="flex flex-row items-center justify-between gap-x-4 rounded-md border border-gray-800 p-4 font-medium text-gray-400">
-          <div>
+        <div className="grid items-center justify-between gap-x-4 gap-y-2 rounded-md border border-gray-800 p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+          <div className="min-w-0">
             <div className="text-xs">Status</div>
             <div
               className={cn(
-                'text-sm font-semibold text-white',
+                'truncate text-sm font-semibold text-white',
                 !schemaVersion.isComposable && 'text-red-600',
               )}
             >
               {schemaVersion.isComposable === false ? <>Composition Errors</> : <>Composable</>}
             </div>
           </div>
-          {'service' in schemaVersion.log ? (
-            <div className="ml-4">
+          {'service' in schemaVersion.log && schemaVersion.log.service ? (
+            <div className="min-w-0">
               <div className="text-xs">Service</div>
-              <div>
-                <div className="text-sm font-semibold text-white">{schemaVersion.log.service}</div>
+              <div
+                className="truncate text-sm font-semibold text-white"
+                title={schemaVersion.log.service}
+              >
+                {schemaVersion.log.service}
               </div>
             </div>
           ) : null}
           {'date' in schemaVersion.log && (
-            <div>
+            <div className="min-w-0">
               <div className="text-xs">
                 Triggered <TimeAgo date={schemaVersion.log.date} />
               </div>
-              {'author' in schemaVersion.log && (
-                <div className="truncate text-sm text-white">by {schemaVersion.log.author}</div>
+              {'author' in schemaVersion.log && schemaVersion.log.author && (
+                <div className="truncate text-sm text-white" title={schemaVersion.log.author}>
+                  by {schemaVersion.log.author}
+                </div>
               )}
             </div>
           )}
-          {'commit' in schemaVersion.log && (
-            <div>
+          {'commit' in schemaVersion.log && schemaVersion.log.commit && (
+            <div className="min-w-0">
               <div className="text-xs">Commit</div>
-              <div>
-                <div className="truncate text-sm font-semibold text-white">
-                  {schemaVersion.log.commit}
-                </div>
+              <div
+                className="truncate text-sm font-semibold text-white"
+                title={schemaVersion.log.commit}
+              >
+                <CopyText>{schemaVersion.log.commit}</CopyText>
               </div>
             </div>
           )}
