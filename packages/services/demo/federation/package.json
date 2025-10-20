@@ -3,10 +3,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy src/main.ts"
+    "deploy": "node --experimental-strip-types ./src/generate-supergraph.ts && wrangler deploy src/main.ts"
   },
   "dependencies": {
     "@apollo/subgraph": "2.9.3",
+    "@theguild/federation-composition": "0.20.1",
     "graphql": "16.9.0",
     "graphql-yoga": "5.13.3"
   },

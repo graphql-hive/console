@@ -1,5 +1,18 @@
 # hive
 
+## 8.4.1
+
+### Patch Changes
+
+- [#7123](https://github.com/graphql-hive/console/pull/7123)
+  [`7b636c6`](https://github.com/graphql-hive/console/commit/7b636c6691ea47691b02b41433d2bfc05970b81e)
+  Thanks [@jdolle](https://github.com/jdolle)! - show overflowed client and versions on insights
+
+- [#7119](https://github.com/graphql-hive/console/pull/7119)
+  [`f2e70bb`](https://github.com/graphql-hive/console/commit/f2e70bb0aa477a5cc039e26ea87648a6130e4501)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where wrong subgraph is shown as the
+  owner of a schema coordinate/field.
+
 ## 8.4.0
 
 ### Minor Changes
