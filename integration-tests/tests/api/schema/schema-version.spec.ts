@@ -5,8 +5,8 @@ import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
 const SchemaByActionIdQuery = graphql(/* GraphQL */ `
-  query SchemaByActionIdQuery($actionId: ID!) {
-    schemaVersionForActionId(actionId: $actionId) {
+  query SchemaByActionIdQuery($actionId: ID!, $targetRef: TargetReferenceInput) {
+    schemaVersionForActionId(actionId: $actionId, target: $targetRef) {
       id
       sdl
       log {
@@ -36,7 +36,7 @@ test.concurrent(
     `;
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
 
     const token = await createTargetAccessToken({
       mode: 'readWrite',
@@ -49,7 +49,8 @@ test.concurrent(
       })
       .then(r => r.expectNoGraphQLErrors());
 
-    waitFor(1);
+    // note: there's a race condition in the publishSchema resolver if we repeatedly publish too quickly
+    waitFor(200);
 
     await token
       .publishSchema({
@@ -63,6 +64,7 @@ test.concurrent(
       token: token.secret,
       variables: {
         actionId,
+        targetRef: { byId: target.id },
       },
     }).then(r => r.expectNoGraphQLErrors());
 
