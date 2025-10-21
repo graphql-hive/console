@@ -60,7 +60,7 @@ import {
 import { execute } from './graphql';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
-import { generateUnique } from './utils';
+import { generateUnique, getServiceHost } from './utils';
 
 export function initSeed() {
   function createConnectionPool() {
@@ -86,6 +86,17 @@ export function initSeed() {
           await pool.end();
         },
       };
+    },
+    async purgePersonalAccessTokenById(id: string) {
+      const registryAddress = await getServiceHost('server', 8082);
+      (
+        await fetch(
+          'http://' + registryAddress + '/cache/personal-access-token-cache/delete/' + id,
+          {
+            method: 'POST',
+          },
+        )
+      ).json();
     },
     authenticate,
     generateEmail: () => userEmail(generateUnique()),
@@ -880,7 +891,10 @@ export function initSeed() {
                 },
               };
             },
-            async inviteAndJoinMember(inviteToken: string = ownerToken) {
+            async inviteAndJoinMember(
+              memberRoleId: string | undefined = undefined,
+              inviteToken: string = ownerToken,
+            ) {
               const memberEmail = userEmail(generateUnique());
               const memberToken = await authenticate(memberEmail).then(r => r.access_token);
 
@@ -892,6 +906,7 @@ export function initSeed() {
                     },
                   },
                   email: memberEmail,
+                  memberRoleId,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());

@@ -605,6 +605,13 @@ export async function main() {
       return;
     });
 
+    // only for integration testing :)
+    server.post('/cache/personal-access-token-cache/delete/:id', async (req, res) => {
+      await registry.injector.get(PersonalAccessTokensCache).delete({ id: (req.params as any).id });
+      void res.status(200).send({});
+      return;
+    });
+
     createOtelAuthEndpoint({
       server,
       authN,

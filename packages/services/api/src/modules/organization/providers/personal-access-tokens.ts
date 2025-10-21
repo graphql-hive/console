@@ -190,7 +190,7 @@ export class PersonalAccessTokens {
         "id" = ${args.personalAccessTokenId}
     `);
 
-    await this.cache.purge(record);
+    await this.cache.delete(record);
 
     await this.auditLogs.record({
       organizationId: record.organizationId,

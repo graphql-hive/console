@@ -21,6 +21,8 @@ export type CachedPersonalAccessToken = Omit<
   >;
 };
 
+type PersonalAccessTokeDeleteInput = Pick<PersonalAccessToken, 'id'>;
+
 /**
  * Cache for performant PersonalAccessToken lookups.
  */
@@ -124,7 +126,8 @@ export class PersonalAccessTokensCache {
     });
   }
 
-  purge(token: PersonalAccessToken) {
+  /** Delete a personal access token from the cache e.g. upon deletion or update of permissions */
+  delete(token: PersonalAccessTokeDeleteInput) {
     return this.cache.delete({
       key: token.id,
     });

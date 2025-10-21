@@ -1,4 +1,5 @@
 import { assertNonNullish } from 'testkit/utils';
+import { PersonalAccessTokensCache } from '../../../packages/services/api/src/modules/organization/providers/personal-access-tokens-cache';
 import { graphql } from '../../testkit/gql';
 import * as GraphQLSchema from '../../testkit/gql/graphql';
 import { execute } from '../../testkit/graphql';
@@ -299,7 +300,8 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
     authToken: ownerToken,
   }).then(e => e.expectNoGraphQLErrors());
   expect(result.createPersonalAccessToken.error).toEqual(null);
-  const organizationAccessToken = result.createPersonalAccessToken.ok!.privateAccessKey;
+  assertNonNullish(result.createPersonalAccessToken.ok);
+  const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;
 
   const projectQuery = await execute({
     document: OrganizationProjectTargetQuery1,
@@ -308,7 +310,7 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
       projectSlug: project.project.slug,
       targetSlug: project.target.slug,
     },
-    authToken: organizationAccessToken,
+    authToken: personalAccessToken,
   }).then(e => e.expectNoGraphQLErrors());
   expect(projectQuery).toEqual({
     organization: {
@@ -376,3 +378,204 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
     },
   });
 });
+
+test.concurrent(
+  'query GraphQL API after membership resources have been downgraded',
+  async ({ expect }) => {
+    const seed = await initSeed();
+    const { createOrg } = await seed.createOwner();
+    const org = await createOrg();
+    const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
+
+    const { member, memberToken, assignMemberRole, createMemberRole } =
+      await org.inviteAndJoinMember();
+
+    const newRole = await createMemberRole([
+      'organization:describe',
+      'project:describe',
+      'personalAccessToken:modify',
+    ]);
+
+    // make user also an admin
+    await assignMemberRole({
+      userId: member.id,
+      roleId: newRole.id,
+    });
+
+    const result = await execute({
+      document: CreatePersonalAccessTokenMutation,
+      variables: {
+        input: {
+          organization: {
+            byId: org.organization.id,
+          },
+          title: 'a access token',
+          description: 'a description',
+          resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+          permissions: ['organization:describe', 'project:describe'],
+        },
+      },
+      authToken: memberToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(result.createPersonalAccessToken.error).toEqual(null);
+    assertNonNullish(result.createPersonalAccessToken.ok);
+
+    const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;
+
+    let projectQuery = await execute({
+      document: OrganizationProjectTargetQuery1,
+      variables: {
+        organizationSlug: org.organization.slug,
+        projectSlug: project.project.slug,
+        targetSlug: project.target.slug,
+      },
+      authToken: personalAccessToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(projectQuery).toEqual({
+      organization: {
+        id: org.organization.id,
+        project: {
+          id: project.project.id,
+          slug: project.project.slug,
+          targetBySlug: {
+            id: project.target.id,
+            slug: project.target.slug,
+          },
+        },
+        slug: org.organization.slug,
+      },
+    });
+
+    // Update member role assignment so it looses access to describe project/target on the resources
+    await assignMemberRole({
+      userId: member.id,
+      roleId: newRole.id,
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+        projects: [],
+      },
+    });
+
+    // simulate 5 minutes passing by...
+    await seed.purgePersonalAccessTokenById(
+      result.createPersonalAccessToken.ok.createdPersonalAccessToken.id,
+    );
+
+    projectQuery = await execute({
+      document: OrganizationProjectTargetQuery1,
+      variables: {
+        organizationSlug: org.organization.slug,
+        projectSlug: project.project.slug,
+        targetSlug: project.target.slug,
+      },
+      authToken: personalAccessToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(projectQuery).toEqual({
+      organization: {
+        id: org.organization.id,
+        project: null,
+        slug: org.organization.slug,
+      },
+    });
+  },
+);
+
+test.concurrent(
+  'query GraphQL API after membership permissions have been downgraded',
+  async ({ expect }) => {
+    const seed = await initSeed();
+    const { createOrg } = await seed.createOwner();
+    const org = await createOrg();
+    const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
+
+    const { member, memberToken, assignMemberRole, createMemberRole, updateMemberRole } =
+      await org.inviteAndJoinMember();
+
+    const newRole = await createMemberRole([
+      'organization:describe',
+      'project:describe',
+      'personalAccessToken:modify',
+    ]);
+
+    // make user also an admin
+    await assignMemberRole({
+      userId: member.id,
+      roleId: newRole.id,
+    });
+
+    const result = await execute({
+      document: CreatePersonalAccessTokenMutation,
+      variables: {
+        input: {
+          organization: {
+            byId: org.organization.id,
+          },
+          title: 'a access token',
+          description: 'a description',
+          resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+          permissions: ['organization:describe', 'project:describe'],
+        },
+      },
+      authToken: memberToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(result.createPersonalAccessToken.error).toEqual(null);
+    assertNonNullish(result.createPersonalAccessToken.ok);
+
+    const personalAccessToken = result.createPersonalAccessToken.ok.privateAccessKey;
+
+    let projectQuery = await execute({
+      document: OrganizationProjectTargetQuery1,
+      variables: {
+        organizationSlug: org.organization.slug,
+        projectSlug: project.project.slug,
+        targetSlug: project.target.slug,
+      },
+      authToken: personalAccessToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(projectQuery).toEqual({
+      organization: {
+        id: org.organization.id,
+        project: {
+          id: project.project.id,
+          slug: project.project.slug,
+          targetBySlug: {
+            id: project.target.id,
+            slug: project.target.slug,
+          },
+        },
+        slug: org.organization.slug,
+      },
+    });
+
+    // Update member role to no longer allow describing projects
+    await updateMemberRole(newRole, ['organization:describe']);
+
+    // simulate 5 minutes passing by...
+    await seed.purgePersonalAccessTokenById(
+      result.createPersonalAccessToken.ok.createdPersonalAccessToken.id,
+    );
+
+    projectQuery = await execute({
+      document: OrganizationProjectTargetQuery1,
+      variables: {
+        organizationSlug: org.organization.slug,
+        projectSlug: project.project.slug,
+        targetSlug: project.target.slug,
+      },
+      authToken: personalAccessToken,
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(projectQuery).toEqual({
+      organization: {
+        id: org.organization.id,
+        project: null,
+        slug: org.organization.slug,
+      },
+    });
+  },
+);
