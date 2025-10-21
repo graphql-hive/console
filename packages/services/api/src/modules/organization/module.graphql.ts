@@ -53,6 +53,100 @@ export default gql`
     deleteOrganizationAccessToken(
       input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
     ): DeleteOrganizationAccessTokenResult! @tag(name: "public")
+
+    """
+    Create a new personal access token that is bound to the organization membership of the viewer.
+    Currently, this mutation can only be executed from a dashboard user session.
+    """
+    createPersonalAccessToken(
+      input: CreatePersonalAccessTokenInput!
+    ): CreatePersonalAccessTokenResult!
+    """
+    Delete a personal access token that is bound to the organization membership of the viewer.
+    Currently, this mutation can only be executed from a dashboard user session.
+    """
+    deletePersonalAccessToken(
+      input: DeletePersonalAccessTokenInput!
+    ): DeletePersonalAccessTokenResult!
+  }
+
+  input CreatePersonalAccessTokenInput {
+    """
+    Organization in which the access token should be created.
+    """
+    organization: OrganizationReferenceInput!
+    """
+    Title of the access token.
+    """
+    title: String!
+    """
+    Additional description containing information about the purpose of the access token.
+    """
+    description: String
+    """
+    List of permissions that are assigned to the access token.
+    A list of available permissions can be retrieved via the 'Organization.availableOrganizationAccessTokenPermissionGroups' field.
+    """
+    permissions: [String!]!
+    """
+    Resources on which the permissions should be granted (project, target, service, and app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ResourceAssignmentInput!
+  }
+
+  input DeletePersonalAccessTokenInput {
+    """
+    The access token that should be deleted.
+    """
+    personalAccessToken: PersonalAccessTokenReference!
+  }
+
+  input PersonalAccessTokenReference @oneOf {
+    byId: ID
+  }
+
+  type DeletePersonalAccessTokenResult {
+    ok: DeletePersonalAccessTokenResultOk
+    error: DeletePersonalAccessTokenResultError
+  }
+
+  type DeletePersonalAccessTokenResultOk {
+    deletedPersonalAccessTokenId: ID!
+  }
+
+  type DeletePersonalAccessTokenResultError {
+    message: String!
+  }
+
+  type PersonalAccessToken {
+    id: ID!
+  }
+
+  type CreatePersonalAccessTokenResultOk {
+    createdPersonalAccessToken: PersonalAccessToken!
+    privateAccessKey: String! @tag(name: "public")
+  }
+
+  type CreatePersonalAccessTokenResultError {
+    message: String!
+    details: CreatePersonalAccessTokenResultErrorDetails
+  }
+
+  type CreatePersonalAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
+  }
+
+  type CreatePersonalAccessTokenResult {
+    ok: CreatePersonalAccessTokenResultOk
+    error: CreatePersonalAccessTokenResultError
   }
 
   input OrganizationReferenceInput @oneOf {
