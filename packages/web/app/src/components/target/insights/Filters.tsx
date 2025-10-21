@@ -121,7 +121,7 @@ function OperationsFilter({
           style={style}
           key={operation.id}
           operationStats={operation}
-          clientOperationStats={clientFilteredOperations === null ? false : clientOpStats}
+          clientOperationStats={clientFilteredOperations == null ? false : clientOpStats}
           selected={selectedItems.includes(operation.operationHash || '')}
           onSelect={onSelect}
         />
