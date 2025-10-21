@@ -9,12 +9,13 @@ import { type Docker } from './docker';
 import { type Environment } from './environment';
 import { type GraphQL } from './graphql';
 import { type Observability } from './observability';
+import { type OTELCollector } from './otel-collector';
 
 /**
  * Hive Gateway Docker Image Version
  * Bump this to update the used gateway version.
  */
-const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.8';
+const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.10';
 
 const gatewayConfigDirectory = path.resolve(
   __dirname,
@@ -32,6 +33,7 @@ export function deployPublicGraphQLAPIGateway(args: {
   graphql: GraphQL;
   docker: Docker;
   observability: Observability;
+  otelCollector: OTELCollector;
 }) {
   const apiConfig = new pulumi.Config('api');
 
@@ -42,6 +44,11 @@ export function deployPublicGraphQLAPIGateway(args: {
   if (!cdnEndpoint) {
     throw new Error("Missing cdn endpoint variable 'HIVE_PERSISTED_DOCUMENTS_CDN_ENDPOINT'.");
   }
+
+  const hiveConfig = new pulumi.Config('hive');
+  const hiveConfigSecrets = new ServiceSecret('hive-secret', {
+    otelTraceAccessToken: hiveConfig.requireSecret('otelTraceAccessToken'),
+  });
 
   const supergraphEndpoint = cdnEndpoint + '/contracts/public';
 
@@ -69,6 +76,13 @@ export function deployPublicGraphQLAPIGateway(args: {
         ),
         SUPERGRAPH_ENDPOINT: supergraphEndpoint,
         OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint ?? '',
+
+        // Hive Console OTEL Tracing configuration
+        HIVE_HIVE_TRACE_ENDPOINT: serviceLocalEndpoint(args.otelCollector.service).apply(
+          value => `${value}/v1/traces`,
+        ),
+        HIVE_HIVE_TARGET: hiveConfig.require('target'),
+        // HIVE_TRACE_ACCESS_TOKEN is a secret
       },
       port: 4000,
       args: ['-c', '/config/gateway.config.ts', 'supergraph'],
@@ -100,6 +114,7 @@ export function deployPublicGraphQLAPIGateway(args: {
     [args.graphql.deployment, args.graphql.service],
   )
     .withSecret('HIVE_CDN_ACCESS_TOKEN', publicGraphQLAPISecret, 'cdnAccessKeyId')
+    .withSecret('HIVE_HIVE_TRACE_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
     .deploy();
 }
 
