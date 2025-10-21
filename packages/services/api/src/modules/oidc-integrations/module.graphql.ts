@@ -19,6 +19,7 @@ export default gql`
     authorizationEndpoint: String!
     oidcUserAccessOnly: Boolean!
     defaultMemberRole: MemberRole!
+    defaultResourceAssignment: ResourceAssignment
   }
 
   extend type Mutation {
@@ -29,6 +30,30 @@ export default gql`
     updateOIDCDefaultMemberRole(
       input: UpdateOIDCDefaultMemberRoleInput!
     ): UpdateOIDCDefaultMemberRoleResult!
+    updateOIDCDefaultResourceAssignment(
+      input: UpdateOIDCDefaultResourceAssignmentInput!
+    ): UpdateOIDCDefaultResourceAssignmentResult!
+  }
+
+  """
+  @oneOf
+  """
+  type UpdateOIDCDefaultResourceAssignmentResult {
+    ok: UpdateOIDCDefaultResourceAssignmentOk
+    error: UpdateOIDCDefaultResourceAssignmentError
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentOk {
+    updatedOIDCIntegration: OIDCIntegration!
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentError implements Error {
+    message: String!
+  }
+
+  input UpdateOIDCDefaultResourceAssignmentInput {
+    oidcIntegrationId: ID!
+    resources: ResourceAssignmentInput!
   }
 
   extend type Subscription {
