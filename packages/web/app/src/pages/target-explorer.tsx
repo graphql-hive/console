@@ -3,6 +3,10 @@ import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
+import {
   ArgumentVisibilityFilter,
   DateRangeFilter,
   FieldByNameFilter,
@@ -224,7 +228,7 @@ function ExplorerPageContent(props: {
           )}
         </div>
       </div>
-      {!query.fetching && !query.stale && (
+      {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>
@@ -271,6 +275,10 @@ function ExplorerPageContent(props: {
             />
           )}
         </>
+      ) : (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
       )}
     </>
   );
