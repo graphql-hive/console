@@ -130,11 +130,6 @@ export class OrganizationMembers {
           throw new Error('Could not resolve role.');
         }
 
-        const resources: ResourceAssignmentGroup = record.assignedResources ?? {
-          mode: '*',
-          projects: [],
-        };
-
         organizationMembershipByUserId.set(
           record.userId,
           OrganizationMembers.buildOrganizationMembership(
