@@ -49,9 +49,6 @@ test.concurrent(
       })
       .then(r => r.expectNoGraphQLErrors());
 
-    // note: there's a race condition in the publishSchema resolver if we repeatedly publish too quickly
-    waitFor(200);
-
     await token
       .publishSchema({
         sdl: latestSchema,
