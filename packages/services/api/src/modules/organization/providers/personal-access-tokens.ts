@@ -1,12 +1,12 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { CommonQueryMethods, DatabasePool, sql } from 'slonik';
 import z from 'zod';
-import { isUUID } from '@hive/api/shared/is-uuid';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { isUUID } from '../../../shared/is-uuid';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import {
   InsufficientPermissionError,
