@@ -45,6 +45,58 @@ Add "user" field to docker-compose.dev.yml
 - Click on `Start Hive` in the bottom bar of VSCode
 - Open the UI (`http://localhost:3000` by default) and Sign in with any of the identity provider
 - Once this is done, you should be able to log in and use the project
+
+#### Possible Issues During Setup
+
+If you encounter an error such as:
+
+```
+error: relation "supertokens_*" does not exist
+```
+
+it usually means that the **Supertokens database tables** were not initialized correctly.
+
+##### Steps to fix it
+
+1. **Ensure no local PostgreSQL instance is running**
+
+   - The local PostgreSQL service on your machine might conflict with the one running in Docker.
+   - Stop any locally running PostgreSQL service and make sure the database used by Hive is the one
+     from Docker Compose.
+
+2. **Handle possible race conditions between `db` and `supertokens` containers**
+
+   - This issue may occur if `supertokens` starts before the `db` container is fully initialized.
+   - To fix:
+     1. Stop all running containers:
+        ```bash
+        docker compose -f ./docker/docker-compose.dev.yml down
+        ```
+     2. Start only the database:
+        ```bash
+        docker compose -f ./docker/docker-compose.dev.yml up db
+        ```
+     3. Wait until the database is ready (you should see “database system is ready to accept
+        connections” in logs).
+     4. Start the `supertokens` service:
+        ```bash
+        docker compose -f ./docker/docker-compose.dev.yml up supertokens
+        ```
+     5. Once `supertokens` successfully creates all the tables, start the rest of the containers:
+        ```bash
+        docker compose -f ./docker/docker-compose.dev.yml up -d
+        ```
+
+3. **If only Supertokens tables were created**
+   - Run the setup command again to ensure all services are initialized properly:
+     ```bash
+     pnpm local:setup
+     ```
+   - Then restart the Hive Console using the VSCode “Start Hive” button.
+
+After completing these steps, reload the Hive UI at [http://localhost:3000](http://localhost:3000),
+and you should be able to log in successfully.
+
 - Once you generate the token against your organization/personal account in hive, the same can be
   added locally to `hive.json` within `packages/libraries/cli` which can be used to interact via the
   hive cli with the registry (Use `http://localhost:3001/graphql` as the `registry.endpoint` value
