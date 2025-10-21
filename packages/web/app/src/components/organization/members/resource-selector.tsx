@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { MouseEvent, useMemo, useState } from 'react';
 import { produce } from 'immer';
 import { ChevronRightIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
@@ -152,7 +152,8 @@ export function ResourceSelector(props: {
   // whether we show the service or apps in the last tab
   const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
-  const toggleServiceAppsState = () => {
+  const toggleServiceAppsState = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const state =
       serviceAppsState === ServicesAppsState.apps
         ? ServicesAppsState.service

@@ -12,6 +12,7 @@ import type {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../__generated__/types';
+import type { ResourceAssignmentGroup } from '../modules/organization/lib/resource-assignment-model';
 import { parseGraphQLSource, sortDocumentNode } from './schema';
 
 export const NameModel = z
@@ -223,6 +224,7 @@ export interface OIDCIntegration {
   authorizationEndpoint: string;
   oidcUserAccessOnly: boolean;
   defaultMemberRoleId: string | null;
+  defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
 
 export interface CDNAccessToken {
