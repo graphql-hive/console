@@ -59,6 +59,9 @@ export type OrganizationMembership = {
   createdAt: string;
 };
 
+/** Properties needed from organization. */
+type OrganizationMemberPartial = Pick<Organization, 'id' | 'ownerId'>;
+
 @Injectable({
   scope: Scope.Operation,
   global: true,
@@ -99,7 +102,7 @@ export class OrganizationMembers {
    * them into resource based role assignments.
    */
   private async resolveMemberships(
-    organization: Organization,
+    organization: OrganizationMemberPartial,
     organizationMembers: Array<z.TypeOf<typeof RawOrganizationMembershipModel>>,
   ) {
     const organizationMembershipByUserId = new Map</* userId */ string, OrganizationMembership>();
@@ -164,7 +167,7 @@ export class OrganizationMembers {
   }
 
   async getPaginatedOrganizationMembersForOrganization(
-    organization: Organization,
+    organization: OrganizationMemberPartial,
     args: { first: number | null; after: string | null },
   ) {
     this.logger.debug(
@@ -245,7 +248,7 @@ export class OrganizationMembers {
    * Batched loader function for a organization membership.
    */
   findOrganizationMembership = batchBy(
-    (args: { organization: Organization; userId: string }) => args.organization.id,
+    (args: { organization: OrganizationMemberPartial; userId: string }) => args.organization.id,
     async args => {
       const organization = args[0].organization;
       const userIds = args.map(arg => arg.userId);
@@ -271,7 +274,7 @@ export class OrganizationMembers {
   }
 
   async findOrganizationMembershipByEmail(
-    organization: Organization,
+    organization: OrganizationMemberPartial,
     email: string,
   ): Promise<OrganizationMembership | null> {
     this.logger.debug(

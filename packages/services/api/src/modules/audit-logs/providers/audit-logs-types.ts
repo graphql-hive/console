@@ -342,6 +342,22 @@ export const AuditLogModel = z.union([
       organizationAccessTokenId: z.string().uuid(),
     }),
   }),
+  z.object({
+    eventType: z.literal('PERSONAL_ACCESS_TOKEN_CREATED'),
+    metadata: z.object({
+      organizationAccessTokenId: z.string().uuid(),
+      userId: z.string().uuid(),
+      permissions: z.array(z.string()),
+      assignedResources: ResourceAssignmentModel,
+    }),
+  }),
+  z.object({
+    eventType: z.literal('PERSONAL_ACCESS_TOKEN_DELETED'),
+    metadata: z.object({
+      organizationAccessTokenId: z.string().uuid(),
+      userId: z.string().uuid(),
+    }),
+  }),
 ]);
 
 export type AuditLogSchemaEvent = z.infer<typeof AuditLogModel>;

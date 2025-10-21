@@ -23,6 +23,8 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
+import { PersonalAccessTokenSessionStrategy } from '@hive/api/modules/auth/lib/personal-access-token-strategy';
+import { PersonalAccessTokensCache } from '@hive/api/modules/organization/providers/personal-access-tokens-cache';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -413,6 +415,13 @@ export async function main() {
         accessTokenValidationCache: registry.injector.get(AccessTokenValidationCache),
       });
 
+    const personalAccessTokenStrategy = (logger: Logger) =>
+      new PersonalAccessTokenSessionStrategy(
+        logger,
+        registry.injector.get(PersonalAccessTokensCache),
+        registry.injector.get(AccessTokenValidationCache),
+      );
+
     const graphqlPath = '/graphql';
     const port = env.http.port;
     const signature = Math.random().toString(16).substr(2);
@@ -443,6 +452,7 @@ export async function main() {
               ),
             }),
           organizationAccessTokenStrategy,
+          personalAccessTokenStrategy,
           (logger: Logger) =>
             new TargetAccessTokenStrategy({
               logger,
@@ -461,7 +471,7 @@ export async function main() {
     });
 
     const authN = new AuthN({
-      strategies: [organizationAccessTokenStrategy],
+      strategies: [organizationAccessTokenStrategy, personalAccessTokenStrategy],
     });
 
     server.route({

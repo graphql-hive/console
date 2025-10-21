@@ -67,6 +67,15 @@ const MemberRoleModel = z
     return {
       ...omit(record, 'legacyScopes'),
       permissions,
+      get allPermissions() {
+        const allPermissions = new Set<Permission>();
+        Object.values(permissions).forEach(set => {
+          set.forEach(permission => {
+            allPermissions.add(permission);
+          });
+        });
+        return allPermissions;
+      },
     };
   });
 

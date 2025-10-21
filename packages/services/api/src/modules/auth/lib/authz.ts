@@ -6,6 +6,7 @@ import { AccessError } from '../../../shared/errors';
 import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
+import type { CachedPersonalAccessToken } from '../../organization/providers/personal-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 
 export type AuthorizationPolicyStatement = {
@@ -44,7 +45,6 @@ function parseResourceIdentifier(resource: string) {
   }
 
   // TODO: maybe some stricter validation of the resource id characters
-
   return { organizationId, resourceId: parts[2] };
 }
 
@@ -58,7 +58,12 @@ export type OrganizationAccessTokenActor = {
   organizationAccessToken: OrganizationAccessToken;
 };
 
-type Actor = UserActor | OrganizationAccessTokenActor;
+export type PersonalAccessTokenActor = {
+  type: 'personalAccessToken';
+  personalAccessToken: CachedPersonalAccessToken;
+};
+
+type Actor = UserActor | OrganizationAccessTokenActor | PersonalAccessTokenActor;
 
 /**
  * Abstract session class that is implemented by various ways to identify a session.
@@ -393,6 +398,7 @@ const permissionsByLevel = {
     z.literal('schemaLinting:modifyOrganizationRules'),
     z.literal('auditLog:export'),
     z.literal('accessToken:modify'),
+    z.literal('personalAccessToken:modify'),
   ],
   project: [
     z.literal('project:describe'),
@@ -485,7 +491,7 @@ export function getPermissionGroup(permission: Permission): ResourceLevel {
  * Transforms a flat permission array into an object that groups the permissions per resource level.
  */
 export function permissionsToPermissionsPerResourceLevelAssignment(
-  permissions: Array<Permission>,
+  permissions: Iterable<Permission>,
 ): PermissionsPerResourceLevelAssignment {
   const assignment: PermissionsPerResourceLevelAssignment = {
     organization: new Set(),

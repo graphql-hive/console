@@ -65,7 +65,13 @@ export class InMemoryRateLimiter {
     const limiter = this.store.ensureLimiter(action, windowSizeInMs, maxActions);
 
     if (
-      !limiter.isAllowed(actor.type === 'user' ? actor.user.id : actor.organizationAccessToken.id)
+      !limiter.isAllowed(
+        actor.type === 'user'
+          ? actor.user.id
+          : actor.type === 'organizationAccessToken'
+            ? actor.organizationAccessToken.id
+            : actor.personalAccessToken.id,
+      )
     ) {
       throw new HiveError(message);
     }
