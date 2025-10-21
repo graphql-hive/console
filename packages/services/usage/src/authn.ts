@@ -1,6 +1,5 @@
 import type Redis from 'ioredis';
 import type { DatabasePool } from 'slonik';
-import { OrganizationMemberRoles, OrganizationMembers } from '@hive/api';
 import { AuthN } from '@hive/api/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '@hive/api/modules/auth/lib/organization-access-token-strategy';
 import { PersonalAccessTokenSessionStrategy } from '@hive/api/modules/auth/lib/personal-access-token-strategy';
@@ -29,11 +28,6 @@ export function createAuthN(args: {
     args.redis,
     args.pgPool,
     prometheusConfig,
-    new OrganizationMembers(
-      args.pgPool,
-      new OrganizationMemberRoles(args.pgPool, args.logger),
-      args.logger,
-    ),
   );
 
   const accessTokenValidationCache = new AccessTokenValidationCache(prometheusConfig);
