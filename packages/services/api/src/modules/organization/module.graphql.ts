@@ -119,8 +119,40 @@ export default gql`
     message: String!
   }
 
-  type PersonalAccessToken {
+  interface AccessToken {
+    id: ID! @tag(name: "public")
+    title: String! @tag(name: "public")
+    description: String @tag(name: "public")
+    permissions: [String!]! @tag(name: "public")
+    resources: ResourceAssignment! @tag(name: "public")
+    firstCharacters: String! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
+  }
+
+  type PersonalAccessToken implements AccessToken {
     id: ID!
+    title: String!
+    description: String
+    """
+    The currently valid permissions for the personal access token.
+    """
+    permissions: [String!]!
+    """
+    The currently valid resources for the personal access token.
+    """
+    resources: ResourceAssignment!
+    firstCharacters: String!
+    createdAt: DateTime!
+    """
+    The permissions that were originally assigned to the access token.
+    They can differ from 'PersonalAccessToken.permissions' as the permissions of the users role can change.
+    """
+    assignedPermissions: [String!]!
+    """
+    The resources that were originally assigned to the access token.
+    They can differ from 'PersonalAccessToken.resources' as the permissions of the users role can change.
+    """
+    assignedResources: [String!]!
   }
 
   type CreatePersonalAccessTokenResultOk {
@@ -205,7 +237,7 @@ export default gql`
     description: String @tag(name: "public")
   }
 
-  type OrganizationAccessToken {
+  type OrganizationAccessToken implements AccessToken {
     id: ID! @tag(name: "public")
     title: String! @tag(name: "public")
     description: String @tag(name: "public")

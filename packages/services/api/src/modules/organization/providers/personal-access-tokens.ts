@@ -119,7 +119,7 @@ export class PersonalAccessTokens {
     const accessKey = await PersonalAccessKey.create(id);
 
     const result = await this.pool.maybeOne<unknown>(sql`
-      INSERT INTO "organization_access_tokens" (
+      INSERT INTO "personal_access_tokens" (
         "id"
         , "organization_id"
         , "user_id"
