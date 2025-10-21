@@ -1062,8 +1062,8 @@ importers:
         specifier: 4.14.0
         version: 4.14.0(encoding@0.1.13)
       nodemailer:
-        specifier: 6.9.16
-        version: 6.9.16
+        specifier: 7.0.7
+        version: 7.0.7
       p-timeout:
         specifier: 6.1.4
         version: 6.1.4
@@ -1424,7 +1424,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 5.1.0-alpha-20231208113249-34700c8a
-        version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.11.0)
+        version: 5.1.0-alpha-20231208113249-34700c8a(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -3663,7 +3663,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -13034,6 +13033,7 @@ packages:
 
   mathjax-full@3.2.2:
     resolution: {integrity: sha512-+LfG9Fik+OuI8SLwsiR02IVdjcnRCy5MufYLi0C3TdMT56L/pjB0alMVGgoWJF8pN9Rc7FESycZB9BMNWIid5w==}
+    deprecated: Version 4 replaces this package with the scoped package @mathjax/src
 
   md5@2.3.0:
     resolution: {integrity: sha512-T1GITYmFaKuO91vxyoQMFETst+O71VUPEU3ze5GNzDm0OWdP8v1ziTaAEPUr/3kLsY3Sftgz242A1SetQiDL7g==}
@@ -13757,6 +13757,10 @@ packages:
 
   nodemailer@6.9.16:
     resolution: {integrity: sha512-psAuZdTIRN08HKVd/E8ObdV6NO7NTBY3KsC30F7M4H1OnmLCUNaS56FpYxyb26zWLSyYF9Ozch9KYHhHegsiOQ==}
+    engines: {node: '>=6.0.0'}
+
+  nodemailer@7.0.7:
+    resolution: {integrity: sha512-jGOaRznodf62TVzdyhKt/f1Q/c3kYynk8629sgJHpRzGZj01ezbgMMWJSAjHADcwTKxco3B68/R+KHJY2T5BaA==}
     engines: {node: '>=6.0.0'}
 
   noms@0.0.0:
@@ -19958,13 +19962,6 @@ snapshots:
     dependencies:
       dependency-graph: 0.11.0
       graphql: 16.9.0
-      object-inspect: 1.12.3
-      tslib: 2.6.2
-
-  '@graphql-inspector/core@5.1.0-alpha-20231208113249-34700c8a(graphql@16.11.0)':
-    dependencies:
-      dependency-graph: 0.11.0
-      graphql: 16.11.0
       object-inspect: 1.12.3
       tslib: 2.6.2
 
@@ -32700,6 +32697,8 @@ snapshots:
       nodemailer-fetch: 1.6.0
 
   nodemailer@6.9.16: {}
+
+  nodemailer@7.0.7: {}
 
   noms@0.0.0:
     dependencies:
