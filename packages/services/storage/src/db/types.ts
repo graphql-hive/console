@@ -229,6 +229,19 @@ export interface organizations_billing {
   organization_id: string;
 }
 
+export interface personal_access_tokens {
+  assigned_resources: any | null;
+  created_at: Date;
+  description: string;
+  first_characters: string;
+  hash: string;
+  id: string;
+  organization_id: string;
+  permissions: Array<string>;
+  title: string;
+  user_id: string;
+}
+
 export interface projects {
   build_url: string | null;
   clean_id: string;
@@ -445,6 +458,7 @@ export interface DBTables {
   organization_member_roles: organization_member_roles;
   organizations: organizations;
   organizations_billing: organizations_billing;
+  personal_access_tokens: personal_access_tokens;
   projects: projects;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;
