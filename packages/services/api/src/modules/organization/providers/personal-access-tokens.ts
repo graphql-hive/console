@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { CommonQueryMethods, DatabasePool, sql } from 'slonik';
+import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import z from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -18,6 +18,7 @@ import {
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
+import { Storage } from '../../shared/providers/storage';
 import * as PersonalAccessKey from '../lib/personal-access-key';
 import {
   intersectResourceAssignments,

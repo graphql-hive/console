@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { CommonQueryMethods, sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -21,6 +21,7 @@ import {
 } from './resource-assignments';
 
 const RawOrganizationMembershipModel = z.object({
+  organizationId: z.string(),
   userId: z.string(),
   roleId: z.string(),
   connectedToZendesk: z
@@ -134,32 +135,14 @@ export class OrganizationMembers {
           projects: [],
         };
 
-        organizationMembershipByUserId.set(record.userId, {
-          organizationId: organization.id,
-          userId: record.userId,
-          isOwner: organization.ownerId === record.userId,
-          connectedToZendesk: record.connectedToZendesk,
-          assignedRole: {
-            role: membershipRole,
-            resources,
-            // We have these as a getter statement as they are
-            // only used in the context of authorization, we do not need
-            // to compute when querying a list of organization mambers via the GraphQL API.
-            get authorizationPolicyStatements() {
-              const resolvedResources = resolveResourceAssignment({
-                organizationId: organization.id,
-                projects: resources,
-              });
-
-              return translateResolvedResourcesToAuthorizationPolicyStatements(
-                organization.id,
-                membershipRole.permissions,
-                resolvedResources,
-              );
-            },
-          },
-          createdAt: record.createdAt,
-        });
+        organizationMembershipByUserId.set(
+          record.userId,
+          OrganizationMembers.buildOrganizationMembership(
+            record,
+            membershipRole,
+            organization.ownerId,
+          ),
+        );
       }
     }
 
@@ -327,10 +310,106 @@ export class OrganizationMembers {
       `,
     );
   }
+
+  static buildOrganizationMembership(
+    rawMembership: z.TypeOf<typeof RawOrganizationMembershipModel>,
+    membershipRole: OrganizationMemberRole,
+    organizationOwnerId: string,
+  ): OrganizationMembership {
+    const resources: ResourceAssignmentGroup = rawMembership.assignedResources ?? {
+      mode: '*',
+      projects: [],
+    };
+
+    return {
+      organizationId: rawMembership.organizationId,
+      userId: rawMembership.userId,
+      isOwner: organizationOwnerId === rawMembership.userId,
+      connectedToZendesk: rawMembership.connectedToZendesk,
+      assignedRole: {
+        role: membershipRole,
+        resources,
+        // We have these as a getter statement as they are
+        // only used in the context of authorization, we do not need
+        // to compute when querying a list of organization mambers via the GraphQL API.
+        get authorizationPolicyStatements() {
+          const resolvedResources = resolveResourceAssignment({
+            organizationId: rawMembership.organizationId,
+            projects: resources,
+          });
+
+          return translateResolvedResourcesToAuthorizationPolicyStatements(
+            rawMembership.organizationId,
+            membershipRole.permissions,
+            resolvedResources,
+          );
+        },
+      },
+      createdAt: rawMembership.createdAt,
+    };
+  }
+
+  static findOrganizationMembership(deps: { logger: Logger; pool: CommonQueryMethods }) {
+    return async function findOrganizationMembership(
+      organizationId: string,
+      userId: string,
+    ): Promise<OrganizationMembership | null> {
+      deps.logger.debug(
+        'Find organization membership by organizationId and userId. (organizationId=%s, userId=%s)',
+        organizationId,
+        userId,
+      );
+
+      const query = sql`
+        SELECT
+          ${organizationMemberFields(sql`"om"`)}
+        FROM
+          "organization_member" AS "om"
+        WHERE
+          "om"."organization_id" = ${organizationId}
+          AND "om"."user_id" = ${userId}
+      `;
+
+      const result = await deps.pool.maybeOne<unknown>(query);
+
+      if (result == null) {
+        deps.logger.debug(
+          'Could not find organization membership by organizationId and userId. (organizationId=%s, userId=%s)',
+          organizationId,
+          userId,
+        );
+
+        return null;
+      }
+
+      const rawMembership = RawOrganizationMembershipModel.parse(result);
+
+      const memberRole = await OrganizationMemberRoles.findMemberRoleById(deps)(
+        rawMembership.roleId,
+      );
+
+      if (!memberRole) {
+        deps.logger.debug(
+          'Could not resolve role. (organizationId=%s, userId=%s)',
+          organizationId,
+          userId,
+        );
+
+        return null;
+      }
+
+      return OrganizationMembers.buildOrganizationMembership(
+        rawMembership,
+        memberRole,
+        /** In this context whether the user is the organization owner does not matter. So we can simply noop it. */ 'noop',
+      );
+    };
+  }
 }
 
 const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
-  ${prefix}."user_id" AS "userId"
+  ${prefix}."organization_id" AS "organizationId"
+  , ${prefix}."user_id" AS "userId"
   , ${prefix}."role_id" AS "roleId"
   , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
   , ${prefix}."assigned_resources" AS "assignedResources"

@@ -25,6 +25,11 @@ export const permissionGroups: Array<PermissionGroup> = [
           'Granting a role the ability to manage members enables it to elevate its own permissions.',
       },
       {
+        id: 'personalAccessToken:modify',
+        title: 'Manage personal access tokens.',
+        description: 'Member can create access tokens with a subset of their permissions.',
+      },
+      {
         id: 'organization:modifySlug',
         title: 'Update organization slug',
         description: 'Member can modify the organization slug.',
@@ -50,7 +55,6 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'View members',
         description: 'Member can access the organization member overview.',
       },
-
       {
         id: 'member:modify',
         title: 'Manage members',

@@ -35,7 +35,6 @@ export class PersonalAccessTokensCache {
     @Inject(REDIS_INSTANCE) redis: Redis,
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     prometheusConfig: PrometheusConfig,
-    private organizationMembers: OrganizationMembers,
   ) {
     this.cache = new BentoCache({
       default: 'personalAccessTokens',
@@ -88,14 +87,10 @@ export class PersonalAccessTokensCache {
       return null;
     }
 
-    const membership = await this.organizationMembers.findOrganizationMembership({
-      organization: {
-        id: personalAccessToken.id,
-        // kind of a noop id, in the context of the access token we don't care whether the user is the admin or not.
-        ownerId: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-      },
-      userId: personalAccessToken.userId,
-    });
+    const membership = await OrganizationMembers.findOrganizationMembership({
+      logger,
+      pool: this.pool,
+    })(personalAccessToken.organizationId, personalAccessToken.userId);
 
     if (!membership) {
       return null;

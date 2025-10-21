@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -190,6 +190,34 @@ export class OrganizationMemberRoles {
       rowsById.set(record.id, record);
     }
     return rowsById;
+  }
+
+  static findMemberRoleById(deps: { logger: Logger; pool: CommonQueryMethods }) {
+    return async function findMemberRoleById(
+      roleId: string,
+    ): Promise<OrganizationMemberRole | null> {
+      deps.logger.debug('Find organization membership role by id. (roleId=%s)', roleId);
+
+      const query = sql`
+        SELECT
+          ${organizationMemberRoleFields}
+        FROM
+          "organization_member_roles"
+        WHERE
+          "id" = ${roleId}
+      `;
+
+      const result = await deps.pool.maybeOne<unknown>(query);
+
+      if (result == null) {
+        deps.logger.debug('Organization membership role not found. (roleId=%s)', roleId);
+        return null;
+      }
+
+      deps.logger.debug('Organization membership found. (roleId=%s)', roleId);
+
+      return MemberRoleModel.parse(result);
+    };
   }
 
   findMemberRoleById = batch<string, OrganizationMemberRole | null>(async roleIds => {
