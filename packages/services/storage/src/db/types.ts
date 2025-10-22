@@ -11,7 +11,6 @@ export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
-export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
 
 export interface alert_channels {
