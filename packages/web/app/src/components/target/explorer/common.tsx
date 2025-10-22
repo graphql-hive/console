@@ -157,7 +157,7 @@ export function SchemaExplorerUsageStats(props: {
             <>
               <div className="mb-1 text-lg font-bold">Client Usage</div>
 
-              {Array.isArray(usage.usedByClients) ? (
+              {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
                 <>
                   <div className="mb-2">This field is used by the following clients:</div>
                   <ul>
