@@ -42,11 +42,13 @@ export const OIDCIntegration: OidcIntegrationResolvers = {
     return role;
   },
   defaultResourceAssignment: async (oidcIntegration, _, { injector }) => {
-    if (oidcIntegration.defaultResourceAssignment) {
-      return await injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
-        organizationId: oidcIntegration.linkedOrganizationId,
-        resources: oidcIntegration.defaultResourceAssignment,
-      });
+    if (!oidcIntegration.defaultResourceAssignment) {
+      return null;
     }
+
+    return injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
+      organizationId: oidcIntegration.linkedOrganizationId,
+      resources: oidcIntegration.defaultResourceAssignment,
+    });
   },
 };
