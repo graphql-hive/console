@@ -1,5 +1,4 @@
-import { GetYourAPIGameWhite } from '#components/get-your-api-game-white';
-import { cn, HiveLayoutConfig } from '@theguild/components';
+import { cn, GetYourAPIGameRightSection, HiveLayoutConfig } from '@theguild/components';
 import { CaseStudiesHeader } from '../case-studies-header';
 import { MoreStoriesSection } from '../more-stories-section';
 import '../../hive-prose-styles.css';
@@ -20,7 +19,7 @@ export default function CaseStudiesLayout({ children }: { children: React.ReactN
         <LookingToUseHiveUpsellBlock className="sticky right-2 top-[108px] mb-8 h-min max-lg:hidden lg:w-[320px] xl:w-[400px]" />
       </div>
       <MoreStoriesSection className="mx-4 md:mx-6" />
-      <GetYourAPIGameWhite className="sm:my-24" />
+      <GetYourAPIGameRightSection className="sm:my-24" />
     </div>
   );
 }
