@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import {
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
 import { GraphQLEnumTypeComponent } from '@/components/target/explorer/enum-type';
 import {
   ArgumentVisibilityFilter,
@@ -247,7 +251,11 @@ function TypeExplorerPageContent(props: {
           ) : null}
         </div>
       </div>
-      {query.fetching ? null : latestSchemaVersion && type ? (
+      {query.fetching || query.stale ? (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
+      ) : latestSchemaVersion && type ? (
         <TypeRenderer
           totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
           type={type}

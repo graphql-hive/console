@@ -2,6 +2,7 @@ import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { PulseIcon, UsersIcon } from '@/components/ui/icon';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -156,7 +157,7 @@ export function SchemaExplorerUsageStats(props: {
             <>
               <div className="mb-1 text-lg font-bold">Client Usage</div>
 
-              {Array.isArray(usage.usedByClients) ? (
+              {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
                 <>
                   <div className="mb-2">This field is used by the following clients:</div>
                   <ul>
@@ -791,3 +792,47 @@ export const LinkToCoordinatePage = React.forwardRef<
     </NextLink>
   );
 });
+
+const getRandomWidth = () => {
+  const values = ['w-32', 'w-48', 'w-64', 'w-96'];
+
+  return values[Math.floor(Math.random() * values.length)];
+};
+
+export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
+  const widths = useMemo(() => {
+    const count = props.count ?? 5;
+
+    return Array.from({ length: count }, () => getRandomWidth());
+  }, [props.count]);
+
+  return (
+    <div className="flex w-full flex-col">
+      {widths.map((width, index) => (
+        <GraphQLTypeCardListItem key={index} index={index} className="w-full">
+          <div className="flex w-full flex-row items-center gap-2">
+            <Skeleton className={cn('bg-muted my-1 h-4', width)} />
+            <div className="ml-auto flex flex-row items-center gap-2">
+              <Skeleton className="bg-muted my-1 size-4" />
+              <Skeleton className="bg-muted my-1 size-4" />
+              <Skeleton className="bg-muted my-1 size-4" />
+            </div>
+          </div>
+        </GraphQLTypeCardListItem>
+      ))}
+    </div>
+  );
+};
+
+export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
+  return (
+    <div className="rounded-md border-2 border-gray-900">
+      <div className="flex flex-row justify-between p-4">
+        <div className="flex flex-row items-center gap-2">
+          <Skeleton className="bg-muted my-1 h-4 w-32" />
+        </div>
+      </div>
+      <div>{props.children}</div>
+    </div>
+  );
+};
