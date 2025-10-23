@@ -4,11 +4,11 @@ title: 'Supergraph'
 
 import { Callout } from '@theguild/components'
 
-# Getting Started
+# Overview
 
 The Supergraph is the architectural backbone of Federation, it's an artifact produced by the composition process, and intended to be the recipe, or control-plane, for running your GraphQL router.
 
-To run Hive Router, you'll need a Supergraph and the subgraphs running (see [Probes](./probes) page for additional information about Router health state and the relation to the Supergraph).
+To run Hive Router, you'll need a Supergraph and the subgraphs running (see [Probes](./observability/probes) page for additional information about Router health state and the relation to the Supergraph).
 
 The Router will read the Supergraph and will use it for query planning and response construction.
 
@@ -23,7 +23,7 @@ Once you have a valid Supergraph published to Hive CDN, gather the following inf
 - [*Hive CDN Endpoint*](../schema-registry/get-started/apollo-federation#cdn-access): under your target's page, click on `Connect to CDN` button to grab your endpoint.
 - [*Hive CDN API Key*](../schema-registry/management/targets#creating-a-cdn-access-token): a secret that allow you to access Hive CDN and fetch your API key.
 
-Once you have both, configure Hive Rotuer to use  the `supergraph` configuration with `source: hive` field:
+Once you have both, configure Hive Router to use  the `supergraph` configuration with `source: hive` field:
 
 ```yaml {2-4} filename="router.config.yaml"
 supergraph:
@@ -73,4 +73,4 @@ When a Supergraph changes, in-flight requests will not be impacted and will comp
 
 In addition, internal caches will be invalidated and all new requests will be served from the updated Supergraph.
 
-In cases when the Supergraph reload process fails, Hive Router will continue to serve requests from the previous version of the Supergraph and will not impact the performance of the router (see [Probes](./probes) to understand how the Supergraph reload process impacts the router).
+In cases when the Supergraph reload process fails, Hive Router will continue to serve requests from the previous version of the Supergraph and will not impact the performance of the router (see [Probes](./observability/probes) to understand how the Supergraph reload process impacts the router).

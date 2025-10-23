@@ -21,9 +21,9 @@ curl -I http://localhost:4000/health
 
 <Callout type="warning" className="mb-4">
 
-The Liveness/health check only represent the validity of the router's HTTP layer.
+The Liveness/health check only represents the validity of the router's HTTP layer.
 
-See **Readiness check** below for a more comprehensive health check that represent the ability of the router to process and execute GraphQL requests.
+See **Readiness check** below for a more comprehensive health check that represents the ability of the router to process and execute GraphQL requests.
 
 </Callout>
 
@@ -31,7 +31,7 @@ See **Readiness check** below for a more comprehensive health check that represe
 
 Readiness of Hive Router is available at `/readiness` endpoint, and represents the readiness status and ability to process GraphQL requests.
 
-The readiness check depends on your [Supergraph](./supergraph) load status. A router instance that did not load the supergraph status yet will return a `503 Service Unavailable` status code. Once the supergraph is loaded, the router will return a `200 OK` status code.
+The readiness check depends on your [Supergraph](./supergraph) load status. A router instance that has not loaded the supergraph yet will return a `503 Service Unavailable` status code. Once the supergraph is loaded, the router will return a `200 OK` status code.
 
 In cases where the initial Supergraph was loaded successfully, and reloading of the Supergraph is failing, the router will continue to report `200 OK` status code, to prevent the runtime from restarting or replacing the instance, which might have a cascading effect.
 

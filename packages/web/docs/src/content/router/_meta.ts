@@ -5,5 +5,5 @@ export default {
   security: 'Security',
   guides: 'Guides',
   configuration: 'Configuration',
-  probes: 'Probes',
+  observability: 'Observability',
 };
