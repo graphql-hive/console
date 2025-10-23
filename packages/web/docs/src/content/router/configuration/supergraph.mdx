@@ -8,7 +8,8 @@ The `supergraph` configuration tells the router where to find your federated sup
 schema is the blueprint of your entire federated graph - it contains information about all your
 subgraphs and how they connect together.
 
-> For additional information about the supergraph loading and reloading process in Hive Router, see [Supergraph page](../supergraph).
+> For additional information about the supergraph loading and reloading process in Hive Router, see
+> [Supergraph page](../supergraph).
 
 ## Hive Console
 
@@ -24,7 +25,8 @@ Load the Supergraph schema from [Hive Console](../../schema-registry) CDN.
 - **Type:** `string`
 - **Required:** Yes
 
-The [*Hive CDN Endpoint*](../schema-registry/get-started/apollo-federation#cdn-access) of your target.
+The [_Hive CDN Endpoint_](../../schema-registry/get-started/apollo-federation#cdn-access) of your
+target.
 
 ```yaml {3} filename="router.config.yaml"
 supergraph:
@@ -38,7 +40,8 @@ supergraph:
 - **Type:** `string`
 - **Required:** Yes
 
-The [*Hive CDN key/token*](../schema-registry/management/targets#creating-a-cdn-access-token) of your target.
+The [_Hive CDN key/token_](../../schema-registry/management/targets#creating-a-cdn-access-token) of
+your target.
 
 ```yaml {4} filename="router.config.yaml"
 supergraph:
@@ -53,7 +56,8 @@ supergraph:
 - **Required:** No
 - **Default:** `10s`
 
-A human-readable string representing the interval at which the router should poll Hive CDN for changes.
+A human-readable string representing the interval at which the router should poll Hive CDN for
+changes.
 
 ```yaml {4} filename="router.config.yaml"
 supergraph:
@@ -83,7 +87,8 @@ supergraph:
 - **Required:** No
 - **Default:** `{ max_retries: 10 }`
 
-Max retries amount for Hive CDN requests. Exponential backoff is used to calculate the delay between retries.
+Max retries amount for Hive CDN requests. Exponential backoff is used to calculate the delay between
+retries.
 
 ```yaml {4-5} filename="router.config.yaml"
 supergraph:
@@ -127,9 +132,11 @@ file.
 - **Required:** No
 - **Default:** disabled
 
-A human-readable string representing the interval at which the router should poll the file for changes.
+A human-readable string representing the interval at which the router should poll the file for
+changes.
 
-The reloading process depends on the file system's ability to detect changes based on the file-system metadata (modified-at attribute).
+The reloading process depends on the file system's ability to detect changes based on the
+file-system metadata (modified-at attribute).
 
 ```yaml {4} filename="router.config.yaml"
 supergraph:
