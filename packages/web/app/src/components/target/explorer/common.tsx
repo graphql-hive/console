@@ -8,6 +8,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { SupergraphMetadataList_SupergraphMetadataFragmentFragment } from '@/gql/graphql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import { capitalize } from '@/utils';
 import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
 import { useArgumentListToggle, useSchemaExplorerContext } from './provider';
@@ -67,9 +68,12 @@ export function SchemaExplorerUsageStats(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  kindLabel?: string;
 }) {
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
+
+  const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -89,18 +93,19 @@ export function SchemaExplorerUsageStats(props: {
         <Tooltip>
           <TooltipContent>
             <div className="z-10">
-              <div className="mb-1 text-lg font-bold">Field Usage</div>
+              <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
               {usage.isUsed === false ? (
-                <div>This field is currently not in use.</div>
+                <div>This {kindLabel} is currently not in use.</div>
               ) : (
                 <div>
                   <ul>
                     <li>
-                      This field has been queried in <strong>{formatNumber(usage.total)}</strong>{' '}
-                      requests.
+                      This {kindLabel} has been queried in{' '}
+                      <strong>{formatNumber(usage.total)}</strong> requests.
                     </li>
                     <li>
-                      <strong>{toDecimal(percentage)}%</strong> of all requests use this field.
+                      <strong>{toDecimal(percentage)}%</strong> of all requests use this {kindLabel}
+                      .
                     </li>
                   </ul>
 
@@ -158,7 +163,7 @@ export function SchemaExplorerUsageStats(props: {
 
               {Array.isArray(usage.usedByClients) ? (
                 <>
-                  <div className="mb-2">This field is used by the following clients:</div>
+                  <div className="mb-2">This {kindLabel} is used by the following clients:</div>
                   <ul>
                     {usage.usedByClients.map(clientName => (
                       <li key={clientName} className="font-bold">
@@ -179,7 +184,7 @@ export function SchemaExplorerUsageStats(props: {
                   </ul>
                 </>
               ) : (
-                <div>This field is not used by any client.</div>
+                <div>This {kindLabel} is not used by any client.</div>
               )}
             </>
           </TooltipContent>
@@ -328,6 +333,7 @@ export function GraphQLTypeCard(props: {
         ) : null}
         {props.usage && typeof props.totalRequests !== 'undefined' ? (
           <SchemaExplorerUsageStats
+            kindLabel={props.kind}
             totalRequests={props.totalRequests}
             usage={props.usage}
             organizationSlug={props.organizationSlug}

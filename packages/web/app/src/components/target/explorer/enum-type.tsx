@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
@@ -5,10 +6,8 @@ import {
   GraphQLTypeCard,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
-  SchemaExplorerUsageStats,
 } from './common';
 import { useSchemaExplorerContext } from './provider';
-import { SupergraphMetadataList } from './super-graph-metadata';
 
 const GraphQLEnumTypeComponent_TypeFragment = graphql(`
   fragment GraphQLEnumTypeComponent_TypeFragment on GraphQLEnumType {
@@ -73,6 +72,10 @@ export function GraphQLEnumTypeComponent(props: {
     return matchesFilter;
   });
 
+  const firstItemUsage = useMemo(() => {
+    return values[0]?.usage;
+  }, [values]);
+
   return (
     <GraphQLTypeCard
       name={ttype.name}
@@ -82,6 +85,8 @@ export function GraphQLEnumTypeComponent(props: {
       targetSlug={props.targetSlug}
       projectSlug={props.projectSlug}
       organizationSlug={props.organizationSlug}
+      totalRequests={props.totalRequests}
+      usage={firstItemUsage}
     >
       <div className="flex flex-col">
         {values.map((value, i) => (
@@ -101,23 +106,6 @@ export function GraphQLEnumTypeComponent(props: {
                 </LinkToCoordinatePage>
               </DeprecationNote>
             </div>
-            {value.supergraphMetadata ? (
-              <SupergraphMetadataList
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
-                supergraphMetadata={value.supergraphMetadata}
-              />
-            ) : null}
-            {typeof props.totalRequests === 'number' ? (
-              <SchemaExplorerUsageStats
-                totalRequests={props.totalRequests}
-                usage={value.usage}
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
-              />
-            ) : null}
           </GraphQLTypeCardListItem>
         ))}
       </div>
