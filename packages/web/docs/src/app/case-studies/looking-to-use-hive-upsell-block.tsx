@@ -4,7 +4,7 @@ export function LookingToUseHiveUpsellBlock({ className }: { className?: string 
   return (
     <article
       className={cn(
-        'text-green-1000 bg-primary dark:bg-primary/95 absolute rounded-2xl p-6',
+        'text-green-1000 bg-primary dark:bg-primary/95 dark absolute rounded-2xl p-6',
         className,
       )}
     >
