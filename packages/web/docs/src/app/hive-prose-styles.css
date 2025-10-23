@@ -1,4 +1,5 @@
-.hive-prose {
+.hive-prose,
+.hive-prose article {
   --nextra-content-width: 1208px;
   --article-max-width: 640px;
 
