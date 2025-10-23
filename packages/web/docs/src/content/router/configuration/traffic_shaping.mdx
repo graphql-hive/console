@@ -1,0 +1,51 @@
+---
+title: 'traffic_shaping'
+---
+
+# traffic_shaping
+
+The `traffic_shaping` configuration object provides control over how the Hive Router manages
+connections and executes requests to your subgraph services.
+
+These settings are crucial for ensuring the router operates efficiently under load and for
+protecting your downstream subgraphs from being overwhelmed. For a detailed guide on how to tune
+these settings, see the [Performance Tuning & Traffic Shaping Guide](../guides/performance-tuning).
+
+## Options
+
+### `dedupe_enabled`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Enables or disables in-flight request deduplication. When `true`, identical, concurrent requests to
+a subgraph are coalesced into a single request, with the response being shared among all clients.
+
+### `max_connections_per_host`
+
+- **Type:** `integer`
+- **Default:** `100`
+
+Limits the maximum number of concurrent HTTP connections the router will open to a single subgraph
+host. This acts as a safeguard to prevent overwhelming a subgraph with too many simultaneous
+requests.
+
+### `pool_idle_timeout_seconds`
+
+- **Type:** `integer`
+- **Default:** `50`
+
+Controls the timeout (in seconds) for idle keep-alive connections in the router's connection pool.
+Connections that are unused for this duration will be closed.
+
+## Example
+
+This example configuration increases the connection limit for a high-capacity subgraph and sets a
+longer idle timeout.
+
+```yaml filename="router.config.yaml"
+traffic_shaping:
+  dedupe_enabled: true
+  max_connections_per_host: 250
+  pool_idle_timeout_seconds: 90
+```
