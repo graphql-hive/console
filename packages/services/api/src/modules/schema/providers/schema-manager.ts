@@ -989,7 +989,7 @@ export class SchemaManager {
       this.session.raise('project:describe');
     }
 
-    this.logger.debug('Fetch schema version by action id. (args=%o)', {
+    this.logger.debug('Fetch schema version by commit. (args=%o)', {
       projectId: selector.projectId,
       targetId: selector.targetId,
       commit: args.commit,
