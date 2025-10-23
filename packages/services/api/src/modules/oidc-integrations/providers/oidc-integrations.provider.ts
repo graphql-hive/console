@@ -1,13 +1,10 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { maskToken } from '@hive/service-common';
-import * as GraphQLSchema from '../../../__generated__/types';
 import { OIDCIntegration } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
-import { ResourceAssignments } from '../../organization/providers/resource-assignments';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
@@ -29,7 +26,6 @@ export class OIDCIntegrationsProvider {
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
     @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
     private session: Session,
-    private resourceAssignments: ResourceAssignments,
   ) {
     this.logger = logger.child({ source: 'OIDCIntegrationsProvider' });
   }
@@ -368,51 +364,6 @@ export class OIDCIntegrationsProvider {
     return {
       type: 'ok',
       oidcIntegration: await this.storage.updateOIDCRestrictions(args),
-    } as const;
-  }
-
-  async updateOIDCDefaultAssignedResources(args: {
-    oidcIntegrationId: string;
-    assignedResources: GraphQLSchema.ResourceAssignmentInput;
-  }) {
-    if (this.isEnabled() === false) {
-      return {
-        type: 'error',
-        message: 'OIDC integrations are disabled.',
-      } as const;
-    }
-
-    const oidcIntegration = await this.storage.getOIDCIntegrationById({
-      oidcIntegrationId: args.oidcIntegrationId,
-    });
-
-    if (oidcIntegration === null) {
-      return {
-        type: 'error',
-        message: 'Integration not found.',
-      } as const;
-    }
-
-    await this.session.assertPerformAction({
-      organizationId: oidcIntegration.linkedOrganizationId,
-      action: 'oidc:modify',
-      params: {
-        organizationId: oidcIntegration.linkedOrganizationId,
-      },
-    });
-
-    const assignedResources: ResourceAssignmentGroup =
-      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
-        oidcIntegration.linkedOrganizationId,
-        args.assignedResources,
-      );
-
-    return {
-      type: 'ok',
-      oidcIntegration: await this.storage.updateOIDCDefaultAssignedResources({
-        oidcIntegrationId: args.oidcIntegrationId,
-        assignedResources,
-      }),
     } as const;
   }
 

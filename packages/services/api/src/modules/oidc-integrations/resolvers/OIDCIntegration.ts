@@ -1,5 +1,4 @@
 import { OrganizationMemberRoles } from '../../organization/providers/organization-member-roles';
-import { ResourceAssignments } from '../../organization/providers/resource-assignments';
 import { OIDCIntegrationsProvider } from '../providers/oidc-integrations.provider';
 import type { OidcIntegrationResolvers } from './../../../__generated__/types';
 
@@ -40,15 +39,5 @@ export const OIDCIntegration: OidcIntegrationResolvers = {
     }
 
     return role;
-  },
-  defaultResourceAssignment: async (oidcIntegration, _, { injector }) => {
-    if (!oidcIntegration.defaultResourceAssignment) {
-      return null;
-    }
-
-    return injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
-      organizationId: oidcIntegration.linkedOrganizationId,
-      resources: oidcIntegration.defaultResourceAssignment,
-    });
   },
 };

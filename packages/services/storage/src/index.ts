@@ -506,7 +506,7 @@ export async function createStorage(
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id, assigned_resources, created_at)
+            (organization_id, user_id, role_id, created_at)
           VALUES
             (
               ${linkedOrganizationId},
@@ -518,10 +518,6 @@ export async function createStorage(
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
-              ),
-              (
-                SELECT default_assigned_resources FROM oidc_integrations
-                WHERE id = ${args.oidcIntegrationId}
               ),
               now()
             )
@@ -3025,7 +3021,6 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
-          , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
@@ -3053,7 +3048,6 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
-          , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
@@ -3117,7 +3111,6 @@ export async function createStorage(
             , "authorization_endpoint"
             , "oidc_user_access_only"
             , "default_role_id"
-            , "default_assigned_resources"
         `);
 
         return {
@@ -3173,7 +3166,6 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
-          , "default_assigned_resources"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3197,36 +3189,9 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
-          , "default_assigned_resources"
       `);
 
       return decodeOktaIntegrationRecord(result);
-    },
-
-    async updateOIDCDefaultAssignedResources(args) {
-      return tracedTransaction('updateOIDCDefaultAssignedResources', pool, async _ => {
-        const result = await pool.one(sql`/* updateOIDCDefaultAssignedResources */
-          UPDATE "oidc_integrations"
-          SET
-            "default_assigned_resources" = ${sql.jsonb(args.assignedResources)}
-          WHERE
-            "id" = ${args.oidcIntegrationId}
-          RETURNING
-          "id"
-          , "linked_organization_id"
-          , "client_id"
-          , "client_secret"
-          , "oauth_api_url"
-          , "token_endpoint"
-          , "userinfo_endpoint"
-          , "authorization_endpoint"
-          , "oidc_user_access_only"
-          , "default_role_id"
-          , "default_assigned_resources"
-        `);
-
-        return decodeOktaIntegrationRecord(result);
-      });
     },
 
     async updateOIDCDefaultMemberRole(args) {
@@ -3262,7 +3227,6 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
-          , "default_assigned_resources"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -4669,7 +4633,6 @@ const OktaIntegrationBaseModel = zod.object({
   client_secret: zod.string(),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
-  default_assigned_resources: zod.any().nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4705,7 +4668,6 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
-      defaultResourceAssignment: rawRecord.default_assigned_resources,
     };
   }
 
@@ -4719,7 +4681,6 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     authorizationEndpoint: rawRecord.authorization_endpoint,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
-    defaultResourceAssignment: rawRecord.default_assigned_resources,
   };
 };
 
