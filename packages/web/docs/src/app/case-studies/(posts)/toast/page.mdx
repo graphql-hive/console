@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "How Toast's bet on Hive's GraphQL open source stack paid off at scale",
+  title: "How Toast's bet on Hive's GraphQL open source stack has paid off at scale",
   excerpt:
     "Toast's journey of migrating from Apollo to Hive to increased productivity, better support, long-term stability, cost reduction and no vendor lock-in.",
   category: 'Point of Sale',
@@ -13,17 +13,15 @@ export const metadata = {
   ]
 }
 
-import { DocsIcon, LargeCallout } from '#components/large-callout'
 import { Lede } from '#components/lede'
-import { SmallAvatar } from '#components/small-avatar'
-import { CallToAction, ContactButton, ComparisonTable as Table } from '@theguild/components'
+import { ComparisonTable as Table } from '@theguild/components'
 
 <Lede>
   
-In this article, we’ll cover how Toast, the worldwide market leader in restaurant management software, which powers more than 148,000 restaurants across the US, Canada, the UK and Ireland, scaled their business so they could keep moving and shipping fast while growing to unprecedented scale.
+In this article, we'll cover how Toast, the worldwide market leader in restaurant management software, which powers more than 148,000 restaurants across the US, Canada, the UK, and Ireland, scaled their business to keep moving and shipping fast while growing to an unprecedented scale.
 
-Scaling to over 100 feature teams, 350 micro-frontends and 900 people in R&D, they keep shipping
-fast using GraphQL Federation, fully managed by the Hive Platform.
+Scaling to over 100 feature teams, 350 micro-frontends, and 900 people in R&D, they continue to ship
+quickly using GraphQL Federation, fully managed by the Hive Platform.
 
 </Lede>
 
@@ -45,59 +43,71 @@ Toast adopted Hive’s open GraphQL Federation platform in phases: starting with
 schema registry, then introducing GraphQL Yoga and Hive Gateway. This allowed them to modernize
 their stack step by step, without disrupting ongoing development.
 
-**Results** The move to Hive gave Toast a flexible and reliable foundation for scaling. Federation
-now supports 350+ micro-frontends and 80 subgraphs, while teams continue to deliver features quickly
-and safely.
+### Results
+
+The move to Hive provided Toast a flexible and reliable foundation for scaling. Federation now
+supports 350+ micro-frontends and 80 subgraphs, while teams continue to deliver features quickly and
+safely.
 
 ## Choosing a schema registry that scales
 
 At the beginning of adopting federation, Toast compared the different options for a schema registry.
-
-The main options were Apollo Studio and Hive Console.
+The main options were GraphOS/Apollo Studio and Hive Console.
 
 After extensive testing, Toast chose Hive Console:
 
-1. Reliability – Hive Console proved to have much better registry uptimes than Apollo Studio
-2. It had all the features they needed while being actively growing and developing in the open
+1. Reliability – Hive Console proved to have significantly better registry uptime than Apollo Studio
+2. It had all the features they needed while actively growing and being developed in the open
 3. Fair and safe pricing that scales with their needs
 4. No vendor-lock which gave them the option to individually choose the best pieces of their
    architecture
 5. Open source, which made sure it was there for years to come (a bet that proved true) and also
    gave them the option to contribute features they cared a lot
    ([example](https://github.com/graphql-hive/console/pull/5616))
-6. [Security](https://vercel.com/security) and compliance were paramount for Toast. Hive’s
+6. [Security](https://vercel.com/security) and compliance were paramount for Toast. Hive's
    infrastructure came with industry-standard security certifications, such as SOC2 Type2, with a
    perfect score, providing peace of mind regarding data protection and privacy.
-7. Support - Toast engineers always have direct access and close collaborations with the actual
-   engineers that build the Hive Platform, through a shared Slack channel - not through intermediary
+7. Support – Toast engineers always have direct access and close collaboration with the actual
+   engineers that build the Hive Platform, through a shared Slack channel – not through intermediary
    sales/support engineers
 
 ## Background
 
 Toast was founded in 2012 with a monolithic Android POS and web application with a single database.
-
 To keep performing efficiently, Toast pivoted to micro-services, allowing teams to move fast
 independently. Today they have over 100 feature teams.
 
 For more details,
 [read here](https://technology.toasttab.com/entry/navigating-the-graphql-evolution-at-toast-from-bffs-to-federation/)
 the full story of how they successfully moved from REST to BFF to GraphQL to GraphQL Federation in
-order to stay efficient at huge scale - with a strong focus on productivity for individual teams and
+order to stay efficient at huge scale – with a strong focus on productivity for individual teams and
 clear separation.
 
-That article also highlights the importance of a good schema registry to move fast safely.
+That article also highlights the importance of a good schema registry to move quickly and safely.
 
 ## Gateway and subgraphs – Starting with Apollo, scaling with Hive
 
-As they were adopting GraphQL Federation, they used Apollo’s gateway and subgraphs to do that.
-
-As they scaled GraphQL Federation across the organization and different teams, they saw some
+In the early stages of adopting GraphQL Federation, they used Apollo's gateway and subgraphs. As
+they scaled GraphQL Federation across the organization and different teams, they saw some
 shortcomings with their federation solution:
 
-1. The implementations of Apollo Gateway and Apollo server weren’t well maintained, up to date, and
+1. The implementations of Apollo Gateway and Apollo Server weren’t well maintained, up to date, or
    performant enough
 2. Active support from core developers of the platform was lacking, including responses to feature
    requests and raised issues
+
+From a business perspective, these limitations translated into:
+
+1. More stability issues – outdated components made the system harder to rely on at scale.
+2. Higher compute usage – less efficient gateway performance resulted in unnecessary resource
+   consumption and increased infrastructure costs.
+3. Slower issue resolution – lack of active support from core developers delayed fixes and responses
+   to feature requests, slowing down progress in production.
+4. Longer response times – the overhead on Apollo Gateway led to slower app performance, directly
+   affecting user experience.
+5. Lack of clarity about the project's future – uncertainty around its sustainability created a risk
+   of needing replacement.
+6. Possible future issues – security updates and outdated or vulnerable dependencies.
 
 ## Gradual migration path
 
@@ -105,115 +115,155 @@ Thanks to Hive and The Guild’s open-source tooling, it was possible to gradual
 federated architecture, piece by piece, and only when necessary.
 
 For most companies, the first step is to migrate the schema registry and GraphQL Platform from
-Apollo Studio to Hive Console.
+Apollo Studio to Hive Console. The technical transition is a one-line change, and during the
+evaluation period, The Guild provides companies with free credits so they can send information to
+both platforms and compare, making sure the transition is safe first. As Hive Console supports any
+gateway and router, including Apollo Gateway and Apollo Router, and also supports any subgraphs,
+including Apollo Server, Toast was able to use Hive Console while keeping their existing
+implementations. As Toast already chose Hive Console from the start, they were good to go and could
+focus on the later phases of the migration when they actually felt the need.
 
-The technical transition is a one line change, and during the evaluation period, The Guild provides
-companies with free credits so they could send information to both platforms and compare, making
-sure the transition is safe first.
-
-As Hive Console supports any gateway and router, including Apollo Gateway and Apollo Router, and
-also supports any subgraphs, including Apollo Server, Toast was able to use Hive Console while
-keeping their existing implementations.
-
-As Toast already chose Hive Console from the start, they were good to go and could focus on the
-later phases of the migration when they actually felt the need.
-
-Second phase of the transition was to migrate from the unmaintained Apollo Server to GraphQL Yoga
-server by The Guild, which
+The second phase of the transition was to migrate from the unmaintained Apollo Server to GraphQL
+Yoga server by The Guild, which
 [outperforms Apollo Server in every single metric](https://the-guild.dev/graphql/yoga-server/docs/comparison).
 
-Third phase was to migrate Apollo Gateway to Hive Gateway, which resulted in easier maintenance,
+The third phase was to migrate Apollo Gateway to Hive Gateway, which resulted in easier maintenance,
 more flexibility and significantly greater performance and efficiency on Toast’s Gateway. That phase
 can also be done gradually and in smaller chunks.
 
-Hive Gateway also provided Toast with access to all of Apollo’s Paid Enterprise features for free,
-without the need for plans or vendor lock-in like GraphQL Subscriptions, Defer and others.
+Hive Gateway also provided Toast with access to all of Apollo's Paid Enterprise features for free,
+without the need of plans or vendor lock like GraphQL Subscriptions, Defer and others.
 
-## Contact us to learn how you can gradually migrate from Apollo to Hive’s open platform
+### GraphOS vs. Hive Features
 
-Tell us about your current stack and we’ll make sure to give you our unbiased opinion on how to best
-scale your platform using GraphQL.
+Paid Enterprise-Exclusive Features for Apollo users, that Hive offers for free:
+
+- **Unlimited Total Users:** Supports a limitless number of developers and consumers.
+- **User Roles and Permissions:** Full, customizable control over user access of any size and any
+  level.
+- **Contracts:** A governance feature allowing you to define filtered, public-facing views of your
+  private Supergraph.
+- **Extensibility:** Enables running custom logic on the Hive Gateway for advanced use cases.
+- **Telemetry:** Deep, custom observability data collection.
+- **SSO & SAML:** Enterprise-grade Single Sign-On integration.
+- **Business Support:** **24x7x365** technical support with the highest tier SLA (Service Level
+  Agreement).
+- **Professional Services & Premium Support Packages:** Access to dedicated The Guild experts for
+  implementation and mission-critical systems.
+
+Things Apollo offers for free too, and we do too
+
+- **Demand Control (Cost-based Limits):** Protects the graph by limiting expensive operations.
+- **Operation-based Limits:** Sets limits on query depth, complexity, etc.
+- **Request Authorization & JWT Authentication:** Built-in security and access control features at
+  the router level.
+- **Traffic Shaping:** Features like deduplication and rate limiting.
+- **APQ Caching** (often metered/add-on).
+- **Entity Caching** (often metered/add-on).
+- **Mesh Compose (compared to Apollo Connectors):** Tools for connecting to legacy REST/other data
+  sources.
+
+## Scale beyond Apollo
+
+Share your stack and we'll chart your gradual migration path so you keep shipping while you scale
 
 ## The technical profile and journey of Toast
 
 In this section we’ll cover more technical details that might be interesting for any GraphQL
 developer to learn and get inspired by, for their own journey.
 
-<Table className="mt-6 dark:[--border:theme(colors.beige.900/.75)]">
+<Table className="mt-6 text-sm dark:[--border:theme(colors.beige.900/.75)]">
   <tbody>
     <Table.Row className="*:border-t-0">
-      <Table.Header scope="row">Number of teams</Table.Header>
+      <Table.Cell>Number of teams</Table.Cell>
       <Table.Cell>over 100 feature teams</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Number of technical people in the org</Table.Header>
+      <Table.Cell>Number of technical people in the org</Table.Cell>
       <Table.Cell>Around 900 people in R&D</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Structure of teams</Table.Header>
+      <Table.Cell>Structure of teams</Table.Cell>
       <Table.Cell>
-        In general — domain horizontal full stack feature teams with a couple of flat focus teams
+        In general - domain-oriented horizontal full-stack feature teams with a couple of flat focus
+        teams
       </Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Apps, consumers and clients of the graph</Table.Header>
+      <Table.Cell>Apps, consumers and clients of the graph</Table.Cell>
       <Table.Cell>
-        350 micro frontends : Apollo Client + Codegen : Native mobile : Point for improvement —
-        Currently they are not utilizing fragment based co-location too much. : Next phase — AI
-        consumers of the graph
+        350 micro frontends
+        <br />
+        Apollo Client + Codegen
+        <br />
+        Native mobile
+        <br />
+        Point for improvement — Currently they are not utilizing fragment based co-location too
+        much.
+        <br />
+        Next phase — AI consumers of the graph
       </Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Number of subgraphs</Table.Header>
+      <Table.Cell>Number of subgraphs</Table.Cell>
       <Table.Cell>80 subgraphs</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Gateway</Table.Header>
+      <Table.Cell>Gateway</Table.Cell>
       <Table.Cell>
-        2 gateways — one for client facing and one for restaurant admin — both using Hive Gateway :
+        2 gateways – one client-facing and one for restaurant admin - both using Hive Gateway
+        <br />
         Using Node 20
       </Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Schema Registry</Table.Header>
+      <Table.Cell>Schema Registry</Table.Cell>
       <Table.Cell>[Hive Console](https://the-guild.dev/graphql/hive)</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Subgraphs stack</Table.Header>
-      <Table.Cell>Kotlin with graphql-java — using GraphQL for all new functionality</Table.Cell>
+      <Table.Cell>Subgraphs stack</Table.Cell>
+      <Table.Cell>Kotlin with graphql-java - using GraphQL for all new functionality</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Infrastructure</Table.Header>
+      <Table.Cell>Infrastructure</Table.Cell>
       <Table.Cell>AWS</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Auth implementation</Table.Header>
+      <Table.Cell>Auth implementation</Table.Cell>
       <Table.Cell>—</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Observability and tracing</Table.Header>
+      <Table.Cell>Observability and tracing</Table.Cell>
       <Table.Cell>
-        Hive Insights and DataDog tracking : Looking into the new Hive Metrics features
+        Hive Insights and DataDog tracking
+        <br />
+        Looking into the new Hive Metrics features
       </Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Schema evolution process</Table.Header>
+      <Table.Cell>Schema evolution process</Table.Cell>
       <Table.Cell>—</Table.Cell>
     </Table.Row>
     <Table.Row>
-      <Table.Header scope="row">Local development process and tooling</Table.Header>
+      <Table.Cell>Local development process and tooling</Table.Cell>
       <Table.Cell>
-        Toast created their own tool for efficient local development called “PrepStation” : The tool
-        deeply integrates with Hive Console, Storybook, GraphQL Codegen and Yoga Server to
-        seamlessly merge together local and remote subgraphs and composes them locally. : It also
-        creates a mocked local gateway instance and together. : Using this setup, feature teams can
-        prototype and work locally with upcoming versions of the graph, and create full prototypes
-        to stakeholders before production or backend teams need to do any work. : The Toast team
-        gave a [great
+        Toast developed their own tool for efficient local development called "PrepStation".
+        
+        The tool deeply integrates with Hive Console, Storybook, GraphQL Codegen and Yoga Server to
+        seamlessly merge local and remote subgraphs and compose them locally.
+        
+        It then takes the composed Supergraph and creates a mocked local gateway instance.
+        
+        Using this setup, feature teams can prototype and work locally with upcoming versions of the
+        graph, and create full prototypes to stakeholders before production or backend teams need to
+        do any work.
+
+        The Toast team gave a [great
         talk](https://graphql.org/conf/2024/schedule/19cf965c68cfae3c7c19c6a9966bcadf/) about it at
         GraphQL Conf.
       </Table.Cell>
     </Table.Row>
+
   </tbody>
 </Table>
 
@@ -223,7 +273,7 @@ developer to learn and get inspired by, for their own journey.
 
 Toast had a long evolution to get to where they are today. Some of it was already discussed at the
 beginning of the article, but to expand a bit, they started with one big REST BFF, which grew into
-30-40 REST BFFs. They first started GraphQL BFF at the guest side. It began with a SPA that had a
+30-40 REST BFFs. They first introduced GraphQL BFF on the guest side. It began with a SPA that had a
 Node BFF written in GraphQL. Later, the restaurant admin side also discovered GraphQL, used the same
 structure and added 30–40 GraphQL BFFs — each team had their own REST API (Kotlin) with a Node
 GraphQL BFF on top.
@@ -233,91 +283,76 @@ adopting Federation and the federated graph, still using the same model where ea
 their own REST API (Kotlin) and Node GraphQL BFF on top. Federation proved to be a great bet,
 growing rapidly into the company. Not only on the restaurant admin side, it was also extended to
 Guest side, all of them were using GraphQL Federation as their frontend API gateway, which helped
-them to bring consistency within all their platforms, including ToastNow their native mobile
-application – a high throughput, simpler auth solution. Also with the years, Toast also made
-acquisitions which merged and federated together into the Supergraph. But as Federated GraphQL BFFs
-grew by the numbers, that also led to logic creeping into the BFF layer.
+them to bring consistency within all their platforms, including ToastNow, their native mobile
+application – a high throughput, simpler auth solution. Over the years, Toast made acquisitions
+which merged and federated together into the Supergraph. But as Federated GraphQL BFFs grew by the
+numbers, that also led to logic creeping into the BFF layer.
 
 #### Current Architecture
 
-So the next evolution was for the Kotlin side of the team to gradually remove REST, replace it with
+The next evolution was for the Kotlin side of the team to gradually remove REST, replace it with
 GraphQL and directly federate into Hive Gateway, without the need of a Node GraphQL BFF in between.
-
 This is the current architecture but as with all things, it is happening gradually, so there are
-still some Node BFFs and when there is a new functionality being added, the Kotlin team would
-gradually remove REST, move business logic from the Node BFF (that accumulated there for years) and
-expose it all as GraphQL.
+still some Node BFFs and when new functionality is added, the Kotlin teams gradually remove REST,
+move business logic from the Node BFF (that accumulated there for years) and expose it all as
+GraphQL.
 
-So the current Hive Gateways federate a combination of Node GraphQL BFFs and Kotlin GraphQL
-subgraphs which are all registered into Hive Console.
+Today, the Hive Gateways federate a combination of Node GraphQL BFFs and Kotlin GraphQL subgraphs
+which are all registered into Hive Console.
 
 ## Next steps for Toast and the Hive Platform team
 
 As the Toast GraphQL teams and The Guild are working closely together, we make sure to align our
-roadmap with Toast’s needs.
-
-Here are some of their future plans:
+roadmap with Toast's needs. Here are some of their future plans.
 
 ### Feedback on the new public API
 
 Since Hive released their new public API, a lot of integrations with internal systems at Toast could
-be made much simpler.
+be made much simpler. We are looking forward to seeing how they utilize the new API and if there are
+ways we can improve it to make it easier for them.
 
-We are looking forward to seeing how they utilise the new API and if there are ways we can improve
-it to make it easier for them.
-
-One area we know we want a tighter integration is with their internal Backstage system.
+One area where we know we want tighter integration is with their internal Backstage system.
 
 ### Usage reporting (OTEL, insights page, and errors)
 
 We recently introduced a new system for gathering and managing OTEL metrics on Hive for selected
-customers.
-
-This also affects Hive’s current insights page, which uses the current agent and query schema
-coordinates to show valuable data for customers.
+customers. This also affects Hive's current insights page, which uses the current agent and query
+schema coordinates to show valuable data for customers.
 
 As we design these new pages, we work closely with Toast to make sure we take their needs into
-account on the new design.
+account in the new design.
 
 ### New and improved alerting and webhooks system
 
 Based on the above features, we are currently in the process of redesigning our alerting and
-webhooks system.
-
-There are a lot of options here so we work closely with Toast to make sure we are covering
-everything they need in the best way possible.
+webhooks system. There are a lot of options here, so we work closely with Toast to make sure we are
+covering everything they need in the best way possible.
 
 ### Schema proposals
 
 Hive is close to shipping the first version of schema proposals to selected customers for feedback.
-
-Toast is excited to try it out and see how it would best fit and improve their current schema change
+Toast is excited to try it out and see how it will best fit and improve their current schema change
 processes.
 
 ### Progressive override
 
 An important Federation feature that allows gradual migration of features from one subgraph to
-another.
-
-As Toast is migrating types and fields from the current Node GraphQL BFFs to the Kotlin subgraphs,
-this becomes important for them.
+another. As Toast is migrating types and fields from the current Node GraphQL BFFs to the Kotlin
+subgraphs, this becomes important for them.
 
 ### New laboratory rebuild
 
-Hive is in the process of completely rebuilding our laboratory experience.
-
-We’ve hired a few people who built that experience on other platforms and are now bringing that
-knowledge into a new, improved experience.
+Hive is in the process of completely rebuilding our laboratory experience. We've hired a few people
+who built that experience on other platforms and are now bringing that knowledge into a new,
+improved experience.
 
 Toast gave us tons of valuable feedback and we hope to get an exciting new experience to them very
 soon.
 
 ### MCP and AI integrations and use cases
 
-Toast is very forward-looking and already has tons of AI use cases, both internally and customer
-facing ones.
+Toast is very forward-looking and already has many AI use cases, both internal and customer-facing.
 
 We work hard to make sure they get everything they need for these use cases from their API layer.
-
 That includes reviewing existing solutions, finding the missing points and supporting those in our
 platform.
