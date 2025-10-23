@@ -241,6 +241,64 @@ export const permissionGroups: Array<PermissionGroup> = [
       },
     ],
   },
+  {
+    id: 'api-cli-actions',
+    title: 'CLI/API Actions',
+    permissions: [
+      {
+        id: 'schema:compose',
+        title: 'Compose schema',
+        description: 'Allow using "hive dev" command for local composition.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'schemaCheck:create',
+        title: 'Check schema/service/subgraph',
+        description: 'Allow usage of the "hive schema:check" command.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'schemaVersion:publish',
+        title: 'Publish schema/service/subgraph',
+        description: 'Allow usage of the "hive schema:publish" command.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'schemaVersion:deleteService',
+        title: 'Delete service',
+        description: 'Allow usage of the "hive schema:delete" command.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'appDeployment:create',
+        title: 'Create app deployment',
+        description: 'Grant access to creating app deployments.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'appDeployment:publish',
+        title: 'Publish app deployment',
+        description: 'Grant access to publishing app deployments.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'appDeployment:retire',
+        title: 'Retire app deployment',
+        description: 'Grant access to retring app deployments.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'usage:report',
+        title: 'Report usage data',
+        description: 'Grant access to report usage data.',
+      },
+      {
+        id: 'traces:report',
+        title: 'Report OTEL traces',
+        description: 'Grant access to reporting traces.',
+      },
+    ],
+  },
 ] as const;
 
 function assertAllRulesAreAssigned(excluded: Array<Permission>) {
@@ -267,18 +325,7 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
  * This seems like the easiest way to make sure that all the permissions we have are
  * assignable and exposed via our API.
  */
-assertAllRulesAreAssigned([
-  /** These are CLI only actions for now. */
-  'schema:compose',
-  'schemaCheck:create',
-  'schemaVersion:publish',
-  'schemaVersion:deleteService',
-  'appDeployment:create',
-  'appDeployment:publish',
-  'appDeployment:retire',
-  'usage:report',
-  'traces:report',
-]);
+assertAllRulesAreAssigned([]);
 
 /**
  * List of permissions that are assignable

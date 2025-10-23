@@ -8,8 +8,8 @@ export const createPersonalAccessToken: NonNullable<
     organization: args.input.organization,
     title: args.input.title,
     description: args.input.description ?? null,
-    permissions: [...args.input.permissions],
-    assignedResources: args.input.resources,
+    permissions: args.input.permissions ?? null,
+    assignedResources: args.input.resources ?? null,
   });
 
   if (result.type === 'success') {

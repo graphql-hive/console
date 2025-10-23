@@ -147,6 +147,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Publish app deployment',
         description: 'Grant access to publishing app deployments.',
       },
+      {
+        id: 'appDeployment:retire',
+        title: 'Retire app deployment',
+        description: 'Grant access to retring app deployments.',
+      },
     ],
   },
 ];

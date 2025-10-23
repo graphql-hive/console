@@ -10,7 +10,7 @@ export default {
       , "created_at" timestamptz NOT NULL DEFAULT now()
       , "title" text NOT NULL
       , "description" text NOT NULL
-      , "permissions" text[] NOT NULL
+      , "permissions" text[]
       , "assigned_resources" jsonb
       , "hash" text NOT NULL
       , "first_characters" text NOT NULL

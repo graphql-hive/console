@@ -26,4 +26,7 @@ export const PersonalAccessToken: PersonalAccessTokenResolvers = {
     throw new Error('TODO: implement');
     /* PersonalAccessToken.assignedResources resolver is required because PersonalAccessToken.assignedResources and PersonalAccessTokenMapper.assignedResources are not compatible */
   },
+  permissions: (_parent, _arg, _ctx) => {
+    throw new Error('TODO: implement, this needs to be inherited from the user rule');
+  },
 };

@@ -61,7 +61,7 @@ export class PersonalAccessTokens {
     organization: GraphQLSchema.OrganizationReferenceInput;
     title: string;
     description: string | null;
-    permissions: Array<string>;
+    permissions: ReadonlyArray<string> | null;
     assignedResources: GraphQLSchema.ResourceAssignmentInput | null;
   }) {
     const titleResult = TitleInputModel.safeParse(args.title.trim());
@@ -92,12 +92,6 @@ export class PersonalAccessTokens {
       action: 'personalAccessToken:modify',
     });
 
-    const assignedResources =
-      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
-        organizationId,
-        args.assignedResources ?? { mode: 'GRANULAR' },
-      );
-
     const organization = await this.storage.getOrganization({ organizationId });
 
     const membership = await this.organizationMembers.findOrganizationMembership({
@@ -109,11 +103,30 @@ export class PersonalAccessTokens {
       throw new Error('Impossible if we got this far.');
     }
 
-    // filter permissions based on users current permissions
-    const allPermissions = membership.assignedRole.role.allPermissions;
-    const permissions = Array.from(
-      new Set(args.permissions.filter(permission => allPermissions.has(permission as Permission))),
+    // We resolve the input to a resource assignment
+    let assignedResources =
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        organizationId,
+        args.assignedResources ?? { mode: 'ALL' },
+      );
+
+    // Filter down resource assignment based on the viewers role
+    // Technically we could also raise an exception/error here, but this does it for now.
+    assignedResources = intersectResourceAssignments(
+      membership.assignedRole.resources,
+      assignedResources,
     );
+
+    // Filter permissions based on viewers current permissions
+    const allPermissions = membership.assignedRole.role.allPermissions;
+    const permissions =
+      args.permissions !== null
+        ? Array.from(
+            new Set(
+              args.permissions.filter(permission => allPermissions.has(permission as Permission)),
+            ),
+          )
+        : null;
 
     const id = crypto.randomUUID();
     const accessKey = await PersonalAccessKey.create(id);
@@ -136,7 +149,7 @@ export class PersonalAccessTokens {
         , ${viewer.id}
         , ${titleResult.data}
         , ${descriptionResult.data}
-        , ${sql.array(permissions, 'text')}
+        , ${permissions == null ? null : sql.array(permissions, 'text')}
         , ${sql.jsonb(assignedResources)}
         , ${accessKey.hash}
         , ${accessKey.firstCharacters}
@@ -355,7 +368,7 @@ const PersonalAccessTokenModel = z
     createdAt: z.string(),
     title: z.string(),
     description: z.string(),
-    permissions: z.array(PermissionsModel),
+    permissions: z.array(PermissionsModel).nullable(),
     assignedResources: ResourceAssignmentModel.nullable().transform(
       value => value ?? { mode: '*' as const, projects: [] },
     ),
@@ -368,12 +381,16 @@ const PersonalAccessTokenModel = z
     // to compute when querying a list of organization access tokens via the GraphQL API.
     // Compared to organization access tokens, we also need to filter down the permissions based on the membership
     resolveAuthorizationPolicyStatements(organizationMembership: OrganizationMembership) {
-      // The roles permission could have been updated.
-      // Because of that we always need to filter this list based on the role.
-      const legitPermissions = intersection(
-        new Set(record.permissions),
-        organizationMembership.assignedRole.role.allPermissions,
-      );
+      const legitPermissions =
+        // If the access token specifies no permissions, we use the permissions of the member role
+        record.permissions === null
+          ? organizationMembership.assignedRole.role.allPermissions
+          : // The roles permission could have been updated.
+            // Because of that we always need to filter this list based on the role.
+            intersection(
+              new Set(record.permissions),
+              organizationMembership.assignedRole.role.allPermissions,
+            );
 
       // The membership resources could have been updated.
       // Because of that we always need to filter this list based on the role.

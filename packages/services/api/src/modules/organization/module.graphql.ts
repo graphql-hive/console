@@ -86,13 +86,17 @@ export default gql`
     """
     List of permissions that are assigned to the access token.
     A list of available permissions can be retrieved via the 'Organization.availableOrganizationAccessTokenPermissionGroups' field.
+
+    If omitted (or set to null), the personal access token will be granted all permissions of the members role.
     """
-    permissions: [String!]!
+    permissions: [String!]
     """
     Resources on which the permissions should be granted (project, target, service, and app deployments).
     Permissions are inherited by sub-resources.
+
+    If omitted (or set to null), the personal access token will be granted all permissions of the members role.
     """
-    resources: ResourceAssignmentInput!
+    resources: ResourceAssignmentInput
   }
 
   input DeletePersonalAccessTokenInput {
@@ -120,13 +124,13 @@ export default gql`
   }
 
   interface AccessToken {
-    id: ID! @tag(name: "public")
-    title: String! @tag(name: "public")
-    description: String @tag(name: "public")
-    permissions: [String!]! @tag(name: "public")
-    resources: ResourceAssignment! @tag(name: "public")
-    firstCharacters: String! @tag(name: "public")
-    createdAt: DateTime! @tag(name: "public")
+    id: ID!
+    title: String!
+    description: String
+    permissions: [String!]!
+    resources: ResourceAssignment!
+    firstCharacters: String!
+    createdAt: DateTime!
   }
 
   type PersonalAccessToken implements AccessToken {
@@ -514,6 +518,10 @@ export default gql`
     """
     viewerCanManageAccessTokens: Boolean!
     """
+    Whether the viewer can manage personal access tokens.
+    """
+    viewerCanManagePersonalAccessTokens: Boolean!
+    """
     Paginated organization access tokens.
     """
     accessTokens(
@@ -526,12 +534,22 @@ export default gql`
     accessToken(id: ID! @tag(name: "public")): OrganizationAccessToken @tag(name: "public")
   }
 
-  type OrganizationAccessTokenEdge {
+  interface AccessTokenEdge {
+    node: AccessToken!
+    cursor: String!
+  }
+
+  interface AccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [AccessTokenEdge!]!
+  }
+
+  type OrganizationAccessTokenEdge implements AccessTokenEdge {
     node: OrganizationAccessToken! @tag(name: "public")
     cursor: String! @tag(name: "public")
   }
 
-  type OrganizationAccessTokenConnection {
+  type OrganizationAccessTokenConnection implements AccessTokenConnection {
     pageInfo: PageInfo! @tag(name: "public")
     edges: [OrganizationAccessTokenEdge!]! @tag(name: "public")
   }
@@ -766,6 +784,16 @@ export default gql`
     error: AssignMemberRoleResultError @tag(name: "public")
   }
 
+  type PersonalAccessTokenConnection implements AccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [PersonalAccessTokenEdge!]!
+  }
+
+  type PersonalAccessTokenEdge implements AccessTokenEdge {
+    node: PersonalAccessToken!
+    cursor: String!
+  }
+
   type Member {
     id: ID!
     user: User! @tag(name: "public")
@@ -777,6 +805,14 @@ export default gql`
     Whether the viewer can remove this member from the organization.
     """
     viewerCanRemove: Boolean!
+    """
+    Paginated list of personal access tokens for the user.
+    """
+    personalAccessTokens(first: Int, after: String): PersonalAccessTokenConnection
+    """
+    Permission groups the member is allowed to assign to personal access tokens.
+    """
+    availablePersonalAccessTokenPermissionGroups: [PermissionGroup!]!
   }
 
   enum ResourceAssignmentModeType {
