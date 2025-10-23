@@ -22,7 +22,11 @@ export const metadata = {
 export default async function CaseStudiesPage() {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
 
-  const caseStudies = pageMap.filter(isCaseStudy);
+  const caseStudies = pageMap.filter(isCaseStudy).sort((a, b) => {
+    const aDate = a.frontMatter.date;
+    const bDate = b.frontMatter.date;
+    return aDate < bDate ? 1 : aDate > bDate ? -1 : 0;
+  });
 
   return (
     <LandingPageContainer className="mx-auto max-w-[90rem] overflow-hidden px-6">
