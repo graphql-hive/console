@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use anyhow::Error;
+use graphql_parser::schema::InputObjectType;
 use graphql_tools::ast::ext::SchemaDocumentExtension;
 use graphql_tools::ast::FieldByNameExtension;
 use graphql_tools::ast::TypeDefinitionExtension;
@@ -25,7 +26,11 @@ use graphql_tools::ast::{
 
 struct SchemaCoordinatesContext {
     pub schema_coordinates: HashSet<String>,
-    pub input_types_to_collect: HashSet<String>,
+    pub used_input_fields: HashSet<String>,
+    pub input_values_provided: HashMap<String, usize>,
+    pub used_variables: HashSet<String>,
+    pub non_null_variables: HashSet<String>,
+    pub variables_with_defaults: HashSet<String>,
     error: Option<Error>,
 }
 
@@ -41,7 +46,11 @@ pub fn collect_schema_coordinates(
 ) -> Result<HashSet<String>, Error> {
     let mut ctx = SchemaCoordinatesContext {
         schema_coordinates: HashSet::new(),
-        input_types_to_collect: HashSet::new(),
+        used_input_fields: HashSet::new(),
+        input_values_provided: HashMap::new(),
+        used_variables: HashSet::new(),
+        non_null_variables: HashSet::new(),
+        variables_with_defaults: HashSet::new(),
         error: None,
     };
     let mut visit_context = OperationVisitorContext::new(document, schema);
@@ -52,18 +61,23 @@ pub fn collect_schema_coordinates(
     if let Some(error) = ctx.error {
         Err(error)
     } else {
-        for input_type_name in ctx.input_types_to_collect {
-            let named_type = schema.type_by_name(&input_type_name);
-
-            match named_type {
-                Some(named_type) => match named_type {
+        for type_name in ctx.used_input_fields {
+            if is_builtin_scalar(&type_name) {
+                ctx.schema_coordinates.insert(type_name);
+            } else if let Some(type_def) = schema.type_by_name(&type_name) {
+                match type_def {
+                    TypeDefinition::Scalar(scalar_def) => {
+                        ctx.schema_coordinates.insert(scalar_def.name.clone());
+                    }
                     TypeDefinition::InputObject(input_type) => {
-                        for field in &input_type.fields {
-                            ctx.schema_coordinates
-                                .insert(format!("{}.{}", input_type_name, field.name));
-                        }
+                        collect_input_object_fields(
+                            schema,
+                            input_type,
+                            &mut ctx.schema_coordinates,
+                        );
                     }
                     TypeDefinition::Enum(enum_type) => {
+                        // Collect all values of enums referenced in variable definitions
                         for value in &enum_type.values {
                             ctx.schema_coordinates.insert(format!(
                                 "{}.{}",
@@ -73,9 +87,6 @@ pub fn collect_schema_coordinates(
                         }
                     }
                     _ => {}
-                },
-                None => {
-                    ctx.schema_coordinates.insert(input_type_name);
                 }
             }
         }
@@ -84,14 +95,118 @@ pub fn collect_schema_coordinates(
     }
 }
 
+fn collect_input_object_fields(
+    schema: &SchemaDocument<'static, String>,
+    input_type: &InputObjectType<'static, String>,
+    coordinates: &mut HashSet<String>,
+) {
+    for field in &input_type.fields {
+        let field_coordinate = format!("{}.{}", input_type.name, field.name);
+        coordinates.insert(field_coordinate);
+
+        let field_type_name = field.value_type.inner_type();
+
+        if let Some(field_type_def) = schema.type_by_name(field_type_name) {
+            match field_type_def {
+                TypeDefinition::Scalar(scalar_def) => {
+                    coordinates.insert(scalar_def.name.clone());
+                }
+                TypeDefinition::InputObject(nested_input_type) => {
+                    collect_input_object_fields(schema, nested_input_type, coordinates);
+                }
+                TypeDefinition::Enum(enum_type) => {
+                    for value in &enum_type.values {
+                        coordinates.insert(format!("{}.{}", enum_type.name, value.name));
+                    }
+                }
+                _ => {}
+            }
+        } else if is_builtin_scalar(field_type_name) {
+            // Handle built-in scalars
+            coordinates.insert(field_type_name.to_string());
+        }
+    }
+}
+
+fn is_builtin_scalar(type_name: &str) -> bool {
+    matches!(type_name, "String" | "Int" | "Float" | "Boolean" | "ID")
+}
+
+fn is_non_null_type(t: &Type<String>) -> bool {
+    matches!(t, Type::NonNullType(_))
+}
+
+fn mark_as_used(ctx: &mut SchemaCoordinatesContext, id: &str) {
+    if let Some(count) = ctx.input_values_provided.get_mut(id) {
+        if *count > 0 {
+            *count -= 1;
+            ctx.schema_coordinates.insert(format!("{}!", id));
+        }
+    }
+    ctx.schema_coordinates.insert(id.to_string());
+}
+
+fn count_input_value_provided(ctx: &mut SchemaCoordinatesContext, id: &str) {
+    let counter = ctx.input_values_provided.entry(id.to_string()).or_insert(0);
+    *counter += 1;
+}
+
+fn value_exists(v: &Value<String>) -> bool {
+    !matches!(v, Value::Null)
+}
+
 struct SchemaCoordinatesVisitor {}
 
 impl SchemaCoordinatesVisitor {
-    fn resolve_type_name(&self, t: Type<String>) -> String {
+    fn process_default_value(
+        info: &OperationVisitorContext,
+        ctx: &mut SchemaCoordinatesContext,
+        type_name: &str,
+        value: &Value<String>,
+    ) {
+        match value {
+            Value::Object(obj) => {
+                if let Some(TypeDefinition::InputObject(input_obj)) =
+                    info.schema.type_by_name(type_name)
+                {
+                    for (field_name, field_value) in obj {
+                        if let Some(field_def) =
+                            input_obj.fields.iter().find(|f| &f.name == field_name)
+                        {
+                            let coordinate = format!("{}.{}", type_name, field_name);
+
+                            // Since a value is provided in the default, mark it with !
+                            ctx.schema_coordinates.insert(format!("{}!", coordinate));
+                            ctx.schema_coordinates.insert(coordinate);
+
+                            // Recursively process nested objects
+                            let field_type_name =
+                                Self::resolve_type_name(field_def.value_type.clone());
+                            Self::process_default_value(info, ctx, &field_type_name, field_value);
+                        }
+                    }
+                }
+            }
+            Value::List(values) => {
+                for val in values {
+                    Self::process_default_value(info, ctx, type_name, val);
+                }
+            }
+            Value::Enum(enum_value) => {
+                let enum_coordinate = format!("{}.{}", type_name, enum_value);
+                ctx.schema_coordinates.insert(enum_coordinate);
+            }
+            _ => {
+                // For scalar values, the type is already collected in variable definition
+            }
+        }
+    }
+
+    fn resolve_type_name(t: Type<String>) -> String {
         match t {
             Type::NamedType(value) => value,
-            Type::ListType(t) => self.resolve_type_name(*t),
-            Type::NonNullType(t) => self.resolve_type_name(*t),
+            Type::ListType(t) => Self::resolve_type_name(*t),
+            Type::NonNullType(t) => Self::resolve_type_name(*t),
         }
     }
 
@@ -101,12 +216,11 @@ impl SchemaCoordinatesVisitor {
         type_name: &str,
     ) -> Option<Vec<String>> {
         let mut visited_types = Vec::new();
-        self._resolve_references(schema, type_name, &mut visited_types);
+        Self::_resolve_references(schema, type_name, &mut visited_types);
         Some(visited_types)
     }
 
     fn _resolve_references(
-        &self,
         schema: &SchemaDocument<'static, String>,
         type_name: &str,
         visited_types: &mut Vec<String>,
@@ -121,14 +235,58 @@ impl SchemaCoordinatesVisitor {
 
         if let Some(TypeDefinition::InputObject(input_type)) = named_type {
             for field in &input_type.fields {
-                let field_type = self.resolve_type_name(field.value_type.clone());
-                self._resolve_references(schema, &field_type, visited_types);
+                let field_type = Self::resolve_type_name(field.value_type.clone());
+                Self::_resolve_references(schema, &field_type, visited_types);
+            }
+        }
+    }
+
+    fn collect_nested_input_coordinates(
+        schema: &SchemaDocument<'static, String>,
+        input_type: &InputObjectType<'static, String>,
+        ctx: &mut SchemaCoordinatesContext,
+    ) {
+        for field in &input_type.fields {
+            let field_coordinate = format!("{}.{}", input_type.name, field.name);
+            ctx.schema_coordinates.insert(field_coordinate);
+
+            let field_type_name = field.value_type.inner_type();
+
+            if let Some(field_type_def) = schema.type_by_name(field_type_name) {
+                match field_type_def {
+                    TypeDefinition::Scalar(scalar_def) => {
+                        ctx.schema_coordinates.insert(scalar_def.name.clone());
+                    }
+                    TypeDefinition::InputObject(nested_input_type) => {
+                        // Recursively collect nested input object fields
+                        Self::collect_nested_input_coordinates(schema, nested_input_type, ctx);
+                    }
+                    TypeDefinition::Enum(enum_type) => {
+                        // Collect enum values
+                        for value in &enum_type.values {
+                            ctx.schema_coordinates
+                                .insert(format!("{}.{}", enum_type.name, value.name));
+                        }
+                    }
+                    _ => {}
+                }
+            } else if is_builtin_scalar(field_type_name) {
+                ctx.schema_coordinates.insert(field_type_name.to_string());
             }
         }
     }
 }
 
 impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVisitor {
+    fn enter_variable_value(
+        &mut self,
+        _info: &mut OperationVisitorContext<'a>,
+        ctx: &mut SchemaCoordinatesContext,
+        name: &str,
+    ) {
+        ctx.used_variables.insert(name.to_string());
+    }
+
     fn enter_field(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
@@ -178,22 +336,27 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             return;
         }
 
-        let type_name = self.resolve_type_name(var.var_type.clone());
-        let type_def = info.schema.type_by_name(&type_name);
-
-        if let Some(TypeDefinition::Scalar(scalar_def)) = type_def {
-            ctx.schema_coordinates
-                .insert(scalar_def.name.as_str().to_string());
-            return;
+        if is_non_null_type(&var.var_type) {
+            ctx.non_null_variables.insert(var.name.clone());
         }
+
+        if var.default_value.is_some() {
+            ctx.variables_with_defaults.insert(var.name.clone());
+        }
+
+        let type_name = Self::resolve_type_name(var.var_type.clone());
 
         if let Some(inner_types) = self.resolve_references(info.schema, &type_name) {
             for inner_type in inner_types {
-                ctx.input_types_to_collect.insert(inner_type);
+                ctx.used_input_fields.insert(inner_type);
             }
         }
 
-        ctx.input_types_to_collect.insert(type_name);
+        ctx.used_input_fields.insert(type_name.clone());
+
+        if let Some(default_value) = &var.default_value {
+            Self::process_default_value(info, ctx, &type_name, default_value);
+        }
     }
 
     fn enter_argument(
@@ -214,57 +377,70 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             return;
         }
 
-        let type_name = info.current_parent_type().unwrap().name();
-
+        let parent_type = info.current_parent_type().unwrap();
+        let type_name = parent_type.name();
         let field = info.current_field();
 
         if let Some(field) = field {
             let field_name = field.name.clone();
-            let arg_name = arg.0.clone();
+            let (arg_name, arg_value) = arg;
 
-            ctx.schema_coordinates
-                .insert(format!("{type_name}.{field_name}.{arg_name}").to_string());
+            let coordinate = format!("{type_name}.{field_name}.{arg_name}");
 
-            let arg_value = arg.1.clone();
+            let has_value = match arg_value {
+                Value::Null => false,
+                Value::Variable(var_name) => {
+                    ctx.variables_with_defaults.contains(var_name)
+                        || ctx.non_null_variables.contains(var_name)
+                }
+                _ => true,
+            };
 
-            if let Some(input_type) = info.current_input_type() {
-                match input_type {
-                    TypeDefinition::Scalar(scalar_def) => {
-                        ctx.schema_coordinates.insert(scalar_def.name.clone());
-                    }
-                    _ => {
-                        let input_type_name = input_type.name();
-                        match arg_value {
-                            Value::Enum(value) => {
-                                let value_str = value.to_string();
-                                ctx.schema_coordinates
-                                    .insert(format!("{input_type_name}.{value_str}").to_string());
+            if has_value {
+                count_input_value_provided(ctx, &coordinate);
+            }
+            mark_as_used(ctx, &coordinate);
+
+            if let Some(field_def) = parent_type.field_by_name(&field_name) {
+                if let Some(arg_def) = field_def.arguments.iter().find(|a| &a.name == arg_name) {
+                    let arg_type_name = Self::resolve_type_name(arg_def.value_type.clone());
+
+                    match arg_value {
+                        Value::Enum(value) => {
+                            let value_str: String = value.to_string();
+                            ctx.schema_coordinates
+                                .insert(format!("{arg_type_name}.{value_str}").to_string());
+                        }
+                        Value::List(_) => {
+                            // handled by enter_list_value
+                        }
+                        Value::Object(_) => {
+                            // Only collect scalar type if it's actually a custom scalar
+                            // receiving an object value
+                            if let Some(TypeDefinition::Scalar(_)) =
+                                info.schema.type_by_name(&arg_type_name)
+                            {
+                                ctx.schema_coordinates.insert(arg_type_name.clone());
                             }
-                            Value::List(_) => {
-                                // handled by enter_list_value
+                            // Otherwise handled by enter_object_value
+                        }
+                        Value::Variable(_) => {
+                            // Variables are handled by enter_variable_definition
+                        }
+                        _ => {
+                            // For literal scalar values, collect the scalar type
+                            // But only for actual scalars, not enum/input types
+                            if is_builtin_scalar(&arg_type_name) {
+                                ctx.schema_coordinates.insert(arg_type_name.clone());
+                            } else if let Some(TypeDefinition::Scalar(_)) =
+                                info.schema.type_by_name(&arg_type_name)
+                            {
+                                ctx.schema_coordinates.insert(arg_type_name.clone());
                             }
-                            Value::Object(_a) => {
-                                // handled by enter_object_field
-                            }
-                            Value::Variable(_) => {
-                                // handled by enter_variable_definition
-                            }
-                            _ => {}
                         }
                     }
                 }
             }
-        }
-    }
-
-    fn enter_object_field(
-        &mut self,
-        info: &mut OperationVisitorContext<'a>,
-        ctx: &mut SchemaCoordinatesContext,
-        _object_field: &(String, graphql_tools::static_graphql::query::Value),
-    ) {
-        if let Some(TypeDefinition::Scalar(scalar_def)) = info.current_input_type() {
-            ctx.schema_coordinates.insert(scalar_def.name.clone());
         }
     }
 
@@ -279,8 +455,14 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
         }
 
         if let Some(input_type) = info.current_input_type() {
+            let coordinate = input_type.name().to_string();
             for value in values {
                 match value {
+                    Value::Enum(value) => {
+                        let value_str = value.to_string();
+                        ctx.schema_coordinates
+                            .insert(format!("{}.{}", coordinate, value_str));
+                    }
                     Value::Object(_) => {
                         // object fields are handled by enter_object_value
                     }
@@ -290,14 +472,15 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                     Value::Variable(_) => {
                         // handled by enter_variable_definition
                     }
-                    Value::Enum(value) => {
-                        let value_str = value.to_string();
-                        ctx.schema_coordinates
-                            .insert(format!("{}.{}", input_type.name(), value_str).to_string());
-                    }
                     _ => {
-                        ctx.input_types_to_collect
-                            .insert(input_type.name().to_string());
+                        // For scalar literals in lists, collect the scalar type
+                        if is_builtin_scalar(&coordinate) {
+                            ctx.schema_coordinates.insert(coordinate.clone());
+                        } else if let Some(TypeDefinition::Scalar(_)) =
+                            info.schema.type_by_name(&coordinate)
+                        {
+                            ctx.schema_coordinates.insert(coordinate.clone());
+                        }
                     }
                 }
             }
@@ -317,17 +500,35 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                     .iter()
                     .find(|field| field.name.eq(name))
                 {
-                    ctx.schema_coordinates.insert(format!(
-                        "{}.{}",
-                        input_object_def.name.as_str(),
-                        field.name.as_str()
-                    ));
+                    let coordinate = format!("{}.{}", input_object_def.name, field.name);
+
+                    let has_value = match value {
+                        Value::Variable(var_name) => {
+                            ctx.variables_with_defaults.contains(var_name)
+                                || ctx.non_null_variables.contains(var_name)
+                        }
+                        _ => value_exists(value),
+                    };
+
+                    let should_mark_non_null = has_value
+                        && (is_non_null_type(&field.value_type)
+                            || match value {
+                                Value::Variable(var_name) => {
+                                    ctx.non_null_variables.contains(var_name)
+                                }
+                                _ => true,
+                            });
+
+                    if should_mark_non_null {
+                        ctx.schema_coordinates.insert(format!("{coordinate}!"));
+                    }
+
+                    mark_as_used(ctx, &coordinate);
 
                     let field_type_name = field.value_type.inner_type();
 
                     match value {
                         Value::Enum(value) => {
-                            // Collect only a specific enum value
                             let value_str = value.to_string();
                             ctx.schema_coordinates
                                 .insert(format!("{field_type_name}.{value_str}").to_string());
@@ -336,14 +537,47 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                             // handled by enter_list_value
                         }
                         Value::Object(_) => {
-                            // handled by enter_object_value
+                            // Only collect scalar type if it's a custom scalar receiving object
+                            if let Some(TypeDefinition::Scalar(_)) =
+                                info.schema.type_by_name(field_type_name)
+                            {
+                                ctx.schema_coordinates.insert(field_type_name.to_string());
+                            }
+                            // Otherwise handled by enter_object_value recursively
                         }
                         Value::Variable(_) => {
-                            // handled by enter_variable_definition
+                            // Variables handled by enter_variable_definition
+                            // Only collect scalar types for variables, not enum/input types
+                            if is_builtin_scalar(field_type_name) {
+                                ctx.schema_coordinates.insert(field_type_name.to_string());
+                            } else if let Some(TypeDefinition::Scalar(_)) =
+                                info.schema.type_by_name(field_type_name)
+                            {
+                                ctx.schema_coordinates.insert(field_type_name.to_string());
+                            }
+                        }
+                        Value::Null => {
+                            // When a field has a null value, we should still collect
+                            // all nested coordinates for input object types
+                            if let Some(TypeDefinition::InputObject(nested_input_obj)) =
+                                info.schema.type_by_name(field_type_name)
+                            {
+                                Self::collect_nested_input_coordinates(
+                                    info.schema,
+                                    nested_input_obj,
+                                    ctx,
+                                );
+                            }
                         }
                         _ => {
-                            ctx.input_types_to_collect
-                                .insert(field_type_name.to_string());
+                            // For literal scalar values, only collect actual scalar types
+                            if is_builtin_scalar(field_type_name) {
+                                ctx.schema_coordinates.insert(field_type_name.to_string());
+                            } else if let Some(TypeDefinition::Scalar(_)) =
+                                info.schema.type_by_name(field_type_name)
+                            {
+                                ctx.schema_coordinates.insert(field_type_name.to_string());
+                            }
                         }
                     }
                 }
@@ -703,7 +937,7 @@ mod tests {
         type Query {
             project(selector: ProjectSelectorInput!): Project
             projectsByType(type: ProjectType!): [Project!]!
-            projectsByTypes(types: [ProjectType!]!): [Project!]!
+            projectsByTypes(types: [ ProjectType!]!): [Project!]!
             projects(filter: FilterInput, and: [FilterInput!]): [Project!]!
             projectsByMetadata(metadata: JSON): [Project!]!
         }
@@ -799,6 +1033,7 @@ mod tests {
         let expected = vec![
             "Mutation.deleteProject",
             "Mutation.deleteProject.selector",
+            "Mutation.deleteProject.selector!",
             "DeleteProjectPayload.selector",
             "ProjectSelector.organization",
             "ProjectSelector.project",
@@ -860,6 +1095,7 @@ mod tests {
             "ProjectOrderByInput.direction",
             "OrderDirection.ASC",
             "OrderDirection.DESC",
+            "JSON",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -907,6 +1143,7 @@ mod tests {
             "ProjectOrderByInput.direction",
             "OrderDirection.ASC",
             "OrderDirection.DESC",
+            "JSON",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -938,12 +1175,14 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.and",
+            "Query.projects.and!",
             "Project.name",
             "PaginationInput.limit",
             "Int",
             "PaginationInput.offset",
             "FilterInput.pagination",
             "FilterInput.type",
+            "FilterInput.type!",
             "ProjectType.FEDERATION",
         ]
         .into_iter()
@@ -976,6 +1215,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByTypes",
             "Query.projectsByTypes.types",
+            "Query.projectsByTypes.types!",
             "Project.name",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
@@ -996,11 +1236,11 @@ mod tests {
         let schema = parse_schema::<String>(SCHEMA_SDL).unwrap();
         let document = parse_query::<String>(
             "
-            query getProjects($limit: Int!, $type: ProjectType!) {
-        projects(filter: { pagination: { limit: $limit }, type: $type }) {
-          id
+        query getProjects($limit: Int!, $type: ProjectType!) {
+            projects(filter: { pagination: { limit: $limit }, type: $type }) {
+                id
+            }
         }
-      }
         ",
         )
         .unwrap();
@@ -1010,14 +1250,18 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "Int",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1049,10 +1293,13 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "Int",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1084,11 +1331,15 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "Int",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
             "ProjectType.FEDERATION",
         ]
         .into_iter()
@@ -1121,6 +1372,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByTypes",
             "Query.projectsByTypes.types",
+            "Query.projectsByTypes.types!",
             "Project.id",
             "ProjectType.FEDERATION",
         ]
@@ -1154,6 +1406,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByTypes",
             "Query.projectsByTypes.types",
+            "Query.projectsByTypes.types!",
             "Project.id",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
@@ -1189,6 +1442,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByType",
             "Query.projectsByType.type",
+            "Query.projectsByType.type!",
             "Project.id",
             "ProjectType.FEDERATION",
         ]
@@ -1222,14 +1476,18 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "Int",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1270,6 +1528,7 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "Project.name",
             "Int",
@@ -1278,8 +1537,11 @@ mod tests {
             "ProjectType.SINGLE",
             "Boolean",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1314,14 +1576,18 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "Int",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
             "PaginationInput.limit",
+            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1353,6 +1619,7 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "Project.id",
             "PaginationInput.limit",
             "Int",
@@ -1361,7 +1628,9 @@ mod tests {
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
+            "FilterInput.pagination!",
             "FilterInput.type",
+            "FilterInput.type!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1393,6 +1662,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByMetadata",
             "Query.projectsByMetadata.metadata",
+            "Query.projectsByMetadata.metadata!",
             "Project.name",
             "JSON",
         ]
@@ -1459,6 +1729,7 @@ mod tests {
         let expected = vec![
             "Query.projectsByMetadata",
             "Query.projectsByMetadata.metadata",
+            "Query.projectsByMetadata.metadata!",
             "Project.name",
             "JSON",
         ]
@@ -1472,8 +1743,6 @@ mod tests {
         assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
         assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
     }
-
-    //
 
     #[test]
     fn custom_scalar_as_input_field_inlined() {
@@ -1494,7 +1763,9 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "FilterInput.metadata",
+            "FilterInput.metadata!",
             "Project.name",
             "JSON",
         ]
@@ -1528,6 +1799,7 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "FilterInput.metadata",
             "Project.name",
             "JSON",
@@ -1562,9 +1834,520 @@ mod tests {
         let expected = vec![
             "Query.projects",
             "Query.projects.filter",
+            "Query.projects.filter!",
             "FilterInput.metadata",
             "Project.name",
             "JSON",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn primitive_field_with_arg_schema_coor() {
+        let schema = parse_schema::<String>(
+            "type Query {
+            hello(message: String): String
+        }",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+                query {
+                hello(message: \"world\")
+                }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.hello",
+            "Query.hello.message!",
+            "Query.hello.message",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn unused_variable_as_nullable_argument() {
+        let schema = parse_schema::<String>(
+            "
+                    type Query {
+                    random(a: String): String
+                    }
+                    ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Foo($a: String) {
+          random(a: $a)
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec!["Query.random", "Query.random.a", "String"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn unused_nullable_input_field() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            random(a: A): String
+        }
+        input A {
+            b: B
+        }
+        input B {
+            c: C
+        }
+        input C {
+            d: String
+        }
+            ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Foo {
+          random(a: { b: null })
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.random",
+            "Query.random.a",
+            "Query.random.a!",
+            "A.b",
+            "B.c",
+            "C.d",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn required_variable_as_input_field() {
+        let schema = parse_schema::<String>(
+            "
+      type Query {
+        random(a: A): String
+      }
+      input A {
+        b: String
+      }
+            ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Foo($b:String! = \"b\") {
+          random(a: { b: $b })
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.random",
+            "Query.random.a",
+            "Query.random.a!",
+            "A.b",
+            "A.b!",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn undefined_variable_as_input_field() {
+        let schema = parse_schema::<String>(
+            "
+      type Query {
+        random(a: A): String
+      }
+      input A {
+        b: String
+      }
+            ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Foo($b: String!) {
+          random(a: { b: $b })
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.random",
+            "Query.random.a",
+            "Query.random.a!",
+            "A.b",
+            "A.b!",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn deeply_nested_variables() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            random(a: A): String
+        }
+        input A {
+            b: B
+        }
+        input B {
+            c: C
+        }
+        input C {
+            d: String
+        }
+            ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Random($a: A = { b: { c: { d: \"D\" } } }) {
+          random(a: $a)
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.random",
+            "Query.random.a",
+            "Query.random.a!",
+            "A.b",
+            "A.b!",
+            "B.c",
+            "B.c!",
+            "C.d",
+            "C.d!",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn aliased_field() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            random(a: String): String
+        }
+        input C {
+            d: String
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Random($a: String= \"B\" ) {
+          foo: random(a: $a )
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.random",
+            "Query.random.a",
+            "Query.random.a!",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn multiple_fields_with_mixed_nullability() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            random(a: String): String
+        }
+        input C {
+            d: String
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query Random($a: String = null) {
+          nullable: random(a: $a)
+          nonnullable: random(a: \"B\")
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.random",
+            "Query.random.a",
+            "Query.random.a!",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn nonnull_and_default_arguments() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query($id: ID! = \"123\") {
+        user(id: $id) { name }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "User.name",
+            "Query.user",
+            "ID",
+            "Query.user.id!",
+            "Query.user.id",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn default_nullable_arguments() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query($name: String = \"John\") {
+        user(id: \"fixed\", name: $name) { id }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "User.id",
+            "Query.user",
+            "ID",
+            "Query.user.id!",
+            "Query.user.id",
+            "Query.user.name!",
+            "Query.user.name",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn non_null_no_default_arguments() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query($id: ID!) {
+        user(id: $id) { name }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "User.name",
+            "Query.user",
+            "ID",
+            "Query.user.id!",
+            "Query.user.id",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn fixed_arguments() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            user(id: ID!, name: String): User
+        }
+
+        type User {
+            id: ID!
+            name: String
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query($name: String) {
+        user(id: \"fixed\", name: $name) { id }
+        }
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "User.id",
+            "Query.user",
+            "ID",
+            "Query.user.id!",
+            "Query.user.id",
+            "Query.user.name",
+            "String",
         ]
         .into_iter()
         .map(|s| s.to_string())

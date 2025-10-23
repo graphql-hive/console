@@ -1,0 +1,100 @@
+---
+title: 'CSRF Prevention'
+---
+
+# CSRF Prevention
+
+Cross-Site Request Forgery (CSRF) attacks trick users' browsers into making unwanted requests to
+your API. If you're using cookies for authentication, this is a real security risk that you need to
+protect against. Hive Router has built-in CSRF protection to keep your GraphQL API safe.
+
+This guide shows you how to set up CSRF protection for real-world scenarios. For the complete
+configuration reference, see [`csrf` configuration](../configuration/csrf).
+
+## What is CSRF?
+
+CSRF attacks happen when a malicious website tricks a user's browser into making a request to your
+API. Here's how it works:
+
+1. **User logs into your app** and gets an authentication cookie
+2. **User visits a malicious website** (while still logged in)
+3. **Malicious site sends a request** to your API using the user's cookie
+4. **Your API thinks it's legitimate** because the cookie is valid
+
+The browser automatically includes the user's authentication cookie, making this request appear
+legitimate.
+
+## How Router Protection Works
+
+Hive Router blocks CSRF attacks by requiring requests to prove they're intentional. A request is
+considered safe if it meets **any** of these conditions:
+
+- **Proper Content-Type** - The request uses `Content-Type: application/json` (or other safe types).
+  Malicious websites can't easily send these because browsers require CORS preflight checks for
+  custom content types.
+
+- **Required Headers** - The request includes specific headers you've configured. Malicious sites
+  can't add custom headers without triggering CORS preflight checks.
+
+If neither condition is met, the router blocks the request.
+
+## Basic Setup
+
+A simple and effective way to protect against CSRF is to require a custom header that browsers don't
+send by default. This forces the client to be aware of your API's security requirements.
+
+```yaml filename="router.config.yaml"
+csrf:
+  enabled: true
+  required_headers:
+    - X-Requested-With
+    - X-CSRF-Token
+```
+
+Your frontend application will need to send one of these headers with every request. If a request
+arrives without one of them, the router will reject it.
+
+## Using Apollo Client
+
+If your frontend is built with Apollo Client, you're in luck. It automatically adds special headers
+to every request that identify the client. You can leverage these for CSRF protection without any
+extra frontend code.
+
+Simply tell the router to require one of the headers that Apollo Client sends.
+
+```yaml filename="router.config.yaml"
+csrf:
+  enabled: true
+  required_headers:
+    - apollographql-client-name
+    - apollographql-client-version
+```
+
+No additional configuration needed - Apollo Client handles the headers automatically.
+
+## Multiple Client Types
+
+If you have different types of clients (web, mobile, partner APIs), you can configure multiple
+acceptable headers.
+
+```yaml filename="router.config.yaml"
+csrf:
+  enabled: true
+  required_headers:
+    - X-Requested-With # Standard web clients
+    - X-Mobile-App # Mobile applications
+    - X-Partner-API # Partner integrations
+    - Authorization # Token-based auth (see note below)
+```
+
+**Important:** If you're using token-based authentication (JWT in `Authorization` header), CSRF
+attacks are much less likely since malicious sites can't access the token. However, cookie-based
+sessions are vulnerable.
+
+## When You Don't Need CSRF Protection
+
+You can disable CSRF protection if:
+
+- **You only use token-based authentication** (JWT, API keys) and never use cookies
+- **Your API is purely machine-to-machine** with no browser clients
+- **You're building a public API** meant to be called from any website

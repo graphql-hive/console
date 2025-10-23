@@ -217,7 +217,7 @@ export class ContractsManager {
   public async getIsFirstComposableVersionForContractVersion(contractVersion: ContractVersion) {
     const diffableContractVersion =
       await this.getDiffableContractVersionForContractVersion(contractVersion);
-    return !diffableContractVersion;
+    return !diffableContractVersion && contractVersion.schemaCompositionErrors === null;
   }
 
   public async getBreakingChangesForContractVersion(contractVersion: ContractVersion) {

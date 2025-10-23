@@ -1,0 +1,140 @@
+---
+title: 'Configuring CORS'
+---
+
+# Configuring CORS
+
+Cross-Origin Resource Sharing (CORS) controls which websites can access your GraphQL API from a
+browser. Without proper CORS configuration, legitimate web apps can't reach your API, but with
+overly permissive settings, you're opening the door to unwanted access.
+
+This guide shows you how to set up CORS for real-world scenarios. For the complete configuration
+reference, see [`cors` configuration](../configuration/cors).
+
+## How CORS Works
+
+When a web page tries to make a request to your API from a different domain, the browser checks CORS
+rules first:
+
+1. **Browser sends preflight request** (for certain types of requests)
+2. **Router responds with allowed origins, methods, and headers**
+3. **Browser allows or blocks the actual request** based on the response
+
+The router uses a policy-based system where you define rules for different origins. When a request
+comes in, it finds the first matching policy and applies those rules.
+
+## Basic Setup: Single Web App
+
+The most common scenario is allowing your web application to access the API.
+
+**What you want:**
+
+- Production website can access the API
+- Local development environment works too
+- Block everyone else
+
+```yaml filename="router.config.yaml"
+cors:
+  enabled: true
+  policies:
+    - origins:
+        - https://my-app.com
+        - http://localhost:3000
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+      allow_headers:
+        - Content-Type
+        - Authorization
+```
+
+This allows your production site and local dev server to make requests, while blocking all other
+origins.
+
+## Handling Credentials
+
+By default, browsers don't send cookies or authentication headers in cross-origin requests. You need
+to explicitly allow this.
+
+```yaml filename="router.config.yaml"
+cors:
+  enabled: true
+  allow_credentials: true # Allow cookies and auth headers
+  policies:
+    - origins:
+        - https://my-app.com
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+      allow_headers:
+        - Content-Type
+        - Authorization
+```
+
+**Important:** When you enable `allow_credentials`, you cannot use wildcards for origins. You must
+specify exact domains.
+
+## Different Rules for Different Origins
+
+Sometimes you need different CORS rules for different types of clients.
+
+```yaml filename="router.config.yaml"
+cors:
+  enabled: true
+  # Default settings for most origins
+  allow_credentials: false
+  methods: ['GET', 'POST', 'OPTIONS']
+  allow_headers: ['Content-Type']
+
+  policies:
+    # Your main application - inherits defaults but adds credentials
+    - origins:
+        - https://my-app.com
+      allow_credentials: true
+      allow_headers:
+        - Content-Type
+        - Authorization
+
+    # Partner integration - more permissive headers
+    - origins:
+        - https://partner.example.com
+      allow_headers:
+        - Content-Type
+        - Authorization
+        - X-Partner-Token
+        - X-API-Version
+
+    # Public demo site - very restricted
+    - origins:
+        - https://demo.my-app.com
+      methods: ['GET', 'OPTIONS'] # Read-only access
+```
+
+## Common Issues and Solutions
+
+CORS is a common source of headaches. Here's a quick guide to troubleshooting the most frequent
+problems.
+
+**"CORS error" in browser console:**
+
+- Check that your origin is listed in the CORS policy
+- Verify the request method is allowed
+- Make sure required headers are in the `allow_headers` list
+
+**Preflight requests failing:**
+
+- Ensure `OPTIONS` is in your `methods` list
+- Check that `Access-Control-Request-Headers` match your `allow_headers`
+
+**Credentials not being sent:**
+
+- Set `allow_credentials: true` in your policy
+- Make sure your frontend code sets `credentials: 'include'`
+- Cannot use wildcard origins when credentials are enabled
+
+**CORS works locally but not in production:**
+
+- Check that your production domain is in the origins list
+- Make sure the router is accessible from your production environment

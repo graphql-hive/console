@@ -136,6 +136,7 @@ pub enum AgentError {
 }
 
 impl UsageAgent {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         schema: String,
         token: String,
