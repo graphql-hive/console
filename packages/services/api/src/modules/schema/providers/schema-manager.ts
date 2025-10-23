@@ -977,8 +977,8 @@ export class SchemaManager {
     });
   }
 
-  async getSchemaVersionByActionId(args: {
-    actionId: string;
+  async getSchemaVersionByCommit(args: {
+    commit: string;
     target: GraphQLSchema.TargetReferenceInput | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
@@ -992,7 +992,7 @@ export class SchemaManager {
     this.logger.debug('Fetch schema version by action id. (args=%o)', {
       projectId: selector.projectId,
       targetId: selector.targetId,
-      actionId: args.actionId,
+      commit: args.commit,
     });
 
     await this.session.assertPerformAction({
@@ -1004,10 +1004,10 @@ export class SchemaManager {
       },
     });
 
-    const record = await this.storage.getSchemaVersionByActionId({
+    const record = await this.storage.getSchemaVersionByCommit({
       projectId: selector.projectId,
       targetId: selector.targetId,
-      actionId: args.actionId,
+      commit: args.commit,
     });
 
     if (!record) {

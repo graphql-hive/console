@@ -2017,7 +2017,7 @@ export class SchemaPublisher {
           target,
           schema: {
             id: schemaVersion.id,
-            commit: schemaVersion.actionId,
+            commit: input.commit,
             valid: schemaVersion.isComposable,
           },
           changes,

@@ -47,7 +47,7 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 - [`hive operations:check FILE`](#hive-operationscheck-file)
 - [`hive schema:check FILE`](#hive-schemacheck-file)
 - [`hive schema:delete SERVICE`](#hive-schemadelete-service)
-- [`hive schema:fetch [ACTIONID]`](#hive-schemafetch-actionid)
+- [`hive schema:fetch [COMMIT]`](#hive-schemafetch-commit)
 - [`hive schema:publish FILE`](#hive-schemapublish-file)
 - [`hive update [CHANNEL]`](#hive-update-channel)
 - [`hive whoami`](#hive-whoami)
@@ -355,17 +355,17 @@ DESCRIPTION
 _See code:
 [src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.50.2/src/commands/schema/delete.ts)_
 
-## `hive schema:fetch [ACTIONID]`
+## `hive schema:fetch [COMMIT]`
 
 fetch a schema, supergraph, or list of subgraphs from the Hive API
 
 ```
 USAGE
-  $ hive schema:fetch [ACTIONID] [--debug] [--registry <value>] [--token <value>] [--registry.endpoint <value>]
+  $ hive schema:fetch [COMMIT] [--debug] [--registry <value>] [--token <value>] [--registry.endpoint <value>]
     [--registry.accessToken <value>] [--type <value>] [--write <value>] [--outputFile <value>] [--target <value>]
 
 ARGUMENTS
-  ACTIONID  action id (e.g. commit sha)
+  COMMIT  commit SHA (or optionally any other external identifier)
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
