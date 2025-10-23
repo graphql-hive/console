@@ -15,7 +15,25 @@ supergraph with real data.
 Hive Router comes as a standalone binary or Docker image. For trying things out locally, the binary
 is usually the quickest option. For production deployments, you'll probably want the Docker image.
 
-<Tabs items={["Binary", "Docker"]} >
+<Tabs items={["Docker Container", "Binary"]} >
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+Pull the official Docker image:
+
+```sh
+docker pull ghcr.io/graphql-hive/router:latest
+```
+
+> We recommend using a pinned version number, instead of `latest`, for any non-development
+> environment.
+>
+> You can find the list of available versions on the
+> [GitHub Releases](https://github.com/graphql-hive/router/releases) page.
+
+</Tabs.Tab>
 
 {/* Binary */}
 
@@ -29,18 +47,6 @@ curl -o- https://raw.githubusercontent.com/graphql-hive/router/main/install.sh |
 
 > Right now we have pre-built binaries for Linux and macOS. Windows users should use the Docker
 > option below.
-
-</Tabs.Tab>
-
-{/* Docker */}
-
-<Tabs.Tab>
-
-Pull the official Docker image:
-
-```sh
-docker pull ghcr.io/graphql-hive/router
-```
 
 </Tabs.Tab>
 
@@ -80,25 +86,14 @@ supergraph:
   path: ./supergraph.graphql
 ```
 
-That's it for basic setup. The router will load your supergraph schema from that file.
+That's it for basic setup. The router will load your supergraph schema from that file. For
+additional configuration options, see the [Supergraph configuration](./supergraph) page.
 
 ## Start the Router
 
 Now let's fire it up:
 
-<Tabs items={["Binary", "Docker"]} >
-
-{/* Binary */}
-
-<Tabs.Tab>
-
-Run the router with your config:
-
-```sh
-./hive_router
-```
-
-</Tabs.Tab>
+<Tabs items={["Docker Container", "Binary"]} >
 
 {/* Docker */}
 
@@ -112,6 +107,18 @@ docker run \
   -v ./supergraph.graphql:/app/supergraph.graphql \
   -v ./router.config.yaml:/app/router.config.yaml \
   ghcr.io/graphql-hive/router:latest
+```
+
+</Tabs.Tab>
+
+{/* Binary */}
+
+<Tabs.Tab>
+
+Run the router with your config:
+
+```sh
+./hive_router
 ```
 
 </Tabs.Tab>
