@@ -479,7 +479,7 @@ mod hive_persisted_documents_tests {
         }
 
         /// Registers a valid artifact URL with an actual GraphQL document
-        fn add_valid(&self, document_id: &str) -> Mock {
+        fn add_valid(&'_ self, document_id: &str) -> Mock<'_> {
             let valid_artifact_url = format!("/apps/{}", str::replace(document_id, "~", "/"));
             let document = "query { __typename }";
             let mock = self.server.mock(|when, then| {

@@ -463,7 +463,7 @@ mod hive_usage_tests {
             tokio::time::sleep(tokio::time::Duration::from_secs(1))
         }
 
-        fn activate_usage_mock(&self) -> Mock {
+        fn activate_usage_mock(&'_ self) -> Mock<'_> {
             self.mocked_upstream.mock(|when, then| {
                 when.method(POST).path("/usage").matches(|r| {
                     // This mock also validates that the content of the reported usage is valid
