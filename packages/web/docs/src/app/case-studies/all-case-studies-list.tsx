@@ -9,7 +9,7 @@ export function AllCaseStudiesList({ caseStudies }: { caseStudies: CaseStudyFile
       <Heading size="md" as="h2" className="text-center">
         Explore customer stories
       </Heading>
-      <ul className="mt-6 flex gap-4 max-sm:flex-col sm:mt-16 sm:gap-6">
+      <ul className="mt-6 flex gap-4 max-lg:flex-col sm:mt-16 sm:gap-6">
         {caseStudies.map(caseStudy => {
           return (
             <li key={caseStudy.name} className="relative basis-1/3">
