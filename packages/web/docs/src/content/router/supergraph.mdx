@@ -12,7 +12,6 @@ To run Hive Router, you'll need a Supergraph and the subgraphs running (see [Pro
 
 The Router will read the Supergraph and will use it for query planning and response construction.
 
-
 ## Loading the Supergraph
 
 ### From Hive Console
@@ -43,17 +42,7 @@ supergraph:
   poll_interval: 60s
 ```
 
-In addition, you may specify `retry_policy` and `timeout` configurations to customize the behaviour of the HTTP request to the CDN:
-
-```yaml {5-7} filename="router.config.yaml"
-supergraph:
-  source: hive
-  endpoint: https://cdn.graphql-hive.com/artifacts/v1/... # Use your Hive CDN endpoint here
-  key: hvABCD # Use your Hive CDN API key here
-  timeout: 500ms
-  retry_policy:
-    max_retries: 10
-```
+For additional configuration options, refer to the [`supergraph` API reference page](./configuration/supergraph).
 
 ### From the file-system
 

@@ -8,30 +8,111 @@ The `supergraph` configuration tells the router where to find your federated sup
 schema is the blueprint of your entire federated graph - it contains information about all your
 subgraphs and how they connect together.
 
-## File Source
+> For additional information about the supergraph loading and reloading process in Hive Router, see [Supergraph page](../supergraph).
+
+## Hive Console
+
+### `source`
+
+- **Type:** `string`
+- **Value:** `"hive"`
+
+Load the Supergraph schema from [Hive Console](../../schema-registry) CDN.
+
+### `endpoint`
+
+- **Type:** `string`
+- **Required:** Yes
+
+The [*Hive CDN Endpoint*](../schema-registry/get-started/apollo-federation#cdn-access) of your target.
+
+```yaml {3} filename="router.config.yaml"
+supergraph:
+  source: hive
+  endpoint: https://cdn.graphql-hive.com/artifacts/v1/...
+  # ...
+```
+
+### `key`
+
+- **Type:** `string`
+- **Required:** Yes
+
+The [*Hive CDN key/token*](../schema-registry/management/targets#creating-a-cdn-access-token) of your target.
+
+```yaml {4} filename="router.config.yaml"
+supergraph:
+  source: hive
+  # ...
+  key: hvABCD
+```
+
+### `poll_interval`
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** `10s`
+
+A human-readable string representing the interval at which the router should poll Hive CDN for changes.
+
+```yaml {4} filename="router.config.yaml"
+supergraph:
+  source: file
+  # ...
+  poll_interval: 10s
+```
+
+### `timeout`
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** `60s`
+
+A human-readable string representing the timeout for Hive CDN requests.
+
+```yaml {4} filename="router.config.yaml"
+supergraph:
+  source: file
+  # ...
+  timeout: 60s
+```
+
+### `retry_policy`
+
+- **Type:** `{ max_retries: number }`
+- **Required:** No
+- **Default:** `{ max_retries: 10 }`
+
+Max retries amount for Hive CDN requests. Exponential backoff is used to calculate the delay between retries.
+
+```yaml {4-5} filename="router.config.yaml"
+supergraph:
+  source: file
+  # ...
+  retry_policy:
+    max_retries: 10
+```
+
+## Filesystem
 
 The most straightforward way to provide your supergraph schema is as a local file. This works well
 for development and production deployments where you manage the schema file directly.
 
-### Options
-
-#### `source`
+### `source`
 
 - **Type:** `string`
 - **Value:** `"file"`
 
 Load the schema from a local file.
 
-#### `path`
+### `path`
 
 - **Type:** `string`
 - **Required:** Yes
 
 Path to your supergraph schema file. Can be absolute or relative to where you're running the router.
 
-### Example
-
-```yaml filename="router.config.yaml"
+```yaml {3} filename="router.config.yaml"
 supergraph:
   source: file
   path: ./supergraph.graphql
@@ -39,3 +120,20 @@ supergraph:
 
 This loads the schema from a file called `supergraph.graphql` in the same directory as your config
 file.
+
+### `poll_interval`
+
+- **Type:** `string`
+- **Required:** No
+- **Default:** disabled
+
+A human-readable string representing the interval at which the router should poll the file for changes.
+
+The reloading process depends on the file system's ability to detect changes based on the file-system metadata (modified-at attribute).
+
+```yaml {4} filename="router.config.yaml"
+supergraph:
+  source: file
+  path: ./supergraph.graphql
+  poll_interval: 10s
+```
