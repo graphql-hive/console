@@ -1,0 +1,49 @@
+---
+title: 'Introduction'
+---
+
+# Introduction to Hive Router
+
+Hive Router is a high-performance [GraphQL Federation](/federation) router built with Rust. It
+serves as the entry point for GraphQL requests in your federated setup, routing them efficiently
+across your subgraph services.
+
+## Why Hive Router?
+
+When you're running a [federated GraphQL architecture](/federation), your router becomes one of the
+most important pieces of your infrastructure. It needs to be fast, reliable, and handle real-world
+production traffic without breaking a sweat. Here's what makes Hive Router a solid choice:
+
+- **Speed matters.** Built with Rust, Hive Router is designed for performance and minimal resource
+  usage. Your API calls won't get bogged down by router overhead.
+- **Production-ready.** Rust's safety guarantees mean you get a router that handles concurrency well
+  and won't crash under heavy load.
+- **Open source, no strings attached.** MIT licensed and fully open source. Use it anywhere, modify
+  it however you need, and avoid vendor lock-in.
+- **Feature-complete.** Get security, traffic management, and modern federation features without
+  hunting for plugins or add-ons.
+
+Want to learn more about why we built this? Check out our
+[introductory blog post](https://the-guild.dev/graphql/hive/blog/welcome-hive-router).
+
+## Performance Benchmarks
+
+We've put Hive Router through its paces against other federation gateways to see how it performs
+under real-world conditions.
+
+See the full results and testing methodology:
+**[Federation Gateway Performance Comparison](https://the-guild.dev/graphql/hive/federation-gateway-performance)**.
+
+## Federation Compatibility
+
+Hive Router works with the standard GraphQL Federation specification. We run comprehensive tests to
+make sure it plays nicely with the rest of the federation ecosystem.
+
+Check out our compliance testing:
+**[Federation Gateway Audit](https://the-guild.dev/graphql/hive/federation-gateway-audit)**.
+
+## Getting Started
+
+- **[Getting Started](./getting-started)** - Install and run the router in just a few minutes.
+- **[Configuration Reference](./configuration)** - Explore all the ways you can customize the router
+  for your needs.
