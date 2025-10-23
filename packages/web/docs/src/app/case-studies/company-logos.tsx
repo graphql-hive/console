@@ -1,4 +1,4 @@
-import { SoundYXZLogo, WealthsimpleLogo, ToastLogo } from '../../components/company-logos';
+import { SoundYXZLogo, ToastLogo, WealthsimpleLogo } from '../../components/company-logos';
 
 /**
  * Take note that these logos may have different dimensions than logos used elsewhere.
