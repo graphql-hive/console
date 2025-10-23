@@ -1,5 +1,4 @@
-.hive-prose,
-.hive-prose article {
+.hive-prose {
   --nextra-content-width: 1208px;
   --article-max-width: 640px;
 
@@ -9,7 +8,11 @@
     max-width: 100%;
 
     & > div {
-      @apply ml-0 pl-6 max-sm:pr-6 md:pl-12;
+      @apply ml-0 w-full !max-w-full pl-6 max-sm:pr-6 md:pl-12;
+    }
+
+    & .case-studies-breakout {
+      @apply max-sm:-mx-6;
     }
 
     & > div > article {
@@ -25,6 +28,10 @@
   }
 
   @apply text-green-1000 dark:text-white;
+
+  & article {
+    @apply text-green-1000 dark:text-white;
+  }
 
   & article main > :is(h2, h3, h4, h5, h6, p, li) {
     @apply text-green-1000 dark:text-white;
