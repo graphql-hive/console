@@ -79,7 +79,8 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
           <div className="relative size-6">
             <Image
               src={avatarSrc}
-              alt={firstAuthor.name}
+              alt=""
+              role="presentation"
               width={24}
               height={24}
               className="rounded-full"
