@@ -2,11 +2,17 @@
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
 import { AuthorId, authors } from '../../../authors';
-import { isBlogPost } from '../blog-types';
+import { BlogFrontmatter, isBlogPost } from '../blog-types';
 
-function getAuthor(name: string) {
-  const author = authors[name as AuthorId]?.name;
-  return author ?? name;
+function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
+  const first = Array.isArray(frontmatterAuthors) ? frontmatterAuthors[0] : frontmatterAuthors;
+
+  if (typeof first === 'string') {
+    const author = authors[first as AuthorId];
+    return author ? author.name : 'Unknown Author';
+  }
+
+  return first.name;
 }
 
 export async function GET() {
@@ -20,11 +26,7 @@ export async function GET() {
           date: new Date(item.frontMatter.date),
           url: `https://the-guild.dev/graphql/hive${item.route}`,
           description: (item.frontMatter as any).description ?? '',
-          author: getAuthor(
-            typeof item.frontMatter.authors === 'string'
-              ? item.frontMatter.authors
-              : item.frontMatter.authors.at(0)!,
-          ),
+          author: getAuthor(item.frontMatter.authors),
           categories: Array.isArray(item.frontMatter.tags)
             ? item.frontMatter.tags
             : [item.frontMatter.tags],
