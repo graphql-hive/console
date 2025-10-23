@@ -40,7 +40,6 @@ import type {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../../auth/providers/scopes';
-import type { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import type { Contracts } from '../../schema/providers/contracts';
 import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
@@ -622,11 +621,6 @@ export interface Storage {
   updateOIDCDefaultMemberRole(_: {
     oidcIntegrationId: string;
     roleId: string;
-  }): Promise<OIDCIntegration>;
-
-  updateOIDCDefaultAssignedResources(_: {
-    oidcIntegrationId: string;
-    assignedResources: ResourceAssignmentGroup;
   }): Promise<OIDCIntegration>;
 
   createCDNAccessToken(_: {

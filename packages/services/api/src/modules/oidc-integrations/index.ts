@@ -1,5 +1,4 @@
 import { createModule } from 'graphql-modules';
-import { ResourceAssignments } from '../organization/providers/resource-assignments';
 import { OIDCIntegrationsProvider } from './providers/oidc-integrations.provider';
 import { resolvers } from './resolvers.generated';
 import typeDefs from './module.graphql';
@@ -9,5 +8,5 @@ export const oidcIntegrationsModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [OIDCIntegrationsProvider, ResourceAssignments],
+  providers: [OIDCIntegrationsProvider],
 });
