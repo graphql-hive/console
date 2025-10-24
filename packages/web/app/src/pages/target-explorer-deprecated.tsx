@@ -2,6 +2,10 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import {
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
 import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -262,7 +266,7 @@ function DeprecatedSchemaExplorer(props: {
           ) : null}
         </div>
       </div>
-      {!query.fetching && (
+      {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (
             <>
@@ -307,6 +311,10 @@ function DeprecatedSchemaExplorer(props: {
             />
           )}
         </>
+      ) : (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
       )}
     </>
   );

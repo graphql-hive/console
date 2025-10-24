@@ -1,0 +1,11 @@
+query AllProducts {
+  allProducts {
+    id
+    sku
+    name
+    variation {
+      id
+      name
+    }
+  }
+}

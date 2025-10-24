@@ -1,0 +1,53 @@
+---
+title: 'Probes'
+---
+
+import { Callout } from '@theguild/components'
+
+## Liveness (health) check
+
+Liveness (health) of Hive Router is available at `/health` endpoint, and represents the HTTP health
+status of the router.
+
+A request to this endpoint will return a `200 OK` status code if the router is healthy.
+
+If a container fails its liveness probe repeatedly, the runtime environment should restart or
+replace the container with a new one.
+
+To manually check your router's health status, you can send an HTTP GET request to the `/health`
+endpoint. For example, using `curl`:
+
+```bash
+# Replace the URL with your Router's host and port
+curl -I http://localhost:4000/health
+```
+
+<Callout type="warning" className="mb-4">
+
+The Liveness/health check only represents the validity of the router's HTTP layer.
+
+See **Readiness check** below for a more comprehensive health check that represents the ability of
+the router to process and execute GraphQL requests.
+
+</Callout>
+
+## Readiness check
+
+Readiness of Hive Router is available at `/readiness` endpoint, and represents the readiness status
+and ability to process GraphQL requests.
+
+The readiness check depends on your [Supergraph](../supergraph) load status. A router instance that
+has not loaded the supergraph yet will return a `503 Service Unavailable` status code. Once the
+supergraph is loaded, the router will return a `200 OK` status code.
+
+In cases where the initial Supergraph was loaded successfully, and reloading of the Supergraph is
+failing, the router will continue to report `200 OK` status code, to prevent the runtime from
+restarting or replacing the instance, which might have a cascading effect.
+
+To manually check your router's readiness status, you can send an HTTP GET request to the
+`/readiness` endpoint. For example, using `curl`:
+
+```bash
+# Replace the URL with your Router's host and port
+curl -I http://localhost:4000/readiness
+```

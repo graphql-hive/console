@@ -264,7 +264,7 @@ function TargetAppsView(props: {
           recommendedAction="publish"
           projectType={data.data?.target?.project?.type ?? null}
         />
-      ) : !data.data.target.appDeployments ? (
+      ) : !data.data.target.appDeployments?.edges?.length ? (
         <EmptyList
           title="Hive is waiting for your first app deployment"
           description="You can create an app deployment with the Hive CLI"

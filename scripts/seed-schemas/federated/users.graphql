@@ -1,0 +1,12 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@tag", "@shareable"])
+directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
+
+type User @key(fields: "email") {
+  email: ID! @tag(name: "test-from-users")
+  name: String
+  totalProductsCreated: Int @shareable
+  createdAt: DateTime
+}
+
+scalar DateTime

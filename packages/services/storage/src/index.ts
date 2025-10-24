@@ -4473,7 +4473,7 @@ export async function createStorage(
         FROM
           "schema_versions"
         WHERE
-          "action_id" = ANY(
+          "action_id" = (
             SELECT
               "id"
             FROM
@@ -4483,6 +4483,7 @@ export async function createStorage(
               AND "schema_log"."target_id" = ${args.targetId}
               AND "schema_log"."commit" = ${args.actionId}
             ORDER BY "schema_log"."created_at" DESC
+            LIMIT 1
           )
         LIMIT 1
       `);
