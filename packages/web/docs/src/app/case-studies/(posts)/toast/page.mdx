@@ -172,7 +172,7 @@ Things Apollo offers for free too, and we do too
 In this section we’ll cover more technical details that might be interesting for any GraphQL
 developer to learn and get inspired by, for their own journey.
 
-<Table className="mt-6 text-sm dark:[--border:theme(colors.beige.900/.75)] case-studies-breakout max-sm:rounded-none max-sm:border-x-0">
+<Table scheme='neutral' className="mt-6 text-sm  dark:[--border:theme(colors.beige.900/.75)] case-studies-breakout max-sm:rounded-none max-sm:border-x-0 [&_td:first-of-type]:font-medium [&_li:not(:first-of-type)]:mt-0 [&_td:has(>ul)]:p-2">
   <tbody>
     <Table.Row className="*:border-t-0">
       <Table.Cell>Number of teams</Table.Cell>
@@ -185,23 +185,19 @@ developer to learn and get inspired by, for their own journey.
     <Table.Row>
       <Table.Cell>Structure of teams</Table.Cell>
       <Table.Cell>
-        In general - domain-oriented horizontal full-stack feature teams with a couple of flat focus
+        In general — domain-oriented horizontal full-stack feature teams with a couple of flat focus
         teams
       </Table.Cell>
     </Table.Row>
     <Table.Row>
       <Table.Cell>Apps, consumers and clients of the graph</Table.Cell>
       <Table.Cell>
-        350 micro frontends
-        <br />
-        Apollo Client + Codegen
-        <br />
-        Native mobile
-        <br />
-        Point for improvement — Currently they are not utilizing fragment based co-location too
+        - 350 micro frontends
+        - apollo Client + Codegen
+        - native mobile
+        - point for improvement — Currently they are not utilizing fragment based co-location too
         much.
-        <br />
-        Next phase — AI consumers of the graph
+        - next phase — AI consumers of the graph
       </Table.Cell>
     </Table.Row>
     <Table.Row>
@@ -211,9 +207,8 @@ developer to learn and get inspired by, for their own journey.
     <Table.Row>
       <Table.Cell>Gateway</Table.Cell>
       <Table.Cell>
-        2 gateways – one client-facing and one for restaurant admin - both using Hive Gateway
-        <br />
-        Using Node 20
+        - 2 gateways — one client-facing and one for restaurant admin — both using Hive Gateway
+        - using Node 20
       </Table.Cell>
     </Table.Row>
     <Table.Row>
@@ -235,9 +230,8 @@ developer to learn and get inspired by, for their own journey.
     <Table.Row>
       <Table.Cell>Observability and tracing</Table.Cell>
       <Table.Cell>
-        Hive Insights and DataDog tracking
-        <br />
-        Looking into the new Hive Metrics features
+        - Hive Insights and DataDog tracking
+        - looking into the new Hive Metrics features
       </Table.Cell>
     </Table.Row>
     <Table.Row>
@@ -247,18 +241,14 @@ developer to learn and get inspired by, for their own journey.
     <Table.Row>
       <Table.Cell>Local development process and tooling</Table.Cell>
       <Table.Cell>
-        Toast developed their own tool for efficient local development called "PrepStation".
-        
-        The tool deeply integrates with Hive Console, Storybook, GraphQL Codegen and Yoga Server to
+        Toast developed their own tool for efficient local development called "PrepStation". The tool deeply integrates with Hive Console, Storybook, GraphQL Codegen and Yoga Server to
         seamlessly merge local and remote subgraphs and compose them locally.
-        
+
         It then takes the composed Supergraph and creates a mocked local gateway instance.
-        
+
         Using this setup, feature teams can prototype and work locally with upcoming versions of the
         graph, and create full prototypes to stakeholders before production or backend teams need to
-        do any work.
-
-        The Toast team gave a [great
+        do any work. The Toast team gave a [great
         talk](https://graphql.org/conf/2024/schedule/19cf965c68cfae3c7c19c6a9966bcadf/) about it at
         GraphQL Conf.
       </Table.Cell>
