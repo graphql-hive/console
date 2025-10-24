@@ -1,19 +1,21 @@
-import { ReactElement } from 'react';
+import { forwardRef } from 'react';
 import { clsx } from 'clsx';
 import dompurify from 'dompurify';
 import snarkdown from 'snarkdown';
 
-export function Markdown({
-  content,
-  className,
-}: {
-  content: string;
-  className?: string;
-}): ReactElement {
+export const Markdown = forwardRef<
+  HTMLDivElement,
+  {
+    content: string;
+    className?: string;
+  }
+>(({ content, className, ...props }, ref) => {
   return (
     <div
+      ref={ref}
       className={clsx('hive-markdown', className)}
       dangerouslySetInnerHTML={{ __html: dompurify.sanitize(snarkdown(content)) }}
+      {...props}
     />
   );
-}
+});

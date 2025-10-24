@@ -3,6 +3,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
+  DescriptionInline,
   GraphQLTypeCard,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
@@ -91,7 +92,7 @@ export function GraphQLEnumTypeComponent(props: {
       <div className="flex flex-col">
         {values.map((value, i) => (
           <GraphQLTypeCardListItem key={value.name} index={i}>
-            <div>
+            <div className="flex flex-col">
               <DeprecationNote
                 styleDeprecated={props.styleDeprecated}
                 deprecationReason={value.deprecationReason}
@@ -105,6 +106,7 @@ export function GraphQLEnumTypeComponent(props: {
                   {value.name}
                 </LinkToCoordinatePage>
               </DeprecationNote>
+              {value.description ? <DescriptionInline description={value.description} /> : null}
             </div>
           </GraphQLTypeCardListItem>
         ))}
