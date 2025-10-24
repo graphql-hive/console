@@ -120,9 +120,10 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
 > seed a target there.
 
 > To send more operations with `seed:usage`, and test heavy load on Hive instance, you can also set
-> `OPERATIONS` (amount of operations in each interval round, default is `1`) and `INTERVAL`
+> `OPERATIONS` (amount of operations in each interval round, default is `10`) and `INTERVAL`
 > (frequency of sending operations, default: `1000`ms). For example, using
-> `INTERVAL=1000 OPERATIONS=1000` will send 1000 requests per second.
+> `INTERVAL=1000 OPERATIONS=1000` will send 1000 requests per second. And set `BATCHES` to set the
+> total number of batches to run before the seed exits. Default: 10.
 
 ### Troubleshooting
 
