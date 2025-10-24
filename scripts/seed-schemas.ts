@@ -23,10 +23,12 @@ switch (stage.toLowerCase()) {
   case 'staging': {
     graphqlEndpoint = 'https://app.hiveready.dev/graphql';
     environment = 'staging';
+    break;
   }
   case 'dev': {
     graphqlEndpoint = 'https://app.buzzcheck.dev/graphql';
     environment = 'dev';
+    break;
   }
   default: {
     graphqlEndpoint = 'http://localhost:3001/graphql';
@@ -119,19 +121,21 @@ async function federation() {
   const schemaDocs = await loadTypedefs('scripts/seed-schemas/federated/*.graphql', {
     loaders: [new GraphQLFileLoader()],
   });
-  const uploads = schemaDocs.map(d => {
-    if (!d.rawSDL) {
-      console.error(`Missing SDL at "${d.location}"`);
-      return;
-    }
-    const service = d.location ? parsePath(d.location).name.replaceAll('.', '-') : undefined;
+  const uploads = schemaDocs
+    .map(d => {
+      if (!d.rawSDL) {
+        console.error(`Missing SDL at "${d.location}"`);
+        return null;
+      }
+      const service = d.location ? parsePath(d.location).name.replaceAll('.', '-') : undefined;
 
-    return publishSchema({
-      sdl: d.rawSDL,
-      service,
-      target,
-    });
-  });
+      return publishSchema({
+        sdl: d.rawSDL,
+        service,
+        target,
+      });
+    })
+    .filter(Boolean);
 
   await Promise.all(uploads);
   // await instance.info();

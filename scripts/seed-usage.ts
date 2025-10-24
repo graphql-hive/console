@@ -31,10 +31,12 @@ switch (stage.toLowerCase()) {
   case 'staging': {
     usageReportingEndpoint = 'https://app.hiveready.dev/usage';
     environment = 'staging';
+    break;
   }
   case 'dev': {
     usageReportingEndpoint = 'https://app.buzzcheck.dev/usage';
     environment = 'dev';
+    break;
   }
   default: {
     usageReportingEndpoint = 'http://localhost:4001';
