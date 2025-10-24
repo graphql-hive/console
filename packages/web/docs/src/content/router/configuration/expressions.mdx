@@ -69,17 +69,17 @@ These values allow you to branch logic based on who is calling your API and what
 ### `.response`
 
 Available only in **response** header rules. It represents the HTTP response from a subgraph call.
-You can inspect `.response.status_code` or `.response.headers` and then set or override additional
-headers. For example, you could conditionally add a cache header based on the subgraph’s status
-code. This variable is not present when computing request headers or dynamic URLs, because the
-response does not yet exist.
+You can inspect `.response.url` or `.response.headers` and then set or override additional headers.
+For example, you could conditionally add a cache header based on the subgraph’s status code. This
+variable is not present when computing request headers or dynamic URLs, because the response does
+not yet exist.
 
 - `.response.headers` - a case‑insensitive map of response headers.
 
 ### `.subgraph`
 
-Available in both **request** and \*_response_& header rules. It provides metadata about the
-subgraph handling the current request, including:
+Available in both **request** and **response** header rules. It provides metadata about the subgraph
+handling the current request, including:
 
 - `.subgraph.name` - the name of the subgraph as defined in your supergraph schema.
 
