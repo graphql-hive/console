@@ -13,8 +13,10 @@ export const metadata = {
   ]
 }
 
-import { Lede } from '#components/lede'
 import { ComparisonTable as Table } from '@theguild/components'
+
+import { Lede } from '#components/lede'
+import { ScaleBeyondCard } from '#components/scale-beyond-card'
 
 <Lede>
   
@@ -163,9 +165,7 @@ Things Apollo offers for free too, and we do too
 - **Mesh Compose (compared to Apollo Connectors):** Tools for connecting to legacy REST/other data
   sources.
 
-## Scale beyond Apollo
-
-Share your stack and we'll chart your gradual migration path so you keep shipping while you scale
+<ScaleBeyondCard className="mt-8" />
 
 ## The technical profile and journey of Toast
 
