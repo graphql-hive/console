@@ -1,0 +1,134 @@
+---
+title: 'cors'
+---
+
+# cors
+
+The `cors` configuration lets you control Cross-Origin Resource Sharing (CORS) for your GraphQL API.
+This is important when you have web applications running on different domains that need to access
+your API.
+
+For practical examples and common scenarios, check out **[Configuring CORS](../security/cors)**.
+
+## Basic Options
+
+### `enabled`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Turn CORS handling on or off.
+
+### `allow_any_origin`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Allow requests from any domain. This ignores the `policies` setting if set to `true`. Don't use this
+in production unless you really know what you're doing.
+
+### `allow_credentials`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Whether to allow credentials like cookies or authorization headers in cross-origin requests. This
+applies globally unless overridden in specific policies.
+
+### `allow_headers`
+
+- **Type:** `string[]`
+
+Which request headers clients can send (like `["Content-Type", "Authorization"]`). This is a global
+default that applies to all origins unless overridden.
+
+### `expose_headers`
+
+- **Type:** `string[]`
+
+Which response headers client-side JavaScript can access. Most headers are hidden from scripts for
+security reasons.
+
+### `max_age`
+
+- **Type:** `integer`
+
+How long (in seconds) browsers can cache preflight request results. Longer values mean fewer
+preflight requests but less flexibility to change CORS settings.
+
+### `methods`
+
+- **Type:** `string[]`
+
+Which HTTP methods are allowed for cross-origin requests (like `["GET", "POST", "OPTIONS"]`).
+
+## Policies
+
+### `policies`
+
+- **Type:** `object[]`
+- **Required:** Yes (unless `allow_any_origin` is `true`)
+
+A list of rules that define CORS behavior for different origins. The router checks these in order
+and uses the first one that matches.
+
+Each policy can have:
+
+- `origins`: `string[]` - Exact origin URLs to match.
+- `match_origin`: `string[]` - Regex patterns to match against origin URLs.
+- Any of the options above (like `allow_credentials`, `methods`) to override global defaults for
+  this specific origin.
+
+## Example
+
+```yaml filename="router.config.yaml"
+cors:
+  enabled: true
+  allow_credentials: false # Default for all origins
+  methods: ['GET', 'POST', 'OPTIONS']
+  allow_headers: ['Content-Type', 'Authorization']
+  policies:
+    # Production website
+    - origins:
+        - https://my-app.com
+        - https://www.my-app.com
+    # Local development
+    - origins:
+        - http://localhost:3000
+        - http://localhost:3001
+      allow_credentials: true # Override for development
+    # Partner domains with special access
+    - match_origin:
+        - "^https://.*\\.partner\\.com$"
+      allow_credentials: true
+      allow_headers: ['Content-Type', 'Authorization', 'X-Custom-Header']
+```
+
+## Common Patterns
+
+**Development setup:** Allow your local dev server to access the API:
+
+```yaml
+cors:
+  enabled: true
+  policies:
+    - origins: ['http://localhost:3000']
+```
+
+**Multiple environments:** Handle different domains for staging and production:
+
+```yaml
+cors:
+  enabled: true
+  policies:
+    - origins: ['https://myapp.com', 'https://staging.myapp.com']
+```
+
+**Subdomain matching:** Allow all subdomains of your company:
+
+```yaml
+cors:
+  enabled: true
+  policies:
+    - match_origin: ["^https://.*\\.mycompany\\.com$"]
+```

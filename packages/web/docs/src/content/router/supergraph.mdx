@@ -1,0 +1,99 @@
+---
+title: 'Supergraph'
+---
+
+import { Callout } from '@theguild/components'
+
+# Overview
+
+The Supergraph is the architectural backbone of Federation, it's an artifact produced by the
+composition process, and intended to be the recipe, or control-plane, for running your GraphQL
+router.
+
+To run Hive Router, you'll need a Supergraph and the subgraphs running (see
+[Probes](./observability/probes) page for additional information about Router health state and the
+relation to the Supergraph).
+
+The Router will read the Supergraph and will use it for query planning and response construction.
+
+## Loading the Supergraph
+
+### From Hive Console
+
+To load the Supergraph from [Hive Console](../schema-registry), the official Hive Router
+schema-registry, start by [creating a project](../schema-registry/get-started/first-steps), and
+[follow with pushing subgraph schema](../schema-registry/get-started/apollo-federation) and have a
+valid composition artifact (Supergraph) published to
+[Hive CDN](../schema-registry/high-availability-cdn).
+
+Once you have a valid Supergraph published to Hive CDN, gather the following information from Hive
+Console's dashboard:
+
+- [_Hive CDN Endpoint_](../schema-registry/get-started/apollo-federation#cdn-access): under your
+  target's page, click on `Connect to CDN` button to grab your endpoint.
+- [_Hive CDN API Key_](../schema-registry/management/targets#creating-a-cdn-access-token): a secret
+  that allow you to access Hive CDN and fetch your API key.
+
+Once you have both, configure Hive Router to use the `supergraph` configuration with `source: hive`
+field:
+
+```yaml {2-4} filename="router.config.yaml"
+supergraph:
+  source: hive
+  endpoint: https://cdn.graphql-hive.com/artifacts/v1/... # Use your Hive CDN endpoint here
+  key: hvABCD # Use your Hive CDN API key here
+```
+
+By default, Hive Router will reload the Supergraph from Hive Console CDN every `10s`. You can change
+this behaviour by adding `poll_interval` field:
+
+```yaml {5} filename="router.config.yaml"
+supergraph:
+  source: hive
+  endpoint: https://cdn.graphql-hive.com/artifacts/v1/... # Use your Hive CDN endpoint here
+  key: hvABCD # Use your Hive CDN API key here
+  poll_interval: 60s
+```
+
+For additional configuration options, refer to the
+[`supergraph` API reference page](./configuration/supergraph).
+
+### From the file-system
+
+If you wish to load the Supergraph from the file-system, use the `supergraph` configuration with
+`source: file` field:
+
+```yaml {2-3} filename="router.config.yaml"
+supergraph:
+  source: file
+  path: ./supergraph.graphql # point to your local supergraph file
+```
+
+If you wish the router to reload the supergraph from the file-system periodically, add
+`poll_interval` field:
+
+```yaml {4} filename="router.config.yaml"
+supergraph:
+  source: file
+  path: ./supergraph.graphql # point to your local supergraph file
+  poll_interval: 5s # reload the supergraph every 5 seconds
+```
+
+> Hive Router will use the file-system's metadata (modified-at attribute) to detect changes and
+> reload the supergraph.
+
+## Reloading the Supergraph
+
+The reload process of the Supergraph needs to be aligned with other on-going processes running in
+Hive Router.
+
+When a Supergraph changes, in-flight requests will not be impacted and will complete based on the
+Supergraph version used when the request was initiated.
+
+In addition, internal caches will be invalidated and all new requests will be served from the
+updated Supergraph.
+
+In cases when the Supergraph reload process fails, Hive Router will continue to serve requests from
+the previous version of the Supergraph and will not impact the performance of the router (see
+[Probes](./observability/probes) to understand how the Supergraph reload process impacts the
+router).
