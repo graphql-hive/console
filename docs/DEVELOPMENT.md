@@ -111,19 +111,18 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
 1. Use `Start Hive` to run your local Hive instance
 2. Make sure `usage` and `usage-ingestor` are running as well (with `pnpm dev`)
 3. Open Hive app, create a project and a target, then create a token
-4. Run the seed script: `TOKEN="MY_TOKEN_HERE" pnpm seed`
-5. This should report a dummy schema and some dummy usage data to your local instance of Hive,
-   allowing you to test features e2e
+4. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
+5. This should report a dummy schema
+6. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
+   to test features e2e: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:usage`
 
-> Note: You can set `STAGING=1` in order to target staging env and seed a target there. Same for
-> development env, you can use `DEV=1`
+> Note: You can set `STAGE=<dev|staging|local>` in order to target a specific Hive environment and
+> seed a target there.
 
-> Note: You can set `FEDERATION=1` in order to publish multiple subgraphs.
-
-> To send more operations and test heavy load on Hive instance, you can also set `OPERATIONS`
-> (amount of operations in each interval round, default is `1`) and `INTERVAL` (frequency of sending
-> operations, default: `1000`ms). For example, using `INTERVAL=1000 OPERATIONS=1000` will send 1000
-> requests per second.
+> To send more operations with `seed:usage`, and test heavy load on Hive instance, you can also set
+> `OPERATIONS` (amount of operations in each interval round, default is `1`) and `INTERVAL`
+> (frequency of sending operations, default: `1000`ms). For example, using
+> `INTERVAL=1000 OPERATIONS=1000` will send 1000 requests per second.
 
 ### Troubleshooting
 
