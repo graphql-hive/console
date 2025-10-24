@@ -50,10 +50,11 @@ override_subgraph_urls:
 
 #### Dynamic URL with `expression`
 
-When an `object` is provided, it must contain a VRL `expression` that returns a URL string. The
-expression is evaluated for each request, allowing for request-time routing decisions.
+When an `object` is provided, it must contain an `expression` that returns a URL string. The
+[expression](./expressions) is evaluated for each request, allowing for request-time routing
+decisions.
 
-- `expression`: **(string, required)** A VRL expression that computes the new URL.
+- `expression`: **(string, required)** A [expression](./expressions) that computes the new URL.
 
 Within the `expression`, you have access to two key variables:
 
