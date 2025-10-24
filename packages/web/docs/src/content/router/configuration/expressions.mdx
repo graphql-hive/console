@@ -91,12 +91,11 @@ useful for debugging and tracing requests.
 
 ### `.original_url`
 
-This variable is only available in
-[dynamic routing expressions](./configuration/override_subgraph_urls). It holds the default URL for
-the current subgraph, as declared in your supergraph schema. Because the expression must return a
-URL, you should always provide a fallback using `.original_url` so that requests are routed
-somewhere when no condition matches. The configuration reference emphasises this by showing a
-pattern where the expression returns `.original_url` in the `else` branch.
+This variable is only available in [dynamic routing expressions](./override_subgraph_urls). It holds
+the default URL for the current subgraph, as declared in your supergraph schema. Because the
+expression must return a URL, you should always provide a fallback using `.original_url` so that
+requests are routed somewhere when no condition matches. The configuration reference emphasises this
+by showing a pattern where the expression returns `.original_url` in the `else` branch.
 
 ## Available functions
 
