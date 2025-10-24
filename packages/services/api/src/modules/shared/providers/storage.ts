@@ -376,10 +376,10 @@ export interface Storage {
    * The action id is the id of the action that created the schema version, it is user provided.
    * Multiple entries with the same action ID can exist. In that case the latest one is returned.
    */
-  getSchemaVersionByActionId(_: {
+  getSchemaVersionByCommit(_: {
     targetId: string;
     projectId: string;
-    actionId: string;
+    commit: string;
   }): Promise<SchemaVersion | null>;
   getMatchingServiceSchemaOfVersions(versions: {
     before: string | null;
