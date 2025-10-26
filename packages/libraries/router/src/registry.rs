@@ -1,3 +1,4 @@
+use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
 use sha2::Digest;
@@ -23,8 +24,6 @@ pub struct HiveRegistryConfig {
     accept_invalid_certs: Option<bool>,
     schema_file_path: Option<String>,
 }
-
-static COMMIT: Option<&'static str> = option_env!("GITHUB_SHA");
 
 impl HiveRegistry {
     #[allow(clippy::new_ret_no_self)]
@@ -171,7 +170,7 @@ impl HiveRegistry {
         headers.insert(
             reqwest::header::USER_AGENT,
             reqwest::header::HeaderValue::from_str(
-                format!("hive-apollo-router/{}", COMMIT.unwrap_or("local")).as_str(),
+                format!("hive-apollo-router/{}", PLUGIN_VERSION).as_str(),
             )
             .unwrap(),
         );
