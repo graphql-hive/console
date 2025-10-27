@@ -1,5 +1,67 @@
 # hive
 
+## 8.5.1
+
+### Patch Changes
+
+- [#7177](https://github.com/graphql-hive/console/pull/7177)
+  [`1f7f195`](https://github.com/graphql-hive/console/commit/1f7f1951b2b1ef76d0853a6588e39458e5e1a982)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue with native
+  federation public SDL generation around inaccessible interfaces.
+
+  **Example supergraph:**
+
+  ```
+  schema
+    @link(
+      url: "https://specs.apollo.dev/federation/v2.3"
+      import: ["@inaccessible"]
+    ) {
+    query: Query
+  }
+
+  type Query {
+    user: User!
+  }
+
+  interface Node @inaccessible {
+    id: ID!
+  }
+
+  type User implements Node {
+    id: ID!
+  }
+  ```
+
+  **Public Schema SDL output:**
+
+  ```diff
+    type Query {
+      user: User!
+    }
+
+  - type User implements Node {
+  + type User {
+      id: ID!
+    }
+  ```
+
+## 8.5.0
+
+### Minor Changes
+
+- [#7155](https://github.com/graphql-hive/console/pull/7155)
+  [`caebbe0`](https://github.com/graphql-hive/console/commit/caebbe093a997022691276e0dc67ce9ab8589112)
+  Thanks [@jdolle](https://github.com/jdolle)! - add schemaVersionByCommit; update docs and cli; fix
+  webhook commit reference
+
+### Patch Changes
+
+- [#7124](https://github.com/graphql-hive/console/pull/7124)
+  [`0e44587`](https://github.com/graphql-hive/console/commit/0e4458772196ad490b682bf9a87971d5179c3985)
+  Thanks [@jdolle](https://github.com/jdolle)! - get latest log in version by commit and add version
+  details to history page
+
 ## 8.4.1
 
 ### Patch Changes

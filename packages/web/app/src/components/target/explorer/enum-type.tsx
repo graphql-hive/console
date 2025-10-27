@@ -1,14 +1,14 @@
+import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
+  DescriptionInline,
   GraphQLTypeCard,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
-  SchemaExplorerUsageStats,
 } from './common';
 import { useSchemaExplorerContext } from './provider';
-import { SupergraphMetadataList } from './super-graph-metadata';
 
 const GraphQLEnumTypeComponent_TypeFragment = graphql(`
   fragment GraphQLEnumTypeComponent_TypeFragment on GraphQLEnumType {
@@ -22,9 +22,6 @@ const GraphQLEnumTypeComponent_TypeFragment = graphql(`
       description
       isDeprecated
       deprecationReason
-      usage {
-        ...SchemaExplorerUsageStats_UsageFragment
-      }
       supergraphMetadata {
         metadata {
           name
@@ -82,11 +79,13 @@ export function GraphQLEnumTypeComponent(props: {
       targetSlug={props.targetSlug}
       projectSlug={props.projectSlug}
       organizationSlug={props.organizationSlug}
+      totalRequests={props.totalRequests}
+      usage={ttype.usage}
     >
       <div className="flex flex-col">
         {values.map((value, i) => (
           <GraphQLTypeCardListItem key={value.name} index={i}>
-            <div>
+            <div className="flex flex-col">
               <DeprecationNote
                 styleDeprecated={props.styleDeprecated}
                 deprecationReason={value.deprecationReason}
@@ -100,6 +99,7 @@ export function GraphQLEnumTypeComponent(props: {
                   {value.name}
                 </LinkToCoordinatePage>
               </DeprecationNote>
+              {value.description ? <DescriptionInline description={value.description} /> : null}
             </div>
             {value.supergraphMetadata ? (
               <SupergraphMetadataList
@@ -107,15 +107,6 @@ export function GraphQLEnumTypeComponent(props: {
                 projectSlug={props.projectSlug}
                 organizationSlug={props.organizationSlug}
                 supergraphMetadata={value.supergraphMetadata}
-              />
-            ) : null}
-            {typeof props.totalRequests === 'number' ? (
-              <SchemaExplorerUsageStats
-                totalRequests={props.totalRequests}
-                usage={value.usage}
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
               />
             ) : null}
           </GraphQLTypeCardListItem>
