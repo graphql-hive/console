@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
