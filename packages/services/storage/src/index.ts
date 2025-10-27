@@ -4466,8 +4466,8 @@ export async function createStorage(
       });
     },
 
-    async getSchemaVersionByActionId(args) {
-      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByActionId */
+    async getSchemaVersionByCommit(args) {
+      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByCommit */
         SELECT
           ${schemaVersionSQLFields()}
         FROM
@@ -4481,7 +4481,7 @@ export async function createStorage(
             WHERE
               "schema_log"."project_id" = ${args.projectId}
               AND "schema_log"."target_id" = ${args.targetId}
-              AND "schema_log"."commit" = ${args.actionId}
+              AND "schema_log"."commit" = ${args.commit}
             ORDER BY "schema_log"."created_at" DESC
             LIMIT 1
           )

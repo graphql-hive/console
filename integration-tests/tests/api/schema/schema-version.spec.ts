@@ -1,12 +1,11 @@
-import { waitFor } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
-const SchemaByActionIdQuery = graphql(/* GraphQL */ `
-  query SchemaByActionIdQuery($actionId: ID!, $targetRef: TargetReferenceInput) {
-    schemaVersionForActionId(actionId: $actionId, target: $targetRef) {
+const SchemaByCommitQuery = graphql(/* GraphQL */ `
+  query SchemaByCommitQuery($commit: String!, $targetRef: TargetReferenceInput) {
+    schemaVersionByCommit(commit: $commit, target: $targetRef) {
       id
       sdl
       log {
@@ -20,9 +19,9 @@ const SchemaByActionIdQuery = graphql(/* GraphQL */ `
 `);
 
 test.concurrent(
-  'schema version by actionId returns latest schema for the actionId',
+  'schema version by commit returns latest schema for the commit',
   async ({ expect }) => {
-    const actionId = 'tiny-test-0';
+    const commit = 'tiny-test-0';
     const schema = /* GraphQL */ `
       type Query {
         ping: String
@@ -45,26 +44,26 @@ test.concurrent(
     await token
       .publishSchema({
         sdl: schema,
-        commit: actionId,
+        commit,
       })
       .then(r => r.expectNoGraphQLErrors());
 
     await token
       .publishSchema({
         sdl: latestSchema,
-        commit: actionId,
+        commit,
       })
       .then(r => r.expectNoGraphQLErrors());
 
     const result = await execute({
-      document: SchemaByActionIdQuery,
+      document: SchemaByCommitQuery,
       token: token.secret,
       variables: {
-        actionId,
+        commit,
         targetRef: { byId: target.id },
       },
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(result.schemaVersionForActionId?.sdl).toIncludeSubstringWithoutWhitespace(latestSchema);
+    expect(result.schemaVersionByCommit?.sdl).toIncludeSubstringWithoutWhitespace(latestSchema);
   },
 );
