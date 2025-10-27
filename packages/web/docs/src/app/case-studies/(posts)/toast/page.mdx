@@ -148,14 +148,17 @@ Paid enterprise-exclusive features for Apollo users that Hive provides for free:
 - **Extensibility:** Enables running custom logic on the Hive Gateway for advanced use cases.
 - **Telemetry:** Deep, custom observability data collection.
 - **SSO & SAML:** Enterprise-grade Single Sign-On integration.
-- **Business Support:** **24x7x365** technical support with top-tier SLAs (Service Level Agreements).
-- **Professional Services & Premium Support Packages:** Access to dedicated The Guild experts for implementation and mission-critical systems.
+- **Business Support:** **24x7x365** technical support with top-tier SLAs (Service Level
+  Agreements).
+- **Professional Services & Premium Support Packages:** Access to dedicated The Guild experts for
+  implementation and mission-critical systems.
 
 **Features Apollo offers for free – and Hive does too:**
 
 - **Demand Control (Cost-based Limits):** Protects the graph by limiting expensive operations.
 - **Operation-based Limits:** Sets limits on query depth, complexity, etc.
-- **Request Authorization & JWT Authentication:** Built-in security and access control features at the router level.
+- **Request Authorization & JWT Authentication:** Built-in security and access control features at
+  the router level.
 - **Traffic Shaping:** Features such as deduplication and rate limiting.
 - **APQ Caching** (often metered/add-on).
 - **Entity Caching** (often metered/add-on).
@@ -260,6 +263,50 @@ Node BFF written in GraphQL. Later, the restaurant admin side also discovered Gr
 structure and added 30–40 GraphQL BFFs — each team had their own REST API (Kotlin) with a Node
 GraphQL BFF on top.
 
+```mermaid
+flowchart TB
+  subgraph Domains["Domain Services"]
+    reporting_rest["REPORTING API\nREST"]
+    takeout_rest["TAKEOUT & DELIVERY DOMAIN\nREST"]
+    menus_rest["MENUS\nREST"]
+    inventory_rest["INVENTORY\nREST"]
+  end
+
+  subgraph BFFs["GraphQL BFFs"]
+    homepage_bff["HOMEPAGE BFF\nGraphQL"]
+    metrics_bff["PERFORMANCE METRICS\nGraphQL"]
+    takeout_bff["TAKEOUT & DELIVERY SETTINGS SPA\nGraphQL"]
+    menus_bff["MENUS\nGraphQL"]
+  end
+
+  subgraph ToastWeb["Toast Web"]
+    homepage["HOMEPAGE"]
+    performance["PERFORMANCE CENTER"]
+    takeout_setup["TAKEOUT & DELIVERY SETUP"]
+    menus_app["MENUS"]
+  end
+
+  homepage -- "GraphQL" --> homepage_bff
+  performance -- "GraphQL" --> metrics_bff
+  takeout_setup -- "GraphQL" --> takeout_bff
+  menus_app -- "GraphQL" --> menus_bff
+
+  homepage_bff -- "REST" --> reporting_rest
+  homepage_bff -- "REST" --> takeout_rest
+  homepage_bff -- "REST" --> menus_rest
+
+  metrics_bff -- "REST" --> reporting_rest
+  metrics_bff -- "REST" --> takeout_rest
+  metrics_bff -- "REST" --> menus_rest
+
+  takeout_bff -- "REST" --> takeout_rest
+  takeout_bff -- "REST" --> menus_rest
+  takeout_bff -- "REST" --> inventory_rest
+
+  menus_bff -- "REST" --> menus_rest
+  menus_bff -- "REST" --> inventory_rest
+```
+
 As more teams, like the Mobile app, needed the same data from multiple BFFs, that led them into
 adopting Federation and the federated graph, still using the same model where each team feature had
 their own REST API (Kotlin) and Node GraphQL BFF on top. Federation proved to be a great bet,
@@ -281,6 +328,35 @@ GraphQL.
 
 Today, the Hive Gateways federate a combination of Node GraphQL BFFs and Kotlin GraphQL subgraphs
 which are all registered into Hive Console.
+
+```mermaid
+flowchart TB
+  subgraph Subgraphs["GraphQL Subgraphs"]
+    reporting["REPORTING API\nGraphQL"]
+    takeout_domain["TAKEOUT & DELIVERY DOMAIN\nGraphQL"]
+    menus_service["MENUS\nGraphQL"]
+    inventory["INVENTORY\nGraphQL"]
+  end
+
+  gateway["FEDERATED GATEWAY\nGraphQL"]
+
+  subgraph ToastWeb["Toast Web"]
+    homepage["HOMEPAGE"]
+    performance_center["PERFORMANCE CENTER"]
+    takeout_setup["TAKEOUT & DELIVERY SETUP"]
+    menus_app["MENUS"]
+  end
+
+  reporting -- "GraphQL" --> gateway
+  takeout_domain -- "GraphQL" --> gateway
+  menus_service -- "GraphQL" --> gateway
+  inventory -- "GraphQL" --> gateway
+
+  gateway -- "GraphQL" --> homepage
+  gateway -- "GraphQL" --> performance_center
+  gateway -- "GraphQL" --> takeout_setup
+  gateway -- "GraphQL" --> menus_app
+```
 
 ## Next steps for Toast and the Hive Platform team
 
@@ -333,13 +409,19 @@ soon.
 
 ### New Hive Rust Router
 
-The Guild is working hard on [Hive Router](https://the-guild.dev/graphql/hive/blog/welcome-hive-router), their new GraphQL Federation Rust Router.
+The Guild is working hard on
+[Hive Router](https://the-guild.dev/graphql/hive/blog/welcome-hive-router), their new GraphQL
+Federation Rust Router.
 
-It is already the [most correct](https://the-guild.dev/graphql/hive/federation-gateway-audit) and the [most performant](https://the-guild.dev/graphql/hive/federation-gateway-performance) router in the ecosystem.
+It is already the [most correct](https://the-guild.dev/graphql/hive/federation-gateway-audit) and
+the [most performant](https://the-guild.dev/graphql/hive/federation-gateway-performance) router in
+the ecosystem.
 
 Toast is interested in trying it out, waiting the flexibility of Hive Gateway JS.
 
-An initial step would be to try the next upcoming version of Hive Gateway, which will include Hive Router’s Rust query planner and has great performance improvements while keeping the gateway in javascript still.
+An initial step would be to try the next upcoming version of Hive Gateway, which will include Hive
+Router’s Rust query planner and has great performance improvements while keeping the gateway in
+javascript still.
 
 ### MCP and AI integrations and use cases
 
@@ -351,4 +433,7 @@ platform.
 
 ## Conclusion
 
-Toast's experience highlights the value of open, flexible GraphQL tooling for companies scaling fast. Hive enabled them to modernize gradually, improve performance, and reduce costs while keeping development efficient. Looking ahead, both teams continue working closely to support new needs and ensure sustainable growth.
+Toast's experience highlights the value of open, flexible GraphQL tooling for companies scaling
+fast. Hive enabled them to modernize gradually, improve performance, and reduce costs while keeping
+development efficient. Looking ahead, both teams continue working closely to support new needs and
+ensure sustainable growth.
