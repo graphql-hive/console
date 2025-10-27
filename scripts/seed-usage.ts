@@ -109,7 +109,7 @@ function start(args: { instance: HiveClient; schema: GraphQLSchema; queries: Doc
           variableValues: {},
           contextValue: {},
         },
-        randNumber > 95
+        randNumber <= 95
           ? {
               errors: undefined,
             }
