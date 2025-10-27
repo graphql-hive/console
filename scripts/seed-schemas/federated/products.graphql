@@ -46,10 +46,12 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   reviewsScore: Float!
   oldField: String
 }
+
 enum ShippingClass {
   STANDARD
   EXPRESS
 }
+
 type ProductDimension @shareable {
   size: String
   weight: Float

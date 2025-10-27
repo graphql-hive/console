@@ -59,7 +59,7 @@ export function DescriptionInline(props: { description: string }) {
     if (ref.current) {
       setCanExpand(ref.current.scrollHeight > ref.current.clientHeight);
     }
-  }, [ref, props.description]);
+  }, [props.description]);
 
   return (
     <div className="inline-block max-w-screen-sm">
