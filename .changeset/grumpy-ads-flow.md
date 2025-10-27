@@ -2,7 +2,7 @@
 'hive': patch
 ---
 
-Fix issue with native federation public SDL generationaround inaccessible interfaces.
+Fix issue with native federation public SDL generation around inaccessible interfaces.
 
 **Example supergraph:**
 
