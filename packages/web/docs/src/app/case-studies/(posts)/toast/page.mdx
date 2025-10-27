@@ -265,25 +265,21 @@ GraphQL BFF on top.
 
 ```mermaid
 flowchart TB
-  subgraph Domains["Domain Services"]
-    reporting_rest["REPORTING API"]
-    takeout_rest["TAKEOUT & DELIVERY DOMAIN"]
-    menus_rest["MENUS"]
-    inventory_rest["INVENTORY"]
-  end
+  reporting_rest["Reporting API"]
+  takeout_rest["Takeout & Delivery Domain"]
+  menus_rest["Menus"]
+  inventory_rest["Inventory"]
 
-  subgraph BFFs["GraphQL BFFs"]
-    homepage_bff["HOMEPAGE BFF"]
-    metrics_bff["PERFORMANCE METRICS"]
-    takeout_bff["TAKEOUT & DELIVERY SETTINGS SPA"]
-    menus_bff["MENUS"]
-  end
+  homepage_bff["Homepage BFF"]
+  metrics_bff["Performance Metrics"]
+  takeout_bff["Takeout & Delivery Settings SPA"]
+  menus_bff["Menus"]
 
   subgraph ToastWeb["Toast Web"]
-    homepage["HOMEPAGE"]
-    performance["PERFORMANCE CENTER"]
-    takeout_setup["TAKEOUT & DELIVERY SETUP"]
-    menus_app["MENUS"]
+    homepage["Homepage"]
+    performance["Performance Center"]
+    takeout_setup["Takeout & Delivery Setup"]
+    menus_app["Menus"]
   end
 
   homepage -- "GraphQL" --> homepage_bff
@@ -331,20 +327,18 @@ which are all registered into Hive Console.
 
 ```mermaid
 flowchart TB
-  subgraph Subgraphs["GraphQL Subgraphs"]
-    reporting["REPORTING API"]
-    takeout_domain["TAKEOUT & DELIVERY DOMAIN"]
-    menus_service["MENUS"]
-    inventory["INVENTORY"]
-  end
+  reporting["Reporting API"]
+  takeout_domain["Takeout & Delivery Domain"]
+  menus_service["Menus"]
+  inventory["Inventory"]
 
-  gateway["FEDERATED GATEWAY"]
+  gateway["Federated Gateway"]
 
   subgraph ToastWeb["Toast Web"]
-    homepage["HOMEPAGE"]
-    performance_center["PERFORMANCE CENTER"]
-    takeout_setup["TAKEOUT & DELIVERY SETUP"]
-    menus_app["MENUS"]
+    homepage["Homepage"]
+    performance_center["Performance Center"]
+    takeout_setup["Takeout & Delivery Setup"]
+    menus_app["Menus"]
   end
 
   reporting -- "GraphQL" --> gateway
