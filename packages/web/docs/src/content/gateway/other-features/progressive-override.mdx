@@ -32,7 +32,7 @@ The `progressiveOverride` configuration in the gateway is the mechanism that det
 are active for any given request.
 
 ```ts filename="gateway-config.ts"
-import { defineConfig, type GatewayContext } from '@hive/gateway'
+import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
 
 export default defineConfig({
   progressiveOverride(label: string, context: GatewayContext) {
