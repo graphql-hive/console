@@ -1,9 +1,10 @@
+import { ProjectManager } from '../../project/providers/project-manager';
 import { OIDCIntegrationsProvider } from '../providers/oidc-integrations.provider';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
-  'oidcIntegration' | 'viewerCanManageOIDCIntegration'
+  'oidcIntegration' | 'projectsForResourceSelector' | 'viewerCanManageOIDCIntegration'
 > = {
   oidcIntegration: async (organization, _, { injector }) => {
     if (injector.get(OIDCIntegrationsProvider).isEnabled() === false) {
@@ -18,5 +19,10 @@ export const Organization: Pick<
     return injector
       .get(OIDCIntegrationsProvider)
       .canViewerManageIntegrationForOrganization(organization.id);
+  },
+  projectsForResourceSelector: async (organization, _, { injector }) => {
+    return await injector
+      .get(OIDCIntegrationsProvider)
+      .getProjectsForResourceSelector({ organizationId: organization.id });
   },
 };

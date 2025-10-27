@@ -85,6 +85,7 @@ const OIDCIntegrationSection_OrganizationFragment = graphql(`
       ...SelectedPermissionOverview_PermissionGroupFragment
     }
     ...ResourceSelector_OrganizationFragment
+    ...OIDCResourceSelector_OrganizationFragment
     oidcIntegration {
       id
       ...UpdateOIDCIntegration_OIDCIntegrationFragment
@@ -844,10 +845,12 @@ function OIDCDefaultResourceSelector(props: {
       {(debouncedMutate.isPending() || isMutating) && (
         <Spinner className="absolute right-0 top-0" />
       )}
+
       <ResourceSelector
         selection={selection}
         onSelectionChange={props.disabled ? () => void 0 : _setSelection}
         organization={props.organization}
+        oidc
       />
     </div>
   );

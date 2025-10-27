@@ -1,9 +1,23 @@
 import { gql } from 'graphql-modules';
 
 export default gql`
+  type ProjectForResourceSelector {
+    id: ID!
+    slug: String!
+    targets: [TargetForResourceSelector!]!
+  }
+
+  type TargetForResourceSelector {
+    id: ID!
+    slug: String!
+    services: [String!]!
+    appDeployments: [String!]!
+  }
+
   extend type Organization {
     viewerCanManageOIDCIntegration: Boolean!
     oidcIntegration: OIDCIntegration
+    projectsForResourceSelector: [ProjectForResourceSelector]
   }
 
   extend type User {
