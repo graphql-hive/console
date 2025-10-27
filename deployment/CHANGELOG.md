@@ -1,5 +1,51 @@
 # hive
 
+## 8.5.1
+
+### Patch Changes
+
+- [#7177](https://github.com/graphql-hive/console/pull/7177)
+  [`1f7f195`](https://github.com/graphql-hive/console/commit/1f7f1951b2b1ef76d0853a6588e39458e5e1a982)
+  Thanks [@User](https://github.com/User), [@User](https://github.com/User)! - Fix issue with native
+  federation public SDL generation around inaccessible interfaces.
+
+  **Example supergraph:**
+
+  ```
+  schema
+    @link(
+      url: "https://specs.apollo.dev/federation/v2.3"
+      import: ["@inaccessible"]
+    ) {
+    query: Query
+  }
+
+  type Query {
+
+  }
+
+  interface Node @inaccessible {
+    id: ID!
+  }
+
+  type User implements Node {
+    id: ID!
+  }
+  ```
+
+  **Public Schema SDL output:**
+
+  ```diff
+    type Query {
+
+    }
+
+  - type User implements Node {
+  + type User {
+      id: ID!
+    }
+  ```
+
 ## 8.5.0
 
 ### Minor Changes
