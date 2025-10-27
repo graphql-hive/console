@@ -1,0 +1,95 @@
+# Gateway Tester
+
+`@graphql-hive/gateway-testing` lets you spin up a fully wired Hive Gateway inside your tests. It
+boots the gateway with mocked subgraphs or a proxy target and gives you helpers to execute
+operations without touching the network.
+
+Under the hood every subgraph call goes through a shared `fetch` implementation powered by
+[@whatwg-node/server](https://github.com/ardatan/whatwg-node/tree/master/packages/server). No HTTP
+servers are started, so there is nothing to bind, close, or clean up—requests flow entirely through
+`Request => Response` functions.
+
+## Install
+
+```sh npm2yarn
+npm i -D @graphql-hive/gateway-testing
+```
+
+## Quick start
+
+```ts filename="gateway.spec.ts"
+import { expect, vi } from 'vitest'
+import { createGatewayTester } from '@graphql-hive/gateway-testing'
+
+const onFetchFn = vi.fn()
+
+const books = {
+  name: 'books',
+  schema: {
+    typeDefs: /* GraphQL */ `
+      type Query {
+        book(id: ID!): Book
+      }
+
+      type Book {
+        id: ID!
+        title: String!
+      }
+    `,
+    resolvers: {
+      Query: {
+        book: (_, { id }) => ({ id, title: 'The Hive Handbook' })
+      }
+    }
+  }
+}
+
+await using gateway = createGatewayTester({
+  subgraphs: [books],
+  plugins: () => [
+    {
+      onFetch({ executionRequest }) {
+        onFetchFn(executionRequest?.operationName)
+      }
+    }
+  ]
+})
+
+await expect(
+  gateway.execute({
+    query: /* GraphQL */ `
+      query Test {
+        book(id: "1") {
+          title
+        }
+      }
+    `
+  })
+).resolves.toStrictEqual({
+  data: {
+    book: {
+      title: 'The Hive Handbook'
+    }
+  }
+})
+
+expect(onFetchFn).toHaveBeenCalledWith('Test')
+```
+
+Use `gateway.execute` when you want typed GraphQL results, or `gateway.fetch` if you prefer to issue
+raw HTTP calls and inspect headers. Both talk to the in-memory gateway, so your tests stay fast and
+isolated. The spy plugin in the snippet proves gateway plugins fire exactly as they would in a live
+deployment.
+
+Disposal is optional; nothing keeps listening in the background, but the tester implements
+`AsyncDisposable` if you prefer to integrate with `using` blocks.
+
+## Pick the right mode
+
+- `supergraph`: load an actual supergraph configuration when you want to mirror production.
+- `subgraphs`: pass inline schemas and let Hive compose a supergraph for you (best for unit-style
+  gateway tests).
+- `proxy`: point the gateway at a single schema and capture how requests and headers flow through.
+
+All gateway plugins and hooks still run in normal order in each mode, so you can exercise
+authentication, observability, and other logic exactly as you would in production.
