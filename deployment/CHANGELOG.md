@@ -6,7 +6,7 @@
 
 - [#7177](https://github.com/graphql-hive/console/pull/7177)
   [`1f7f195`](https://github.com/graphql-hive/console/commit/1f7f1951b2b1ef76d0853a6588e39458e5e1a982)
-  Thanks [@User](https://github.com/User), [@User](https://github.com/User)! - Fix issue with native
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue with native
   federation public SDL generation around inaccessible interfaces.
 
   **Example supergraph:**
@@ -21,7 +21,7 @@
   }
 
   type Query {
-
+    user: User!
   }
 
   interface Node @inaccessible {
@@ -37,7 +37,7 @@
 
   ```diff
     type Query {
-
+      user: User!
     }
 
   - type User implements Node {
