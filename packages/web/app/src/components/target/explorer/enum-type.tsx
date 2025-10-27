@@ -1,3 +1,4 @@
+import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
@@ -21,9 +22,6 @@ const GraphQLEnumTypeComponent_TypeFragment = graphql(`
       description
       isDeprecated
       deprecationReason
-      usage {
-        ...SchemaExplorerUsageStats_UsageFragment
-      }
       supergraphMetadata {
         metadata {
           name
@@ -103,6 +101,14 @@ export function GraphQLEnumTypeComponent(props: {
               </DeprecationNote>
               {value.description ? <DescriptionInline description={value.description} /> : null}
             </div>
+            {value.supergraphMetadata ? (
+              <SupergraphMetadataList
+                targetSlug={props.targetSlug}
+                projectSlug={props.projectSlug}
+                organizationSlug={props.organizationSlug}
+                supergraphMetadata={value.supergraphMetadata}
+              />
+            ) : null}
           </GraphQLTypeCardListItem>
         ))}
       </div>
