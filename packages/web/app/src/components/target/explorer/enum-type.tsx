@@ -73,10 +73,6 @@ export function GraphQLEnumTypeComponent(props: {
     return matchesFilter;
   });
 
-  const firstItemUsage = useMemo(() => {
-    return values[0]?.usage;
-  }, [values]);
-
   return (
     <GraphQLTypeCard
       name={ttype.name}
@@ -87,7 +83,7 @@ export function GraphQLEnumTypeComponent(props: {
       projectSlug={props.projectSlug}
       organizationSlug={props.organizationSlug}
       totalRequests={props.totalRequests}
-      usage={firstItemUsage}
+      usage={ttype.usage}
     >
       <div className="flex flex-col">
         {values.map((value, i) => (
