@@ -237,7 +237,7 @@ export interface personal_access_tokens {
   hash: string;
   id: string;
   organization_id: string;
-  permissions: Array<string>;
+  permissions: Array<string> | null;
   title: string;
   user_id: string;
 }
