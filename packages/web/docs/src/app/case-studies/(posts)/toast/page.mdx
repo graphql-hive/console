@@ -138,7 +138,7 @@ without the need of plans or vendor lock like GraphQL Subscriptions, Defer and o
 
 ### GraphOS vs. Hive Features
 
-Paid Enterprise-Exclusive Features for Apollo users, that Hive offers for free:
+Paid enterprise-exclusive features for Apollo users that Hive provides for free:
 
 - **Unlimited Total Users:** Supports a limitless number of developers and consumers.
 - **User Roles and Permissions:** Full, customizable control over user access of any size and any
@@ -148,18 +148,15 @@ Paid Enterprise-Exclusive Features for Apollo users, that Hive offers for free:
 - **Extensibility:** Enables running custom logic on the Hive Gateway for advanced use cases.
 - **Telemetry:** Deep, custom observability data collection.
 - **SSO & SAML:** Enterprise-grade Single Sign-On integration.
-- **Business Support:** **24x7x365** technical support with the highest tier SLA (Service Level
-  Agreement).
-- **Professional Services & Premium Support Packages:** Access to dedicated The Guild experts for
-  implementation and mission-critical systems.
+- **Business Support:** **24x7x365** technical support with top-tier SLAs (Service Level Agreements).
+- **Professional Services & Premium Support Packages:** Access to dedicated The Guild experts for implementation and mission-critical systems.
 
-Things Apollo offers for free too, and we do too
+**Features Apollo offers for free – and Hive does too:**
 
 - **Demand Control (Cost-based Limits):** Protects the graph by limiting expensive operations.
 - **Operation-based Limits:** Sets limits on query depth, complexity, etc.
-- **Request Authorization & JWT Authentication:** Built-in security and access control features at
-  the router level.
-- **Traffic Shaping:** Features like deduplication and rate limiting.
+- **Request Authorization & JWT Authentication:** Built-in security and access control features at the router level.
+- **Traffic Shaping:** Features such as deduplication and rate limiting.
 - **APQ Caching** (often metered/add-on).
 - **Entity Caching** (often metered/add-on).
 - **Mesh Compose (compared to Apollo Connectors):** Tools for connecting to legacy REST/other data
@@ -193,7 +190,7 @@ developer to learn and get inspired by, for their own journey.
       <Table.Cell>Apps, consumers and clients of the graph</Table.Cell>
       <Table.Cell>
         - 350 micro frontends
-        - apollo Client + Codegen
+        - Apollo Client + Codegen
         - native mobile
         - point for improvement — Currently they are not utilizing fragment based co-location too
         much.
@@ -241,25 +238,20 @@ developer to learn and get inspired by, for their own journey.
     <Table.Row>
       <Table.Cell>Local development process and tooling</Table.Cell>
       <Table.Cell>
-        Toast developed their own tool for efficient local development called "PrepStation". The tool deeply integrates with Hive Console, Storybook, GraphQL Codegen and Yoga Server to
-        seamlessly merge local and remote subgraphs and compose them locally.
+        Toast developed their own tool for efficient local development called "PrepStation". The tool deeply integrates with Hive Console, Storybook, GraphQL Codegen and Yoga Server to seamlessly merge local and remote subgraphs and compose them locally.
 
         It then takes the composed Supergraph and creates a mocked local gateway instance.
 
-        Using this setup, feature teams can prototype and work locally with upcoming versions of the
-        graph, and create full prototypes to stakeholders before production or backend teams need to
-        do any work. The Toast team gave a [great
-        talk](https://graphql.org/conf/2024/schedule/19cf965c68cfae3c7c19c6a9966bcadf/) about it at
-        GraphQL Conf.
+        Using this setup, feature teams can prototype and work locally with upcoming versions of the graph, and create full prototypes to stakeholders before production or backend teams need to do any work. The Toast team gave a [great talk](https://graphql.org/conf/2024/schedule/19cf965c68cfae3c7c19c6a9966bcadf/) about it at GraphQL Conf.
       </Table.Cell>
     </Table.Row>
 
   </tbody>
 </Table>
 
-### How they got to this architecture
+## How they got to this architecture
 
-#### Initial Approach
+### Initial Approach
 
 Toast had a long evolution to get to where they are today. Some of it was already discussed at the
 beginning of the article, but to expand a bit, they started with one big REST BFF, which grew into
@@ -278,7 +270,7 @@ application – a high throughput, simpler auth solution. Over the years, Toast 
 which merged and federated together into the Supergraph. But as Federated GraphQL BFFs grew by the
 numbers, that also led to logic creeping into the BFF layer.
 
-#### Current Architecture
+### Current Architecture
 
 The next evolution was for the Kotlin side of the team to gradually remove REST, replace it with
 GraphQL and directly federate into Hive Gateway, without the need of a Node GraphQL BFF in between.
@@ -339,6 +331,16 @@ improved experience.
 Toast gave us tons of valuable feedback and we hope to get an exciting new experience to them very
 soon.
 
+### New Hive Rust Router
+
+The Guild is working hard on [Hive Router](https://the-guild.dev/graphql/hive/blog/welcome-hive-router), their new GraphQL Federation Rust Router.
+
+It is already the [most correct](https://the-guild.dev/graphql/hive/federation-gateway-audit) and the [most performant](https://the-guild.dev/graphql/hive/federation-gateway-performance) router in the ecosystem.
+
+Toast is interested in trying it out, waiting the flexibility of Hive Gateway JS.
+
+An initial step would be to try the next upcoming version of Hive Gateway, which will include Hive Router’s Rust query planner and has great performance improvements while keeping the gateway in javascript still.
+
 ### MCP and AI integrations and use cases
 
 Toast is very forward-looking and already has many AI use cases, both internal and customer-facing.
@@ -346,3 +348,7 @@ Toast is very forward-looking and already has many AI use cases, both internal a
 We work hard to make sure they get everything they need for these use cases from their API layer.
 That includes reviewing existing solutions, finding the missing points and supporting those in our
 platform.
+
+## Conclusion
+
+Toast's experience highlights the value of open, flexible GraphQL tooling for companies scaling fast. Hive enabled them to modernize gradually, improve performance, and reduce costs while keeping development efficient. Looking ahead, both teams continue working closely to support new needs and ensure sustainable growth.
