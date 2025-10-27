@@ -33,6 +33,7 @@
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
     "oclif:pack": "npm pack && pnpm oclif pack tarballs --no-xz",
+    "oclif:readme": "pnpm oclif readme && npx prettier --write README.md",
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
     "prebuild": "tsc --build --clean",

@@ -24,6 +24,7 @@ Load the Supergraph schema from [Hive Console](../../schema-registry) CDN.
 
 - **Type:** `string`
 - **Required:** Yes
+- **Environment Variable:** `HIVE_CDN_ENDPOINT`
 
 The [_Hive CDN Endpoint_](../../schema-registry/get-started/apollo-federation#cdn-access) of your
 target.
@@ -39,6 +40,7 @@ supergraph:
 
 - **Type:** `string`
 - **Required:** Yes
+- **Environment Variable:** `HIVE_CDN_KEY`
 
 The [_Hive CDN key/token_](../../schema-registry/management/targets#creating-a-cdn-access-token) of
 your target.
@@ -55,6 +57,7 @@ supergraph:
 - **Type:** `string`
 - **Required:** No
 - **Default:** `10s`
+- **Environment Variable:** `HIVE_CDN_POLL_INTERVAL`
 
 A human-readable string representing the interval at which the router should poll Hive CDN for
 changes.
@@ -114,6 +117,7 @@ Load the schema from a local file.
 
 - **Type:** `string`
 - **Required:** Yes
+- **Environment Variable:** `SUPERGRAPH_FILE_PATH`
 
 Path to your supergraph schema file. Can be absolute or relative to where you're running the router.
 
