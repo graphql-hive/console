@@ -7,6 +7,9 @@ title: 'Configuration reference'
 You can configure Hive Router using a YAML, JSON, or TOML file (by default, `router.config.yaml`).
 We'll use YAML for all examples in this documentation since it's the most readable.
 
+Some configuration variables can be overridden at runtime using
+[environment variables](./environment-variables).
+
 This page covers all the main configuration options available. Each option links to a detailed page
 that explains how to use that feature.
 
@@ -18,6 +21,8 @@ that explains how to use that feature.
 - [`log`](./configuration/log): Control what the router logs and how it formats log messages.
 - [`override_subgraph_urls`](./configuration/override_subgraph_urls): Route requests to different
   subgraph URLs dynamically.
+- [`override_labels`](./configuration/override_labels): Dynamically activate or deactivate
+  progressive override labels.
 - [`query_planner`](./configuration/query_planner): Add safety limits and debugging for query
   planning.
 - [`supergraph`](./configuration/supergraph): Tell the router where to find your supergraph schema.

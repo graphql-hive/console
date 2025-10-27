@@ -198,6 +198,7 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
 
     ```bash
     HIVE_TOKEN="..." \
+    HIVE_TARGET_ID= "..." \
     HIVE_CDN_ENDPOINT="..." \
     HIVE_CDN_KEY="..." \
       ./router --config router.yaml
@@ -213,6 +214,7 @@ You can send usage reporting to Hive registry by enabling `hive.usage` plugin in
       ```bash
       docker run -p 4000:4000 \
         --env HIVE_TOKEN="..." \
+        --env HIVE_TARGET_ID="..." \
         --env HIVE_CDN_ENDPOINT="..." \
         --env HIVE_CDN_KEY="..." \
         --mount "type=bind,source=/home/usr/src/hive/router.yaml,target=/dist/config/router.yaml" \
@@ -288,6 +290,15 @@ plugins:
     #  Default: true
     # enabled: true
     #
+    #  Registry token to use instead of HIVE_TOKEN for usage reporting.
+    # registry_token: "hvo1/xxxxxxx"
+    #
+    #  Endpoint for the usage reporting.
+    # registry_usage_endpoint: "https://app.graphql-hive.com/usage"
+    #
+    #  The target for which usage should be reported.
+    # target: "the-guild/graphql-hive/production"
+    #
     #  Sample rate to determine sampling.
     #  0.0 = 0% chance of being sent
     #  1.0 = 100% chance of being sent.
@@ -306,9 +317,17 @@ plugins:
     #  Default: 1000
     # buffer_size: 1000
     #
+    #  A timeout for the entire request to the usage reporting endpoint in seconds
+    #  Default: 15
+    # connect_timeout: 15
+    #
     #  Accepts invalid SSL certificates
     #  Default: false
     # accept_invalid_certs: true
+    #
+    #  Frequency of flushing the buffer to the server in seconds
+    #  Default: 5
+    # flush_interval: 5
 ```
 
 ## Persisted Documents (App Deployments)
