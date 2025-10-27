@@ -81,8 +81,9 @@ raw HTTP calls and inspect headers. Both talk to the in-memory gateway, so your 
 isolated. The spy plugin in the snippet proves gateway plugins fire exactly as they would in a live
 deployment.
 
-Disposal is optional; nothing keeps listening in the background, but the tester implements
-`AsyncDisposable` if you prefer to integrate with `using` blocks.
+The tester implements `AsyncDisposable`. While no persistent network listeners are created, it's a
+best practice to use `await using` blocks or manual disposal to ensure all internal resources are
+properly cleaned up after each test.
 
 ## Pick the right mode
 
