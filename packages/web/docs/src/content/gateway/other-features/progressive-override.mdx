@@ -34,7 +34,7 @@ are active for any given request.
 ```ts filename="gateway-config.ts"
 import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
 
-export default defineConfig({
+export const gatewayConfig = defineConfig({
   progressiveOverride(label: string, context: GatewayContext) {
     if (label === 'use-fulfillment-service') {
       // Activate for 10% of requests
