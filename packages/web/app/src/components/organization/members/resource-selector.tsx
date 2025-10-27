@@ -50,6 +50,30 @@ const ResourceSelector_OrganizationProjectTargestQuery = graphql(`
   }
 `);
 
+const OIDCResourceSelector_OrganizationFragment = graphql(`
+  fragment OIDCResourceSelector_OrganizationFragment on Organization {
+    projectsForResourceSelector {
+      id
+      slug
+      targets {
+        id
+        slug
+        services
+        appDeployments
+      }
+    }
+  }
+`);
+
+// @todo use this!!
+const ResourceSelector_OIDCResourceQuery = graphql(`
+  query ResourceSelector_OIDCResourceQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...OIDCResourceSelector_OrganizationFragment
+    }
+  }
+`);
+
 const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
   query ResourceSelector_OrganizationProjectTargetQuery(
     $organizationSlug: String!
@@ -141,6 +165,7 @@ export function ResourceSelector(props: {
   organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
   selection: ResourceSelection;
   onSelectionChange: (selection: ResourceSelection) => void;
+  oidc?: boolean;
 }) {
   const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
   const [breadcrumb, setBreadcrumb] = useState(
@@ -230,6 +255,8 @@ export function ResourceSelector(props: {
       },
     };
   }, [organization.projects.edges, props.selection, breadcrumb?.projectId]);
+
+  // @todo (conditionally???) use OIDCResourceSelector_OrganizationFragment
 
   const [organizationProjectTargets] = useQuery({
     query: ResourceSelector_OrganizationProjectTargestQuery,

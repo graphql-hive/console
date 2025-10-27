@@ -508,6 +508,15 @@ export class OIDCIntegrationsProvider {
 
     return this.pubSub.subscribe('oidcIntegrationLogs', integration.id);
   }
+
+  async getProjectsForResourceSelector(args: { organizationId: string }) {
+    const isAllowed = this.canViewerManageIntegrationForOrganization(args.organizationId);
+    if (!isAllowed) {
+      this.session.raise('oidc:modify');
+    }
+
+    return this.storage.getProjectsForResourceSelector({ organizationId: args.organizationId });
+  }
 }
 
 const OIDCIntegrationClientIdModel = zod

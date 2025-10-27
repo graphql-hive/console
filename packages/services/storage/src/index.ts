@@ -22,6 +22,7 @@ import type {
   Target,
   TargetSettings,
 } from '@hive/api';
+import { ResourceAssignmentModel } from '@hive/api/modules/organization/lib/resource-assignment-model';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
 import {
@@ -2201,6 +2202,27 @@ export async function createStorage(
       );
 
       return result.rows.map(transformSchema);
+    },
+    async getSchemaNamesOfVersion({ versionId: version }) {
+      const result = await pool.query<
+        Pick<OverrideProp<schema_log, 'action', 'PUSH'>, 'service_name'>
+      >(
+        sql`/* getSchemaNamesOfVersion */
+          SELECT
+            lower(sl.service_name) as service_name
+          FROM schema_version_to_log AS svl
+          LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
+          LEFT JOIN projects as p ON (p.id = sl.project_id)
+          WHERE
+            svl.version_id = ${version}
+            AND sl.action = 'PUSH'
+            AND p.type != 'CUSTOM'
+          ORDER BY
+            sl.created_at DESC
+        `,
+      );
+
+      return result.rows.map(s => s.service_name).filter(Boolean) as string[];
     },
     async getServiceSchemaOfVersion(args) {
       const result = await pool.maybeOne<
@@ -4611,6 +4633,51 @@ export async function createStorage(
         organizationId: args.organizationId,
       });
     },
+    async getProjectsForResourceSelector(args) {
+      const projects = await this.getProjects({ organizationId: args.organizationId });
+
+      return await Promise.all(
+        projects.map(async p => {
+          const targets = await this.getTargets({
+            organizationId: args.organizationId,
+            projectId: p.id,
+          });
+          return {
+            id: p.id,
+            slug: p.slug,
+            targets: await Promise.all(
+              targets.map(async t => {
+                const latest = await this.getMaybeLatestValidVersion({ targetId: t.id });
+                let services: string[] | undefined;
+                if (latest) {
+                  services = await storage.getSchemaNamesOfVersion({
+                    versionId: latest.id,
+                  });
+                }
+
+                const apps = await this.pool.query<{ name: string }>(
+                  sql`
+                  SELECT DISTINCT ON ("name")
+                    "name"
+                  FROM
+                    "app_deployments"
+                  WHERE
+                    "target_id" = ${t.id}
+                    AND "retired_at" IS NULL
+                `,
+                );
+                return {
+                  id: t.id,
+                  slug: t.slug,
+                  services: services ?? [],
+                  appDeployments: apps.rows.map(a => a.name),
+                };
+              }),
+            ),
+          };
+        }),
+      );
+    },
     pool,
   };
 
@@ -4672,7 +4739,7 @@ const OktaIntegrationBaseModel = zod.object({
   client_secret: zod.string(),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
-  default_assigned_resources: zod.any().nullable(),
+  default_assigned_resources: ResourceAssignmentModel.nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
