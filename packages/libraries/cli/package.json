@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.51.0",
+  "version": "0.52.0",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
@@ -33,6 +33,7 @@
     "build": "tsc --build",
     "build:watch": "tsc --build --watch",
     "oclif:pack": "npm pack && pnpm oclif pack tarballs --no-xz",
+    "oclif:readme": "pnpm oclif readme && npx prettier --write README.md",
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
     "prebuild": "tsc --build --clean",
@@ -59,7 +60,7 @@
     "@oclif/core": "^3.26.6",
     "@oclif/plugin-help": "6.0.22",
     "@oclif/plugin-update": "4.2.13",
-    "@theguild/federation-composition": "0.20.1",
+    "@theguild/federation-composition": "0.20.2",
     "colors": "1.4.0",
     "env-ci": "7.3.0",
     "graphql": "^16.8.1",

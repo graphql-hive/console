@@ -1,22 +1,23 @@
 extend schema
   @link(
     url: "https://specs.apollo.dev/federation/v2.3"
-    import: ["@key", "@shareable", "@inaccessible", "@tag"]
+    import: ["@key", "@shareable", "@inaccessible", "@tag", "@external"]
   )
-directive @myDirective(a: String!) on FIELD_DEFINITION
-directive @hello on FIELD_DEFINITION
+
+directive @example(text: String!) on FIELD_DEFINITION
 
 type Query {
   allProducts: [ProductItf]
-  product(id: ID!): ProductItf
+  product(upc: String!): ProductItf
+  topProducts(first: Int = 5): [ProductItf]
 }
 
 interface ProductItf implements SkuItf {
-  id: ID!
+  upc: String!
   sku: String
   name: String
   package: String
-  variation: ProductVariation
+  variations: [ProductItf]
   dimensions: ProductDimension
   createdBy: User
   hidden: String @inaccessible
@@ -27,15 +28,18 @@ interface SkuItf {
   sku: String
 }
 
-type Product implements ProductItf & SkuItf
-  @key(fields: "id")
-  @key(fields: "sku package")
-  @key(fields: "sku variation { id }") {
-  id: ID! @tag(name: "hi-from-products")
-  sku: String
-  name: String @hello
+type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sku package") {
+  """
+  Universal Product Code. A standardized numeric global identifier
+  """
+  upc: String!
+  """
+  SKUs are unique to the company and are used internally. Alphanumeric.
+  """
+  sku: String @tag(name: "internal")
+  name: String @example(text: "Foo Bar")
   package: String
-  variation: ProductVariation
+  variations: [ProductItf]
   dimensions: ProductDimension
   createdBy: User
   hidden: String
@@ -46,15 +50,12 @@ enum ShippingClass {
   STANDARD
   EXPRESS
 }
-type ProductVariation {
-  id: ID!
-  name: String
-}
 type ProductDimension @shareable {
   size: String
   weight: Float
 }
-type User @key(fields: "email") {
-  email: ID!
+
+type User @key(fields: "id") {
+  id: ID!
   totalProductsCreated: Int @shareable
 }

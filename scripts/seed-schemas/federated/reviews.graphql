@@ -1,28 +1,28 @@
 extend schema
   @link(
     url: "https://specs.apollo.dev/federation/v2.3"
-    import: ["@key", "@shareable", "@override"]
+    import: ["@key", "@override", "@external", "@provides"]
   )
-
-type Product implements ProductItf @key(fields: "id") {
-  id: ID!
-  reviewsCount: Int!
-  reviewsScore: Float! @shareable @override(from: "products")
-  reviews: [Review!]!
-}
-
-interface ProductItf {
-  id: ID!
-  reviewsCount: Int!
-  reviewsScore: Float!
-  reviews: [Review!]!
-}
 
 type Query {
   review(id: Int!): Review
 }
 
-type Review {
-  id: Int!
-  body: String!
+type Review @key(fields: "id") {
+  id: ID!
+  body: String
+  author: User
+  product: Product
+}
+
+extend type User @key(fields: "id") {
+  id: ID!
+  reviews: [Review]
+}
+
+extend type Product @key(fields: "upc") {
+  upc: String!
+  reviews: [Review]
+  reviewsCount: Int!
+  reviewsScore: Float! @override(from: "products")
 }

@@ -397,21 +397,21 @@ export class InvalidTargetError extends HiveCLIError {
 }
 
 export class SchemaNotFoundError extends HiveCLIError {
-  constructor(actionId?: string) {
+  constructor(commit?: string) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.ARTIFACT_FETCH, 0),
-      `No schema found${actionId ? ` for action id ${actionId}.` : '.'}`,
+      `No schema found${commit ? ` for commit ${commit}.` : '.'}`,
     );
   }
 }
 
 export class InvalidSchemaError extends HiveCLIError {
-  constructor(actionId?: string) {
+  constructor(commit?: string) {
     super(
       ExitCode.ERROR,
       errorCode(ErrorCategory.ARTIFACT_FETCH, 1),
-      `Schema is invalid${actionId ? ` for action id ${actionId}.` : '.'}`,
+      `Schema is invalid${commit ? ` for commit ${commit}.` : '.'}`,
     );
   }
 }

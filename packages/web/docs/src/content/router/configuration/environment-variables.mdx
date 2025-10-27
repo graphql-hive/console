@@ -1,0 +1,34 @@
+---
+title: 'Environment Variables'
+---
+
+# Environment Variables
+
+## Available Environment Variables
+
+The following environment variables are accepted by the router, and they override other
+configurations that can be set in the router's configuration file (`router.config.yaml`):
+
+| Name                     | Accepted Values                                      | Overrides (YAML)                                               |
+| ------------------------ | ---------------------------------------------------- | -------------------------------------------------------------- |
+| `LOG_LEVEL`              | `trace` / `debug` / `info` / `warn` / `error`        | [`log.level`](./log#level)                                     |
+| `LOG_FORMAT`             | `json` / `pretty-tree` / `pretty-compact`            | [`log.format`](./log#format)                                   |
+| `LOG_FILTER`             | `string`                                             | [`log.filter`](./log#filter)                                   |
+| `GRAPHIQL_ENABLED`       | `true` / `false`                                     | [`graphiql.enabled`](./graphiql#enabled)                       |
+| `PORT`                   | `number` (port number)                               | [`http.port`](./http#port)                                     |
+| `HOST`                   | `string` (host name or IP address)                   | [`http.host`](./http#host)                                     |
+| `SUPERGRAPH_FILE_PATH`   | `string` (relative or absolute path to a local file) | [`supergraph[file].path`](./supergraph#path)                   |
+| `HIVE_CDN_ENDPOINT`      | `string` (full url to Hive CDN supergraph artifact)  | [`supergraph[hive].endpoint`](./supergraph#endpoint)           |
+| `HIVE_CDN_KEY`           | `string` (Hive CDN key)                              | [`supergraph[hive].key`](./supergraph#key)                     |
+| `HIVE_CDN_POLL_INTERVAL` | `string` (human-readable, for example: `10s`)        | [`supergraph[hive].poll_interval`](./supergraph#poll_interval) |
+
+> In cases where a configuration file (`router.config.yaml`) is used with environment variables at
+> the same time, environment variables will only override the specific configuration values.
+
+## Additional Variables
+
+In addition, you may specify the following environment variables:
+
+| Name                      | Accepted Values                                      | Description                                          |
+| ------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
+| `ROUTER_CONFIG_FILE_PATH` | `string` (relative or absolute path to a local file) | Overrides the path to the router configuration file. |

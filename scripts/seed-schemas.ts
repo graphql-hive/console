@@ -83,7 +83,7 @@ const publishMutationDocument =
   `;
 
 async function publishSchema(args: { sdl: string; service?: string; target?: string }) {
-  let res = await fetch(graphqlEndpoint, {
+  const response = await fetch(graphqlEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -103,7 +103,14 @@ async function publishSchema(args: { sdl: string; service?: string; target?: str
       },
     }),
   }).then(res => res.json());
-  console.log(JSON.stringify(res, null, 2));
+  return response as {
+    data: {
+      schemaPublish: {
+        valid: boolean;
+      } | null;
+    } | null;
+    errors?: any[];
+  };
 }
 
 async function single() {
@@ -111,10 +118,16 @@ async function single() {
     loaders: [new GraphQLFileLoader()],
   });
   const sdl = printSchema(schema);
-  return publishSchema({
+  const result = await publishSchema({
     sdl,
     target,
   });
+  if (result?.errors || result?.data?.schemaPublish?.valid !== true) {
+    console.error(`Published schema is invalid.`);
+  } else {
+    console.log(`Published successfully.`);
+  }
+  return result;
 }
 
 async function federation() {
@@ -122,23 +135,30 @@ async function federation() {
     loaders: [new GraphQLFileLoader()],
   });
   const uploads = schemaDocs
-    .map(d => {
+    .map(async d => {
       if (!d.rawSDL) {
         console.error(`Missing SDL at "${d.location}"`);
         return null;
       }
       const service = d.location ? parsePath(d.location).name.replaceAll('.', '-') : undefined;
 
-      return publishSchema({
+      const result = await publishSchema({
         sdl: d.rawSDL,
         service,
         target,
       });
+
+      if (result?.errors || result?.data?.schemaPublish?.valid !== true) {
+        console.error(`Published schema is invalid for "${service}".`);
+      } else {
+        console.log(`Published "${service}" successfully.`);
+      }
+
+      return result;
     })
     .filter(Boolean);
 
-  await Promise.all(uploads);
-  // await instance.info();
+  return Promise.all(uploads);
 }
 
 if (isFederation === false) {
