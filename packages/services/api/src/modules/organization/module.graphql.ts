@@ -138,25 +138,23 @@ export default gql`
     title: String!
     description: String
     """
+    Whether the permissions of this access token are inherited from the access token owner.
+    """
+    hasAllPermissionsFromOwner: Boolean!
+    """
     The currently valid permissions for the personal access token.
+
+    Resolves to the access token owners permissions in case no restriction was specified during the creation of the access token.
     """
     permissions: [String!]!
     """
     The currently valid resources for the personal access token.
+
+    Resolves to the access token owners resources in case no restriction was specified during the creation of the access token.
     """
     resources: ResourceAssignment!
     firstCharacters: String!
     createdAt: DateTime!
-    """
-    The permissions that were originally assigned to the access token.
-    They can differ from 'PersonalAccessToken.permissions' as the permissions of the users role can change.
-    """
-    assignedPermissions: [String!]!
-    """
-    The resources that were originally assigned to the access token.
-    They can differ from 'PersonalAccessToken.resources' as the permissions of the users role can change.
-    """
-    assignedResources: [String!]!
   }
 
   type CreatePersonalAccessTokenResultOk {
@@ -809,6 +807,10 @@ export default gql`
     Paginated list of personal access tokens for the user.
     """
     personalAccessTokens(first: Int, after: String): PersonalAccessTokenConnection
+    """
+    Retrieve a personal access token by it's id.
+    """
+    personalAccessToken(id: ID!): PersonalAccessToken
     """
     Permission groups the member is allowed to assign to personal access tokens.
     """

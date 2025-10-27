@@ -1,3 +1,4 @@
+import { PersonalAccessTokens } from '../providers/personal-access-tokens';
 import { ResourceAssignments } from '../providers/resource-assignments';
 import type { PersonalAccessTokenResolvers } from './../../../__generated__/types';
 
@@ -11,22 +12,24 @@ import type { PersonalAccessTokenResolvers } from './../../../__generated__/type
  * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
  */
 export const PersonalAccessToken: PersonalAccessTokenResolvers = {
-  /* Implement PersonalAccessToken resolver logic here */
-  resources: async (accessToken, _arg, { injector }) => {
+  async resources(personalAccessToken, _arg, { injector }) {
+    const resources = await injector
+      .get(PersonalAccessTokens)
+      .getResourcesForPersonalAccessToken(personalAccessToken);
+
     return injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
-      organizationId: accessToken.organizationId,
-      resources: accessToken.assignedResources,
+      organizationId: personalAccessToken.organizationId,
+      resources,
     });
   },
-  assignedPermissions: async (_parent, _arg, _ctx) => {
-    throw new Error('TODO: implement');
-    /* PersonalAccessToken.assignedPermissions resolver is required because PersonalAccessToken.assignedPermissions exists but PersonalAccessTokenMapper.assignedPermissions does not */
+  async permissions(personalAccessToken, _arg, { injector }) {
+    const permissions = await injector
+      .get(PersonalAccessTokens)
+      .getPermissionsForPersonalAccessToken(personalAccessToken);
+
+    return Array.from(permissions);
   },
-  assignedResources: (_parent, _arg, _ctx) => {
-    throw new Error('TODO: implement');
-    /* PersonalAccessToken.assignedResources resolver is required because PersonalAccessToken.assignedResources and PersonalAccessTokenMapper.assignedResources are not compatible */
-  },
-  permissions: (_parent, _arg, _ctx) => {
-    throw new Error('TODO: implement, this needs to be inherited from the user rule');
+  hasAllPermissionsFromOwner: async (personalAccessToken, _arg, _ctx) => {
+    return personalAccessToken.permissions === null;
   },
 };

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import z from 'zod';
+import { cache } from '@hive/api/shared/helpers';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -38,7 +39,6 @@ import {
 })
 export class PersonalAccessTokens {
   logger: Logger;
-  private findById: ReturnType<typeof PersonalAccessTokens.findById>;
 
   constructor(
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
@@ -54,7 +54,6 @@ export class PersonalAccessTokens {
     this.logger = logger.child({
       source: 'OrganizationAccessTokens',
     });
-    this.findById = PersonalAccessTokens.findById({ logger: this.logger, pool });
   }
 
   async create(args: {
@@ -183,17 +182,24 @@ export class PersonalAccessTokens {
   async delete(args: { personalAccessTokenId: string }) {
     const viewer = await this.session.getViewer();
 
-    const record = await this.findById(args.personalAccessTokenId);
+    const record = await PersonalAccessTokens.findById({
+      pool: this.pool,
+      logger: this.logger,
+    })(args.personalAccessTokenId);
 
-    if (record === null || record.userId !== viewer.id) {
-      this.session.raise('accessToken:modify');
+    if (!record) {
+      return null;
     }
 
     await this.session.assertPerformAction({
-      action: 'personalAccessToken:modify',
       organizationId: record.organizationId,
       params: { organizationId: record.organizationId },
+      action: 'personalAccessToken:modify',
     });
+
+    if (record.userId !== viewer.id) {
+      return null;
+    }
 
     await this.pool.query(sql`
       DELETE
@@ -220,11 +226,13 @@ export class PersonalAccessTokens {
     };
   }
 
-  async getPaginated(args: { organizationId: string; first: number | null; after: string | null }) {
-    const viewer = await this.session.getViewer();
+  async getPaginatedForMembership(
+    membership: OrganizationMembership,
+    args: { first: number | null; after: string | null },
+  ) {
     await this.session.assertPerformAction({
-      organizationId: args.organizationId,
-      params: { organizationId: args.organizationId },
+      organizationId: membership.organizationId,
+      params: { organizationId: membership.organizationId },
       action: 'personalAccessToken:modify',
     });
 
@@ -245,8 +253,8 @@ export class PersonalAccessTokens {
       FROM
         "personal_access_tokens"
       WHERE
-        "organization_id" = ${args.organizationId}
-        AND "user_id" = ${viewer.id}
+        "organization_id" = ${membership.organizationId}
+        AND "user_id" = ${membership.userId}
         ${
           cursor
             ? sql`
@@ -298,6 +306,25 @@ export class PersonalAccessTokens {
     };
   }
 
+  async findByIdForMembership(membership: OrganizationMembership, accessTokenId: string) {
+    await this.session.assertPerformAction({
+      organizationId: membership.organizationId,
+      params: { organizationId: membership.organizationId },
+      action: 'personalAccessToken:modify',
+    });
+
+    const accessToken = await PersonalAccessTokens.findById({
+      logger: this.logger,
+      pool: this.pool,
+    })(accessTokenId);
+
+    if (!accessToken || accessToken.userId !== viewer.id) {
+      return null;
+    }
+
+    return accessToken;
+  }
+
   /**
    * Implementation for finding a personal access token from the PG database.
    * It is a static function, so we can use it for the personal access tokens cache.
@@ -345,6 +372,87 @@ export class PersonalAccessTokens {
       return result;
     };
   }
+
+  static computeResources(
+    personalAccessToken: PersonalAccessToken,
+    membership: OrganizationMembership,
+  ) {
+    const legitAssignedResources = intersectResourceAssignments(
+      membership.assignedRole.resources,
+      personalAccessToken.assignedResources,
+    );
+
+    return legitAssignedResources;
+  }
+
+  static computePermissions(
+    personalAccessToken: PersonalAccessToken,
+    membership: OrganizationMembership,
+  ) {
+    // If the access token specifies no permissions, we use the permissions of the member role
+    if (personalAccessToken.permissions === null) {
+      return membership.assignedRole.role.allPermissions;
+    }
+
+    // The roles permission could have been updated.
+    // Because of that we always need to filter this list based on the role.
+    return intersection(
+      new Set(personalAccessToken.permissions),
+      membership.assignedRole.role.allPermissions,
+    );
+  }
+
+  static computeAuthorizationStatements(
+    personalAccessToken: PersonalAccessToken,
+    membership: OrganizationMembership,
+  ) {
+    const permissions = PersonalAccessTokens.computePermissions(personalAccessToken, membership);
+    const resources = PersonalAccessTokens.computeResources(personalAccessToken, membership);
+
+    const permissionsPerLevel = permissionsToPermissionsPerResourceLevelAssignment(permissions);
+    const resolvedResources = resolveResourceAssignment({
+      organizationId: personalAccessToken.organizationId,
+      projects: resources,
+    });
+
+    return translateResolvedResourcesToAuthorizationPolicyStatements(
+      personalAccessToken.organizationId,
+      permissionsPerLevel,
+      resolvedResources,
+    );
+  }
+
+  @cache((...values: Array<string>) => values.join('|'))
+  async getMembership(organizationId: string, userId: string) {
+    const organization = await this.storage.getOrganization({ organizationId });
+    const membership = await this.organizationMembers.findOrganizationMembership({
+      organization,
+      userId,
+    });
+
+    if (!membership) {
+      throw new Error('Should be able to find membership.');
+    }
+
+    return membership;
+  }
+
+  async getResourcesForPersonalAccessToken(personalAccessToken: PersonalAccessToken) {
+    const membership = await this.getMembership(
+      personalAccessToken.organizationId,
+      personalAccessToken.userId,
+    );
+
+    return PersonalAccessTokens.computeResources(personalAccessToken, membership);
+  }
+
+  async getPermissionsForPersonalAccessToken(personalAccessToken: PersonalAccessToken) {
+    const membership = await this.getMembership(
+      personalAccessToken.organizationId,
+      personalAccessToken.userId,
+    );
+    return PersonalAccessTokens.computePermissions(personalAccessToken, membership);
+  }
 }
 
 const personalAccessTokenFields = sql`
@@ -360,58 +468,20 @@ const personalAccessTokenFields = sql`
   , "hash"
 `;
 
-const PersonalAccessTokenModel = z
-  .object({
-    id: z.string().uuid(),
-    organizationId: z.string().uuid(),
-    userId: z.string().uuid(),
-    createdAt: z.string(),
-    title: z.string(),
-    description: z.string(),
-    permissions: z.array(PermissionsModel).nullable(),
-    assignedResources: ResourceAssignmentModel.nullable().transform(
-      value => value ?? { mode: '*' as const, projects: [] },
-    ),
-    firstCharacters: z.string(),
-    hash: z.string(),
-  })
-  .transform(record => ({
-    ...record,
-    // Only used in the context of authorization, we do not need
-    // to compute when querying a list of organization access tokens via the GraphQL API.
-    // Compared to organization access tokens, we also need to filter down the permissions based on the membership
-    resolveAuthorizationPolicyStatements(organizationMembership: OrganizationMembership) {
-      const legitPermissions =
-        // If the access token specifies no permissions, we use the permissions of the member role
-        record.permissions === null
-          ? organizationMembership.assignedRole.role.allPermissions
-          : // The roles permission could have been updated.
-            // Because of that we always need to filter this list based on the role.
-            intersection(
-              new Set(record.permissions),
-              organizationMembership.assignedRole.role.allPermissions,
-            );
-
-      // The membership resources could have been updated.
-      // Because of that we always need to filter this list based on the role.
-      const legitAssignedResources = intersectResourceAssignments(
-        organizationMembership.assignedRole.resources,
-        record.assignedResources,
-      );
-
-      const permissions = permissionsToPermissionsPerResourceLevelAssignment(legitPermissions);
-      const resolvedResources = resolveResourceAssignment({
-        organizationId: record.organizationId,
-        projects: legitAssignedResources,
-      });
-
-      return translateResolvedResourcesToAuthorizationPolicyStatements(
-        record.organizationId,
-        permissions,
-        resolvedResources,
-      );
-    },
-  }));
+const PersonalAccessTokenModel = z.object({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  userId: z.string().uuid(),
+  createdAt: z.string(),
+  title: z.string(),
+  description: z.string(),
+  permissions: z.array(PermissionsModel).nullable(),
+  assignedResources: ResourceAssignmentModel.nullable().transform(
+    value => value ?? { mode: '*' as const, projects: [] },
+  ),
+  firstCharacters: z.string(),
+  hash: z.string(),
+});
 
 export type PersonalAccessToken = z.TypeOf<typeof PersonalAccessTokenModel>;
 

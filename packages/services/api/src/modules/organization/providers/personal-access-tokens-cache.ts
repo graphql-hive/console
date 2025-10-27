@@ -5,6 +5,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import type Redis from 'ioredis';
 import type { DatabasePool } from 'slonik';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
+import type { AuthorizationPolicyStatement } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { PrometheusConfig } from '../../shared/providers/prometheus-config';
@@ -12,16 +13,14 @@ import { REDIS_INSTANCE } from '../../shared/providers/redis';
 import { OrganizationMembers, type OrganizationMembership } from './organization-members';
 import { PersonalAccessTokens, type PersonalAccessToken } from './personal-access-tokens';
 
-export type CachedPersonalAccessToken = Omit<
+export type CachedPersonalAccessToken = Pick<
   PersonalAccessToken,
-  'resolveAuthorizationPolicyStatements'
+  'id' | 'userId' | 'organizationId' | 'hash'
 > & {
-  authorizationPolicyStatements: ReturnType<
-    PersonalAccessToken['resolveAuthorizationPolicyStatements']
-  >;
+  authorizationPolicyStatements: Array<AuthorizationPolicyStatement>;
 };
 
-type PersonalAccessTokeDeleteInput = Pick<PersonalAccessToken, 'id'>;
+type PersonalAccessTokeDeleteInput = Pick<CachedPersonalAccessToken, 'id'>;
 
 /**
  * Cache for performant PersonalAccessToken lookups.
@@ -65,13 +64,16 @@ export class PersonalAccessTokensCache {
   private makeCachedPersonalAccessToken(
     personalAccessToken: PersonalAccessToken,
     membership: OrganizationMembership,
-  ) {
-    const authorizationPolicyStatements =
-      personalAccessToken.resolveAuthorizationPolicyStatements(membership);
-
+  ): CachedPersonalAccessToken {
     return {
-      ...personalAccessToken,
-      authorizationPolicyStatements,
+      id: personalAccessToken.id,
+      userId: personalAccessToken.userId,
+      organizationId: personalAccessToken.organizationId,
+      hash: personalAccessToken.hash,
+      authorizationPolicyStatements: PersonalAccessTokens.computeAuthorizationStatements(
+        personalAccessToken,
+        membership,
+      ),
     };
   }
 

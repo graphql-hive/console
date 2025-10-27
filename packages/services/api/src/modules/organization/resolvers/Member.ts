@@ -45,8 +45,7 @@ export const Member: MemberResolvers = {
     });
   },
   personalAccessTokens: async (member, args, { injector }) => {
-    return injector.get(PersonalAccessTokens).getPaginated({
-      organizationId: member.organizationId,
+    return injector.get(PersonalAccessTokens).getPaginatedForMembership(member, {
       first: args.first ?? null,
       after: args.after ?? null,
     });
@@ -57,5 +56,8 @@ export const Member: MemberResolvers = {
       PersonalAccessTokenPermissions.permissionGroups,
       member.assignedRole.role.allPermissions,
     );
+  },
+  personalAccessToken: async (member, args, { injector }) => {
+    return injector.get(PersonalAccessTokens).findByIdForMembership(member, args.id);
   },
 };
