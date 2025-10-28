@@ -19,6 +19,7 @@
       box-sizing: content-box;
       max-width: 100%;
       width: var(--article-max-width);
+      margin-inline: auto;
       padding: 0;
     }
 
