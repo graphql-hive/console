@@ -818,10 +818,16 @@ function OIDCDefaultResourceSelector(props: {
     async (args: Parameters<typeof mutate>[0]) => {
       setMutateState('loading');
       await mutate(args)
-        .then(() => {
-          setMutateState('success');
+        .then(data => {
+          if (data.error) {
+            setMutateState('error');
+          } else {
+            setMutateState('success');
+          }
+          return data;
         })
-        .catch((_: unknown) => {
+        .catch((err: unknown) => {
+          console.error(err);
           setMutateState('error');
         });
     },
