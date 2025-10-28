@@ -292,6 +292,7 @@ export class ServiceDeployment {
 
     if (this.options.exposesMetrics) {
       metadata.annotations = {
+        ...metadata.annotations,
         'prometheus.io/port': '10254',
         'prometheus.io/path': '/metrics',
         'prometheus.io/scrape': 'true',
