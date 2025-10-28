@@ -1,5 +1,6 @@
 // Specify the modules our binary should include -- https://twitter.com/YassinEldeeb7/status/1468680104243077128
 mod agent;
+mod consts;
 mod graphql;
 mod persisted_documents;
 mod registry;

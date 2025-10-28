@@ -298,13 +298,13 @@ export function createCLI(tokens: { readwrite: string; readonly: string }) {
     ]);
   }
 
-  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; actionId?: string }) {
+  async function fetchCmd(input: { type: 'subgraphs' | 'supergraph' | 'sdl'; commit?: string }) {
     const cmd = schemaFetch([
       '--token',
       tokens.readwrite,
       '--type',
       input.type,
-      ...(input.actionId ? [input.actionId] : []),
+      ...(input.commit ? [input.commit] : []),
     ]);
 
     return cmd;

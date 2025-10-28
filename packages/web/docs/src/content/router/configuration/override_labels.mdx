@@ -1,0 +1,113 @@
+---
+title: 'override_labels'
+---
+
+# override_labels
+
+The `override_labels` configuration allows you to dynamically activate or deactivate progressive
+override labels at runtime, based on the properties of an incoming request.
+
+## What is Progressive Override?
+
+As a supergraph evolves, you often need to move fields from one subgraph to another. For example,
+imagine you are migrating the `status` of an `Order` from a general `orders` subgraph to a new, more
+specialized `fulfillment` subgraph.
+
+The `@override` directive in Apollo Federation is used for this, but making this change for all
+traffic at once can be risky. Progressive override allows for a safer, incremental migration by
+using a `label` on the directive:
+
+```graphql filename="fulfillment-subgraph.graphql"
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+
+type Order @key(fields: "id") {
+  id: ID!
+  # The "use-fulfillment-service" label controls this override
+  status: String! @override(from: "orders", label: "use-fulfillment-service")
+}
+```
+
+When a label like `"use-fulfillment-service"` is "active" for a request, the router will resolve
+`Order.status` from the new `fulfillment` subgraph. When it's inactive, it will continue to use the
+original `orders` subgraph.
+
+The `override_labels` configuration in the router is the mechanism that determines which labels are
+active for any given request.
+
+## How to Use It
+
+This feature allows you to implement advanced deployment patterns directly from your router
+configuration, without needing to repeatedly update and publish your subgraph schemas. Common use
+cases include:
+
+- **Canary Releases:** Activate a new field implementation for a small subset of traffic first.
+- **A/B Testing:** Activate a feature for users in a specific group (e.g., based on a `x-user-group`
+  header) to compare behavior.
+- **Internal Testing:** Activate an override only for internal users.
+
+## Configuration Structure
+
+The `override_labels` key is a top-level map in your `router.config.yaml`. The keys within this map
+are the names of the labels you wish to control, as they appear in your subgraph schemas.
+
+For each label, you can specify either a static boolean or an object for dynamic expression-based
+evaluation.
+
+```yaml
+override_labels:
+  # The name of the label to control
+  use-fulfillment-service: true
+  activate-beta-feature:
+    expression: # ... expression definition
+```
+
+## Value Options
+
+The value for each label key defines the condition under which the label should be considered active
+for a given request. It can be provided in two forms: a static boolean or an object for dynamic
+evaluation.
+
+### Static Boolean
+
+- **Type:** `boolean`
+
+When a boolean is provided, the label's status is statically set for all requests. `true` means the
+label is always active, and `false` means it is never active. This is useful for globally enabling
+or disabling a feature flag.
+
+```yaml
+override_labels:
+  # This label will be active for every single request.
+  use-fulfillment-service: true
+
+  # This label will never be active.
+  use-legacy-inventory: false
+```
+
+### Dynamic with `expression`
+
+- **Type:** `object`
+
+When an `object` is provided, it must contain a VRL `expression` that evaluates to a boolean (`true`
+or `false`). The expression is evaluated for each request, allowing for request-time activation
+decisions.
+
+- `expression`: **(string, required)** A VRL expression that computes the active state of the label.
+
+Within the `expression`, you have access to the following context:
+
+- `.request`: The incoming HTTP request object, including its headers.
+
+```yaml
+override_labels:
+  # This label will be active for 5% of the traffic
+  use-fulfillment-service:
+    expession: 'random_float(0.0, 100.0) < 5.0'
+
+  activate-beta-feature:
+    expression: '.request.headers."x-user-group" == "beta"'
+```
+
+This configuration activates the `activate-beta-feature` label only for requests that include the
+header `x-user-group: beta`. The `use-fulfillment-service` label is activated for approximately 5%
+of all requests, enabling a canary release pattern.

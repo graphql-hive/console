@@ -27,6 +27,12 @@ export default gql`
 
   extend type Query {
     schemaVersionForActionId(actionId: ID!, target: TargetReferenceInput): SchemaVersion
+      @deprecated(reason: "Use Query.schemaVersionByCommit")
+
+    """
+    Returns the latest SchemaVersion associated with a specific commit
+    """
+    schemaVersionByCommit(commit: String!, target: TargetReferenceInput): SchemaVersion
     latestValidVersion(target: TargetReferenceInput): SchemaVersion
     """
     Requires API Token

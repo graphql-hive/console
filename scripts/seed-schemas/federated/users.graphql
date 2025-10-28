@@ -1,0 +1,20 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@tag", "@shareable"])
+directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
+
+type User @key(fields: "id") @key(fields: "email") {
+  id: ID!
+  email: String! @tag(name: "pii")
+  name: String
+  alias: String
+  totalProductsCreated: Int @shareable
+  createdAt: DateTime
+}
+
+scalar DateTime
+
+extend type Query {
+  me: User
+  user(id: ID!): User
+  users: [User]
+}

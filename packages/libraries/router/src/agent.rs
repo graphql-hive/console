@@ -1,3 +1,5 @@
+use crate::consts::PLUGIN_VERSION;
+
 use super::graphql::OperationProcessor;
 use graphql_parser::schema::{parse_schema, Document};
 use reqwest::Client;
@@ -9,8 +11,6 @@ use std::{
 };
 use thiserror::Error;
 use tokio::sync::Mutex as AsyncMutex;
-
-static COMMIT: Option<&'static str> = option_env!("GITHUB_SHA");
 
 #[derive(Serialize, Debug)]
 pub struct Report {
@@ -299,7 +299,7 @@ impl UsageAgent {
                 )
                 .header(
                     reqwest::header::USER_AGENT,
-                    format!("hive-apollo-router/{}", COMMIT.unwrap_or("local")),
+                    format!("hive-apollo-router/{}", PLUGIN_VERSION),
                 )
                 .json(&report)
                 .send()

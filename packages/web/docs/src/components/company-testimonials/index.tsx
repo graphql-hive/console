@@ -62,6 +62,7 @@ const testimonials: Testimonial[] = [
     picture: {
       img: wealthsimplePicture,
     },
+    caseStudyHref: '/case-studies/wealthsimple',
   },
   {
     company: 'Prodigy',
@@ -206,7 +207,7 @@ export function CompanyTestimonialsSection({ className }: { className?: string }
                           href={caseStudyHref}
                           className="absolute bottom-0 w-full md:w-fit"
                         >
-                          Read Case Study
+                          Read the case study
                           <ArrowIcon />
                         </CallToAction>
                       )}

@@ -1,0 +1,12 @@
+query AllProducts {
+  allProducts {
+    upc
+    sku
+    name
+    variations {
+      upc
+      sku
+      name
+    }
+  }
+}

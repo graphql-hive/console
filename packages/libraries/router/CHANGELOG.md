@@ -1,5 +1,33 @@
 # 16.10.2024
 
+## 2.2.0
+
+### Minor Changes
+
+- [#6906](https://github.com/graphql-hive/console/pull/6906)
+  [`7fe1c27`](https://github.com/graphql-hive/console/commit/7fe1c271a596353d23ad770ce667f7781be6cc13)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - Advanced breaking change detection for inputs
+  and arguments.
+
+  With this change, inputs and arguments will now be collected from the GraphQL operations executed
+  by the router, and will be reported to Hive Console.
+
+  Additional references:
+
+  - https://github.com/graphql-hive/console/pull/6764
+  - https://github.com/graphql-hive/console/issues/6649
+
+### Patch Changes
+
+- [#7173](https://github.com/graphql-hive/console/pull/7173)
+  [`eba62e1`](https://github.com/graphql-hive/console/commit/eba62e13f658f00a4a8f6db6b4d8501070fbed45)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Use the correct plugin version in the
+  User-Agent header used for Console requests
+
+- [#6906](https://github.com/graphql-hive/console/pull/6906)
+  [`7fe1c27`](https://github.com/graphql-hive/console/commit/7fe1c271a596353d23ad770ce667f7781be6cc13)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - Update Rust version to 1.90
+
 ## 2.1.3
 
 ### Patch Changes

@@ -111,7 +111,8 @@ export default class SchemaPublish extends Command<typeof SchemaPublish> {
       description: 'author of the change',
     }),
     commit: Flags.string({
-      description: 'associated commit sha',
+      description:
+        'The associated commit SHA, or optionally any external identifier that references the schema',
     }),
     github: Flags.boolean({
       description: 'Connect with GitHub Application',

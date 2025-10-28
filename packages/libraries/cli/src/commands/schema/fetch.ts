@@ -16,15 +16,15 @@ import {
 import * as TargetInput from '../../helpers/target-input';
 import { Texture } from '../../helpers/texture/texture';
 
-const SchemaVersionForActionIdQuery = graphql(/* GraphQL */ `
-  query SchemaVersionForActionId(
-    $actionId: ID!
+const SchemaVersionByCommitQuery = graphql(/* GraphQL */ `
+  query SchemaVersionByCommit(
+    $commit: String!
     $includeSDL: Boolean!
     $includeSupergraph: Boolean!
     $includeSubgraphs: Boolean!
     $target: TargetReferenceInput
   ) {
-    schemaVersionForActionId(actionId: $actionId, target: $target) {
+    schemaVersionByCommit(commit: $commit, target: $target) {
       id
       isValid
       sdl @include(if: $includeSDL)
@@ -128,9 +128,9 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
   };
 
   static args = {
-    actionId: Args.string({
-      name: 'actionId' as const,
-      description: 'action id (e.g. commit sha)',
+    commit: Args.string({
+      name: 'commit' as const,
+      description: 'commit SHA, or it can be any external ID that references the schema',
       hidden: false,
     }),
   };
@@ -163,7 +163,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       throw new MissingRegistryTokenError();
     }
 
-    const { actionId } = args;
+    const { commit } = args;
 
     const sdlType = this.ensure({
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -185,18 +185,18 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }
 
     let schemaVersion;
-    if (actionId) {
+    if (commit) {
       const result = await this.registryApi(endpoint, accessToken).request({
-        operation: SchemaVersionForActionIdQuery,
+        operation: SchemaVersionByCommitQuery,
         variables: {
-          actionId,
+          commit,
           includeSDL: sdlType === 'sdl',
           includeSupergraph: sdlType === 'supergraph',
           includeSubgraphs: sdlType === 'subgraphs',
           target,
         },
       });
-      schemaVersion = result.schemaVersionForActionId;
+      schemaVersion = result.schemaVersionByCommit;
     } else {
       const result = await this.registryApi(endpoint, accessToken).request({
         operation: LatestSchemaVersionQuery,
@@ -211,11 +211,11 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
     }
 
     if (schemaVersion == null) {
-      throw new SchemaNotFoundError(actionId);
+      throw new SchemaNotFoundError(commit);
     }
 
     if (schemaVersion.isValid === false) {
-      throw new InvalidSchemaError(actionId);
+      throw new InvalidSchemaError(commit);
     }
 
     if (schemaVersion.schemas) {
@@ -239,7 +239,7 @@ export default class SchemaFetch extends Command<typeof SchemaFetch> {
       const schema = schemaVersion.sdl ?? schemaVersion.supergraph;
 
       if (schema == null) {
-        throw new SchemaNotFoundError(actionId);
+        throw new SchemaNotFoundError(commit);
       }
 
       if (flags.write) {

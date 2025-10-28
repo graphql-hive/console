@@ -1,0 +1,63 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@shareable", "@inaccessible", "@tag", "@external"]
+  )
+
+directive @example(text: String!) on FIELD_DEFINITION
+
+type Query {
+  allProducts: [ProductItf]
+  product(upc: String!): ProductItf
+  topProducts(first: Int = 5): [ProductItf]
+}
+
+interface ProductItf implements SkuItf {
+  upc: String!
+  sku: String
+  name: String
+  package: String
+  variations: [ProductItf]
+  dimensions: ProductDimension
+  createdBy: User
+  hidden: String @inaccessible
+  oldField: String @deprecated(reason: "refactored out")
+}
+
+interface SkuItf {
+  sku: String
+}
+
+type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sku package") {
+  """
+  Universal Product Code. A standardized numeric global identifier
+  """
+  upc: String!
+  """
+  SKUs are unique to the company and are used internally. Alphanumeric.
+  """
+  sku: String @tag(name: "internal")
+  name: String @example(text: "Foo Bar")
+  package: String
+  variations: [ProductItf]
+  dimensions: ProductDimension
+  createdBy: User
+  hidden: String
+  reviewsScore: Float!
+  oldField: String
+}
+
+enum ShippingClass {
+  STANDARD
+  EXPRESS
+}
+
+type ProductDimension @shareable {
+  size: String
+  weight: Float
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  totalProductsCreated: Int @shareable
+}

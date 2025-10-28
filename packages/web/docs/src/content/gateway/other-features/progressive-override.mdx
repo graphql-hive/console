@@ -1,0 +1,61 @@
+# Progressive Override
+
+As a supergraph evolves, you often need to move fields from one subgraph to another. For example,
+imagine you are migrating the `status` of an `Order` from a general `orders` subgraph to a new, more
+specialized `fulfillment` subgraph.
+
+## Feature Flag Approach
+
+The `@override` directive in Apollo Federation is used for this, but making this change for all
+traffic at once can be risky. Progressive override allows for a safer, incremental migration by
+using a `label` on the directive:
+
+```graphql filename="fulfillment-subgraph.graphql"
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+
+type Order @key(fields: "id") {
+  id: ID!
+  # The "use-fulfillment-service" label controls this override
+  status: String! @override(from: "orders", label: "use-fulfillment-service")
+}
+```
+
+When a label like `"use-fulfillment-service"` is "active" for a request, the gateway will resolve
+`Order.status` from the new `fulfillment` subgraph. When it's inactive, it will continue to use the
+original `orders` subgraph.
+
+The `progressiveOverride` configuration in the gateway is the mechanism that determines which labels
+are active for any given request.
+
+```ts filename="gateway-config.ts"
+import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  progressiveOverride(label: string, context: GatewayContext) {
+    if (label === 'use-fulfillment-service') {
+      // Activate for 10% of requests
+      return Math.random() < 0.1
+      // Or based on an environment variable
+      return process.env.USE_FULFILLMENT_SERVICE === 'true'
+      // Or based on a header
+      return context.request.headers.get('X-Use-Fulfillment-Service') === 'true'
+    }
+  }
+})
+```
+
+## Percentage Approach
+
+You can use the built-in `percent(x)` label to gradually roll out overrides based on a percentage of
+requests without the need of any custom logic.
+
+```graphql filename="fulfillment-subgraph.graphql"
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+
+type Order @key(fields: "id") {
+  id: ID!
+  # The "percent" label controls this override
+  status: String! @override(from: "orders", label: "percent(25)")
+  # Now 25% of requests will use the fulfillment subgraph for Order.status
+}
+```

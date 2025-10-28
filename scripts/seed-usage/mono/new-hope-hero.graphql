@@ -1,0 +1,5 @@
+query NewHopeHero {
+  hero(episode: NEWHOPE) {
+    name
+  }
+}

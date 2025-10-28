@@ -13,6 +13,7 @@ Router listens on for incoming GraphQL requests.
 
 - **Type:** `string`
 - **Default:** `"0.0.0.0"`
+- **Environment Variable:** `HOST`
 
 The `host` property specifies the IP address to which the router's HTTP server will bind.
 
@@ -25,6 +26,7 @@ The `host` property specifies the IP address to which the router's HTTP server w
 
 - **Type:** `integer`
 - **Default:** `4000`
+- **Environment Variable:** `PORT`
 
 The `port` property specifies the network port that the router will listen on. Ensure this port is
 not already in use by another service on the same host. When running in a container, this is the

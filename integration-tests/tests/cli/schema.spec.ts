@@ -503,7 +503,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         const numSchemas = schema.latestVersion?.schemas.nodes.length;
         const fetchCmd = cli.fetch({
           type: 'subgraphs',
-          actionId: 'abc123',
+          commit: 'abc123',
         });
         const rHeader = `service\\s+url\\s+date`;
         const rUrl = `http:\\/\\/\\S+(:\\d+)?|n/a`;
