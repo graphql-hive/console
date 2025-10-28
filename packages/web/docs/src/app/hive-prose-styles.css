@@ -4,8 +4,7 @@
 
   & > .main-content {
     box-sizing: content-box;
-    width: var(--nextra-content-width);
-    max-width: 100%;
+    max-width: min(100%, var(--nextra-content-width));
 
     & > div {
       @apply ml-0 w-full !max-w-full pl-6 max-sm:pr-6 md:pl-12;
@@ -19,7 +18,6 @@
       box-sizing: content-box;
       max-width: 100%;
       width: var(--article-max-width);
-      margin-inline: auto;
       padding: 0;
     }
 
