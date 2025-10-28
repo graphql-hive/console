@@ -9,6 +9,7 @@
     "build": "next build && next-sitemap",
     "dev": "next --turbopack",
     "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
+    "prettier": "prettier --cache --write --list-different --ignore-unknown src",
     "validate-mdx-links": "pnpx validate-mdx-links@1.1.0 --files 'src/**/*.mdx'"
   },
   "dependencies": {
