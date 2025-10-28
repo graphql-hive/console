@@ -13,10 +13,13 @@ export const metadata = {
   ]
 }
 
+import Image from 'next/image'
 import { ComparisonTable as Table } from '@theguild/components'
 
 import { Lede } from '#components/lede'
 import { ScaleBeyondCard } from '#components/scale-beyond-card'
+
+import architectureDiagramSvg from './architecture-diagram.svg'
 
 <Lede>
   
@@ -50,6 +53,10 @@ their stack step by step, without disrupting ongoing development.
 The move to Hive provided Toast a flexible and reliable foundation for scaling. Federation now
 supports 350+ micro-frontends and 80 subgraphs, while teams continue to deliver features quickly and
 safely.
+
+<div className="bg-green-1000 mt-6 flex w-full p-6 max-sm:-mx-6 max-sm:w-screen sm:rounded-2xl">
+  <Image src={architectureDiagramSvg} />
+</div>
 
 ## Choosing a schema registry that scales
 
