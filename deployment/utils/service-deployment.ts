@@ -31,6 +31,7 @@ export type ServiceSecretBinding<T extends Record<string, string>> = {
 
 export class ServiceDeployment {
   private envSecrets: Record<string, ServiceSecretBinding<any>> = {};
+  private replaceEveryDeployment: boolean = false;
 
   constructor(
     protected name: string,
@@ -76,6 +77,12 @@ export class ServiceDeployment {
     key: keyof T,
   ) {
     this.envSecrets[envVar] = { secret, key };
+
+    return this;
+  }
+
+  replaceOnEveryDeployment() {
+    this.replaceEveryDeployment = true;
 
     return this;
   }
@@ -272,6 +279,12 @@ export class ServiceDeployment {
     const metadata: k8s.types.input.meta.v1.ObjectMeta = {
       annotations: {},
     };
+
+    if (this.replaceEveryDeployment) {
+      metadata.annotations = {
+        'pulumi.com/update-timestamp': Date.now().toString(),
+      };
+    }
 
     metadata.labels = {
       app: this.name,
