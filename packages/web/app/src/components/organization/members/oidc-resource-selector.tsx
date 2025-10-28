@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import { MouseEvent, useMemo, useState } from 'react';
 import { produce } from 'immer';
 import { ChevronRightIcon, XIcon } from 'lucide-react';
-import { useQuery } from 'urql';
 import { ArrowDownIcon } from '@/components/ui/icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,81 +9,20 @@ import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 
-const ResourceSelector_OrganizationFragment = graphql(`
-  fragment ResourceSelector_OrganizationFragment on Organization {
+const OIDCResourceSelector_OrganizationFragment = graphql(`
+  fragment OIDCResourceSelector_OrganizationFragment on Organization {
     id
     slug
-    projects {
-      edges {
-        node {
-          id
-          slug
-          type
-        }
-      }
-    }
     isAppDeploymentsEnabled
-  }
-`);
-
-const ResourceSelector_OrganizationProjectTargestQuery = graphql(`
-  query ResourceSelector_OrganizationProjectTargestQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+    projects: projectsForResourceSelector {
       id
-      project: projectBySlug(projectSlug: $projectSlug) {
+      slug
+      type
+      targets {
         id
-        type
-        targets {
-          edges {
-            node {
-              id
-              slug
-            }
-          }
-        }
-      }
-    }
-  }
-`);
-
-const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
-  query ResourceSelector_OrganizationProjectTargetQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
-  ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      id
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
-        type
-        targets {
-          edges {
-            node {
-              id
-              slug
-            }
-          }
-        }
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          latestValidSchemaVersion {
-            id
-            schemas {
-              edges {
-                node {
-                  ... on CompositeSchema {
-                    id
-                    service
-                  }
-                }
-              }
-            }
-          }
-        }
+        slug
+        services
+        appDeployments
       }
     }
   }
@@ -137,12 +75,24 @@ const enum ServicesAppsState {
   apps,
 }
 
-export function ResourceSelector(props: {
-  organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
+type Project = {
+  id: string;
+  slug: string;
+  type: GraphQLSchema.ProjectType;
+  targets: Array<{
+    id: string;
+    slug: string;
+    services: Array<string>;
+    appDeployments: Array<string>;
+  }>;
+};
+
+export function OIDCResourceSelector(props: {
+  organization: FragmentType<typeof OIDCResourceSelector_OrganizationFragment>;
   selection: ResourceSelection;
   onSelectionChange: (selection: ResourceSelection) => void;
 }) {
-  const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
+  const organization = useFragment(OIDCResourceSelector_OrganizationFragment, props.organization);
   const [breadcrumb, setBreadcrumb] = useState(
     null as
       | null
@@ -152,7 +102,8 @@ export function ResourceSelector(props: {
   // whether we show the service or apps in the last tab
   const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
-  const toggleServiceAppsState = () => {
+  const toggleServiceAppsState = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     const state =
       serviceAppsState === ServicesAppsState.apps
         ? ServicesAppsState.service
@@ -160,46 +111,57 @@ export function ResourceSelector(props: {
     setServiceAppsState(state);
   };
 
+  /**
+   * Tracks internal state of the selected projects
+   * - activeProject is whatever is currently highlighted
+   * - selected is the list of projects that have been added to the list of resources
+   * - notSelected is the list of projects still yet to be added
+   * - add/removeProject add or remove the project from props.selected and call props.onSelectionChange
+   *
+   * This gets called as a memo so it can respond to the breadcrumb changing.
+   * The "mode" is used to be able to keep the selected state as well as toggle between
+   * granular and all.
+   * */
   const projectState = useMemo(() => {
     if (props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
       return null;
     }
 
-    type SelectedItem = {
-      project: (typeof organization.projects.edges)[number]['node'];
+    const selectedProjects: Array<{
+      project: Project;
       projectSelection: GraphQLSchema.ProjectResourceAssignmentInput;
-    };
+    }> = [];
+    const notSelectedProjects: Array<Project> = [];
 
-    type NotSelectedItem = (typeof organization.projects.edges)[number]['node'];
+    let activeProject: null | (typeof selectedProjects)[number] = null;
+    const projects = organization?.projects?.filter(p => !!p) ?? [];
 
-    const selectedProjects: Array<SelectedItem> = [];
-    const notSelectedProjects: Array<NotSelectedItem> = [];
-
-    let activeProject: null | SelectedItem = null;
-
-    for (const edge of organization.projects.edges) {
+    for (const project of projects) {
       const projectSelection = props.selection.projects?.find(
-        item => item.projectId === edge.node.id,
+        item => item.projectId === project?.id,
       );
 
       if (projectSelection) {
-        selectedProjects.push({ project: edge.node, projectSelection });
+        const selection = { project, projectSelection };
+        selectedProjects.push(selection);
 
-        if (breadcrumb?.projectId === edge.node.id) {
-          activeProject = { project: edge.node, projectSelection };
+        if (breadcrumb?.projectId === project?.id) {
+          activeProject = selection;
         }
 
         continue;
       }
 
-      notSelectedProjects.push(edge.node);
+      notSelectedProjects.push(project);
     }
+
+    console.log('calling projectState memo');
 
     return {
       selected: selectedProjects,
       notSelected: notSelectedProjects,
       activeProject,
-      addProject(item: (typeof organization.projects.edges)[number]['node']) {
+      addProject(item: { id: string; slug: string }) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects?.push({
@@ -214,7 +176,7 @@ export function ResourceSelector(props: {
           }),
         );
       },
-      removeProject(item: (typeof organization.projects.edges)[number]['node']) {
+      removeProject(item: { id: string; slug: string }) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects = state.projects?.filter(project => project.projectId !== item.id);
@@ -228,22 +190,10 @@ export function ResourceSelector(props: {
         });
       },
     };
-  }, [organization.projects.edges, props.selection, breadcrumb?.projectId]);
-
-  const [organizationProjectTargets] = useQuery({
-    query: ResourceSelector_OrganizationProjectTargestQuery,
-    pause: !projectState?.activeProject,
-    variables: {
-      organizationSlug: organization.slug,
-      projectSlug: projectState?.activeProject?.project.slug ?? '',
-    },
-  });
+  }, [organization?.projects, props.selection, breadcrumb?.projectId]);
 
   const targetState = useMemo(() => {
-    if (
-      !organizationProjectTargets?.data?.organization?.project?.targets?.edges ||
-      !projectState?.activeProject
-    ) {
+    if (!organization?.projects || !projectState?.activeProject) {
       return null;
     }
 
@@ -268,46 +218,43 @@ export function ResourceSelector(props: {
       } as const;
     }
 
+    type Target = Omit<
+      NonNullable<NonNullable<typeof organization.projects>[number]>['targets'][number],
+      '__typename'
+    >;
     type SelectedItem = {
-      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
-      targetSelection: Exclude<
-        typeof projectState.activeProject.projectSelection.targets.targets,
-        null | undefined
-      >[number];
+      target: Target;
+      targetSelection: (typeof projectState.activeProject.projectSelection.targets.targets & {})[number];
     };
 
-    type NotSelectedItem =
-      (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
+    type NotSelectedItem = Target;
 
     const selected: Array<SelectedItem> = [];
     const notSelected: Array<NotSelectedItem> = [];
 
     let activeTarget: null | {
-      targetSelection: Exclude<
-        typeof projectState.activeProject.projectSelection.targets.targets,
-        null | undefined
-      >[number];
-      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
+      targetSelection: (typeof projectState.activeProject.projectSelection.targets.targets & {})[number];
+      target: Target;
     } = null;
 
-    for (const edge of organizationProjectTargets.data.organization.project.targets.edges) {
+    for (const target of projectState.activeProject.project.targets) {
       const targetSelection = projectState.activeProject.projectSelection.targets.targets?.find(
-        item => item.targetId === edge.node.id,
+        item => item.targetId === target.id,
       );
 
       if (targetSelection) {
-        selected.push({ target: edge.node, targetSelection });
+        selected.push({ target, targetSelection });
 
-        if (breadcrumb?.targetId === edge.node.id) {
+        if (breadcrumb?.targetId === target.id) {
           activeTarget = {
             targetSelection,
-            target: edge.node,
+            target,
           };
         }
         continue;
       }
 
-      notSelected.push(edge.node);
+      notSelected.push(target);
     }
 
     return {
@@ -317,9 +264,7 @@ export function ResourceSelector(props: {
       },
       activeTarget,
       activeProject: projectState.activeProject,
-      addTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
-      ) {
+      addTarget(item: Target) {
         props.onSelectionChange(
           produce(props.selection, state => {
             const project = state.projects.find(project => project.projectId === projectId);
@@ -344,9 +289,7 @@ export function ResourceSelector(props: {
           }),
         );
       },
-      removeTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
-      ) {
+      removeTarget(item: Target) {
         props.onSelectionChange(
           produce(props.selection, state => {
             const project = state.projects?.find(project => project.projectId === projectId);
@@ -377,35 +320,19 @@ export function ResourceSelector(props: {
         setBreadcrumb({ projectId });
       },
     };
-  }, [
-    projectState?.activeProject,
-    organizationProjectTargets?.data?.organization?.project?.targets?.edges,
-    breadcrumb?.targetId,
-  ]);
-
-  const [organizationProjectTarget] = useQuery({
-    query: ResourceSelector_OrganizationProjectTargetQuery,
-    pause: !targetState?.activeTarget || !projectState?.activeProject,
-    variables: {
-      organizationSlug: organization.slug,
-      projectSlug: projectState?.activeProject?.project.slug ?? '',
-      targetSlug: targetState?.activeTarget?.target?.slug ?? '',
-    },
-  });
+  }, [projectState?.activeProject, organization?.projects, breadcrumb?.targetId]);
 
   const serviceState = useMemo(() => {
     if (
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organizationProjectTarget.data?.organization?.project
+      !organization?.projects
     ) {
       return null;
     }
 
-    if (
-      organizationProjectTarget.data.organization.project.type === GraphQLSchema.ProjectType.Single
-    ) {
+    if (projectState.activeProject.project.type === GraphQLSchema.ProjectType.Single) {
       return 'none' as const;
     }
 
@@ -437,19 +364,13 @@ export function ResourceSelector(props: {
     ];
     const notSelectedServices: Array<string> = [];
 
-    if (
-      organizationProjectTarget.data.organization.project.target?.latestValidSchemaVersion?.schemas
-    ) {
-      for (const edge of organizationProjectTarget.data.organization.project.target
-        .latestValidSchemaVersion.schemas.edges) {
-        const schema = edge.node;
-        if (
-          schema.__typename === 'CompositeSchema' &&
-          schema.service &&
-          !selectedServices.find(service => service.serviceName === schema.service)
-        ) {
-          notSelectedServices.push(schema.service);
-        }
+    for (const serviceName of targetState.activeTarget.target.services) {
+      if (
+        // @todo is it critical to check composite schema here??
+        // schema.__typename === 'CompositeSchema' &&
+        !selectedServices.find(service => service.serviceName === serviceName)
+      ) {
+        notSelectedServices.push(serviceName);
       }
     }
 
@@ -1088,7 +1009,7 @@ function RowItem(props: {
       </span>
 
       {props.onDelete && (
-        <TooltipProvider>
+        <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
               <button

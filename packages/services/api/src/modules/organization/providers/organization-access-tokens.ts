@@ -5,6 +5,7 @@ import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
+import { ResourceAssignmentModel } from '@hive/storage/resource-assignment-model';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
@@ -21,7 +22,6 @@ import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
 import { assignablePermissions } from '../lib/organization-access-token-permissions';
-import { ResourceAssignmentModel } from '../lib/resource-assignment-model';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
 import {
   resolveResourceAssignment,

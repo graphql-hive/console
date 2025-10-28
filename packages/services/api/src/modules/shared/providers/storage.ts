@@ -12,7 +12,8 @@ import type {
   SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { SchemaChecksFilter } from '../../../__generated__/types';
+import type { ResourceAssignmentGroup } from '@hive/storage/resource-assignment-model';
+import type { ProjectType, SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -40,7 +41,6 @@ import type {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../../auth/providers/scopes';
-import type { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import type { Contracts } from '../../schema/providers/contracts';
 import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
@@ -59,6 +59,7 @@ export interface TargetSelector extends ProjectSelector {
 export type ProjectForResourceSelector = {
   id: string;
   slug: string;
+  type: ProjectType;
   targets: TargetForResourceSelector[];
 };
 

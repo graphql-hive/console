@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
 import type { CompositionFailureError } from '@hive/schema';
 import type { schema_policy_resource } from '@hive/storage';
+import type { ResourceAssignmentGroup } from '@hive/storage/resource-assignment-model';
 import type {
   AlertChannelType,
   AlertType,
@@ -12,7 +13,6 @@ import type {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../__generated__/types';
-import type { ResourceAssignmentGroup } from '../modules/organization/lib/resource-assignment-model';
 import { parseGraphQLSource, sortDocumentNode } from './schema';
 
 export const NameModel = z

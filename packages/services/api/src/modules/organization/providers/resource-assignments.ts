@@ -1,5 +1,10 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
+import {
+  GranularAssignedProjects,
+  TargetAssignmentModel,
+  type ResourceAssignmentGroup,
+} from '@hive/storage/resource-assignment-model';
 import * as GraphQLSchema from '../../../__generated__/types';
 import type { Project } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
@@ -10,11 +15,6 @@ import {
 } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
-import {
-  GranularAssignedProjects,
-  TargetAssignmentModel,
-  type ResourceAssignmentGroup,
-} from '../lib/resource-assignment-model';
 
 @Injectable({
   scope: Scope.Operation,

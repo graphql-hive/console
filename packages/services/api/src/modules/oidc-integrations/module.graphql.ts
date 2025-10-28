@@ -4,6 +4,7 @@ export default gql`
   type ProjectForResourceSelector {
     id: ID!
     slug: String!
+    type: ProjectType!
     targets: [TargetForResourceSelector!]!
   }
 

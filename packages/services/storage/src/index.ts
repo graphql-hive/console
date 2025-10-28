@@ -22,7 +22,6 @@ import type {
   Target,
   TargetSettings,
 } from '@hive/api';
-import { ResourceAssignmentModel } from '@hive/api/modules/organization/lib/resource-assignment-model';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
 import {
@@ -52,6 +51,7 @@ import {
   tokens,
   users,
 } from './db';
+import { ResourceAssignmentModel } from './resource-assignment-model';
 import {
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
@@ -4645,6 +4645,7 @@ export async function createStorage(
           return {
             id: p.id,
             slug: p.slug,
+            type: p.type,
             targets: await Promise.all(
               targets.map(async t => {
                 const latest = await this.getMaybeLatestValidVersion({ targetId: t.id });
