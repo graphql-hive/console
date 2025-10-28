@@ -1,10 +1,11 @@
 query AllProducts {
   allProducts {
-    id
+    upc
     sku
     name
-    variation {
-      id
+    variations {
+      upc
+      sku
       name
     }
   }
