@@ -19,7 +19,15 @@ import { ComparisonTable as Table } from '@theguild/components'
 import { Lede } from '#components/lede'
 import { ScaleBeyondCard } from '#components/scale-beyond-card'
 
-import architectureDiagramSvg from './architecture-diagram.svg'
+import afterDiagram from './after-diagram.svg'
+import architectureDiagram from './architecture-diagram.svg'
+import beforeDiagram from './before-diagram.svg'
+
+export const Diagram = ({ src }) => (
+  <div className="bg-green-1000 -mx-6 mt-6 flex w-[calc(100%+3rem)] p-6 max-sm:w-screen sm:rounded-2xl">
+    <Image src={src} alt="" role="presentation" className="!rounded-none" />
+  </div>
+)
 
 <Lede>
   
@@ -54,9 +62,7 @@ The move to Hive provided Toast a flexible and reliable foundation for scaling. 
 supports 350+ micro-frontends and 80 subgraphs, while teams continue to deliver features quickly and
 safely.
 
-<div className="bg-green-1000 -mx-6 mt-6 flex w-[calc(100%+3rem)] p-6 max-sm:w-screen sm:rounded-2xl">
-  <Image src={architectureDiagramSvg} alt="" role="presentation" />
-</div>
+<Diagram src={architectureDiagram} />
 
 ## Choosing a schema registry that scales
 
@@ -270,45 +276,7 @@ Node BFF written in GraphQL. Later, the restaurant admin side also discovered Gr
 structure and added 30–40 GraphQL BFFs — each team had their own REST API (Kotlin) with a Node
 GraphQL BFF on top.
 
-```mermaid
-flowchart TB
-  reporting_rest["Reporting API"]
-  takeout_rest["Takeout & Delivery Domain"]
-  menus_rest["Menus"]
-  inventory_rest["Inventory"]
-
-  homepage_bff["Homepage BFF"]
-  metrics_bff["Performance Metrics"]
-  takeout_bff["Takeout & Delivery Settings SPA"]
-  menus_bff["Menus"]
-
-  subgraph ToastWeb["Toast Web"]
-    homepage["Homepage"]
-    performance["Performance Center"]
-    takeout_setup["Takeout & Delivery Setup"]
-    menus_app["Menus"]
-  end
-
-  homepage -- "GraphQL" --> homepage_bff
-  performance -- "GraphQL" --> metrics_bff
-  takeout_setup -- "GraphQL" --> takeout_bff
-  menus_app -- "GraphQL" --> menus_bff
-
-  homepage_bff -- "REST" --> reporting_rest
-  homepage_bff -- "REST" --> takeout_rest
-  homepage_bff -- "REST" --> menus_rest
-
-  metrics_bff -- "REST" --> reporting_rest
-  metrics_bff -- "REST" --> takeout_rest
-  metrics_bff -- "REST" --> menus_rest
-
-  takeout_bff -- "REST" --> takeout_rest
-  takeout_bff -- "REST" --> menus_rest
-  takeout_bff -- "REST" --> inventory_rest
-
-  menus_bff -- "REST" --> menus_rest
-  menus_bff -- "REST" --> inventory_rest
-```
+<Diagram src={beforeDiagram} />
 
 As more teams, like the Mobile app, needed the same data from multiple BFFs, that led them into
 adopting Federation and the federated graph, still using the same model where each team feature had
@@ -332,32 +300,7 @@ GraphQL.
 Today, the Hive Gateways federate a combination of Node GraphQL BFFs and Kotlin GraphQL subgraphs
 which are all registered into Hive Console.
 
-```mermaid
-flowchart TB
-  reporting["Reporting API"]
-  takeout_domain["Takeout & Delivery Domain"]
-  menus_service["Menus"]
-  inventory["Inventory"]
-
-  gateway["Federated Gateway"]
-
-  subgraph ToastWeb["Toast Web"]
-    homepage["Homepage"]
-    performance_center["Performance Center"]
-    takeout_setup["Takeout & Delivery Setup"]
-    menus_app["Menus"]
-  end
-
-  reporting -- "GraphQL" --> gateway
-  takeout_domain -- "GraphQL" --> gateway
-  menus_service -- "GraphQL" --> gateway
-  inventory -- "GraphQL" --> gateway
-
-  gateway -- "GraphQL" --> homepage
-  gateway -- "GraphQL" --> performance_center
-  gateway -- "GraphQL" --> takeout_setup
-  gateway -- "GraphQL" --> menus_app
-```
+<Diagram src={afterDiagram} />
 
 ## Next steps for Toast and the Hive Platform team
 
