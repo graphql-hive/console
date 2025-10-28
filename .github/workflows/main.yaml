@@ -42,6 +42,7 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-22.04
+    if: ${{ vars.ENABLE_STAGING_DEPLOYMENT == '1' }}
     steps:
       - name: Dispatch Deployment
         run: |

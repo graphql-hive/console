@@ -2231,3 +2231,132 @@ test.concurrent(
     });
   },
 );
+
+test.concurrent('schema policy errors prevent schema check approval', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization } = await createOrg();
+  const { createTargetAccessToken, setProjectSchemaPolicy, project, target } = await createProject(
+    ProjectType.Single,
+  );
+
+  await setProjectSchemaPolicy(createPolicy(RuleInstanceSeverityLevel.Error));
+
+  const writeToken = await createTargetAccessToken({});
+  await writeToken
+    .publishSchema({
+      sdl: /* GraphQL */ `
+        type Query {
+          ping: String
+        }
+      `,
+    })
+    .then(r => r.expectNoGraphQLErrors());
+
+  const checkResult = await writeToken
+    .checkSchema(/* GraphQL */ `
+      type Query {
+        ping: Float
+      }
+    `)
+    .then(r => r.expectNoGraphQLErrors());
+
+  const check = checkResult.schemaCheck;
+
+  if (check.__typename !== 'SchemaCheckError') {
+    throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+  }
+
+  const schemaCheckId = check.schemaCheck?.id;
+
+  if (schemaCheckId == null) {
+    throw new Error('Missing schema check id.');
+  }
+
+  const mutationResult = await execute({
+    document: ApproveFailedSchemaCheckMutation,
+    variables: {
+      input: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        schemaCheckId,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(mutationResult).toEqual({
+    approveFailedSchemaCheck: {
+      ok: null,
+      error: {
+        message: 'Schema check has schema policy errors that must be resolved before approval.',
+      },
+    },
+  });
+});
+
+test.concurrent(
+  'schema policy errors prevent schema check approval with safe changes',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, setProjectSchemaPolicy, project, target } =
+      await createProject(ProjectType.Single);
+
+    await setProjectSchemaPolicy(createPolicy(RuleInstanceSeverityLevel.Error));
+
+    const writeToken = await createTargetAccessToken({});
+    await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const checkResult = await writeToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: String
+          pong: String
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    const check = checkResult.schemaCheck;
+
+    if (check.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+    }
+
+    const schemaCheckId = check.schemaCheck?.id;
+
+    if (schemaCheckId == null) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const mutationResult = await execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(mutationResult).toEqual({
+      approveFailedSchemaCheck: {
+        ok: null,
+        error: {
+          message: 'Schema check has schema policy errors that must be resolved before approval.',
+        },
+      },
+    });
+  },
+);

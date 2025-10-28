@@ -4118,6 +4118,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
+            AND "schema_policy_errors" IS NULL
           RETURNING
             "id"
         `);
@@ -4136,6 +4137,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
+            AND "schema_policy_errors" IS NULL
           RETURNING
             "id"
         `);

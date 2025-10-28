@@ -955,6 +955,19 @@ export class SchemaManager {
     });
 
     if (!schemaCheck) {
+      // Re-fetch the schema check to determine why approval failed
+      const recheck = await this.storage.findSchemaCheck({
+        targetId: args.targetId,
+        schemaCheckId: args.schemaCheckId,
+      });
+
+      if (recheck?.schemaPolicyErrors !== null) {
+        return {
+          type: 'error',
+          reason: 'Schema check has schema policy errors that must be resolved before approval.',
+        } as const;
+      }
+
       return {
         type: 'error',
         reason: "Schema check doesn't exist.",
