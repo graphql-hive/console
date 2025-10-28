@@ -155,8 +155,6 @@ export function OIDCResourceSelector(props: {
       notSelectedProjects.push(project);
     }
 
-    console.log('calling projectState memo');
-
     return {
       selected: selectedProjects,
       notSelected: notSelectedProjects,
