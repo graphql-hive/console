@@ -120,3 +120,34 @@ writing expressions, you can call any of these functions directly.
   Functions that could perform network I/O (e.g. HTTP requests) are intentionally not available, so
   expressions remain side‑effect‑free and deterministic.
 </Callout>
+
+## Troubleshooting
+
+When an expression doesn't work as expected, it can be due to a compilation error (syntax) or a
+runtime error (evaluation). The Hive Router provides detailed logs to help you diagnose the issue.
+
+### Compilation Errors
+
+Compilation errors occur if your expression has invalid VRL syntax. The router will fail to start
+and log an error message pointing to the problematic expression. Common syntax errors include
+mismatched parentheses, missing commas, or incorrect function names.
+
+### Runtime Errors
+
+Runtime errors happen when a syntactically correct expression fails during execution. These are
+logged by the router during a request. The router will also return an error response to the client.
+
+Here are some frequent causes of runtime errors in expressions:
+
+1. **Accessing an unavailable variable**: Expressions run in specific contexts. For example, trying
+   to access `.response` in a request header rule will fail because the response from the subgraph
+   doesn't exist yet.
+1. **Type Mismatches**: VRL is strongly typed. If you try to perform an operation on incompatible
+   types, like comparing a string with an integer, you'll get a runtime error.
+1. **Handling `null` values**: Accessing a non-existent header or field returns `null`. Operations
+   on `null` values can lead to errors. Always check for the existence of a value or provide a
+   fallback. You can use the `||` operator to provide a default value (e.g.,
+   `.request.headers."x-custom-header" || "default-value"`).
+
+For a full list of error codes and their meanings, refer to the
+[VRL error reference](https://vector.dev/docs/reference/vrl/errors).
