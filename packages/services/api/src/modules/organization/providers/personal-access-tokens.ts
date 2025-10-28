@@ -318,7 +318,7 @@ export class PersonalAccessTokens {
       pool: this.pool,
     })(accessTokenId);
 
-    if (!accessToken || accessToken.userId !== viewer.id) {
+    if (!accessToken) {
       return null;
     }
 
@@ -422,12 +422,16 @@ export class PersonalAccessTokens {
     );
   }
 
-  @cache((...values: Array<string>) => values.join('|'))
-  async getMembership(organizationId: string, userId: string) {
-    const organization = await this.storage.getOrganization({ organizationId });
+  @cache(
+    (args: { organizationId: string; userId: string }) => args.organizationId + '|' + args.userId,
+  )
+  async getMembership(args: { organizationId: string; userId: string }) {
+    const organization = await this.storage.getOrganization({
+      organizationId: args.organizationId,
+    });
     const membership = await this.organizationMembers.findOrganizationMembership({
       organization,
-      userId,
+      userId: args.userId,
     });
 
     if (!membership) {
@@ -438,19 +442,20 @@ export class PersonalAccessTokens {
   }
 
   async getResourcesForPersonalAccessToken(personalAccessToken: PersonalAccessToken) {
-    const membership = await this.getMembership(
-      personalAccessToken.organizationId,
-      personalAccessToken.userId,
-    );
+    const membership = await this.getMembership({
+      organizationId: personalAccessToken.organizationId,
+      userId: personalAccessToken.userId,
+    });
 
     return PersonalAccessTokens.computeResources(personalAccessToken, membership);
   }
 
   async getPermissionsForPersonalAccessToken(personalAccessToken: PersonalAccessToken) {
-    const membership = await this.getMembership(
-      personalAccessToken.organizationId,
-      personalAccessToken.userId,
-    );
+    const membership = await this.getMembership({
+      organizationId: personalAccessToken.organizationId,
+      userId: personalAccessToken.userId,
+    });
+
     return PersonalAccessTokens.computePermissions(personalAccessToken, membership);
   }
 }

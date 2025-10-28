@@ -53,6 +53,7 @@ const OrganizationLayout_OrganizationFragment = graphql(`
   fragment OrganizationLayout_OrganizationFragment on Organization {
     id
     slug
+    viewerCanAccessSettings
     viewerCanCreateProject
     viewerCanManageSupportTickets
     viewerCanDescribeBilling
@@ -153,14 +154,16 @@ export function OrganizationLayout({
                     </Link>
                   </TabsTrigger>
                 )}
-                <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                  <Link
-                    to="/$organizationSlug/view/settings"
-                    params={{ organizationSlug: currentOrganization.slug }}
-                  >
-                    Settings
-                  </Link>
-                </TabsTrigger>
+                {currentOrganization.viewerCanAccessSettings && (
+                  <TabsTrigger variant="menu" value={Page.Settings} asChild>
+                    <Link
+                      to="/$organizationSlug/view/settings"
+                      params={{ organizationSlug: currentOrganization.slug }}
+                    >
+                      Settings
+                    </Link>
+                  </TabsTrigger>
+                )}
                 {currentOrganization.viewerCanManageSupportTickets && (
                   <TabsTrigger variant="menu" value={Page.Support} asChild>
                     <Link
