@@ -23,7 +23,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import { AlertTriangleIcon, KeyIcon } from '@/components/ui/icon';
+import { AlertTriangleIcon, CheckIcon, KeyIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -813,18 +813,37 @@ function OIDCDefaultResourceSelector(props: {
     })),
   }));
 
-  const [isMutating, setIsMutating] = useState<boolean>(false);
-
+  const [mutateState, setMutateState] = useState<null | 'loading' | 'success' | 'error'>(null);
   const debouncedMutate = useDebouncedCallback(
     async (args: Parameters<typeof mutate>[0]) => {
-      setIsMutating(true);
-      await mutate(args).finally(() => {
-        setIsMutating(false);
-      });
+      setMutateState('loading');
+      await mutate(args)
+        .then(data => {
+          if (data.error) {
+            setMutateState('error');
+          } else {
+            setMutateState('success');
+          }
+          return data;
+        })
+        .catch((err: unknown) => {
+          console.error(err);
+          setMutateState('error');
+        });
     },
     1500,
     { leading: false },
   );
+
+  function MutateState() {
+    if (debouncedMutate.isPending() || mutateState === 'loading') {
+      return <Spinner className="absolute right-0 top-0" />;
+    } else if (mutateState === 'error') {
+      return <XIcon className="absolute right-0 top-0 text-red-500" />;
+    } else if (mutateState === 'success') {
+      return <CheckIcon className="absolute right-0 top-0 text-emerald-500" />;
+    }
+  }
 
   const _setSelection = useCallback(
     async (resources: ResourceSelection) => {
@@ -841,9 +860,7 @@ function OIDCDefaultResourceSelector(props: {
 
   return (
     <div className="relative">
-      {(debouncedMutate.isPending() || isMutating) && (
-        <Spinner className="absolute right-0 top-0" />
-      )}
+      <MutateState />
       <ResourceSelector
         selection={selection}
         onSelectionChange={props.disabled ? () => void 0 : _setSelection}
