@@ -1,4 +1,3 @@
-import { ProjectManager } from '../../project/providers/project-manager';
 import { OIDCIntegrationsProvider } from '../providers/oidc-integrations.provider';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 

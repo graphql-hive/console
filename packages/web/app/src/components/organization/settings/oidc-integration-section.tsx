@@ -23,7 +23,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import { AlertTriangleIcon, KeyIcon } from '@/components/ui/icon';
+import { AlertTriangleIcon, CheckIcon, KeyIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -41,9 +41,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
 import { RoleSelector } from '../members/common';
+import { OIDCResourceSelector } from '../members/oidc-resource-selector';
 import {
   ResourceSelection,
-  ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
 } from '../members/resource-selector';
 
@@ -84,7 +84,6 @@ const OIDCIntegrationSection_OrganizationFragment = graphql(`
       ...PermissionSelector_PermissionGroupsFragment
       ...SelectedPermissionOverview_PermissionGroupFragment
     }
-    ...ResourceSelector_OrganizationFragment
     ...OIDCResourceSelector_OrganizationFragment
     oidcIntegration {
       id
@@ -814,14 +813,17 @@ function OIDCDefaultResourceSelector(props: {
     })),
   }));
 
-  const [isMutating, setIsMutating] = useState<boolean>(false);
-
+  const [mutateState, setMutateState] = useState<null | 'loading' | 'success' | 'error'>(null);
   const debouncedMutate = useDebouncedCallback(
     async (args: Parameters<typeof mutate>[0]) => {
-      setIsMutating(true);
-      await mutate(args).finally(() => {
-        setIsMutating(false);
-      });
+      setMutateState('loading');
+      await mutate(args)
+        .then(() => {
+          setMutateState('success');
+        })
+        .catch((_: unknown) => {
+          setMutateState('error');
+        });
     },
     1500,
     { leading: false },
@@ -840,17 +842,23 @@ function OIDCDefaultResourceSelector(props: {
     [debouncedMutate, setSelection, props.oidcIntegrationId],
   );
 
+  function MutateState() {
+    if (debouncedMutate.isPending() || mutateState === 'loading') {
+      return <Spinner className="absolute right-0 top-0" />;
+    } else if (mutateState === 'error') {
+      return <XIcon className="absolute right-0 top-0 text-red-500" />;
+    } else if (mutateState === 'success') {
+      return <CheckIcon className="absolute right-0 top-0 text-emerald-500" />;
+    }
+  }
+
   return (
     <div className="relative">
-      {(debouncedMutate.isPending() || isMutating) && (
-        <Spinner className="absolute right-0 top-0" />
-      )}
-
-      <ResourceSelector
+      <MutateState />
+      <OIDCResourceSelector
         selection={selection}
         onSelectionChange={props.disabled ? () => void 0 : _setSelection}
         organization={props.organization}
-        oidc
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ResourceAssignmentModel } from '../../organization/lib/resource-assignment-model';
+import { ResourceAssignmentModel } from '@hive/storage/resource-assignment-model';
 
 export const AuditLogModel = z.union([
   z.object({

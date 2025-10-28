@@ -1,12 +1,12 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { maskToken } from '@hive/service-common';
+import { ResourceAssignmentGroup } from '@hive/storage/resource-assignment-model';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { OIDCIntegration } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
-import { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import { ResourceAssignments } from '../../organization/providers/resource-assignments';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
