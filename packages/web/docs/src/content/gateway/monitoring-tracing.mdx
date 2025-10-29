@@ -136,8 +136,7 @@ We recommend to place your OpenTelemetry setup in a `telemetry.ts` file that wil
 import in your `gateway.config.ts` file. This allow instrumentations to be registered (if any)
 before any other packages are imported.
 
-For ease of configuration, we provide a `openTelemetrySetup` function from
-`@graphql-hive/plugin-opentelemetry/setup` module, with sensible default and straightforward API
+For ease of configuration, we provide a `openTelemetrySetup` function, with sensible default and straightforward API
 compatible with all runtimes.
 
 But this utility is not mandatory, you can use any setup relevant to your specific use case and
@@ -168,8 +167,18 @@ supports `AsyncLocalStorage` API), and a trace exporter depending on your traces
 npm i @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-http
 ```
 
+Depending on your usage, you will have to import `openTelemetrySetup` from a different module:
+
+ - CLI usage: `@graphql-hive/gateway/opentelemetry/setup`
+ - Programmatic usage : `@graphql-hive/plugin-opentelemetry/setup`
+
 ```ts filename="telemetry.ts"
+// For CLI usage
 import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+// For Programmatic usage
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 
@@ -2100,9 +2109,9 @@ to get the proper context.
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
-import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+import { openTelemetrySetup } from '@graphql-hive/gateway/opentelemetry/setup'
 // This package re-export official @opentelemetry/api package for ease of use
-import { trace, hive } from '@graphql-hive/plugin-opentelemetry/api'
+import { trace, hive } from '@graphql-hive/gateway/opentelemetry/api'
 
 openTelemetrySetup({
   contextManager: null, // Don't register any context manager
@@ -2184,11 +2193,15 @@ environment variable on your gateway process/runtime.
 
 In addition, you can use the stdout exporter to log the traces to the console:
 
-<Tabs items={["CLI", 'Programmatic Usage']}>
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
 
 <Tabs.Tab>
 
 ```ts filename="telemetry.ts"
+// For CLI usage
+import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
+
+// For Programmatic usage
 import { openTelemetrySetup } from '@graphql-hive/plugin-opentelemetry/setup'
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
 
