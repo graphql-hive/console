@@ -582,7 +582,13 @@ importers:
         version: 16.9.0
     publishDirectory: dist
 
-  packages/libraries/router: {}
+  packages/libraries/router:
+    dependencies:
+      hive-console-sdk-rs:
+        specifier: workspace:*
+        version: link:../sdk-rs
+
+  packages/libraries/sdk-rs: {}
 
   packages/libraries/yoga:
     dependencies:

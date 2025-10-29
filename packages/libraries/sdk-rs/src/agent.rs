@@ -1,8 +1,7 @@
-use crate::consts::PLUGIN_VERSION;
-
 use super::graphql::OperationProcessor;
-use graphql_parser::schema::{parse_schema, Document};
-use reqwest::Client;
+use graphql_parser::schema::Document;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use serde::Serialize;
 use std::{
     collections::{HashMap, VecDeque},
@@ -10,7 +9,7 @@ use std::{
     time::Duration,
 };
 use thiserror::Error;
-use tokio::sync::Mutex as AsyncMutex;
+use tokio_util::sync::CancellationToken;
 
 #[derive(Serialize, Debug)]
 pub struct Report {
@@ -64,6 +63,7 @@ struct ClientInfo {
 
 #[derive(Debug, Clone)]
 pub struct ExecutionReport {
+    pub schema: Arc<Document<'static, String>>,
     pub client_name: Option<String>,
     pub client_version: Option<String>,
     pub timestamp: u64,
@@ -75,27 +75,32 @@ pub struct ExecutionReport {
     pub persisted_document_hash: Option<String>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct State {
-    buffer: VecDeque<ExecutionReport>,
-    schema: Document<'static, String>,
-}
+#[derive(Debug, Default)]
+pub struct Buffer(Mutex<VecDeque<ExecutionReport>>);
 
-impl State {
-    fn new(schema: Document<'static, String>) -> Self {
-        Self {
-            buffer: VecDeque::new(),
-            schema,
-        }
+impl Buffer {
+    fn new() -> Self {
+        Self(Mutex::new(VecDeque::new()))
     }
 
-    pub fn push(&mut self, report: ExecutionReport) -> usize {
-        self.buffer.push_back(report);
-        self.buffer.len()
+    fn lock_buffer(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, VecDeque<ExecutionReport>>, AgentError> {
+        let buffer: Result<std::sync::MutexGuard<'_, VecDeque<ExecutionReport>>, AgentError> =
+            self.0.lock().map_err(|e| AgentError::Lock(e.to_string()));
+        buffer
     }
 
-    pub fn drain(&mut self) -> Vec<ExecutionReport> {
-        self.buffer.drain(0..).collect::<Vec<ExecutionReport>>()
+    pub fn push(&self, report: ExecutionReport) -> Result<usize, AgentError> {
+        let mut buffer = self.lock_buffer()?;
+        buffer.push_back(report);
+        Ok(buffer.len())
+    }
+
+    pub fn drain(&self) -> Result<Vec<ExecutionReport>, AgentError> {
+        let mut buffer = self.lock_buffer()?;
+        let reports: Vec<ExecutionReport> = buffer.drain(..).collect();
+        Ok(reports)
     }
 }
 
@@ -104,21 +109,15 @@ pub struct UsageAgent {
     token: String,
     buffer_size: usize,
     endpoint: String,
-    /// We need the Arc wrapper to be able to clone the agent while preserving multiple mutable reference to processor
-    /// We also need the Mutex wrapper bc we cannot borrow data in an `Arc` as mutable
-    pub state: Arc<Mutex<State>>,
-    processor: Arc<Mutex<OperationProcessor>>,
-    client: Client,
+    buffer: Arc<Buffer>,
+    processor: Arc<OperationProcessor>,
+    client: ClientWithMiddleware,
+    flush_interval: Duration,
+    user_agent: String,
 }
 
 fn non_empty_string(value: Option<String>) -> Option<String> {
-    match value {
-        Some(value) => match value.is_empty() {
-            true => None,
-            false => Some(value),
-        },
-        None => None,
-    }
+    value.filter(|str| str.is_empty())
 }
 
 #[derive(Error, Debug)]
@@ -138,52 +137,50 @@ pub enum AgentError {
 impl UsageAgent {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        schema: String,
         token: String,
         endpoint: String,
+        target_id: Option<String>,
         buffer_size: usize,
         connect_timeout: u64,
         request_timeout: u64,
         accept_invalid_certs: bool,
         flush_interval: Duration,
+        user_agent: String,
     ) -> Self {
-        let schema = parse_schema::<String>(&schema)
-            .expect("Failed to parse schema")
-            .into_static();
-        let state = Arc::new(Mutex::new(State::new(schema)));
-        let processor = Arc::new(Mutex::new(OperationProcessor::new()));
+        let processor = Arc::new(OperationProcessor::new());
 
-        let client = reqwest::Client::builder()
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+
+        let reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
             .connect_timeout(Duration::from_secs(connect_timeout))
             .timeout(Duration::from_secs(request_timeout))
             .build()
             .map_err(|err| err.to_string())
             .expect("Couldn't instantiate the http client for reports sending!");
+        let client = ClientBuilder::new(reqwest_agent)
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .build();
+        let buffer = Arc::new(Buffer::new());
 
-        let agent = Self {
-            state,
+        let mut endpoint = endpoint;
+
+        if token.starts_with("hvo1/") {
+            if let Some(target_id) = target_id {
+                endpoint.push_str(&format!("/{}", target_id));
+            }
+        }
+
+        UsageAgent {
+            buffer,
             processor,
             endpoint,
             token,
             buffer_size,
             client,
-        };
-
-        let agent_for_interval = AsyncMutex::new(Arc::new(agent.clone()));
-
-        tokio::task::spawn(async move {
-            loop {
-                tokio::time::sleep(flush_interval).await;
-
-                let agent_ref = agent_for_interval.lock().await.clone();
-                tokio::task::spawn(async move {
-                    agent_ref.flush().await;
-                });
-            }
-        });
-
-        agent
+            flush_interval,
+            user_agent,
+        }
     }
 
     fn produce_report(&self, reports: Vec<ExecutionReport>) -> Result<Report, AgentError> {
@@ -195,18 +192,7 @@ impl UsageAgent {
 
         // iterate over reports and check if they are valid
         for op in reports {
-            let operation = self
-                .processor
-                .lock()
-                .map_err(|e| AgentError::Lock(e.to_string()))?
-                .process(
-                    &op.operation_body,
-                    &self
-                        .state
-                        .lock()
-                        .map_err(|e| AgentError::Lock(e.to_string()))?
-                        .schema,
-                );
+            let operation = self.processor.process(&op.operation_body, &op.schema);
             match operation {
                 Err(e) => {
                     tracing::warn!(
@@ -271,11 +257,7 @@ impl UsageAgent {
     }
 
     pub fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
-        let size = self
-            .state
-            .lock()
-            .map_err(|e| AgentError::Lock(e.to_string()))?
-            .push(execution_report);
+        let size = self.buffer.push(execution_report)?;
 
         self.flush_if_full(size)?;
 
@@ -283,54 +265,36 @@ impl UsageAgent {
     }
 
     pub async fn send_report(&self, report: Report) -> Result<(), AgentError> {
-        const DELAY_BETWEEN_TRIES: Duration = Duration::from_millis(500);
-        const MAX_TRIES: u8 = 3;
-        let mut error_message = "unexpected error".to_string();
+        let report_body =
+            serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
+        // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
+        let resp = self
+            .client
+            .post(&self.endpoint)
+            .header("X-Usage-API-Version", "2")
+            .header(
+                reqwest::header::AUTHORIZATION,
+                format!("Bearer {}", self.token),
+            )
+            .header(reqwest::header::USER_AGENT, self.user_agent.to_string())
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .header(reqwest::header::CONTENT_LENGTH, report_body.len())
+            .body(report_body)
+            .send()
+            .await
+            .map_err(|e| AgentError::Unknown(e.to_string()))?;
 
-        for _ in 0..MAX_TRIES {
-            // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
-            let resp = self
-                .client
-                .post(self.endpoint.clone())
-                .header("X-Usage-API-Version", "2")
-                .header(
-                    reqwest::header::AUTHORIZATION,
-                    format!("Bearer {}", self.token.clone()),
-                )
-                .header(
-                    reqwest::header::USER_AGENT,
-                    format!("hive-apollo-router/{}", PLUGIN_VERSION),
-                )
-                .json(&report)
-                .send()
-                .await
-                .map_err(|e| AgentError::Unknown(e.to_string()))?;
-
-            match resp.status() {
-                reqwest::StatusCode::OK => {
-                    return Ok(());
-                }
-                reqwest::StatusCode::UNAUTHORIZED => {
-                    return Err(AgentError::Unauthorized);
-                }
-                reqwest::StatusCode::FORBIDDEN => {
-                    return Err(AgentError::Forbidden);
-                }
-                reqwest::StatusCode::TOO_MANY_REQUESTS => {
-                    return Err(AgentError::RateLimited);
-                }
-                _ => {
-                    error_message = format!(
-                        "({}) {}",
-                        resp.status().as_str(),
-                        resp.text().await.unwrap_or_default()
-                    );
-                }
-            }
-            tokio::time::sleep(DELAY_BETWEEN_TRIES).await;
+        match resp.status() {
+            reqwest::StatusCode::OK => Ok(()),
+            reqwest::StatusCode::UNAUTHORIZED => Err(AgentError::Unauthorized),
+            reqwest::StatusCode::FORBIDDEN => Err(AgentError::Forbidden),
+            reqwest::StatusCode::TOO_MANY_REQUESTS => Err(AgentError::RateLimited),
+            _ => Err(AgentError::Unknown(format!(
+                "({}) {}",
+                resp.status(),
+                resp.text().await.unwrap_or_default()
+            ))),
         }
-
-        Err(AgentError::Unknown(error_message))
     }
 
     pub fn flush_if_full(&self, size: usize) -> Result<(), AgentError> {
@@ -345,7 +309,13 @@ impl UsageAgent {
     }
 
     pub async fn flush(&self) {
-        let execution_reports = drain_reports(&self.state);
+        let execution_reports = match self.buffer.drain() {
+            Ok(res) => res,
+            Err(e) => {
+                tracing::error!("Unable to acquire lock for State in drain_reports: {}", e);
+                Vec::new()
+            }
+        };
         let size = execution_reports.len();
 
         if size > 0 {
@@ -358,14 +328,20 @@ impl UsageAgent {
             }
         }
     }
-}
+    pub async fn start_flush_interval(&self, token: Option<CancellationToken>) {
+        let mut tokio_interval = tokio::time::interval(self.flush_interval);
 
-fn drain_reports(state: &Arc<Mutex<State>>) -> Vec<ExecutionReport> {
-    match state.lock() {
-        Ok(mut state) => state.drain(),
-        Err(e) => {
-            tracing::error!("Unable to acquire lock for State in drain_reports: {}", e);
-            Vec::new()
+        match token {
+            Some(token) => loop {
+                tokio::select! {
+                    _ = tokio_interval.tick() => { self.flush().await; }
+                    _ = token.cancelled() => { println!("Shutting down."); return; }
+                }
+            },
+            None => loop {
+                tokio_interval.tick().await;
+                self.flush().await;
+            },
         }
     }
 }
