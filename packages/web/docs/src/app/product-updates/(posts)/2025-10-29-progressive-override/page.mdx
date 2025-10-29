@@ -27,7 +27,7 @@ First you need to import `@override` directive in your subgraph schema:
 extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
 ```
 
-Then, you can apply it to your new Billing subgraph like this:
+Then, you can apply it to your new `Billing` subgraph like this:
 
 ```diff
 type Bill @key(fields: "id") {
