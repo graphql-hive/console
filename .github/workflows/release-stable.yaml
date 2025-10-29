@@ -123,9 +123,8 @@ jobs:
           echo "crate_version=$VERSION" >> $GITHUB_OUTPUT
           echo "crate_publish=true" >> $GITHUB_OUTPUT
 
-      - name: release hive-apollo-router-plugin to Crates.io
+      - name: release to Crates.io
         if: steps.rust-crate.outputs.crate_publish == 'true'
         run: |
-          cd packages/libraries/router
           cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
           cargo publish --allow-dirty --no-verify

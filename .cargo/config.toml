@@ -1,0 +1,3 @@
+# The following are aliases you can use with "cargo command_name"
+[alias]
+"clippy:fix" = "clippy --all --fix --allow-dirty --allow-staged"

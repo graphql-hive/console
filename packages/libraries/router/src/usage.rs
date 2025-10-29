@@ -1,5 +1,4 @@
-use crate::agent::{AgentError, ExecutionReport, UsageAgent};
-use crate::persisted_documents::PERSISTED_DOCUMENT_HASH_KEY;
+use crate::consts::PLUGIN_VERSION;
 use apollo_router::layers::ServiceBuilderExt;
 use apollo_router::plugin::Plugin;
 use apollo_router::plugin::PluginInit;
@@ -7,6 +6,9 @@ use apollo_router::services::*;
 use apollo_router::Context;
 use core::ops::Drop;
 use futures::StreamExt;
+use graphql_parser::parse_schema;
+use graphql_parser::schema::Document;
+use hive_console_sdk::agent::{ExecutionReport, UsageAgent};
 use http::HeaderValue;
 use rand::Rng;
 use schemars::JsonSchema;
@@ -14,12 +16,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::env;
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tower::BoxError;
 use tower::ServiceBuilder;
 use tower::ServiceExt;
+
+use crate::persisted_documents::PERSISTED_DOCUMENT_HASH_KEY;
 
 pub(crate) static OPERATION_CONTEXT: &str = "hive::operation_context";
 
@@ -43,7 +46,8 @@ struct OperationConfig {
 
 pub struct UsagePlugin {
     config: OperationConfig,
-    agent: Option<Arc<Mutex<UsageAgent>>>,
+    agent: Option<Arc<UsageAgent>>,
+    schema: Arc<Document<'static, String>>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema)]
@@ -191,7 +195,7 @@ impl Plugin for UsagePlugin {
             return Err("Hive token is required".into());
         }
 
-        let mut endpoint = init
+        let endpoint = init
             .config
             .registry_usage_endpoint
             .clone()
@@ -204,11 +208,6 @@ impl Plugin for UsagePlugin {
             .target
             .clone()
             .or_else(|| env::var("HIVE_TARGET_ID").ok());
-
-        // In case target ID is specified in configuration, append it to the endpoint
-        if let Some(target_id) = &target_id {
-            endpoint.push_str(&format!("/{}", target_id));
-        }
 
         let default_config = Config::default();
         let user_config = init.config;
@@ -240,8 +239,30 @@ impl Plugin for UsagePlugin {
         if enabled {
             tracing::info!("Starting GraphQL Hive Usage plugin");
         }
+        let schema = parse_schema(&init.supergraph_sdl)
+            .expect("Failed to parse schema")
+            .into_static();
 
+        let agent = if enabled {
+            let flush_interval = Duration::from_secs(flush_interval);
+            let agent = Arc::new(UsageAgent::new(
+                token.expect("token is set"),
+                endpoint,
+                target_id,
+                buffer_size,
+                connect_timeout,
+                request_timeout,
+                accept_invalid_certs,
+                flush_interval,
+                format!("hive-apollo-router/{}", PLUGIN_VERSION),
+            ));
+            start_flush_interval(agent.clone());
+            Some(agent)
+        } else {
+            None
+        };
         Ok(UsagePlugin {
+            schema: Arc::new(schema),
             config: OperationConfig {
                 sample_rate: user_config
                     .sample_rate
@@ -257,24 +278,13 @@ impl Plugin for UsagePlugin {
                     .or(default_config.client_version_header)
                     .expect("client_version_header has no default value"),
             },
-            agent: match enabled {
-                true => Some(Arc::new(Mutex::new(UsageAgent::new(
-                    init.supergraph_sdl.to_string(),
-                    token.unwrap(),
-                    endpoint,
-                    buffer_size,
-                    connect_timeout,
-                    request_timeout,
-                    accept_invalid_certs,
-                    Duration::from_secs(flush_interval),
-                )))),
-                false => None,
-            },
+            agent,
         })
     }
 
     fn supergraph_service(&self, service: supergraph::BoxService) -> supergraph::BoxService {
         let config = self.config.clone();
+        let schema = self.schema.clone();
         match self.agent.clone() {
             None => ServiceBuilder::new().service(service).boxed(),
             Some(agent) => {
@@ -285,7 +295,8 @@ impl Plugin for UsagePlugin {
                             req.context.clone()
                         },
                         move |ctx: Context, fut| {
-                            let agent_clone = agent.clone();
+                            let agent = agent.clone();
+                            let schema = schema.clone();
                             async move {
                                 let start: Instant = Instant::now();
 
@@ -329,9 +340,9 @@ impl Plugin for UsagePlugin {
 
                                 match result {
                                     Err(e) => {
-                                        try_add_report(
-                                            agent_clone.clone(),
-                                            ExecutionReport {
+                                        agent
+                                            .add_report(ExecutionReport {
+                                                schema,
                                                 client_name,
                                                 client_version,
                                                 timestamp,
@@ -341,8 +352,10 @@ impl Plugin for UsagePlugin {
                                                 operation_body,
                                                 operation_name,
                                                 persisted_document_hash,
-                                            },
-                                        );
+                                            })
+                                            .unwrap_or_else(|e| {
+                                                tracing::error!("Error adding report: {}", e);
+                                            });
                                         Err(e)
                                     }
                                     Ok(router_response) => {
@@ -359,9 +372,9 @@ impl Plugin for UsagePlugin {
                                                     // make sure we send a single report, not for each chunk
                                                     let response_has_errors =
                                                         !response.errors.is_empty();
-                                                    try_add_report(
-                                                        agent_clone.clone(),
-                                                        ExecutionReport {
+                                                    agent
+                                                        .add_report(ExecutionReport {
+                                                            schema: schema.clone(),
                                                             client_name: client_name.clone(),
                                                             client_version: client_version.clone(),
                                                             timestamp,
@@ -372,8 +385,13 @@ impl Plugin for UsagePlugin {
                                                             operation_name: operation_name.clone(),
                                                             persisted_document_hash:
                                                                 persisted_document_hash.clone(),
-                                                        },
-                                                    );
+                                                        })
+                                                        .unwrap_or_else(|e| {
+                                                            tracing::error!(
+                                                                "Error adding report: {}",
+                                                                e
+                                                            );
+                                                        });
 
                                                     response
                                                 })
@@ -393,21 +411,17 @@ impl Plugin for UsagePlugin {
     }
 }
 
-fn try_add_report(agent: Arc<Mutex<UsageAgent>>, execution_report: ExecutionReport) {
-    agent
-        .lock()
-        .map_err(|e| AgentError::Lock(e.to_string()))
-        .and_then(|a| a.add_report(execution_report))
-        .unwrap_or_else(|e| {
-            tracing::error!("Error adding report: {}", e);
-        });
-}
-
 impl Drop for UsagePlugin {
     fn drop(&mut self) {
         tracing::debug!("UsagePlugin has been dropped!");
         // TODO: flush the buffer
     }
+}
+
+pub fn start_flush_interval(agent_for_interval: Arc<UsageAgent>) {
+    tokio::task::spawn(async move {
+        agent_for_interval.start_flush_interval(None).await;
+    });
 }
 
 #[cfg(test)]

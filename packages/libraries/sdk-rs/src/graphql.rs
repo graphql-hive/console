@@ -5,12 +5,11 @@ use graphql_tools::ast::ext::SchemaDocumentExtension;
 use graphql_tools::ast::FieldByNameExtension;
 use graphql_tools::ast::TypeDefinitionExtension;
 use graphql_tools::ast::TypeExtension;
-use lru::LruCache;
+use moka::sync::Cache;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::num::NonZeroUsize;
 
 use graphql_parser::minify_query;
 use graphql_parser::parse_query;
@@ -400,7 +399,6 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                 count_input_value_provided(ctx, &coordinate);
             }
             mark_as_used(ctx, &coordinate);
-
             if let Some(field_def) = parent_type.field_by_name(&field_name) {
                 if let Some(arg_def) = field_def.arguments.iter().find(|a| &a.name == arg_name) {
                     let arg_type_name = Self::resolve_type_name(arg_def.value_type.clone());
@@ -661,6 +659,12 @@ pub struct SortSelectionsTransform<'s, T: Text<'s> + Clone> {
     seen: Seen<'s, T>,
 }
 
+impl<'s, T: Text<'s> + Clone> Default for SortSelectionsTransform<'s, T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'s, T: Text<'s> + Clone> SortSelectionsTransform<'s, T> {
     pub fn new() -> Self {
         Self {
@@ -845,31 +849,36 @@ pub struct ProcessedOperation {
 }
 
 pub struct OperationProcessor {
-    cache: LruCache<String, Option<ProcessedOperation>>,
+    cache: Cache<String, Option<ProcessedOperation>>,
+}
+
+impl Default for OperationProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl OperationProcessor {
     pub fn new() -> OperationProcessor {
         OperationProcessor {
-            cache: LruCache::new(NonZeroUsize::new(1000).unwrap()),
+            cache: Cache::new(1000),
         }
     }
 
     pub fn process(
-        &mut self,
+        &self,
         query: &str,
         schema: &SchemaDocument<'static, String>,
     ) -> Result<Option<ProcessedOperation>, String> {
-        let key = query.to_string();
-        if self.cache.contains(&key) {
-            Ok(self
+        if self.cache.contains_key(query) {
+            let entry = self
                 .cache
-                .get(&key)
-                .expect("Unable to acquire Cache in OperationProcessor.process")
-                .clone())
+                .get(query)
+                .expect("Unable to acquire Cache in OperationProcessor.process");
+            Ok(entry.clone())
         } else {
             let result = self.transform(query, schema)?;
-            self.cache.put(key, result.clone());
+            self.cache.insert(query.to_string(), result.clone());
             Ok(result)
         }
     }
