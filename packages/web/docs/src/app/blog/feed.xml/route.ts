@@ -20,6 +20,8 @@ function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
 export async function GET() {
   let allPosts: RSS.ItemOptions[] = [];
 
+  // TODO: This needs a refactor: one `getPageMap` call,
+  // iterating over all items and pushing to `allPosts` in a coerced form.
   const [, , ...blogs] = await getPageMap('/blog');
   const [, , ...studies] = await getPageMap('/case-studies');
   const [, , ...updates] = await getPageMap('/product-updates');

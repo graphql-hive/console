@@ -22,7 +22,11 @@ export default async function BlogPage() {
   const allPosts = pageMap
     .filter(isBlogPost)
     .concat(caseStudies)
-    .concat(productUpdates.filter(isBlogPost));
+    .concat(
+      productUpdates
+        .filter(isBlogPost)
+        .map(post => ((post.frontMatter.tags ||= ['Product Update']), post)),
+    );
 
   return (
     <BlogPageLayout>
