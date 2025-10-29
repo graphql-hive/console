@@ -21,6 +21,7 @@ import {
   Project,
   ProjectType,
   Target,
+  User,
 } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
@@ -860,15 +861,22 @@ export class SchemaManager {
     organizationId: string;
     schemaCheckId: string;
     comment: string | null | undefined;
+    author?: string | null;
   }) {
     this.logger.debug('Manually approve failed schema check (args=%o)', args);
 
-    let [schemaCheck, viewer, target] = await Promise.all([
+    let viewer: User | null = null;
+    try {
+      viewer = await this.session.getViewer();
+    } catch (error) {
+      this.logger.debug('No viewer available (likely using CLI) (args=%o)', args);
+    }
+
+    let [schemaCheck, target] = await Promise.all([
       this.storage.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
       }),
-      this.session.getViewer(),
       this.storage.getTarget({
         organizationId: args.organizationId,
         projectId: args.projectId,
@@ -950,8 +958,9 @@ export class SchemaManager {
       targetId: target.id,
       contracts: this.contracts,
       schemaCheckId: args.schemaCheckId,
-      userId: viewer.id,
+      userId: viewer?.id ?? null,
       comment: args.comment,
+      author: args.author ?? null,
     });
 
     if (!schemaCheck) {
