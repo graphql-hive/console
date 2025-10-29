@@ -1,11 +1,10 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
-import { Author, AuthorId, authors } from '../../../authors';
-import { CaseStudyFile } from '../../case-studies/case-study-types';
+import { AuthorId, authors } from '../../../authors';
 import { coerceCaseStudiesToBlogs } from '../../case-studies/coerce-case-studies-to-blogs';
 import { isCaseStudy } from '../../case-studies/isCaseStudyFile';
-import { BlogFrontmatter, BlogPostFile, isBlogPost } from '../blog-types';
+import { BlogFrontmatter, isBlogPost } from '../blog-types';
 
 function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
   const first = Array.isArray(frontmatterAuthors) ? frontmatterAuthors[0] : frontmatterAuthors;
