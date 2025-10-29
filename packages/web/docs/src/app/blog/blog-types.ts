@@ -12,6 +12,7 @@ export interface BlogFrontmatter {
   featured?: boolean;
   image?: VideoPath | StaticImageData;
   thumbnail?: StaticImageData;
+  description?: string;
 }
 
 type VideoPath = `${string}.${'webm' | 'mp4'}`;

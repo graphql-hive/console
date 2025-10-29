@@ -2,6 +2,8 @@
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
 import { AuthorId, authors } from '../../../authors';
+import { coerceCaseStudiesToBlogs } from '../../case-studies/coerce-case-studies-to-blogs';
+import { isCaseStudy } from '../../case-studies/isCaseStudyFile';
 import { BlogFrontmatter, isBlogPost } from '../blog-types';
 
 function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
@@ -16,23 +18,34 @@ function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
 }
 
 export async function GET() {
-  const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
-  const allPosts = pageMap
-    .filter(isBlogPost)
-    .map(
-      item =>
-        ({
+  let allPosts: RSS.ItemOptions[] = [];
+
+  // TODO: This needs a refactor: one `getPageMap` call,
+  // iterating over all items and pushing to `allPosts` in a coerced form.
+  const [, , ...blogs] = await getPageMap('/blog');
+  const [, , ...studies] = await getPageMap('/case-studies');
+  const [, , ...updates] = await getPageMap('/product-updates');
+
+  const studiesAsBlogs = coerceCaseStudiesToBlogs(studies.filter(isCaseStudy));
+
+  for (const items of [blogs.filter(isBlogPost), updates.filter(isBlogPost), studiesAsBlogs]) {
+    allPosts = allPosts.concat(
+      items.map(
+        (item): RSS.ItemOptions => ({
           title: item.frontMatter.title,
           date: new Date(item.frontMatter.date),
           url: `https://the-guild.dev/graphql/hive${item.route}`,
-          description: (item.frontMatter as any).description ?? '',
+          description: item.frontMatter.description ?? '',
           author: getAuthor(item.frontMatter.authors),
           categories: Array.isArray(item.frontMatter.tags)
             ? item.frontMatter.tags
             : [item.frontMatter.tags],
-        }) satisfies RSS.ItemOptions,
-    )
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+        }),
+      ),
+    );
+  }
+
+  allPosts = allPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const feed = new RSS({
     title: 'Hive Blog',
