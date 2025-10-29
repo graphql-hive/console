@@ -2360,3 +2360,272 @@ test.concurrent(
     });
   },
 );
+
+test.concurrent(
+  'approve failed schema check with author field using target access token',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+    const writeToken = await createTargetAccessToken({});
+
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const readToken = await createTargetAccessToken({
+      mode: 'readWrite',
+    });
+
+    const checkResult = await readToken
+      .checkSchema(/* GraphQL */ `
+        type Query {
+          ping: Float
+        }
+      `)
+      .then(r => r.expectNoGraphQLErrors());
+
+    const check = checkResult.schemaCheck;
+    if (check.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+    }
+
+    const schemaCheckId = check.schemaCheck?.id;
+    if (schemaCheckId == null) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const mutationResult = await execute({
+      document: graphql(/* GraphQL */ `
+        mutation ApproveFailedSchemaCheckWithAuthor($input: ApproveFailedSchemaCheckInput!) {
+          approveFailedSchemaCheck(input: $input) {
+            ok {
+              schemaCheck {
+                __typename
+                ... on SuccessfulSchemaCheck {
+                  isApproved
+                  approvalComment
+                  cliApprovalMetadata {
+                    displayName
+                    email
+                  }
+                }
+              }
+            }
+            error {
+              message
+            }
+          }
+        }
+      `),
+      variables: {
+        input: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+          comment: 'Check force approved automatically via CLI --forceSafe flag',
+          author: 'John Doe <john@example.com>',
+        },
+      },
+      authToken: readToken.secret,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(mutationResult.approveFailedSchemaCheck.ok).not.toBeNull();
+    expect(mutationResult.approveFailedSchemaCheck.error).toBeNull();
+
+    const approvedCheck = mutationResult.approveFailedSchemaCheck.ok?.schemaCheck;
+    expect(approvedCheck?.__typename).toBe('SuccessfulSchemaCheck');
+
+    if (approvedCheck?.__typename === 'SuccessfulSchemaCheck') {
+      expect(approvedCheck.isApproved).toBe(true);
+
+      expect(approvedCheck.cliApprovalMetadata).toMatchObject({
+        displayName: 'John Doe',
+        email: 'john@example.com',
+      });
+    }
+
+    const schemaCheckQueryResult = await execute({
+      document: graphql(/* GraphQL */ `
+        query GetSchemaCheckWithApproval(
+          $organizationSlug: String!
+          $projectSlug: String!
+          $targetSlug: String!
+          $schemaCheckId: ID!
+        ) {
+          target(
+            reference: {
+              bySelector: {
+                organizationSlug: $organizationSlug
+                projectSlug: $projectSlug
+                targetSlug: $targetSlug
+              }
+            }
+          ) {
+            schemaCheck(id: $schemaCheckId) {
+              __typename
+              ... on SuccessfulSchemaCheck {
+                id
+                isApproved
+                cliApprovalMetadata {
+                  displayName
+                  email
+                }
+                breakingSchemaChanges {
+                  nodes {
+                    message
+                    approval {
+                      cliApprovalMetadata {
+                        displayName
+                        email
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `),
+      variables: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        schemaCheckId,
+      },
+      authToken: readToken.secret,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const queriedCheck = schemaCheckQueryResult.target?.schemaCheck;
+    expect(queriedCheck?.__typename).toBe('SuccessfulSchemaCheck');
+
+    if (queriedCheck?.__typename === 'SuccessfulSchemaCheck') {
+      expect(queriedCheck.isApproved).toBe(true);
+
+      const breakingChanges = queriedCheck.breakingSchemaChanges?.nodes ?? [];
+      expect(breakingChanges.length).toBeGreaterThan(0);
+
+      for (const change of breakingChanges) {
+        expect(change.approval?.cliApprovalMetadata).toMatchObject({
+          displayName: 'John Doe',
+          email: 'john@example.com',
+        });
+      }
+    }
+  },
+);
+
+test.concurrent(
+  'approve failed schema check handles different author formats',
+  async ({ expect }) => {
+    const testCases = [
+      {
+        author: 'john@example.com',
+        expected: { displayName: 'john@example.com', email: 'john@example.com' },
+        description: 'email only',
+      },
+      {
+        author: 'John Doe',
+        expected: { displayName: 'John Doe', email: '<no email provided>' },
+        description: 'name only',
+      },
+      {
+        author: 'John Doe <john@example.com>',
+        expected: { displayName: 'John Doe', email: 'john@example.com' },
+        description: 'git standard format',
+      },
+    ];
+
+    for (const testCase of testCases) {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject, organization } = await createOrg();
+      const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+
+      const writeToken = await createTargetAccessToken({
+        mode: 'readWrite',
+      });
+
+      await writeToken
+        .publishSchema({
+          sdl: /* GraphQL */ `
+            type Query {
+              ping: String
+              email: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const checkResult = await writeToken
+        .checkSchema(/* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `)
+        .then(r => r.expectNoGraphQLErrors());
+
+      expect(checkResult.schemaCheck.__typename).toBe('SchemaCheckError');
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        throw new Error('Expected SchemaCheckError');
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      expect(schemaCheckId).toBeDefined();
+
+      const mutationResult = await execute({
+        document: graphql(/* GraphQL */ `
+          mutation ApproveFailedSchemaCheckWithDifferentAuthorFormats(
+            $input: ApproveFailedSchemaCheckInput!
+          ) {
+            approveFailedSchemaCheck(input: $input) {
+              ok {
+                schemaCheck {
+                  __typename
+                  ... on SuccessfulSchemaCheck {
+                    isApproved
+                    approvalComment
+                    cliApprovalMetadata {
+                      displayName
+                      email
+                    }
+                  }
+                }
+              }
+              error {
+                message
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+            schemaCheckId: schemaCheckId!,
+            comment: `Testing ${testCase.description}`,
+            author: testCase.author,
+          },
+        },
+        authToken: writeToken.secret,
+      }).then(r => r.expectNoGraphQLErrors());
+
+      expect(mutationResult.approveFailedSchemaCheck.ok).not.toBeNull();
+
+      const approvedCheck = mutationResult.approveFailedSchemaCheck.ok?.schemaCheck;
+      if (approvedCheck?.__typename === 'SuccessfulSchemaCheck') {
+        expect(approvedCheck.cliApprovalMetadata?.displayName).toBe(testCase.expected.displayName);
+        expect(approvedCheck.cliApprovalMetadata?.email).toBe(testCase.expected.email);
+      }
+    }
+  },
+);

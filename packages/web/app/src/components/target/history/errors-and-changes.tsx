@@ -64,6 +64,10 @@ const ChangesBlock_SchemaChangeApprovalFragment = graphql(`
       id
       displayName
     }
+    cliApprovalMetadata {
+      displayName
+      email
+    }
     approvedAt
     schemaCheckId
   }
@@ -389,7 +393,8 @@ function ApprovedByBadge(props: {
   approval: FragmentType<typeof ChangesBlock_SchemaChangeApprovalFragment>;
 }) {
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
-  const approvalName = approval.approvedBy?.displayName ?? '<unknown>';
+  const approvalName =
+    approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
     <span className="cursor-pointer text-green-500">
@@ -406,7 +411,8 @@ function SchemaChangeApproval(props: {
   schemaCheckId: string;
 }) {
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
-  const approvalName = approval.approvedBy?.displayName ?? '<unknown>';
+  const approvalName =
+    approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
   const approvalDate = format(new Date(approval.approvedAt), 'do MMMM yyyy');
   const schemaCheckPath =
     '/' +

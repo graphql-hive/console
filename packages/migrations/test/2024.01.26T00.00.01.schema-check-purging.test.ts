@@ -437,6 +437,7 @@ describe('schema check purging', async () => {
         schemaCheckId: failedSchemaCheck.id,
         userId: user.id,
         comment: null,
+        author: null,
         contracts: {
           approveContractChecksForSchemaCheckId() {
             return Promise.resolve(false);
@@ -611,6 +612,7 @@ describe('schema check purging', async () => {
         schemaCheckId: failedSchemaCheck.id,
         userId: user.id,
         comment: null,
+        author: null,
         contracts: {
           approveContractChecksForSchemaCheckId() {
             return Promise.resolve(false);
@@ -870,6 +872,7 @@ describe('schema check purging', async () => {
         userId: user.id,
         contracts,
         comment: null,
+        author: null,
       });
 
       schemaChangeApprovalCount = await db.oneFirst<number>(
@@ -1072,6 +1075,7 @@ describe('schema check purging', async () => {
         userId: user.id,
         contracts,
         comment: null,
+        author: null,
       });
 
       schemaChangeApprovalCount = await db.oneFirst<number>(
