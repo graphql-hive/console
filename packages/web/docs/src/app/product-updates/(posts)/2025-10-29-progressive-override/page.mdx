@@ -48,7 +48,7 @@ type Bill @key(fields: "id") {
 }
 ```
 
-This configuration will route 20% of the traffic for the `amount` field to the new Billing subgraph,
+This configuration will route 20% of the traffic for the `amount` field to the `Billing` subgraph,
 while the remaining 80% will still be served by the Payments subgraph. This allows you to monitor
 the performance and behavior of the new implementation before fully committing to the change.
 
