@@ -17,9 +17,8 @@ controlling the traffic of the affected fields.
 
 ### `@override` directive with traffic percentage
 
-You can now use the `@override` directive along with a `label` argument
-and `percent(x)` value to specify the percentage of traffic that should be routed to the new
-implementation of a field.
+You can now use the `@override` directive along with a `label` argument and `percent(x)` value to
+specify the percentage of traffic that should be routed to the new implementation of a field.
 
 First you need to import `@override` directive in your subgraph schema:
 
@@ -39,7 +38,8 @@ type Bill @key(fields: "id") {
 Now this directive tells your gateway to use this subgraph to resolve the `amount` field instead of
 the `Payments` subgraph.
 
-But with Progressive Override, you can control the traffic percentage like this:
+Now with progressive overrides, you can control the traffic percentage like in the following
+example:
 
 ```diff
 type Bill @key(fields: "id") {
