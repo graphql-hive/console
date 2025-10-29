@@ -1,0 +1,133 @@
+---
+title: Progressive Override
+description:
+  Safer and controlled migrations with Progressive Override that allows gradual schema changes.
+date: 2025-10-29
+authors: [ardatan]
+---
+
+import { Tabs } from '@theguild/components'
+
+In this update, we are excited to introduce Progressive Override in Hive Gateway and Hive Router,
+enabling safer and more controlled schema migrations for your GraphQL services.
+
+As your GraphQL API evolves, you usually need to move fields around subgraphs while the final
+supergraph remains the same. Progressive Override allows you to make these changes gradually by
+controlling the traffic of the affected fields.
+
+### `@override` directive with traffic percentage
+
+With Progressive Override, you can now use the `@override` directive along with a `label` argument
+and `percent(x)` value to specify the percentage of traffic that should be routed to the new
+implementation of a field.
+
+First you need to import `@override` directive in your subgraph schema:
+
+```graphql
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+```
+
+Then, you can apply it to your new Billing subgraph like this:
+
+```diff
+type Bill @key(fields: "id") {
+  id: ID!
++ amount: Int! @override(from: "Payments")
+}
+```
+
+Now this directive tells your gateway to use this subgraph to resolve the `amount` field instead of
+`Payments` subgraph.
+
+But with Progressive Override, you can control the traffic percentage like this:
+
+```diff
+type Bill @key(fields: "id") {
+  id: ID!
++ amount: Int! @override(from: "Payments", label: "percent(20)")
+}
+```
+
+This configuration will route 20% of the traffic for the `amount` field to the new Billing subgraph,
+while the remaining 80% will still be served by the Payments subgraph. This allows you to monitor
+the performance and behavior of the new implementation before fully committing to the change.
+
+You can gradually increase the percentage over time until you reach 100%, at which point the field
+can be safely removed from the old subgraph.
+
+### `@override` directive with labels
+
+In addition to percentage-based traffic control, Progressive Override also supports using custom
+labels to manage field overrides. This allows you to route traffic based on specific criteria or
+conditions that are relevant to your application.
+
+For example, you can define labels such as `beta-users` or `internal-testing` to route traffic to
+the new implementation for specific user groups or testing scenarios.
+
+```diff
+type Bill @key(fields: "id") {
+  id: ID!
++ amount: Int! @override(from: "Payments", label: "activate-beta-feature")
+}
+```
+
+This flexibility enables you to conduct targeted testing and gather feedback from specific user
+segments before rolling out changes to your entire user base.
+
+Then on your Hive Gateway or Hive Router configuration, you can define the logic for these labels.
+
+The following example shows how to activate the `activate-beta-feature` label if `x-user-group`
+header is set to `beta`.
+
+<Tabs items={['Hive Gateway', 'Hive Router']}>
+  <Tabs.Tab>
+    {/* Hive Gateway Content */}
+    ```ts
+    import { defineConfig, type GatewayContext } from '@graphql-hive/gateway';
+
+    export const gatewayConfig = defineConfig({
+      progressiveOverride(label: string, context: GatewayContext) {
+        if (label === 'activate-beta-feature' && context.request.headers.get('x-user-group') === 'beta') {
+            // Activate `activate-beta-feature` feature flag
+            return true;
+        }
+        return false;
+      }
+    });
+    ```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+    {/* Hive Router Content */}
+    ```yaml
+    override_labels:
+        activate-beta-feature:
+            # Activate if the x-user-group header is set to beta
+            expression: '.request.headers."x-user-group" == "beta"'
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+### Benefits of Progressive Override
+
+This feature allows you to implement better deployment strategies directly from your gateway/router
+configuration without multiple publishes of your subgraphs. Some key benefits include:
+
+- **A/B Testing**: Activate a feature for users in a specific group (e.g., based on a `x-user-group`
+  header) to compare behavior.
+- **Canary Releases**: Gradually roll out changes to a small percentage of users before a full
+  release.
+- **Safer Migrations**: Reduce the risk of breaking changes by allowing gradual transitions between
+  implementations.
+- **Improved Monitoring**: Observe the performance and impact of changes in a controlled manner.
+- **Internal Testing**: Activate new implementations for internal teams before exposing them to
+  end-users.
+
+### Start Using Progressive Override Today!
+
+Progressive Override is now available in both Hive Gateway and Hive Router. To get started:
+
+- For Hive Gateway, refer to the
+  [Hive Gateway Documentation](/docs/gateway/other-features/progressive-override).
+- For Hive Router, refer to the
+  [Hive Router Documentation](/docs/router/configuration/override_labels).
