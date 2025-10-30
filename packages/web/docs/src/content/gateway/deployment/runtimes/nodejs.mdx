@@ -17,13 +17,66 @@ You can follow the introduction page directly to use Hive Gateway CLI. [See here
 Use this method only if you know what you are doing. It is recommended to use Hive Gateway CLI for
 most cases.
 
-```ts
+```ts filename="index.ts"
 import { createServer } from 'http'
 import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { enableWebSocket } from './websocket.ts'
 
-const serveRuntime = createGatewayRuntime(/* Your configuration */)
+// Create the gateway runtime. The Gateway Runtime is an http handler.
+const serveRuntime = createGatewayRuntime({
+  /* Your configuration */
+})
+
+// Create the HTTP server that will listen for incoming HTTP requests.
+// It can be any server implementation, here we use Node official http module.
 const server = createServer(serveRuntime)
+
+// Optionally add support for WebSockets, see below for details
+enableWebSocket(server, serverRuntime)
+
 server.listen(4000, () => {
   console.log(`Server is running on http://localhost:4000`)
 })
+```
+
+## WebSocket support
+
+To enable WebSocket support, you have to configure `graphql-ws` to be used to handle incoming
+WebSockets.
+
+Here is an example of how to do it with Node server, but it can be used with most server
+implementations (see
+[`graphql-ws` documentation for more details](https://the-guild.dev/graphql/ws/recipes#server)).
+
+Use `getGraphQLWSOptions` from `@graphql-hive/gateway-runtime` to automatically generate the
+`graphql-ws` configuration for your runtime. Adapt the `onContext` parameter with your HTTP server
+specific needs.
+
+```ts filename="websocket.ts"
+import type { Server } from 'node:http'
+import { useServer } from 'graphql-ws/use/ws'
+import { WebSocketServer } from 'ws'
+import { GatewayRuntime, getGraphQLWSOptions } from '@graphql-hive/gateway-runtime'
+
+function enableWebSocket(server: Server, runtime: GatewayRuntime): void {
+  const wsServer = new WebSocketServer({
+    path: runtime.graphqlEndpoint,
+    server
+  })
+
+  useServer(
+    getGraphQLWSOptions<TContext, Extra>(runtime, ctx => ({
+      req: ctx.extra?.request,
+      socket: ctx.extra?.socket
+    })),
+    wsServer
+  )
+
+  runtime.disposableStack.defer(
+    () =>
+      new Promise((resolve, reject) => {
+        wsServer.close(err => (err ? reject(err) : resolve()))
+      })
+  )
+}
 ```
