@@ -2614,7 +2614,7 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "anyhow",
  "apollo-router",
@@ -2648,7 +2648,7 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
