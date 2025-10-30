@@ -84,6 +84,7 @@ async function main() {
     pgPool,
     redis,
     isPrometheusEnabled: !!tracing,
+    logger: server.log,
   });
 
   const prometheusConfig = new PrometheusConfig(!!tracing);

@@ -29,12 +29,15 @@ export const SelectedPermissionOverview_PermissionGroupFragment = graphql(`
 
 export type SelectedPermissionOverviewProps = {
   permissionsGroups: Array<FragmentType<typeof SelectedPermissionOverview_PermissionGroupFragment>>;
-  activePermissionIds: Array<string>;
   showOnlyAllowedPermissions: boolean;
   /** default: true */
   isExpanded?: boolean;
   /** option for injecting additional content within a permission group. */
   additionalGroupContent?: (group: { level: PermissionLevelType }) => React.ReactNode;
+  /** Active permissions */
+  activePermissionIds: Array<string>;
+  /** Whether all permissions within "permissionsGroups" are granted, overrides "activePermissionIds" */
+  isAllPermissionsGranted?: boolean;
 };
 
 export function SelectedPermissionOverview(props: SelectedPermissionOverviewProps) {
@@ -42,10 +45,15 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
     SelectedPermissionOverview_PermissionGroupFragment,
     props.permissionsGroups,
   );
-  const activePermissionIds = useMemo<ReadonlySet<string>>(
-    () => new Set(props.activePermissionIds),
-    [props.activePermissionIds],
-  );
+  const activePermissionIds = useMemo<ReadonlySet<string>>(() => {
+    if (props.isAllPermissionsGranted) {
+      return new Set(
+        permissionGroups.flatMap(group => group.permissions.map(permission => permission.id)),
+      );
+    }
+
+    return new Set(props.activePermissionIds);
+  }, [props.isAllPermissionsGranted, props.activePermissionIds]);
 
   return [
     {

@@ -26,6 +26,8 @@ const AssignedServicesModel = z.union([
   WildcardAssignmentMode,
 ]);
 
+type AssignedServices = z.TypeOf<typeof AssignedServicesModel>;
+
 const AssignedAppDeploymentsModel = z.union([
   z.object({
     mode: GranularAssignmentModeModel,
@@ -33,6 +35,8 @@ const AssignedAppDeploymentsModel = z.union([
   }),
   WildcardAssignmentMode,
 ]);
+
+type AssignedAppDeployments = z.TypeOf<typeof AssignedAppDeploymentsModel>;
 
 export const TargetAssignmentModel = z.object({
   type: z.literal('target'),
@@ -48,6 +52,8 @@ const AssignedTargetsModel = z.union([
   }),
   WildcardAssignmentMode,
 ]);
+
+type AssignedTargets = z.TypeOf<typeof AssignedTargetsModel>;
 
 const ProjectAssignmentModel = z.object({
   type: z.literal('project'),
@@ -79,3 +85,111 @@ export const ResourceAssignmentModel = z.union([
  */
 export type ResourceAssignmentGroup = z.TypeOf<typeof ResourceAssignmentModel>;
 export type GranularAssignedProjects = z.TypeOf<typeof GranularAssignedProjectsModel>;
+
+/**
+ * Get the intersection of two resource assignments
+ */
+export function intersectResourceAssignments(
+  a: ResourceAssignmentGroup,
+  b: ResourceAssignmentGroup,
+): ResourceAssignmentGroup {
+  if (a.mode === '*' && b.mode === '*') {
+    return { mode: '*' };
+  }
+
+  if (a.mode === '*') {
+    return b;
+  }
+
+  if (b.mode === '*') {
+    return a;
+  }
+
+  return {
+    mode: 'granular',
+    projects: a.projects
+      .map(projectA => {
+        const projectB = b.projects.find(p => p.id === projectA.id);
+        if (!projectB) {
+          return null;
+        }
+
+        const intersectedTargets = intersectTargets(projectA.targets, projectB.targets);
+
+        return {
+          ...projectA,
+          targets: intersectedTargets,
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null),
+  };
+}
+
+function intersectTargets(a: AssignedTargets, b: AssignedTargets): AssignedTargets {
+  if (a.mode === '*' && b.mode === '*') {
+    return { mode: '*' };
+  }
+
+  if (a.mode === '*') {
+    return b;
+  }
+
+  if (b.mode === '*') {
+    return a;
+  }
+
+  const targets = a.targets
+    .map(targetA => {
+      const targetB = b.targets.find(t => t.id === targetA.id);
+      if (!targetB) return null;
+
+      return {
+        ...targetA,
+        services: intersectServices(targetA.services, targetB.services),
+        appDeployments: intersectAppDeployments(targetA.appDeployments, targetB.appDeployments),
+      };
+    })
+    .filter(t => t !== null);
+
+  return { mode: 'granular', targets };
+}
+
+function intersectServices(a: AssignedServices, b: AssignedServices): AssignedServices {
+  if (a.mode === '*' && b.mode === '*') {
+    return { mode: '*' };
+  }
+  if (a.mode === '*') {
+    return b;
+  }
+  if (b.mode === '*') {
+    return a;
+  }
+
+  // Both granular
+  const services = a.services.filter(s => b.services.some(sb => sb.serviceName === s.serviceName));
+  return { mode: 'granular', services };
+}
+
+function intersectAppDeployments(
+  a: AssignedAppDeployments,
+  b: AssignedAppDeployments,
+): AssignedAppDeployments {
+  if (a.mode === '*' && b.mode === '*') {
+    return { mode: '*' };
+  }
+
+  if (a.mode === '*') {
+    return b;
+  }
+
+  if (b.mode === '*') {
+    return a;
+  }
+
+  // Both granular
+  const appDeployments = a.appDeployments.filter(ad =>
+    b.appDeployments.some(bd => bd.type === ad.type && bd.appName === ad.appName),
+  );
+
+  return { mode: 'granular', appDeployments };
+}

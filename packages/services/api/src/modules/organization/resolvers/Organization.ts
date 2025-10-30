@@ -30,6 +30,7 @@ export const Organization: Pick<
   | 'viewerCanExportAuditLogs'
   | 'viewerCanManageAccessTokens'
   | 'viewerCanManageInvitations'
+  | 'viewerCanManagePersonalAccessTokens'
   | 'viewerCanManageRoles'
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
@@ -153,6 +154,13 @@ export const Organization: Pick<
           organizationId: organization.id,
         },
       }),
+      session.canPerformAction({
+        action: 'personalAccessToken:modify',
+        organizationId: organization.id,
+        params: {
+          organizationId: organization.id,
+        },
+      }),
     ]).then(result => result.some(Boolean));
   },
   viewerCanSeeMembers: async (organization, _arg, { session }) => {
@@ -243,6 +251,15 @@ export const Organization: Pick<
     return injector.get(OrganizationAccessTokens).get({
       organizationId: organization.id,
       id: args.id,
+    });
+  },
+  viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      action: 'personalAccessToken:modify',
+      organizationId: organization.id,
+      params: {
+        organizationId: organization.id,
+      },
     });
   },
 };

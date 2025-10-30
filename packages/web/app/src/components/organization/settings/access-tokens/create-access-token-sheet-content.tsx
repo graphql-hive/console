@@ -28,7 +28,7 @@ import { SelectedPermissionOverview } from '../../members/selected-permission-ov
 import { permissionLevelToResourceName, resolveResources } from './shared-helpers';
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-const TitleInputModel = z
+export const TitleInputModel = z
   .string()
   .trim()
   .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
@@ -36,13 +36,13 @@ const TitleInputModel = z
   .max(100, 'Maximum length is 100 characters.');
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-const DescriptionInputModel = z
+export const DescriptionInputModel = z
   .string()
   .trim()
   .max(248, 'Maximum length is 248 characters.')
   .optional();
 
-const CreateAccessTokenFormModel = z.object({
+export const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
   description: DescriptionInputModel,
   permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
@@ -284,7 +284,9 @@ export function CreateAccessTokenSheetContent(
                       <>
                         <div className="grid w-full items-center gap-1.5">
                           <Form.FormItem>
-                            <Form.FormLabel>Resource Access</Form.FormLabel>
+                            <Form.FormLabel>
+                              <Heading>Resource Access</Heading>
+                            </Form.FormLabel>
                             <Form.FormControl>
                               <ResourceSelector
                                 organization={organization}
@@ -434,7 +436,7 @@ export function CreateAccessTokenSheetContent(
   );
 }
 
-function AcessTokenCreatedConfirmationDialogue(props: {
+export function AcessTokenCreatedConfirmationDialogue(props: {
   privateAccessKey: string;
   onClose: () => void;
 }) {
@@ -481,7 +483,7 @@ function AcessTokenCreatedConfirmationDialogue(props: {
   );
 }
 
-function shakeElement(ev: React.MouseEvent<HTMLElement>) {
+export function shakeElement(ev: React.MouseEvent<HTMLElement>) {
   const el = ev.target as HTMLElement;
   el.classList.add('animate-shake');
   el.addEventListener(

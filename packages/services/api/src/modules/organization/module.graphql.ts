@@ -53,6 +53,134 @@ export default gql`
     deleteOrganizationAccessToken(
       input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
     ): DeleteOrganizationAccessTokenResult! @tag(name: "public")
+
+    """
+    Create a new personal access token that is bound to the organization membership of the viewer.
+    Currently, this mutation can only be executed from a dashboard user session.
+    """
+    createPersonalAccessToken(
+      input: CreatePersonalAccessTokenInput!
+    ): CreatePersonalAccessTokenResult!
+    """
+    Delete a personal access token that is bound to the organization membership of the viewer.
+    Currently, this mutation can only be executed from a dashboard user session.
+    """
+    deletePersonalAccessToken(
+      input: DeletePersonalAccessTokenInput!
+    ): DeletePersonalAccessTokenResult!
+  }
+
+  input CreatePersonalAccessTokenInput {
+    """
+    Organization in which the access token should be created.
+    """
+    organization: OrganizationReferenceInput!
+    """
+    Title of the access token.
+    """
+    title: String!
+    """
+    Additional description containing information about the purpose of the access token.
+    """
+    description: String
+    """
+    List of permissions that are assigned to the access token.
+    A list of available permissions can be retrieved via the 'Organization.availableOrganizationAccessTokenPermissionGroups' field.
+
+    If omitted (or set to null), the personal access token will be granted all permissions of the members role.
+    """
+    permissions: [String!]
+    """
+    Resources on which the permissions should be granted (project, target, service, and app deployments).
+    Permissions are inherited by sub-resources.
+
+    If omitted (or set to null), the personal access token will be granted all permissions of the members role.
+    """
+    resources: ResourceAssignmentInput
+  }
+
+  input DeletePersonalAccessTokenInput {
+    """
+    The access token that should be deleted.
+    """
+    personalAccessToken: PersonalAccessTokenReference!
+  }
+
+  input PersonalAccessTokenReference @oneOf {
+    byId: ID
+  }
+
+  type DeletePersonalAccessTokenResult {
+    ok: DeletePersonalAccessTokenResultOk
+    error: DeletePersonalAccessTokenResultError
+  }
+
+  type DeletePersonalAccessTokenResultOk {
+    deletedPersonalAccessTokenId: ID!
+  }
+
+  type DeletePersonalAccessTokenResultError {
+    message: String!
+  }
+
+  interface AccessToken {
+    id: ID!
+    title: String!
+    description: String
+    permissions: [String!]!
+    resources: ResourceAssignment!
+    firstCharacters: String!
+    createdAt: DateTime!
+  }
+
+  type PersonalAccessToken implements AccessToken {
+    id: ID!
+    title: String!
+    description: String
+    """
+    Whether the permissions of this access token are inherited from the access token owner.
+    """
+    hasAllPermissionsFromOwner: Boolean!
+    """
+    The currently valid permissions for the personal access token.
+
+    Resolves to the access token owners permissions in case no restriction was specified during the creation of the access token.
+    """
+    permissions: [String!]!
+    """
+    The currently valid resources for the personal access token.
+
+    Resolves to the access token owners resources in case no restriction was specified during the creation of the access token.
+    """
+    resources: ResourceAssignment!
+    firstCharacters: String!
+    createdAt: DateTime!
+  }
+
+  type CreatePersonalAccessTokenResultOk {
+    createdPersonalAccessToken: PersonalAccessToken!
+    privateAccessKey: String! @tag(name: "public")
+  }
+
+  type CreatePersonalAccessTokenResultError {
+    message: String!
+    details: CreatePersonalAccessTokenResultErrorDetails
+  }
+
+  type CreatePersonalAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
+  }
+
+  type CreatePersonalAccessTokenResult {
+    ok: CreatePersonalAccessTokenResultOk
+    error: CreatePersonalAccessTokenResultError
   }
 
   input OrganizationReferenceInput @oneOf {
@@ -111,7 +239,7 @@ export default gql`
     description: String @tag(name: "public")
   }
 
-  type OrganizationAccessToken {
+  type OrganizationAccessToken implements AccessToken {
     id: ID! @tag(name: "public")
     title: String! @tag(name: "public")
     description: String @tag(name: "public")
@@ -388,6 +516,10 @@ export default gql`
     """
     viewerCanManageAccessTokens: Boolean!
     """
+    Whether the viewer can manage personal access tokens.
+    """
+    viewerCanManagePersonalAccessTokens: Boolean!
+    """
     Paginated organization access tokens.
     """
     accessTokens(
@@ -400,12 +532,22 @@ export default gql`
     accessToken(id: ID! @tag(name: "public")): OrganizationAccessToken @tag(name: "public")
   }
 
-  type OrganizationAccessTokenEdge {
+  interface AccessTokenEdge {
+    node: AccessToken!
+    cursor: String!
+  }
+
+  interface AccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [AccessTokenEdge!]!
+  }
+
+  type OrganizationAccessTokenEdge implements AccessTokenEdge {
     node: OrganizationAccessToken! @tag(name: "public")
     cursor: String! @tag(name: "public")
   }
 
-  type OrganizationAccessTokenConnection {
+  type OrganizationAccessTokenConnection implements AccessTokenConnection {
     pageInfo: PageInfo! @tag(name: "public")
     edges: [OrganizationAccessTokenEdge!]! @tag(name: "public")
   }
@@ -640,6 +782,16 @@ export default gql`
     error: AssignMemberRoleResultError @tag(name: "public")
   }
 
+  type PersonalAccessTokenConnection implements AccessTokenConnection {
+    pageInfo: PageInfo!
+    edges: [PersonalAccessTokenEdge!]!
+  }
+
+  type PersonalAccessTokenEdge implements AccessTokenEdge {
+    node: PersonalAccessToken!
+    cursor: String!
+  }
+
   type Member {
     id: ID!
     user: User! @tag(name: "public")
@@ -651,6 +803,18 @@ export default gql`
     Whether the viewer can remove this member from the organization.
     """
     viewerCanRemove: Boolean!
+    """
+    Paginated list of personal access tokens for the user.
+    """
+    personalAccessTokens(first: Int, after: String): PersonalAccessTokenConnection
+    """
+    Retrieve a personal access token by it's id.
+    """
+    personalAccessToken(id: ID!): PersonalAccessToken
+    """
+    Permission groups the member is allowed to assign to personal access tokens.
+    """
+    availablePersonalAccessTokenPermissionGroups: [PermissionGroup!]!
   }
 
   enum ResourceAssignmentModeType {

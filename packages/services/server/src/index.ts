@@ -23,6 +23,8 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
+import { PersonalAccessTokenSessionStrategy } from '@hive/api/modules/auth/lib/personal-access-token-strategy';
+import { PersonalAccessTokensCache } from '@hive/api/modules/organization/providers/personal-access-tokens-cache';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -60,7 +62,7 @@ import { AuthN } from '../../api/src/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
 import { SuperTokensUserAuthNStrategy } from '../../api/src/modules/auth/lib/supertokens-strategy';
 import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target-access-token-strategy';
-import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
+import { AccessTokenValidationCache } from '../../api/src/modules/auth/providers/access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { internalApiRouter } from './api';
 import { asyncStorage } from './async-storage';
@@ -410,10 +412,15 @@ export async function main() {
       new OrganizationAccessTokenStrategy({
         logger,
         organizationAccessTokensCache: registry.injector.get(OrganizationAccessTokensCache),
-        organizationAccessTokenValidationCache: registry.injector.get(
-          OrganizationAccessTokenValidationCache,
-        ),
+        accessTokenValidationCache: registry.injector.get(AccessTokenValidationCache),
       });
+
+    const personalAccessTokenStrategy = (logger: Logger) =>
+      new PersonalAccessTokenSessionStrategy(
+        logger,
+        registry.injector.get(PersonalAccessTokensCache),
+        registry.injector.get(AccessTokenValidationCache),
+      );
 
     const graphqlPath = '/graphql';
     const port = env.http.port;
@@ -445,6 +452,7 @@ export async function main() {
               ),
             }),
           organizationAccessTokenStrategy,
+          personalAccessTokenStrategy,
           (logger: Logger) =>
             new TargetAccessTokenStrategy({
               logger,
@@ -463,7 +471,7 @@ export async function main() {
     });
 
     const authN = new AuthN({
-      strategies: [organizationAccessTokenStrategy],
+      strategies: [organizationAccessTokenStrategy, personalAccessTokenStrategy],
     });
 
     server.route({
@@ -594,6 +602,13 @@ export async function main() {
       }
 
       void res.status(result.status).send(result);
+      return;
+    });
+
+    // only for integration testing :)
+    server.post('/cache/personal-access-token-cache/delete/:id', async (req, res) => {
+      await registry.injector.get(PersonalAccessTokensCache).delete({ id: (req.params as any).id });
+      void res.status(200).send({});
       return;
     });
 

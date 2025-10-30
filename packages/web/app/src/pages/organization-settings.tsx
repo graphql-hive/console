@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
+import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/person-access-tokens-sub-page';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -619,11 +620,17 @@ const OrganizationSettingsPageQuery = graphql(`
       ...OrganizationPolicySettings_OrganizationFragment
       viewerCanAccessSettings
       viewerCanManageAccessTokens
+      viewerCanManagePersonalAccessTokens
     }
   }
 `);
 
-export const OrganizationSettingsPageEnum = z.enum(['general', 'policy', 'access-tokens']);
+export const OrganizationSettingsPageEnum = z.enum([
+  'general',
+  'policy',
+  'access-tokens',
+  'personal-access-tokens',
+]);
 export type OrganizationSettingsSubPage = z.TypeOf<typeof OrganizationSettingsPageEnum>;
 
 function SettingsPageContent(props: {
@@ -662,6 +669,13 @@ function SettingsPageContent(props: {
       pages.push({
         key: 'access-tokens',
         title: 'Access Tokens',
+      });
+    }
+
+    if (currentOrganization?.viewerCanManagePersonalAccessTokens) {
+      pages.push({
+        key: 'personal-access-tokens',
+        title: 'Personal Access Tokens',
       });
     }
 
@@ -738,6 +752,9 @@ function SettingsPageContent(props: {
             {resolvedPage.key === 'access-tokens' ? (
               <AccessTokensSubPage organizationSlug={props.organizationSlug} />
             ) : null}
+            {resolvedPage.key === 'personal-access-tokens' && (
+              <PersonalAccessTokensSubPage organizationSlug={props.organizationSlug} />
+            )}
           </div>
         </PageLayoutContent>
       </PageLayout>

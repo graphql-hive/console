@@ -1,5 +1,8 @@
 import { Storage } from '../../shared/providers/storage';
+import { filterDownPermissionGroups } from '../lib/permissions';
+import * as PersonalAccessTokenPermissions from '../lib/personal-access-token-permissions';
 import { OrganizationManager } from '../providers/organization-manager';
+import { PersonalAccessTokens } from '../providers/personal-access-tokens';
 import { ResourceAssignments } from '../providers/resource-assignments';
 import type { MemberResolvers } from './../../../__generated__/types';
 
@@ -40,5 +43,21 @@ export const Member: MemberResolvers = {
       organizationId: member.organizationId,
       resources: member.assignedRole.resources,
     });
+  },
+  personalAccessTokens: async (member, args, { injector }) => {
+    return injector.get(PersonalAccessTokens).getPaginatedForMembership(member, {
+      first: args.first ?? null,
+      after: args.after ?? null,
+    });
+  },
+  availablePersonalAccessTokenPermissionGroups: async (member, _arg, _ctx) => {
+    // TODO: also filter down on feature flags...
+    return filterDownPermissionGroups(
+      PersonalAccessTokenPermissions.permissionGroups,
+      member.assignedRole.role.allPermissions,
+    );
+  },
+  personalAccessToken: async (member, args, { injector }) => {
+    return injector.get(PersonalAccessTokens).findByIdForMembership(member, args.id);
   },
 };
