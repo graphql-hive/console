@@ -1,5 +1,25 @@
 # 16.10.2024
 
+## 2.3.1
+
+### Patch Changes
+
+- [#7196](https://github.com/graphql-hive/console/pull/7196)
+  [`7878736`](https://github.com/graphql-hive/console/commit/7878736643578ab23d95412b893c091e32691e60)
+  Thanks [@ardatan](https://github.com/ardatan)! - Breaking;
+
+  - `UsageAgent` now accepts `Duration` for `connect_timeout` and `request_timeout` instead of
+    `u64`.
+  - `SupergraphFetcher` now accepts `Duration` for `connect_timeout` and `request_timeout` instead
+    of `u64`.
+  - `PersistedDocumentsManager` now accepts `Duration` for `connect_timeout` and `request_timeout`
+    instead of `u64`.
+  - Use original `graphql-parser` and `graphql-tools` crates instead of forked versions.
+
+- Updated dependencies
+  [[`7878736`](https://github.com/graphql-hive/console/commit/7878736643578ab23d95412b893c091e32691e60)]:
+  - hive-console-sdk-rs@0.1.0
+
 ## 2.3.0
 
 ### Minor Changes
