@@ -1,0 +1,16 @@
+.nextra-sidebar.nextra-sidebar {
+  width: 300px;
+
+  & ul {
+    padding-left: 4px;
+    margin-left: 9px;
+
+    & .x\:text-gray-500 {
+      @apply text-gray-700 dark:text-neutral-300;
+    }
+  }
+}
+
+article.x\:min-h-\[calc\(100vh-var\(--nextra-navbar-height\)\)\] {
+  @apply md:pl-6 md:pr-8;
+}
