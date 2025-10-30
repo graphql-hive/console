@@ -69,3 +69,39 @@ type Order @key(fields: "id") {
   # Now 25% of requests will use the fulfillment subgraph for Order.status
 }
 ```
+
+## Async Support
+
+The `progressiveOverride` function can also be **async** and return a Promise. This allows you to
+perform asynchronous operations like fetching from external services, database queries, or other
+async logic to determine if a label should be active:
+
+```ts filename="gateway-config.ts"
+import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  async progressiveOverride(label: string, context: GatewayContext) {
+    if (label === 'use-fulfillment-service') {
+      // Fetch from an external service to determine if override should be active
+      const response = await fetch('https://api.myfeaturechecker.com/feature-flags', {
+        headers: {
+          'x-user-id': context.request.headers.get('x-user-id') || ''
+        }
+      })
+      const flags = await response.json()
+      return flags.useFulfillmentService === true
+    }
+
+    // Default fallback
+    return false
+  }
+})
+```
+
+In this example:
+
+- We fetch feature flags from an external API service
+- We pass the user ID from request headers to the service
+- The service responds with feature flags, and we check if `useFulfillmentService` is enabled
+- The function returns a Promise that resolves to a boolean, determining whether the override is
+  active
