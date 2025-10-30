@@ -26,18 +26,18 @@ You can either provide the usage reporting configuration via environment variabl
 
 <Tabs.Tab>
 
-- `HIVE__USAGE_REPORTING__TARGET_ID`: The target ID, this can either be a slug following the format
+- `HIVE_TARGET`: The target ID, this can either be a slug following the format
   `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`) or an UUID
   (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`). To be used when the token is configured with an
   organization access token.
 
-- `HIVE__USAGE_REPORTING__TOKEN`: Your
+- `HIVE_ACCESS_TOKEN`: Your
   [Registry Access Token](https://the-guild.dev/graphql/hive/docs/management/targets#registry-access-tokens)
   with write permission.
 
 ```sh filename="Run Hive Router with Usage Reporting enabled."
-HIVE__USAGE_REPORTING__TOKEN="<hive_usage_access_token>" \
-  HIVE__USAGE_REPORTING__TARGET_ID="<hive_usage_target>" \
+HIVE_ACCESS_TOKEN="<hive_usage_access_token>" \
+  HIVE_TARGET="<hive_usage_target>" \
   hive-router
 ```
 
