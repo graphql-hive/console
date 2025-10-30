@@ -1,6 +1,6 @@
 {
   "name": "hive-console-sdk-rs",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "sync-cargo-file": "./sync-cargo-file.sh"
