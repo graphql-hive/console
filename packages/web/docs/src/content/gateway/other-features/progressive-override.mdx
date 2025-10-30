@@ -49,9 +49,10 @@ logic to determine if the label should be active or not either based on percenta
 IDs, or any other criteria. Keep on mind that this function should be performant since it runs for
 every request. So you need a fast way to determine if a label is active or not.
 
-> You can see a working example with LaunchDarkly that holds the flag state externally. And it
-> decides whether to activate the override based on the flag value dynamically per request.
-> [Here is the example](https://github.com/graphql-hive/gateway/tree/main/examples/launchdarkly-override).
+> You can see a working example with [LaunchDarkly](https://launchdarkly.com/) that holds the flag
+> state externally. The gateway then decides whether to activate the override based on the flag
+> value dynamically per request.
+> [See the example here.](https://github.com/graphql-hive/gateway/tree/main/examples/launchdarkly-override)
 
 ## Percentage Approach
 
