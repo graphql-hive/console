@@ -5,6 +5,10 @@ export type CaseStudyFrontmatter = {
   excerpt: string;
   category: string;
   authors: CaseStudyAuthor[];
+  /**
+   * YYYY-MM-DD
+   */
+  date: `${number}-${number}-${number}`;
 };
 
 export type CaseStudyAuthor = {

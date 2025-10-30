@@ -10,3 +10,15 @@
     }
   }
 }
+
+.flowchart {
+  & .edgeLabel p {
+    background-color: rgb(var(--nextra-bg)) !important;
+  }
+  & .cluster rect {
+    @apply dark:!fill-beige-800/5 !stroke-beige-300 dark:!stroke-beige-700/25 !fill-blue-300;
+  }
+  & .node rect {
+    @apply dark:!fill-beige-700/10 dark:!stroke-beige-700/25 !fill-blue-100 !stroke-transparent;
+  }
+}
