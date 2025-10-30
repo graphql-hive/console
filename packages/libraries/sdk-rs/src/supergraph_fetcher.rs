@@ -14,8 +14,8 @@ impl SupergraphFetcher {
         endpoint: String,
         key: String,
         user_agent: String,
-        connect_timeout: u64,
-        request_timeout: u64,
+        connect_timeout: Duration,
+        request_timeout: Duration,
         accept_invalid_certs: bool,
     ) -> Result<Self, String> {
         let mut endpoint = endpoint;
@@ -29,8 +29,8 @@ impl SupergraphFetcher {
 
         let client = reqwest::blocking::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(Duration::from_secs(connect_timeout))
-            .timeout(Duration::from_secs(request_timeout))
+            .connect_timeout(connect_timeout)
+            .timeout(request_timeout)
             .build()
             .map_err(|e| e.to_string())?;
 

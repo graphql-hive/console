@@ -141,8 +141,8 @@ impl UsageAgent {
         endpoint: String,
         target_id: Option<String>,
         buffer_size: usize,
-        connect_timeout: u64,
-        request_timeout: u64,
+        connect_timeout: Duration,
+        request_timeout: Duration,
         accept_invalid_certs: bool,
         flush_interval: Duration,
         user_agent: String,
@@ -153,8 +153,8 @@ impl UsageAgent {
 
         let reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(Duration::from_secs(connect_timeout))
-            .timeout(Duration::from_secs(request_timeout))
+            .connect_timeout(connect_timeout)
+            .timeout(request_timeout)
             .build()
             .map_err(|err| err.to_string())
             .expect("Couldn't instantiate the http client for reports sending!");
