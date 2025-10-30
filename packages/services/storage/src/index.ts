@@ -51,6 +51,7 @@ import {
   tokens,
   users,
 } from './db';
+import { ResourceAssignmentModel } from './resource-assignment-model';
 import {
   ConditionalBreakingChangeMetadata,
   ConditionalBreakingChangeMetadataModel,
@@ -506,7 +507,7 @@ export async function createStorage(
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id, created_at)
+            (organization_id, user_id, role_id, assigned_resources, created_at)
           VALUES
             (
               ${linkedOrganizationId},
@@ -518,6 +519,10 @@ export async function createStorage(
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
+              ),
+              (
+                SELECT default_assigned_resources FROM oidc_integrations
+                WHERE id = ${args.oidcIntegrationId}
               ),
               now()
             )
@@ -2198,6 +2203,27 @@ export async function createStorage(
 
       return result.rows.map(transformSchema);
     },
+    async getSchemaNamesOfVersion({ versionId: version }) {
+      const result = await pool.query<
+        Pick<OverrideProp<schema_log, 'action', 'PUSH'>, 'service_name'>
+      >(
+        sql`/* getSchemaNamesOfVersion */
+          SELECT
+            lower(sl.service_name) as service_name
+          FROM schema_version_to_log AS svl
+          LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
+          LEFT JOIN projects as p ON (p.id = sl.project_id)
+          WHERE
+            svl.version_id = ${version}
+            AND sl.action = 'PUSH'
+            AND p.type != 'CUSTOM'
+          ORDER BY
+            sl.created_at DESC
+        `,
+      );
+
+      return result.rows.map(s => s.service_name).filter(Boolean) as string[];
+    },
     async getServiceSchemaOfVersion(args) {
       const result = await pool.maybeOne<
         Pick<
@@ -3021,6 +3047,7 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
@@ -3048,6 +3075,7 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
@@ -3111,6 +3139,7 @@ export async function createStorage(
             , "authorization_endpoint"
             , "oidc_user_access_only"
             , "default_role_id"
+            , "default_assigned_resources"
         `);
 
         return {
@@ -3166,6 +3195,7 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3189,9 +3219,36 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
       `);
 
       return decodeOktaIntegrationRecord(result);
+    },
+
+    async updateOIDCDefaultAssignedResources(args) {
+      return tracedTransaction('updateOIDCDefaultAssignedResources', pool, async _ => {
+        const result = await pool.one(sql`/* updateOIDCDefaultAssignedResources */
+          UPDATE "oidc_integrations"
+          SET
+            "default_assigned_resources" = ${sql.jsonb(args.assignedResources)}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "oidc_user_access_only"
+          , "default_role_id"
+          , "default_assigned_resources"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
     },
 
     async updateOIDCDefaultMemberRole(args) {
@@ -3227,6 +3284,7 @@ export async function createStorage(
           , "authorization_endpoint"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -4574,6 +4632,52 @@ export async function createStorage(
         organizationId: args.organizationId,
       });
     },
+    async getProjectsForResourceSelector(args) {
+      const projects = await this.getProjects({ organizationId: args.organizationId });
+
+      return await Promise.all(
+        projects.map(async p => {
+          const targets = await this.getTargets({
+            organizationId: args.organizationId,
+            projectId: p.id,
+          });
+          return {
+            id: p.id,
+            slug: p.slug,
+            type: p.type,
+            targets: await Promise.all(
+              targets.map(async t => {
+                const latest = await this.getMaybeLatestValidVersion({ targetId: t.id });
+                let services: string[] | undefined;
+                if (latest) {
+                  services = await storage.getSchemaNamesOfVersion({
+                    versionId: latest.id,
+                  });
+                }
+
+                const apps = await this.pool.query<{ name: string }>(
+                  sql`
+                  SELECT DISTINCT ON ("name")
+                    "name"
+                  FROM
+                    "app_deployments"
+                  WHERE
+                    "target_id" = ${t.id}
+                    AND "retired_at" IS NULL
+                `,
+                );
+                return {
+                  id: t.id,
+                  slug: t.slug,
+                  services: services ?? [],
+                  appDeployments: apps.rows.map(a => a.name),
+                };
+              }),
+            ),
+          };
+        }),
+      );
+    },
     pool,
   };
 
@@ -4635,6 +4739,7 @@ const OktaIntegrationBaseModel = zod.object({
   client_secret: zod.string(),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
+  default_assigned_resources: ResourceAssignmentModel.nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4670,6 +4775,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
+      defaultResourceAssignment: rawRecord.default_assigned_resources,
     };
   }
 
@@ -4683,6 +4789,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     authorizationEndpoint: rawRecord.authorization_endpoint,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
+    defaultResourceAssignment: rawRecord.default_assigned_resources,
   };
 };
 

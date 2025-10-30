@@ -1,9 +1,24 @@
 import { gql } from 'graphql-modules';
 
 export default gql`
+  type ProjectForResourceSelector {
+    id: ID!
+    slug: String!
+    type: ProjectType!
+    targets: [TargetForResourceSelector!]!
+  }
+
+  type TargetForResourceSelector {
+    id: ID!
+    slug: String!
+    services: [String!]!
+    appDeployments: [String!]!
+  }
+
   extend type Organization {
     viewerCanManageOIDCIntegration: Boolean!
     oidcIntegration: OIDCIntegration
+    projectsForResourceSelector: [ProjectForResourceSelector]
   }
 
   extend type User {
@@ -19,6 +34,7 @@ export default gql`
     authorizationEndpoint: String!
     oidcUserAccessOnly: Boolean!
     defaultMemberRole: MemberRole!
+    defaultResourceAssignment: ResourceAssignment
   }
 
   extend type Mutation {
@@ -29,6 +45,30 @@ export default gql`
     updateOIDCDefaultMemberRole(
       input: UpdateOIDCDefaultMemberRoleInput!
     ): UpdateOIDCDefaultMemberRoleResult!
+    updateOIDCDefaultResourceAssignment(
+      input: UpdateOIDCDefaultResourceAssignmentInput!
+    ): UpdateOIDCDefaultResourceAssignmentResult!
+  }
+
+  """
+  @oneOf
+  """
+  type UpdateOIDCDefaultResourceAssignmentResult {
+    ok: UpdateOIDCDefaultResourceAssignmentOk
+    error: UpdateOIDCDefaultResourceAssignmentError
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentOk {
+    updatedOIDCIntegration: OIDCIntegration!
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentError implements Error {
+    message: String!
+  }
+
+  input UpdateOIDCDefaultResourceAssignmentInput {
+    oidcIntegrationId: ID!
+    resources: ResourceAssignmentInput!
   }
 
   extend type Subscription {

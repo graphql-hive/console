@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
 import type { CompositionFailureError } from '@hive/schema';
 import type { schema_policy_resource } from '@hive/storage';
+import type { ResourceAssignmentGroup } from '@hive/storage/resource-assignment-model';
 import type {
   AlertChannelType,
   AlertType,
@@ -223,6 +224,7 @@ export interface OIDCIntegration {
   authorizationEndpoint: string;
   oidcUserAccessOnly: boolean;
   defaultMemberRoleId: string | null;
+  defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
 
 export interface CDNAccessToken {

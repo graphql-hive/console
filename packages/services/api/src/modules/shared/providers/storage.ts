@@ -12,7 +12,8 @@ import type {
   SchemaVersion,
   TargetBreadcrumb,
 } from '@hive/storage';
-import type { SchemaChecksFilter } from '../../../__generated__/types';
+import type { ResourceAssignmentGroup } from '@hive/storage/resource-assignment-model';
+import type { ProjectType, SchemaChecksFilter } from '../../../__generated__/types';
 import type {
   Alert,
   AlertChannel,
@@ -54,6 +55,20 @@ export interface ProjectSelector extends OrganizationSelector {
 export interface TargetSelector extends ProjectSelector {
   targetId: string;
 }
+
+export type ProjectForResourceSelector = {
+  id: string;
+  slug: string;
+  type: ProjectType;
+  targets: TargetForResourceSelector[];
+};
+
+export type TargetForResourceSelector = {
+  id: string;
+  slug: string;
+  services: string[];
+  appDeployments: string[];
+};
 
 type CreateContractVersionInput = {
   contractId: string;
@@ -390,6 +405,7 @@ export interface Storage {
     after: string | null;
   }>;
   getSchemasOfVersion(_: { versionId: string; includeMetadata?: boolean }): Promise<Schema[]>;
+  getSchemaNamesOfVersion(_: { versionId: string }): Promise<string[]>;
   getSchemaByNameOfVersion(_: { versionId: string; serviceName: string }): Promise<Schema | null>;
   getServiceSchemaOfVersion(args: {
     schemaVersionId: string;
@@ -623,6 +639,11 @@ export interface Storage {
     roleId: string;
   }): Promise<OIDCIntegration>;
 
+  updateOIDCDefaultAssignedResources(_: {
+    oidcIntegrationId: string;
+    assignedResources: ResourceAssignmentGroup;
+  }): Promise<OIDCIntegration>;
+
   createCDNAccessToken(_: {
     id: string;
     targetId: string;
@@ -822,6 +843,9 @@ export interface Storage {
     targetId: string;
     nativeComposition: boolean;
   }): Promise<Target>;
+  getProjectsForResourceSelector(_: {
+    organizationId: string;
+  }): Promise<ProjectForResourceSelector[]>;
 }
 
 @Injectable()
