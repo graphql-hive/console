@@ -456,7 +456,7 @@ export const env = {
         ? { 
           baseUrl: cdnApi.CDN_API_BASE_URL,
           kv: cdnApi.CDN_API_KV_BASE_URL ? { baseUrl: cdnApi.CDN_API_KV_BASE_URL } : null,
-        } : null,,
+        } : null,
     },
   },
   s3: {
