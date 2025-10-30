@@ -60,8 +60,8 @@ impl PersistedDocumentsManager {
         key: String,
         endpoint: String,
         accept_invalid_certs: bool,
-        connect_timeout: u64,
-        request_timeout: u64,
+        connect_timeout: Duration,
+        request_timeout: Duration,
         retry_count: u32,
         cache_size: u64,
     ) -> Self {
@@ -69,8 +69,8 @@ impl PersistedDocumentsManager {
 
         let reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(Duration::from_secs(connect_timeout))
-            .timeout(Duration::from_secs(request_timeout))
+            .connect_timeout(connect_timeout)
+            .timeout(request_timeout)
             .build()
             .expect("Failed to create reqwest client");
         let agent = ClientBuilder::new(reqwest_agent)

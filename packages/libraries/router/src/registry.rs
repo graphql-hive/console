@@ -7,6 +7,7 @@ use sha2::Sha256;
 use std::env;
 use std::io::Write;
 use std::thread;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct HiveRegistry {
@@ -126,8 +127,8 @@ impl HiveRegistry {
                 endpoint,
                 key,
                 format!("hive-apollo-router/{}", PLUGIN_VERSION),
-                5,
-                60,
+                Duration::from_secs(5),
+                Duration::from_secs(60),
                 accept_invalid_certs,
             )
             .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?,

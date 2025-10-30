@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::ops::ControlFlow;
 use std::sync::Arc;
+use std::time::Duration;
 use tower::{BoxError, ServiceBuilder, ServiceExt};
 use tracing::{debug, info, warn};
 
@@ -102,8 +103,8 @@ impl PersistedDocumentsPlugin {
                 key,
                 endpoint,
                 config.accept_invalid_certs.unwrap_or(false),
-                config.connect_timeout.unwrap_or(5),
-                config.request_timeout.unwrap_or(15),
+                Duration::from_secs(config.connect_timeout.unwrap_or(5)),
+                Duration::from_secs(config.request_timeout.unwrap_or(15)),
                 config.retry_count.unwrap_or(3),
                 config.cache_size.unwrap_or(1000),
             ))),
