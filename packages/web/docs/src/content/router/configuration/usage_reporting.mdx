@@ -9,7 +9,7 @@ The `usage_reporting` configuration object allows you to control over how the Hi
 
 ## Options
 
-### `token`
+### `access_token`
 
 - **Type:** `string`
 
@@ -17,8 +17,7 @@ Your
 [Registry Access Token](https://the-guild.dev/graphql/hive/docs/management/targets#registry-access-tokens)
 with write permission.
 
-Alternatively, you can set the `HIVE__USAGE_REPORTING__TOKEN` environment variable to provide the
-token.
+Alternatively, you can set the `HIVE_ACCESS_TOKEN` environment variable to provide the token.
 
 ### `target_id`
 
@@ -29,8 +28,7 @@ A target ID, this can either be a slug following the format
 `a0f4c605-6541-4350-8cfe-b31f21a4bf80`). To be used when the token is configured with an
 organization access token.
 
-Alternatively, you can set the `HIVE__USAGE_REPORTING__TARGET_ID` environment variable to provide
-the target ID.
+Alternatively, you can set the `HIVE_TARGET` environment variable to provide the target ID.
 
 ### `endpoint`
 
@@ -41,12 +39,12 @@ For self-hosting, you can override `/usage` endpoint of your Hive instance.
 
 ### `sample_rate`
 
-- **Type:** `number`
-- **Default:** `1.0`
+- **Type:** `string`
+- **Default:** `100%`
 
-A value between `0.0` and `1.0` that indicates the percentage of requests to be reported. For
-example, a value of `0.1` means that approximately 10% of requests will be reported, while a value
-of `1.0` means that all requests will be reported.
+A percentage value between `0%` and `100%` that indicates the percentage of requests to be reported.
+For example, a value of `10%` means that approximately 10% of requests will be reported, while a
+value of `100%` means that all requests will be reported.
 
 ### `exclude`
 
@@ -90,21 +88,23 @@ This can be useful for self-hosted Hive instances using self-signed certificates
 
 ### `connect_timeout`
 
-- **Type:** `integer`
-- **Default:** `5`
+- **Type:** `string`
+- **Default:** `5s`
 
-A timeout for only the connect phase of a request to Hive Console, in seconds.
+A timeout for only the connect phase of a request to Hive Console, in duration format (e.g., `5s`
+for 5 seconds).
 
 ### `request_timeout`
 
-- **Type:** `integer`
-- **Default:** `15`
+- **Type:** `string`
+- **Default:** `15s`
 
-A timeout for the entire request to Hive Console, in seconds.
+A timeout for the entire request to Hive Console, in duration format (e.g., `15s` for 15 seconds).
 
 ### `flush_interval`
 
-- **Type:** `integer`
-- **Default:** `5`
+- **Type:** `string`
+- **Default:** `5s`
 
-The interval in seconds at which the usage report buffer is flushed and sent to Hive Console.
+The interval in seconds at which the usage report buffer is flushed and sent to Hive Console. In
+duration format (e.g., `5s` for 5 seconds).
