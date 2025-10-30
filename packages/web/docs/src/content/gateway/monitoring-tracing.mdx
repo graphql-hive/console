@@ -136,8 +136,8 @@ We recommend to place your OpenTelemetry setup in a `telemetry.ts` file that wil
 import in your `gateway.config.ts` file. This allow instrumentations to be registered (if any)
 before any other packages are imported.
 
-For ease of configuration, we provide a `openTelemetrySetup` function, with sensible default and straightforward API
-compatible with all runtimes.
+For ease of configuration, we provide a `openTelemetrySetup` function, with sensible default and
+straightforward API compatible with all runtimes.
 
 But this utility is not mandatory, you can use any setup relevant to your specific use case and
 infrastructure.
@@ -169,8 +169,8 @@ npm i @opentelemetry/context-async-hooks @opentelemetry/exporter-trace-otlp-http
 
 Depending on your usage, you will have to import `openTelemetrySetup` from a different module:
 
- - CLI usage: `@graphql-hive/gateway/opentelemetry/setup`
- - Programmatic usage : `@graphql-hive/plugin-opentelemetry/setup`
+- CLI usage: `@graphql-hive/gateway/opentelemetry/setup`
+- Programmatic usage : `@graphql-hive/plugin-opentelemetry/setup`
 
 ```ts filename="telemetry.ts"
 // For CLI usage
