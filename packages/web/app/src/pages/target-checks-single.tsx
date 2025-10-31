@@ -997,6 +997,10 @@ const ActiveSchemaCheck_SchemaCheckFragment = graphql(`
         displayName
         email
       }
+      cliApprovalMetadata {
+        displayName
+        email
+      }
       approvalComment
     }
     contractChecks {
@@ -1181,17 +1185,24 @@ const ActiveSchemaCheck = (props: {
                     </TooltipTrigger>
                     <TooltipContent>
                       Schema Check was manually approved by{' '}
-                      {schemaCheck.approvedBy?.displayName ?? 'unknown'}.
+                      {schemaCheck.approvedBy?.displayName ??
+                        schemaCheck.cliApprovalMetadata?.displayName ??
+                        'unknown'}
+                      .
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               <div>
                 <p className="text-sm font-medium leading-none">
-                  {schemaCheck.approvedBy?.displayName ?? 'unknown'}
+                  {schemaCheck.approvedBy?.displayName ??
+                    schemaCheck.cliApprovalMetadata?.displayName ??
+                    'unknown'}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {schemaCheck.approvedBy?.email ?? 'unknown'}
+                  {schemaCheck.approvedBy?.email ??
+                    schemaCheck.cliApprovalMetadata?.email ??
+                    'unknown'}
                 </p>
               </div>
               {schemaCheck.approvalComment ? (
