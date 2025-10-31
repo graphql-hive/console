@@ -631,6 +631,7 @@ export async function main() {
 
       const artifactHandler = createArtifactRequestHandler({
         isKeyValid: createIsKeyValid({
+          kvStorageBaseUrl: env.cdn.providers.api.kv?.baseUrl,
           artifactStorageReader,
           analytics: null,
           breadcrumb(message: string) {

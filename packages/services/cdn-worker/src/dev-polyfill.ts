@@ -13,4 +13,6 @@ export const env: Env = {
   SENTRY_DSN: '',
   SENTRY_ENVIRONMENT: '',
   SENTRY_RELEASE: '',
+  // eslint-disable-next-line no-process-env
+  KV_STORAGE_BASE_URL: process.env.KV_STORAGE_BASE_URL,
 };
