@@ -31,11 +31,12 @@ import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
 export function labelize(message: string) {
-  // Turn " into '
-  // Replace '...' with <Label>...</Label>
-  return reactStringReplace(message.replace(/"/g, "'"), /'([^']+)'/gim, (match, i) => {
-    return <Label key={i}>{match}</Label>;
-  });
+  // Replace '...' and "..." with <Label>...</Label>
+  return reactStringReplace(
+    message,
+    /["']([A-Za-z_$][A-Za-z0-9_.$@-]*(?:\.[A-Za-z_$][A-Za-z0-9_.$@-]*)?)["']/g,
+    (match, i) => <Label key={i}>{match}</Label>,
+  );
 }
 
 const severityLevelMapping = {
