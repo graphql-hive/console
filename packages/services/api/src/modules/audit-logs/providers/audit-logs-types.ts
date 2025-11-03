@@ -334,6 +334,18 @@ export const AuditLogModel = z.union([
       organizationAccessTokenId: z.string().uuid(),
       permissions: z.array(z.string()).nullable(),
       assignedResources: ResourceAssignmentModel,
+      userId: z
+        .string()
+        // optional, because it was introduced later on.
+        .optional()
+        .nullable()
+        .transform(value => value ?? null),
+      projectId: z
+        .string()
+        // optional, because it was introduced later on.
+        .optional()
+        .nullable()
+        .transform(value => value ?? null),
     }),
   }),
   z.object({

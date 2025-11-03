@@ -442,6 +442,8 @@ export class OrganizationAccessTokens {
         organizationAccessTokenId: accessToken.id,
         permissions: accessToken.permissions,
         assignedResources: accessToken.assignedResources,
+        projectId: accessToken.projectId,
+        userId: accessToken.userId,
       },
     });
 
