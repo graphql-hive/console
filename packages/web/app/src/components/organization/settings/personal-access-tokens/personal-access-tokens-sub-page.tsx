@@ -7,7 +7,7 @@ import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
-import { CreateAccessTokenState } from '../../../organization/settings/access-tokens/access-tokens-sub-page';
+import { CreateAccessTokenState } from '../access-tokens/access-tokens-sub-page';
 import { CreatePersonalAccessTokenSheetContent } from './create-personal-access-token-sheet-content';
 import { PersonalAccessTokensTable } from './personal-access-tokens-table';
 

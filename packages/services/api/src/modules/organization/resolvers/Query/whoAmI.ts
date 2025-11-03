@@ -1,4 +1,4 @@
-import { HiveError } from '@hive/api/shared/errors';
+import { HiveError } from '../../../../shared/errors';
 import { OrganizationAccessTokenSession } from '../../../auth/lib/organization-access-token-strategy';
 import { TargetAccessTokenSession } from '../../../auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokens } from '../../providers/organization-access-tokens';

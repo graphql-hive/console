@@ -19,6 +19,7 @@ const ProjectAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
           title
           description
           resolvedResourcePermissionGroups(includeAll: true) {
+            title
             ...PermissionDetailView_ResolvedResourcePermissionGroup
           }
         }
@@ -59,6 +60,7 @@ export function ProjectAccessTokenDetailViewSheet(props: ProjectAccessTokenDetai
           resolvedResourcePermissionGroup => (
             <PermissionDetailView
               resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}
+              key={resolvedResourcePermissionGroup.title}
             />
           ),
         )}

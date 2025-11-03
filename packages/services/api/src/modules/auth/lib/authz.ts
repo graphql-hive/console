@@ -7,7 +7,6 @@ import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { CachedAccessToken } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
-import { TargetAccessTokenStrategy } from './target-access-token-strategy';
 
 export type AuthorizationPolicyStatement = {
   effect: 'allow' | 'deny';

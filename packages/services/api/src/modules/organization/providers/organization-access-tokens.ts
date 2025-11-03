@@ -1,12 +1,12 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { Organization, Project } from '@hive/api';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
 import * as GraphQLSchema from '../../../__generated__/types';
+import { Organization, Project } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import {

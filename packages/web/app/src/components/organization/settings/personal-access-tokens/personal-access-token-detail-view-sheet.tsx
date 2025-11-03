@@ -1,7 +1,7 @@
 import { useQuery } from 'urql';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
-import { PermissionDetailView } from './../access-tokens/permission-detail-view';
+import { PermissionDetailView } from '../access-tokens/permission-detail-view';
 
 const PersonalAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
   query PersonalAccessTokenDetailViewSheet_OrganizationQuery(
@@ -17,6 +17,7 @@ const PersonalAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
           title
           description
           resolvedResourcePermissionGroups(includeAll: true) {
+            title
             ...PermissionDetailView_ResolvedResourcePermissionGroup
           }
         }
@@ -55,6 +56,7 @@ export function PersonalAccessTokenDetailViewSheet(props: PersonalAccessTokenDet
           resolvedResourcePermissionGroup => (
             <PermissionDetailView
               resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}
+              key={resolvedResourcePermissionGroup.title}
             />
           ),
         )}

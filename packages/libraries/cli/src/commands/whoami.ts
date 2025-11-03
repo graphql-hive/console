@@ -8,7 +8,6 @@ import {
   MissingEndpointError,
   MissingRegistryTokenError,
 } from '../helpers/errors';
-import { Texture } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo($showAll: Boolean!) {
@@ -135,23 +134,4 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       this.log(table.toString());
     }
   }
-}
-
-function createPrinter(records: { [label: string]: [value: string, extra?: string] }) {
-  const labels = Object.keys(records);
-  const values = Object.values(records).map(v => v[0]);
-  const maxLabelsLen = Math.max(...labels.map(v => v.length)) + 4;
-  const maxValuesLen = Math.max(...values.map(v => v.length)) + 4;
-
-  return () => {
-    const lines: string[] = [];
-
-    for (const label in records) {
-      const [value, extra] = records[label];
-
-      lines.push(label.padEnd(maxLabelsLen, ' ') + value.padEnd(maxValuesLen, ' ') + (extra || ''));
-    }
-
-    return lines.join('\n');
-  };
 }

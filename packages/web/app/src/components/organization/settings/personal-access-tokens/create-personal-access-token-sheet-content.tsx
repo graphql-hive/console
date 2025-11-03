@@ -18,21 +18,18 @@ import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PermissionSelector } from '../../../organization/members/permission-selector';
+import { PermissionSelector } from '../../members/permission-selector';
 import {
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
   type ResourceSelection,
-} from '../../../organization/members/resource-selector';
-import { SelectedPermissionOverview } from '../../../organization/members/selected-permission-overview';
+} from '../../members/resource-selector';
+import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
 import {
   DescriptionInputModel,
   TitleInputModel,
-} from '../../../organization/settings/access-tokens/create-access-token-sheet-content';
-import {
-  permissionLevelToResourceName,
-  resolveResources,
-} from '../../../organization/settings/access-tokens/shared-helpers';
+} from '../access-tokens/create-access-token-sheet-content';
+import { permissionLevelToResourceName, resolveResources } from '../access-tokens/shared-helpers';
 
 const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
@@ -52,13 +49,6 @@ const CreatePersonalAccessTokenSheetContent_OrganizationFragment = graphql(`
       }
     }
     ...ResourceSelector_OrganizationFragment
-  }
-`);
-
-const CreatePersonalAccessTokenSheetContent_ProjectFragment = graphql(`
-  fragment CreatePersonalAccessTokenSheetContent_ProjectFragment on Project {
-    id
-    slug
   }
 `);
 
