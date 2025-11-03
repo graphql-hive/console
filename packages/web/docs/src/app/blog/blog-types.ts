@@ -1,15 +1,18 @@
 import type { StaticImageData } from 'next/image';
-import { AuthorId } from '../../authors';
-import { MdxFile, PageMapItem } from '../../mdx-types';
+import type { Author, AuthorId } from '../../authors';
+import type { MdxFile, PageMapItem } from '../../mdx-types';
+
+type OneOrMany<T> = T | T[];
 
 export interface BlogFrontmatter {
-  authors: AuthorId | AuthorId[];
+  authors: OneOrMany<AuthorId | Author>;
   title: string;
   date: string;
   tags: string | string[];
   featured?: boolean;
   image?: VideoPath | StaticImageData;
   thumbnail?: StaticImageData;
+  description?: string;
 }
 
 type VideoPath = `${string}.${'webm' | 'mp4'}`;

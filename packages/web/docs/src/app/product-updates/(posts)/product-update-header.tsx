@@ -4,13 +4,9 @@ import { format } from 'date-fns';
 import { Anchor, cn, useConfig } from '@theguild/components';
 import { AuthorId, authors } from '../../../authors';
 import { SocialAvatar } from '../../../components/social-avatar';
+import { BlogFrontmatter } from '../../blog/blog-types';
 
-type Meta = {
-  authors: AuthorId[];
-  date: string;
-  title: string;
-  description: string;
-};
+type Meta = Pick<BlogFrontmatter, 'authors' | 'date' | 'title' | 'description'>;
 
 export const ProductUpdateAuthors = ({
   meta,
@@ -21,10 +17,15 @@ export const ProductUpdateAuthors = ({
 }) => {
   const date = meta.date ? new Date(meta.date) : new Date();
 
-  if (meta.authors.length === 1) {
-    const author = authors[meta.authors[0] as AuthorId];
+  const metaAuthors = (Array.isArray(meta.authors) ? meta.authors : [meta.authors]).map(author => {
+    return typeof author === 'string' ? authors[author as AuthorId] : author;
+  });
+
+  if (metaAuthors.length === 1) {
+    const author = metaAuthors[0];
+
     if (!author) {
-      throw new Error(`Author ${meta.authors[0]} not found`);
+      throw new Error(`Author ${metaAuthors[0]} not found`);
     }
 
     return (
@@ -66,14 +67,9 @@ export const ProductUpdateAuthors = ({
         {format(date, 'EEEE, LLL do y')}
       </time>
       <div className="my-5 flex flex-wrap justify-center gap-5">
-        {meta.authors.map(authorId => {
-          const author = authors[authorId as AuthorId];
-          if (!author) {
-            throw new Error(`Author ${authorId} not found`);
-          }
-
+        {metaAuthors.map(author => {
           return (
-            <div key={authorId}>
+            <div key={author.name}>
               <Anchor
                 href={author.link}
                 title={author.name}
