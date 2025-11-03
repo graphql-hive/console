@@ -905,18 +905,49 @@ export class OrganizationAccessTokens {
     (
       accessToken: Pick<
         OrganizationAccessToken,
-        'organizationId' | 'projectId' | 'assignedResources' | 'permissions'
+        'organizationId' | 'projectId' | 'assignedResources' | 'permissions' | 'userId'
       >,
     ) =>
     async (
       /** Whether to include all or only the granted permissions. */
       includeAll: boolean = false,
     ): Promise<Array<GraphQLResolvedResourcePermissionGroupOutput>> => {
-      const grantedPermissions = new Set(accessToken.permissions ?? []);
+      let grantedPermissions: Set<Permission>;
+      let grantedResources: ResourceAssignmentGroup;
+
+      if (accessToken.userId) {
+        const organization = await this.storage.getOrganization({
+          organizationId: accessToken.organizationId,
+        });
+        const membership = await this.members.findOrganizationMembership({
+          organization,
+          userId: accessToken.userId,
+        });
+
+        if (
+          !membership ||
+          !membership.assignedRole.role.permissions.organization.has('personalAccessToken:modify')
+        ) {
+          return [];
+        } else {
+          grantedResources = intersectResourceAssignments(
+            accessToken.assignedResources,
+            membership.assignedRole.resources,
+          );
+          const membershipPermissions = membership.assignedRole.role.allPermissions;
+          grantedPermissions = new Set(
+            accessToken.permissions?.filter(permission => membershipPermissions.has(permission)) ??
+              [],
+          );
+        }
+      } else {
+        grantedPermissions = new Set(accessToken.permissions ?? []);
+        grantedResources = accessToken.assignedResources;
+      }
 
       const resourceIds = await this.resourceAssignments.resourceAssignmentToResourceIds(
         accessToken.organizationId,
-        accessToken.assignedResources,
+        grantedResources,
       );
 
       type PMap = {

@@ -77,6 +77,8 @@ export class OrganizationAccessTokensCache {
 
     // in this case, we need to load the membership and filter down permissions based on the viewer.
     if (accessToken.userId) {
+      logger.debug('personal access token detected');
+
       const membership = await OrganizationMembers.findOrganizationMembership({
         logger,
         pool: this.pool,
@@ -126,16 +128,16 @@ export class OrganizationAccessTokensCache {
     });
   }
 
-  add(logger: Logger, record: OrganizationAccessToken) {
+  async add(logger: Logger, record: OrganizationAccessToken) {
     return this.cache.set({
       key: record.id,
-      value: this.makeCacheRecord(logger, record),
+      value: await this.makeCacheRecord(logger, record),
       ttl: '5min',
       grace: '24h',
     });
   }
 
-  purge(token: OrganizationAccessToken) {
+  purge(token: Pick<OrganizationAccessToken, 'id'>) {
     return this.cache.delete({
       key: token.id,
     });

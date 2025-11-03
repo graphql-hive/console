@@ -140,8 +140,20 @@ export default gql`
     privateAccessKey: String!
   }
 
+  type CreateProjectAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
+  }
+
   type CreateProjectAccessTokenResultError {
     message: String
+    details: CreateProjectAccessTokenResultErrorDetails
   }
 
   """
