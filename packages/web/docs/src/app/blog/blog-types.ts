@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AuthorOrId, staticImageDataSchema } from '../../authors';
-import type { MdxFile, PageMapItem } from '../../mdx-types';
+import { parseSchema } from '../../lib/parse-schema';
+import { MdxFile, PageMapItem } from '../../mdx-types';
 
 export const VideoPath = z
   .string()
@@ -21,15 +22,5 @@ export const BlogFrontmatter = z.object({
 
 export type BlogFrontmatter = z.infer<typeof BlogFrontmatter>;
 
-export type BlogPostFile = Required<MdxFile<BlogFrontmatter>>;
-
-export function isBlogPost(item: PageMapItem): item is BlogPostFile {
-  return (
-    item &&
-    'route' in item &&
-    'name' in item &&
-    'frontMatter' in item &&
-    !!item.frontMatter &&
-    BlogFrontmatter.safeParse(item.frontMatter).success
-  );
-}
+export const BlogPostFile = MdxFile(BlogFrontmatter);
+export type BlogPostFile = z.infer<typeof BlogPostFile>;

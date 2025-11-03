@@ -1,12 +1,18 @@
+import { z, ZodTypeAny } from 'zod';
 import type { getPageMap } from '@theguild/components/server';
 
-/**
- * TODO: This type should be exported from `nextra` and `@theguild/components`
- */
 export type MdxFile<FrontMatterType> = {
   name: string;
   route: string;
-  frontMatter?: FrontMatterType;
+  frontMatter: FrontMatterType;
+};
+
+export const MdxFile = <T extends ZodTypeAny>(frontMatterSchema: T) => {
+  return z.object({
+    name: z.string(),
+    route: z.string(),
+    frontMatter: frontMatterSchema,
+  });
 };
 
 /**

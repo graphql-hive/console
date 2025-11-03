@@ -1,11 +1,11 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
 import { AuthorId, authors } from '../../../authors';
+import { parseSchema } from '../../../lib/parse-schema';
 import { pagesDepthFirst } from '../../../mdx-types';
+import { CaseStudyFile } from '../../case-studies/case-study-types';
 import { coerceCaseStudyToBlog } from '../../case-studies/coerce-case-studies-to-blogs';
-import { isCaseStudy } from '../../case-studies/case-study-types';
-import { BlogFrontmatter, BlogPostFile, isBlogPost } from '../blog-types';
+import { BlogFrontmatter, BlogPostFile } from '../blog-types';
 
 function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
   const first = Array.isArray(frontmatterAuthors) ? frontmatterAuthors[0] : frontmatterAuthors;
@@ -32,10 +32,10 @@ export async function GET() {
     switch (dir) {
       case 'blog':
       case 'product-updates':
-        if (isBlogPost(page)) allPosts.push(toRssItem(page));
+        allPosts.push(toRssItem(parseSchema(page, BlogPostFile)));
         break;
       case 'case-studies':
-        if (isCaseStudy(page)) allPosts.push(toRssItem(coerceCaseStudyToBlog(page)));
+        allPosts.push(toRssItem(coerceCaseStudyToBlog(parseSchema(page, CaseStudyFile))));
         break;
     }
   }

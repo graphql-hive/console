@@ -2,11 +2,11 @@
 
 import { useFrontmatter } from '../../../components/use-frontmatter';
 import { CaseStudyCard } from '../case-study-card';
-import { CaseStudyFile } from '../case-study-types';
+import { CaseStudyFile, CaseStudyFrontmatter } from '../case-study-types';
 import { getCompanyLogo } from '../company-logos';
 
 export function OtherCaseStudies({ caseStudies }: { caseStudies: CaseStudyFile[] }) {
-  const frontmatter = useFrontmatter();
+  const frontmatter = useFrontmatter(CaseStudyFrontmatter);
   return (
     <>
       {caseStudies

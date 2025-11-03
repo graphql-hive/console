@@ -7,7 +7,7 @@ import { CaseStudyAuthor, CaseStudyFrontmatter } from './case-study-types';
 import { companyLogos } from './company-logos';
 
 export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
-  const { name, frontmatter } = useFrontmatter<CaseStudyFrontmatter>();
+  const { name, frontmatter } = useFrontmatter(CaseStudyFrontmatter);
 
   if (!name) {
     throw new Error('unexpected');
