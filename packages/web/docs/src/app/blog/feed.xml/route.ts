@@ -2,35 +2,49 @@
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
 import { AuthorId, authors } from '../../../authors';
-import { isBlogPost } from '../blog-types';
+import { pagesDepthFirst } from '../../../mdx-types';
+import { coerceCaseStudyToBlog } from '../../case-studies/coerce-case-studies-to-blogs';
+import { isCaseStudy } from '../../case-studies/isCaseStudyFile';
+import { BlogFrontmatter, BlogPostFile, isBlogPost } from '../blog-types';
 
-function getAuthor(name: string) {
-  const author = authors[name as AuthorId]?.name;
-  return author ?? name;
+function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
+  const first = Array.isArray(frontmatterAuthors) ? frontmatterAuthors[0] : frontmatterAuthors;
+
+  if (typeof first === 'string') {
+    const author = authors[first as AuthorId];
+    return author ? author.name : 'Unknown Author';
+  }
+
+  return first.name;
 }
 
+export const dynamic = 'force-static';
+export const config = { runtime: 'edge' };
+
 export async function GET() {
-  const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
-  const allPosts = pageMap
-    .filter(isBlogPost)
-    .map(
-      item =>
-        ({
-          title: item.frontMatter.title,
-          date: new Date(item.frontMatter.date),
-          url: `https://the-guild.dev/graphql/hive${item.route}`,
-          description: (item.frontMatter as any).description ?? '',
-          author: getAuthor(
-            typeof item.frontMatter.authors === 'string'
-              ? item.frontMatter.authors
-              : item.frontMatter.authors.at(0)!,
-          ),
-          categories: Array.isArray(item.frontMatter.tags)
-            ? item.frontMatter.tags
-            : [item.frontMatter.tags],
-        }) satisfies RSS.ItemOptions,
-    )
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  let allPosts: RSS.ItemOptions[] = [];
+
+  const [_meta, _indexPage, ...pages] = await getPageMap('/');
+  for (const page of pagesDepthFirst(pages)) {
+    const route = (page && 'route' in page && page.route) || '';
+    const [dir, name] = route.split('/').filter(Boolean);
+    if (!name) continue;
+    switch (dir) {
+      case 'blog':
+      case 'product-updates':
+        if (isBlogPost(page)) allPosts.push(toRssItem(page));
+        break;
+      case 'case-studies':
+        if (isCaseStudy(page)) allPosts.push(toRssItem(coerceCaseStudyToBlog(page)));
+        break;
+    }
+  }
+
+  if (allPosts.length === 0) {
+    throw new Error('No blog posts found for RSS feed');
+  }
+
+  allPosts = allPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const feed = new RSS({
     title: 'Hive Blog',
@@ -49,5 +63,15 @@ export async function GET() {
   });
 }
 
-export const dynamic = 'force-static';
-export const config = { runtime: 'edge' };
+function toRssItem(blogPost: BlogPostFile): RSS.ItemOptions {
+  return {
+    title: blogPost.frontMatter.title,
+    date: new Date(blogPost.frontMatter.date),
+    url: `https://the-guild.dev/graphql/hive${blogPost.route}`,
+    description: blogPost.frontMatter.description ?? '',
+    author: getAuthor(blogPost.frontMatter.authors),
+    categories: Array.isArray(blogPost.frontMatter.tags)
+      ? blogPost.frontMatter.tags
+      : [blogPost.frontMatter.tags],
+  };
+}
