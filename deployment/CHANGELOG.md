@@ -1,13 +1,22 @@
 # hive
 
+## 8.5.2
+
+### Patch Changes
+
+- [#7185](https://github.com/graphql-hive/console/pull/7185)
+  [`7457e4d`](https://github.com/graphql-hive/console/commit/7457e4de75c51a218493b6c7ea5b0e3823d99f6a)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix schema check approval to properly
+  reject checks with policy errors and return descriptive error message instead of generic error
+
 ## 8.5.1
 
 ### Patch Changes
 
 - [#7177](https://github.com/graphql-hive/console/pull/7177)
   [`1f7f195`](https://github.com/graphql-hive/console/commit/1f7f1951b2b1ef76d0853a6588e39458e5e1a982)
-  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue with native
-  federation public SDL generation around inaccessible interfaces.
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue with native federation public SDL
+  generation around inaccessible interfaces.
 
   **Example supergraph:**
 

@@ -789,8 +789,9 @@ export interface Storage {
     /** We inject this here as a dirty way to avoid chicken egg issues :) */
     contracts: Contracts;
     schemaCheckId: string;
-    userId: string;
+    userId: string | null;
     comment: string | null | undefined;
+    author: string | null | undefined;
   }): Promise<SchemaCheck | null>;
 
   /**

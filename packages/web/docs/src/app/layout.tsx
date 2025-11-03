@@ -114,7 +114,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
             resources: [
               {
                 children: 'Privacy Policy',
-                href: 'https://the-guild.dev/graphql/hive/privacy-policy.pdf',
+                href: 'https://the-guild.dev/graphql/hive/privacy-policy.html',
                 title: 'Privacy Policy',
               },
               {

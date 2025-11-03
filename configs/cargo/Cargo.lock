@@ -2393,22 +2393,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphql-parser-hive-fork"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a0137d5de726e9c6ddb3e6abcddc4fc3fd1c1cfcf23667388b6ccec9fa6433f"
-dependencies = [
- "combine",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "graphql-tools"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68fb22726aceab7a8933cdcff4201e1cdbcc7c7394df5bc1ebdcf27b44376433"
 dependencies = [
- "graphql-parser-hive-fork",
+ "graphql-parser",
  "lazy_static",
  "serde",
  "serde_json",
@@ -2614,14 +2604,14 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "anyhow",
  "apollo-router",
  "async-trait",
  "axum-core 0.5.5",
  "futures",
- "graphql-parser-hive-fork",
+ "graphql-parser",
  "graphql-tools",
  "hive-console-sdk",
  "http 1.3.1",
@@ -2648,12 +2638,12 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "async-trait",
  "axum-core 0.5.5",
- "graphql-parser-hive-fork",
+ "graphql-parser",
  "graphql-tools",
  "md5",
  "moka",
