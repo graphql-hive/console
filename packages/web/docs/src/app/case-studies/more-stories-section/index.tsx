@@ -10,15 +10,7 @@ export async function MoreStoriesSection({
   ...rest
 }: React.HTMLAttributes<HTMLDivElement>) {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
-  let caseStudies = pageMap.filter(isCaseStudy).slice(0, 4);
-
-  if (caseStudies.length < 4) {
-    if (process.env.NODE_ENV === 'development') {
-      caseStudies = [...caseStudies, ...caseStudies, ...caseStudies];
-    } else {
-      return null;
-    }
-  }
+  const caseStudies = pageMap.filter(isCaseStudy).slice(0, 4);
 
   return (
     <section {...rest} className={cn('py-6 sm:p-24', className)}>
