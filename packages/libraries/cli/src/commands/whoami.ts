@@ -125,7 +125,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
             group.title,
             perm.permission.id,
             perm.permission.title,
-            perm.isGranted ? '✓' : '❌',
+            perm.isGranted ? '✓' : '✗',
             perm.permission.description,
           ]);
         }
