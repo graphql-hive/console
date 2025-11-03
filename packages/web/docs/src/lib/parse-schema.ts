@@ -27,9 +27,9 @@ export function prettifyZodError(err: ZodError) {
   const pretty = err.issues
     .map(issue => {
       const lines = [];
-      lines.push(`   🔥  ${issue.message}`);
+      lines.push(`🔥 ${issue.message}`);
       if (issue.path.length > 0) {
-        lines.push(`      → at ${issue.path.join('.')}`);
+        lines.push(`    → at ${issue.path.join('.')}`);
       }
       return lines.join('\n');
     })

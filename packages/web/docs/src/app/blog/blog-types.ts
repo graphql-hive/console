@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { AuthorOrId, staticImageDataSchema } from '../../authors';
-import { parseSchema } from '../../lib/parse-schema';
-import { MdxFile, PageMapItem } from '../../mdx-types';
+import { MdxFile } from '../../mdx-types';
 
 export const VideoPath = z
   .string()
@@ -10,7 +9,7 @@ export const VideoPath = z
 export type VideoPath = z.infer<typeof VideoPath>;
 
 export const BlogFrontmatter = z.object({
-  authors: z.array(AuthorOrId),
+  authors: z.union([z.array(AuthorOrId), AuthorOrId]),
   title: z.string(),
   date: z.string(),
   tags: z.union([z.string(), z.array(z.string())]),
