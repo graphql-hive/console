@@ -24,9 +24,11 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       slackIntegration:modify,
       project:create,
       schemaLinting:modifyOrganizationRules,
+      personalAccessToken:modify,
       project:describe,
       project:delete,
       project:modifySettings,
+      projectAccessToken:modify,
       schemaLinting:modifyProjectRules,
       target:create,
       alert:modify,
@@ -37,7 +39,16 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       laboratory:describe,
       laboratory:modify,
       laboratory:modifyPreflightScript,
+      schema:compose,
+      usage:report,
+      traces:report,
       schemaCheck:approve,
+      schemaCheck:create,
+      schemaVersion:publish,
+      schemaVersion:deleteService,
+      appDeployment:create,
+      appDeployment:publish,
+      appDeployment:retire,
     ]
   `);
 });
