@@ -24,12 +24,12 @@ export default async function BlogPage() {
     .map(x => parseSchema(x, BlogPostFile))
     .concat(caseStudies)
     .concat(
-      productUpdates
-        .map(x => parseSchema(x, BlogPostFile))
-        .map(post => {
+      productUpdates.map(post => {
+        if ('frontMatter' in post && post.frontMatter) {
           post.frontMatter.tags ||= ['Product Update'];
-          return post;
-        }),
+        }
+        return parseSchema(post, BlogPostFile);
+      }),
     );
 
   return (

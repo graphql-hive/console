@@ -7,15 +7,16 @@ import { CaseStudyFile } from '../../case-studies/case-study-types';
 import { coerceCaseStudyToBlog } from '../../case-studies/coerce-case-studies-to-blogs';
 import { BlogFrontmatter, BlogPostFile } from '../blog-types';
 
-function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
+function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string | undefined {
   const first = Array.isArray(frontmatterAuthors) ? frontmatterAuthors[0] : frontmatterAuthors;
 
-  if (typeof first === 'string') {
+  if (first && typeof first === 'string') {
     const author = authors[first as AuthorId];
-    return author ? author.name : 'Unknown Author';
+    return author?.name;
   }
 
-  return first.name;
+  // authors can be empty array
+  return first?.name;
 }
 
 export const dynamic = 'force-static';
@@ -68,14 +69,15 @@ export async function GET() {
 }
 
 function toRssItem(blogPost: BlogPostFile): RSS.ItemOptions {
+  const author = getAuthor(blogPost.frontMatter.authors);
   return {
     title: blogPost.frontMatter.title,
     date: new Date(blogPost.frontMatter.date),
     url: `https://the-guild.dev/graphql/hive${blogPost.route}`,
     description: blogPost.frontMatter.description ?? '',
-    author: getAuthor(blogPost.frontMatter.authors),
     categories: Array.isArray(blogPost.frontMatter.tags)
       ? blogPost.frontMatter.tags
       : [blogPost.frontMatter.tags],
+    ...(author ? { author } : {}),
   };
 }
