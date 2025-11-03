@@ -30,6 +30,7 @@ export default async function BlogPage() {
           post.frontMatter.tags ||= ['Product Update'];
           return post;
         }),
+    );
 
   return (
     <BlogPageLayout>

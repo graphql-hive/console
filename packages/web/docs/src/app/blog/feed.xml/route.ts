@@ -30,8 +30,12 @@ export async function GET() {
     const [dir, name] = route.split('/').filter(Boolean);
     if (!name) continue;
     switch (dir) {
-      case 'blog':
       case 'product-updates':
+        if ('frontMatter' in page && page.frontMatter) {
+          page.frontMatter.tags ||= ['Product Update'];
+        }
+      // eslint-disable-next-line no-fallthrough
+      case 'blog':
         allPosts.push(toRssItem(parseSchema(page, BlogPostFile)));
         break;
       case 'case-studies':
