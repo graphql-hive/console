@@ -30,7 +30,8 @@
     "react-dom": "19.0.0",
     "react-icons": "5.4.0",
     "rehype-frontmatter-mdx-imports": "0.1.1",
-    "tailwind-merge": "2.6.0"
+    "tailwind-merge": "2.6.0",
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@mdx-js/typescript-plugin": "^0.0.8",
