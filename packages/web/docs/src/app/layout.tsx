@@ -20,6 +20,7 @@ import '../selection-styles.css';
 import '../easing-functions.css';
 import '../mermaid.css';
 import { NarrowPages } from './narrow-pages';
+import './global.css';
 
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
