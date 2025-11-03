@@ -4,7 +4,7 @@ import { getPageMap } from '@theguild/components/server';
 import { AuthorId, authors } from '../../../authors';
 import { pagesDepthFirst } from '../../../mdx-types';
 import { coerceCaseStudyToBlog } from '../../case-studies/coerce-case-studies-to-blogs';
-import { isCaseStudy } from '../../case-studies/isCaseStudyFile';
+import { isCaseStudy } from '../../case-studies/case-study-types';
 import { BlogFrontmatter, BlogPostFile, isBlogPost } from '../blog-types';
 
 function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {

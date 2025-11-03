@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { MdxFile } from '../../mdx-types';
+import type { MdxFile, PageMapItem } from '../../mdx-types';
 
 export const CaseStudyAuthor = z.object({
   name: z.string(),
@@ -23,3 +23,14 @@ export const CaseStudyFrontmatter = z.object({
 export type CaseStudyFrontmatter = z.infer<typeof CaseStudyFrontmatter>;
 
 export type CaseStudyFile = Required<MdxFile<CaseStudyFrontmatter>>;
+
+export function isCaseStudy(item: PageMapItem): item is CaseStudyFile {
+  return (
+    item &&
+    'route' in item &&
+    'name' in item &&
+    'frontMatter' in item &&
+    !!item.frontMatter &&
+    CaseStudyFrontmatter.safeParse(item.frontMatter).success
+  );
+}

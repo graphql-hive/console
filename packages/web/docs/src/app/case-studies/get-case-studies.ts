@@ -1,5 +1,5 @@
 import { getPageMap } from '@theguild/components/server';
-import { isCaseStudy } from './isCaseStudyFile';
+import { isCaseStudy } from './case-study-types';
 
 export async function getCaseStudies() {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
