@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { parseSchema } from '../../lib/parse-schema';
-import { MdxFile, PageMapItem } from '../../mdx-types';
+import { MdxFile } from '../../mdx-types';
 
 export const CaseStudyAuthor = z.object({
   name: z.string(),
