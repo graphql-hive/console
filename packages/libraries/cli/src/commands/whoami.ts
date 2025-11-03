@@ -120,7 +120,7 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         style: { head: ['cyan'] },
       });
 
-      for (const group of permLevel.groups) {
+      for (const group of permLevel.resolvedPermissionGroups) {
         for (const perm of group.permissions) {
           table.push([
             group.title,
