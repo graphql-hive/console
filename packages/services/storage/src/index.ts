@@ -3993,6 +3993,7 @@ export async function createStorage(
         userId: args.userId,
         date: new Date().toISOString(),
         schemaCheckId: schemaCheck.id,
+        author: args.author ?? undefined,
       };
 
       if (schemaCheck.contextId !== null && !!schemaCheck.breakingSchemaChanges) {
@@ -5097,9 +5098,10 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
   type: string;
   meta: Record<string, SerializableValue>;
   approvalMetadata: null | {
-    userId: string;
+    userId: string | null;
     date: string;
     schemaCheckId: string;
+    author?: string;
   };
   isSafeBasedOnUsage: boolean;
   usageStatistics: null | {
