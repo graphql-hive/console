@@ -25,7 +25,7 @@ export const Permission: PermissionResolvers = {
   },
 };
 
-function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
+export function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
   switch (resourceLevel) {
     case 'target':
       return 'TARGET' as const;

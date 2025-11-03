@@ -332,7 +332,7 @@ export const AuditLogModel = z.union([
     eventType: z.literal('ORGANIZATION_ACCESS_TOKEN_CREATED'),
     metadata: z.object({
       organizationAccessTokenId: z.string().uuid(),
-      permissions: z.array(z.string()),
+      permissions: z.array(z.string()).nullable(),
       assignedResources: ResourceAssignmentModel,
     }),
   }),

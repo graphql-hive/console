@@ -1,3 +1,4 @@
+import Table from 'cli-table3';
 import { Flags } from '@oclif/core';
 import Command from '../base-command';
 import { graphql } from '../gql';
@@ -6,33 +7,28 @@ import {
   InvalidRegistryTokenError,
   MissingEndpointError,
   MissingRegistryTokenError,
-  UnexpectedError,
 } from '../helpers/errors';
 import { Texture } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
-  query myTokenInfo {
-    tokenInfo {
-      __typename
-      ... on TokenInfo {
-        token {
-          name
+  query myTokenInfo($showAll: Boolean!) {
+    whoAmI {
+      title
+      resolvedPermissions(includeAll: $showAll) {
+        level
+        resolvedResourceIds
+        title
+        groups {
+          title
+          permissions {
+            isGranted
+            permission {
+              id
+              title
+              description
+            }
+          }
         }
-        organization {
-          slug
-        }
-        project {
-          type
-          slug
-        }
-        target {
-          slug
-        }
-        canPublishSchema: hasTargetScope(scope: REGISTRY_WRITE)
-        canCheckSchema: hasTargetScope(scope: REGISTRY_READ)
-      }
-      ... on TokenNotFoundError {
-        message
       }
     }
   }
@@ -62,6 +58,10 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
         message: 'use --registry.accessToken instead',
         version: '0.21.0',
       },
+    }),
+    all: Flags.boolean({
+      description: 'Also show non-granted permissions.',
+      default: false,
     }),
   };
 
@@ -95,43 +95,44 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
 
     const result = await this.registryApi(registry, token).request({
       operation: myTokenInfoQuery,
+      variables: {
+        showAll: flags.all,
+      },
     });
 
-    if (result.tokenInfo.__typename === 'TokenInfo') {
-      const { tokenInfo } = result;
-      const { organization, project, target } = tokenInfo;
+    if (result.whoAmI == null) {
+      throw new InvalidRegistryTokenError();
+    }
 
-      const organizationUrl = `https://app.graphql-hive.com/${organization.slug}`;
-      const projectUrl = `${organizationUrl}/${project.slug}`;
-      const targetUrl = `${projectUrl}/${target.slug}`;
+    const data = result.whoAmI;
 
-      const access = {
-        yes: Texture.colors.green('Yes'),
-        not: Texture.colors.red('No access'),
-      };
+    // Print header
+    this.log(`\n=== ${data.title} ===\n`);
 
-      const print = createPrinter({
-        'Token name:': [Texture.colors.bold(tokenInfo.token.name)],
-        ' ': [''],
-        'Organization:': [
-          Texture.colors.bold(organization.slug),
-          Texture.colors.dim(organizationUrl),
-        ],
-        'Project:': [Texture.colors.bold(project.slug), Texture.colors.dim(projectUrl)],
-        'Target:': [Texture.colors.bold(target.slug), Texture.colors.dim(targetUrl)],
-        '  ': [''],
-        'Access to schema:publish': [tokenInfo.canPublishSchema ? access.yes : access.not],
-        'Access to schema:check': [tokenInfo.canCheckSchema ? access.yes : access.not],
+    // Iterate and display each permission group
+    for (const permLevel of data.resolvedPermissions) {
+      this.log(`Level: ${permLevel.level}`);
+      this.log(`Resources: ${permLevel.resolvedResourceIds?.join(', ') ?? '<none>'}`);
+
+      const table = new Table({
+        head: ['Group', 'Permission ID', 'Title', 'Granted', 'Description'],
+        wordWrap: true,
+        style: { head: ['cyan'] },
       });
 
-      this.log(print());
-    } else if (result.tokenInfo.__typename === 'TokenNotFoundError') {
-      this.debug(result.tokenInfo.message);
-      throw new InvalidRegistryTokenError();
-    } else {
-      throw new UnexpectedError(
-        `Token response got an unsupported type: ${(result.tokenInfo as any).__typename}`,
-      );
+      for (const group of permLevel.groups) {
+        for (const perm of group.permissions) {
+          table.push([
+            group.title,
+            perm.permission.id,
+            perm.permission.title,
+            perm.isGranted ? '✓' : '❌',
+            perm.permission.description,
+          ]);
+        }
+      }
+
+      this.log(table.toString());
     }
   }
 }

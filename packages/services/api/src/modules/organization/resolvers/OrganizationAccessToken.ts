@@ -1,4 +1,4 @@
-import { ResourceAssignments } from '../providers/resource-assignments';
+import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import type { OrganizationAccessTokenResolvers } from './../../../__generated__/types';
 
 /*
@@ -11,10 +11,18 @@ import type { OrganizationAccessTokenResolvers } from './../../../__generated__/
  * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
  */
 export const OrganizationAccessToken: OrganizationAccessTokenResolvers = {
-  resources: async (accessToken, _arg, { injector }) => {
-    return injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
-      organizationId: accessToken.organizationId,
-      resources: accessToken.assignedResources,
-    });
+  resources(accessToken, _arg, { injector }) {
+    return injector.get(OrganizationAccessTokens).getResourceAssignmentsForAccessToken(accessToken);
+  },
+  scope(accessToken, _arg, _ctx) {
+    return accessToken.userId ? 'PERSONAL' : accessToken.projectId ? 'PROJECT' : 'ORGANIZATION';
+  },
+  permissions(accessToken, _arg, { injector }) {
+    return injector.get(OrganizationAccessTokens).getPermissionsForAccessToken(accessToken);
+  },
+  resolvedPermissions(accessToken, _arg, { injector }) {
+    return injector
+      .get(OrganizationAccessTokens)
+      .getGraphQLResolvedResourcePermissionGroupForAccessToken(accessToken)();
   },
 };

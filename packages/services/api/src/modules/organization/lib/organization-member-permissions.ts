@@ -18,6 +18,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         description: 'Member can access, create and reply to support tickets.',
       },
       {
+        id: 'personalAccessToken:modify',
+        title: 'Create personal access tokens',
+        description: 'Member can create and use personal access tokens.',
+      },
+      {
         id: 'accessToken:modify',
         title: 'Manage organization access tokens',
         description: 'Member can create and delete organization access tokens.',
@@ -137,6 +142,12 @@ export const permissionGroups: Array<PermissionGroup> = [
         id: 'project:modifySettings',
         title: 'Modify Settings',
         description: 'Member can access the specified projects.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'projectAccessToken:modify',
+        title: 'Create Project scoped access tokens',
+        description: 'Create access tokens for performing actions within the project.',
         dependsOn: 'project:describe',
       },
     ],

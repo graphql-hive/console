@@ -53,6 +53,103 @@ export default gql`
     deleteOrganizationAccessToken(
       input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
     ): DeleteOrganizationAccessTokenResult! @tag(name: "public")
+    createProjectAccessToken(input: CreateProjectAccessTokenInput!): CreateProjectAccessTokenResult!
+    createPersonalAccessToken(
+      input: CreatePersonalAccessTokenInput!
+    ): CreatePersonalAccessTokenResult!
+  }
+
+  input CreatePersonalAccessTokenInput {
+    """
+    Organization in which the access token should be created.
+    """
+    organization: OrganizationReferenceInput!
+    """
+    Title of the access token.
+    """
+    title: String!
+    """
+    Additional description containing information about the purpose of the access token.
+    """
+    description: String
+    """
+    List of permissions that are assigned to the access token.
+    A list of available permissions can be retrieved via the 'Member.availablePersonalAccessTokenPermissionGroups' field.
+    """
+    permissions: [String!]
+    """
+    Resources on which the permissions should be granted (project, target, service, and app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ResourceAssignmentInput
+  }
+
+  type CreatePersonalAccessTokenResultOk {
+    createdPersonalAccessToken: OrganizationAccessToken!
+    privateAccessKey: String!
+  }
+
+  type CreatePersonalAccessTokenResultError {
+    message: String!
+    details: CreatePersonalAccessTokenResultErrorDetails
+  }
+
+  type CreatePersonalAccessTokenResultErrorDetails {
+    """
+    Error message for the input title.
+    """
+    title: String
+    """
+    Error message for the input description.
+    """
+    description: String
+  }
+
+  type CreatePersonalAccessTokenResult {
+    ok: CreatePersonalAccessTokenResultOk
+    error: CreatePersonalAccessTokenResultError
+  }
+
+  input CreateProjectAccessTokenInput {
+    """
+    Project in which the access token should be created.
+    """
+    project: ProjectReferenceInput!
+    """
+    Title of the access token.
+    """
+    title: String!
+    """
+    Additional description containing information about the purpose of the access token.
+    """
+    description: String
+    """
+    List of permissions that are assigned to the access token.
+    A list of available permissions can be retrieved via the 'Organization.availableOrganizationAccessTokenPermissionGroups' field.
+    """
+    permissions: [String!]!
+    """
+    Resources on which the permissions should be granted (project, target, service, and app deployments).
+    Permissions are inherited by sub-resources.
+    """
+    resources: ProjectTargetsResourceAssignmentInput!
+  }
+
+  type CreateProjectAccessTokenResultOk {
+    createdProjectAccessToken: OrganizationAccessToken!
+    privateAccessKey: String!
+  }
+
+  type CreateProjectAccessTokenResultError {
+    message: String
+  }
+
+  """
+  @oneOf
+  """
+  type CreateProjectAccessTokenResult {
+    ok: CreateProjectAccessTokenResultOk
+    error: CreateProjectAccessTokenResultError
   }
 
   input OrganizationReferenceInput @oneOf {
@@ -111,6 +208,12 @@ export default gql`
     description: String @tag(name: "public")
   }
 
+  enum OrganizationAccessTokenScopeType {
+    ORGANIZATION
+    PROJECT
+    PERSONAL
+  }
+
   type OrganizationAccessToken {
     id: ID! @tag(name: "public")
     title: String! @tag(name: "public")
@@ -119,6 +222,8 @@ export default gql`
     resources: ResourceAssignment! @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+    scope: OrganizationAccessTokenScopeType!
+    resolvedPermissions: [ResolvedResourcePermissionGroup!]!
   }
 
   input DeleteOrganizationAccessTokenInput {
@@ -768,5 +873,70 @@ export default gql`
   type ResourceAssignment {
     mode: ResourceAssignmentModeType! @tag(name: "public")
     projects: [ProjectResourceAssignment!] @tag(name: "public")
+  }
+
+  extend type Project {
+    """
+    Paginated list of access tokens issued for the project.
+    """
+    accessTokens(first: Int, after: String): OrganizationAccessTokenConnection
+    """
+    Access token for project.
+    """
+    accessToken(id: ID): OrganizationAccessToken
+    """
+    Permissions that the viewer can assign to project access tokens.
+    """
+    availableProjectAccessTokenPermissionGroups: [PermissionGroup!]!
+  }
+
+  extend type Member {
+    availablePersonalAccessTokenPermissionGroups: [PermissionGroup!]!
+  }
+
+  type ResolvedPermission {
+    """
+    The permission
+    """
+    permission: Permission!
+    """
+    Whether this permission is granted.
+    """
+    isGranted: Boolean!
+  }
+
+  type ResolvedPermissionsGroup {
+    title: String!
+    permissions: [ResolvedPermission!]!
+  }
+
+  type ResolvedResourcePermissionGroup {
+    """
+    On what resoucre level this permission applies.
+    """
+    level: PermissionLevelType!
+    """
+    Resource ids that are currently valid for this permission group.
+    """
+    resolvedResourceIds: [String!]
+    """
+    Title
+    """
+    title: String!
+    groups: [ResolvedPermissionsGroup!]!
+  }
+
+  type WhoAmI {
+    title: String!
+    resolvedPermissions(
+      """
+      Whether an overview of all permissions should be included in the output, even if not granted.
+      """
+      includeAll: Boolean = false
+    ): [ResolvedResourcePermissionGroup!]!
+  }
+
+  extend type Query {
+    whoAmI: WhoAmI
   }
 `;

@@ -205,26 +205,12 @@ export const Organization: Pick<
     return OrganizationMemberPermissions.permissionGroups;
   },
   availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
-    let permissionGroups = OrganizationAccessTokensPermissions.permissionGroups;
-
-    const isAppDeploymentsEnabled =
-      injector.get<boolean>(APP_DEPLOYMENTS_ENABLED) || organization.featureFlags.appDeployments;
-
-    if (!isAppDeploymentsEnabled) {
-      permissionGroups = permissionGroups.filter(p => p.id !== 'app-deployments');
-    }
-
-    if (!organization.featureFlags.otelTracing) {
-      permissionGroups = permissionGroups.map(group => ({
-        ...group,
-        permissions: group.permissions.filter(p => p.id !== 'traces:report'),
-      }));
-    }
-
-    return permissionGroups;
+    return injector
+      .get(OrganizationAccessTokens)
+      .getAvailablePermissionGroupsForOrganization(organization);
   },
   accessTokens: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getPaginated({
+    return injector.get(OrganizationAccessTokens).getPaginatedForOrganization({
       organizationId: organization.id,
       first: args.first ?? null,
       after: args.after ?? null,
@@ -240,9 +226,6 @@ export const Organization: Pick<
     });
   },
   accessToken: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).get({
-      organizationId: organization.id,
-      id: args.id,
-    });
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
   },
 };

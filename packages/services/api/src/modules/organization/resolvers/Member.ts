@@ -41,4 +41,7 @@ export const Member: MemberResolvers = {
       resources: member.assignedRole.resources,
     });
   },
+  availablePersonalAccessTokenPermissionGroups: async (_parent, _arg, _ctx) => {
+    /* Member.availablePersonalAccessTokenPermissionGroups resolver is required because Member.availablePersonalAccessTokenPermissionGroups exists but MemberMapper.availablePersonalAccessTokenPermissionGroups does not */
+  },
 };

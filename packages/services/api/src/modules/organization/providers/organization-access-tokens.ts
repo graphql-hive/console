@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type CommonQueryMethods, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { Organization, Project } from '@hive/api';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -9,20 +10,29 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import { isUUID } from '../../../shared/is-uuid';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import {
+  getPermissionGroup,
   InsufficientPermissionError,
   Permission,
   PermissionsModel,
   permissionsToPermissionsPerResourceLevelAssignment,
+  ResourceLevel,
   Session,
 } from '../../auth/lib/authz';
+import { resourceLevelToResourceLevelType } from '../../auth/resolvers/Permission';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
-import { assignablePermissions } from '../lib/organization-access-token-permissions';
-import { ResourceAssignmentModel } from '../lib/resource-assignment-model';
+import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
+import { PermissionGroup, PermissionRecord } from '../lib/permissions';
+import {
+  intersectResourceAssignments,
+  ResourceAssignmentGroup,
+  ResourceAssignmentModel,
+} from '../lib/resource-assignment-model';
 import { OrganizationAccessTokensCache } from './organization-access-tokens-cache';
+import { OrganizationMembers, OrganizationMembership } from './organization-members';
 import {
   resolveResourceAssignment,
   ResourceAssignments,
@@ -46,10 +56,13 @@ const OrganizationAccessTokenModel = z
   .object({
     id: z.string().uuid(),
     organizationId: z.string().uuid(),
+    projectId: z.string().uuid().nullable(),
+    userId: z.string().uuid().nullable(),
     createdAt: z.string(),
     title: z.string(),
     description: z.string(),
-    permissions: z.array(PermissionsModel),
+    /** Note: permissions is only supposed to be nullable if "userId" is non-null */
+    permissions: z.array(PermissionsModel).nullable(),
     assignedResources: ResourceAssignmentModel.nullable().transform(
       value => value ?? { mode: '*' as const, projects: [] },
     ),
@@ -62,10 +75,31 @@ const OrganizationAccessTokenModel = z
     // only used in the context of authorization, we do not need
     // to compute when querying a list of organization access tokens via the GraphQL API.
     get authorizationPolicyStatements() {
-      const permissions = permissionsToPermissionsPerResourceLevelAssignment(record.permissions);
+      if (record.permissions === null && record.userId === null) {
+        throw new Error(
+          'I am very sorry, but this property only works for access tokens on the organization and project scope.' +
+            '\nFor user access tokens we need to look at the organization memebrship in order to compute the authorization policy statements.',
+        );
+      }
+      const permissions = permissionsToPermissionsPerResourceLevelAssignment(
+        record.permissions ?? [],
+      );
+      let assignedResources = record.assignedResources;
+
+      // Filter down permissions based on project - just to be sure :)
+      if (record.projectId) {
+        assignedResources = {
+          mode: 'granular',
+          projects:
+            assignedResources.mode === 'granular'
+              ? assignedResources.projects.filter(project => project.id === record.projectId)
+              : [],
+        };
+      }
+
       const resolvedResources = resolveResourceAssignment({
         organizationId: record.organizationId,
-        projects: record.assignedResources,
+        projects: assignedResources,
       });
 
       return translateResolvedResourcesToAuthorizationPolicyStatements(
@@ -77,6 +111,13 @@ const OrganizationAccessTokenModel = z
   }));
 
 export type OrganizationAccessToken = z.TypeOf<typeof OrganizationAccessTokenModel>;
+
+const validProjectResourceLevels: ReadonlySet<string> = new Set<string>([
+  'project',
+  'target',
+  'service',
+  'appDeployment',
+]);
 
 @Injectable({
   scope: Scope.Operation,
@@ -94,6 +135,7 @@ export class OrganizationAccessTokens {
     private session: Session,
     private auditLogs: AuditLogRecorder,
     private storage: Storage,
+    private members: OrganizationMembers,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -102,13 +144,7 @@ export class OrganizationAccessTokens {
     this.findById = findById({ logger: this.logger, pool });
   }
 
-  async create(args: {
-    organization: GraphQLSchema.OrganizationReferenceInput;
-    title: string;
-    description: string | null;
-    permissions: Array<string>;
-    assignedResources: GraphQLSchema.ResourceAssignmentInput | null;
-  }) {
+  private _validateCreateInputError(args: { title: string; description: string | null }) {
     const titleResult = TitleInputModel.safeParse(args.title.trim());
     const descriptionResult = DescriptionInputModel.safeParse(args.description);
 
@@ -122,6 +158,95 @@ export class OrganizationAccessTokens {
         },
       };
     }
+  }
+
+  /**
+   * Create an access token that is on the project level.
+   */
+  async createForProject(args: {
+    project: GraphQLSchema.ProjectReferenceInput;
+    title: string;
+    description: string | null;
+    permissions: Array<string>;
+    assignedResources: GraphQLSchema.ProjectTargetsResourceAssignmentInput | null;
+  }) {
+    this.logger.debug('create access token for project (project=%o)', args.project);
+
+    const error = this._validateCreateInputError(args);
+
+    if (error) {
+      return error;
+    }
+
+    const selector = await this.idTranslator.resolveProjectReference({
+      reference: args.project,
+    });
+
+    if (!selector) {
+      this.session.raise('projectAccessToken:modify');
+    }
+
+    const { projectId, organizationId } = selector;
+
+    const canModifyProjectAccessTokens = await this.session.canPerformAction({
+      organizationId,
+      params: { organizationId, projectId },
+      action: 'projectAccessToken:modify',
+    });
+    const canModifyOrganizationAccessTokens = await this.session.canPerformAction({
+      organizationId,
+      params: { organizationId },
+      action: 'accessToken:modify',
+    });
+
+    if (!canModifyProjectAccessTokens && !canModifyOrganizationAccessTokens) {
+      this.session.raise('projectAccessToken:modify');
+    }
+
+    const permissions = args.permissions.filter(permission =>
+      validProjectResourceLevels.has(getPermissionGroup(permission as Permission)),
+    );
+
+    const assignedResources =
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        organizationId,
+        {
+          mode: 'GRANULAR',
+          projects: [
+            {
+              projectId,
+              targets: args.assignedResources ?? { mode: 'ALL' },
+            },
+          ],
+        },
+      );
+
+    return this._create({
+      organizationId,
+      projectId,
+      userId: null,
+      title: args.title,
+      description: args.description,
+      assignedResources,
+      permissions,
+    });
+  }
+
+  /**
+   * Create an access token that is on the organization level.
+   */
+  async createForOrganization(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    title: string;
+    description: string | null;
+    permissions: Array<string>;
+    assignedResources: GraphQLSchema.ResourceAssignmentInput;
+  }) {
+    const error = this._validateCreateInputError(args);
+
+    if (error) {
+      return error;
+    }
 
     const { organizationId } = await this.idTranslator.resolveOrganizationReference({
       reference: args.organization,
@@ -130,11 +255,7 @@ export class OrganizationAccessTokens {
       },
     });
 
-    await this.session.assertPerformAction({
-      organizationId,
-      params: { organizationId },
-      action: 'accessToken:modify',
-    });
+    const organization = await this.storage.getOrganization({ organizationId });
 
     const assignedResources =
       await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
@@ -142,19 +263,139 @@ export class OrganizationAccessTokens {
         args.assignedResources ?? { mode: 'GRANULAR' },
       );
 
-    const organization = await this.storage.getOrganization({ organizationId });
+    await this.session.assertPerformAction({
+      organizationId,
+      params: { organizationId },
+      action: 'accessToken:modify',
+    });
+
+    // Permissions assigned to this access token must be valid organization access token permissions
+    const assignablePermissionFilter = (permission: Permission) =>
+      OrganizationAccessTokensPermissions.assignablePermissions.has(permission);
+
+    // Permissions assigned to this access token must be valid based on the organziations feature flags
+    const featurePermissionFlagFilter = this.createFeatureFlagPermissionFilter(organization);
+
+    const permissionFilter = (permission: Permission) =>
+      featurePermissionFlagFilter(permission) && assignablePermissionFilter(permission);
 
     const permissions = Array.from(
-      new Set(
-        args.permissions.filter(
-          permission =>
-            assignablePermissions.has(permission as Permission) &&
-            // can only assign traces report permission if otel tracing feature flag is enabled in organization
-            (permission === 'traces:report' ? organization.featureFlags.otelTracing : true),
-        ),
-      ),
+      new Set(args.permissions.filter(permission => permissionFilter(permission as Permission))),
     );
 
+    return this._create({
+      organizationId,
+      projectId: null,
+      userId: null,
+      title: args.title,
+      description: args.description,
+      assignedResources,
+      permissions,
+    });
+  }
+
+  /** Create an access token on the user scope. */
+  async createPersonalAccessTokenForViewer(args: {
+    organization: GraphQLSchema.OrganizationReferenceInput;
+    title: string;
+    description: string | null;
+    permissions: ReadonlyArray<string> | null;
+    assignedResources: GraphQLSchema.ResourceAssignmentInput | null;
+  }) {
+    const error = this._validateCreateInputError(args);
+
+    if (error) {
+      return error;
+    }
+
+    const viewer = await this.session.getViewer();
+
+    const { organizationId } = await this.idTranslator.resolveOrganizationReference({
+      reference: args.organization,
+      onError() {
+        throw new InsufficientPermissionError('personalAccessToken:modify');
+      },
+    });
+
+    const organization = await this.storage.getOrganization({ organizationId });
+
+    await this.session.assertPerformAction({
+      organizationId,
+      params: { organizationId },
+      action: 'personalAccessToken:modify',
+    });
+
+    const membership = await this.members.findOrganizationMembership({
+      organization,
+      userId: viewer.id,
+    });
+
+    if (!membership) {
+      this.session.raise('personalAccessToken:modify');
+    }
+
+    // Handle permission assignment
+    //
+    // Must be intersection with the members permissions
+
+    const assignedResources = intersectResourceAssignments(
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        organizationId,
+        args.assignedResources ?? { mode: 'ALL' },
+      ),
+      membership.assignedRole.resources,
+    );
+
+    // Handle permission assignment
+    //
+    // permissions -> null : The access tokens permissions equal members permission.
+    // permissions  -> non-null: The access tokens permissions equal a subset of the members permissions.
+
+    let permissions = args.permissions;
+
+    if (permissions !== null) {
+      const membershipPermissions = membership.assignedRole.role.allPermissions;
+
+      const membershipHasPermissionFilter = (permission: Permission) =>
+        membershipPermissions.has(permission);
+
+      // Permissions assigned to this access token must be valid organization access token permissions
+      const assignablePermissionFilter = (permission: Permission) =>
+        OrganizationAccessTokensPermissions.assignablePermissions.has(permission);
+
+      // Permissions assigned to this access token must be valid based on the organziations feature flags
+      const featurePermissionFlagFilter = this.createFeatureFlagPermissionFilter(organization);
+
+      const permissionFilter = (permission: Permission) =>
+        featurePermissionFlagFilter(permission) &&
+        assignablePermissionFilter(permission) &&
+        membershipHasPermissionFilter(permission);
+
+      permissions = Array.from(
+        new Set(permissions.filter(permission => permissionFilter(permission as Permission))),
+      );
+    }
+
+    return this._create({
+      organizationId,
+      projectId: null,
+      userId: viewer.id,
+      title: args.title,
+      description: args.description,
+      assignedResources,
+      permissions,
+    });
+  }
+
+  private async _create(args: {
+    organizationId: string;
+    projectId: string | null;
+    userId: string | null;
+    title: string;
+    description: string | null;
+    permissions: ReadonlyArray<string> | null;
+    assignedResources: ResourceAssignmentGroup;
+  }) {
     const id = crypto.randomUUID();
     const accessKey = await OrganizationAccessKey.create(id);
 
@@ -162,6 +403,8 @@ export class OrganizationAccessTokens {
       INSERT INTO "organization_access_tokens" (
         "id"
         , "organization_id"
+        , "project_id"
+        , "user_id"
         , "title"
         , "description"
         , "permissions"
@@ -171,11 +414,13 @@ export class OrganizationAccessTokens {
       )
       VALUES (
         ${id}
-        , ${organizationId}
-        , ${titleResult.data}
-        , ${descriptionResult.data}
-        , ${sql.array(permissions, 'text')}
-        , ${sql.jsonb(assignedResources)}
+        , ${args.organizationId}
+        , ${args.projectId}
+        , ${args.userId}
+        , ${args.title}
+        , ${args.description}
+        , ${args.permissions !== null ? sql.array(args.permissions, 'text') : null}
+        , ${sql.jsonb(args.assignedResources)}
         , ${accessKey.hash}
         , ${accessKey.firstCharacters}
       )
@@ -183,23 +428,23 @@ export class OrganizationAccessTokens {
         ${organizationAccessTokenFields}
     `);
 
-    const organizationAccessToken = OrganizationAccessTokenModel.parse(result);
+    const accessToken = OrganizationAccessTokenModel.parse(result);
 
-    await this.cache.add(organizationAccessToken);
+    await this.cache.add(this.logger, accessToken);
 
     await this.auditLogs.record({
-      organizationId,
+      organizationId: args.organizationId,
       eventType: 'ORGANIZATION_ACCESS_TOKEN_CREATED',
       metadata: {
-        organizationAccessTokenId: organizationAccessToken.id,
-        permissions: organizationAccessToken.permissions,
-        assignedResources: organizationAccessToken.assignedResources,
+        organizationAccessTokenId: accessToken.id,
+        permissions: accessToken.permissions,
+        assignedResources: accessToken.assignedResources,
       },
     });
 
     return {
       type: 'success' as const,
-      organizationAccessToken,
+      accessToken,
       privateAccessKey: accessKey.privateAccessToken,
     };
   }
@@ -240,7 +485,11 @@ export class OrganizationAccessTokens {
     };
   }
 
-  async getPaginated(args: { organizationId: string; first: number | null; after: string | null }) {
+  async getPaginatedForOrganization(args: {
+    organizationId: string;
+    first: number | null;
+    after: string | null;
+  }) {
     await this.session.assertPerformAction({
       organizationId: args.organizationId,
       params: { organizationId: args.organizationId },
@@ -315,30 +564,457 @@ export class OrganizationAccessTokens {
     };
   }
 
-  async get(args: { organizationId: string; id: string }) {
+  async getPaginatedForProject(
+    project: Project,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ) {
     await this.session.assertPerformAction({
-      organizationId: args.organizationId,
-      params: { organizationId: args.organizationId },
-      action: 'accessToken:modify',
+      organizationId: project.orgId,
+      params: { organizationId: project.orgId, projectId: project.id },
+      action: 'projectAccessToken:modify',
     });
 
-    const row = await this.pool.maybeOne<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
+    let cursor: null | {
+      createdAt: string;
+      id: string;
+    } = null;
+
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+    if (args.after) {
+      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+    }
+
+    const result = await this.pool.any<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
       SELECT
         ${organizationAccessTokenFields}
       FROM
         "organization_access_tokens"
       WHERE
-        "id" = ${args.id}
-        AND "organization_id" = ${args.organizationId}
+        "project_id" = ${project.id}
+        ${
+          cursor
+            ? sql`
+              AND (
+                (
+                  "created_at" = ${cursor.createdAt}
+                  AND "id" < ${cursor.id}
+                )
+                OR "created_at" < ${cursor.createdAt}
+              )
+            `
+            : sql``
+        }
+      ORDER BY
+        "project_id" ASC
+        , "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
     `);
 
-    if (row === null) {
+    let edges = result.map(row => {
+      const node = OrganizationAccessTokenModel.parse(row);
+
+      return {
+        node,
+        get cursor() {
+          return encodeCreatedAtAndUUIDIdBasedCursor(node);
+        },
+      };
+    });
+
+    const hasNextPage = edges.length > limit;
+
+    edges = edges.slice(0, limit);
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
+  }
+
+  async getPaginatedForMembership(
+    member: OrganizationMembership,
+    args: {
+      first: number | null;
+      after: string | null;
+    },
+  ) {
+    let cursor: null | {
+      createdAt: string;
+      id: string;
+    } = null;
+
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+    if (args.after) {
+      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+    }
+
+    const result = await this.pool
+      .any<unknown>(sql` /* OrganizationAccessTokens.getPaginatedForMembership */
+      SELECT
+        ${organizationAccessTokenFields}
+      FROM
+        "organization_access_tokens"
+      WHERE
+        "user_id" = ${member.userId}
+        ${
+          cursor
+            ? sql`
+              AND (
+                (
+                  "created_at" = ${cursor.createdAt}
+                  AND "id" < ${cursor.id}
+                )
+                OR "created_at" < ${cursor.createdAt}
+              )
+            `
+            : sql``
+        }
+      ORDER BY
+        "user_id" ASC
+        , "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
+    `);
+
+    let edges = result.map(row => {
+      const node = OrganizationAccessTokenModel.parse(row);
+
+      return {
+        node,
+        get cursor() {
+          return encodeCreatedAtAndUUIDIdBasedCursor(node);
+        },
+      };
+    });
+
+    const hasNextPage = edges.length > limit;
+
+    edges = edges.slice(0, limit);
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
+  }
+
+  async getById(id: string) {
+    return await findById({
+      logger: this.logger,
+      pool: this.pool,
+    })(id);
+  }
+
+  async getForOrganization(organization: Organization, id: string) {
+    await this.session.assertPerformAction({
+      organizationId: organization.id,
+      params: { organizationId: organization.id },
+      action: 'accessToken:modify',
+    });
+
+    const accessToken = await this.getById(id);
+
+    if (!accessToken || accessToken?.organizationId !== organization.id) {
       return null;
     }
 
-    return OrganizationAccessTokenModel.parse(row);
+    return accessToken;
+  }
+
+  async getForProject(project: Project, id: string) {
+    await this.session.assertPerformAction({
+      organizationId: project.orgId,
+      params: { organizationId: project.orgId, projectId: project.id },
+      action: 'projectAccessToken:modify',
+    });
+
+    const accessToken = await this.getById(id);
+
+    if (!accessToken || accessToken?.projectId !== project.id) {
+      return null;
+    }
+
+    return accessToken;
+  }
+
+  async getAvailablePermissionsGroupsForProject(project: Project): Promise<Array<PermissionGroup>> {
+    await this.session.assertPerformAction({
+      organizationId: project.orgId,
+      params: { organizationId: project.orgId, projectId: project.id },
+      action: 'projectAccessToken:modify',
+    });
+
+    const organization = await this.storage.getOrganization({ organizationId: project.orgId });
+    const groups = await this.getAvailablePermissionGroupsForOrganization(organization);
+
+    return groups
+      .map(group => ({
+        ...group,
+        permissions: group.permissions.filter(permission =>
+          validProjectResourceLevels.has(getPermissionGroup(permission.id)),
+        ),
+      }))
+      .filter(group => group.permissions.length !== 0);
+  }
+
+  private createFeatureFlagPermissionFilter(organization: Organization) {
+    const isAppDeplymentsEnabled = organization.featureFlags.appDeployments;
+    const isOTELTracingEnabled = organization.featureFlags.otelTracing;
+
+    return (id: Permission) =>
+      (!isAppDeplymentsEnabled && id.startsWith('appDeployment:')) ||
+      (!isOTELTracingEnabled && id.startsWith('traces:'))
+        ? false
+        : true;
+  }
+
+  async getAvailablePermissionGroupsForOrganization(
+    organization: Organization,
+  ): Promise<Array<PermissionGroup>> {
+    const filter = this.createFeatureFlagPermissionFilter(organization);
+
+    return OrganizationAccessTokensPermissions.permissionGroups
+      .map(group => ({
+        ...group,
+        permissions: group.permissions.filter(permission => filter(permission.id)),
+      }))
+      .filter(group => group.permissions.length !== 0);
+  }
+
+  async getPermissionsForAccessToken(accessToken: OrganizationAccessToken) {
+    if (!accessToken.userId) {
+      return accessToken.permissions ?? [];
+    }
+    const organization = await this.storage.getOrganization({
+      organizationId: accessToken.organizationId,
+    });
+    const membership = await this.members.findOrganizationMembership({
+      organization,
+      userId: accessToken.userId,
+    });
+    if (!membership) {
+      return [];
+    }
+
+    const allRolePermissions = membership.assignedRole.role.allPermissions;
+
+    if (!accessToken.permissions) {
+      return Array.from(membership.assignedRole.role.allPermissions);
+    }
+
+    return accessToken.permissions.filter(permission => allRolePermissions.has(permission));
+  }
+
+  async getResourceAssignmentsForAccessToken(accessToken: OrganizationAccessToken) {
+    if (accessToken.userId === null) {
+      return this.resourceAssignments.resolveGraphQLMemberResourceAssignment({
+        organizationId: accessToken.organizationId,
+        resources: accessToken.assignedResources,
+      });
+    }
+
+    const organization = await this.storage.getOrganization({
+      organizationId: accessToken.organizationId,
+    });
+    const membership = await this.members.findOrganizationMembership({
+      organization,
+      userId: accessToken.userId,
+    });
+
+    // TODO: we could handle this different TBH
+    if (!membership) {
+      return {
+        mode: 'GRANULAR',
+      } satisfies GraphQLSchema.ResolversTypes['ResourceAssignment'];
+    }
+
+    return this.resourceAssignments.resolveGraphQLMemberResourceAssignment({
+      organizationId: accessToken.organizationId,
+      resources: intersectResourceAssignments(
+        accessToken.assignedResources,
+        membership?.assignedRole.resources,
+      ),
+    });
+  }
+
+  getGraphQLResolvedResourcePermissionGroupForAccessToken =
+    (
+      accessToken: Pick<
+        OrganizationAccessToken,
+        'organizationId' | 'projectId' | 'assignedResources' | 'permissions'
+      >,
+    ) =>
+    async (
+      /** Whether to include all or only the granted permissions. */
+      includeAll: boolean = false,
+    ): Promise<Array<GraphQLResolvedResourcePermissionGroupOutput>> => {
+      const grantedPermissions = new Set(accessToken.permissions ?? []);
+
+      const resourceIds = await this.resourceAssignments.resourceAssignmentToResourceIds(
+        accessToken.organizationId,
+        accessToken.assignedResources,
+      );
+
+      type PMap = {
+        title: string;
+        level: ResourceLevel;
+        permissionGroups: Map<
+          /* group name */ string,
+          {
+            title: string;
+            permissions: Array<{
+              permission: PermissionRecord;
+              isGranted: boolean;
+            }>;
+          }
+        >;
+        resourceIds: Array<string>;
+      };
+
+      const resourceLevelGroups = new Map<ResourceLevel, PMap>(
+        (
+          [
+            'organization',
+            'project',
+            'target',
+            'service',
+            'appDeployment',
+          ] satisfies Array<ResourceLevel>
+        ).map((value): [ResourceLevel, PMap] => [
+          value,
+          {
+            title: value,
+            level: value,
+            permissionGroups: new Map(),
+            resourceIds: resourceIds[value] ?? [],
+          },
+        ]),
+      );
+
+      if (accessToken.projectId) {
+        resourceLevelGroups.delete('organization');
+      }
+
+      for (const pgroup of OrganizationAccessTokensPermissions.permissionGroups) {
+        for (const permission of pgroup.permissions) {
+          const resourceLevel = getPermissionGroup(permission.id);
+          const resourceGroup = resourceLevelGroups.get(resourceLevel);
+
+          if (resourceGroup === undefined) {
+            continue;
+          }
+
+          let group = resourceGroup.permissionGroups.get(pgroup.title);
+
+          if (group === undefined) {
+            group = {
+              title: pgroup.title,
+              permissions: [],
+            };
+            resourceGroup.permissionGroups.set(pgroup.title, group);
+          }
+
+          const isGranted = grantedPermissions.has(permission.id);
+
+          if (includeAll || isGranted) {
+            group.permissions.push({
+              isGranted: grantedPermissions.has(permission.id),
+              permission,
+            });
+          }
+        }
+      }
+
+      return Array.from(resourceLevelGroups.values())
+        .map(
+          resourceGroup =>
+            ({
+              level: resourceLevelToResourceLevelType(resourceGroup.level),
+              title: resourceGroup.title,
+              groups: Array.from(resourceGroup.permissionGroups.values())
+                .map(group => ({
+                  title: group.title,
+                  permissions: group.permissions.map(permission => ({
+                    isGranted: permission.isGranted,
+                    permission: permission.permission,
+                  })),
+                }))
+                .filter(group => (includeAll ? true : group.permissions.length !== 0)),
+              resolvedResourceIds: resourceGroup.resourceIds.length
+                ? resourceGroup.resourceIds
+                : null,
+            }) satisfies GraphQLResolvedResourcePermissionGroupOutput,
+        )
+        .filter(group =>
+          includeAll ? true : group.groups.length !== 0 && group.resolvedResourceIds?.length,
+        );
+    };
+
+  static computeAuthorizationStatements(
+    accessToken: OrganizationAccessToken,
+    membership: OrganizationMembership,
+  ) {
+    let permissions = accessToken.permissions;
+
+    if (permissions === null) {
+      permissions = Array.from(membership.assignedRole.role.allPermissions);
+    } else {
+      const allMembershipPermissions = membership.assignedRole.role.allPermissions;
+      permissions = permissions.filter(permission => allMembershipPermissions.has(permission));
+    }
+
+    let resources = accessToken.assignedResources;
+
+    if (resources === null) {
+      resources = membership.assignedRole.resources;
+    } else {
+      const membershipResources = membership.assignedRole.resources;
+      resources = intersectResourceAssignments(membershipResources, resources);
+    }
+
+    const permissionsPerLevel = permissionsToPermissionsPerResourceLevelAssignment(permissions);
+    const resolvedResources = resolveResourceAssignment({
+      organizationId: accessToken.organizationId,
+      projects: resources,
+    });
+
+    return translateResolvedResourcesToAuthorizationPolicyStatements(
+      accessToken.organizationId,
+      permissionsPerLevel,
+      resolvedResources,
+    );
   }
 }
+
+type ResolveType<TResolverType> =
+  TResolverType extends GraphQLSchema.ResolverTypeWrapper<infer T> ? T : never;
+
+export type GraphQLResolvedResourcePermissionGroupOutput = ResolveType<
+  GraphQLSchema.ResolversTypes['ResolvedResourcePermissionGroup']
+>;
 
 /**
  * Implementation for finding a organization access token from the PG database.
@@ -359,7 +1035,7 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
       return null;
     }
 
-    const data = await deps.pool.maybeOne<unknown>(sql`
+    const data = await deps.pool.maybeOne<unknown>(sql` /* OrganizationAccessTokens.findById */
       SELECT
         ${organizationAccessTokenFields}
       FROM
@@ -391,6 +1067,8 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
 const organizationAccessTokenFields = sql`
   "id"
   , "organization_id" AS "organizationId"
+  , "project_id" AS "projectId"
+  , "user_id" AS "userId"
   , to_json("created_at") AS "createdAt"
   , "title"
   , "description"

@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { CommonQueryMethods, sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
@@ -67,6 +67,15 @@ const MemberRoleModel = z
     return {
       ...omit(record, 'legacyScopes'),
       permissions,
+      get allPermissions() {
+        const allPermissions = new Set<Permission>();
+        Object.values(permissions).forEach(set => {
+          set.forEach(permission => {
+            allPermissions.add(permission);
+          });
+        });
+        return allPermissions;
+      },
     };
   });
 
@@ -277,6 +286,34 @@ export class OrganizationMemberRoles {
     );
 
     return MemberRoleModel.parse(role);
+  }
+
+  static findMemberRoleById(deps: { logger: Logger; pool: CommonQueryMethods }) {
+    return async function findMemberRoleById(
+      roleId: string,
+    ): Promise<OrganizationMemberRole | null> {
+      deps.logger.debug('Find organization membership role by id. (roleId=%s)', roleId);
+
+      const query = sql`
+        SELECT
+          ${organizationMemberRoleFields}
+        FROM
+          "organization_member_roles"
+        WHERE
+          "id" = ${roleId}
+      `;
+
+      const result = await deps.pool.maybeOne<unknown>(query);
+
+      if (result == null) {
+        deps.logger.debug('Organization membership role not found. (roleId=%s)', roleId);
+        return null;
+      }
+
+      deps.logger.debug('Organization membership found. (roleId=%s)', roleId);
+
+      return MemberRoleModel.parse(result);
+    };
   }
 }
 

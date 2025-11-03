@@ -1,11 +1,11 @@
 import { OrganizationAccessTokens } from '../../providers/organization-access-tokens';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-export const createOrganizationAccessToken: NonNullable<
-  MutationResolvers['createOrganizationAccessToken']
+export const createProjectAccessToken: NonNullable<
+  MutationResolvers['createProjectAccessToken']
 > = async (_, args, { injector }) => {
-  const result = await injector.get(OrganizationAccessTokens).createForOrganization({
-    organization: args.input.organization,
+  const result = await injector.get(OrganizationAccessTokens).createForProject({
+    project: args.input.project,
     title: args.input.title,
     description: args.input.description ?? null,
     permissions: [...args.input.permissions],
@@ -15,8 +15,8 @@ export const createOrganizationAccessToken: NonNullable<
   if (result.type === 'success') {
     return {
       ok: {
-        __typename: 'CreateOrganizationAccessTokenResultOk',
-        createdOrganizationAccessToken: result.accessToken,
+        __typename: 'CreateProjectAccessTokenResultOk',
+        createdProjectAccessToken: result.accessToken,
         privateAccessKey: result.privateAccessKey,
       },
     };
@@ -24,7 +24,7 @@ export const createOrganizationAccessToken: NonNullable<
 
   return {
     error: {
-      __typename: 'CreateOrganizationAccessTokenResultError',
+      __typename: 'CreateProjectAccessTokenResultError',
       message: result.message,
       details: result.details,
     },

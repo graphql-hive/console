@@ -5,8 +5,9 @@ import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
-import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
+import { CachedAccessToken } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
+import { TargetAccessTokenStrategy } from './target-access-token-strategy';
 
 export type AuthorizationPolicyStatement = {
   effect: 'allow' | 'deny';
@@ -55,10 +56,14 @@ export type UserActor = {
 
 export type OrganizationAccessTokenActor = {
   type: 'organizationAccessToken';
-  organizationAccessToken: OrganizationAccessToken;
+  organizationAccessToken: CachedAccessToken;
 };
 
-type Actor = UserActor | OrganizationAccessTokenActor;
+export type LegacyTargetAccessTokenActor = {
+  type: 'legacyTargetAccessToken';
+};
+
+type Actor = UserActor | OrganizationAccessTokenActor | LegacyTargetAccessTokenActor;
 
 /**
  * Abstract session class that is implemented by various ways to identify a session.
@@ -393,6 +398,7 @@ const permissionsByLevel = {
     z.literal('schemaLinting:modifyOrganizationRules'),
     z.literal('auditLog:export'),
     z.literal('accessToken:modify'),
+    z.literal('personalAccessToken:modify'),
   ],
   project: [
     z.literal('project:describe'),
@@ -401,6 +407,7 @@ const permissionsByLevel = {
     z.literal('alert:modify'),
     z.literal('schemaLinting:modifyProjectRules'),
     z.literal('target:create'),
+    z.literal('projectAccessToken:modify'),
   ],
   target: [
     z.literal('targetAccessToken:modify'),
