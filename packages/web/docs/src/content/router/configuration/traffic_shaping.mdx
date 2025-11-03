@@ -35,8 +35,9 @@ requests.
 - **Type:** `string`
 - **Default:** `50s`
 
-Controls the timeout (in seconds) for idle keep-alive connections in the router's connection pool.
-Connections that are unused for this duration will be closed.
+Controls the timeout in duration string format (e.g. `1m` for 1 minute, `30s` for 30 seconds) for
+idle keep-alive connections in the router's connection pool. Connections that are unused for this
+duration will be closed.
 
 ## Example
 
