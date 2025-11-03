@@ -620,6 +620,7 @@ const OrganizationSettingsPageQuery = graphql(`
       ...OrganizationPolicySettings_OrganizationFragment
       viewerCanAccessSettings
       viewerCanManageAccessTokens
+      viewerCanManagePersonalAccessTokens
     }
   }
 `);
@@ -671,10 +672,12 @@ function SettingsPageContent(props: {
       });
     }
 
-    pages.push({
-      key: 'personal-access-tokens',
-      title: 'Personal Access Tokens',
-    });
+    if (currentOrganization?.viewerCanManagePersonalAccessTokens) {
+      pages.push({
+        key: 'personal-access-tokens',
+        title: 'Personal Access Tokens',
+      });
+    }
 
     return pages;
   }, [currentOrganization]);

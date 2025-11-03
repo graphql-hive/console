@@ -477,6 +477,7 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
     isProjectNameInGitHubCheckEnabled
     viewerCanDelete
     viewerCanModifySettings
+    viewerCanManageProjectAccessTokens
     ...CompositionSettings_ProjectFragment
     ...ProjectPolicySettings_ProjectFragment
   }
@@ -518,7 +519,9 @@ function ProjectSettingsContent(props: {
   // Verify wether user is allowed to access the settings
   // Otherwise redirect to the project overview.
   useRedirect({
-    canAccess: project?.viewerCanModifySettings === true,
+    canAccess:
+      project?.viewerCanModifySettings === true ||
+      project?.viewerCanManageProjectAccessTokens === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug',
@@ -556,11 +559,12 @@ function ProjectSettingsContent(props: {
       });
     }
 
-    // TODO: based on permission check
-    pages.push({
-      key: 'access-tokens',
-      title: 'Access Tokens',
-    });
+    if (project?.viewerCanManageProjectAccessTokens) {
+      pages.push({
+        key: 'access-tokens',
+        title: 'Access Tokens',
+      });
+    }
 
     return pages;
   }, [project]);

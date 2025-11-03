@@ -495,6 +495,10 @@ export default gql`
     """
     viewerCanManageAccessTokens: Boolean!
     """
+    Whether the viewer can manage personal access tokens.
+    """
+    viewerCanManagePersonalAccessTokens: Boolean!
+    """
     Paginated organization access tokens.
     """
     accessTokens(
@@ -890,6 +894,10 @@ export default gql`
     Permissions that the viewer can assign to project access tokens.
     """
     availableProjectAccessTokenPermissionGroups: [PermissionGroup!]!
+    """
+    Whether the user can manage the access tokens in this project.
+    """
+    viewerCanManageProjectAccessTokens: Boolean!
   }
 
   extend type Member {

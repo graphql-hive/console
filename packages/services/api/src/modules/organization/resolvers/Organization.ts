@@ -28,6 +28,7 @@ export const Organization: Pick<
   | 'viewerCanExportAuditLogs'
   | 'viewerCanManageAccessTokens'
   | 'viewerCanManageInvitations'
+  | 'viewerCanManagePersonalAccessTokens'
   | 'viewerCanManageRoles'
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
@@ -225,5 +226,14 @@ export const Organization: Pick<
   },
   accessToken: async (organization, args, { injector }) => {
     return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
+  },
+  viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
+      organizationId: organization.id,
+      action: 'personalAccessToken:modify',
+      params: {
+        organizationId: organization.id,
+      },
+    });
   },
 };

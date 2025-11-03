@@ -12,7 +12,10 @@ import type { ProjectResolvers } from './../../../__generated__/types';
  */
 export const Project: Pick<
   ProjectResolvers,
-  'accessToken' | 'accessTokens' | 'availableProjectAccessTokenPermissionGroups'
+  | 'accessToken'
+  | 'accessTokens'
+  | 'availableProjectAccessTokenPermissionGroups'
+  | 'viewerCanManageProjectAccessTokens'
 > = {
   accessTokens(project, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getPaginatedForProject(project, {
@@ -25,5 +28,15 @@ export const Project: Pick<
   },
   accessToken(project, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getForProject(project, args.id);
+  },
+  viewerCanManageProjectAccessTokens(project, _arg, { session }) {
+    return session.canPerformAction({
+      organizationId: project.orgId,
+      action: 'projectAccessToken:modify',
+      params: {
+        organizationId: project.orgId,
+        projectId: project.id,
+      },
+    });
   },
 };

@@ -48,13 +48,22 @@ export function PersonalAccessTokensSubPage(
   return (
     <SubPageLayout>
       <SubPageLayoutHeader
-        subPageTitle="Access Tokens"
+        subPageTitle="Personal Access Tokens"
         description={
-          <>
+          <div className="max-w-[800px] space-y-2">
             <CardDescription>
-              These are the access tokens created for this project. Members with permissions can
-              manage and issues access tokens for CI/CD integrations with the CLI or local
-              development.
+              Here you can manage access tokens on behalf of your users authority. You can create
+              and assign access tokens with a subset of your organization membership permissions and
+              resource access.
+            </CardDescription>
+            <CardDescription>
+              Your personal access tokens are disabled once your user account looses the authority
+              to issue personal access tokens.
+            </CardDescription>
+            <CardDescription>
+              It is recommended to use personal access tokens for local development. If you are
+              setting up CI or CD pipelines please instead consider using project or organization
+              scoped access tokens.
             </CardDescription>
             <CardDescription>
               <DocsLink
@@ -64,7 +73,7 @@ export function PersonalAccessTokensSubPage(
                 Learn more about Access Tokens
               </DocsLink>
             </CardDescription>
-          </>
+          </div>
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
