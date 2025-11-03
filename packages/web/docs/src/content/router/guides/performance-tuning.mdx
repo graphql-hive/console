@@ -59,6 +59,9 @@ connection pool before being closed.
 
 - **Default Value:** `50s`
 
+It takes a duration string (like `30s` for 30 seconds, or `1m` for 1 minute). This setting affects
+how aggressively the router reuses existing connections versus closing them to free up resources.
+
 ### The Connection Reuse Trade-off
 
 **Too short = latency overhead:**
