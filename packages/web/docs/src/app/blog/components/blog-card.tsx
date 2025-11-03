@@ -20,11 +20,15 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
   const { title, tags } = frontmatter;
   const date = new Date(frontmatter.date);
 
-  const postAuthors: Author[] = (
-    typeof frontmatter.authors === 'string'
-      ? [authors[frontmatter.authors as AuthorId]]
-      : frontmatter.authors.map(author => authors[author as AuthorId])
-  ).filter(Boolean);
+  const authorsArray = Array.isArray(frontmatter.authors)
+    ? frontmatter.authors
+    : [frontmatter.authors];
+
+  const postAuthors: Author[] = authorsArray
+    .map((authorId: AuthorId | Author) =>
+      typeof authorId === 'string' ? authors[authorId] : authorId,
+    )
+    .filter(Boolean);
 
   if (postAuthors.length === 0) {
     console.error('author not found', frontmatter);
@@ -44,6 +48,7 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
         className,
       )}
       href={post.route}
+      scroll
     >
       <article
         className={cn(
@@ -74,7 +79,8 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
           <div className="relative size-6">
             <Image
               src={avatarSrc}
-              alt={firstAuthor.name}
+              alt=""
+              role="presentation"
               width={24}
               height={24}
               className="rounded-full"
