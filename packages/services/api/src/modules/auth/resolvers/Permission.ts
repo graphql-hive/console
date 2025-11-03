@@ -23,6 +23,9 @@ export const Permission: PermissionResolvers = {
   warning: async (permission, _arg, _ctx) => {
     return permission.warning ?? null;
   },
+  isAssignableByViewer(permission) {
+    return permission.isAssignableByViewer ?? true;
+  },
 };
 
 export function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {

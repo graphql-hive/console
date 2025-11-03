@@ -817,7 +817,12 @@ export class OrganizationAccessTokens {
     return OrganizationAccessTokensPermissions.permissionGroups
       .map(group => ({
         ...group,
-        permissions: group.permissions.filter(permission => filter(permission.id)),
+        permissions: group.permissions
+          .filter(permission => filter(permission.id))
+          .map(permission => ({
+            ...permission,
+            isAssignableByViewer: true,
+          })),
       }))
       .filter(group => group.permissions.length !== 0);
   }
@@ -832,7 +837,10 @@ export class OrganizationAccessTokens {
     return groups
       .map(group => ({
         ...group,
-        permissions: group.permissions.filter(permission => memberPermissions.has(permission.id)),
+        permissions: group.permissions.map(permission => ({
+          ...permission,
+          isAssignableByViewer: memberPermissions.has(permission.id),
+        })),
       }))
       .filter(group => group.permissions.length !== 0);
   }

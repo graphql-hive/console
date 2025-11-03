@@ -7,6 +7,7 @@ export type PermissionRecord = {
   dependsOn?: Permission;
   isReadOnly?: true;
   warning?: string;
+  isAssignableByViewer?: boolean;
 };
 
 export type PermissionGroup = {

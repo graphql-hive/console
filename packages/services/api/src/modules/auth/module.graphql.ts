@@ -109,6 +109,10 @@ export default gql`
     dependsOnId: ID @tag(name: "public")
     isReadOnly: Boolean!
     warning: String
+    """
+    Whether this permission is assignable by the current viewer.
+    """
+    isAssignableByViewer: Boolean!
   }
 
   type PermissionGroup {
