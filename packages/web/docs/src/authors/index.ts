@@ -1,4 +1,5 @@
 import type { StaticImageData } from 'next/image';
+import { z } from 'zod';
 import saihajPhoto from './saihaj.webp';
 
 export type Author =
@@ -17,6 +18,14 @@ export type Author =
       // if the author has no avatar, we'll take it from GitHub
       avatar?: string | StaticImageData;
     };
+
+export const Author = z.object({
+  name: z.string(),
+  link: z.string().url(),
+  twitter: z.string().optional(),
+  github: z.string().optional(),
+  avatar: z.union([z.string(), z.object({})]).optional(),
+});
 
 export const authors = {
   kamil: {
@@ -253,3 +262,7 @@ export const authors = {
 } satisfies Record<string, Author>;
 
 export type AuthorId = keyof typeof authors;
+
+export const AuthorId = z.string().refine((val): val is AuthorId => val in authors, {
+  message: `AuthorId must be one of: ${Object.keys(authors).join(', ')}`,
+});
