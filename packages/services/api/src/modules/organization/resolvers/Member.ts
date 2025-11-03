@@ -1,4 +1,5 @@
 import { Storage } from '../../shared/providers/storage';
+import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { ResourceAssignments } from '../providers/resource-assignments';
 import type { MemberResolvers } from './../../../__generated__/types';
@@ -41,7 +42,16 @@ export const Member: MemberResolvers = {
       resources: member.assignedRole.resources,
     });
   },
-  availablePersonalAccessTokenPermissionGroups: async (_parent, _arg, _ctx) => {
-    /* Member.availablePersonalAccessTokenPermissionGroups resolver is required because Member.availablePersonalAccessTokenPermissionGroups exists but MemberMapper.availablePersonalAccessTokenPermissionGroups does not */
+  availablePersonalAccessTokenPermissionGroups(member, _arg, { injector }) {
+    return injector.get(OrganizationAccessTokens).getAvailablePermissionGroupsForMembership(member);
+  },
+  accessToken(member, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getForMembership(member, args.id);
+  },
+  accessTokens(member, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getPaginatedForMembership(member, {
+      first: args.first ?? null,
+      after: args.after ?? null,
+    });
   },
 };

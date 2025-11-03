@@ -12,7 +12,7 @@ import { CreateProjectAccessTokenSheetContent } from './create-project-access-to
 import { ProjectAccessTokensTable } from './project-access-tokens-table';
 
 const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
-  query PersonalAccessTokensSubPage_OrganizationQuery(
+  query ProjectAccessTokensSubPage_OrganizationQuery(
     $organizationSlug: String!
     $projectSlug: String!
   ) {

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
+import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -623,7 +624,12 @@ const OrganizationSettingsPageQuery = graphql(`
   }
 `);
 
-export const OrganizationSettingsPageEnum = z.enum(['general', 'policy', 'access-tokens']);
+export const OrganizationSettingsPageEnum = z.enum([
+  'general',
+  'policy',
+  'access-tokens',
+  'personal-access-tokens',
+]);
 export type OrganizationSettingsSubPage = z.TypeOf<typeof OrganizationSettingsPageEnum>;
 
 function SettingsPageContent(props: {
@@ -664,6 +670,11 @@ function SettingsPageContent(props: {
         title: 'Access Tokens',
       });
     }
+
+    pages.push({
+      key: 'personal-access-tokens',
+      title: 'Personal Access Tokens',
+    });
 
     return pages;
   }, [currentOrganization]);
@@ -737,6 +748,9 @@ function SettingsPageContent(props: {
             ) : null}
             {resolvedPage.key === 'access-tokens' ? (
               <AccessTokensSubPage organizationSlug={props.organizationSlug} />
+            ) : null}
+            {resolvedPage.key === 'personal-access-tokens' ? (
+              <PersonalAccessTokensSubPage organizationSlug={props.organizationSlug} />
             ) : null}
           </div>
         </PageLayoutContent>

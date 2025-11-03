@@ -1,36 +1,39 @@
 import { useQuery } from 'urql';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
-import { PermissionDetailView } from './permission-detail-view';
+import { PermissionDetailView } from './../access-tokens/permission-detail-view';
 
-const AccessTokenDetailViewSheet_OrganizationQuery = graphql(`
-  query AccessTokenDetailViewSheet_OrganizationQuery(
+const PersonalAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
+  query PersonalAccessTokenDetailViewSheet_OrganizationQuery(
     $organizationSlug: String!
     $organizationAccessTokenId: ID!
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessToken(id: $organizationAccessTokenId) {
+      me {
         id
-        title
-        description
-        resolvedResourcePermissionGroups(includeAll: true) {
-          ...PermissionDetailView_ResolvedResourcePermissionGroup
+        accessToken(id: $organizationAccessTokenId) {
+          id
+          title
+          description
+          resolvedResourcePermissionGroups(includeAll: true) {
+            ...PermissionDetailView_ResolvedResourcePermissionGroup
+          }
         }
       }
     }
   }
 `);
 
-type AccessTokenDetailViewSheetProps = {
+type PersonalAccessTokenDetailViewSheetProps = {
   onClose: () => void;
   organizationSlug: string;
   accessTokenId: string;
 };
 
-export function AccessTokenDetailViewSheet(props: AccessTokenDetailViewSheetProps) {
+export function PersonalAccessTokenDetailViewSheet(props: PersonalAccessTokenDetailViewSheetProps) {
   const [query] = useQuery({
-    query: AccessTokenDetailViewSheet_OrganizationQuery,
+    query: PersonalAccessTokenDetailViewSheet_OrganizationQuery,
     variables: {
       organizationSlug: props.organizationSlug,
       organizationAccessTokenId: props.accessTokenId,
@@ -42,13 +45,13 @@ export function AccessTokenDetailViewSheet(props: AccessTokenDetailViewSheetProp
       <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
         <Sheet.SheetHeader>
           <Sheet.SheetTitle>
-            Access Token: {query.data?.organization?.accessToken?.title}
+            Access Token: {query.data?.organization?.me?.accessToken?.title}
           </Sheet.SheetTitle>
           <Sheet.SheetDescription>
-            {query.data?.organization?.accessToken?.description}
+            {query.data?.organization?.me?.accessToken?.description}
           </Sheet.SheetDescription>
         </Sheet.SheetHeader>
-        {query.data?.organization?.accessToken?.resolvedResourcePermissionGroups.map(
+        {query.data?.organization?.me?.accessToken?.resolvedResourcePermissionGroups.map(
           resolvedResourcePermissionGroup => (
             <PermissionDetailView
               resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}

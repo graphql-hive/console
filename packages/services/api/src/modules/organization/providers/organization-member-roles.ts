@@ -67,7 +67,7 @@ const MemberRoleModel = z
     return {
       ...omit(record, 'legacyScopes'),
       permissions,
-      get allPermissions() {
+      get allPermissions(): ReadonlySet<Permission> {
         const allPermissions = new Set<Permission>();
         Object.values(permissions).forEach(set => {
           set.forEach(permission => {

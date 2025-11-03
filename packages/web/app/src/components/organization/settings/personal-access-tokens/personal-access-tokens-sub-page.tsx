@@ -8,43 +8,36 @@ import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
 import { CreateAccessTokenState } from '../../../organization/settings/access-tokens/access-tokens-sub-page';
-import { CreateProjectAccessTokenSheetContent } from './create-project-access-token-sheet-content';
-import { ProjectAccessTokensTable } from './project-access-tokens-table';
+import { CreatePersonalAccessTokenSheetContent } from './create-personal-access-token-sheet-content';
+import { PersonalAccessTokensTable } from './personal-access-tokens-table';
 
-const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
-  query PersonalAccessTokensSubPage_OrganizationQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-  ) {
+const PersonalAccessTokensSubPage_OrganizationQuery = graphql(`
+  query PersonalAccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      project: projectBySlug(projectSlug: $projectSlug) {
+      me {
         id
-        slug
         accessTokens(first: 20) {
           __typename
-          ...ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment
+          ...PersonalAccessTokensTable_OrganizationAccessTokenConnectionFragment
         }
-        ...CreateProjectAccessTokenSheetContent_ProjectFragment
       }
-      ...CreateProjectAccessTokenSheetContent_OrganizationFragment
+      ...CreatePersonalAccessTokenSheetContent_OrganizationFragment
     }
   }
 `);
 
 type PersonalAccessTokensSubPageProps = {
   organizationSlug: string;
-  projectSlug: string;
 };
 
-export function ProjectAccessTokensSubPage(
+export function PersonalAccessTokensSubPage(
   props: PersonalAccessTokensSubPageProps,
 ): React.ReactNode {
   const [query, refetchQuery] = useQuery({
-    query: ProjectAccessTokensSubPage_OrganizationQuery,
+    query: PersonalAccessTokensSubPage_OrganizationQuery,
     variables: {
       organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
     },
     requestPolicy: 'network-only',
   });
@@ -91,10 +84,9 @@ export function ProjectAccessTokensSubPage(
             </Button>
           </Sheet.SheetTrigger>
           {createAccessTokenState !== CreateAccessTokenState.closed &&
-            query.data?.organization?.project && (
-              <CreateProjectAccessTokenSheetContent
+            query.data?.organization?.me && (
+              <CreatePersonalAccessTokenSheetContent
                 organization={query.data.organization}
-                project={query.data.organization.project}
                 onSuccess={() => {
                   setCreateAccessTokenState(CreateAccessTokenState.closed);
                   refetchQuery();
@@ -128,11 +120,10 @@ export function ProjectAccessTokensSubPage(
             </AlertDialog.AlertDialogContent>
           </AlertDialog.AlertDialog>
         )}
-        {query.data?.organization?.project?.accessTokens && (
-          <ProjectAccessTokensTable
-            accessTokens={query.data.organization.project.accessTokens}
+        {query.data?.organization?.me?.accessTokens && (
+          <PersonalAccessTokensTable
+            accessTokens={query.data.organization.me.accessTokens}
             organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
             refetch={refetchQuery}
           />
         )}

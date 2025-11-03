@@ -747,6 +747,21 @@ export class OrganizationAccessTokens {
     return accessToken;
   }
 
+  async getForMembership(membership: OrganizationMembership, id: string) {
+    const accessToken = await this.getById(id);
+
+    if (
+      !accessToken ||
+      !accessToken.userId ||
+      accessToken.userId !== membership.userId ||
+      accessToken.organizationId !== membership.organizationId
+    ) {
+      return null;
+    }
+
+    return accessToken;
+  }
+
   async getForProject(project: Project, id: string) {
     await this.session.assertPerformAction({
       organizationId: project.orgId,
@@ -803,6 +818,21 @@ export class OrganizationAccessTokens {
       .map(group => ({
         ...group,
         permissions: group.permissions.filter(permission => filter(permission.id)),
+      }))
+      .filter(group => group.permissions.length !== 0);
+  }
+
+  async getAvailablePermissionGroupsForMembership(membership: OrganizationMembership) {
+    const organization = await this.storage.getOrganization({
+      organizationId: membership.organizationId,
+    });
+    const groups = await this.getAvailablePermissionGroupsForOrganization(organization);
+    const memberPermissions = membership.assignedRole.role.allPermissions;
+
+    return groups
+      .map(group => ({
+        ...group,
+        permissions: group.permissions.filter(permission => memberPermissions.has(permission.id)),
       }))
       .filter(group => group.permissions.length !== 0);
   }

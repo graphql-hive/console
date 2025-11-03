@@ -885,7 +885,7 @@ export default gql`
     """
     Access token for project.
     """
-    accessToken(id: ID): OrganizationAccessToken
+    accessToken(id: ID!): OrganizationAccessToken
     """
     Permissions that the viewer can assign to project access tokens.
     """
@@ -894,6 +894,14 @@ export default gql`
 
   extend type Member {
     availablePersonalAccessTokenPermissionGroups: [PermissionGroup!]!
+    """
+    Paginated list of access tokens issued for the project.
+    """
+    accessTokens(first: Int, after: String): OrganizationAccessTokenConnection
+    """
+    Access token for project.
+    """
+    accessToken(id: ID!): OrganizationAccessToken
   }
 
   type ResolvedPermission {
