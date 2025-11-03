@@ -24,5 +24,12 @@ export type BlogFrontmatter = z.infer<typeof BlogFrontmatter>;
 export type BlogPostFile = Required<MdxFile<BlogFrontmatter>>;
 
 export function isBlogPost(item: PageMapItem): item is BlogPostFile {
-  return item && 'route' in item && 'name' in item && 'frontMatter' in item && !!item.frontMatter;
+  return (
+    item &&
+    'route' in item &&
+    'name' in item &&
+    'frontMatter' in item &&
+    !!item.frontMatter &&
+    BlogFrontmatter.safeParse(item.frontMatter).success
+  );
 }
