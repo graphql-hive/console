@@ -322,7 +322,7 @@ export class ResourceAssignments {
 
     for (const projectTargetAssignment of projectTargetAssignments) {
       const target = targets.get(projectTargetAssignment.target.id);
-      if (!target || target.id !== projectTargetAssignment.project.id) {
+      if (!target || target.projectId !== projectTargetAssignment.project.id) {
         continue;
       }
       const targetBaseId = projectTargetAssignment.projectBaseId + '/' + target.slug;
