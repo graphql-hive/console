@@ -172,17 +172,18 @@ using the store provided in the context `context.mockStore`;
 When having a schema that returns a list, in this case, a list of users:
 
 ```ts filename="init-store.ts"
-import { MockStore } from '@graphql-mesh/plugin-mock'
+import type { IMockStore } from '@graphql-mesh/plugin-mock'
 
-export const store = new MockStore()
-const users = [{ id: 'uuid', name: 'John Snow' }]
-// Set individual users' data in the store so that they can be queried as individuals later on
-users.forEach(user => {
-  store.set('User', user.id, user)
-})
+export function initializeStore(mockStore: IMockStore) {
+  const users = [{ id: 'uuid', name: 'John Snow' }]
+  // Set individual users' data in the store so that they can be queried as individuals later on
+  users.forEach(user => {
+    mockStore.set('User', user.id, user)
+  })
 
-// Populate the `users` query on the root with data
-store.set('Query', 'ROOT', 'users', users)
+  // Populate the `users` query on the root with data
+  mockStore.set('Query', 'ROOT', 'users', users)
+}
 ```
 
 ### Get from the store
@@ -192,22 +193,23 @@ You can implement the mock query field `*ById` declaratively like below:
 ```graphql
 type Query {
   user(id: ID): User
+  users: [User]
 }
 ```
 
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
 import { useMock } from '@graphql-mesh/plugin-mock'
-import { store } from './init-store.js'
+import { initializeStore } from './init-store.js'
 
 export const gatewayConfig = defineConfig({
   plugins: pluginCtx => [
     useMock({
-      store,
+      initializeStore,
       mocks: [
         {
           apply: 'Query.user',
-          custom: (_, args) => store.get('User', args.id)
+          custom: (_, args, context) => context.mockStore.get('User', args.id)
         }
       ]
     })
@@ -224,6 +226,8 @@ type User {
 }
 type Query {
   me: User
+  user(id: ID): User
+  users: [User]
 }
 type Mutation {
   changeMyName(newName: String): User
@@ -234,32 +238,37 @@ type Mutation {
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
 import { useMock } from '@graphql-mesh/plugin-mock'
-import { store } from './init-store.js'
+import { initializeStore } from './init-store.js'
+
+interface User {
+  id: string
+  name: string
+}
 
 export const gatewayConfig = defineConfig({
   plugins: pluginCtx => [
     useMock({
-      store,
+      initializeStore,
       mocks: [
         {
           apply: 'Query.me',
-          custom: (_, args, context) => store.get('User', 'uuid')
+          custom: (_, args, context) => context.mockStore.get('User', 'uuid')
         },
         {
           apply: 'Mutation.changeMyName',
           custom: (_, args, context) => {
-            const user = store.get('User', 'uuid')
+            const user = context.mockStore.get('User', 'uuid') as User
             user.name = args.newName
-            store.set('User', 'uuid', user)
+            context.mockStore.set('User', 'uuid', user)
             return user
           }
         },
         {
           apply: 'Mutation.updateUser',
           custom: (_, args, context) => {
-            const user = store.get('User', args.id)
+            const user = context.mockStore.get('User', args.id) as User
             user.name = args.name
-            store.set('User', args.id, user)
+            context.mockStore.set('User', args.id, user)
             return user
           }
         }
