@@ -30,10 +30,10 @@ Limits the maximum number of concurrent HTTP connections the router will open to
 host. This acts as a safeguard to prevent overwhelming a subgraph with too many simultaneous
 requests.
 
-### `pool_idle_timeout_seconds`
+### `pool_idle_timeout`
 
-- **Type:** `integer`
-- **Default:** `50`
+- **Type:** `string`
+- **Default:** `50s`
 
 Controls the timeout (in seconds) for idle keep-alive connections in the router's connection pool.
 Connections that are unused for this duration will be closed.
@@ -47,5 +47,5 @@ longer idle timeout.
 traffic_shaping:
   dedupe_enabled: true
   max_connections_per_host: 250
-  pool_idle_timeout_seconds: 90
+  pool_idle_timeout: 90s
 ```
