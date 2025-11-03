@@ -18,7 +18,7 @@ const myTokenInfoQuery = graphql(/* GraphQL */ `
         level
         resolvedResourceIds
         title
-        groups {
+        resolvedPermissionGroups {
           title
           permissions {
             isGranted

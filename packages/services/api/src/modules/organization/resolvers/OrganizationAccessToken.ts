@@ -20,9 +20,11 @@ export const OrganizationAccessToken: OrganizationAccessTokenResolvers = {
   permissions(accessToken, _arg, { injector }) {
     return injector.get(OrganizationAccessTokens).getPermissionsForAccessToken(accessToken);
   },
-  resolvedPermissions(accessToken, _arg, { injector }) {
+  resolvedResourcePermissionGroups(accessToken, args, { injector }) {
     return injector
       .get(OrganizationAccessTokens)
-      .getGraphQLResolvedResourcePermissionGroupForAccessToken(accessToken)();
+      .getGraphQLResolvedResourcePermissionGroupForAccessToken(accessToken)(
+      args.includeAll ?? false,
+    );
   },
 };

@@ -18,29 +18,21 @@ import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PermissionSelector } from '../../members/permission-selector';
+import { PermissionSelector } from '../../../organization/members/permission-selector';
 import {
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
   type ResourceSelection,
-} from '../../members/resource-selector';
-import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
-import { permissionLevelToResourceName, resolveResources } from './shared-helpers';
-
-/** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-export const TitleInputModel = z
-  .string()
-  .trim()
-  .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
-  .min(2, 'Minimum length is 2 characters.')
-  .max(100, 'Maximum length is 100 characters.');
-
-/** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-export const DescriptionInputModel = z
-  .string()
-  .trim()
-  .max(248, 'Maximum length is 248 characters.')
-  .optional();
+} from '../../../organization/members/resource-selector';
+import { SelectedPermissionOverview } from '../../../organization/members/selected-permission-overview';
+import {
+  DescriptionInputModel,
+  TitleInputModel,
+} from '../../../organization/settings/access-tokens/create-access-token-sheet-content';
+import {
+  permissionLevelToResourceName,
+  resolveResources,
+} from '../../../organization/settings/access-tokens/shared-helpers';
 
 const CreateAccessTokenFormModel = z.object({
   title: TitleInputModel,
@@ -48,47 +40,55 @@ const CreateAccessTokenFormModel = z.object({
   permissions: z.array(z.string()).min(1, 'Please select at least one permission.'),
 });
 
-const CreateAccessTokenSheetContent_OrganizationFragment = graphql(`
-  fragment CreateAccessTokenSheetContent_OrganizationFragment on Organization {
+const CreateProjectAccessTokenSheetContent_OrganizationFragment = graphql(`
+  fragment CreateProjectAccessTokenSheetContent_OrganizationFragment on Organization {
     id
     slug
-    availableOrganizationAccessTokenPermissionGroups {
-      ...PermissionSelector_PermissionGroupsFragment
-      ...SelectedPermissionOverview_PermissionGroupFragment
-    }
     ...ResourceSelector_OrganizationFragment
   }
 `);
 
-type CreateAccessTokenSheetContentProps = {
+const CreateProjectAccessTokenSheetContent_ProjectFragment = graphql(`
+  fragment CreateProjectAccessTokenSheetContent_ProjectFragment on Project {
+    id
+    slug
+    availableProjectAccessTokenPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
+  }
+`);
+
+type CreateProjectAccessTokenSheetContentProps = {
   onSuccess: () => void;
-  organization: FragmentType<typeof CreateAccessTokenSheetContent_OrganizationFragment>;
+  organization: FragmentType<typeof CreateProjectAccessTokenSheetContent_OrganizationFragment>;
+  project: FragmentType<typeof CreateProjectAccessTokenSheetContent_ProjectFragment>;
 };
 
-const CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation = graphql(`
-  mutation CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation(
-    $input: CreateOrganizationAccessTokenInput!
+const CreateProjectAccessTokenSheetContent_CreateOrganizationAccessTokenMutation = graphql(`
+  mutation CreateProjectAccessTokenSheetContent_CreateOrganizationAccessTokenMutation(
+    $input: CreateProjectAccessTokenInput!
   ) {
-    createOrganizationAccessToken(input: $input) {
+    createProjectAccessToken(input: $input) {
       ok {
         privateAccessKey
-        createdOrganizationAccessToken {
+        createdProjectAccessToken {
           id
         }
       }
       error {
         message
-        details {
-          title
-          description
-        }
+        # details {
+        #   title
+        #   description
+        # }
       }
     }
   }
 `);
 
-export function CreateAccessTokenSheetContent(
-  props: CreateAccessTokenSheetContentProps,
+export function CreateProjectAccessTokenSheetContent(
+  props: CreateProjectAccessTokenSheetContentProps,
 ): React.ReactNode {
   // eslint-disable-next-line react/hook-use-state
   const [Stepper] = useState(() =>
@@ -112,12 +112,22 @@ export function CreateAccessTokenSheetContent(
     ),
   );
   const organization = useFragment(
-    CreateAccessTokenSheetContent_OrganizationFragment,
+    CreateProjectAccessTokenSheetContent_OrganizationFragment,
     props.organization,
   );
+  const project = useFragment(CreateProjectAccessTokenSheetContent_ProjectFragment, props.project);
   const [resourceSelection, setResourceSelection] = useState<ResourceSelection>(() => ({
-    mode: GraphQLSchema.ResourceAssignmentModeType.All,
-    projects: [],
+    mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+    projects: [
+      {
+        projectId: project.id,
+        projectSlug: project.slug,
+        targets: {
+          mode: GraphQLSchema.ResourceAssignmentModeType.All,
+          targets: [],
+        },
+      },
+    ],
   }));
 
   const form = useForm<z.TypeOf<typeof CreateAccessTokenFormModel>>({
@@ -131,7 +141,7 @@ export function CreateAccessTokenSheetContent(
   });
 
   const [createOrganizationAccessTokenState, createOrganizationAccessToken] = useMutation(
-    CreateAccessTokenSheetContent_CreateOrganizationAccessTokenMutation,
+    CreateProjectAccessTokenSheetContent_CreateOrganizationAccessTokenMutation,
   );
 
   const resolvedResources = useMemo(
@@ -144,24 +154,26 @@ export function CreateAccessTokenSheetContent(
     const formValues = form.getValues();
     const result = await createOrganizationAccessToken({
       input: {
-        organization: {
-          byId: organization.id,
+        project: {
+          byId: project.id,
         },
         title: formValues.title ?? '',
         description: formValues.description ?? '',
         permissions: formValues.permissions,
-        resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection),
+        resources:
+          resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection).projects?.at(0)!
+            .targets!,
       },
     });
 
-    if (result.data?.createOrganizationAccessToken.error) {
-      const { error } = result.data.createOrganizationAccessToken;
-      if (error.details?.title) {
-        form.setError('title', { message: error.details.title });
-      }
-      if (error.details?.description) {
-        form.setError('description', { message: error.details.description });
-      }
+    if (result.data?.createProjectAccessToken.error) {
+      const { error } = result.data.createProjectAccessToken;
+      // if (error.details?.title) {
+      //   form.setError('title', { message: error.details.title });
+      // }
+      // if (error.details?.description) {
+      //   form.setError('description', { message: error.details.description });
+      // }
       if (error.message) {
         toast({
           variant: 'destructive',
@@ -258,7 +270,7 @@ export function CreateAccessTokenSheetContent(
                               <Form.FormControl>
                                 <PermissionSelector
                                   permissionGroups={
-                                    organization.availableOrganizationAccessTokenPermissionGroups
+                                    project.availableProjectAccessTokenPermissionGroups
                                   }
                                   selectedPermissionIds={new Set(form.getValues()['permissions'])}
                                   onSelectedPermissionsChange={selectedPermissionIds => {
@@ -290,6 +302,7 @@ export function CreateAccessTokenSheetContent(
                                 organization={organization}
                                 selection={resourceSelection}
                                 onSelectionChange={setResourceSelection}
+                                forProjectId={project.id}
                               />
                             </Form.FormControl>
                             <Form.FormMessage />
@@ -309,9 +322,7 @@ export function CreateAccessTokenSheetContent(
                         ) : (
                           <SelectedPermissionOverview
                             activePermissionIds={form.getValues().permissions}
-                            permissionsGroups={
-                              organization.availableOrganizationAccessTokenPermissionGroups
-                            }
+                            permissionsGroups={project.availableProjectAccessTokenPermissionGroups}
                             showOnlyAllowedPermissions
                             isExpanded
                             additionalGroupContent={group => (
@@ -421,12 +432,11 @@ export function CreateAccessTokenSheetContent(
           </>
         )}
       </Stepper.StepperProvider>
-      {createOrganizationAccessTokenState.data?.createOrganizationAccessToken.ok && (
+      {createOrganizationAccessTokenState.data?.createProjectAccessToken.ok && (
         <AcessTokenCreatedConfirmationDialogue
           onClose={props.onSuccess}
           privateAccessKey={
-            createOrganizationAccessTokenState.data.createOrganizationAccessToken.ok
-              .privateAccessKey
+            createOrganizationAccessTokenState.data.createProjectAccessToken.ok.privateAccessKey
           }
         />
       )}

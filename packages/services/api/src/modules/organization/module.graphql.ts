@@ -223,7 +223,9 @@ export default gql`
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
     scope: OrganizationAccessTokenScopeType!
-    resolvedPermissions: [ResolvedResourcePermissionGroup!]!
+    resolvedResourcePermissionGroups(
+      includeAll: Boolean = false
+    ): [ResolvedResourcePermissionGroup!]!
   }
 
   input DeleteOrganizationAccessTokenInput {
@@ -923,7 +925,7 @@ export default gql`
     Title
     """
     title: String!
-    groups: [ResolvedPermissionsGroup!]!
+    resolvedPermissionGroups: [ResolvedPermissionsGroup!]!
   }
 
   type WhoAmI {

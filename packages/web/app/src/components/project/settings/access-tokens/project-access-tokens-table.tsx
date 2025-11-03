@@ -9,12 +9,12 @@ import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
-import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
+import { ProjectAccessTokenDetailViewSheet } from './project-access-token-detail-view-sheet';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
 
-const AccessTokensTable_OrganizationAccessTokenConnectionFragment = graphql(`
-  fragment AccessTokensTable_OrganizationAccessTokenConnectionFragment on OrganizationAccessTokenConnection {
+const ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment = graphql(`
+  fragment ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment on OrganizationAccessTokenConnection {
     edges {
       cursor
       node {
@@ -32,29 +32,40 @@ const AccessTokensTable_OrganizationAccessTokenConnectionFragment = graphql(`
   }
 `);
 
-const AccessTokensTable_MoreAccessTokensQuery = graphql(`
-  query AccessTokensTable_MoreAccessTokensQuery($organizationSlug: String!, $after: String) {
+const ProjectAccessTokensTable_MoreAccessTokensQuery = graphql(`
+  query ProjectAccessTokensTable_MoreAccessTokensQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $after: String
+  ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessTokens(first: 10, after: $after) {
-        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
-        pageInfo {
-          endCursor
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        accessTokens(first: 10, after: $after) {
+          ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+          pageInfo {
+            endCursor
+          }
         }
       }
     }
   }
 `);
 
-type AccessTokensTable = {
+type ProjectAccessTokensTable = {
   organizationSlug: string;
-  accessTokens: FragmentType<typeof AccessTokensTable_OrganizationAccessTokenConnectionFragment>;
+  projectSlug: string;
+  accessTokens: FragmentType<
+    typeof ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment
+  >;
   refetch: () => void;
 };
 
-export function AccessTokensTable(props: AccessTokensTable) {
+export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
   const accessTokens = useFragment(
-    AccessTokensTable_OrganizationAccessTokenConnectionFragment,
+    ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment,
     props.accessTokens,
   );
 
@@ -79,8 +90,9 @@ export function AccessTokensTable(props: AccessTokensTable) {
             if (accessTokens?.pageInfo?.endCursor && accessTokens?.pageInfo?.hasNextPage) {
               setIsLoadingMore(true);
               void client
-                .query(AccessTokensTable_MoreAccessTokensQuery, {
+                .query(ProjectAccessTokensTable_MoreAccessTokensQuery, {
                   organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
                   after: accessTokens.pageInfo?.endCursor,
                 })
                 .toPromise()
@@ -153,8 +165,9 @@ export function AccessTokensTable(props: AccessTokensTable) {
         />
       )}
       {detailViewId && (
-        <AccessTokenDetailViewSheet
+        <ProjectAccessTokenDetailViewSheet
           organizationSlug={props.organizationSlug}
+          projectSlug={props.projectSlug}
           accessTokenId={detailViewId}
           onClose={() => setDetailViewId(null)}
         />

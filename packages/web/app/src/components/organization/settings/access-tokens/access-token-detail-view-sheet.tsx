@@ -142,7 +142,7 @@ type AccessTokenResources = Some<
 /**
  * Converts {ResourceAssignment} to {ResourceSelection}.
  */
-function toResourceSelection(resources: AccessTokenResources): ResourceSelection {
+export function toResourceSelection(resources: AccessTokenResources): ResourceSelection {
   return {
     mode: resources.mode,
     projects:

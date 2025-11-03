@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { PolicySettings } from '@/components/policy/policy-settings';
+import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -555,6 +556,12 @@ function ProjectSettingsContent(props: {
       });
     }
 
+    // TODO: based on permission check
+    pages.push({
+      key: 'access-tokens',
+      title: 'Access Tokens',
+    });
+
     return pages;
   }, [project]);
 
@@ -627,13 +634,24 @@ function ProjectSettingsContent(props: {
           {resolvedPage.key === 'composition' ? (
             <CompositionSettings project={project} organization={organization} />
           ) : null}
+          {resolvedPage.key === 'access-tokens' ? (
+            <ProjectAccessTokensSubPage
+              organizationSlug={organization.slug}
+              projectSlug={project.slug}
+            />
+          ) : null}
         </div>
       </PageLayoutContent>
     </PageLayout>
   );
 }
 
-export const ProjectSettingsPageEnum = z.enum(['general', 'policy', 'composition']);
+export const ProjectSettingsPageEnum = z.enum([
+  'general',
+  'policy',
+  'composition',
+  'access-tokens',
+]);
 
 export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
 

@@ -39,3 +39,18 @@ export function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
       return 'APP_DEPLOYMENT' as const;
   }
 }
+
+export function resourceLevelToHumanReadableName(resourceLevel: ResourceLevel) {
+  switch (resourceLevel) {
+    case 'target':
+      return 'Target' as const;
+    case 'service':
+      return 'Service' as const;
+    case 'project':
+      return 'Project' as const;
+    case 'organization':
+      return 'Organization' as const;
+    case 'appDeployment':
+      return 'App Deployment' as const;
+  }
+}

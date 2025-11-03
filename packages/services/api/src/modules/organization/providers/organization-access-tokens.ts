@@ -18,7 +18,10 @@ import {
   ResourceLevel,
   Session,
 } from '../../auth/lib/authz';
-import { resourceLevelToResourceLevelType } from '../../auth/resolvers/Permission';
+import {
+  resourceLevelToHumanReadableName,
+  resourceLevelToResourceLevelType,
+} from '../../auth/resolvers/Permission';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -879,7 +882,6 @@ export class OrganizationAccessTokens {
       );
 
       type PMap = {
-        title: string;
         level: ResourceLevel;
         permissionGroups: Map<
           /* group name */ string,
@@ -906,7 +908,6 @@ export class OrganizationAccessTokens {
         ).map((value): [ResourceLevel, PMap] => [
           value,
           {
-            title: value,
             level: value,
             permissionGroups: new Map(),
             resourceIds: resourceIds[value] ?? [],
@@ -953,8 +954,8 @@ export class OrganizationAccessTokens {
           resourceGroup =>
             ({
               level: resourceLevelToResourceLevelType(resourceGroup.level),
-              title: resourceGroup.title,
-              groups: Array.from(resourceGroup.permissionGroups.values())
+              title: resourceLevelToHumanReadableName(resourceGroup.level),
+              resolvedPermissionGroups: Array.from(resourceGroup.permissionGroups.values())
                 .map(group => ({
                   title: group.title,
                   permissions: group.permissions.map(permission => ({
@@ -969,7 +970,9 @@ export class OrganizationAccessTokens {
             }) satisfies GraphQLResolvedResourcePermissionGroupOutput,
         )
         .filter(group =>
-          includeAll ? true : group.groups.length !== 0 && group.resolvedResourceIds?.length,
+          includeAll
+            ? true
+            : group.resolvedPermissionGroups.length !== 0 && group.resolvedResourceIds?.length,
         );
     };
 

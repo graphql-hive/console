@@ -7,42 +7,47 @@ import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
 import { graphql } from '@/gql';
-import { AccessTokensTable } from './access-tokens-table';
-import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
+import { CreateAccessTokenState } from '../../../organization/settings/access-tokens/access-tokens-sub-page';
+import { CreateProjectAccessTokenSheetContent } from './create-project-access-token-sheet-content';
+import { ProjectAccessTokensTable } from './project-access-tokens-table';
 
-type AccessTokensSubPageProps = {
-  organizationSlug: string;
-};
-
-const AccessTokensSubPage_OrganizationQuery = graphql(`
-  query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
+const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
+  query PersonalAccessTokensSubPage_OrganizationQuery(
+    $organizationSlug: String!
+    $projectSlug: String!
+  ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessTokens(first: 10) {
-        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+      project: projectBySlug(projectSlug: $projectSlug) {
+        id
+        slug
+        accessTokens(first: 20) {
+          __typename
+          ...ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment
+        }
+        ...CreateProjectAccessTokenSheetContent_ProjectFragment
       }
-      ...CreateAccessTokenSheetContent_OrganizationFragment
-      ...ResourceSelector_OrganizationFragment
+      ...CreateProjectAccessTokenSheetContent_OrganizationFragment
     }
   }
 `);
 
-export const enum CreateAccessTokenState {
-  closed,
-  open,
-  /** show confirmation dialog to ditch draft state of new access token */
-  closing,
-}
+type PersonalAccessTokensSubPageProps = {
+  organizationSlug: string;
+  projectSlug: string;
+};
 
-export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.ReactNode {
+export function ProjectAccessTokensSubPage(
+  props: PersonalAccessTokensSubPageProps,
+): React.ReactNode {
   const [query, refetchQuery] = useQuery({
-    query: AccessTokensSubPage_OrganizationQuery,
+    query: ProjectAccessTokensSubPage_OrganizationQuery,
     variables: {
       organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
     },
     requestPolicy: 'network-only',
   });
-
   const [createAccessTokenState, setCreateAccessTokenState] = useState<CreateAccessTokenState>(
     CreateAccessTokenState.closed,
   );
@@ -54,8 +59,9 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         description={
           <>
             <CardDescription>
-              Access Tokens are used for the Hive CLI, Hive Public GraphQL API and Hive Usage
-              Reporting. Granular resource based access can be granted based on permissions.
+              These are the access tokens created for this project. Members with permissions can
+              manage and issues access tokens for CI/CD integrations with the CLI or local
+              development.
             </CardDescription>
             <CardDescription>
               <DocsLink
@@ -68,7 +74,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
           </>
         }
       />
-      <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
+      <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
         <Sheet.Sheet
           open={createAccessTokenState !== CreateAccessTokenState.closed}
           onOpenChange={isOpen => {
@@ -84,17 +90,17 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
               Create new access token
             </Button>
           </Sheet.SheetTrigger>
-          {createAccessTokenState !== CreateAccessTokenState.closed && query.data?.organization && (
-            <>
-              <CreateAccessTokenSheetContent
+          {createAccessTokenState !== CreateAccessTokenState.closed &&
+            query.data?.organization?.project && (
+              <CreateProjectAccessTokenSheetContent
                 organization={query.data.organization}
+                project={query.data.organization.project}
                 onSuccess={() => {
                   setCreateAccessTokenState(CreateAccessTokenState.closed);
                   refetchQuery();
                 }}
               />
-            </>
-          )}
+            )}
         </Sheet.Sheet>
         {createAccessTokenState === CreateAccessTokenState.closing && (
           <AlertDialog.AlertDialog open>
@@ -122,10 +128,11 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
             </AlertDialog.AlertDialogContent>
           </AlertDialog.AlertDialog>
         )}
-        {query.data?.organization && (
-          <AccessTokensTable
-            accessTokens={query.data.organization.accessTokens}
+        {query.data?.organization?.project?.accessTokens && (
+          <ProjectAccessTokensTable
+            accessTokens={query.data.organization.project.accessTokens}
             organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
             refetch={refetchQuery}
           />
         )}

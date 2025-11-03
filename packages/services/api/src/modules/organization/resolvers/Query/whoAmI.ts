@@ -6,9 +6,8 @@ import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
   _,
-  args,
+  __,
   { session, injector },
-  info,
 ) => {
   const accessTokens = injector.get(OrganizationAccessTokens);
 
