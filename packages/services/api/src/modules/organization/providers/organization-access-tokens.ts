@@ -1011,6 +1011,12 @@ export class OrganizationAccessTokens {
     membership: OrganizationMembership,
   ) {
     let permissions = accessToken.permissions;
+    const allMembershipPermissions = membership.assignedRole.role.allPermissions;
+
+    // if the user does not have this, the user cannot have personal access tokens.
+    if (!allMembershipPermissions.has('personalAccessToken:modify')) {
+      return [];
+    }
 
     if (permissions === null) {
       permissions = Array.from(membership.assignedRole.role.allPermissions);
