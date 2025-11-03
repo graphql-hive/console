@@ -26,8 +26,10 @@ export default async function BlogPage() {
     .concat(
       productUpdates
         .map(x => parseSchema(x, BlogPostFile))
-        .map(post => ((post.frontMatter.tags ||= ['Product Update']), post)),
-    );
+        .map(post => {
+          post.frontMatter.tags ||= ['Product Update'];
+          return post;
+        }),
 
   return (
     <BlogPageLayout>
