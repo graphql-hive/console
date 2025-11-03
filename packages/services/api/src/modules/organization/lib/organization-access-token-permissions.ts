@@ -124,7 +124,7 @@ export const permissionGroups: Array<PermissionGroup> = [
       {
         id: 'schemaCheck:create',
         title: 'Check schema/service/subgraph',
-        description: 'Grant access to publish services/schemas.',
+        description: 'Grant access to run checks for services/schemas.',
       },
       {
         id: 'schemaVersion:publish',
