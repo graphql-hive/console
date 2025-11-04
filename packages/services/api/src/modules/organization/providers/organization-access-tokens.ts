@@ -196,20 +196,11 @@ export class OrganizationAccessTokens {
 
     const { projectId, organizationId } = selector;
 
-    const canModifyProjectAccessTokens = await this.session.canPerformAction({
+    await this.session.assertPerformAction({
       organizationId,
       params: { organizationId, projectId },
       action: 'projectAccessToken:modify',
     });
-    const canModifyOrganizationAccessTokens = await this.session.canPerformAction({
-      organizationId,
-      params: { organizationId },
-      action: 'accessToken:modify',
-    });
-
-    if (!canModifyProjectAccessTokens && !canModifyOrganizationAccessTokens) {
-      this.session.raise('projectAccessToken:modify');
-    }
 
     const permissions = args.permissions.filter(permission =>
       validProjectResourceLevels.has(getPermissionGroup(permission as Permission)),
