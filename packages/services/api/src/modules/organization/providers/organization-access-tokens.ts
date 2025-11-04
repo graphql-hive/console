@@ -930,17 +930,17 @@ export class OrganizationAccessTokens {
           !membership.assignedRole.role.permissions.organization.has('personalAccessToken:modify')
         ) {
           return [];
-        } else {
-          grantedResources = intersectResourceAssignments(
-            accessToken.assignedResources,
-            membership.assignedRole.resources,
-          );
-          const membershipPermissions = membership.assignedRole.role.allPermissions;
-          grantedPermissions = new Set(
-            accessToken.permissions?.filter(permission => membershipPermissions.has(permission)) ??
-              [],
-          );
         }
+
+        grantedResources = intersectResourceAssignments(
+          accessToken.assignedResources,
+          membership.assignedRole.resources,
+        );
+        const membershipPermissions = membership.assignedRole.role.allPermissions;
+        grantedPermissions = new Set(
+          accessToken.permissions?.filter(permission => membershipPermissions.has(permission)) ??
+            [],
+        );
       } else {
         grantedPermissions = new Set(accessToken.permissions ?? []);
         grantedResources = accessToken.assignedResources;
