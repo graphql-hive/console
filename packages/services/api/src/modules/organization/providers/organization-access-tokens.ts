@@ -457,9 +457,9 @@ export class OrganizationAccessTokens {
     };
   }
 
-  async delete(args: { accessTokenId: string }) {
+  async delete(args: { accessTokenId: string; onlyOrganizationScoped?: true }) {
     const record = await this.findById(args.accessTokenId);
-    if (record === null) {
+    if (record === null || (args.onlyOrganizationScoped && (record.projectId || record.userId))) {
       return {
         type: 'error' as const,
         message: 'The access token does not exist.',
@@ -518,14 +518,18 @@ export class OrganizationAccessTokens {
     };
   }
 
-  async getPaginatedForOrganization(args: {
-    organizationId: string;
-    first: number | null;
-    after: string | null;
-  }) {
+  async getPaginatedForOrganization(
+    organization: Organization,
+    args: {
+      first: number | null;
+      after: string | null;
+      /** Whether only access tokens on the organization scope should be included in the result. */
+      includeOnlyOrganizationScoped?: true;
+    },
+  ) {
     await this.session.assertPerformAction({
-      organizationId: args.organizationId,
-      params: { organizationId: args.organizationId },
+      organizationId: organization.id,
+      params: { organizationId: organization.id },
       action: 'accessToken:modify',
     });
 
@@ -546,7 +550,7 @@ export class OrganizationAccessTokens {
       FROM
         "organization_access_tokens"
       WHERE
-        "organization_id" = ${args.organizationId}
+        "organization_id" = ${organization.id}
         ${
           cursor
             ? sql`
@@ -558,6 +562,14 @@ export class OrganizationAccessTokens {
                 OR "created_at" < ${cursor.createdAt}
               )
             `
+            : sql``
+        }
+        ${
+          args.includeOnlyOrganizationScoped
+            ? sql`
+                AND "project_id" IS NULL
+                AND "user_id" IS NULL
+              `
             : sql``
         }
       ORDER BY
@@ -762,7 +774,11 @@ export class OrganizationAccessTokens {
     })(id);
   }
 
-  async getForOrganization(organization: Organization, id: string) {
+  async getForOrganization(
+    organization: Organization,
+    id: string,
+    includeOnlyOrganizationScoped?: true,
+  ) {
     await this.session.assertPerformAction({
       organizationId: organization.id,
       params: { organizationId: organization.id },
@@ -772,6 +788,10 @@ export class OrganizationAccessTokens {
     const accessToken = await this.getById(id);
 
     if (!accessToken || accessToken?.organizationId !== organization.id) {
+      return null;
+    }
+
+    if (includeOnlyOrganizationScoped && (accessToken.projectId || accessToken.userId)) {
       return null;
     }
 

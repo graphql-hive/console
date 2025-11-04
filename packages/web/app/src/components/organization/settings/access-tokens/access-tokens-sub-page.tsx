@@ -18,7 +18,7 @@ const AccessTokensSubPage_OrganizationQuery = graphql(`
   query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessTokens(first: 10) {
+      allAccessTokens(first: 10) {
         ...AccessTokensTable_AccessTokenConnectionFragment
       }
       ...CreateAccessTokenSheetContent_OrganizationFragment
@@ -128,7 +128,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         )}
         {query.data?.organization && (
           <AccessTokensTable
-            accessTokens={query.data.organization.accessTokens}
+            accessTokens={query.data.organization.allAccessTokens}
             organizationSlug={props.organizationSlug}
             refetch={refetchQuery}
           />

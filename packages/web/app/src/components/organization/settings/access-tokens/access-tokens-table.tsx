@@ -35,7 +35,7 @@ const AccessTokensTable_MoreAccessTokensQuery = graphql(`
   query AccessTokensTable_MoreAccessTokensQuery($organizationSlug: String!, $after: String) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessTokens(first: 10, after: $after) {
+      allAccessTokens(first: 10, after: $after) {
         ...AccessTokensTable_AccessTokenConnectionFragment
         pageInfo {
           endCursor

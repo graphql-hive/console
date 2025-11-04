@@ -54,9 +54,36 @@ export default gql`
     createPersonalAccessToken(
       input: CreatePersonalAccessTokenInput!
     ): CreatePersonalAccessTokenResult!
+    deleteOrganizationAccessToken(
+      input: DeleteOrganizationAccessTokenInput!
+    ): DeleteOrganizationAccessTokenResult!
     deleteAccessToken(
       input: DeleteAccessTokenInput! @tag(name: "public")
     ): DeleteAccessTokenResult! @tag(name: "public")
+  }
+
+  input DeleteOrganizationAccessTokenInput {
+    """
+    The access token that should be deleted.
+    """
+    organizationAccessToken: OrganizationAccessTokenReference! @tag(name: "public")
+  }
+
+  input OrganizationAccessTokenReference @oneOf @tag(name: "public") {
+    byId: ID @tag(name: "public")
+  }
+
+  type DeleteOrganizationAccessTokenResult {
+    ok: DeleteOrganizationAccessTokenResultOk @tag(name: "public")
+    error: DeleteOrganizationAccessTokenResultError @tag(name: "public")
+  }
+
+  type DeleteOrganizationAccessTokenResultOk {
+    deletedOrganizationAccessTokenId: ID! @tag(name: "public")
+  }
+
+  type DeleteOrganizationAccessTokenResultError {
+    message: String! @tag(name: "public")
   }
 
   input CreatePersonalAccessTokenInput {
@@ -227,25 +254,25 @@ export default gql`
   }
 
   interface AccessToken {
-    id: ID! @tag(name: "public")
+    id: ID!
     scope: AccessTokenScopeType!
-    title: String! @tag(name: "public")
-    description: String @tag(name: "public")
-    firstCharacters: String! @tag(name: "public")
-    createdAt: DateTime! @tag(name: "public")
+    title: String!
+    description: String
+    firstCharacters: String!
+    createdAt: DateTime!
     resolvedResourcePermissionGroups(
       includeAll: Boolean = false
     ): [ResolvedResourcePermissionGroup!]!
   }
 
   type AccessTokenEdge {
-    node: AccessToken! @tag(name: "public")
-    cursor: String! @tag(name: "public")
+    node: AccessToken!
+    cursor: String!
   }
 
   type AccessTokenConnection {
-    pageInfo: PageInfo! @tag(name: "public")
-    edges: [AccessTokenEdge!]! @tag(name: "public")
+    pageInfo: PageInfo!
+    edges: [AccessTokenEdge!]!
   }
 
   type OrganizationAccessToken implements AccessToken {
@@ -577,16 +604,26 @@ export default gql`
     """
     viewerCanManagePersonalAccessTokens: Boolean!
     """
-    Paginated list of all access tokens issued in the organization.
+    Paginated list of all organization scoped access tokens.
     """
     accessTokens(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
-    ): AccessTokenConnection! @tag(name: "public")
+    ): OrganizationAccessTokenConnection! @tag(name: "public")
     """
-    Retrieve a access token issued in the organization by it's id.
+    Retrieve a organization scoped access token by it's id.
     """
-    accessToken(id: ID! @tag(name: "public")): AccessToken @tag(name: "public")
+    accessToken(id: ID! @tag(name: "public")): OrganizationAccessToken @tag(name: "public")
+
+    """
+    Retrieve a list of all access tokens within the organization.
+    This includes organization, project and personal scoped access tokens.
+    """
+    allAccessTokens(first: Int, after: String): AccessTokenConnection!
+    """
+    Retrieve a access token within the organization by its ID.
+    """
+    accessTokenById(id: ID!): AccessToken
   }
 
   type OrganizationAccessTokenEdge {

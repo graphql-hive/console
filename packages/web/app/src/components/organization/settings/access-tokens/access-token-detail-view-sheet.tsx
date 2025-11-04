@@ -6,11 +6,11 @@ import { PermissionDetailView } from './permission-detail-view';
 const AccessTokenDetailViewSheet_OrganizationQuery = graphql(`
   query AccessTokenDetailViewSheet_OrganizationQuery(
     $organizationSlug: String!
-    $organizationAccessTokenId: ID!
+    $accessTokenId: ID!
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessToken(id: $organizationAccessTokenId) {
+      accessToken: accessTokenById(id: $accessTokenId) {
         id
         title
         description
@@ -34,7 +34,7 @@ export function AccessTokenDetailViewSheet(props: AccessTokenDetailViewSheetProp
     query: AccessTokenDetailViewSheet_OrganizationQuery,
     variables: {
       organizationSlug: props.organizationSlug,
-      organizationAccessTokenId: props.accessTokenId,
+      accessTokenId: props.accessTokenId,
     },
   });
 

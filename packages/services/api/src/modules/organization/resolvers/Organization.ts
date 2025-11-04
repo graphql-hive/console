@@ -9,7 +9,9 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
 export const Organization: Pick<
   OrganizationResolvers,
   | 'accessToken'
+  | 'accessTokenById'
   | 'accessTokens'
+  | 'allAccessTokens'
   | 'availableMemberPermissionGroups'
   | 'availableOrganizationAccessTokenPermissionGroups'
   | 'cleanId'
@@ -209,10 +211,10 @@ export const Organization: Pick<
       .getAvailablePermissionGroupsForOrganization(organization);
   },
   accessTokens: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getPaginatedForOrganization({
-      organizationId: organization.id,
+    return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {
       first: args.first ?? null,
       after: args.after ?? null,
+      includeOnlyOrganizationScoped: true,
     });
   },
   viewerCanManageAccessTokens: async (organization, _arg, { session }) => {
@@ -225,7 +227,7 @@ export const Organization: Pick<
     });
   },
   accessToken: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, true);
   },
   viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {
     return session.canPerformAction({
@@ -234,6 +236,15 @@ export const Organization: Pick<
       params: {
         organizationId: organization.id,
       },
+    });
+  },
+  accessTokenById: async (organization, args, { injector }) => {
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
+  },
+  async allAccessTokens(organization, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {
+      first: args.first ?? null,
+      after: args.after ?? null,
     });
   },
 };
