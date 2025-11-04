@@ -1,0 +1,90 @@
+---
+title: 'hmac_signature'
+---
+
+# hmac_signature
+
+The `hmac_signature` configuration enables you to sign outgoing requests to subgraphs using HMAC
+signatures. This adds an extra layer of security by ensuring that requests are authenticated and
+have not been tampered with.
+
+For practical examples and common scenarios, check out
+**[Subgraph Auth](../security/subgraph-auth)**.
+
+## Options
+
+### `enabled`
+
+- **Default:** `false`
+
+Enable or disable HMAC signing for outgoing subgraph requests. You can also provide an expression
+that evaluates to a boolean to enable or disable signing dynamically based on request properties.
+
+#### Value Options:
+
+##### Static Boolean
+
+- **Type:** `boolean`
+
+When a boolean is provided, HMAC signing is either always enabled (`true`) or always disabled
+(`false`).
+
+```yaml
+hmac_signature:
+  enabled: true
+```
+
+##### Dynamic with `expression`
+
+- **Type:** `object`
+
+When an `object` is provided, it must contain a VRL `expression` that evaluates to a boolean (`true`
+or `false`). The expression is evaluated for each request, allowing for request-time activation
+decisions.
+
+- `expression`: **(string, required)** A VRL expression that computes the active state of the label.
+
+Within the `expression`, you have access to the following context:
+
+- `.request`: The incoming HTTP request object, including its headers.
+- `.subgraph`: Subgraph metadata, such as its name.
+
+```yaml
+hmac_signature:
+  enabled:
+    expression: |
+      if .subgraph.name == "secure-subgraph" {
+        true
+      } else {
+        false
+      }
+```
+
+### `secret`
+
+- **Type:** `string`
+- **Required:** Yes
+
+The shared secret key used to generate the HMAC signature. This key must be known by both the router
+and the subgraph to verify the signature.
+
+```yaml
+hmac_signature:
+  enabled: true
+  secret: 'my_shared_secret_key'
+```
+
+### `extension_name`
+
+- **Type:** `string`
+- **Default:** `hmac-signature`
+
+The name of the extension where the HMAC signature will be included in the outgoing request. This
+should match the expected extension name on the subgraph side.
+
+```yaml
+hmac_signature:
+  enabled: true
+  secret: 'my_shared_secret_key'
+  extension_name: 'hmac-signature'
+```

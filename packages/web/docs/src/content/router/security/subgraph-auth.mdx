@@ -1,0 +1,199 @@
+---
+title: 'Subgraph Authentication'
+---
+
+import { Callout, Steps } from '@theguild/components'
+
+# Subgraph Authentication
+
+Subgraph Authentication allows you to secure communication between the Hive Router and your
+subgraphs. You can follow this guide to set up how to sign subgraph requests.
+
+By activating this, you can ensure that the requests send to GraphQL subgraphs is trusted and signed
+by the Hive Router. In case of any missing signature, tampering or unauthorized access, the subgraph
+services will reject the request.
+
+## HMAC Signature
+
+HMAC (Hash-based Message Authentication Code) is a mechanism for calculating a message
+authentication code involving a hash function in combination with a secret key. It can be used to
+verify the integrity and authenticity of a message.
+
+This feature implements HMAC signing for requests between Hive Router and the GraphQL subgraph. It
+also provides HMAC verification plugin for the incoming requests in the subgraph services.
+
+```mermaid
+flowchart LR
+	1(["End-user"]) --->|"query { comments { id author { id name }}}"| 2
+
+    subgraph Hive Router
+    2["Engine"]
+    3["HMAC Signature"]
+    4["Query Planner"]
+    2--->3
+    2--->4
+    end
+
+    subgraph "Users Subgraph"
+        5["HMAC Signature Validation"]
+        4--->|"query { _entities(representations: $r) { ... on User { name }} }\nextensions: { hmac-signature: AbC123 }"|5
+    end
+
+    subgraph "Comments Subgraph"
+        6["HMAC Signature Validation"]
+
+        4--->|"query { comments { id author { id }} }\nextensions: { hmac-signature: AbC123 }"|6
+    end
+```
+
+### How to use?
+
+<Steps>
+
+#### Step 1: Gather your secret key
+
+Before you start, you need to have a secret key that will be used for HMAC signing and verification.
+
+The secret key should be a random, opaque string, that will be shared between the Hive Router and
+the subgraphs validating the HMAC signature.
+
+#### Step 2: HMAC Signing in Hive Router
+
+```yaml
+hmac_signature:
+  enabled: true
+  secret: 'myHMACSecret' # Use the secret key gathered in step 1
+```
+
+Now, every GraphQL request sent to the upstream GraphQL subgraphs will be signed with the HMAC and
+the `extensions` of the upstream request will contain the HMAC signature.
+
+To configure the subgraph verification of the HMAC signature, please follow the next step.
+
+#### Step 3: HMAC Verification in Subgraph services
+
+The next step is to perform a verification over the sent HMAC signature in the subgraph services:
+
+##### With GraphQL Yoga
+
+If you are using Yoga, you can use the following package:
+
+```sh npm2yarn
+npm i @graphql-mesh/hmac-upstream-signature
+```
+
+```ts
+import { createYoga } from 'graphql-yoga'
+import { useHmacSignatureValidation } from '@graphql-mesh/hmac-upstream-signature'
+
+const myYogaSubgraphServer = createYoga({
+  // ...
+  plugins: [
+    useHmacSignatureValidation({
+      secret: myHMACSecret // see step 1 for the secret key
+    })
+    // other Yoga plugins
+    // ...
+  ]
+})
+```
+
+<Callout>
+  Make sure to add `useHmacSignatureValidation` first in the plugins list in your Yoga
+  configuration. This will ensure the request is verified before processing the other plugins.
+</Callout>
+
+##### With Apollo Server
+
+If you are using Apollo-Server for your subgraph services, you can implement a custom plugin to
+verify the HMAC signature. You can still use the utilities from the
+`@graphql-mesh/hmac-upstream-signature` library to serialize the request parameters and verify the
+HMAC signature in a stable way.
+
+Start by installing the `@graphql-mesh/hmac-upstream-signature` package:
+
+```sh npm2yarn
+npm i @graphql-mesh/hmac-upstream-signature
+```
+
+Now, configure your Apollo Server with the HMAC verification plugin:
+
+```ts filename="apollo-subgraph.ts"
+import { createHmac } from 'crypto'
+import { ApolloServer, ApolloServerPlugin } from '@apollo/server'
+import { defaultParamsSerializer } from '@graphql-mesh/hmac-upstream-signature'
+
+const verifyHmacPlugin = {
+  async requestDidStart({ request, contextValue }) {
+    const signature = request.extensions?.['hmac-signature']
+
+    if (!signature) {
+      throw new Error('HMAC signature is missing')
+    }
+
+    const serializedParams = defaultParamsSerializer({
+      query: request.query,
+      variables: request.variables
+    })
+
+    const incomingReqSignature = createHmac('sha256', HMAC_SIGNING_SECRET)
+      .update(serializedParams)
+      .digest('base64')
+
+    if (incomingReqSignature !== signature) {
+      throw new Error('HMAC signature is invalid')
+    }
+  }
+} satisfies ApolloServerPlugin<{}>
+
+const server = new ApolloServer({
+  plugins: [
+    verifyHmacPlugin
+    // ... other Apollo plugins
+  ]
+})
+```
+
+##### Other GraphQL servers
+
+To implement HMAC verification in other GraphQL servers, you should implement a HMAC verification
+using the following specification:
+
+- The incoming request to your server will contain an `extensions` field with a `hmac-signature`
+  key.
+- The `hmac-signature` value is a `base64` encoded HMAC signature of the request parameters, using
+  the SHA-256 algorithm.
+- The request parameters should be serialized in a stable way, so the signature can be verified
+  correctly. I should consist of the GraphQL `query` and `variables`:
+
+  ```json
+  {
+    "query": "query { comments { id author { id name } } ",
+    "variables": {}
+  }
+  ```
+
+- The HMAC signature should be calculated using the secret key shared between the Hive Router and
+  the subgraph services.
+
+Here's an example of an incoming subgraph request with the HMAC signature:
+
+```json
+{
+  "query": "query { comments { id author { id name } } ",
+  "variables": {},
+  "extensions": {
+    "hmac-signature": "AbC123"
+  }
+}
+```
+
+> The signature is produced by the Hive Router using the shared secret key, and the serialized
+> request (query and variables).
+
+</Steps>
+
+### Configuration
+
+Learn more about the options available in the
+[`hmac_signature` configuration reference](../configuration/hmac_signature).
