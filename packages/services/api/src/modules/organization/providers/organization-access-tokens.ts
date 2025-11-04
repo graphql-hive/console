@@ -457,14 +457,31 @@ export class OrganizationAccessTokens {
   async delete(args: { organizationAccessTokenId: string }) {
     const record = await this.findById(args.organizationAccessTokenId);
     if (record === null) {
-      throw new InsufficientPermissionError('accessToken:modify');
+      return {
+        type: 'error' as const,
+        message: 'The access token does not exist.',
+      };
     }
 
-    await this.session.assertPerformAction({
-      action: 'accessToken:modify',
-      organizationId: record.organizationId,
-      params: { organizationId: record.organizationId },
-    });
+    if (record.projectId) {
+      await this.session.assertPerformAction({
+        action: 'projectAccessToken:modify',
+        organizationId: record.organizationId,
+        params: { organizationId: record.organizationId, projectId: record.projectId },
+      });
+    } else if (record.userId) {
+      await this.session.assertPerformAction({
+        action: 'personalAccessToken:modify',
+        organizationId: record.organizationId,
+        params: { organizationId: record.organizationId },
+      });
+    } else {
+      await this.session.assertPerformAction({
+        action: 'accessToken:modify',
+        organizationId: record.organizationId,
+        params: { organizationId: record.organizationId },
+      });
+    }
 
     await this.pool.query(sql`
       DELETE
