@@ -13,14 +13,6 @@ these settings, see the [Performance Tuning & Traffic Shaping Guide](../guides/p
 
 ## Options
 
-### `dedupe_enabled`
-
-- **Type:** `boolean`
-- **Default:** `true`
-
-Enables or disables in-flight request deduplication. When `true`, identical, concurrent requests to
-a subgraph are coalesced into a single request, with the response being shared among all clients.
-
 ### `max_connections_per_host`
 
 - **Type:** `integer`
@@ -30,7 +22,34 @@ Limits the maximum number of concurrent HTTP connections the router will open to
 host. This acts as a safeguard to prevent overwhelming a subgraph with too many simultaneous
 requests.
 
-### `pool_idle_timeout`
+### Subgraph Specific Options
+
+The following options can be set globally for all subgraphs or overridden on a per-subgraph basis by
+nesting them under the subgraph's name within the `traffic_shaping` map.
+
+For example, the following example shows how to set global defaults and override them for a specific
+subgraph named `products`:
+
+```yaml
+traffic_shaping:
+  max_connections_per_host: 150
+  all:
+    pool_idle_timeout: 60s
+  subgraphs:
+    products:
+      dedupe_enabled: false
+      pool_idle_timeout: 120s
+```
+
+#### `dedupe_enabled`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Enables or disables in-flight request deduplication. When `true`, identical, concurrent requests to
+a subgraph are coalesced into a single request, with the response being shared among all clients.
+
+#### `pool_idle_timeout`
 
 - **Type:** `string`
 - **Default:** `50s`
@@ -39,7 +58,7 @@ Controls the timeout in duration string format (e.g. `1m` for 1 minute, `30s` fo
 idle keep-alive connections in the router's connection pool. Connections that are unused for this
 duration will be closed.
 
-## Example
+##### Example
 
 This example configuration increases the connection limit for a high-capacity subgraph and sets a
 longer idle timeout.
@@ -50,3 +69,54 @@ traffic_shaping:
   max_connections_per_host: 250
   pool_idle_timeout: 90s
 ```
+
+#### `request_timeout`
+
+- **Default:** `30s`
+
+Request timeout in duration string format (e.g. `30s` for 30 seconds, `1m` for 1 minute). This
+setting specifies the maximum time the router will wait for a response from a subgraph before timing
+out the request. By default, the router will wait up to 30 seconds for a subgraph to respond.
+
+##### Value Options
+
+The value for `request_timeout` must be a valid duration string or a VRL expression that evaluates
+to a duration string.
+
+###### Static Duration String
+
+- **Type:** `string`
+
+When a static duration string is provided, it sets a fixed timeout for all requests to subgraphs.
+
+```yamlyaml
+traffic_shaping:
+  request_timeout: 30s
+```
+
+###### Dynamic with `expression`
+
+- **Type:** `object`
+
+When an `object` is provided, it must contain a VRL `expression` that evaluates to a duration
+string. The expression is evaluated for each request, allowing for dynamic timeout values based on
+request characteristics.
+
+- `expression`: **(string, required)** A VRL expression that computes the request timeout duration.
+
+Within the `expression`, you have access to the following context:
+
+- `.request`: The incoming HTTP request object, including its headers.
+
+```yaml
+traffic_shaping:
+  request_timeout:
+    expression: |
+      if .request.headers["X-Priority"] == "high" {
+        "10s"
+      } else {
+        "60s"
+      }
+```
+
+This example sets a shorter timeout for high-priority requests based on a custom header.
