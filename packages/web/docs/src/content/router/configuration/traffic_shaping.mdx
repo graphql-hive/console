@@ -24,8 +24,9 @@ requests.
 
 ### Subgraph Specific Options
 
-The following options can be set globally for all subgraphs or overridden on a per-subgraph basis by
-nesting them under the subgraph's name within the `traffic_shaping` map.
+The following options (`dedupe_enabled`, `pool_idle_timeout`, and `request_timeout`) can be set
+globally for all subgraphs or overridden on a per-subgraph basis by nesting them under the
+subgraph's name within the `traffic_shaping` map.
 
 For example, the following example shows how to set global defaults and override them for a specific
 subgraph named `products`:
@@ -65,9 +66,9 @@ longer idle timeout.
 
 ```yaml filename="router.config.yaml"
 traffic_shaping:
-  dedupe_enabled: true
-  max_connections_per_host: 250
-  pool_idle_timeout: 90s
+  subgraphs:
+    high_capacity_subgraph:
+      pool_idle_timeout: 90s
 ```
 
 #### `request_timeout`
@@ -91,7 +92,8 @@ When a static duration string is provided, it sets a fixed timeout for all reque
 
 ```yamlyaml
 traffic_shaping:
-  request_timeout: 30s
+  all:
+    request_timeout: 30s
 ```
 
 ###### Dynamic with `expression`
@@ -110,13 +112,14 @@ Within the `expression`, you have access to the following context:
 
 ```yaml
 traffic_shaping:
-  request_timeout:
-    expression: |
-      if .request.headers["X-Priority"] == "high" {
-        "10s"
-      } else {
-        "60s"
-      }
+  all:
+    request_timeout:
+      expression: |
+        if .request.headers["X-Priority"] == "high" {
+          "10s"
+        } else {
+          "60s"
+        }
 ```
 
 This example sets a shorter timeout for high-priority requests based on a custom header.
