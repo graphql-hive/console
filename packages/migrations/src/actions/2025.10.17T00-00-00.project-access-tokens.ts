@@ -14,7 +14,7 @@ export default {
       `,
     },
     {
-      name: 'add index "organization_access_tokens_pagination_target"',
+      name: 'add index "organization_access_tokens_pagination_project"',
       query: sql`
         CREATE INDEX CONCURRENTLY IF NOT EXISTS "organization_access_tokens_pagination_project" ON "organization_access_tokens" (
           "project_id"
