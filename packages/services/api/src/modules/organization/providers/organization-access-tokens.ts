@@ -74,6 +74,11 @@ const OrganizationAccessTokenModel = z
   })
   .transform(record => ({
     ...record,
+    type: record.userId
+      ? ('personal' as const)
+      : record.projectId
+        ? ('project' as const)
+        : ('organization' as const),
     // We have these as a getter statement as they are
     // only used in the context of authorization, we do not need
     // to compute when querying a list of organization access tokens via the GraphQL API.
@@ -743,6 +748,7 @@ export class OrganizationAccessTokens {
     };
   }
 
+  /** Get a access token by it's ID without performing any permission checks. */
   async getById(id: string) {
     return await findById({
       logger: this.logger,
@@ -1152,8 +1158,9 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
     const result = OrganizationAccessTokenModel.parse(data);
 
     deps.logger.debug(
-      'Organization access token found. (organizationAccessTokenId=%s)',
+      'Organization access token found. (organizationAccessTokenId=%s, type=%s)',
       organizationAccessTokenId,
+      result.type,
     );
 
     return result;
