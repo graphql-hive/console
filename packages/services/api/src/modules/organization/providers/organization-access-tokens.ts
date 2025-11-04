@@ -887,7 +887,6 @@ export class OrganizationAccessTokens {
       userId: accessToken.userId,
     });
 
-    // TODO: we could handle this different TBH
     if (!membership) {
       return {
         mode: 'GRANULAR',
