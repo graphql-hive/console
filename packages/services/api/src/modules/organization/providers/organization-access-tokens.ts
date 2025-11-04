@@ -74,11 +74,18 @@ const OrganizationAccessTokenModel = z
   })
   .transform(record => ({
     ...record,
-    type: record.userId
-      ? ('personal' as const)
+    get __typename() {
+      return record.userId
+        ? ('OrganizationAccessToken' as const)
+        : record.projectId
+          ? ('PersonalAccessToken' as const)
+          : ('ProjectAccessToken' as const);
+    },
+    scope: record.userId
+      ? ('PERSONAL' as const)
       : record.projectId
-        ? ('project' as const)
-        : ('organization' as const),
+        ? ('PROJECT' as const)
+        : ('ORGANIZATION' as const),
     // We have these as a getter statement as they are
     // only used in the context of authorization, we do not need
     // to compute when querying a list of organization access tokens via the GraphQL API.
@@ -450,8 +457,8 @@ export class OrganizationAccessTokens {
     };
   }
 
-  async delete(args: { organizationAccessTokenId: string }) {
-    const record = await this.findById(args.organizationAccessTokenId);
+  async delete(args: { accessTokenId: string }) {
+    const record = await this.findById(args.accessTokenId);
     if (record === null) {
       return {
         type: 'error' as const,
@@ -459,24 +466,32 @@ export class OrganizationAccessTokens {
       };
     }
 
+    const canOrganizationAccessTokens = this.session.canPerformAction({
+      action: 'accessToken:modify',
+      organizationId: record.organizationId,
+      params: { organizationId: record.organizationId },
+    });
+
     if (record.projectId) {
-      await this.session.assertPerformAction({
-        action: 'projectAccessToken:modify',
-        organizationId: record.organizationId,
-        params: { organizationId: record.organizationId, projectId: record.projectId },
-      });
+      if (!canOrganizationAccessTokens) {
+        await this.session.assertPerformAction({
+          action: 'projectAccessToken:modify',
+          organizationId: record.organizationId,
+          params: { organizationId: record.organizationId, projectId: record.projectId },
+        });
+      }
     } else if (record.userId) {
-      await this.session.assertPerformAction({
-        action: 'personalAccessToken:modify',
-        organizationId: record.organizationId,
-        params: { organizationId: record.organizationId },
-      });
+      if (!canOrganizationAccessTokens) {
+        await this.session.canPerformAction({
+          action: 'personalAccessToken:modify',
+          organizationId: record.organizationId,
+          params: { organizationId: record.organizationId },
+        });
+      }
     } else {
-      await this.session.assertPerformAction({
-        action: 'accessToken:modify',
-        organizationId: record.organizationId,
-        params: { organizationId: record.organizationId },
-      });
+      if (!canOrganizationAccessTokens) {
+        this.session.raise('accessToken:modify');
+      }
     }
 
     await this.pool.query(sql`
@@ -484,7 +499,7 @@ export class OrganizationAccessTokens {
       FROM
         "organization_access_tokens"
       WHERE
-        "id" = ${args.organizationAccessTokenId}
+        "id" = ${record.id}
     `);
 
     await this.cache.purge(record);
@@ -499,7 +514,7 @@ export class OrganizationAccessTokens {
 
     return {
       type: 'success' as const,
-      organizationAccessTokenId: args.organizationAccessTokenId,
+      organizationAccessTokenId: record.id,
     };
   }
 
@@ -1149,9 +1164,9 @@ export function findById(deps: { pool: CommonQueryMethods; logger: Logger }) {
     const result = OrganizationAccessTokenModel.parse(data);
 
     deps.logger.debug(
-      'Organization access token found. (organizationAccessTokenId=%s, type=%s)',
+      'Organization access token found. (organizationAccessTokenId=%s, scope=%s)',
       organizationAccessTokenId,
-      result.type,
+      result.scope,
     );
 
     return result;

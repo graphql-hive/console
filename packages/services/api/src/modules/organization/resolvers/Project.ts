@@ -17,17 +17,17 @@ export const Project: Pick<
   | 'availableProjectAccessTokenPermissionGroups'
   | 'viewerCanManageProjectAccessTokens'
 > = {
-  accessTokens(project, args, { injector }) {
-    return injector.get(OrganizationAccessTokens).getPaginatedForProject(project, {
-      first: args.first ?? null,
-      after: args.after ?? null,
-    });
-  },
   availableProjectAccessTokenPermissionGroups(project, _, { injector }) {
     return injector.get(OrganizationAccessTokens).getAvailablePermissionsGroupsForProject(project);
   },
   accessToken(project, args, { injector }) {
     return injector.get(OrganizationAccessTokens).getForProject(project, args.id);
+  },
+  accessTokens(project, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getPaginatedForProject(project, {
+      first: args.first ?? null,
+      after: args.after ?? null,
+    });
   },
   viewerCanManageProjectAccessTokens(project, _arg, { session }) {
     return session.canPerformAction({

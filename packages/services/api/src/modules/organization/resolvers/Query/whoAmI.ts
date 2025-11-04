@@ -1,4 +1,5 @@
 import { HiveError } from '../../../../shared/errors';
+import { UnauthenticatedSession } from '../../../auth/lib/authz';
 import { OrganizationAccessTokenSession } from '../../../auth/lib/organization-access-token-strategy';
 import { TargetAccessTokenSession } from '../../../auth/lib/target-access-token-strategy';
 import { OrganizationAccessTokens } from '../../providers/organization-access-tokens';
@@ -31,6 +32,7 @@ export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
     const resolvedPermissions =
       accessTokens.getGraphQLResolvedResourcePermissionGroupForAccessToken({
         projectId: session.projectId,
+        userId: null,
         organizationId: session.organizationId,
         assignedResources: {
           mode: 'granular',
@@ -53,5 +55,9 @@ export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
     };
   }
 
-  throw new HiveError('Currently not supported.');
+  if (session instanceof UnauthenticatedSession) {
+    throw new HiveError('Not authneticated.');
+  }
+
+  throw new HiveError('WhoAmI only supports access tokens.');
 };

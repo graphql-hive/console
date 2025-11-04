@@ -14,7 +14,6 @@ const CreateProjectAccessTokenMutation = graphql(`
           id
           title
           description
-          permissions
           createdAt
         }
       }

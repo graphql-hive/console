@@ -15,7 +15,6 @@ export const createProjectAccessToken: NonNullable<
   if (result.type === 'success') {
     return {
       ok: {
-        __typename: 'CreateProjectAccessTokenResultOk',
         createdProjectAccessToken: result.accessToken,
         privateAccessKey: result.privateAccessKey,
       },
@@ -24,7 +23,6 @@ export const createProjectAccessToken: NonNullable<
 
   return {
     error: {
-      __typename: 'CreateProjectAccessTokenResultError',
       message: result.message,
       details: result.details,
     },

@@ -22,8 +22,7 @@ const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
         id
         slug
         accessTokens(first: 20) {
-          __typename
-          ...ProjectAccessTokensTable_OrganizationAccessTokenConnectionFragment
+          ...ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment
         }
         ...CreateProjectAccessTokenSheetContent_ProjectFragment
       }

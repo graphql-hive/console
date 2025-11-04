@@ -526,7 +526,7 @@ type Actions = keyof typeof actionDefinitions;
 type ActionStrings = Actions | '*' | '*:describe';
 
 /** Unauthenticated session that is returned by default. */
-class UnauthenticatedSession extends Session {
+export class UnauthenticatedSession extends Session {
   protected loadPolicyStatementsForOrganization(
     _: string,
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement> {

@@ -14,7 +14,6 @@ const CreatePersonalAccessTokenMutation = graphql(`
           id
           title
           description
-          permissions
           createdAt
         }
       }

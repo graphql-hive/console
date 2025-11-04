@@ -17,6 +17,9 @@ export type OrganizationGetStartedMapper = OrganizationGetStarted;
 export type OrganizationInvitationMapper = OrganizationInvitation;
 export type MemberMapper = OrganizationMembership;
 export type OrganizationAccessTokenMapper = OrganizationAccessToken;
+export type PersonalAccessTokenMapper = OrganizationAccessToken;
+export type ProjectAccessTokenMapper = OrganizationAccessToken;
+
 export type WhoAmIMapper = {
   title: string;
   resolvedPermissions: (

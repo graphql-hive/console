@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
-import { useClient, useMutation } from 'urql';
-import * as AlertDialog from '@/components/ui/alert-dialog';
+import { useClient } from 'urql';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';
-import { useToast } from '@/components/ui/use-toast';
 import { TimeAgo } from '@/components/v2';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
+import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';
 
 const privateKeyFiller = new Array(20).fill('•').join('');
 
-const AccessTokensTable_OrganizationAccessTokenConnectionFragment = graphql(`
-  fragment AccessTokensTable_OrganizationAccessTokenConnectionFragment on OrganizationAccessTokenConnection {
+const AccessTokensTable_AccessTokenConnectionFragment = graphql(`
+  fragment AccessTokensTable_AccessTokenConnectionFragment on AccessTokenConnection {
     edges {
       cursor
       node {
@@ -37,7 +36,7 @@ const AccessTokensTable_MoreAccessTokensQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       accessTokens(first: 10, after: $after) {
-        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+        ...AccessTokensTable_AccessTokenConnectionFragment
         pageInfo {
           endCursor
         }
@@ -48,13 +47,13 @@ const AccessTokensTable_MoreAccessTokensQuery = graphql(`
 
 type AccessTokensTable = {
   organizationSlug: string;
-  accessTokens: FragmentType<typeof AccessTokensTable_OrganizationAccessTokenConnectionFragment>;
+  accessTokens: FragmentType<typeof AccessTokensTable_AccessTokenConnectionFragment>;
   refetch: () => void;
 };
 
 export function AccessTokensTable(props: AccessTokensTable) {
   const accessTokens = useFragment(
-    AccessTokensTable_OrganizationAccessTokenConnectionFragment,
+    AccessTokensTable_AccessTokenConnectionFragment,
     props.accessTokens,
   );
 
@@ -160,92 +159,5 @@ export function AccessTokensTable(props: AccessTokensTable) {
         />
       )}
     </Table.Table>
-  );
-}
-
-const DeleteAccessTokenConfirmationDialogue_DeleteOrganizationAccessToken = graphql(`
-  mutation DeleteAccessTokenConfirmationDialogue_DeleteOrganizationAccessToken(
-    $input: DeleteOrganizationAccessTokenInput!
-  ) {
-    deleteOrganizationAccessToken(input: $input) {
-      error {
-        message
-      }
-      ok {
-        deletedOrganizationAccessTokenId
-      }
-    }
-  }
-`);
-
-type DeleteAccessTokenConfirmationDialogueProps = {
-  accessTokenId: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-};
-
-function DeleteAccessTokenConfirmationDialogue(props: DeleteAccessTokenConfirmationDialogueProps) {
-  const [mutationState, mutate] = useMutation(
-    DeleteAccessTokenConfirmationDialogue_DeleteOrganizationAccessToken,
-  );
-  const { toast } = useToast();
-
-  return (
-    <AlertDialog.AlertDialog open>
-      <AlertDialog.AlertDialogContent>
-        <AlertDialog.AlertDialogHeader>
-          <AlertDialog.AlertDialogTitle>
-            Do you want to delete this access token?
-          </AlertDialog.AlertDialogTitle>
-          <AlertDialog.AlertDialogDescription>
-            If you cancel now, any draft information will be lost.
-          </AlertDialog.AlertDialogDescription>
-        </AlertDialog.AlertDialogHeader>
-        <AlertDialog.AlertDialogFooter>
-          <AlertDialog.AlertDialogCancel
-            onClick={mutationState.fetching ? undefined : props.onCancel}
-            disabled={mutationState.fetching}
-          >
-            Cancel
-          </AlertDialog.AlertDialogCancel>
-          <AlertDialog.AlertDialogAction
-            onClick={() =>
-              mutate({
-                input: {
-                  organizationAccessToken: {
-                    byId: props.accessTokenId,
-                  },
-                },
-              }).then(result => {
-                if (result.error) {
-                  toast({
-                    variant: 'destructive',
-                    title: 'Delete Access Token failed.',
-                    description: result.error.message,
-                  });
-                }
-                if (result.data?.deleteOrganizationAccessToken.error) {
-                  toast({
-                    variant: 'destructive',
-                    title: 'Delete Access Token failed.',
-                    description: result.data.deleteOrganizationAccessToken.error.message,
-                  });
-                }
-                if (result.data?.deleteOrganizationAccessToken.ok) {
-                  toast({
-                    variant: 'default',
-                    title: 'Access Token deleted.',
-                    description: 'It can take up to 5 minutes for changes to propagate.',
-                  });
-                  props.onConfirm();
-                }
-              })
-            }
-          >
-            Delete Access Token
-          </AlertDialog.AlertDialogAction>
-        </AlertDialog.AlertDialogFooter>
-      </AlertDialog.AlertDialogContent>
-    </AlertDialog.AlertDialog>
   );
 }

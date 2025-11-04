@@ -1,8 +1,8 @@
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
-import type { OrganizationAccessTokenResolvers } from './../../../__generated__/types';
+import type { ProjectAccessTokenResolvers } from './../../../__generated__/types';
 
 /*
- * Note: This object type is generated because "OrganizationAccessTokenMapper" is declared. This is to ensure runtime safety.
+ * Note: This object type is generated because "ProjectAccessTokenMapper" is declared. This is to ensure runtime safety.
  *
  * When a mapper is used, it is possible to hit runtime errors in some scenarios:
  * - given a field name, the schema type's field type does not match mapper's field type
@@ -10,13 +10,7 @@ import type { OrganizationAccessTokenResolvers } from './../../../__generated__/
  *
  * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
  */
-export const OrganizationAccessToken: OrganizationAccessTokenResolvers = {
-  resources(accessToken, _arg, { injector }) {
-    return injector.get(OrganizationAccessTokens).getResourceAssignmentsForAccessToken(accessToken);
-  },
-  permissions(accessToken, _arg, { injector }) {
-    return injector.get(OrganizationAccessTokens).getPermissionsForAccessToken(accessToken);
-  },
+export const ProjectAccessToken: ProjectAccessTokenResolvers = {
   resolvedResourcePermissionGroups(accessToken, args, { injector }) {
     return injector
       .get(OrganizationAccessTokens)

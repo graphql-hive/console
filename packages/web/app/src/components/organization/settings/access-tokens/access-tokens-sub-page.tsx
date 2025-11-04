@@ -19,7 +19,7 @@ const AccessTokensSubPage_OrganizationQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       accessTokens(first: 10) {
-        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+        ...AccessTokensTable_AccessTokenConnectionFragment
       }
       ...CreateAccessTokenSheetContent_OrganizationFragment
       ...ResourceSelector_OrganizationFragment

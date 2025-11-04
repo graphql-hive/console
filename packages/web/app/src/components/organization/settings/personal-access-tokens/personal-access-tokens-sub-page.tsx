@@ -18,8 +18,7 @@ const PersonalAccessTokensSubPage_OrganizationQuery = graphql(`
       me {
         id
         accessTokens(first: 20) {
-          __typename
-          ...PersonalAccessTokensTable_OrganizationAccessTokenConnectionFragment
+          ...PersonalAccessTokensTable_PersonalAccessTokenConnectionFragment
         }
       }
       ...CreatePersonalAccessTokenSheetContent_OrganizationFragment
