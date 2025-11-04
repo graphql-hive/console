@@ -78,10 +78,10 @@ const CreateProjectAccessTokenSheetContent_CreateOrganizationAccessTokenMutation
       }
       error {
         message
-        # details {
-        #   title
-        #   description
-        # }
+        details {
+          title
+          description
+        }
       }
     }
   }
@@ -160,20 +160,23 @@ export function CreateProjectAccessTokenSheetContent(
         title: formValues.title ?? '',
         description: formValues.description ?? '',
         permissions: formValues.permissions,
-        resources:
-          resourceSlectionToGraphQLSchemaResourceAssignmentInput(resourceSelection).projects?.at(0)!
-            .targets!,
+        resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(
+          resourceSelection,
+        ).projects?.at(0)?.targets ?? {
+          mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+          targets: [],
+        },
       },
     });
 
     if (result.data?.createProjectAccessToken.error) {
       const { error } = result.data.createProjectAccessToken;
-      // if (error.details?.title) {
-      //   form.setError('title', { message: error.details.title });
-      // }
-      // if (error.details?.description) {
-      //   form.setError('description', { message: error.details.description });
-      // }
+      if (error.details?.title) {
+        form.setError('title', { message: error.details.title });
+      }
+      if (error.details?.description) {
+        form.setError('description', { message: error.details.description });
+      }
       if (error.message) {
         toast({
           variant: 'destructive',

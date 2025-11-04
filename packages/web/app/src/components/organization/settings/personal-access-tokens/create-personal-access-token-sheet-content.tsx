@@ -70,10 +70,10 @@ const CreatePersonalAccessTokenSheetContent_CreatePersonalAccessTokenMutation = 
       }
       error {
         message
-        # details {
-        #   title
-        #   description
-        # }
+        details {
+          title
+          description
+        }
       }
     }
   }
@@ -148,12 +148,12 @@ export function CreatePersonalAccessTokenSheetContent(
 
     if (result.data?.createPersonalAccessToken.error) {
       const { error } = result.data.createPersonalAccessToken;
-      // if (error.details?.title) {
-      //   form.setError('title', { message: error.details.title });
-      // }
-      // if (error.details?.description) {
-      //   form.setError('description', { message: error.details.description });
-      // }
+      if (error.details?.title) {
+        form.setError('title', { message: error.details.title });
+      }
+      if (error.details?.description) {
+        form.setError('description', { message: error.details.description });
+      }
       if (error.message) {
         toast({
           variant: 'destructive',
