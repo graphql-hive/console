@@ -3,7 +3,7 @@ title: GraphQL Schema Usage Insights
 ---
 
 import NextImage from 'next/image'
-import { Callout } from '@theguild/components'
+import { Callout, Tabs } from '@theguild/components'
 import usageClientsImage from '../../../public/docs/pages/features/usage-clients.png'
 import usageLatencyImage from '../../../public/docs/pages/features/usage-latency-over-time.png'
 import usageOperationsOverTimeImage from '../../../public/docs/pages/features/usage-operations-over-time.png'
@@ -18,10 +18,12 @@ following purposes:
 
 1. **Monitoring and Observability**: view a list of all your GraphQL operations and their
    performance, error-rate, and other metrics.
-2. **Schema Usage and Coverage**: understand how your consumers are using your GraphQL schema, and
+2. **Tracing**: view detailed traces of your GraphQL operations, with breakdown and timing of
+   subgraph upstream requests.
+3. **Schema Usage and Coverage**: understand how your consumers are using your GraphQL schema, and
    what parts of the schema are not being used at all (see
    [Schema Usage and Coverage](/docs/schema-registry#schema-explorer)).
-3. **Schema Evolution**: with the knowledge of what GraphQL fields are being used, you can
+4. **Schema Evolution**: with the knowledge of what GraphQL fields are being used, you can
    confidently evolve your schema without breaking your consumers (see
    [Conditional Breaking Changes](/docs/management/targets#conditional-breaking-changes)).
 
@@ -126,3 +128,276 @@ performance:
   src={usageLatencyImage}
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
+
+## Tracing
+
+In addition to usage report, you can obtain more details about your operation performances by
+reporting complete tracing data to Hive Tracing.
+
+Hive Tracing shows the list of all recorded GraphQL operations executed by your customers, with all
+the associated spans. This can allow you to understand what takes time in an operation detected as
+slow in Hive Insights. It also allow to see the actual sub-queries sent to subgraphs for a given
+GraphQL operation.
+
+### Setup in Hive Gateway
+
+Hive Tracing is built on top of OpenTelemetry and is integrated out of the box in Hive Gateway.
+
+To enable traces reporting, you can either use cli options, environment variables or config file:
+
+<Tabs items={["CLI options", "Environment variables", "Configuration file"]}>
+
+<Tabs.Tab>
+
+```bash
+hive-gateway supergraph --hive-target="xxx" --hive-trace-access-token="xxx"
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```bash
+HIVE_HIVE_TRACE_ACCESS_TOKEN="xxx" HIVE_TARGET="xxx" hive-gateway supergraph
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+hiveTracingSetup({ accessToken: 'YOUR_ACCESS_TOKEN', target: 'YOUR_TARGET' })
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    traces: true
+  }
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Advanced Configuration
+
+The integration has sain defaults for a production ready setup, but you can also customize it to
+better suite your specific needs. Advanced configuration requires the use of a config file
+(`gateway.config.ts`).
+
+It is highly recommended to place the telemetry setup in its own file, and import it as the very
+first import in `gateway.config.ts`. This is to ensure that any OTEL compatible third party library
+that you use are properly instrumented.
+
+```ts filename="telemetry.ts"
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+hiveTracingSetup({ accessToken: 'xxx', target: 'xxx' })
+```
+
+```ts filename="gateway.config.ts"
+import './telemetry.ts'
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  openTelemetry: {
+    traces: true
+  }
+})
+```
+
+#### Service Name and version
+
+You can provide a service name, either by using standard `OTEL_SERVICE_NAME` and
+`OTEL_SERVICE_VERSION` or by providing them programmatically via setup options
+
+```ts filename="telemetry.ts"
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+hiveTracingSetup({
+  resource: {
+    serviceName: 'my-service',
+    serviceVersion: '1.0.0'
+  }
+})
+```
+
+#### Custom resource attributes
+
+Resource attributes can be defined by providing a `Resource` instance to the setup `resource`
+option.
+
+This resource will be merged with the resource created from env variables, which means
+`service.name` and `service.version` are not mandatory if already provided through environment
+variables.
+
+```sh npm2yarn
+npm i @opentelemetry/resources # Not needed with Docker image
+```
+
+```ts filename="telemetry.ts"
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+import { resourceFromAttributes } from '@opentelemetry/resources'
+
+hiveTracingSetup({
+  resource: resourceFromAttributes({
+    'custom.attribute': 'my custom value'
+  })
+})
+```
+
+#### Span Batching
+
+By default, if you provide only a Trace Exporter, it will be wrapped into a `BatchSpanProcessor` to
+batch spans together and reduce the number of request to you backend.
+
+This is an important feature for a real world production environment, and you can configure its
+behavior to exactly suites your infrastructure limits.
+
+By default, the batch processor will send the spans every 5 seconds or when the buffer is full.
+
+The following configuration are allowed:
+
+- `true` (default): enables batching and use
+  [`BatchSpanProcessor`](https://opentelemetry.io/docs/specs/otel/trace/sdk/#batching-processor)
+  default config.
+- `object`: enables batching and use
+  [`BatchSpanProcessor`](https://opentelemetry.io/docs/specs/otel/trace/sdk/#batching-processor)
+  with the provided configuration.
+- `false` - disables batching and use
+  [`SimpleSpanProcessor`](https://opentelemetry.io/docs/specs/otel/trace/sdk/#simple-processor)
+
+```ts filename="telemetry.ts"
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+hiveTracingSetup({
+  batching: {
+    exportTimeoutMillis: 30_000, // Default to 30_000ms
+    maxExportBatchSize: 512, // Default to 512 spans
+    maxQueueSize: 2048, // Default to 2048 spans
+    scheduledDelayMillis: 5_000 // Default to 5_000ms
+  }
+})
+```
+
+#### Sampling
+
+When your gateway have a lot of traffic, tracing every requests can become a very expensive
+approach.
+
+A mitigation for this problem is to trace only some requests, using a strategy to choose which
+request to trace or not.
+
+The most common strategy is to combine both a parent first (a span is picked if parent is picked)
+and a ratio based on trace id (each trace, one by request, have a chance to be picked, with a given
+rate).
+
+By default, all requests are traced. You can either provide you own Sampler, or provide a sampling
+rate which will be used to setup a Parent + TraceID Ratio strategy.
+
+```ts filename="telemetry.ts"
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+import { JaegerRemoteSampler } from '@opentelemetry/sampler-jaeger-remote'
+import { AlwaysOnSampler } from '@opentelemetry/sdk-trace-base'
+
+hiveTracingSetup({
+  // Use Parent + TraceID Ratio strategy
+  samplingRate: 0.1,
+
+  // Or use a custom Sampler
+  sampler: new JaegerRemoteSampler({
+    endpoint: 'http://your-jaeger-agent:14268/api/sampling',
+    serviceName: 'your-service-name',
+    initialSampler: new AlwaysOnSampler(),
+    poolingInterval: 60000 // 60 seconds
+  })
+})
+```
+
+#### Limits
+
+To ensure that you don't overwhelm your tracing ingestion infrastructure, you can set limits for
+both cardinality and amount of data the OpenTelemetry SDK will be allowed to generate.
+
+```ts filename="telemetry.ts"
+import { hiveTracingSetup } from '@graphql-hive/gateway/opentelemetry/setup'
+
+hiveTracingSetup({
+  generalLimits: {
+    //...
+  },
+  spanLimits: {
+    //...
+  }
+})
+```
+
+#### Spans, Events and Attributes
+
+For more details about Spans, Events and Attributes configuration, please refer to
+[`Monitoring and Tracing documentation`](/docs/gateway/monitoring-tracing#configuration).
+
+### Manual OpenTelemetry Setup
+
+If you have an existing OpenTelemetry setup and want to send your traces to both Hive Tracing and
+your own OTEl backend, you can use `HiveTracingSpanProcessor`.
+
+For more information about setting up OpenTelemetry manually, please refer to
+[`Monitoring and Tracing documentation`](/docs/gateway/monitoring-tracing#service-name-and-version)
+
+<Tabs items={[<div>Hive Gateway <code>openTelemetrySetup()</code> (recommended)</div>, <div>OpenTelemetry <code>NodeSDK</code></div>]}>
+
+<Tabs.Tab>
+
+```ts filename="telemetry.ts"
+import {
+  HiveTracingSpanProcessor,
+  openTelemetrySetup
+} from '@graphql-hive/gateway/opentelemetry/setup'
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
+
+openTelemetrySetup({
+  contextManager: new AsyncLocalStorageContextManager(),
+  traces: {
+    // Define your span processors.
+    processors: [
+      new HiveTracingSpanProcessor({
+        endpoint: 'https://api.graphql-hive.com/otel/v1/traces',
+        target: process.env['HIVE_TARGET'],
+        accessToken: process.env['HIVE_TRACES_ACCESS_TOKEN']
+      })
+
+      //... your processors
+    ]
+  }
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="telemetry.ts"
+import { HiveTracingSpanProcessor } from '@graphql-hive/gateway/opentelemetry/setup'
+import { NodeSDK } from '@opentelemetry/sdk-node'
+
+new NodeSDK({
+  // Define your processors
+  spanProcessors: [
+    new HiveTracingSpanProcessor({
+      endpoint: 'https://api.graphql-hive.com/otel/v1/traces',
+      target: process.env['HIVE_TARGET'],
+      accessToken: process.env['HIVE_TRACES_ACCESS_TOKEN']
+    })
+
+    //... your processors
+  ]
+}).start()
+```
+
+</Tabs.Tab>
+
+</Tabs>
