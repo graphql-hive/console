@@ -9,9 +9,9 @@ import { Callout, Steps } from '@theguild/components'
 Subgraph Authentication allows you to secure communication between the Hive Router and your
 subgraphs. You can follow this guide to set up how to sign subgraph requests.
 
-By activating this, you can ensure that the requests send to GraphQL subgraphs is trusted and signed
-by the Hive Router. In case of any missing signature, tampering or unauthorized access, the subgraph
-services will reject the request.
+By activating this, you can ensure that the requests sent to GraphQL subgraphs are trusted and
+signed by the Hive Router. In case of any missing signature, tampering or unauthorized access, the
+subgraph services will reject the request.
 
 ## HMAC Signature
 
@@ -123,8 +123,11 @@ import { createHmac } from 'crypto'
 import { ApolloServer, ApolloServerPlugin } from '@apollo/server'
 import { defaultParamsSerializer } from '@graphql-mesh/hmac-upstream-signature'
 
+/* This should be your secret key from Step 1 */
+const HMAC_SIGNING_SECRET = 'myHMACSecret' // Use the secret key gathered in step 1
+
 const verifyHmacPlugin = {
-  async requestDidStart({ request, contextValue }) {
+  async requestDidStart({ request }) {
     const signature = request.extensions?.['hmac-signature']
 
     if (!signature) {
@@ -164,7 +167,7 @@ using the following specification:
 - The `hmac-signature` value is a `base64` encoded HMAC signature of the request parameters, using
   the SHA-256 algorithm.
 - The request parameters should be serialized in a stable way, so the signature can be verified
-  correctly. I should consist of the GraphQL `query` and `variables`:
+  correctly. It should consist of the GraphQL `query` and `variables`:
 
   ```json
   {

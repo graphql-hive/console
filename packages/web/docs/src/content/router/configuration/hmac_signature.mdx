@@ -42,7 +42,8 @@ When an `object` is provided, it must contain a VRL `expression` that evaluates 
 or `false`). The expression is evaluated for each request, allowing for request-time activation
 decisions.
 
-- `expression`: **(string, required)** A VRL expression that computes the active state of the label.
+- `expression`: **(string, required)** A VRL expression that computes if the request should be HMAC
+  signed.
 
 Within the `expression`, you have access to the following context:
 
@@ -52,12 +53,7 @@ Within the `expression`, you have access to the following context:
 ```yaml
 hmac_signature:
   enabled:
-    expression: |
-      if .subgraph.name == "secure-subgraph" {
-        true
-      } else {
-        false
-      }
+    expression: .subgraph.name == "users"
 ```
 
 ### `secret`
