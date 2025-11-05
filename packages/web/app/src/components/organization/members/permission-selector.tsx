@@ -142,10 +142,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     >
                       <div
                         className={cn(
-                          (needsDependency ||
-                            !permission.isAssignableByViewer ||
-                            !permission.isAssignableByViewer) &&
-                            'opacity-30',
+                          (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
                         )}
                       >
                         <div className="font-semibold text-white">{permission.title}</div>

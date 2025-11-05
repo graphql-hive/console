@@ -56,7 +56,7 @@ export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
   }
 
   if (session instanceof UnauthenticatedSession) {
-    throw new HiveError('Not authneticated.');
+    throw new HiveError('Not authenticated.');
   }
 
   throw new HiveError('WhoAmI only supports access tokens.');

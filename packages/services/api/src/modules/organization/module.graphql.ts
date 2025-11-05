@@ -247,21 +247,20 @@ export default gql`
     description: String @tag(name: "public")
   }
 
-  enum AccessTokenScopeType {
-    ORGANIZATION
-    PROJECT
-    PERSONAL
-  }
-
   interface AccessToken {
     id: ID!
-    scope: AccessTokenScopeType!
     title: String!
     description: String
     firstCharacters: String!
     createdAt: DateTime!
+    """
+    A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
+    """
     resolvedResourcePermissionGroups(
-      includeAll: Boolean = false
+      """
+      Whether the result should contain all permissions and resource groups, or only granted permissions/resources.
+      """
+      includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
   }
 
@@ -277,15 +276,20 @@ export default gql`
 
   type OrganizationAccessToken implements AccessToken {
     id: ID! @tag(name: "public")
-    scope: AccessTokenScopeType!
     title: String! @tag(name: "public")
     description: String @tag(name: "public")
     permissions: [String!]! @tag(name: "public")
     resources: ResourceAssignment! @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+    """
+    A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
+    """
     resolvedResourcePermissionGroups(
-      includeAll: Boolean = false
+      """
+      Whether the result should contain all permissions and resource groups, or only granted permissions/resources.
+      """
+      includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
   }
 
@@ -311,25 +315,35 @@ export default gql`
 
   type ProjectAccessToken implements AccessToken {
     id: ID! @tag(name: "public")
-    scope: AccessTokenScopeType!
     title: String! @tag(name: "public")
     description: String @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+    """
+    A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
+    """
     resolvedResourcePermissionGroups(
-      includeAll: Boolean = false
+      """
+      Whether the result should contain all permissions and resource groups, or only granted permissions/resources.
+      """
+      includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
   }
 
   type PersonalAccessToken implements AccessToken {
     id: ID! @tag(name: "public")
-    scope: AccessTokenScopeType!
     title: String! @tag(name: "public")
     description: String @tag(name: "public")
     firstCharacters: String! @tag(name: "public")
     createdAt: DateTime! @tag(name: "public")
+    """
+    A list of the resource levels, the assigned resources and the granted permissions on each of those resources.
+    """
     resolvedResourcePermissionGroups(
-      includeAll: Boolean = false
+      """
+      Whether the result should contain all permissions and resource groups, or only granted permissions/resources.
+      """
+      includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
   }
 
