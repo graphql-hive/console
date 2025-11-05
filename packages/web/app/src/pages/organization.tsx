@@ -459,7 +459,7 @@ function OrganizationPageContent(
             projectsConnection.edges.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
-                description='You can create a project by clicking the "Create Project" button'
+                description='You can create a project by clicking the "New Project" button'
                 docsUrl="/management/projects#create-a-new-project"
               />
             ) : (
