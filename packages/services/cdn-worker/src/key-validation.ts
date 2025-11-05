@@ -152,9 +152,12 @@ async function handleCDNAccessToken(
 
     if (requestCache) {
       const cacheKey = new Request(
-        [deps.kvStorageBaseUrl ?? 'https://key-cache.graphql-hive.com', 'v1', targetId, encodeURIComponent(accessToken)].join(
-          '/',
-        ),
+        [
+          deps.kvStorageBaseUrl ?? 'https://key-cache.graphql-hive.com',
+          'v1',
+          targetId,
+          encodeURIComponent(accessToken),
+        ].join('/'),
         {
           method: 'GET',
         },

@@ -19,7 +19,7 @@ export type Env = {
   /**
    * Base URL of the KV storage, used to fetch the schema from the KV storage.
    * If not provided, the schema will be fetched from default KV storage value.
-   * 
+   *
    * @default https://key-cache.graphql-hive.com
    */
   KV_STORAGE_BASE_URL?: string;
