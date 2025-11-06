@@ -101,6 +101,14 @@ query BookQuery {
 Even if you can set defaults and customize the cost calculation programmatically in the gateway, it
 can also be customized on the subgraph level by using `@cost` and `@listSize` directives.
 
+<Callout type="warning">
+
+Customization using directives is not available when using the Gateway in `proxy` mode without providing the `schema` option.
+
+This limitation is due to the schema being loaded via introspection when it is not provided. But introspection result doesn't include directives.
+
+</Callout>
+
 ### `@cost` directive on the subgraph level
 
 If you want to override the default cost calculations, you can use `@cost` directive on the subgraph
