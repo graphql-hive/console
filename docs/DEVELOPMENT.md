@@ -4,8 +4,8 @@
 
 Developing Hive locally requires you to have the following software installed locally:
 
-- Node.js 21 (or `nvm` or `fnm`)
-- pnpm v9
+- Node.js >=22 (or `nvm` or `fnm`)
+- pnpm >=10.16.0
 - Docker version 26.1.1 or later(previous versions will not work correctly on arm64)
 - make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043
 
@@ -13,7 +13,7 @@ Developing Hive locally requires you to have the following software installed lo
 
 - Clone the repository locally
 - Make sure to install the recommended VSCode extensions (defined in `.vscode/extensions.json`)
-- In the root of the repo, run `nvm use` to use the same version of node as mentioned
+- In the root of the repo, run `nvm use` to use the same version of node as mentioned above
 - Create `.env` file in the root, and use the following:
 
 ```dotenv
@@ -30,7 +30,7 @@ export UID=$(id -u)
 export GID=$(id -g)
 ```
 
-Add "user" field to docker-compose.dev.yml
+Add "user" field to ./docker/docker-compose.dev.yml
 
 ```
   clickhouse:
