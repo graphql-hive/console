@@ -30,3 +30,26 @@ export function fetchPermissions(accessToken: string) {
     .then(e => e.expectNoGraphQLErrors())
     .then(res => res.whoAmI?.resolvedPermissions);
 }
+
+const DeleteAccessTokenMutation = graphql(`
+  mutation DeleteAccessTokenMutation($accessTokenId: ID!) {
+    deleteAccessToken(input: { accessToken: { byId: $accessTokenId } }) {
+      error {
+        message
+      }
+      ok {
+        deletedAccessTokenId
+      }
+    }
+  }
+`);
+
+export function deleteAccessToken(accessTokenId: string, authToken: string) {
+  return execute({
+    document: DeleteAccessTokenMutation,
+    variables: {
+      accessTokenId,
+    },
+    authToken,
+  });
+}

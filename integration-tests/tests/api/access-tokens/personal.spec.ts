@@ -3,7 +3,7 @@ import { graphql } from '../../../testkit/gql';
 import * as GraphQLSchema from '../../../testkit/gql/graphql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
-import { fetchPermissions } from './shared';
+import { deleteAccessToken, fetchPermissions } from './shared';
 
 const CreatePersonalAccessTokenMutation = graphql(`
   mutation CreatePersonalAccessTokenMutation($input: CreatePersonalAccessTokenInput!) {
@@ -25,21 +25,6 @@ const CreatePersonalAccessTokenMutation = graphql(`
         }
       }
     }
-  }
-`);
-
-const DeletePersonalAccessTokenMutation = graphql(`
-  mutation DeletePersonalAccessTokenMutation {
-    #   ) #     #$input: DeletePersonalAccessTokenInput! # (
-    # deletePersonalAccessToken(input: $input) {
-    #   ok {
-    #     deletedPersonalAccessTokenId
-    #   }
-    #   error {
-    #     message
-    #   }
-    # }
-    __typename
   }
 `);
 
@@ -90,7 +75,6 @@ test.concurrent('create: success with admin supertokens session', async () => {
       id: expect.any(String),
       title: 'a access token',
       description: 'Some description',
-      permissions: [],
       createdAt: expect.any(String),
     },
   });
@@ -190,95 +174,96 @@ test.concurrent('create: failure because no access to organization', async ({ ex
   ]);
 });
 
-// test.concurrent('delete: successfuly delete own access token', async ({ expect }) => {
-//   const { createOrg, ownerToken } = await initSeed().createOwner();
-//   const org = await createOrg();
+test.concurrent('delete: successfuly delete own access token', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
 
-//   const createResult = await execute({
-//     document: CreatePersonalAccessTokenMutation,
-//     variables: {
-//       input: {
-//         organization: {
-//           byId: org.organization.id,
-//         },
-//         title: 'a access token',
-//         description: 'Some description',
-//         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-//         permissions: [],
-//       },
-//     },
-//     authToken: ownerToken,
-//   }).then(e => e.expectNoGraphQLErrors());
-//   expect(createResult.createPersonalAccessToken.error).toEqual(null);
-//   assertNonNullish(createResult.createPersonalAccessToken.ok);
+  const createResult = await execute({
+    document: CreatePersonalAccessTokenMutation,
+    variables: {
+      input: {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'a access token',
+        description: 'Some description',
+        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+        permissions: [],
+      },
+    },
+    authToken: ownerToken,
+  }).then(e => e.expectNoGraphQLErrors());
+  expect(createResult.createPersonalAccessToken.error).toEqual(null);
+  assertNonNullish(createResult.createPersonalAccessToken.ok);
 
-//   const deleteResult = await execute({
-//     document: DeletePersonalAccessTokenMutation,
-//     variables: {
-//       input: {
-//         personalAccessToken: {
-//           byId: createResult.createPersonalAccessToken.ok.createdPersonalAccessToken.id,
-//         },
-//       },
-//     },
-//     authToken: ownerToken,
-//   }).then(e => e.expectNoGraphQLErrors());
-//   expect(deleteResult.deletePersonalAccessToken.error).toEqual(null);
-//   expect(deleteResult.deletePersonalAccessToken.ok).toEqual({
-//     deletedPersonalAccessTokenId:
-//       createResult.createPersonalAccessToken.ok.createdPersonalAccessToken.id,
-//   });
-// });
+  const accessToken = createResult.createPersonalAccessToken.ok.createdPersonalAccessToken;
 
-// test.concurrent('delete: fail delete access token of another user', async ({ expect }) => {
-//   const { createOrg, ownerToken } = await initSeed().createOwner();
-//   const org = await createOrg();
-//   const user2 = await org.inviteAndJoinMember();
-//   // make user also an admin
-//   await user2.assignMemberRole({
-//     userId: user2.member.id,
-//     roleId: org.organization.owner.role.id,
-//   });
+  const deleteResult = await deleteAccessToken(accessToken.id, ownerToken).then(e =>
+    e.expectNoGraphQLErrors(),
+  );
+  expect(deleteResult.deleteAccessToken.error).toEqual(null);
+  expect(deleteResult.deleteAccessToken.ok).toEqual({
+    deletedAccessTokenId: accessToken.id,
+  });
+});
 
-//   const createResult = await execute({
-//     document: CreatePersonalAccessTokenMutation,
-//     variables: {
-//       input: {
-//         organization: {
-//           byId: org.organization.id,
-//         },
-//         title: 'a access token',
-//         description: 'Some description',
-//         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-//         permissions: [],
-//       },
-//     },
-//     authToken: user2.memberToken,
-//   }).then(e => e.expectNoGraphQLErrors());
-//   expect(createResult.createPersonalAccessToken.error).toEqual(null);
-//   assertNonNullish(createResult.createPersonalAccessToken.ok);
+test.concurrent('delete: fail delete access token of another user', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const org = await createOrg();
 
-//   const deleteResult = await execute({
-//     document: DeletePersonalAccessTokenMutation,
-//     variables: {
-//       input: {
-//         personalAccessToken: {
-//           byId: createResult.createPersonalAccessToken.ok.createdPersonalAccessToken.id,
-//         },
-//       },
-//     },
-//     authToken: ownerToken,
-//   }).then(e => e.expectGraphQLErrors());
-//   expect(deleteResult).toMatchObject([
-//     {
-//       extensions: {
-//         code: 'UNAUTHORISED',
-//       },
-//       message: `No access (reason: "Missing permission for performing 'accessToken:modify' on resource")`,
-//       path: ['deletePersonalAccessToken'],
-//     },
-//   ]);
-// });
+  const user1 = await org.inviteAndJoinMember();
+  const { createMemberRole, assignMemberRole } = user1;
+
+  const memberRole = await createMemberRole([
+    'organization:describe',
+    'project:describe',
+    'personalAccessToken:modify',
+  ]);
+
+  const user2 = await org.inviteAndJoinMember();
+
+  await assignMemberRole({
+    roleId: memberRole.id,
+    userId: user1.member.id,
+  });
+
+  await assignMemberRole({
+    roleId: memberRole.id,
+    userId: user2.member.id,
+  });
+
+  const createResult = await execute({
+    document: CreatePersonalAccessTokenMutation,
+    variables: {
+      input: {
+        organization: {
+          byId: org.organization.id,
+        },
+        title: 'a access token',
+        description: 'Some description',
+        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+        permissions: [],
+      },
+    },
+    authToken: user1.memberToken,
+  }).then(e => e.expectNoGraphQLErrors());
+  expect(createResult.createPersonalAccessToken.error).toEqual(null);
+  assertNonNullish(createResult.createPersonalAccessToken.ok);
+  const accessToken = createResult.createPersonalAccessToken.ok.createdPersonalAccessToken;
+
+  const deleteResult = await deleteAccessToken(accessToken.id, user2.memberToken).then(e =>
+    e.expectGraphQLErrors(),
+  );
+  expect(deleteResult).toMatchObject([
+    {
+      extensions: {
+        code: 'UNAUTHORISED',
+      },
+      message: `No access (reason: "Missing permission for performing 'personalAccessToken:modify' on resource")`,
+      path: ['deleteAccessToken'],
+    },
+  ]);
+});
 
 test.concurrent('query GraphQL API on resources with access', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();

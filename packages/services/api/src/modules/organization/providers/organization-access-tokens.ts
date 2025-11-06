@@ -450,6 +450,8 @@ export class OrganizationAccessTokens {
       },
     });
 
+    this.logger.debug('Access tokens was created successfully. (accessTokenId=%s)', accessToken.id);
+
     return {
       type: 'success' as const,
       accessToken,
@@ -458,15 +460,19 @@ export class OrganizationAccessTokens {
   }
 
   async delete(args: { accessTokenId: string; onlyOrganizationScoped?: true }) {
+    this.logger.debug('Delete access token. (accessTokenId=%s)', args.accessTokenId);
+
     const record = await this.findById(args.accessTokenId);
     if (record === null || (args.onlyOrganizationScoped && (record.projectId || record.userId))) {
+      this.logger.debug('Delete failed. Token not found. (accessTokenId=%s)', args.accessTokenId);
+
       return {
         type: 'error' as const,
         message: 'The access token does not exist.',
       };
     }
 
-    const canOrganizationAccessTokens = this.session.canPerformAction({
+    const canOrganizationAccessTokens = await this.session.canPerformAction({
       action: 'accessToken:modify',
       organizationId: record.organizationId,
       params: { organizationId: record.organizationId },
@@ -482,11 +488,16 @@ export class OrganizationAccessTokens {
       }
     } else if (record.userId) {
       if (!canOrganizationAccessTokens) {
-        await this.session.canPerformAction({
+        await this.session.assertPerformAction({
           action: 'personalAccessToken:modify',
           organizationId: record.organizationId,
           params: { organizationId: record.organizationId },
         });
+
+        const viewer = await this.session.getViewer();
+        if (viewer.id !== record.userId) {
+          this.session.raise('personalAccessToken:modify');
+        }
       }
     } else {
       if (!canOrganizationAccessTokens) {
@@ -511,6 +522,11 @@ export class OrganizationAccessTokens {
         organizationAccessTokenId: record.id,
       },
     });
+
+    this.logger.debug(
+      'Access tokens was deleted successfully. (accessTokenId=%s)',
+      args.accessTokenId,
+    );
 
     return {
       type: 'success' as const,
