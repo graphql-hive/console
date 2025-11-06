@@ -21,7 +21,6 @@ const ProjectAccessTokensTable_ProjectAccessTokenConnectionFragment = graphql(`
         title
         firstCharacters
         createdAt
-        scope
       }
     }
     pageInfo {
@@ -112,7 +111,6 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
         <Table.TableRow>
           <Table.TableHead>Title</Table.TableHead>
           <Table.TableHead className="w-[100px]">Private Key</Table.TableHead>
-          <Table.TableHead className="pl-10">Scope</Table.TableHead>
           <Table.TableHead className="text-right">Created At</Table.TableHead>
           <Table.TableHead className="text-right" />
         </Table.TableRow>
@@ -124,9 +122,7 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
             <Table.TableCell className="font-mono">
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
-            <Table.TableCell className="pl-10 font-mono">
-              <Badge variant="success">{edge.node.scope.toLowerCase()}</Badge>
-            </Table.TableCell>
+            <Table.TableCell className="pl-10 font-mono"></Table.TableCell>
             <Table.TableCell className="text-right">
               created <TimeAgo date={edge.node.createdAt} />
             </Table.TableCell>

@@ -55,8 +55,10 @@ export default gql`
       input: CreatePersonalAccessTokenInput!
     ): CreatePersonalAccessTokenResult!
     deleteOrganizationAccessToken(
-      input: DeleteOrganizationAccessTokenInput!
+      input: DeleteOrganizationAccessTokenInput! @tag(name: "public")
     ): DeleteOrganizationAccessTokenResult!
+      @tag(name: "public")
+      @deprecated(reason: "Please use 'Mutation.deleteAccessToken' instead.")
     deleteAccessToken(
       input: DeleteAccessTokenInput! @tag(name: "public")
     ): DeleteAccessTokenResult! @tag(name: "public")

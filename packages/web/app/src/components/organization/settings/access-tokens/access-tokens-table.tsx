@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';
 import { TimeAgo } from '@/components/v2';
-import { graphql, useFragment, type FragmentType } from '@/gql';
+import { graphql, useFragment, type DocumentType, type FragmentType } from '@/gql';
 import { AccessTokenDetailViewSheet } from './access-token-detail-view-sheet';
 import { DeleteAccessTokenConfirmationDialogue } from './delete-access-token-confirmation-dialogue';
 
@@ -17,11 +17,11 @@ const AccessTokensTable_AccessTokenConnectionFragment = graphql(`
     edges {
       cursor
       node {
+        __typename
         id
         title
         firstCharacters
         createdAt
-        scope
       }
     }
     pageInfo {
@@ -115,7 +115,7 @@ export function AccessTokensTable(props: AccessTokensTable) {
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
             <Table.TableCell className="pl-10 font-mono">
-              <Badge variant="success">{edge.node.scope.toLowerCase()}</Badge>
+              <Badge variant="success">{typenameToScope(edge.node.__typename)}</Badge>
             </Table.TableCell>
             <Table.TableCell className="text-right">
               created <TimeAgo date={edge.node.createdAt} />
@@ -160,4 +160,25 @@ export function AccessTokensTable(props: AccessTokensTable) {
       )}
     </Table.Table>
   );
+}
+
+function typenameToScope(
+  typename: DocumentType<
+    typeof AccessTokensTable_AccessTokenConnectionFragment
+  >['edges'][number]['node']['__typename'],
+): string {
+  switch (typename) {
+    case 'OrganizationAccessToken':
+      return 'organization';
+    case 'ProjectAccessToken':
+      return 'project';
+    case 'PersonalAccessToken':
+      return 'personal';
+    default:
+      casesExceeded(typename);
+  }
+}
+
+function casesExceeded(data: never): never {
+  throw new Error(`Unhandled case: ${data}`);
 }
