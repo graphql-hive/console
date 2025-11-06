@@ -36,7 +36,7 @@ const SimpleProjectQuery = graphql(`
   }
 `);
 
-test.concurrent('create: success with admin supertokens session', async ({ expect }) => {
+test.concurrent('create: success with admin session', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
   const { project } = await org.createProject(GraphQLSchema.ProjectType.Federation);
@@ -167,6 +167,49 @@ test.concurrent('create: failure because no access to project', async ({ expect 
     },
   ]);
 });
+
+test.concurrent(
+  'create: fail because of missing "projectAccessToken:modify" permission.',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const org = await createOrg();
+    const { member, createMemberRole, assignMemberRole, memberToken } =
+      await org.inviteAndJoinMember();
+    const memberRole = await createMemberRole(['organization:describe', 'project:describe']);
+    await assignMemberRole({
+      roleId: memberRole.id,
+      userId: member.id,
+    });
+
+    const { project } = await org.createProject(GraphQLSchema.ProjectType.Federation);
+
+    const errors = await execute({
+      document: CreateProjectAccessTokenMutation,
+      variables: {
+        input: {
+          project: {
+            byId: project.id,
+          },
+          title: 'a access token',
+          description: 'Some description',
+          resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+          permissions: [],
+        },
+      },
+      authToken: memberToken,
+    }).then(e => e.expectGraphQLErrors());
+
+    expect(errors).toMatchObject([
+      {
+        extensions: {
+          code: 'UNAUTHORISED',
+        },
+        message: `No access (reason: "Missing permission for performing 'projectAccessToken:modify' on resource")`,
+        path: ['createProjectAccessToken'],
+      },
+    ]);
+  },
+);
 
 test.concurrent('query GraphQL API on resources with access', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
