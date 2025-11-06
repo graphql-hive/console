@@ -1,6 +1,10 @@
 /**
  * Example:
  * `TARGET=<target_id> FEDERATION=1 STAGE=local TOKEN=<access_token> pnpm seed:schemas`
+ *
+ * Where
+ * - <target_id> = target's Resource ID
+ * - <access_token> = An Access Token (obtained from Organization's Settings page)
  */
 import { parse as parsePath } from 'path';
 import { printSchema } from 'graphql';
