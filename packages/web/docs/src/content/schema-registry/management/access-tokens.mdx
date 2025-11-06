@@ -21,12 +21,85 @@ access they need - and nothing more.
 For example, a CI pipeline that publishes schemas only needs the "Publish Service" scope. There’s no
 need to grant more permissions.
 
+Three types of access token exist.
+
+**Organization Access Tokens.** These are scoped at the organization level and managed by
+organization administrators. They are typically used to integrate with external tooling for
+provisioning resources such as projects and users.
+
+**Project Access Tokens**: These are scoped at the project level and can be managed by any project
+member with sufficient permissions. They are commonly used for self-service operations such as CI/CD
+or CLI workflows.
+
+**Personal Access Tokens (PATs).** These are scoped to individual organization members and can be
+enabled or disabled on a per-user basis. They are primarily used for personal or local development
+tasks, such as running `hive dev`.
+
 <Callout type="warning">
   **Important**: Treat access tokens like passwords. Keep them secret and revoke them immediately if
   compromised. Monitor token usage regularly and revoke unused tokens to maintain security.
 </Callout>
 
+## Access Token Type Overview
+
+Depending on the use-case you want to use different access tokens. All the access tokens share the
+following properties:
+
+- Assigning **granular permissions**.
+- Assigning **granular resources** in a **hierarchical** structure.
+
+### Organization Access Tokens
+
+- Require the `Manage organization access tokens` (`accessToken:modify`) permission (assignable to
+  users roles).
+- Can technically be used to elevate permissions, so usage should be restricted.
+- Recommended **only for organization administrators**, typically for **third-party integrations**
+  that provision or manage resources at the organization level.
+
+### Project Access Tokens
+
+- Require the `Manage project access tokens` (`projectAccessToken:modify`) permission (assignable to
+  user roles).
+- Manage access within a **specific project**.
+- Most access tokens should fall under this category.
+- Recommended for **CI/CD pipelines** performing actions such as schema publishing or schema checks.
+- Organization administrators can view and revoke all project access tokens from the organization
+  settings.
+
+### Personal Access Tokens (PATs)
+
+- Require the `Manage personal access tokens` (`personalAccessToken:modify`) permission (assignable
+  to user roles).
+- Organization administrators can view and revoke all personal access tokens in the organization
+  settings.
+- The permissions and resources of a PAT are a **subset of the member’s role permissions**.
+- If a member’s role permissions are downgraded, the PAT automatically reflects the change.
+- Recommended for **local CLI usage**, such as running `hive dev` or `hive check`.
+- **Not recommended for CI/CD** - use Project Access Tokens instead.
+- Removing a user from the organization automatically **deletes** their PATs.
+- Removing the `personalAccessToken:modify` permission **temporarily disables** all tokens issued by
+  that user until the permission is restored.
+
+### Personal Access Tokens
+
+- requires `personalAccessToken:modify` permission (can be issued on a user/role basis)
+- personal access token permissions and resources is a subset of the member roles permission
+- if the member roles permissions are downgraded, this is reflected in the access token
+- generally recommended for allowing users to perform actions with the CLI e.g. `hive dev` or
+  `hive check`
+- for CI/CD actions, project access tokens are recommended
+- organization admins can conveniently see all the issued personal access tokens in the organization
+  settings and revoke individual tokens if needed
+- removing the user from the organization deletes the access tokens
+- removing the `personalAccessToken:modify` permission from the user temporarily disabled the access
+  tokens issued by that user until the permission is readded
+
 ## Create an Access Token
+
+Depending on the type of access token you are creating, navigate either to the organization settings
+`Access Token` subpage for creating `Organization Access Tokens`, the organization settings
+`Personal Access Tokens` subgraph for creating `Personal Access Tokens` or the project settings
+`Access Tokens` subpage for creating `Project Access Tokens`
 
 <Steps>
 
