@@ -1,5 +1,8 @@
 import { getPageMap } from '@theguild/components/server';
-import { isBlogPost } from './blog-types';
+import { parseSchema } from '../../lib/parse-schema';
+import { coerceCaseStudiesToBlogs } from '../case-studies/coerce-case-studies-to-blogs';
+import { getCaseStudies } from '../case-studies/get-case-studies';
+import { BlogPostFile } from './blog-types';
 import { NewsletterFormCard } from './components/newsletter-form-card';
 import { PostsByTag } from './components/posts-by-tag';
 // We can't move this page to `(index)` dir together with `tag` page because Nextra crashes for
@@ -13,7 +16,21 @@ export const metadata = {
 
 export default async function BlogPage() {
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
-  const allPosts = pageMap.filter(isBlogPost);
+  const [, , ...productUpdates] = await getPageMap('/product-updates');
+
+  const caseStudies = await getCaseStudies().then(coerceCaseStudiesToBlogs);
+
+  const allPosts = pageMap
+    .map(x => parseSchema(x, BlogPostFile))
+    .concat(caseStudies)
+    .concat(
+      productUpdates.map(post => {
+        if ('frontMatter' in post && post.frontMatter) {
+          post.frontMatter.tags ||= ['Product Update'];
+        }
+        return parseSchema(post, BlogPostFile);
+      }),
+    );
 
   return (
     <BlogPageLayout>

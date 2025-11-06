@@ -5,7 +5,6 @@ import {
   Heading,
   HiveLayoutConfig,
 } from '@theguild/components';
-import { getPageMap } from '@theguild/components/server';
 import { GetYourAPIGameWhite } from '../../components/get-your-api-game-white';
 import { HeroLinks } from '../../components/hero';
 import { LandingPageContainer } from '../../components/landing-page-container';
@@ -13,16 +12,14 @@ import { TrustedBySection } from '../../components/trusted-by-section';
 import { AllCaseStudiesList } from './all-case-studies-list';
 import { CaseStudiesArchDecoration, CaseStudiesGradientDefs } from './case-studies-arch-decoration';
 import { FeaturedCaseStudiesGrid } from './featured-case-studies-grid';
-import { isCaseStudy } from './isCaseStudyFile';
+import { getCaseStudies } from './get-case-studies';
 
 export const metadata = {
   title: 'Case Studies',
 };
 
 export default async function CaseStudiesPage() {
-  const [_meta, _indexPage, ...pageMap] = await getPageMap('/case-studies');
-
-  const caseStudies = pageMap.filter(isCaseStudy);
+  const caseStudies = await getCaseStudies();
 
   return (
     <LandingPageContainer className="mx-auto max-w-[90rem] overflow-hidden px-6">

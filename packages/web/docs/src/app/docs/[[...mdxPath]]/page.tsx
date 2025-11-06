@@ -30,8 +30,6 @@ export async function generateMetadata(
     ...docsMetadata.openGraph,
   };
 
-  console.log('Generated metadata for', mdxPath, docsMetadata);
-
   return docsMetadata;
 }
 

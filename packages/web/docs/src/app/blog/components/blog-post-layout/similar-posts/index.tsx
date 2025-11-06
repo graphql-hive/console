@@ -1,6 +1,7 @@
 import { ArrowIcon, cn, Heading } from '@theguild/components';
 import { getPageMap } from '@theguild/components/server';
-import { isBlogPost } from '../../../blog-types';
+import { parseSchema } from '../../../../../lib/parse-schema';
+import { BlogPostFile } from '../../../blog-types';
 import { SimilarPostsClient } from './client';
 
 export async function SimilarPosts({ className }: { className?: string }) {
@@ -11,7 +12,7 @@ export async function SimilarPosts({ className }: { className?: string }) {
   // We can optimize this later.
   const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
   const sortedPosts = pageMap
-    .filter(isBlogPost)
+    .map(x => parseSchema(x, BlogPostFile))
     .sort((a, b) => new Date(b.frontMatter.date).getTime() - new Date(a.frontMatter.date).getTime())
     .slice(
       0,

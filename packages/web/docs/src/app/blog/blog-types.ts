@@ -1,21 +1,25 @@
-import type { StaticImageData } from 'next/image';
-import { AuthorId } from '../../authors';
-import { MdxFile, PageMapItem } from '../../mdx-types';
+import { z } from 'zod';
+import { AuthorOrId, staticImageDataSchema } from '../../authors';
+import { MdxFile } from '../../mdx-types';
 
-export interface BlogFrontmatter {
-  authors: AuthorId | AuthorId[];
-  title: string;
-  date: string;
-  tags: string | string[];
-  featured?: boolean;
-  image?: VideoPath | StaticImageData;
-  thumbnail?: StaticImageData;
-}
+export const VideoPath = z
+  .string()
+  .regex(/^.+\.(webm|mp4)$/) as z.ZodType<`${string}.${'webm' | 'mp4'}`>;
 
-type VideoPath = `${string}.${'webm' | 'mp4'}`;
+export type VideoPath = z.infer<typeof VideoPath>;
 
-export type BlogPostFile = Required<MdxFile<BlogFrontmatter>>;
+export const BlogFrontmatter = z.object({
+  authors: z.union([z.array(AuthorOrId), AuthorOrId]),
+  title: z.string(),
+  date: z.string(),
+  tags: z.union([z.string(), z.array(z.string())]),
+  featured: z.boolean().optional(),
+  image: z.union([VideoPath, staticImageDataSchema]).optional(),
+  thumbnail: staticImageDataSchema.optional(),
+  description: z.string().optional(),
+});
 
-export function isBlogPost(item: PageMapItem): item is BlogPostFile {
-  return item && 'route' in item && 'name' in item && 'frontMatter' in item && !!item.frontMatter;
-}
+export type BlogFrontmatter = z.infer<typeof BlogFrontmatter>;
+
+export const BlogPostFile = MdxFile(BlogFrontmatter);
+export type BlogPostFile = z.infer<typeof BlogPostFile>;
