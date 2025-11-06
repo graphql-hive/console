@@ -1,0 +1,60 @@
+---
+title: Personal and project access tokens
+description:
+  Gain more control over who can issue access tokens with personal and oproject access tokens.
+date: 2025-11-07
+authors: [laurin]
+---
+
+Earlier this year, we introduced
+[**Organization Access Tokens**](/product-updates/2025-03-10-new-access-tokens) to enhance security
+and simplify access management across teams. These tokens brought several benefits:
+
+- **Granular permission scopes:** Define precise permissions for tokens, limiting access to specific
+  resources (e.g., projects, targets, services, or app deployments).
+- **Principle of least privilege:** Ensure tokens have only the permissions they need—nothing more.
+- **Replacement for registry access tokens:** Organization access tokens fully replace registry
+  tokens used by the Hive CLI and usage reporting.
+- **Foundation for the GraphQL Management API:** These tokens enable programmatic interaction with
+  Hive Console, including creating and managing resources such as projects, targets, and subgraphs.
+
+### Introducing Personal and Project Access Tokens
+
+After collaborating with enterprises managing multiple GraphQL projects and teams, we recognized the
+need for more flexibility around **who** can create and manage access tokens.
+
+With this update, we’re introducing two new token types, **Personal Access Tokens** and **Project
+Access Tokens**, to give teams finer control and autonomy while maintaining strong security
+boundaries.
+
+#### Project Access Tokens
+
+- Scoped to a single project.
+- Manageable by project members with the appropriate permissions.
+- Ideal for **CI/CD pipelines** performing actions such as schema publish or schema check.
+- Organization admins can view and revoke all project access tokens directly from organization
+  settings.
+
+#### Personal Access Tokens
+
+- Scoped to individual organization members.
+- Reflect a member’s role permissions - any role changes automatically update the token’s
+  capabilities.
+- Perfect for **local development and CLI operations** like `hive dev` or `hive check`.
+- Can be enabled or disabled on a per-user basis, and revoked anytime by organization
+  administrators.
+
+### Conclusion
+
+These new token types provide a balance between **security** and **developer autonomy**:
+
+- Organizations maintain full visibility and control.
+- Teams can independently manage tokens for their workflows.
+- Tokens now align naturally with your existing permission model and resource hierarchy.
+
+Together with organization access tokens, these additions complete a unified and flexible access
+control system for Hive.
+
+---
+
+[Learn more about Access Tokens](/docs/schema-registry/management/access-tokens)
