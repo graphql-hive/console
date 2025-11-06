@@ -41,6 +41,14 @@ type Env = {
   R2_ANALYTICS: AnalyticsEngine;
   S3_ANALYTICS: AnalyticsEngine;
   KEY_VALIDATION_ANALYTICS: AnalyticsEngine;
+
+  /**
+   * Base URL of the KV storage, used to fetch the schema from the KV storage.
+   * If not provided, the schema will be fetched from default KV storage value.
+   *
+   * @default https://key-cache.graphql-hive.com
+   */
+  KV_STORAGE_BASE_URL?: string;
 };
 
 const handler: ExportedHandler<Env> = {
@@ -108,6 +116,7 @@ const handler: ExportedHandler<Env> = {
     );
 
     const isKeyValid = createIsKeyValid({
+      kvStorageBaseUrl: env.KV_STORAGE_BASE_URL,
       waitUntil: p => ctx.waitUntil(p),
       getCache: () => caches.open('artifacts-auth'),
       artifactStorageReader,
