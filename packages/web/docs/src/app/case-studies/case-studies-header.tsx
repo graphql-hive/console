@@ -24,7 +24,7 @@ export function CaseStudiesHeader(props: React.HTMLAttributes<HTMLDivElement>) {
         <Heading as="h1" size="md" className="max-sm:text-[32px]">
           {frontmatter.title}
         </Heading>
-        <Authors authors={frontmatter.authors} className="mt-8" />
+        <Authors authors={frontmatter.authors} className="max-lg:my-4 lg:mt-8" />
       </div>
       <LogoWithDecorations className="h-[224px] w-full max-w-[640px] shrink-0 max-lg:-order-1 max-sm:mb-6 lg:w-[320px] lg:max-xl:h-[180px] xl:w-[400px] lg:max-xl:[&>svg]:w-[140px] lg:max-xl:[&_svg]:h-[120px]">
         {logo}
