@@ -236,8 +236,8 @@ API.
 
 <Callout>
 
-When using the Gateway `proxy` mode with a introspected remote schema, schema directives can't be
-used, since directives are not part of the introspection response.
+When using the Gateway in `proxy` mode with introspection of the source schema, schema directives
+are not supported because they are not part of the introspection response.
 
 This means proxy mode with introspection is not compatible with directive driven cache, auth, demand
 and control, or any other feature relying on directives.
