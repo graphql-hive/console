@@ -103,9 +103,11 @@ can also be customized on the subgraph level by using `@cost` and `@listSize` di
 
 <Callout type="warning">
 
-Customization using directives is not available when using the Gateway in `proxy` mode without providing the `schema` option.
+Customization using directives is not available when using the Gateway in `proxy` mode without
+providing the `schema` option.
 
-This limitation is due to the schema being loaded via introspection when it is not provided. But introspection result doesn't include directives.
+This is because the schema is loaded via introspection when it is not provided, and introspection
+results do not include directives.
 
 </Callout>
 
