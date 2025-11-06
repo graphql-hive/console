@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';

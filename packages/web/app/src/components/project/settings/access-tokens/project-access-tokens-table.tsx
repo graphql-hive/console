@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { EllipsisIcon, LoaderCircleIcon } from 'lucide-react';
 import { useClient } from 'urql';
 import { DeleteAccessTokenConfirmationDialogue } from '@/components/organization/settings/access-tokens/delete-access-token-confirmation-dialogue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import * as DropDownMenu from '@/components/ui/dropdown-menu';
 import * as Table from '@/components/ui/table';
@@ -122,7 +121,6 @@ export function ProjectAccessTokensTable(props: ProjectAccessTokensTable) {
             <Table.TableCell className="font-mono">
               {edge.node.firstCharacters + privateKeyFiller}
             </Table.TableCell>
-            <Table.TableCell className="pl-10 font-mono"></Table.TableCell>
             <Table.TableCell className="text-right">
               created <TimeAgo date={edge.node.createdAt} />
             </Table.TableCell>
