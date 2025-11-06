@@ -80,20 +80,6 @@ following properties:
 - Removing the `Manage personal access tokens` (`personalAccessToken:modify`) permission
   **temporarily disables** all tokens issued by that user until the permission is restored.
 
-### Personal Access Tokens
-
-- requires `personalAccessToken:modify` permission (can be issued on a user/role basis)
-- personal access token permissions and resources is a subset of the member roles permission
-- if the member roles permissions are downgraded, this is reflected in the access token
-- generally recommended for allowing users to perform actions with the CLI e.g. `hive dev` or
-  `hive check`
-- for CI/CD actions, project access tokens are recommended
-- organization admins can conveniently see all the issued personal access tokens in the organization
-  settings and revoke individual tokens if needed
-- removing the user from the organization deletes the access tokens
-- removing the `personalAccessToken:modify` permission from the user temporarily disabled the access
-  tokens issued by that user until the permission is readded
-
 ## Create an Access Token
 
 Depending on the type of access token you are creating, navigate either to the organization settings
