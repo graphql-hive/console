@@ -136,13 +136,13 @@ export const permissionGroups: Array<PermissionGroup> = [
       },
       {
         id: 'project:modifySettings',
-        title: 'Modify Settings',
+        title: 'Modify project settings',
         description: 'Member can access the specified projects.',
         dependsOn: 'project:describe',
       },
       {
         id: 'projectAccessToken:modify',
-        title: 'Create Project scoped access tokens',
+        title: 'Manage project access token',
         description: 'Create access tokens for performing actions within the project.',
         dependsOn: 'project:describe',
       },
@@ -250,7 +250,7 @@ export const permissionGroups: Array<PermissionGroup> = [
     permissions: [
       {
         id: 'personalAccessToken:modify',
-        title: 'Create personal access tokens',
+        title: 'Manage personal access tokens',
         description: 'Member can create and use personal access tokens.',
       },
       {
