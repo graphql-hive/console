@@ -112,15 +112,14 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
 2. Make sure `usage` and `usage-ingestor` are running as well (with `pnpm dev`)
 3. Open Hive app, create a project and a target, then create a token
 4. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
-
-   > Note: `<target_id>` can be obtained via target's Settings page → General → Resource ID,
-   > `<access_token>` is created on organization's Setting's page → Access Tokens
 5. This should report a dummy schema
 6. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
    to test features e2e: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:usage`
 
 > Note: You can set `STAGE=<dev|staging|local>` in order to target a specific Hive environment and
 > seed a target there.
+> `TARGET=<target_id>` can be obtained via target's Settings page → General → Resource ID.
+> `TOKEN=<access_token>` is created on organization's Setting's page → Access Tokens
 
 > To send more operations with `seed:usage`, and test heavy load on Hive instance, you can also set
 > `OPERATIONS` (amount of operations in each interval round, default is `10`) and `INTERVAL`
