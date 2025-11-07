@@ -85,6 +85,7 @@ function CollectedOperationsOverTime(props: {
   const dataRef = useRef<[string, number][]>();
   dataRef.current ||= operations.map(node => [node.date, node.count]);
   const data = dataRef.current;
+  const chartStyles = useChartStyles();
 
   return (
     <AutoSizer disableHeight>
@@ -93,7 +94,7 @@ function CollectedOperationsOverTime(props: {
           style={{ width: size.width, height: 200 }}
           theme={theme.theme}
           option={{
-            ...useChartStyles(),
+            ...chartStyles,
             grid: {
               left: 50,
               top: 50,

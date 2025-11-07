@@ -27,7 +27,7 @@ jobs:
       - name: Look for changes
         id: rust_changed
         run: |
-          lines=$( git diff HEAD~ HEAD --name-only -- 'packages/libraries/router' 'Cargo.toml' 'configs/cargo/Cargo.lock' | wc -l )
+          lines=$( git diff HEAD~ HEAD --name-only -- 'packages/libraries/router' 'packages/libraries/sdk-rs' 'Cargo.toml' 'configs/cargo/Cargo.lock' | wc -l )
           if [ $lines -gt 0 ]; then
               echo 'rust_changed=true' >> $GITHUB_OUTPUT
           fi
@@ -84,7 +84,7 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
         with:
-          toolchain: '1.87.0'
+          toolchain: '1.90.0'
           target: ${{ env.RUST_TARGET }}
           default: true
           override: true

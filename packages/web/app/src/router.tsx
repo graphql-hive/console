@@ -1,4 +1,5 @@
-import { lazy, useCallback, useEffect } from 'react';
+import { lazy, useCallback, useEffect, useMemo } from 'react';
+import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
@@ -19,6 +20,8 @@ import {
   createRouter,
   Navigate,
   Outlet,
+  parseSearchWith,
+  stringifySearchWith,
   useNavigate,
   useParams,
 } from '@tanstack/react-router';
@@ -45,7 +48,6 @@ import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organiza
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
-import { OrganizationPolicyPage } from './pages/organization-policy';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -57,8 +59,7 @@ import { OrganizationSupportTicketPage } from './pages/organization-support-tick
 import { OrganizationTransferPage } from './pages/organization-transfer';
 import { ProjectIndexRouteSearch, ProjectPage } from './pages/project';
 import { ProjectAlertsPage } from './pages/project-alerts';
-import { ProjectPolicyPage } from './pages/project-policy';
-import { ProjectSettingsPage } from './pages/project-settings';
+import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
 import { TargetAppsPage } from './pages/target-apps';
@@ -79,6 +80,13 @@ import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal'
 import { TargetProposalsPage } from './pages/target-proposals';
 import { TargetProposalsNewPage } from './pages/target-proposals-new';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
+import { TargetTracePage } from './pages/target-trace';
+import {
+  FilterState,
+  TargetTracesFilterState,
+  TargetTracesPage,
+  TargetTracesSort,
+} from './pages/target-traces';
 
 SuperTokens.init(frontendConfig());
 if (env.sentry) {
@@ -335,7 +343,7 @@ const manageRoute = createRoute({
 });
 
 const joinOrganizationRoute = createRoute({
-  getParentRoute: () => authenticatedRoute,
+  getParentRoute: () => root,
   path: 'join/$inviteCode',
   component: function JoinOrganizationRoute() {
     const { inviteCode } = joinOrganizationRoute.useParams();
@@ -428,15 +436,6 @@ const organizationSubscriptionManageRoute = createRoute({
   },
 });
 
-const organizationPolicyRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  path: 'view/policy',
-  component: function OrganizationPolicyRoute() {
-    const { organizationSlug } = organizationPolicyRoute.useParams();
-    return <OrganizationPolicyPage organizationSlug={organizationSlug} />;
-  },
-});
-
 const OrganizationSettingRouteSearch = z.object({
   page: OrganizationSettingsPageEnum.default('general').optional(),
 });
@@ -511,21 +510,27 @@ const projectIndexRoute = createRoute({
   },
 });
 
+const ProjectSettingsRouteSearch = z.object({
+  page: ProjectSettingsPageEnum.default('general').optional(),
+});
+
 const projectSettingsRoute = createRoute({
   getParentRoute: () => projectRoute,
   path: 'view/settings',
+  validateSearch(search) {
+    return ProjectSettingsRouteSearch.parse(search);
+  },
   component: function ProjectSettingsRoute() {
     const { organizationSlug, projectSlug } = projectSettingsRoute.useParams();
-    return <ProjectSettingsPage organizationSlug={organizationSlug} projectSlug={projectSlug} />;
-  },
-});
+    const { page } = projectSettingsRoute.useSearch();
 
-const projectPolicyRoute = createRoute({
-  getParentRoute: () => projectRoute,
-  path: 'view/policy',
-  component: function ProjectPolicyRoute() {
-    const { organizationSlug, projectSlug } = projectPolicyRoute.useParams();
-    return <ProjectPolicyPage organizationSlug={organizationSlug} projectSlug={projectSlug} />;
+    return (
+      <ProjectSettingsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        page={page}
+      />
+    );
   },
 });
 
@@ -646,6 +651,85 @@ const targetInsightsRoute = createRoute({
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const TargetTracesRouteSearch = z.object({
+  filter: TargetTracesFilterState.optional(),
+  sort: TargetTracesSort.shape.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+});
+
+const targetTracesRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'traces',
+  validateSearch: TargetTracesRouteSearch.parse,
+  component: function TargetTracesRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetTracesRoute.useParams();
+    const {
+      filter = {
+        'graphql.client': [],
+        'graphql.errorCode': [],
+        'graphql.kind': [],
+        'graphql.operation': [],
+        'graphql.status': [],
+        'graphql.subgraph': [],
+        'http.host': [],
+        'http.method': [],
+        'http.route': [],
+        'http.status': [],
+        'http.url': [],
+        'trace.id': [],
+        duration: [],
+      } satisfies FilterState,
+      sort = {
+        id: 'timestamp',
+        desc: true,
+      },
+      from,
+      to,
+    } = targetTracesRoute.useSearch();
+
+    const range = useMemo(() => (from && to ? { from, to } : null), [from, to]);
+
+    return (
+      <TargetTracesPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        sorting={sort}
+        filter={filter}
+        range={range}
+      />
+    );
+  },
+});
+
+const TargetTraceRouteSearchModel = z.object({
+  activeSpanId: z.string().optional(),
+  activeSpanTab: z.string().optional(),
+});
+
+const targetTraceRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  validateSearch(search) {
+    return TargetTraceRouteSearchModel.parse(search);
+  },
+  path: 'trace/$traceId',
+  component: function TargetTraceRoute() {
+    const { organizationSlug, projectSlug, targetSlug, traceId } = targetTraceRoute.useParams();
+    const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();
+    return (
+      <TargetTracePage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        traceId={traceId}
+        activeSpanId={activeSpanId ?? null}
+        activeSpanTab={activeSpanTab ?? null}
       />
     );
   },
@@ -938,21 +1022,17 @@ const routeTree = root.addChildren([
       organizationSubscriptionManageRoute,
       organizationSubscriptionManageLegacyRoute,
       organizationMembersRoute,
-      organizationPolicyRoute,
       organizationSettingsRoute,
     ]),
-    projectRoute.addChildren([
-      projectIndexRoute,
-      projectSettingsRoute,
-      projectPolicyRoute,
-      projectAlertsRoute,
-    ]),
+    projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),
     targetRoute.addChildren([
       targetIndexRoute,
       targetSettingsRoute,
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
+      targetTraceRoute,
+      targetTracesRoute,
       targetInsightsCoordinateRoute,
       targetInsightsClientRoute,
       targetInsightsOperationsRoute,
@@ -968,7 +1048,21 @@ const routeTree = root.addChildren([
   ]),
 ]);
 
-export const router = createRouter({ routeTree });
+export const router = createRouter({
+  routeTree,
+  parseSearch: parseSearchWith(str => {
+    if (window.location.pathname.endsWith('/traces')) {
+      return jsUrlParse(str);
+    }
+    return JSON.parse(str);
+  }),
+  stringifySearch: stringifySearchWith(search => {
+    if (window.location.pathname.endsWith('/traces')) {
+      return jsUrlStringify(search);
+    }
+    return JSON.stringify(search);
+  }),
+});
 
 router.history.subscribe(() => {
   gtag.pageview(router.history.location.href);

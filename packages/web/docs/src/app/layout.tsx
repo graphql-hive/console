@@ -20,6 +20,7 @@ import '../selection-styles.css';
 import '../easing-functions.css';
 import '../mermaid.css';
 import { NarrowPages } from './narrow-pages';
+import './global.css';
 
 export const metadata = getDefaultMetadata({
   productName: PRODUCTS.HIVE.name,
@@ -113,7 +114,7 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
             resources: [
               {
                 children: 'Privacy Policy',
-                href: 'https://the-guild.dev/graphql/hive/privacy-policy.pdf',
+                href: 'https://the-guild.dev/graphql/hive/privacy-policy.html',
                 title: 'Privacy Policy',
               },
               {

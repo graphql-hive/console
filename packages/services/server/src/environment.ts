@@ -121,6 +121,7 @@ const CdnCFModel = zod.union([
   zod.object({
     CDN_CF: zod.literal('1'),
     CDN_CF_BASE_URL: zod.string(),
+    CDN_CF_KV_BASE_URL: emptyString(zod.string().url().optional()),
   }),
 ]);
 
@@ -131,6 +132,7 @@ const CdnApiModel = zod.union([
   zod.object({
     CDN_API: zod.literal('1'),
     CDN_API_BASE_URL: zod.string(),
+    CDN_API_KV_BASE_URL: emptyString(zod.string().url().optional()),
   }),
 ]);
 
@@ -450,9 +452,16 @@ export const env = {
         cdnCf.CDN_CF === '1'
           ? {
               baseUrl: cdnCf.CDN_CF_BASE_URL,
+              kv: cdnCf.CDN_CF_KV_BASE_URL ? { baseUrl: cdnCf.CDN_CF_KV_BASE_URL } : null,
             }
           : null,
-      api: cdnApi.CDN_API === '1' ? { baseUrl: cdnApi.CDN_API_BASE_URL } : null,
+      api:
+        cdnApi.CDN_API === '1'
+          ? {
+              baseUrl: cdnApi.CDN_API_BASE_URL,
+              kv: cdnApi.CDN_API_KV_BASE_URL ? { baseUrl: cdnApi.CDN_API_KV_BASE_URL } : null,
+            }
+          : null,
     },
   },
   s3: {

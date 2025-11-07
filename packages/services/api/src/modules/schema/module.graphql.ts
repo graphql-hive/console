@@ -8,13 +8,7 @@ export default gql`
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
-    updateNativeFederation(input: UpdateNativeFederationInput!): UpdateNativeFederationResult!
-    enableExternalSchemaComposition(
-      input: EnableExternalSchemaCompositionInput!
-    ): EnableExternalSchemaCompositionResult!
-    disableExternalSchemaComposition(
-      input: DisableExternalSchemaCompositionInput!
-    ): DisableExternalSchemaCompositionResult!
+    updateSchemaComposition(input: UpdateSchemaCompositionInput!): UpdateSchemaCompositionResult!
     """
     Approve a failed schema check with breaking changes.
     """
@@ -33,6 +27,12 @@ export default gql`
 
   extend type Query {
     schemaVersionForActionId(actionId: ID!, target: TargetReferenceInput): SchemaVersion
+      @deprecated(reason: "Use Query.schemaVersionByCommit")
+
+    """
+    Returns the latest SchemaVersion associated with a specific commit
+    """
+    schemaVersionByCommit(commit: String!, target: TargetReferenceInput): SchemaVersion
     latestValidVersion(target: TargetReferenceInput): SchemaVersion
     """
     Requires API Token
@@ -43,50 +43,57 @@ export default gql`
     ): TestExternalSchemaCompositionResult!
   }
 
-  input UpdateNativeFederationInput {
-    organizationSlug: String!
-    projectSlug: String!
-    enabled: Boolean!
+  input UpdateSchemaCompositionInput @oneOf {
+    native: UpdateSchemaCompositionNativeInput
+    external: UpdateSchemaCompositionExternalInput
+    legacy: UpdateSchemaCompositionLegacyInput
   }
 
-  """
-  @oneOf
-  """
-  type UpdateNativeFederationResult {
-    ok: Project
-    error: UpdateNativeFederationError
-  }
-
-  type UpdateNativeFederationError implements Error {
-    message: String!
-  }
-
-  input DisableExternalSchemaCompositionInput {
+  input UpdateSchemaCompositionNativeInput {
     organizationSlug: String!
     projectSlug: String!
   }
 
-  """
-  @oneOf
-  """
-  type DisableExternalSchemaCompositionResult {
-    ok: Project
-    error: String
-  }
-
-  input EnableExternalSchemaCompositionInput {
+  input UpdateSchemaCompositionExternalInput {
     organizationSlug: String!
     projectSlug: String!
     endpoint: String!
     secret: String!
   }
 
+  input UpdateSchemaCompositionLegacyInput {
+    organizationSlug: String!
+    projectSlug: String!
+  }
+
   """
   @oneOf
   """
-  type EnableExternalSchemaCompositionResult {
+  type UpdateSchemaCompositionResult {
     ok: Project
-    error: EnableExternalSchemaCompositionError
+    error: UpdateSchemaCompositionError
+  }
+
+  interface UpdateSchemaCompositionError implements Error {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError & Error {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError & Error {
+    message: String!
+  }
+
+  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError & Error {
+    message: String!
+    inputErrors: UpdateSchemaCompositionExternalInputErrors
+  }
+
+  type UpdateSchemaCompositionExternalInputErrors {
+    endpoint: String
+    secret: String
   }
 
   type ExternalSchemaComposition {
@@ -152,19 +159,6 @@ export default gql`
     INCOMPATIBLE
     UNKNOWN
     NOT_APPLICABLE
-  }
-
-  type EnableExternalSchemaCompositionError implements Error {
-    message: String!
-    """
-    The detailed validation error messages for the input fields.
-    """
-    inputErrors: EnableExternalSchemaCompositionInputErrors!
-  }
-
-  type EnableExternalSchemaCompositionInputErrors {
-    endpoint: String
-    secret: String
   }
 
   type UpdateBaseSchemaResult {
@@ -560,6 +554,10 @@ export default gql`
     """
     approvedBy: User
     """
+    CLI approval metadata when approved via CLI (mutually exclusive with approvedBy).
+    """
+    cliApprovalMetadata: CLIApprovalMetadata
+    """
     Date of the schema change approval.
     """
     approvedAt: DateTime!
@@ -567,6 +565,24 @@ export default gql`
     ID of the schema check in which this change was first approved.
     """
     schemaCheckId: ID!
+  }
+
+  """
+  Metadata for approvals made via CLI.
+  """
+  type CLIApprovalMetadata {
+    """
+    Raw author string from the CLI.
+    """
+    author: String!
+    """
+    Parsed display name from the author string.
+    """
+    displayName: String!
+    """
+    Parsed email from the author string (if available).
+    """
+    email: String
   }
 
   type SchemaError {
@@ -1429,6 +1445,10 @@ export default gql`
     """
     approvedBy: User
     """
+    CLI approval metadata when approved via CLI (mutually exclusive with approvedBy).
+    """
+    cliApprovalMetadata: CLIApprovalMetadata
+    """
     Comment given when the schema check was approved.
     """
     approvalComment: String
@@ -1547,6 +1567,7 @@ export default gql`
     Give a reason why the schema check was approved.
     """
     comment: String
+    author: String
   }
 
   type ApproveFailedSchemaCheckResult {

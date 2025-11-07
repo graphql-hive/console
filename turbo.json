@@ -23,6 +23,7 @@
         "//#graphql:generate:watch",
         "@hive/server#dev",
         "@hive/app#dev",
+        "@hive/tokens#dev",
         "@hive/schema#dev",
         "@hive/policy#dev",
         "@hive/commerce#dev",

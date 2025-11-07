@@ -179,7 +179,7 @@ module.exports = {
         'react/jsx-no-useless-fragment': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-empty-function': 'off',
-        'react-hooks/rules-of-hooks': 'off',
+        'react-hooks/rules-of-hooks': 'error',
         'react-hooks/exhaustive-deps': 'off',
         'unicorn/filename-case': 'off',
         'import/no-default-export': 'off',
@@ -206,13 +206,12 @@ module.exports = {
         },
       },
     },
-    // {
-    //   files: ['packages/web/app/**'],
-    //   excludedFiles: ['packages/web/app/src/pages/**'],
-    //   rules: {
-    //     'import/no-unused-modules': ['error', { unusedExports: true }],
-    //   },
-    // },
+    {
+      files: ['packages/web/app/**/*.stories.tsx', 'packages/web/docs/**'],
+      rules: {
+        'react-hooks/rules-of-hooks': 'off',
+      },
+    },
     {
       files: ['packages/web/docs/**'],
       settings: {

@@ -267,7 +267,11 @@ export function GenerateTokenContent(props: {
             <Button
               type="submit"
               data-cy="submit"
-              disabled={!props.form.formState.isValid || props.noPermissionsSelected}
+              disabled={
+                !props.form.formState.isValid ||
+                props.noPermissionsSelected ||
+                props.form.formState.isSubmitting
+              }
             >
               Generate Token
             </Button>

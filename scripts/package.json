@@ -3,6 +3,8 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@graphql-hive/core": "workspace:*"
+    "@faker-js/faker": "9.9.0",
+    "@graphql-hive/core": "workspace:*",
+    "immer": "10.1.1"
   }
 }

@@ -44,12 +44,12 @@ export class AppDeploymentsManager {
   }
 
   getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
-    if (appDeployment.activatedAt) {
-      return 'active';
-    }
-
     if (appDeployment.retiredAt) {
       return 'retired';
+    }
+
+    if (appDeployment.activatedAt) {
+      return 'active';
     }
 
     return 'pending';
@@ -161,28 +161,34 @@ export class AppDeploymentsManager {
   }
 
   async retireAppDeployment(args: {
-    targetId: string;
+    reference: GraphQLSchema.TargetReferenceInput | null;
     appDeployment: {
       name: string;
       version: string;
     };
   }) {
-    const target = await this.targetManager.getTargetById({ targetId: args.targetId });
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: args.reference,
+    });
+
+    if (!selector) {
+      this.session.raise('appDeployment:retire');
+    }
 
     await this.session.assertPerformAction({
       action: 'appDeployment:retire',
-      organizationId: target.orgId,
+      organizationId: selector.organizationId,
       params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
         appDeploymentName: args.appDeployment.name,
       },
     });
 
     return await this.appDeployments.retireAppDeployment({
-      organizationId: target.orgId,
-      targetId: target.id,
+      organizationId: selector.organizationId,
+      targetId: selector.targetId,
       appDeployment: args.appDeployment,
     });
   }

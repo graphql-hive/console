@@ -18,7 +18,6 @@ export const SchemaCoordinateStats: Pick<SchemaCoordinateStatsResolvers, 'superg
     // @note: `SchemaVersionHelper.getSupergraphAst` is cached
     const supergraphAst = await injector.get(SchemaVersionHelper).getSupergraphAst(latestVersion);
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
-    supergraph?.schemaCoordinateServicesMappings;
 
     return {
       __typename: 'SupergraphMetadata',

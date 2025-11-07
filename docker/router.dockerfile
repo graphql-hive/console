@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1
-FROM scratch AS pkg
+FROM scratch AS router_pkg
+FROM scratch AS sdk_rs_pkg
 FROM scratch AS config
 
-FROM rust:1.87 AS build
+FROM rust:1.90-slim-bookworm AS build
 
 # Required by Apollo Router
 RUN apt-get update
@@ -12,12 +13,25 @@ RUN update-ca-certificates
 RUN rustup component add rustfmt
 
 WORKDIR /usr/src
-# Create blank project
+# Create blank projects
 RUN USER=root cargo new router
+RUN USER=root cargo new sdk-rs
 
 # Copy Cargo files
-COPY --from=pkg Cargo.toml /usr/src/router/
+COPY --from=router_pkg Cargo.toml /usr/src/router/
+COPY --from=sdk_rs_pkg Cargo.toml /usr/src/sdk-rs/
 COPY --from=config Cargo.lock /usr/src/router/
+
+WORKDIR /usr/src/sdk-rs
+# Get the dependencies cached, so we can use dummy input files so Cargo wont fail
+RUN echo 'fn main() { println!(""); }' > ./src/main.rs
+RUN echo 'fn main() { println!(""); }' > ./src/lib.rs
+RUN cargo build --release
+
+# Copy in the actual source code
+COPY --from=sdk_rs_pkg src ./src
+RUN touch ./src/main.rs
+RUN touch ./src/lib.rs
 
 WORKDIR /usr/src/router
 # Get the dependencies cached, so we can use dummy input files so Cargo wont fail
@@ -26,7 +40,7 @@ RUN echo 'fn main() { println!(""); }' > ./src/lib.rs
 RUN cargo build --release
 
 # Copy in the actual source code
-COPY --from=pkg src ./src
+COPY --from=router_pkg src ./src
 RUN touch ./src/main.rs
 RUN touch ./src/lib.rs
 
@@ -53,7 +67,7 @@ RUN mkdir /dist/schema
 
 # Copy in the required files from our build image
 COPY --from=build --chown=root:root /usr/src/router/target/release/router /dist
-COPY --from=pkg router.yaml /dist/config/router.yaml
+COPY --from=router_pkg router.yaml /dist/config/router.yaml
 
 WORKDIR /dist
 

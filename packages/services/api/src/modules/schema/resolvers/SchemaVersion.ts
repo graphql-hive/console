@@ -1,6 +1,7 @@
 import { createPeriod, parseDateRangeInput } from '../../../shared/helpers';
 import { buildASTSchema } from '../../../shared/schema';
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { Logger } from '../../shared/providers/logger';
 import { onlyDeprecatedDocumentNode } from '../lib/deprecated-graphql';
 import { extractSuperGraphInformation } from '../lib/federation-super-graph';
 import { stripUsedSchemaCoordinatesFromDocumentNode } from '../lib/unused-graphql';
@@ -163,6 +164,16 @@ export const SchemaVersion: SchemaVersionResolvers = {
     };
   },
   deprecatedSchema: async (version, args, { injector }) => {
+    const logger = injector.get(Logger);
+
+    logger.debug(
+      'Build deprecated schema explorer. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+      version.organizationId,
+      version.projectId,
+      version.targetId,
+      version.id,
+    );
+
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
       injector.get(SchemaVersionHelper).getSupergraphAst(version),
@@ -178,8 +189,26 @@ export const SchemaVersion: SchemaVersionResolvers = {
       ? parseDateRangeInput(args.period.absoluteRange)
       : createPeriod('30d');
 
+    logger.debug(
+      'Start filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+      version.organizationId,
+      version.projectId,
+      version.targetId,
+      version.id,
+    );
+
+    const filteredSdl = onlyDeprecatedDocumentNode(schemaAst);
+
+    logger.debug(
+      'Finished filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+      version.organizationId,
+      version.projectId,
+      version.targetId,
+      version.id,
+    );
+
     return {
-      sdl: onlyDeprecatedDocumentNode(schemaAst),
+      sdl: filteredSdl,
       usage: {
         period,
         organizationId: version.organizationId,

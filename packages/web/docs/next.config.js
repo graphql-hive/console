@@ -1,6 +1,7 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withGuildDocs } from '@theguild/components/next.config';
 
-export default withGuildDocs({
+let config = withGuildDocs({
   output: 'export',
   eslint: {
     ignoreDuringBuilds: true,
@@ -126,6 +127,11 @@ export default withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/features/laboratory',
+      destination: '/docs/schema-registry/laboratory',
+      permanent: true,
+    },
+    {
       source: '/docs/features/laboratory/:path*',
       destination: '/docs/schema-registry/laboratory/:path*',
       permanent: true,
@@ -156,6 +162,11 @@ export default withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/graphql-api',
+      destination: '/docs/api-reference/graphql-api',
+      permanent: true,
+    },
+    {
       source: '/docs/graphql-api/:path*',
       destination: '/docs/api-reference/graphql-api/:path*',
       permanent: true,
@@ -179,6 +190,11 @@ export default withGuildDocs({
       // SEO: Redirect to the new URL
       source: '/docs/self-hosting/federation-2',
       destination: '/docs/schema-registry/self-hosting/external-composition',
+      permanent: true,
+    },
+    {
+      source: '/docs/integrations',
+      destination: '/docs/other-integrations',
       permanent: true,
     },
     {
@@ -319,3 +335,9 @@ export default withGuildDocs({
     return config;
   },
 });
+
+if (process.env.ANALYZE === 'true') {
+  config = withBundleAnalyzer({ enabled: true })(config);
+}
+
+export default config;

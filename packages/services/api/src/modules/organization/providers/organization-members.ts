@@ -21,6 +21,7 @@ import {
 } from './resource-assignments';
 
 const RawOrganizationMembershipModel = z.object({
+  organizationId: z.string(),
   userId: z.string(),
   roleId: z.string(),
   connectedToZendesk: z
@@ -124,6 +125,11 @@ export class OrganizationMembers {
         const membershipRole = memberRolesById.get(record.roleId);
         if (!membershipRole) {
           throw new Error('Could not resolve role.');
+        }
+        if (record.organizationId !== membershipRole.organizationId) {
+          throw new Error(
+            `Member with id "${membershipRole.id}" has role from other organization assigned.`,
+          );
         }
 
         const resources: ResourceAssignmentGroup = record.assignedResources ?? {
@@ -327,7 +333,8 @@ export class OrganizationMembers {
 }
 
 const organizationMemberFields = (prefix = sql`"organization_member"`) => sql`
-  ${prefix}."user_id" AS "userId"
+  ${prefix}."organization_id" AS "organizationId"
+  , ${prefix}."user_id" AS "userId"
   , ${prefix}."role_id" AS "roleId"
   , ${prefix}."connected_to_zendesk" AS "connectedToZendesk"
   , ${prefix}."assigned_resources" AS "assignedResources"

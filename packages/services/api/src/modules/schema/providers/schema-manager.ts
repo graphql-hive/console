@@ -21,6 +21,7 @@ import {
   Project,
   ProjectType,
   Target,
+  User,
 } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
@@ -583,82 +584,19 @@ export class SchemaManager {
     }
   }
 
-  async disableExternalSchemaComposition(input: ProjectSelector) {
-    this.logger.debug('Disabling external composition (input=%o)', input);
-    await this.session.assertPerformAction({
-      organizationId: input.organizationId,
-      action: 'project:modifySettings',
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
-
-    await this.storage.disableExternalSchemaComposition(input);
-
-    return {
-      ok: await this.projectManager.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      }),
-    };
-  }
-
-  async enableExternalSchemaComposition(
-    input: ProjectSelector & {
-      endpoint: string;
-      secret: string;
-    },
+  async updateSchemaComposition(
+    input: ProjectSelector &
+      (
+        | { mode: 'native' }
+        | { mode: 'legacy' }
+        | {
+            mode: 'external';
+            endpoint: string;
+            secret: string;
+          }
+      ),
   ) {
-    this.logger.debug('Enabling external composition (input=%o)', lodash.omit(input, ['secret']));
-    await this.session.assertPerformAction({
-      organizationId: input.organizationId,
-      action: 'project:modifySettings',
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
-    const parseResult = ENABLE_EXTERNAL_COMPOSITION_SCHEMA.safeParse({
-      endpoint: input.endpoint,
-      secret: input.secret,
-    });
-
-    if (!parseResult.success) {
-      return {
-        error: {
-          message: parseResult.error.message,
-          inputErrors: {
-            endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
-            secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
-          },
-        },
-      };
-    }
-
-    const encryptedSecret = this.crypto.encrypt(input.secret);
-
-    await this.storage.enableExternalSchemaComposition({
-      projectId: input.projectId,
-      organizationId: input.organizationId,
-      endpoint: input.endpoint.trim(),
-      encryptedSecret,
-    });
-
-    return {
-      ok: await this.projectManager.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      }),
-    };
-  }
-
-  async updateNativeSchemaComposition(
-    input: ProjectSelector & {
-      enabled: boolean;
-    },
-  ) {
-    this.logger.debug('Updating native schema composition (input=%o)', input);
+    this.logger.debug('Updating schema composition settings (input=%o)', input);
     await this.session.assertPerformAction({
       organizationId: input.organizationId,
       action: 'project:modifySettings',
@@ -674,14 +612,70 @@ export class SchemaManager {
     });
 
     if (project.type !== ProjectType.FEDERATION) {
-      throw new HiveError(`Native schema composition is supported only by Federation projects`);
+      const message = 'Schema composition is supported only by Federation projects';
+      if (input.mode === 'native') {
+        return { error: { __typename: 'UpdateSchemaCompositionNativeError', message } } as const;
+      }
+      if (input.mode === 'legacy') {
+        return { error: { __typename: 'UpdateSchemaCompositionLegacyError', message } } as const;
+      }
+      if (input.mode === 'external') {
+        return { error: { __typename: 'UpdateSchemaCompositionExternalError', message } } as const;
+      }
     }
 
-    return this.storage.updateNativeSchemaComposition({
-      projectId: input.projectId,
-      organizationId: input.organizationId,
-      enabled: input.enabled,
-    });
+    switch (input.mode) {
+      case 'native': {
+        return {
+          ok: await this.storage.updateNativeSchemaComposition({
+            projectId: input.projectId,
+            organizationId: input.organizationId,
+            enabled: true,
+          }),
+        };
+      }
+      case 'legacy': {
+        return {
+          ok: await this.storage.updateNativeSchemaComposition({
+            projectId: input.projectId,
+            organizationId: input.organizationId,
+            enabled: false,
+          }),
+        };
+      }
+      case 'external': {
+        const parseResult = ENABLE_EXTERNAL_COMPOSITION_SCHEMA.safeParse({
+          endpoint: input.endpoint,
+          secret: input.secret,
+        });
+
+        if (!parseResult.success) {
+          return {
+            error: {
+              __typename: 'UpdateSchemaCompositionExternalError' as const,
+              message: parseResult.error.message,
+              inputErrors: {
+                endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
+                secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
+              },
+            },
+          };
+        }
+
+        return {
+          ok: await this.storage.enableExternalSchemaComposition({
+            projectId: input.projectId,
+            organizationId: input.organizationId,
+            endpoint: parseResult.data.endpoint.trim(),
+            encryptedSecret: this.crypto.encrypt(parseResult.data.secret),
+          }),
+        };
+      }
+      default: {
+        const _: never = input;
+        throw new HiveError('Unexpected input');
+      }
+    }
   }
 
   async getPaginatedSchemaChecksForTarget<TransformedSchemaCheck extends SchemaCheck>(
@@ -880,15 +874,22 @@ export class SchemaManager {
     organizationId: string;
     schemaCheckId: string;
     comment: string | null | undefined;
+    author?: string | null;
   }) {
     this.logger.debug('Manually approve failed schema check (args=%o)', args);
 
-    let [schemaCheck, viewer, target] = await Promise.all([
+    let viewer: User | null = null;
+    try {
+      viewer = await this.session.getViewer();
+    } catch (error) {
+      this.logger.debug('No viewer available (likely using CLI) (args=%o)', args);
+    }
+
+    let [schemaCheck, target] = await Promise.all([
       this.storage.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
       }),
-      this.session.getViewer(),
       this.storage.getTarget({
         organizationId: args.organizationId,
         projectId: args.projectId,
@@ -970,11 +971,25 @@ export class SchemaManager {
       targetId: target.id,
       contracts: this.contracts,
       schemaCheckId: args.schemaCheckId,
-      userId: viewer.id,
+      userId: viewer?.id ?? null,
       comment: args.comment,
+      author: args.author ?? null,
     });
 
     if (!schemaCheck) {
+      // Re-fetch the schema check to determine why approval failed
+      const recheck = await this.storage.findSchemaCheck({
+        targetId: args.targetId,
+        schemaCheckId: args.schemaCheckId,
+      });
+
+      if (recheck?.schemaPolicyErrors !== null) {
+        return {
+          type: 'error',
+          reason: 'Schema check has schema policy errors that must be resolved before approval.',
+        } as const;
+      }
+
       return {
         type: 'error',
         reason: "Schema check doesn't exist.",
@@ -997,8 +1012,8 @@ export class SchemaManager {
     });
   }
 
-  async getSchemaVersionByActionId(args: {
-    actionId: string;
+  async getSchemaVersionByCommit(args: {
+    commit: string;
     target: GraphQLSchema.TargetReferenceInput | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
@@ -1009,10 +1024,10 @@ export class SchemaManager {
       this.session.raise('project:describe');
     }
 
-    this.logger.debug('Fetch schema version by action id. (args=%o)', {
+    this.logger.debug('Fetch schema version by commit. (args=%o)', {
       projectId: selector.projectId,
       targetId: selector.targetId,
-      actionId: args.actionId,
+      commit: args.commit,
     });
 
     await this.session.assertPerformAction({
@@ -1024,10 +1039,10 @@ export class SchemaManager {
       },
     });
 
-    const record = await this.storage.getSchemaVersionByActionId({
+    const record = await this.storage.getSchemaVersionByCommit({
       projectId: selector.projectId,
       targetId: selector.targetId,
-      actionId: args.actionId,
+      commit: args.commit,
     });
 
     if (!record) {

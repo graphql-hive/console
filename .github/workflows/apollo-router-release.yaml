@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'packages/libraries/router/**'
+      - 'packages/libraries/sdk-rs/**'
       - 'docker/router.dockerfile'
       - 'scripts/compress/**'
       - 'configs/cargo/Cargo.lock'
@@ -16,6 +17,7 @@ on:
   push:
     paths:
       - 'packages/libraries/router/**'
+      - 'packages/libraries/sdk-rs/**'
       - 'docker/router.dockerfile'
       - 'scripts/compress/**'
       - 'configs/cargo/Cargo.lock'
@@ -60,7 +62,7 @@ jobs:
           github_org="graphql-hive"
           router_version=$(cargo tree -i apollo-router --quiet | head -n 1 | awk -F" v" '{print $2}')
           plugin_version=$(jq -r '.version' packages/libraries/router/package.json)
-          has_changes=$(git diff HEAD~ HEAD --name-only -- 'packages/libraries/router/Cargo.toml' 'Cargo.lock' 'configs/cargo/Cargo.lock' 'packages/libraries/router/package.json')
+          has_changes=$(git diff HEAD~ HEAD --name-only -- 'packages/libraries/router/Cargo.toml' 'packages/libraries/router/package.json' 'packages/libraries/sdk-rs/Cargo.toml' 'packages/libraries/sdk-rs/package.json' 'Cargo.lock' 'configs/cargo/Cargo.lock')
 
           if [ "$has_changes" ]; then
             image_tag_version="router${router_version}-plugin${plugin_version}"

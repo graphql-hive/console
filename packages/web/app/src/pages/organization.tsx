@@ -348,10 +348,6 @@ function OrganizationPageContent(
       });
   }, [projectsConnection, props.search, sortKey, sortOrder]);
 
-  if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
-  }
-
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       void router.navigate({
@@ -391,6 +387,10 @@ function OrganizationPageContent(
       },
     });
   }, [router, props.sortOrder]);
+
+  if (query.error) {
+    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
+  }
 
   return (
     <OrganizationLayout
@@ -459,7 +459,7 @@ function OrganizationPageContent(
             projectsConnection.edges.length === 0 ? (
               <EmptyList
                 title="Hive is waiting for your first project"
-                description='You can create a project by clicking the "Create Project" button'
+                description='You can create a project by clicking the "New Project" button'
                 docsUrl="/management/projects#create-a-new-project"
               />
             ) : (

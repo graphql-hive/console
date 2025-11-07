@@ -1,0 +1,182 @@
+---
+title: 'Header Manipulation'
+---
+
+# Header Manipulation
+
+When you're running a federated GraphQL setup, the router is the perfect place to handle HTTP
+headers consistently across all your subgraphs. Hive Router lets you add, remove, and modify headers
+as requests flow through your system.
+
+This guide shows you practical ways to use header manipulation in real-world scenarios. For the
+complete configuration reference, see [`headers` configuration](../configuration/headers).
+
+## How Header Rules Work
+
+Understanding a few key concepts will help you configure headers effectively:
+
+**Execution Order:** Global rules (in the `all` block) run first, then subgraph-specific rules. This
+lets you set defaults and then override them for specific subgraphs.
+
+**Request vs Response:**
+
+- `request` rules modify headers going **from the router to your subgraphs**
+- `response` rules modify headers going **from the router back to the client**
+
+**Rule Chaining:** Rules within a block run in order, so you can chain transformations together.
+
+## Passing Client Headers to Subgraphs
+
+The most common use case is forwarding headers from client requests to your subgraphs.
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    request:
+      # Forward the Authorization header to all subgraphs
+      - propagate:
+          named: Authorization
+
+      # Also forward custom headers
+      - propagate:
+          named: X-User-ID
+
+      # Forward with a default if missing
+      - propagate:
+          named: X-Trace-ID
+          default: 'router-generated-trace'
+```
+
+This forwards `Authorization` and `X-User-ID` headers if they exist, and always sends `X-Trace-ID`
+(creating one if the client didn't provide it).
+
+## Adding Custom Headers
+
+Sometimes you need to add headers that weren't in the original request.
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    request:
+      # Add a header with a fixed value
+      - insert:
+          name: X-Environment
+          value: production
+
+      # Add request timestamp
+      - insert:
+          name: X-Request-Time
+          value: '.timestamp'
+```
+
+## Removing Sensitive Headers
+
+You might want to strip certain headers before they reach specific subgraphs.
+
+```yaml filename="router.config.yaml"
+headers:
+  # By default, pass internal headers to all subgraphs
+  all:
+    request:
+      - propagate:
+          named: X-Internal-User-ID
+      - propagate:
+          named: X-Session-Token
+
+  # But remove them for the public-facing products service
+  subgraphs:
+    products:
+      request:
+        - remove:
+            named: X-Internal-User-ID
+        - remove:
+            named: X-Session-Token
+```
+
+## Modifying Header Values
+
+You can also transform header values on the fly using [expressions](../configuration/expressions).
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    request:
+      # Remove existing auth header and add normalized version
+      - remove:
+          named: Authorization
+      - insert:
+          name: Authorization
+          expression: "Bearer " + replace(replace(.request.headers.authorization, "Basic ", ""), "Bearer ", "")
+```
+
+As you can see, this example uses the `replace` function to ensure the `Authorization` header is
+always in `Bearer <token>` format. It's a function of VRL (Vector Remap Language) that Hive Router
+supports for advanced transformations. List of available functions can be found in the
+[VRL documentation](https://vector.dev/docs/reference/vrl/functions/).
+
+## Managing Response Headers
+
+Control what headers get sent back to clients.
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    response:
+      # Add security headers to all responses
+      - insert:
+          name: X-Content-Type-Options
+          value: nosniff
+      - insert:
+          name: X-Frame-Options
+          value: DENY
+
+  subgraphs:
+    products:
+      response:
+        # Products service controls caching
+        - propagate:
+            named: Cache-Control
+            algorithm: last # Use this value if multiple subgraphs set it
+```
+
+The `algorithm: last` option ensures that if multiple subgraphs set the `Cache-Control` header, the
+router will use the value from the last subgraph that responded.
+
+## Conditional Header Rules
+
+Apply different rules based on request properties, using
+[expressions](../configuration/expressions).
+
+```yaml filename="router.config.yaml"
+headers:
+  all:
+    request:
+      # Add API version info
+      - insert:
+          name: X-API-Version
+          expression: |
+            if contains(.request.headers.accept || "", "application/vnd.api+json;version=2") {
+              "v2"
+            } else {
+              "v1"
+            }
+```
+
+The above example checks the `Accept` header to determine which API version the client expects and
+sets the `X-API-Version` header accordingly.
+
+## Best Practices
+
+- **Security first:** Be careful about which headers you forward to external services. Remove
+  sensitive headers from requests going to third-party APIs.
+- **Performance matters:** Avoid complex header transformations in high-traffic scenarios. Simple
+  propagation is fastest.
+- **Be explicit:** Use descriptive header names and add comments to your configuration to explain
+  business logic.
+- **Test thoroughly:** Header manipulation can affect authentication, caching, and other critical
+  behaviors. Test your rules with realistic traffic patterns.
+- **Monitor in production:** Watch for header-related errors in your logs, especially authentication
+  failures that might indicate misconfigured forwarding rules.
+
+Remember that header manipulation happens on every request, so keep your rules efficient and
+well-tested.

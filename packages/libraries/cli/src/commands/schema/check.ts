@@ -25,6 +25,21 @@ import {
 } from '../../helpers/schema';
 import * as TargetInput from '../../helpers/target-input';
 
+const approveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
+  mutation approveFailedSchemaCheck($input: ApproveFailedSchemaCheckInput!) {
+    approveFailedSchemaCheck(input: $input) {
+      ok {
+        schemaCheck {
+          id
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 const schemaCheckMutation = graphql(/* GraphQL */ `
   mutation schemaCheck($input: SchemaCheckInput!) {
     schemaCheck(input: $input) {
@@ -48,6 +63,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           ...RenderChanges_schemaChanges
         }
         schemaCheck {
+          id
           webUrl
         }
       }
@@ -72,6 +88,7 @@ const schemaCheckMutation = graphql(/* GraphQL */ `
           ...RenderErrors_SchemaErrorConnectionFragment
         }
         schemaCheck {
+          id
           webUrl
         }
       }
@@ -314,7 +331,39 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         this.log('');
 
         if (forceSafe) {
-          this.logSuccess('Breaking changes were expected (forced)');
+          if (!target?.bySelector) {
+            throw new Errors.CLIError(
+              'The `--forceSafe` flag requires the `--target` flag to be specified by its slug ("organization/project/target"), not its ID.',
+            );
+          }
+
+          if (result.schemaCheck.schemaCheck?.id) {
+            let approvalResult: GraphQLSchema.ApproveFailedSchemaCheckMutation;
+            try {
+              approvalResult = await this.registryApi(endpoint, accessToken).request({
+                operation: approveFailedSchemaCheckMutation,
+                variables: {
+                  input: {
+                    organizationSlug: target.bySelector.organizationSlug,
+                    projectSlug: target.bySelector.projectSlug,
+                    targetSlug: target.bySelector.targetSlug,
+                    schemaCheckId: result.schemaCheck.schemaCheck.id,
+                    comment: 'Check force approved automatically via CLI --forceSafe flag',
+                    author: author ?? '',
+                  },
+                },
+              });
+            } catch (error) {
+              throw new UnexpectedError(error);
+            }
+            if (approvalResult.approveFailedSchemaCheck.error) {
+              this.logFailure(
+                `Failed to auto-approve: ${approvalResult.approveFailedSchemaCheck.error.message}`,
+              );
+              this.exit(1);
+            }
+            this.logSuccess('Breaking changes were expected (forced)');
+          }
         } else {
           this.exit(1);
         }

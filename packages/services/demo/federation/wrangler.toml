@@ -4,3 +4,6 @@ node_compat = true
 
 [limits]
 cpu_ms = 100
+
+[assets]
+directory = "./public"

@@ -273,6 +273,7 @@ assertAllRulesAreAssigned([
   'appDeployment:publish',
   'appDeployment:retire',
   'usage:report',
+  'traces:report',
 ]);
 
 /**

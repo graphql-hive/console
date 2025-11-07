@@ -1,5 +1,191 @@
 # hive
 
+## 8.6.0
+
+### Minor Changes
+
+- [#7202](https://github.com/graphql-hive/console/pull/7202)
+  [`0885253`](https://github.com/graphql-hive/console/commit/0885253d14be7e3e0a973c863e45b115ba84f6e8)
+  Thanks [@noghartt](https://github.com/noghartt)! - Add envs for KV namespace on Cloudflare CDN
+  worker
+
+### Patch Changes
+
+- [#7193](https://github.com/graphql-hive/console/pull/7193)
+  [`543de17`](https://github.com/graphql-hive/console/commit/543de174f5cb8caa46b8e833d13e1831c7ffbfa9)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - `schema:check --forceSafe` now
+  properly approves breaking schema changes in Hive (requires write permission registry token)
+
+- [#7234](https://github.com/graphql-hive/console/pull/7234)
+  [`ef46bbf`](https://github.com/graphql-hive/console/commit/ef46bbfeb82f866ddb200dd2cf745176f114c601)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve checks for assigning member roles to avoid
+  assigning roles not existing in the organization.
+
+## 8.5.2
+
+### Patch Changes
+
+- [#7185](https://github.com/graphql-hive/console/pull/7185)
+  [`7457e4d`](https://github.com/graphql-hive/console/commit/7457e4de75c51a218493b6c7ea5b0e3823d99f6a)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix schema check approval to properly
+  reject checks with policy errors and return descriptive error message instead of generic error
+
+## 8.5.1
+
+### Patch Changes
+
+- [#7177](https://github.com/graphql-hive/console/pull/7177)
+  [`1f7f195`](https://github.com/graphql-hive/console/commit/1f7f1951b2b1ef76d0853a6588e39458e5e1a982)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue with native federation public SDL
+  generation around inaccessible interfaces.
+
+  **Example supergraph:**
+
+  ```
+  schema
+    @link(
+      url: "https://specs.apollo.dev/federation/v2.3"
+      import: ["@inaccessible"]
+    ) {
+    query: Query
+  }
+
+  type Query {
+    user: User!
+  }
+
+  interface Node @inaccessible {
+    id: ID!
+  }
+
+  type User implements Node {
+    id: ID!
+  }
+  ```
+
+  **Public Schema SDL output:**
+
+  ```diff
+    type Query {
+      user: User!
+    }
+
+  - type User implements Node {
+  + type User {
+      id: ID!
+    }
+  ```
+
+## 8.5.0
+
+### Minor Changes
+
+- [#7155](https://github.com/graphql-hive/console/pull/7155)
+  [`caebbe0`](https://github.com/graphql-hive/console/commit/caebbe093a997022691276e0dc67ce9ab8589112)
+  Thanks [@jdolle](https://github.com/jdolle)! - add schemaVersionByCommit; update docs and cli; fix
+  webhook commit reference
+
+### Patch Changes
+
+- [#7124](https://github.com/graphql-hive/console/pull/7124)
+  [`0e44587`](https://github.com/graphql-hive/console/commit/0e4458772196ad490b682bf9a87971d5179c3985)
+  Thanks [@jdolle](https://github.com/jdolle)! - get latest log in version by commit and add version
+  details to history page
+
+## 8.4.1
+
+### Patch Changes
+
+- [#7123](https://github.com/graphql-hive/console/pull/7123)
+  [`7b636c6`](https://github.com/graphql-hive/console/commit/7b636c6691ea47691b02b41433d2bfc05970b81e)
+  Thanks [@jdolle](https://github.com/jdolle)! - show overflowed client and versions on insights
+
+- [#7119](https://github.com/graphql-hive/console/pull/7119)
+  [`f2e70bb`](https://github.com/graphql-hive/console/commit/f2e70bb0aa477a5cc039e26ea87648a6130e4501)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix issue where wrong subgraph is shown as the
+  owner of a schema coordinate/field.
+
+## 8.4.0
+
+### Minor Changes
+
+- [#7085](https://github.com/graphql-hive/console/pull/7085)
+  [`e5aa9bd`](https://github.com/graphql-hive/console/commit/e5aa9bde3e8e2c4fad87bfa26e2841ce92629bb2)
+  Thanks [@egoodwinx](https://github.com/egoodwinx)! - add user message when stripe is blocked
+
+### Patch Changes
+
+- [#7090](https://github.com/graphql-hive/console/pull/7090)
+  [`0d1cf80`](https://github.com/graphql-hive/console/commit/0d1cf80f2894c0e01bb8df4cd3aee31c23b3d975)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Further improve the performance of loading the
+  deprecated schema view for large schemas.
+
+- [#7079](https://github.com/graphql-hive/console/pull/7079)
+  [`cbbd5e5`](https://github.com/graphql-hive/console/commit/cbbd5e52b6b4f538b33e213ff393766c523be08c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix dashboard background using different shades of
+  black.
+
+## 8.3.0
+
+### Minor Changes
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - add operation counts by selected client to insights
+  filter
+
+- [#7060](https://github.com/graphql-hive/console/pull/7060)
+  [`93967de`](https://github.com/graphql-hive/console/commit/93967de720fb4f74780d6d5cf760d54eadba8de4)
+  Thanks [@jdolle](https://github.com/jdolle)! - add search to app deployment version by operation
+  name
+
+- [#7035](https://github.com/graphql-hive/console/pull/7035)
+  [`88ce5d3`](https://github.com/graphql-hive/console/commit/88ce5d3587b880ccba58bd9736042a8a8f1ef81f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add selected counts to insights client filter
+
+- [#7050](https://github.com/graphql-hive/console/pull/7050)
+  [`d1ec149`](https://github.com/graphql-hive/console/commit/d1ec149b9e0178f1ead24a6f79d9c9848f72a762)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Refine schema composition settings UI
+
+### Patch Changes
+
+- [#7033](https://github.com/graphql-hive/console/pull/7033)
+  [`2449790`](https://github.com/graphql-hive/console/commit/2449790e24b807939adf72de13787f7c48719e1b)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Stay in the opened page when switching between
+  targets
+
+- [#7030](https://github.com/graphql-hive/console/pull/7030)
+  [`12c5665`](https://github.com/graphql-hive/console/commit/12c5665a43396388516c31d22ff2f3c719007447)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix paginated operations list filtering if there
+  are many operations by passing a list of operation IDs to filter on
+
+- [#7067](https://github.com/graphql-hive/console/pull/7067)
+  [`7a39b32`](https://github.com/graphql-hive/console/commit/7a39b323d9167664a6e499dce3bb6f40caaf2e52)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix input cursor reset for org and project
+
+- [#7045](https://github.com/graphql-hive/console/pull/7045)
+  [`0f26e42`](https://github.com/graphql-hive/console/commit/0f26e4253de96b3107972993410dc32a659dbcc2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Adjust token creation ui to make toggling
+  all/granular and services/apps more intuitive
+
+- [#7066](https://github.com/graphql-hive/console/pull/7066)
+  [`58658a4`](https://github.com/graphql-hive/console/commit/58658a49b5ef23f2d884c4a6966e4dca30b1a1b1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix first schema check landing width; fix
+  flickering sidenav on schema check loading"
+
+- [#7061](https://github.com/graphql-hive/console/pull/7061)
+  [`5cac244`](https://github.com/graphql-hive/console/commit/5cac2441fd475aff2d38faac5ebf51a7e08baf58)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix explorer field input cursor reset
+
+- [#7071](https://github.com/graphql-hive/console/pull/7071)
+  [`1b7c7b5`](https://github.com/graphql-hive/console/commit/1b7c7b5506eca9e78fee1a4fef150562e73873c5)
+  Thanks [@jdolle](https://github.com/jdolle)! - fix error printing in logs
+
+- [#7074](https://github.com/graphql-hive/console/pull/7074)
+  [`8eb9e14`](https://github.com/graphql-hive/console/commit/8eb9e144b7e9a452b2d596776d75d136540207ff)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent potential resource exhaustion in the
+  deprecated schema explorer for large schemas.
+
 ## 8.2.1
 
 ### Patch Changes

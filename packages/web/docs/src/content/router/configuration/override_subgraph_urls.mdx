@@ -1,0 +1,75 @@
+---
+title: 'override_subgraph_urls'
+---
+
+# override_subgraph_urls
+
+The `override_subgraph_urls` configuration allows you to dynamically change the URL for a subgraph
+at runtime, based on the properties of an incoming request.
+
+This is the primary mechanism for implementing advanced routing patterns. For detailed guides and
+use cases, see the [Dynamic Subgraph Routing](../guides/dynamic-subgraph-routing) guide.
+
+## Configuration Structure
+
+The `override_subgraph_urls` key is a top-level object in your `router.config.yaml`. The keys within
+this object are the names of the subgraphs you wish to override, as they appear in your supergraph
+schema.
+
+For each subgraph, you must specify a `url` property.
+
+```yaml
+override_subgraph_urls:
+  # The name of the subgraph to override
+  products:
+    url: # ... url definition
+  reviews:
+    url: # ... url definition
+```
+
+## Options
+
+### `url`
+
+- **Type:** `string` or `object`
+- **Required:** Yes
+
+The `url` property defines the new URL for the subgraph. It can be provided in two forms: a static
+string or an object for dynamic evaluation.
+
+#### Static URL
+
+When a `string` is provided, all requests to that subgraph will be sent to the new static URL. This
+is useful for permanently redirecting a subgraph without recomposing your supergraph.
+
+```yaml
+override_subgraph_urls:
+  products:
+    url: 'https://products.staging.svc.cluster.local/'
+```
+
+#### Dynamic URL with `expression`
+
+When an `object` is provided, it must contain an `expression` that returns a URL string. The
+[expression](./expressions) is evaluated for each request, allowing for request-time routing
+decisions.
+
+- `expression`: **(string, required)** An [expression](./expressions) that computes the new URL.
+
+Within the `expression`, you have access to two key variables:
+
+- `.request`: The incoming HTTP request object, including its headers.
+- `.original_url`: The original subgraph URL from the supergraph schema, which should be used as a
+  fallback.
+
+```yaml
+override_subgraph_urls:
+  reviews:
+    url:
+      expression: |
+        if .request.headers."x-region" == "eu" {
+          "https://reviews.eu.api/graphql"
+        } else {
+          .original_url
+        }
+```

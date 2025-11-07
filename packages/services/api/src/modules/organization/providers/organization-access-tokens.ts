@@ -18,6 +18,7 @@ import {
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
+import { Storage } from '../../shared/providers/storage';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
 import { assignablePermissions } from '../lib/organization-access-token-permissions';
 import { ResourceAssignmentModel } from '../lib/resource-assignment-model';
@@ -92,6 +93,7 @@ export class OrganizationAccessTokens {
     private idTranslator: IdTranslator,
     private session: Session,
     private auditLogs: AuditLogRecorder,
+    private storage: Storage,
     logger: Logger,
   ) {
     this.logger = logger.child({
@@ -140,9 +142,16 @@ export class OrganizationAccessTokens {
         args.assignedResources ?? { mode: 'GRANULAR' },
       );
 
+    const organization = await this.storage.getOrganization({ organizationId });
+
     const permissions = Array.from(
       new Set(
-        args.permissions.filter(permission => assignablePermissions.has(permission as Permission)),
+        args.permissions.filter(
+          permission =>
+            assignablePermissions.has(permission as Permission) &&
+            // can only assign traces report permission if otel tracing feature flag is enabled in organization
+            (permission === 'traces:report' ? organization.featureFlags.otelTracing : true),
+        ),
       ),
     );
 

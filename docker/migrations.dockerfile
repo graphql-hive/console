@@ -7,9 +7,9 @@ WORKDIR /usr/src/app
 COPY --from=dist . /usr/src/app/
 COPY --from=shared . /
 
-ENV ENVIRONMENT production
-ENV NODE_ENV production
-ENV RELEASE $RELEASE
+ENV ENVIRONMENT=production
+ENV NODE_ENV=production
+ENV RELEASE=$RELEASE
 
 LABEL org.opencontainers.image.licenses=MIT
 LABEL org.opencontainers.image.title=$IMAGE_TITLE

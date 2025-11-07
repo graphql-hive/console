@@ -84,7 +84,7 @@ export default gql`
   }
 
   input RetireAppDeploymentInput {
-    targetId: ID!
+    target: TargetReferenceInput
     appName: String!
     appVersion: String!
   }

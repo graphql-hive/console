@@ -258,8 +258,6 @@ export interface Storage {
     },
   ): Promise<Project>;
 
-  disableExternalSchemaComposition(_: ProjectSelector): Promise<Project>;
-
   enableProjectNameInGithubCheck(_: ProjectSelector): Promise<Project>;
 
   getTargetId(_: {
@@ -363,8 +361,6 @@ export interface Storage {
 
   getMaybeLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | null | never>;
 
-  getLatestVersion(_: TargetSelector): Promise<SchemaVersion | never>;
-
   getMaybeLatestVersion(_: TargetSelector): Promise<SchemaVersion | null>;
 
   /** Find the version before a schema version */
@@ -380,10 +376,10 @@ export interface Storage {
    * The action id is the id of the action that created the schema version, it is user provided.
    * Multiple entries with the same action ID can exist. In that case the latest one is returned.
    */
-  getSchemaVersionByActionId(_: {
+  getSchemaVersionByCommit(_: {
     targetId: string;
     projectId: string;
-    actionId: string;
+    commit: string;
   }): Promise<SchemaVersion | null>;
   getMatchingServiceSchemaOfVersions(versions: {
     before: string | null;
@@ -820,8 +816,9 @@ export interface Storage {
     /** We inject this here as a dirty way to avoid chicken egg issues :) */
     contracts: Contracts;
     schemaCheckId: string;
-    userId: string;
+    userId: string | null;
     comment: string | null | undefined;
+    author: string | null | undefined;
   }): Promise<SchemaCheck | null>;
 
   /**

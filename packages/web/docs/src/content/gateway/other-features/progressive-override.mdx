@@ -1,0 +1,358 @@
+# Progressive Override
+
+As a supergraph evolves, you often need to move fields from one subgraph to another. For example,
+imagine you are migrating the `status` of an `Order` from a general `orders` subgraph to a new, more
+specialized `fulfillment` subgraph.
+
+## How Progressive Override Works
+
+Progressive override works in combination with Apollo Federation's `@override` directive. When you
+use `@override` with a `label`, you create a **controlled migration path** that can be activated
+selectively based on request criteria.
+
+Here's the basic flow:
+
+1. The field exists in both the old subgraph and the new subgraph
+2. The new subgraph's field has an `@override` directive with a label (e.g.,
+   `"use-fulfillment-service"`)
+3. The gateway's `progressiveOverride` function determines if the label is "active" for each request
+4. If active → use the new subgraph's field
+5. If inactive → continue using the old subgraph's field
+
+This allows you to gradually migrate traffic while maintaining reliability.
+
+## Feature Flag Approach
+
+The most common approach is to use a feature flag mechanism to control when the override is active:
+
+```graphql filename="fulfillment-subgraph.graphql"
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+
+type Order @key(fields: "id") {
+  id: ID!
+  # The "use-fulfillment-service" label controls this override
+  status: String! @override(from: "orders", label: "use-fulfillment-service")
+}
+```
+
+When a label like `"use-fulfillment-service"` is "active" for a request, the gateway will resolve
+`Order.status` from the new `fulfillment` subgraph. When it's inactive, it will continue to use the
+original `orders` subgraph.
+
+The `progressiveOverride` configuration in the gateway is the mechanism that determines which labels
+are active for any given request.
+
+```ts filename="gateway-config.ts"
+import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  progressiveOverride(label: string, context: GatewayContext) {
+    if (label === 'use-fulfillment-service') {
+      // Choose ONE of these approaches:
+
+      // 1. Percentage-based rollout (10% of requests)
+      return Math.random() < 0.1
+
+      // 2. Environment variable control
+      // return process.env.USE_FULFILLMENT_SERVICE === 'true'
+
+      // 3. Request header control
+      // return context.request.headers.get('X-Use-Fulfillment-Service') === 'true'
+
+      // 4. User-based (stable per user ID)
+      // const userId = context.request.headers.get('x-user-id')
+      // return userId ? stableHash(userId) % 100 < 10 : false
+    }
+
+    // Return false for any unrecognized labels
+    return false
+  }
+})
+```
+
+`progressiveOverride` function is called per used label and request, allowing you to implement any
+logic to determine if the label should be active or not either based on percentages, headers, user
+IDs, or any other criteria.
+
+### Important Performance Considerations
+
+⚠️ **This function runs on every request**, so it must be highly performant:
+
+- **Avoid network calls** at all cost
+- **Cache expensive computations** (e.g., feature flag evaluations)
+- **Use simple hash functions** for user-based rollouts for consistency
+- **Return `false` quickly** for labels you don't recognize or raise errors
+
+### Best Practices
+
+1. **Always return a boolean** - Don't return `undefined` or `null`
+2. **Make it deterministic** - Same request → same result (important for caching and consistency)
+3. **Default to `false`** - Safer to keep old behavior unless explicitly enabled
+4. **Test thoroughly** - Verify both active and inactive paths work correctly
+
+### Example: LaunchDarkly Integration
+
+You can see a working example with [LaunchDarkly](https://launchdarkly.com/) that holds the flag
+state externally. The gateway then decides whether to activate the override based on the flag value
+dynamically per request.
+
+[**See the LaunchDarkly example here.**](https://github.com/graphql-hive/gateway/tree/main/examples/launchdarkly-override)
+
+## Percentage Approach
+
+For simple percentage-based rollouts, you can use the built-in `percent(x)` label syntax without
+writing custom logic.
+
+```graphql filename="fulfillment-subgraph.graphql"
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+
+type Order @key(fields: "id") {
+  id: ID!
+  # The "percent(25)" label controls this override
+  status: String! @override(from: "orders", label: "percent(25)")
+  # Now 25% of requests will use the fulfillment subgraph for Order.status
+}
+```
+
+### How `percent(x)` Works
+
+- **Syntax**: `label: "percent(N)"` where N is a number between 0 and 100
+- **No gateway config needed**: Works automatically without `progressiveOverride` function
+- **Stable per operation**: Same query → same percentage bucket
+
+### Percentage vs Labels
+
+| Approach                | Use When                                      | Pros                         | Cons                    |
+| ----------------------- | --------------------------------------------- | ---------------------------- | ----------------------- |
+| Percentage `percent(x)` | Simple gradual rollouts                       | No config needed, consistent | Limited to percentages  |
+| Labels                  | Complex criteria (headers, user traits, etc.) | Full control, feature flags  | Requires implementation |
+
+## Async Support
+
+The `progressiveOverride` function can be **async** and return a Promise. This enables advanced use
+cases like fetching from external services or database queries.
+
+### When to Use Async
+
+Use async mode when you need to:
+
+- Fetch from external feature flag services (LaunchDarkly, Split, etc.)
+- Query a database for user-specific flags
+- Perform complex calculations that require I/O
+
+⚠️ **Performance Warning**: Async calls add latency to every request. Consider caching strategies to
+minimize external calls.
+
+### Example: External Feature Flag Service
+
+```ts filename="gateway-config.ts"
+import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  async progressiveOverride(label: string, context: GatewayContext) {
+    if (label === 'use-fulfillment-service') {
+      const userId = context.request.headers.get('x-user-id')
+
+      if (!userId) {
+        return false // No user ID, default to old behavior
+      }
+
+      try {
+        // Fetch from external feature flag service
+        const response = await fetch('https://api.myfeaturechecker.com/feature-flags', {
+          headers: {
+            'x-user-id': userId,
+            authorization: `Bearer ${process.env.FEATURE_API_TOKEN}`
+          }
+        })
+
+        if (!response.ok) {
+          // Fail closed - default to old behavior on error
+          return false
+        }
+
+        const flags = await response.json()
+        return flags.useFulfillmentService === true
+      } catch (error) {
+        // Log error and fail closed
+        console.error('Feature flag service error:', error)
+        return false
+      }
+    }
+
+    return false
+  }
+})
+```
+
+### Async Best Practices
+
+1. **Set timeouts** - Prevent slow services from blocking requests
+2. **Fail safely** - Default to `false` when unsure (keeps old behavior)
+3. **Cache results** - Avoid repeated calls for the same data
+4. **Monitor latency** - Track async call duration in metrics
+
+### Example: With Caching
+
+```ts filename="gateway-config.ts"
+import { defineConfig, type GatewayContext } from '@graphql-hive/gateway'
+
+// Simple in-memory cache (use Redis in production)
+const flagCache = new Map<string, { value: boolean; expires: number }>()
+const CACHE_TTL = 60000 // 1 minute
+
+export const gatewayConfig = defineConfig({
+  async progressiveOverride(label: string, context: GatewayContext) {
+    if (label === 'use-fulfillment-service') {
+      const userId = context.request.headers.get('x-user-id')
+      if (!userId) return false
+
+      const cacheKey = `user:${userId}`
+      const cached = flagCache.get(cacheKey)
+
+      // Return cached value if valid
+      if (cached && cached.expires > Date.now()) {
+        return cached.value
+      }
+
+      // Fetch fresh value
+      const value = await fetchFlagForUser(userId)
+
+      // Update cache
+      flagCache.set(cacheKey, {
+        value,
+        expires: Date.now() + CACHE_TTL
+      })
+
+      return value
+    }
+
+    return false
+  }
+})
+
+async function fetchFlagForUser(userId: string): Promise<boolean> {
+  // Your async logic here
+  return false
+}
+```
+
+## Complete Migration Walkthrough
+
+Here's a step-by-step example of migrating `Order.status` from `orders` subgraph to `fulfillment`
+subgraph:
+
+### Step 1: Add Field to New Subgraph
+
+```graphql filename="fulfillment-subgraph.graphql"
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@override"])
+
+type Order @key(fields: "id") {
+  id: ID!
+  # New location with override directive
+  status: String! @override(from: "orders", label: "use-fulfillment-service")
+}
+```
+
+### Step 2: Configure Gateway
+
+```ts filename="gateway-config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+
+export const gatewayConfig = defineConfig({
+  progressiveOverride(label: string) {
+    // Start with 0% rollout
+    if (label === 'use-fulfillment-service') {
+      return process.env.FULFILLMENT_ROLLOUT_PERCENT === '100' ? true : false
+    }
+    return false
+  }
+})
+```
+
+### Step 3: Gradual Rollout
+
+1. **Deploy** the new subgraph and gateway config
+2. **Monitor** - Everything still uses old subgraph (0%)
+3. **Test internally** - Set env var to `true` for internal testing
+4. **10% rollout** - Set `FULFILLMENT_ROLLOUT_PERCENT=10`
+5. **Monitor metrics** - Check error rates, latency, correctness
+6. **Increase gradually** - 25%, 50%, 75%, 100%
+7. **Remove old field** - Once at 100%, remove from old subgraph
+
+### Step 4: Cleanup
+
+After successful migration:
+
+```graphql filename="orders-subgraph.graphql" diff
+type Order @key(fields: "id") {
+  id: ID!
+- # This can be removed now
+- status: String!
+}
+```
+
+## Common Gotchas
+
+### 1. Label Naming
+
+**Bad:**
+
+```graphql
+@override(from: "orders", label: "true")  # Too generic
+```
+
+**Good:**
+
+```graphql
+@override(from: "orders", label: "use-fulfillment-service")  # Specific
+```
+
+### 2. Caching Issues
+
+If you see inconsistent behavior, your GraphQL operation cache might be affecting results.
+Progressive override decisions are made per-request, but GraphQL operation caching happens
+separately.
+
+### 3. Missing Fields in Old Subgraph
+
+Make sure the old subgraph **still has the field** during migration. The override only tells the
+gateway where to get it from - both need to exist until migration is complete.
+
+### 4. Schema Composition Order
+
+When updating multiple subgraphs, deploy the new subgraph **before** updating the old one to avoid
+composition errors.
+
+### 5. Testing Edge Cases
+
+Test these scenarios:
+
+- Field throws an error in new subgraph
+- New subgraph is slow or unavailable
+- Network timeouts
+- User doesn't have feature flag access
+
+## Monitoring & Debugging
+
+Add logging to track override activation:
+
+```ts
+progressiveOverride(label: string, context: GatewayContext) {
+  const isActive = /* your logic */
+  context.log.debug(`Override "${label}" active: ${isActive}`)
+  return isActive
+}
+```
+
+In production, use structured logging with request IDs to trace which path was taken.
+
+## Summary
+
+- **Progressive override** enables safe, gradual field migrations
+- Use **`percent(x)`** for simple percentage rollouts
+- Use **custom logic** for feature flags and complex criteria
+- **Async mode** enables external service integration
+- **Always test thoroughly** and monitor metrics during rollout
+- **Default to `false`** for safe behavior
+- **Clean up** old fields after successful migration

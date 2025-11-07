@@ -35,6 +35,7 @@ export const urqlClient = createClient({
       resolvers: {
         Target: {
           appDeployments: relayPagination(),
+          traces: relayPagination(),
         },
         AppDeployment: {
           documents: relayPagination(),
@@ -77,6 +78,10 @@ export const urqlClient = createClient({
         MetadataAttribute: noKey,
         RateLimit: noKey,
         DeprecatedSchemaExplorer: noKey,
+        TraceStatusBreakdownBucket: noKey,
+        FilterStringOption: noKey,
+        FilterBooleanOption: noKey,
+        TracesFilterOptions: noKey,
       },
       globalIDs: ['SuccessfulSchemaCheck', 'FailedSchemaCheck'],
     }),

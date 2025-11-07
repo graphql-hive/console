@@ -82,6 +82,13 @@ target "router-base" {
   }
 }
 
+target "otel-collector-base" {
+  dockerfile = "${PWD}/docker/otel-collector.dockerfile"
+  args = {
+    RELEASE = "${RELEASE}"
+  }
+}
+
 target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
@@ -354,7 +361,8 @@ target "app" {
 target "apollo-router" {
   inherits = ["router-base", get_target()]
   contexts = {
-    pkg = "${PWD}/packages/libraries/router"
+    router_pkg = "${PWD}/packages/libraries/router"
+    sdk_rs_pkg = "${PWD}/packages/libraries/sdk-rs"
     config = "${PWD}/configs/cargo"
   }
   args = {
@@ -367,6 +375,21 @@ target "apollo-router" {
     stable_image_tag("apollo-router"),
     image_tag("apollo-router", COMMIT_SHA),
     image_tag("apollo-router", BRANCH_NAME)
+  ]
+}
+
+target "otel-collector" {
+  inherits = ["otel-collector-base", get_target()]
+  context = "${PWD}/docker/configs/otel-collector"
+  args = {
+    IMAGE_TITLE = "graphql-hive/otel-collector"
+    IMAGE_DESCRIPTION = "OTEL Collector for GraphQL Hive."
+  }
+  tags = [
+    local_image_tag("otel-collector"),
+    stable_image_tag("otel-collector"),
+    image_tag("otel-collector", COMMIT_SHA),
+    image_tag("otel-collector", BRANCH_NAME)
   ]
 }
 
@@ -400,7 +423,8 @@ group "build" {
     "server",
     "commerce",
     "composition-federation-2",
-    "app"
+    "app",
+    "otel-collector"
   ]
 }
 
@@ -416,7 +440,8 @@ group "integration-tests" {
     "usage",
     "webhooks",
     "server",
-    "composition-federation-2"
+    "composition-federation-2",
+    "otel-collector"
   ]
 }
 

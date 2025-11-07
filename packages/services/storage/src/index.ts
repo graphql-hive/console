@@ -1482,7 +1482,8 @@ export async function createStorage(
         await pool.one<projects>(sql`/* updateNativeSchemaComposition */
           UPDATE projects
           SET
-            native_federation = ${enabled}
+            native_federation = ${enabled},
+            external_composition_enabled = FALSE
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1493,22 +1494,10 @@ export async function createStorage(
         await pool.one<Slonik<projects>>(sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
+            native_federation = FALSE,
             external_composition_enabled = TRUE,
             external_composition_endpoint = ${endpoint},
             external_composition_secret = ${encryptedSecret}
-          WHERE id = ${project}
-          RETURNING *
-        `),
-      );
-    },
-    async disableExternalSchemaComposition({ projectId: project }) {
-      return transformProject(
-        await pool.one<Slonik<projects>>(sql`/* disableExternalSchemaComposition */
-          UPDATE projects
-          SET
-            external_composition_enabled = FALSE,
-            external_composition_endpoint = NULL,
-            external_composition_secret = NULL
           WHERE id = ${project}
           RETURNING *
         `),
@@ -2034,31 +2023,17 @@ export async function createStorage(
 
       return SchemaVersionModel.parse(version);
     },
-    async getLatestVersion(args) {
-      const version = await pool.maybeOne<unknown>(
-        sql`/* getLatestVersion */
-          SELECT
-            ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
-          LIMIT 1
-        `,
-      );
-
-      return SchemaVersionModel.parse(version);
-    },
-
     async getMaybeLatestVersion(args) {
       const version = await pool.maybeOne<unknown>(
         sql`/* getMaybeLatestVersion */
           SELECT
             ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
+          FROM
+            "schema_versions" AS "sv"
+          WHERE
+            "sv"."target_id" = ${args.targetId}
+          ORDER BY
+            "sv"."created_at" DESC
           LIMIT 1
         `,
       );
@@ -4020,6 +3995,7 @@ export async function createStorage(
         userId: args.userId,
         date: new Date().toISOString(),
         schemaCheckId: schemaCheck.id,
+        author: args.author ?? undefined,
       };
 
       if (schemaCheck.contextId !== null && !!schemaCheck.breakingSchemaChanges) {
@@ -4087,6 +4063,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
+            AND "schema_policy_errors" IS NULL
           RETURNING
             "id"
         `);
@@ -4105,6 +4082,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
+            AND "schema_policy_errors" IS NULL
           RETURNING
             "id"
         `);
@@ -4585,14 +4563,14 @@ export async function createStorage(
       });
     },
 
-    async getSchemaVersionByActionId(args) {
-      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByActionId */
+    async getSchemaVersionByCommit(args) {
+      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByCommit */
         SELECT
           ${schemaVersionSQLFields()}
         FROM
           "schema_versions"
         WHERE
-          "action_id" = ANY(
+          "action_id" = (
             SELECT
               "id"
             FROM
@@ -4600,7 +4578,9 @@ export async function createStorage(
             WHERE
               "schema_log"."project_id" = ${args.projectId}
               AND "schema_log"."target_id" = ${args.targetId}
-              AND "schema_log"."commit" = ${args.actionId}
+              AND "schema_log"."commit" = ${args.commit}
+            ORDER BY "schema_log"."created_at" DESC
+            LIMIT 1
           )
         LIMIT 1
       `);
@@ -4831,6 +4811,8 @@ const FeatureFlagsModel = zod
     forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
     /** whether app deployments are enabled for the given organization */
     appDeployments: zod.boolean().default(false),
+    /** whether otel tracing is enabled for the given organization */
+    otelTracing: zod.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4841,6 +4823,7 @@ const FeatureFlagsModel = zod
         compareToPreviousComposableVersion: false,
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
+        otelTracing: false,
       },
   );
 
@@ -5209,9 +5192,10 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
   type: string;
   meta: Record<string, SerializableValue>;
   approvalMetadata: null | {
-    userId: string;
+    userId: string | null;
     date: string;
     schemaCheckId: string;
+    author?: string;
   };
   isSafeBasedOnUsage: boolean;
   usageStatistics: null | {

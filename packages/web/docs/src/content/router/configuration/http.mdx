@@ -1,0 +1,43 @@
+---
+title: 'http'
+---
+
+# http
+
+The `http` configuration object allows you to customize the network interface and port that the Hive
+Router listens on for incoming GraphQL requests.
+
+## Options
+
+### `host`
+
+- **Type:** `string`
+- **Default:** `"0.0.0.0"`
+- **Environment Variable:** `HOST`
+
+The `host` property specifies the IP address to which the router's HTTP server will bind.
+
+- `"0.0.0.0"`: Binds to all available network interfaces. This is the standard for services running
+  inside containers.
+- `"127.0.0.1"` or `"localhost"`: Binds only to the local loopback interface, meaning the router
+  will only be accessible from the same machine.
+
+### `port`
+
+- **Type:** `integer`
+- **Default:** `4000`
+- **Environment Variable:** `PORT`
+
+The `port` property specifies the network port that the router will listen on. Ensure this port is
+not already in use by another service on the same host. When running in a container, this is the
+port you will need to expose.
+
+## Example
+
+This example configures the router to listen only on the localhost interface on port `8080`.
+
+```yaml filename="router.config.yaml"
+http:
+  host: '127.0.0.1'
+  port: 8080
+```

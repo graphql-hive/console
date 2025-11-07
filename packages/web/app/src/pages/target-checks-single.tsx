@@ -10,6 +10,7 @@ import {
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
 import { Button } from '@/components/ui/button';
+import { CopyText } from '@/components/ui/copy-text';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Heading } from '@/components/ui/heading';
@@ -996,6 +997,10 @@ const ActiveSchemaCheck_SchemaCheckFragment = graphql(`
         displayName
         email
       }
+      cliApprovalMetadata {
+        displayName
+        email
+      }
       approvalComment
     }
     contractChecks {
@@ -1099,38 +1104,51 @@ const ActiveSchemaCheck = (props: {
         <Title>Check {schemaCheck.id}</Title>
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
-      <div>
-        <div className="flex flex-row items-center justify-between gap-x-4 rounded-md border border-gray-800 p-4 font-medium text-gray-400">
-          <div>
+      <div className="mb-3">
+        <div className="grid items-center justify-between gap-x-4 gap-y-2 rounded-md border border-gray-800 p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+          <div className="min-w-0">
             <div className="text-xs">Status</div>
-            <div className="text-sm font-semibold text-white">
+            <div
+              className={cn(
+                'truncate text-sm font-semibold text-white',
+                schemaCheck.__typename === 'FailedSchemaCheck' && 'text-red-600',
+              )}
+            >
               {schemaCheck.__typename === 'FailedSchemaCheck' ? <>Failed</> : <>Success</>}
             </div>
           </div>
           {schemaCheck.serviceName ? (
-            <div className="ml-4">
+            <div className="min-w-0">
               <div className="text-xs">Service</div>
-              <div>
-                <div className="text-sm font-semibold text-white">{schemaCheck.serviceName}</div>
+              <div
+                className="truncate text-sm font-semibold text-white"
+                title={schemaCheck.serviceName}
+              >
+                {schemaCheck.serviceName}
               </div>
             </div>
           ) : null}
-          <div>
+          <div className="min-w-0">
             <div className="text-xs">
               Triggered <TimeAgo date={schemaCheck.createdAt} />
             </div>
-            <div className="truncate text-sm text-white">
-              by {schemaCheck.meta ? <>{schemaCheck.meta.author}</> : 'unknown'}
-            </div>
+            {schemaCheck.meta?.author && (
+              <div className="truncate text-sm text-white" title={schemaCheck.meta.author}>
+                by {schemaCheck.meta.author}
+              </div>
+            )}
           </div>
-          <div>
-            <div className="text-xs">Commit</div>
-            <div>
-              <div className="truncate text-sm font-semibold text-white">
-                {schemaCheck.meta?.commit ?? 'unknown'}
+          {schemaCheck.meta?.commit && (
+            <div className="min-w-0">
+              <div className="text-xs">Commit</div>
+              <div
+                className="truncate text-sm font-semibold text-white"
+                title={schemaCheck.meta.commit}
+              >
+                <CopyText>{schemaCheck.meta.commit}</CopyText>
               </div>
             </div>
-          </div>
+          )}
           {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.canBeApproved ? (
             <div className="ml-auto mr-0 pl-4">
               {schemaCheck.canBeApprovedByViewer ? (
@@ -1167,17 +1185,24 @@ const ActiveSchemaCheck = (props: {
                     </TooltipTrigger>
                     <TooltipContent>
                       Schema Check was manually approved by{' '}
-                      {schemaCheck.approvedBy?.displayName ?? 'unknown'}.
+                      {schemaCheck.approvedBy?.displayName ??
+                        schemaCheck.cliApprovalMetadata?.displayName ??
+                        'unknown'}
+                      .
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               <div>
                 <p className="text-sm font-medium leading-none">
-                  {schemaCheck.approvedBy?.displayName ?? 'unknown'}
+                  {schemaCheck.approvedBy?.displayName ??
+                    schemaCheck.cliApprovalMetadata?.displayName ??
+                    'unknown'}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                  {schemaCheck.approvedBy?.email ?? 'unknown'}
+                  {schemaCheck.approvedBy?.email ??
+                    schemaCheck.cliApprovalMetadata?.email ??
+                    'unknown'}
                 </p>
               </div>
               {schemaCheck.approvalComment ? (

@@ -1,5 +1,40 @@
 # @graphql-hive/cli
 
+## 0.52.1
+
+### Patch Changes
+
+- [#7193](https://github.com/graphql-hive/console/pull/7193)
+  [`543de17`](https://github.com/graphql-hive/console/commit/543de174f5cb8caa46b8e833d13e1831c7ffbfa9)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - `schema:check --forceSafe` now
+  properly approves breaking schema changes in Hive (requires write permission registry token)
+
+## 0.52.0
+
+### Minor Changes
+
+- [#7155](https://github.com/graphql-hive/console/pull/7155)
+  [`caebbe0`](https://github.com/graphql-hive/console/commit/caebbe093a997022691276e0dc67ce9ab8589112)
+  Thanks [@jdolle](https://github.com/jdolle)! - add schemaVersionByCommit; update docs and cli; fix
+  webhook commit reference
+
+## 0.51.0
+
+### Minor Changes
+
+- [#7100](https://github.com/graphql-hive/console/pull/7100)
+  [`2cbdced`](https://github.com/graphql-hive/console/commit/2cbdcedb79cfbe225dbdafe6122cdc12305d5aaf)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - add `hive app:retire` command for retiring an app
+  deployment
+
+## 0.50.5
+
+### Patch Changes
+
+- [#7046](https://github.com/graphql-hive/console/pull/7046)
+  [`8c49615`](https://github.com/graphql-hive/console/commit/8c4961549f265946edcf744c6180b76b2217c4a3)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add progress log to app:create
+
 ## 0.50.4
 
 ### Patch Changes

@@ -1,0 +1,28 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@override", "@external", "@provides"]
+  )
+
+type Query {
+  review(id: Int!): Review
+}
+
+type Review @key(fields: "id") {
+  id: ID!
+  body: String
+  author: User
+  product: Product
+}
+
+extend type User @key(fields: "id") {
+  id: ID!
+  reviews: [Review]
+}
+
+extend type Product @key(fields: "upc") {
+  upc: String!
+  reviews: [Review]
+  reviewsCount: Int!
+  reviewsScore: Float! @override(from: "products")
+}

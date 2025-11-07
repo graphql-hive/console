@@ -4,14 +4,10 @@ import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
-import { getServiceHost } from 'testkit/utils';
+import { assertNonNull, getServiceHost } from 'testkit/utils';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
-import {
-  createTarget,
-  enableExternalSchemaComposition,
-  publishSchema,
-} from '../../../testkit/flow';
+import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -610,11 +606,12 @@ describe('schema publishing changes are persisted', () => {
         return;
       }
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       const changes = await storage.getSchemaChangesForVersion({
         versionId: latestVersion.id,
@@ -2714,11 +2711,12 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -2804,13 +2802,15 @@ test('Composition Error (Federation 2) can be served from the database', async (
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2844,11 +2844,12 @@ test('Composition Error (Federation 2) can be served from the database', async (
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -2924,13 +2925,15 @@ test('Composition Network Failure (Federation 2)', async () => {
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2965,12 +2968,14 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/no_compose`,
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/no_compose`,
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2992,11 +2997,12 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,

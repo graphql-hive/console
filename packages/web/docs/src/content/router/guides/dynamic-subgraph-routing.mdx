@@ -1,0 +1,115 @@
+---
+title: 'Dynamic Subgraph Routing'
+---
+
+import { Tabs } from '@theguild/components'
+
+# Dynamic Subgraph Routing
+
+Sometimes you need to route requests to different instances of the same subgraph based on the
+request properties - maybe for testing new versions, handling different regions, or managing load.
+Hive Router lets you change where requests go dynamically using simple logic expressions.
+
+This guide shows you practical ways to use dynamic routing in real-world scenarios. For the complete
+configuration reference, see
+[`override_subgraph_urls` configuration](../configuration/override_subgraph_urls).
+
+## How It Works
+
+Dynamic routing uses [expressions](../configuration/expressions) to decide where to send requests.
+For each request, the router evaluates your expression and routes to the URL it returns.
+
+**What you have access to:**
+
+- `.request` - The incoming HTTP request (headers, method, etc.)
+- `.original_url` - The default URL from your supergraph schema
+
+Simple example configuration that routes based on a runtime condition:
+
+```yaml filename="router.config.yaml"
+override_subgraph_urls:
+  subgraph_name:
+    url:
+      expression: |
+        if .router.headers."x-use-special-instance" == "true" {
+          "https://special-instance.com/graphql"
+        } else {
+          .original_url  # Always provide a fallback
+        }
+```
+
+## Examples
+
+To illustrate how dynamic routing can be used, here are some common scenarios, along with example
+configurations.
+
+### Canary Deployments
+
+One of the most common use cases for dynamic routing is canary deployment. This pattern allows you
+to roll out a new version of a subgraph to a small, controlled subset of traffic before releasing it
+to all users.
+
+<Tabs items={["Route canary traffic based on a header", "Percentage-based canary"]} >
+
+<Tabs.Tab>
+
+```yaml filename="router.config.yaml"
+override_subgraph_urls:
+  products:
+    url:
+      expression: |
+        if .request.headers."x-deploy-track" == "canary" {
+          "https://products-canary.example.com/graphql"
+        } else {
+          .original_url
+        }
+```
+
+With this configuration, your QA team or CI/CD pipeline can test the new deployment in production by
+simply adding the `X-Deploy-Track: canary` header to their requests, without affecting regular
+users.
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```yaml filename="router.config.yaml"
+override_subgraph_urls:
+  products:
+    url:
+      expression: |
+        # Route 10% of traffic to canary
+        if random_int(1, 100) <= 10 {
+          "https://products-canary.example.com/graphql"
+        } else {
+          .original_url
+        }
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Regional Routing
+
+If your application is deployed globally, you likely have subgraph instances in multiple geographic
+regions. Routing users to the instance closest to them can significantly reduce latency.
+
+```yaml filename="router.config.yaml"
+override_subgraph_urls:
+  reviews:
+    url:
+      expression: |
+        region = .request.headers."x-user-region" || "unknown"
+
+        if region == "us-east" {
+          "https://reviews-us-east.example.com/graphql"
+        } else if region == "eu-west" {
+          "https://reviews-eu-west.example.com/graphql"
+        } else if region == "asia-pacific" {
+          "https://reviews-ap.example.com/graphql"
+        } else {
+          # Default to primary region
+          .original_url
+        }
+```

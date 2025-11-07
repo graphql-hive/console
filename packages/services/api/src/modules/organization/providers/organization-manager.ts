@@ -589,8 +589,13 @@ export class OrganizationManager {
       ? await this.organizationMemberRoles.findMemberRoleById(input.role)
       : await this.organizationMemberRoles.findViewerRoleByOrganizationId(organizationId);
 
-    if (!role) {
-      throw new HiveError(`Role not found`);
+    if (!role || role.organizationId !== organization.id) {
+      return {
+        error: {
+          message: 'The provided member role does not exist.',
+          inputErrors: {},
+        },
+      };
     }
 
     // Delete existing invitation

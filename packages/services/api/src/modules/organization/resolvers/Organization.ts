@@ -205,12 +205,22 @@ export const Organization: Pick<
     return OrganizationMemberPermissions.permissionGroups;
   },
   availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
-    const permissionGroups = OrganizationAccessTokensPermissions.permissionGroups;
+    let permissionGroups = OrganizationAccessTokensPermissions.permissionGroups;
+
     const isAppDeploymentsEnabled =
       injector.get<boolean>(APP_DEPLOYMENTS_ENABLED) || organization.featureFlags.appDeployments;
+
     if (!isAppDeploymentsEnabled) {
-      return permissionGroups.filter(p => p.id !== 'app-deployments');
+      permissionGroups = permissionGroups.filter(p => p.id !== 'app-deployments');
     }
+
+    if (!organization.featureFlags.otelTracing) {
+      permissionGroups = permissionGroups.map(group => ({
+        ...group,
+        permissions: group.permissions.filter(p => p.id !== 'traces:report'),
+      }));
+    }
+
     return permissionGroups;
   },
   accessTokens: async (organization, args, { injector }) => {
