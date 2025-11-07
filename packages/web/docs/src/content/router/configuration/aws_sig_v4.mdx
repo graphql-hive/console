@@ -1,0 +1,97 @@
+---
+title: 'aws_sig_v4'
+---
+
+# aws_sig_v4
+
+The `aws_sig_v4` configuration enables you to sign outgoing requests to AWS-hosted subgraphs using
+AWS Signature Version 4. This ensures secure communication between the Hive Router and your AWS
+services by authenticating requests with AWS credentials.
+
+For practical examples and common scenarios, check out
+**[Subgraph Auth](../security/subgraph-auth)**.
+
+## Configuration Structure
+
+The `aws_sig_v4` configuration object allows you to define signing options globally for all
+subgraphs or individually for specific subgraphs.
+
+```yaml
+aws_sig_v4:
+  # Signing configuration applied to all subgraphs.
+  all:
+    # Signing options...
+  subgraphs:
+    products:
+      # Signing options for the 'products' subgraph...
+    users:
+      # Signing options for the 'users' subgraph...
+```
+
+### Options:
+
+You can provide `hardcoded` or `default_chain` credentials for signing requests, not both.
+
+#### `hardcoded`
+
+- **Type:** `object`
+
+Use hard-coded AWS credentials to sign all outgoing subgraph requests. This accepts the following
+fields:
+
+- `access_key_id`: **(string, required)** Your AWS Access Key ID.
+- `secret_access_key`: **(string, required)** Your AWS Secret Access Key.
+- `region`: **(string, required)** The AWS region where your subgraphs are hosted.
+- `service_name`: **(string, required)** The AWS service name (e.g., `lambda`, `s3`, etc.).
+
+```yaml
+aws_sig_v4:
+  all:
+    hardcoded:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_key: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+      region: us-east-1
+      service_name: lambda
+```
+
+#### `default_chain`
+
+- **Type:** `object`
+
+Use the Default Chain Authentication method to sign outgoing subgraph requests. Hive Router will
+automatically look for AWS credentials in the following order:
+
+1. Environment Variables: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+2. Credential File: `~/.aws/credentials`
+3. IAM Roles: For EC2 instances and ECS tasks
+4. AssumeRole: Via STS AssumeRole operations
+5. WebIdentity: For Kubernetes service accounts mostly configured via `AWS_WEB_IDENTITY_TOKEN_FILE`
+   environment variable
+6. SSO: AWS SSO credentials
+
+This configuration accepts the following fields:
+
+- `profile_name`: **(string, optional)** The AWS CLI profile name to use from the shared credentials
+  file.
+  [Learn more](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html#ec2-instance-profile)
+- `region`: **(string, required)** The AWS region where your subgraphs are hosted.
+  [Learn more](https://docs.aws.amazon.com/general/latest/gr/rande.html)
+- `service_name`: **(string, required)** The AWS service name (e.g., `lambda`, `s3`, etc.).
+  [Learn more](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-services-that-work-with-iam.html)
+- `assume_role`: **(object, optional)** Configuration for assuming a role via STS. Contains:
+  - `role_arn`: **(string, required)** The ARN of the role to assume.
+  - `session_name`: **(string, required)** An identifier for the assumed role session.
+
+[See AWS official documentation to learn more about Assume Role IAM](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html).
+
+```yaml
+aws_sig_v4:
+  all:
+    default_chain:
+      profile_name: 'my-test-profile'
+      region: 'us-east-1'
+      service_name: 'lambda'
+      assume_role:
+        role_arn: 'test-arn'
+        session_name: 'test-session'
+```
