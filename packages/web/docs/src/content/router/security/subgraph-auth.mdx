@@ -200,3 +200,107 @@ Here's an example of an incoming subgraph request with the HMAC signature:
 
 Learn more about the options available in the
 [`hmac_signature` configuration reference](../configuration/hmac_signature).
+
+## AWS Signature Version 4
+
+Hive Router also supports subgraph request authentication and signing using AWS Signature Version 4.
+
+This feature allows you to secure the communication between your router and the AWS-hosted subgraphs
+by signing requests with AWS credentials so that the subgraphs can verify the authenticity of the
+requests.
+
+### Supported Services
+
+- Amazon S3
+- Amazon DynamoDB
+- AWS Lambda
+- Amazon SQS
+- Amazon SNS
+- And many more…
+
+```mermaid
+flowchart TD
+    A[Consumer] -->|GraphQL Request| B(Hive Router)
+    B --> C[Execution Engine]
+    C -->|Subgraph request| D[AWS Sigv4 Plugin]
+    D --> |Get the credentials| E[Assume Role I AM]
+    E --> F[Sign the request]
+    F --> |HTTP Request| G[Products Subgraph]
+    C -->|Subgraph request| H[AWS Sigv4 Plugin]
+    H --> |Get the credentials| I[Hard-coded configuration]
+    I --> J[Sign the request]
+    J --> |HTTP Request| K[Users Subgraph]
+```
+
+### Configuration
+
+If you want to learn more about the available configuration options, check the
+[`aws_sig_v4` configuration reference](../configuration/aws_sig_v4).
+
+#### Authentication
+
+You have two ways to provide AWS credentials for signing subgraph requests.
+
+##### Hard-coded Credentials (not recommended)
+
+You can provide AWS credentials directly in the Hive Router configuration file. We do not recommend
+this approach. See the next section for a more secure way.
+
+```yaml
+aws_sig_v4:
+  all:
+    hardcoded:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_key: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+      region: us-east-1
+      service_name: lambda
+```
+
+##### Default Chain Authentication (recommended)
+
+The recommended way to provide AWS credentials is to use the Default Chain Authentication method.
+Hive Router will automatically look for AWS credentials in the following order:
+
+1. Environment Variables: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+2. Credential File: `~/.aws/credentials`
+3. IAM Roles: For EC2 instances and ECS tasks
+4. AssumeRole: Via STS AssumeRole operations
+5. WebIdentity: For Kubernetes service accounts mostly configured via `AWS_WEB_IDENTITY_TOKEN_FILE`
+   environment variable
+6. SSO: AWS SSO credentials
+
+```yaml
+aws_sig_v4:
+  all:
+    default_chain:
+      profile_name: 'my-test-profile'
+      region: 'us-east-1'
+      service_name: 'lambda'
+      assume_role:
+        role_arn: 'test-arn'
+        session_name: 'test-session'
+```
+
+#### Subgraph Specific Configuration
+
+You can also configure AWS Sigv4 signing on a per-subgraph basis. This allows you to have different
+signing configurations for different subgraphs.
+
+```yaml
+aws_sig_v4:
+  all:
+    default_chain:
+      profile_name: 'my-test-profile'
+      region: 'us-east-1'
+      service_name: 'lambda'
+      assume_role:
+        role_arn: 'test-arn'
+        session_name: 'test-session'
+  subgraphs:
+    users:
+      hardcoded:
+        access_key_id: AKIAIOSFODNN7EXAMPLE
+        secret_access_key: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY'
+        region: eu-west-1
+        service_name: lambda
+```
