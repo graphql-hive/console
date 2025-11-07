@@ -8,6 +8,7 @@ import {
   MissingEndpointError,
   MissingRegistryTokenError,
 } from '../helpers/errors';
+import { colors } from '../helpers/texture/texture';
 
 const myTokenInfoQuery = graphql(/* GraphQL */ `
   query myTokenInfo($showAll: Boolean!) {
@@ -113,25 +114,52 @@ export default class WhoAmI extends Command<typeof WhoAmI> {
       this.log(`Level: ${permLevel.level}`);
       this.log(`Resources: ${permLevel.resolvedResourceIds?.join(', ') ?? '<none>'}`);
 
-      const table = new Table({
-        head: ['Group', 'Permission ID', 'Title', 'Granted', 'Description'],
-        wordWrap: true,
-        style: { head: ['cyan'] },
-      });
+      const data = [['Group', 'Permission ID', 'Title', 'Granted', 'Description']];
 
       for (const group of permLevel.resolvedPermissionGroups) {
         for (const perm of group.permissions) {
-          table.push([
+          data.push([
             group.title,
             perm.permission.id,
             perm.permission.title,
-            perm.isGranted ? '✓' : '✗',
+            perm.isGranted ? colors.green('✓') : colors.red('✗'),
             perm.permission.description,
           ]);
         }
       }
 
+      const colWidths = calculateColWidths(data);
+
+      const table = new Table({
+        head: data[0],
+        wordWrap: true,
+        style: { head: ['cyan'] },
+        colWidths,
+      });
+
+      data.slice(1).forEach(row => table.push(row));
+
       this.log(table.toString());
     }
   }
+}
+
+function calculateColWidths(data: Array<Array<string>>) {
+  const colCount = data[0].length;
+  const maxColWidths = new Array(colCount).fill(0);
+
+  data.forEach(row => {
+    row.forEach((cell, i) => {
+      maxColWidths[i] = Math.max(maxColWidths[i], cell.length);
+    });
+  });
+
+  const terminalWidth = process.stdout.columns || 80;
+
+  // Account for borders: numCols + 1
+  const totalBorder = colCount + 1;
+  const totalContentWidth = maxColWidths.reduce((a, b) => a + b, 0);
+
+  // Calculate scaled width for each column
+  return maxColWidths.map(w => Math.floor((w / totalContentWidth) * (terminalWidth - totalBorder)));
 }
