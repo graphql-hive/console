@@ -223,7 +223,7 @@ flowchart TD
     A[Consumer] -->|GraphQL Request| B(Hive Router)
     B --> C[Execution Engine]
     C -->|Subgraph request| D[AWS Sigv4 Plugin]
-    D --> |Get the credentials| E[Assume Role I AM]
+    D --> |Get the credentials| E[Assume Role IAM]
     E --> F[Sign the request]
     F --> |HTTP Request| G[Products Subgraph]
     C -->|Subgraph request| H[AWS Sigv4 Plugin]
