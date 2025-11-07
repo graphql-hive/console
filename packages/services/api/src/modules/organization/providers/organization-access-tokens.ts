@@ -805,7 +805,7 @@ export class OrganizationAccessTokens {
     };
   }
 
-  /** Get a access token by it's ID without performing any permission checks. */
+  /** Get an access token by it's ID without performing any permission checks. */
   async getById(id: string) {
     return await findById({
       logger: this.logger,

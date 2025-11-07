@@ -129,7 +129,7 @@ export function initSeed() {
             ) {
               const result = await createOrganizationAccessToken(
                 {
-                  title: 'A Access Token',
+                  title: 'an access token',
                   description: 'access token',
                   organization: {
                     byId: organization.id,
@@ -497,7 +497,7 @@ export function initSeed() {
                   return result.addAlertChannel;
                 },
                 /**
-                 * Create a access token for a given target.
+                 * Create an access token for a given target.
                  * This token can be used for usage reporting and all actions that would be performed by the CLI.
                  */
                 async createTargetAccessToken({

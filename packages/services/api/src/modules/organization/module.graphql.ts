@@ -891,7 +891,7 @@ export default gql`
     """
     allAccessTokens(first: Int, after: String): AccessTokenConnection!
     """
-    Retrieve a access token within the organization by its ID.
+    Retrieve an access token within the organization by its ID.
     """
     accessTokenById(id: ID!): AccessToken
   }

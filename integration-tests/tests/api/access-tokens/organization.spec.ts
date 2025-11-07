@@ -58,7 +58,7 @@ test.concurrent('create: success', async () => {
       organization: {
         byId: org.organization.id,
       },
-      title: 'a access token',
+      title: 'an access token',
       description: 'Some description',
       resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
       permissions: [],
@@ -71,7 +71,7 @@ test.concurrent('create: success', async () => {
     privateAccessKey: expect.any(String),
     createdOrganizationAccessToken: {
       id: expect.any(String),
-      title: 'a access token',
+      title: 'an access token',
       description: 'Some description',
       permissions: [],
       createdAt: expect.any(String),
@@ -116,7 +116,7 @@ test.concurrent('create: failure invalid description', async ({ expect }) => {
       organization: {
         byId: org.organization.id,
       },
-      title: 'a access token',
+      title: 'an access token',
       description: new Array(300).fill('A').join(''),
       resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
       permissions: [],
@@ -145,7 +145,7 @@ test.concurrent('create: failure because no access to organization', async ({ ex
       organization: {
         byId: org.organization.id,
       },
-      title: 'a access token',
+      title: 'an access token',
       description: 'Some description',
       resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
       permissions: [],
@@ -174,7 +174,7 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
       organization: {
         byId: org.organization.id,
       },
-      title: 'a access token',
+      title: 'an access token',
       description: 'a description',
       resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
       permissions: ['organization:describe', 'project:describe'],
@@ -220,7 +220,7 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
       organization: {
         byId: org.organization.id,
       },
-      title: 'a access token',
+      title: 'an access token',
       description: 'a description',
       resources: {
         mode: GraphQLSchema.ResourceAssignmentModeType.Granular,

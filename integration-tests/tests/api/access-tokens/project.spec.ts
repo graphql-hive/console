@@ -48,7 +48,7 @@ test.concurrent('create: success with admin session', async ({ expect }) => {
         project: {
           byId: project.id,
         },
-        title: 'a access token',
+        title: 'an access token',
         description: 'Some description',
         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: [],
@@ -61,7 +61,7 @@ test.concurrent('create: success with admin session', async ({ expect }) => {
     privateAccessKey: expect.any(String),
     createdProjectAccessToken: {
       id: expect.any(String),
-      title: 'a access token',
+      title: 'an access token',
       description: 'Some description',
       createdAt: expect.any(String),
     },
@@ -115,7 +115,7 @@ test.concurrent('create: failure invalid description', async ({ expect }) => {
         project: {
           byId: project.id,
         },
-        title: 'a access token',
+        title: 'an access token',
         description: new Array(300).fill('A').join(''),
         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: [],
@@ -148,7 +148,7 @@ test.concurrent('create: failure because no access to project', async ({ expect 
         project: {
           byId: project.id,
         },
-        title: 'a access token',
+        title: 'an access token',
         description: 'Some description',
         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: [],
@@ -190,7 +190,7 @@ test.concurrent(
           project: {
             byId: project.id,
           },
-          title: 'a access token',
+          title: 'an access token',
           description: 'Some description',
           resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
           permissions: [],
@@ -240,7 +240,7 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
         project: {
           byId: project.id,
         },
-        title: 'a access token',
+        title: 'an access token',
         description: 'a description',
         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: ['project:describe'],
@@ -331,7 +331,7 @@ test.concurrent('delete access token revokes access', async ({ expect }) => {
         project: {
           byId: project.id,
         },
-        title: 'a access token',
+        title: 'an access token',
         description: 'a description',
         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: ['project:describe'],
@@ -407,7 +407,7 @@ test.concurrent('cannot delete access token without sufficient permissions', asy
         project: {
           byId: project.id,
         },
-        title: 'a access token',
+        title: 'an access token',
         description: 'a description',
         resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: ['project:describe'],
@@ -461,7 +461,7 @@ test.concurrent(
           project: {
             byId: project.id,
           },
-          title: 'a access token',
+          title: 'an access token',
           description: 'a description',
           resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
           permissions: ['project:describe'],
