@@ -117,9 +117,8 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
    to test features e2e: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:usage`
 
 > Note: You can set `STAGE=<dev|staging|local>` in order to target a specific Hive environment and
-> seed a target there.
-> `TARGET=<target_id>` can be obtained via target's Settings page → General → Resource ID.
-> `TOKEN=<access_token>` is created on organization's Setting's page → Access Tokens
+> seed a target there. `TARGET=<target_id>` can be obtained via target's Settings page → General →
+> Resource ID. `TOKEN=<access_token>` is created on organization's Setting's page → Access Tokens
 
 > To send more operations with `seed:usage`, and test heavy load on Hive instance, you can also set
 > `OPERATIONS` (amount of operations in each interval round, default is `10`) and `INTERVAL`
