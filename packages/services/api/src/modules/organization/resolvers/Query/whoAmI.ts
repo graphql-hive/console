@@ -23,7 +23,7 @@ export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
       accessTokens.getGraphQLResolvedResourcePermissionGroupForAccessToken(accessToken);
 
     return {
-      title: `Access Token - ${accessToken.title}`,
+      title: `Access Token (${accessToken.scope}) ${accessToken.firstCharacters} - ${accessToken.title}`,
       resolvedPermissions,
     };
   }
@@ -50,7 +50,7 @@ export const whoAmI: NonNullable<QueryResolvers['whoAmI']> = async (
       });
 
     return {
-      title: `Legacy Target Access Token - ${session.id}`,
+      title: `Legacy Access Token - ${session.id}`,
       resolvedPermissions,
     };
   }
