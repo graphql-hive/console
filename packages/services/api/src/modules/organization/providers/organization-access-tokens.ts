@@ -76,10 +76,10 @@ const OrganizationAccessTokenModel = z
     ...record,
     get __typename() {
       return record.userId
-        ? ('OrganizationAccessToken' as const)
+        ? ('PersonalAccessToken' as const)
         : record.projectId
-          ? ('PersonalAccessToken' as const)
-          : ('ProjectAccessToken' as const);
+          ? ('ProjectAccessToken' as const)
+          : ('OrganizationAccessToken' as const);
     },
     scope: record.userId
       ? ('PERSONAL' as const)
