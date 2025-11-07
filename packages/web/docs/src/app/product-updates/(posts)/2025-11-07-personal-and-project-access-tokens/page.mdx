@@ -44,6 +44,35 @@ boundaries.
 - Can be enabled or disabled on a per-user basis, and revoked anytime by organization
   administrators.
 
+### Improvements to the Hive CLI
+
+The `hive whoami` command has been enhanced to provide more detailed and actionable information
+about the **permissions and scopes** of the access token in use.
+
+This makes it easier to verify what actions a token allows, helping developers and administrators
+**debug permission issues** and ensure tokens are configured correctly.
+
+```bash filename="Example: whoami output"
+> hive whoami
+
+=== Access Token (PERSONAL) hvu1/M2JlY - Local Development ===
+
+Level: TARGET
+Resources: the-guild/graphql-hive/production
+┌─────────────────┬────────────────┬────────────────┬─────────┬───────────────────────────────────────────────────────┐
+│ Group           │ Permission ID  │ Title          │ Granted │ Description                                           │
+├─────────────────┼────────────────┼────────────────┼─────────┼───────────────────────────────────────────────────────┤
+│ Schema Registry │ schema:compose │ Compose schema │ ✓       │ Allow using "hive dev" command for local composition. │
+└─────────────────┴────────────────┴────────────────┴─────────┴───────────────────────────────────────────────────────┘
+Level: SERVICE
+Resources: the-guild/graphql-hive/production/services/users
+┌─────────────────┬────────────────────┬───────────────────────────────┬─────────┬──────────────────────────────────────────────────┐
+│ Group           │ Permission ID      │ Title                         │ Granted │ Description                                      │
+├─────────────────┼────────────────────┼───────────────────────────────┼─────────┼──────────────────────────────────────────────────┤
+│ Schema Registry │ schemaCheck:create │ Check schema/service/subgraph │ ✓       │ Grant access to run checks for services/schemas. │
+└─────────────────┴────────────────────┴───────────────────────────────┴─────────┴──────────────────────────────────────────────────┘
+```
+
 ### Conclusion
 
 These new token types provide a balance between **security** and **developer autonomy**:
