@@ -61,13 +61,13 @@ aws_sig_v4:
 Use the Default Chain Authentication method to sign outgoing subgraph requests. Hive Router will
 automatically look for AWS credentials in the following order:
 
-  1. Environment Variables: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-  2. Credential File: `~/.aws/credentials`
-  3. IAM Roles: For EC2 instances and ECS tasks
-  4. AssumeRole: Via STS AssumeRole operations
-  5. WebIdentity: For Kubernetes service accounts mostly configured via `AWS_WEB_IDENTITY_TOKEN_FILE`
-     environment variable
-  6. SSO: AWS SSO credentials
+1. Environment Variables: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+2. Credential File: `~/.aws/credentials`
+3. IAM Roles: For EC2 instances and ECS tasks
+4. AssumeRole: Via STS AssumeRole operations
+5. WebIdentity: For Kubernetes service accounts mostly configured via `AWS_WEB_IDENTITY_TOKEN_FILE`
+   environment variable
+6. SSO: AWS SSO credentials
 
 This configuration accepts the following fields:
 
