@@ -238,6 +238,8 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
   expect(result.createOrganizationAccessToken.error).toEqual(null);
   const organizationAccessToken = result.createOrganizationAccessToken.ok!.privateAccessKey;
 
+  expect(organizationAccessToken).toMatch(/^hvo1\//);
+
   const projectQuery = await execute({
     document: OrganizationProjectTargetQuery,
     variables: {

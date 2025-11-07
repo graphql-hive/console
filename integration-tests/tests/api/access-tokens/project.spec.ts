@@ -251,6 +251,8 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
   expect(result.createProjectAccessToken.error).toEqual(null);
   const organizationAccessToken = result.createProjectAccessToken.ok!.privateAccessKey;
 
+  expect(organizationAccessToken).toMatch(/^hvp1\//);
+
   expect(await fetchPermissions(organizationAccessToken)).toEqual([
     {
       level: 'PROJECT',

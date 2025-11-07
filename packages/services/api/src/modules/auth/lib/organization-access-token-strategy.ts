@@ -108,7 +108,25 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
       result.accessKey.id,
       this.logger,
     );
+
     if (!organizationAccessToken) {
+      return null;
+    }
+
+    // access token uses wrong prefix
+    // e.g. hvo1/ -> but has userId or hvp1/ but has no projectId
+    if (
+      (result.accessKey.category === OrganizationAccessKey.AccessTokenCategory.personal &&
+        organizationAccessToken.userId == null) ||
+      (result.accessKey.category === OrganizationAccessKey.AccessTokenCategory.project &&
+        organizationAccessToken.projectId == null) ||
+      (result.accessKey.category === OrganizationAccessKey.AccessTokenCategory.organization &&
+        (organizationAccessToken.projectId || organizationAccessToken.userId))
+    ) {
+      this.logger.debug(
+        'Someone is trying an access token with the wrong prefix. (category=%s)',
+        result.accessKey.category,
+      );
       return null;
     }
 

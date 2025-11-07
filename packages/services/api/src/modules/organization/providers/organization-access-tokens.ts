@@ -230,7 +230,6 @@ export class OrganizationAccessTokens {
     return this._create({
       organizationId,
       projectId,
-      userId: null,
       title: args.title,
       description: args.description,
       assignedResources,
@@ -291,8 +290,6 @@ export class OrganizationAccessTokens {
 
     return this._create({
       organizationId,
-      projectId: null,
-      userId: null,
       title: args.title,
       description: args.description,
       assignedResources,
@@ -384,7 +381,6 @@ export class OrganizationAccessTokens {
 
     return this._create({
       organizationId,
-      projectId: null,
       userId: viewer.id,
       title: args.title,
       description: args.description,
@@ -393,17 +389,44 @@ export class OrganizationAccessTokens {
     });
   }
 
-  private async _create(args: {
-    organizationId: string;
-    projectId: string | null;
-    userId: string | null;
-    title: string;
-    description: string | null;
-    permissions: ReadonlyArray<string> | null;
-    assignedResources: ResourceAssignmentGroup;
-  }) {
+  private async _create(
+    args: {
+      title: string;
+      description: string | null;
+      assignedResources: ResourceAssignmentGroup;
+    } & (
+      | {
+          // Organization Scope
+          organizationId: string;
+          userId?: never;
+          projectId?: never;
+          permissions: ReadonlyArray<string>;
+        }
+      | {
+          // Project Scope
+          organizationId: string;
+          projectId: string;
+          userId?: never;
+          permissions: ReadonlyArray<string>;
+        }
+      | {
+          // Personal Scope
+          organizationId: string;
+          userId: string;
+          projectId?: never;
+          permissions: ReadonlyArray<string> | null;
+        }
+    ),
+  ) {
     const id = crypto.randomUUID();
-    const accessKey = await OrganizationAccessKey.create(id);
+    const accessKey = await OrganizationAccessKey.create(
+      id,
+      args.userId
+        ? OrganizationAccessKey.AccessTokenCategory.personal
+        : args.projectId
+          ? OrganizationAccessKey.AccessTokenCategory.project
+          : OrganizationAccessKey.AccessTokenCategory.organization,
+    );
 
     const result = await this.pool.maybeOne<unknown>(sql`
       INSERT INTO "organization_access_tokens" (
@@ -421,8 +444,8 @@ export class OrganizationAccessTokens {
       VALUES (
         ${id}
         , ${args.organizationId}
-        , ${args.projectId}
-        , ${args.userId}
+        , ${args.projectId ?? null}
+        , ${args.userId ?? null}
         , ${args.title}
         , ${args.description}
         , ${args.permissions !== null ? sql.array(args.permissions, 'text') : null}
