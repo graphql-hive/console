@@ -265,7 +265,7 @@ test.concurrent('delete: fail delete access token of another user', async ({ exp
   ]);
 });
 
-test.concurrent.only('query GraphQL API on resources with access', async ({ expect }) => {
+test.concurrent('query GraphQL API on resources with access', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
   const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
