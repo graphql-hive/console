@@ -16,7 +16,8 @@
     }
   ],
   "files.associations": {
-    "*.env.template": "dotenv"
+    "*.env.template": "dotenv",
+    "*.css": "tailwindcss"
   },
   "editor.codeActionsOnSave": {
     "source.organizeImports": "never"
