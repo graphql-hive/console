@@ -147,6 +147,10 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
         xs: 'calc(var(--radius) - 6px)',
       },
+      ringColor: (theme: any) => ({
+        DEFAULT: theme('colors.orange.500/75'),
+        ...theme('colors'),
+      }),
       keyframes: {
         // Dropdown menu
         'scale-in': {
