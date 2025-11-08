@@ -1,5 +1,26 @@
 # hive
 
+## 8.6.0
+
+### Minor Changes
+
+- [#7202](https://github.com/graphql-hive/console/pull/7202)
+  [`0885253`](https://github.com/graphql-hive/console/commit/0885253d14be7e3e0a973c863e45b115ba84f6e8)
+  Thanks [@noghartt](https://github.com/noghartt)! - Add envs for KV namespace on Cloudflare CDN
+  worker
+
+### Patch Changes
+
+- [#7193](https://github.com/graphql-hive/console/pull/7193)
+  [`543de17`](https://github.com/graphql-hive/console/commit/543de174f5cb8caa46b8e833d13e1831c7ffbfa9)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - `schema:check --forceSafe` now
+  properly approves breaking schema changes in Hive (requires write permission registry token)
+
+- [#7234](https://github.com/graphql-hive/console/pull/7234)
+  [`ef46bbf`](https://github.com/graphql-hive/console/commit/ef46bbfeb82f866ddb200dd2cf745176f114c601)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve checks for assigning member roles to avoid
+  assigning roles not existing in the organization.
+
 ## 8.5.2
 
 ### Patch Changes

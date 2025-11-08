@@ -111,6 +111,25 @@ test.concurrent('email invitation', async ({ expect }) => {
   expect(sentEmails).toContainEqual(expect.objectContaining({ to: inviteEmail }));
 });
 
+test.concurrent('can not invite with role not existing in organization', async ({ expect }) => {
+  const seed = initSeed();
+  const owner1 = await seed.createOwner();
+  const org1 = await owner1.createOrg();
+  const owner2 = await seed.createOwner();
+  const org2 = await owner2.createOrg();
+  // no idea why the createMemberRole functionality is "hidden" in the tests SDK and requires to invite a user first to get to :D
+  const org2Members = await org2.inviteAndJoinMember();
+  const org2Role = await org2Members.createMemberRole(['organization:describe']);
+
+  const result = await org1.inviteMember(undefined, undefined, org2Role.id);
+  expect(result).toEqual({
+    error: {
+      message: 'The provided member role does not exist.',
+    },
+    ok: null,
+  });
+});
+
 test.concurrent(
   'cannot join organization twice using the same invitation code',
   async ({ expect }) => {

@@ -1,6 +1,7 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withGuildDocs } from '@theguild/components/next.config';
 
-export default withGuildDocs({
+let config = withGuildDocs({
   output: 'export',
   eslint: {
     ignoreDuringBuilds: true,
@@ -334,3 +335,9 @@ export default withGuildDocs({
     return config;
   },
 });
+
+if (process.env.ANALYZE === 'true') {
+  config = withBundleAnalyzer({ enabled: true })(config);
+}
+
+export default config;

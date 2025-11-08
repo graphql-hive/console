@@ -5,7 +5,7 @@ import { BlogFrontmatter, BlogPostFile } from '../../../blog-types';
 import { BlogCard } from '../../blog-card';
 
 export function SimilarPostsClient({ sortedPosts }: { sortedPosts: BlogPostFile[] }) {
-  const { frontmatter } = useFrontmatter<BlogFrontmatter>();
+  const { frontmatter } = useFrontmatter(BlogFrontmatter);
   const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [frontmatter.tags];
 
   const postsToShow = [];
