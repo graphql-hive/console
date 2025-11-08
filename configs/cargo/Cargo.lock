@@ -122,9 +122,9 @@ dependencies = [
 
 [[package]]
 name = "apollo-federation"
-version = "2.8.0"
+version = "2.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5f653ee37d59599d388436138554f12a4362d51507b97ffc2b68bcc032bea9d"
+checksum = "05a3f1d7d9123e5d30952e3e6cc7a39f3b14b07e1d941cf4cff66ebf1ecaa490"
 dependencies = [
  "apollo-compiler",
  "derive_more",
@@ -171,9 +171,9 @@ dependencies = [
 
 [[package]]
 name = "apollo-router"
-version = "2.8.0"
+version = "2.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dd095773afd8d690aa1c1edf5e499e9fd7eecc1246c8c5224480eb07863b6a0"
+checksum = "1a8caeab0404cb06fc1d5066ae24e21f50116d7583d5886e51f6de65b99064de"
 dependencies = [
  "addr2line",
  "ahash",
@@ -2604,7 +2604,7 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "2.3.0"
+version = "2.3.1"
 dependencies = [
  "anyhow",
  "apollo-router",
@@ -2638,7 +2638,7 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4227,16 +4227,6 @@ dependencies = [
 
 [[package]]
 name = "petgraph"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
-dependencies = [
- "fixedbitset 0.5.7",
- "indexmap 2.12.0",
-]
-
-[[package]]
-name = "petgraph"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8701b58ea97060d5e5b155d383a69952a60943f0e6dfe30b04c287beb0b27455"
@@ -4461,11 +4451,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck 0.5.0",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "log",
  "multimap 0.10.1",
  "once_cell",
- "petgraph 0.7.1",
+ "petgraph 0.6.5",
  "prettyplease",
  "prost",
  "prost-types",
@@ -4481,7 +4471,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.108",
