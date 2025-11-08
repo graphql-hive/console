@@ -296,7 +296,6 @@ export class OrganizationManager {
     slug: string;
     user: {
       id: string;
-      superTokensUserId: string | null;
       oidcIntegrationId: string | null;
     };
   }) {

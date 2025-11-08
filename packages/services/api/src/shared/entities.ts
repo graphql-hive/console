@@ -342,7 +342,7 @@ export interface User {
   fullName: string;
   displayName: string;
   provider: AuthProviderType;
-  superTokensUserId: string | null;
+  betterAuthUserId: string | null;
   isAdmin: boolean;
   oidcIntegrationId: string | null;
   zendeskId: string | null;

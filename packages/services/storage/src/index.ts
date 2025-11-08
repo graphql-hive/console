@@ -420,19 +420,19 @@ export async function createStorage(
   }
 
   const shared = {
-    async getUserBySuperTokenId(
-      { superTokensUserId }: { superTokensUserId: string },
+    async getUserByBetterAuthId(
+      { betterAuthUserId }: { betterAuthUserId: string },
       connection: Connection,
     ) {
-      const record = await connection.maybeOne<unknown>(sql`/* getUserBySuperTokenId */
+      const record = await connection.maybeOne<unknown>(sql`/* getUserByBetterAuthId */
         SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
+          ${userFields(sql`"users".`, sql`"baa".`)}
         FROM
           "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
+        LEFT JOIN "better_auth_accounts" AS "baa"
+          ON ("baa"."userId" = "users"."better_auth_user_id")
         WHERE
-          "users"."supertoken_user_id" = ${superTokensUserId}
+          "users"."better_auth_user_id" = ${betterAuthUserId}
         LIMIT 1
       `);
 
@@ -444,13 +444,13 @@ export async function createStorage(
     },
     async createUser(
       {
-        superTokensUserId,
+        betterAuthUserId,
         email,
         fullName,
         displayName,
         oidcIntegrationId,
       }: {
-        superTokensUserId: string;
+        betterAuthUserId: string;
         email: string;
         fullName: string;
         displayName: string;
@@ -461,13 +461,13 @@ export async function createStorage(
       await connection.query<unknown>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "supertoken_user_id", "full_name", "display_name", "oidc_integration_id")
+            ("email", "better_auth_user_id", "full_name", "display_name", "oidc_integration_id")
           VALUES
-            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${oidcIntegrationId})
+            (${email}, ${betterAuthUserId}, ${fullName}, ${displayName}, ${oidcIntegrationId})
         `,
       );
 
-      const user = await this.getUserBySuperTokenId({ superTokensUserId }, connection);
+      const user = await this.getUserByBetterAuthId({ betterAuthUserId }, connection);
       if (!user) {
         throw new Error('Something went wrong.');
       }
@@ -549,7 +549,7 @@ export async function createStorage(
   };
 
   function buildUserData(input: {
-    superTokensUserId: string;
+    betterAuthUserId: string;
     email: string;
     oidcIntegrationId: string | null;
     firstName: string | null;
@@ -562,7 +562,7 @@ export async function createStorage(
         : input.email.split('@')[0].slice(0, 25).padEnd(2, '1');
 
     return {
-      superTokensUserId: input.superTokensUserId,
+      betterAuthUserId: input.betterAuthUserId,
       email: input.email,
       displayName: name,
       fullName: name,
@@ -583,13 +583,13 @@ export async function createStorage(
       }
     },
     async ensureUserExists({
-      superTokensUserId,
+      betterAuthUserId,
       email,
       oidcIntegration,
       firstName,
       lastName,
     }: {
-      superTokensUserId: string;
+      betterAuthUserId: string;
       firstName: string | null;
       lastName: string | null;
       email: string;
@@ -599,12 +599,12 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        let internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
+        let internalUser = await shared.getUserByBetterAuthId({ betterAuthUserId }, t);
 
         if (!internalUser) {
           internalUser = await shared.createUser(
             buildUserData({
-              superTokensUserId,
+              betterAuthUserId,
               email,
               oidcIntegrationId: oidcIntegration?.id ?? null,
               firstName,
@@ -629,18 +629,18 @@ export async function createStorage(
         return action;
       });
     },
-    async getUserBySuperTokenId({ superTokensUserId }) {
-      return shared.getUserBySuperTokenId({ superTokensUserId }, pool);
+    async getUserByBetterAuthId({ betterAuthUserId }) {
+      return shared.getUserByBetterAuthId({ betterAuthUserId }, pool);
     },
     getUserById: batch(async input => {
       const userIds = input.map(i => i.id);
       const records = await pool.any<unknown>(sql`/* getUserById */
         SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
+          ${userFields(sql`"users".`, sql`"baa".`)}
         FROM
           "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
+        LEFT JOIN "better_auth_accounts" AS "baa"
+          ON ("baa"."userId" = "users"."better_auth_user_id")
         WHERE
           "users"."id" = ANY(${sql.array(userIds, 'uuid')})
       `);
@@ -845,7 +845,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationOwner */
         SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
+          ${userFields(sql`"u".`, sql`"baa".`)},
           omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
@@ -858,7 +858,7 @@ export async function createStorage(
         LEFT JOIN users as u ON (u.id = o.user_id)
         LEFT JOIN organization_member as om ON (om.user_id = u.id AND om.organization_id = o.id)
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
+        LEFT JOIN better_auth_accounts as baa ON (baa.userId = u.better_auth_user_id)
         WHERE o.id = ANY(${sql.array(organizations, 'uuid')})`,
       );
 
@@ -895,7 +895,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationMember */
           SELECT
-            ${userFields(sql`"u".`, sql`"stu".`)},
+            ${userFields(sql`"u".`, sql`"baa".`)},
             omr.scopes as scopes,
             om.organization_id,
             om.connected_to_zendesk,
@@ -909,7 +909,7 @@ export async function createStorage(
           LEFT JOIN organizations as o ON (o.id = om.organization_id)
           LEFT JOIN users as u ON (u.id = om.user_id)
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-          LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
+          LEFT JOIN better_auth_accounts as baa ON (baa.userId = u.better_auth_user_id)
           WHERE (om.organization_id, om.user_id) IN ((${sql.join(
             selectors.map(s => sql`${s.organizationId}, ${s.userId}`),
             sql`), (`,
@@ -5292,18 +5292,18 @@ export type PaginatedOrganizationInvitationConnection = Readonly<{
 
 export const userFields = (
   user: TaggedTemplateLiteralInvocation,
-  superTokensThirdParty: TaggedTemplateLiteralInvocation,
+  betterAuthAccounts: TaggedTemplateLiteralInvocation,
 ) => sql`
   ${user}"id"
   , ${user}"email"
   , to_json(${user}"created_at") AS "createdAt"
   , ${user}"display_name" AS "displayName"
   , ${user}"full_name" AS "fullName"
-  , ${user}"supertoken_user_id" AS "superTokensUserId"
+  , ${user}"better_auth_user_id" AS "betterAuthUserId"
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
-  , ${superTokensThirdParty}"third_party_id" AS "provider"
+  , ${betterAuthAccounts}"providerId" AS "provider"
 `;
 
 export const UserModel = zod.object({
@@ -5312,7 +5312,7 @@ export const UserModel = zod.object({
   createdAt: zod.string(),
   displayName: zod.string(),
   fullName: zod.string(),
-  superTokensUserId: zod.string(),
+  betterAuthUserId: zod.string(),
   isAdmin: zod
     .boolean()
     .nullable()

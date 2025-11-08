@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { CircleHelpIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import z from 'zod';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
 import { Button } from '@/components/ui/button';
@@ -18,10 +17,11 @@ import { Meta } from '@/components/ui/meta';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { env } from '@/env/frontend';
-import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
+import { authClient } from '@/lib/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
+import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
 
 const SSOFormSchema = z.object({
   slug: z
@@ -65,7 +65,7 @@ async function fetchOidcId(input: { slug: string }) {
 }
 
 export function AuthSSOPage(props: { redirectToPath: string }) {
-  const session = useSessionContext();
+  const session = authClient.useSession();
   const router = useRouter();
   const sso = useMutation({
     mutationFn: fetchOidcId,
@@ -117,12 +117,12 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
     [sso.mutate],
   );
 
-  if (session.loading) {
+  if (session.isPending) {
     // AuthPage component already shows a loading state
     return null;
   }
 
-  if (session.doesSessionExist) {
+  if (session.data) {
     // Redirect to the home page if the user is already signed in
     return <Navigate to="/" />;
   }
