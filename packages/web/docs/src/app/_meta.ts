@@ -111,6 +111,16 @@ const meta: Record<string, DeepPartial<Item | MenuItem | PageItem>> = {
     type: 'page',
     href: 'https://graphql.org/community/foundation/',
   },
+  'bug-bounty-program': {
+    type: 'page',
+    title: 'Bug Bounty Program',
+    theme: {
+      sidebar: false,
+      toc: true,
+      breadcrumb: false,
+      typesetting: 'article',
+    },
+  },
 };
 
 export default meta;
