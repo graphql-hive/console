@@ -10,6 +10,7 @@ export const schemaCheck: NonNullable<MutationResolvers['schemaCheck']> = async 
     ...input,
     service: input.service?.toLowerCase(),
     target: input.target ?? null,
+    schemaProposalId: input.schemaProposalId, // @todo check permission
   });
 
   if ('changes' in result && result.changes) {

@@ -99,7 +99,7 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
   }
 `);
 
-const ChangesBlock_SchemaChangeFragment = graphql(`
+export const ChangesBlock_SchemaChangeFragment = graphql(`
   fragment ChangesBlock_SchemaChangeFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
