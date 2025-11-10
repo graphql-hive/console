@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.53.0
+
+### Minor Changes
+
+- [#7206](https://github.com/graphql-hive/console/pull/7206)
+  [`01963a0`](https://github.com/graphql-hive/console/commit/01963a089968f6d956c9dbc7d090dd6dc907c305)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve output of the `hive whoami` command. It now
+  also handles the new access token format.
+
 ## 0.52.1
 
 ### Patch Changes

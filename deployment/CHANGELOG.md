@@ -1,5 +1,14 @@
 # hive
 
+## 8.7.0
+
+### Minor Changes
+
+- [#7206](https://github.com/graphql-hive/console/pull/7206)
+  [`01963a0`](https://github.com/graphql-hive/console/commit/01963a089968f6d956c9dbc7d090dd6dc907c305)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce personal access tokens (PAT) and project
+  scoped access tokens.
+
 ## 8.6.0
 
 ### Minor Changes
