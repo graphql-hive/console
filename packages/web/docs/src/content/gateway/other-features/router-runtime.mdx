@@ -9,6 +9,8 @@ might not work as expected or at all, and the API might change at any time. Plea
 
 </Callout>
 
+## Introduction
+
 Hive Gateway can now use parts of [Hive Router's](/docs/router) runtime, like the Query Planner,
 introducing a new federation query planner in JavaScript that aims to optimize query execution
 performance by using Rust Hive Router's advanced planning algorithms through native addons.
@@ -17,7 +19,7 @@ This integration allows Hive Gateway to leverage the high-performance capabiliti
 runtime while still operating within the Node.js or Bun environment and offering the full suite of
 JavaScript's ecosystem back to Hive Router.
 
-## How to Use?
+## Getting Started
 
 Start by installing the necessary package:
 
@@ -59,6 +61,13 @@ export const gateway = createGatewayRuntime({
 </Tabs>
 
 ## Compared to Stitching Runtime
+
+<Callout type="info" emoji="ℹ️">
+
+While Router Runtime provides superior performance for many workloads, it sacrifices some of the
+flexibility and extensibility of the Stitching Runtime.
+
+</Callout>
 
 By default, Hive Gateway uses the Stitching Runtime, which is a pure JavaScript implementation
 designed for flexibility and ease of use. The Stitching Runtime is well-suited for most
@@ -117,10 +126,3 @@ The following table provides a comprehensive comparison between the two runtimes
 |                                         | Request plugins              | ✅ Full support     | ✅ Full support    | Request-level processing and modification                                         |
 |                                         | Response plugins             | ✅ Full support     | ✅ Full support    | Response-level processing and modification                                        |
 |                                         | Schema plugins               | ✅ Full support     | ⚠️ Limited support | Schema-level modifications may be limited                                         |
-
-<Callout type="info" emoji="ℹ️">
-
-While Router Runtime provides superior performance for many workloads, it sacrifices some of the
-flexibility and extensibility of the Stitching Runtime.
-
-</Callout>
