@@ -163,7 +163,9 @@ export const gatewayConfig = defineConfig({
           headers: {
             'x-user-id': userId,
             authorization: `Bearer ${process.env.FEATURE_API_TOKEN}`
-          }
+          },
+          // Set reasonable timeout, don't slow down migrations unnecessarily
+          signal: AbortSignal.timeout(100)
         })
 
         if (!response.ok) {
