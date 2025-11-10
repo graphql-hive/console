@@ -57,7 +57,10 @@ pub enum FetcherMode {
 #[derive(Debug)]
 enum AsyncOrSyncClient {
     Async(ClientWithMiddleware),
-    Sync(reqwest::blocking::Client),
+    Sync {
+        client: reqwest::blocking::Client,
+        retry_count: u32,
+    },
 }
 
 impl SupergraphFetcher {
@@ -84,10 +87,10 @@ impl SupergraphFetcher {
         let user_agent_value =
             HeaderValue::from_str(&user_agent).map_err(SupergraphFetcherError::InvalidUserAgent)?;
 
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
-
         let client = match fetcher_mode {
             FetcherMode::Async => {
+                let retry_policy =
+                    ExponentialBackoff::builder().build_with_max_retries(retry_count);
                 let reqwest_agent = reqwest::Client::builder()
                     .danger_accept_invalid_certs(accept_invalid_certs)
                     .connect_timeout(connect_timeout)
@@ -100,15 +103,16 @@ impl SupergraphFetcher {
                     .build();
                 AsyncOrSyncClient::Async(async_client)
             }
-            FetcherMode::Sync => AsyncOrSyncClient::Sync(
-                reqwest::blocking::Client::builder()
+            FetcherMode::Sync => AsyncOrSyncClient::Sync {
+                client: reqwest::blocking::Client::builder()
                     .danger_accept_invalid_certs(accept_invalid_certs)
                     .connect_timeout(connect_timeout)
                     .timeout(request_timeout)
                     .user_agent(user_agent_value.clone())
                     .build()
                     .map_err(SupergraphFetcherError::FetcherCreationError)?,
-            ),
+                retry_count,
+            },
         };
 
         let mut headers = HeaderMap::new();
@@ -127,18 +131,39 @@ impl SupergraphFetcher {
     pub fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
         let headers = self.get_headers()?;
 
-        let sync_client = match &self.client {
+        let (sync_client, retry_count) = match &self.client {
             AsyncOrSyncClient::Async(_) => {
                 return Err(SupergraphFetcherError::AsyncInSyncMode);
             }
-            AsyncOrSyncClient::Sync(sync_client) => sync_client,
+            AsyncOrSyncClient::Sync {
+                client,
+                retry_count,
+            } => (client, retry_count),
         };
 
-        let resp = sync_client
-            .get(&self.endpoint)
-            .headers(headers)
-            .send()
-            .map_err(SupergraphFetcherError::NetworkResponseError)?;
+        // Implementing retry logic for sync client
+        let mut attempts = 0;
+        let resp = loop {
+            let response = sync_client
+                .get(&self.endpoint)
+                .headers(headers.clone())
+                .send();
+
+            match response {
+                Ok(resp) => break resp,
+                Err(e) => {
+                    attempts += 1;
+                    if attempts > *retry_count {
+                        return Err(SupergraphFetcherError::NetworkError(
+                            reqwest_middleware::Error::Reqwest(e),
+                        ));
+                    }
+                    // Exponential backoff before retrying
+                    let backoff_duration = Duration::from_millis(2u64.pow(attempts) * 100);
+                    std::thread::sleep(backoff_duration);
+                }
+            }
+        };
 
         if resp.status().as_u16() == 304 {
             return Ok(None);
@@ -158,7 +183,10 @@ impl SupergraphFetcher {
         // Switch to sync fetch if the client is sync
         let async_client = match &self.client {
             AsyncOrSyncClient::Async(async_client) => async_client,
-            AsyncOrSyncClient::Sync(_) => return self.fetch_supergraph(),
+            AsyncOrSyncClient::Sync {
+                client: _,
+                retry_count: _,
+            } => return self.fetch_supergraph(),
         };
 
         let headers = self.get_headers()?;
