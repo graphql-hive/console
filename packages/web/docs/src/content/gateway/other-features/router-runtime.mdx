@@ -1,4 +1,4 @@
-import { Callout } from '@theguild/components'
+import { Callout, Tabs } from '@theguild/components'
 
 # Router Runtime
 
@@ -21,7 +21,7 @@ JavaScript's ecosystem back to Hive Router.
 
 Start by installing the necessary package:
 
-```npm2yarn
+```sh npm2yarn
 npm install @graphql-hive/router-runtime
 ```
 
@@ -63,3 +63,64 @@ export const gateway = createGatewayRuntime({
 By default, Hive Gateway uses the Stitching Runtime, which is a pure JavaScript implementation
 designed for flexibility and ease of use. The Stitching Runtime is well-suited for most
 applications, providing a robust and adaptable solution for GraphQL federation.
+
+The following table provides a comprehensive comparison between the two runtimes:
+
+| Feature Category                        | Feature                      | Stitching Runtime   | Router Runtime     | Notes                                                                             |
+| --------------------------------------- | ---------------------------- | ------------------- | ------------------ | --------------------------------------------------------------------------------- |
+| **Schema Transformations & Transforms** |                              |                     |                    |                                                                                   |
+|                                         | Envelop plugins              | ✅ Full support     | ⚠️ Limited support | Most Envelop plugins work, but some complex plugins may have compatibility issues |
+|                                         | Custom schema transforms     | ✅ Full support     | ❌ Not supported   | Schema transformation pipeline not available in router runtime                    |
+|                                         | Schema directives            | ✅ Full support     | ✅ Full support    | Federation directives (`@key`, `@requires`, `@provides`) work normally            |
+|                                         | Custom scalars               | ✅ Full support     | ✅ Full support    | Core scalar types and custom implementations preserved                            |
+|                                         | Schema extensions            | ✅ Full support     | ⚠️ Limited support | Basic extensions work, complex ones may be limited                                |
+| **Additional Resolvers**                |                              |                     |                    |                                                                                   |
+|                                         | Field-level resolvers        | ✅ Full support     | ❌ Not supported   | Custom field resolvers for overriding subgraph data not available                 |
+|                                         | Type resolvers               | ✅ Full support     | ❌ Not supported   | Abstract type resolvers for polymorphism not supported                            |
+|                                         | Mock resolvers               | ✅ Full support     | ❌ Not supported   | Schema mocking for development/testing not available                              |
+|                                         | Subscription resolvers       | ✅ Full support     | ❌ Not supported   | Real-time data resolvers for subscriptions not supported                          |
+|                                         | Root resolvers               | ✅ Full support     | ❌ Not supported   | Custom root query/mutation/subscription resolvers not available                   |
+| **Custom Transports**                   |                              |                     |                    |                                                                                   |
+|                                         | HTTP transport               | ✅ Full support     | ✅ Full support    | Standard HTTP transport for RESTful subgraphs                                     |
+|                                         | HTTPS transport              | ✅ Full support     | ✅ Full support    | Secure HTTP with TLS/SSL                                                          |
+|                                         | WebSocket transport          | ✅ Full support     | ❌ Not supported   | Real-time subscriptions and live queries                                          |
+|                                         | SSE transport                | ✅ Full support     | ❌ Not supported   | Server-Sent Events for subscriptions                                              |
+|                                         | HTTP callbacks               | ✅ Full support     | ❌ Not supported   | Callback-based subscription transport                                             |
+|                                         | Custom transport protocols   | ✅ Full support     | ❌ Not supported   | Custom transport implementations not available                                    |
+|                                         | gRPC transport               | ✅ Full support     | ❌ Not supported   | gRPC-based subgraph communication                                                 |
+| **Federation Features**                 |                              |                     |                    |                                                                                   |
+|                                         | Query planning               | ✅ JavaScript-based | ✅ Rust-powered    | Router runtime uses advanced Rust query planner for better performance            |
+|                                         | Entity resolution            | ✅ Full support     | ✅ Full support    | Federation entity resolvers and key-based fetching work                           |
+|                                         | `@key` directive             | ✅ Full support     | ✅ Full support    | Federation key relationships and composition                                      |
+|                                         | `@requires`/`@provides`      | ✅ Full support     | ✅ Full support    | Field-level dependency resolution                                                 |
+|                                         | `@external`                  | ✅ Full support     | ✅ Full support    | Marking external fields from subgraphs                                            |
+|                                         | `@interfaceObject`           | ✅ Full support     | ✅ Full support    | Interface implementation in subgraphs                                             |
+| **Performance & Caching**               |                              |                     |                    |                                                                                   |
+|                                         | Response caching             | ✅ Full support     | ✅ Full support    | In-memory and distributed caching (Redis, etc.)                                   |
+|                                         | Request batching             | ✅ Full support     | ✅ Full support    | Automatic batching of requests to subgraphs                                       |
+|                                         | Parsing & validation caching | ✅ Full support     | ✅ Full support    | Document parsing and validation optimization                                      |
+|                                         | Query cost analysis          | ✅ Full support     | ✅ Full support    | Query complexity and cost analysis                                                |
+| **Monitoring & Observability**          |                              |                     |                    |                                                                                   |
+|                                         | Prometheus metrics           | ✅ Full support     | ✅ Full support    | Standard metrics collection and export                                            |
+|                                         | OpenTelemetry tracing        | ✅ Full support     | ✅ Full support    | Distributed tracing and span creation                                             |
+|                                         | Custom spans                 | ✅ Full support     | ⚠️ Limited support | Custom instrumentation may be limited                                             |
+|                                         | Request logging              | ✅ Full support     | ✅ Full support    | Request/response logging and auditing                                             |
+| **Security Features**                   |                              |                     |                    |                                                                                   |
+|                                         | JWT authentication           | ✅ Full support     | ✅ Full support    | JSON Web Token validation and propagation                                         |
+|                                         | Rate limiting                | ✅ Full support     | ✅ Full support    | Field-level and global rate limiting                                              |
+|                                         | Depth limiting               | ✅ Full support     | ✅ Full support    | Query depth and complexity analysis                                               |
+|                                         | Max tokens                   | ✅ Full support     | ✅ Full support    | Token-based request limiting                                                      |
+|                                         | HMAC signing                 | ✅ Full support     | ✅ Full support    | Inter-service request signing and verification                                    |
+|                                         | Persisted documents          | ✅ Full support     | ✅ Full support    | Operation allow-listing and security                                              |
+| **Plugin System**                       |                              |                     |                    |                                                                                   |
+|                                         | Custom plugins               | ✅ Full support     | ⚠️ Limited support | Most plugins work, but some may need adaptation                                   |
+|                                         | Request plugins              | ✅ Full support     | ✅ Full support    | Request-level processing and modification                                         |
+|                                         | Response plugins             | ✅ Full support     | ✅ Full support    | Response-level processing and modification                                        |
+|                                         | Schema plugins               | ✅ Full support     | ⚠️ Limited support | Schema-level modifications may be limited                                         |
+
+<Callout type="info" emoji="ℹ️">
+
+While Router Runtime provides superior performance for many workloads, it sacrifices some of the
+flexibility and extensibility of the Stitching Runtime.
+
+</Callout>
