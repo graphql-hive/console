@@ -5,6 +5,7 @@ use std::time::Duration;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
 use reqwest::header::InvalidHeaderValue;
+use reqwest::header::IF_NONE_MATCH;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::policies::ExponentialBackoff;
@@ -14,7 +15,7 @@ use reqwest_retry::RetryTransientMiddleware;
 pub struct SupergraphFetcher {
     client: AsyncOrSyncClient,
     endpoint: String,
-    headers: RwLock<HeaderMap>,
+    etag: RwLock<Option<HeaderValue>>,
 }
 
 pub enum SupergraphFetcherError {
@@ -23,7 +24,6 @@ pub enum SupergraphFetcherError {
     NetworkResponseError(reqwest::Error),
     HeadersLock(String),
     InvalidKey(InvalidHeaderValue),
-    InvalidUserAgent(InvalidHeaderValue),
     AsyncInSyncMode,
 }
 
@@ -39,9 +39,6 @@ impl Display for SupergraphFetcherError {
             }
             SupergraphFetcherError::HeadersLock(e) => write!(f, "Headers lock error: {}", e),
             SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid CDN key: {}", e),
-            SupergraphFetcherError::InvalidUserAgent(e) => {
-                write!(f, "Invalid user agent: {}", e)
-            }
             SupergraphFetcherError::AsyncInSyncMode => {
                 write!(f, "Attempted to use async client in sync fetch")
             }
@@ -84,8 +81,11 @@ impl SupergraphFetcher {
             }
         }
 
-        let user_agent_value =
-            HeaderValue::from_str(&user_agent).map_err(SupergraphFetcherError::InvalidUserAgent)?;
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "X-Hive-CDN-Key",
+            HeaderValue::from_str(&key).map_err(SupergraphFetcherError::InvalidKey)?,
+        );
 
         let client = match fetcher_mode {
             FetcherMode::Async => {
@@ -95,7 +95,8 @@ impl SupergraphFetcher {
                     .danger_accept_invalid_certs(accept_invalid_certs)
                     .connect_timeout(connect_timeout)
                     .timeout(request_timeout)
-                    .user_agent(user_agent_value)
+                    .default_headers(headers)
+                    .user_agent(user_agent)
                     .build()
                     .map_err(SupergraphFetcherError::FetcherCreationError)?;
                 let async_client = ClientBuilder::new(reqwest_agent)
@@ -108,29 +109,21 @@ impl SupergraphFetcher {
                     .danger_accept_invalid_certs(accept_invalid_certs)
                     .connect_timeout(connect_timeout)
                     .timeout(request_timeout)
-                    .user_agent(user_agent_value)
+                    .user_agent(user_agent)
                     .build()
                     .map_err(SupergraphFetcherError::FetcherCreationError)?,
                 retry_count,
             },
         };
 
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            "X-Hive-CDN-Key",
-            HeaderValue::from_str(&key).map_err(SupergraphFetcherError::InvalidKey)?,
-        );
-
         Ok(Self {
             client,
             endpoint,
-            headers: RwLock::new(headers),
+            etag: RwLock::new(None),
         })
     }
 
     pub fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
-        let headers = self.get_headers()?;
-
         let (sync_client, retry_count) = match &self.client {
             AsyncOrSyncClient::Async(_) => {
                 return Err(SupergraphFetcherError::AsyncInSyncMode);
@@ -144,10 +137,12 @@ impl SupergraphFetcher {
         // Implementing retry logic for sync client
         let mut attempts = 0;
         let resp = loop {
-            let response = sync_client
-                .get(&self.endpoint)
-                .headers(headers.clone())
-                .send();
+            let mut req = sync_client.get(&self.endpoint);
+            let etag = self.get_latest_etag()?;
+            if let Some(etag) = etag {
+                req = req.header(IF_NONE_MATCH, etag);
+            }
+            let response = req.send();
 
             match response {
                 Ok(resp) => break resp,
@@ -189,11 +184,13 @@ impl SupergraphFetcher {
             } => return self.fetch_supergraph(),
         };
 
-        let headers = self.get_headers()?;
+        let mut req = async_client.get(&self.endpoint);
+        let etag = self.get_latest_etag()?;
+        if let Some(etag) = etag {
+            req = req.header(IF_NONE_MATCH, etag);
+        }
 
-        let resp = async_client
-            .get(&self.endpoint)
-            .headers(headers)
+        let resp = req
             .send()
             .await
             .map_err(SupergraphFetcherError::NetworkError)?;
@@ -213,25 +210,31 @@ impl SupergraphFetcher {
         Ok(Some(text))
     }
 
-    fn get_headers(&self) -> Result<HeaderMap, SupergraphFetcherError> {
-        let guard = self.headers.try_read().map_err(|e| {
-            SupergraphFetcherError::HeadersLock(format!("Failed to read the etag record: {:?}", e))
-        })?;
+    fn get_latest_etag(&self) -> Result<Option<HeaderValue>, SupergraphFetcherError> {
+        let guard: std::sync::RwLockReadGuard<'_, Option<HeaderValue>> =
+            self.etag.try_read().map_err(|e| {
+                SupergraphFetcherError::HeadersLock(format!(
+                    "Failed to read the etag record: {:?}",
+                    e
+                ))
+            })?;
+
         Ok(guard.clone())
     }
 
     fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> Result<(), SupergraphFetcherError> {
-        let mut guard = self.headers.try_write().map_err(|e| {
-            SupergraphFetcherError::HeadersLock(format!(
-                "Failed to update the etag record: {:?}",
-                e
-            ))
-        })?;
+        let mut guard: std::sync::RwLockWriteGuard<'_, Option<HeaderValue>> =
+            self.etag.try_write().map_err(|e| {
+                SupergraphFetcherError::HeadersLock(format!(
+                    "Failed to update the etag record: {:?}",
+                    e
+                ))
+            })?;
 
         if let Some(etag_value) = etag {
-            guard.insert("If-None-Match", etag_value.clone());
+            *guard = Some(etag_value.clone());
         } else {
-            guard.remove("If-None-Match");
+            *guard = None;
         }
 
         Ok(())

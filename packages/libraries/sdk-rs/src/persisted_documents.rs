@@ -1,6 +1,8 @@
 use std::time::Duration;
 
 use moka::future::Cache;
+use reqwest::header::HeaderMap;
+use reqwest::header::HeaderValue;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -11,7 +13,6 @@ pub struct PersistedDocumentsManager {
     agent: ClientWithMiddleware,
     cache: Cache<String, String>,
     endpoint: String,
-    key: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -64,13 +65,18 @@ impl PersistedDocumentsManager {
         request_timeout: Duration,
         retry_count: u32,
         cache_size: u64,
+        user_agent: String,
     ) -> Self {
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
 
+        let mut default_headers = HeaderMap::new();
+        default_headers.insert("X-Hive-CDN-Key", HeaderValue::from_str(&key).unwrap());
         let reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
             .connect_timeout(connect_timeout)
             .timeout(request_timeout)
+            .user_agent(user_agent)
+            .default_headers(default_headers)
             .build()
             .expect("Failed to create reqwest client");
         let agent = ClientBuilder::new(reqwest_agent)
@@ -83,7 +89,6 @@ impl PersistedDocumentsManager {
             agent,
             cache,
             endpoint,
-            key,
         }
     }
 
@@ -111,12 +116,7 @@ impl PersistedDocumentsManager {
                     "Fetching document {} from CDN: {}",
                     document_id, cdn_artifact_url
                 );
-                let cdn_response = self
-                    .agent
-                    .get(cdn_artifact_url)
-                    .header("X-Hive-CDN-Key", self.key.to_string())
-                    .send()
-                    .await;
+                let cdn_response = self.agent.get(cdn_artifact_url).send().await;
 
                 match cdn_response {
                     Ok(response) => {

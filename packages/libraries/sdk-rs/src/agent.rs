@@ -1,5 +1,6 @@
 use super::graphql::OperationProcessor;
 use graphql_parser::schema::Document;
+use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use serde::Serialize;
@@ -106,14 +107,12 @@ impl Buffer {
 
 #[derive(Clone)]
 pub struct UsageAgent {
-    token: String,
     buffer_size: usize,
     endpoint: String,
     buffer: Arc<Buffer>,
     processor: Arc<OperationProcessor>,
     client: ClientWithMiddleware,
     flush_interval: Duration,
-    user_agent: String,
 }
 
 fn non_empty_string(value: Option<String>) -> Option<String> {
@@ -151,10 +150,25 @@ impl UsageAgent {
 
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 
+        let mut default_headers = HeaderMap::new();
+
+        default_headers.insert("X-Usage-API-Version", HeaderValue::from_static("2"));
+
+        default_headers.insert(
+            reqwest::header::AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+        );
+
+        default_headers.insert(
+            reqwest::header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
+
         let reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
             .connect_timeout(connect_timeout)
             .timeout(request_timeout)
+            .user_agent(user_agent)
             .build()
             .map_err(|err| err.to_string())
             .expect("Couldn't instantiate the http client for reports sending!");
@@ -175,11 +189,9 @@ impl UsageAgent {
             buffer,
             processor,
             endpoint,
-            token,
             buffer_size,
             client,
             flush_interval,
-            user_agent,
         }
     }
 
@@ -271,13 +283,6 @@ impl UsageAgent {
         let resp = self
             .client
             .post(&self.endpoint)
-            .header("X-Usage-API-Version", "2")
-            .header(
-                reqwest::header::AUTHORIZATION,
-                format!("Bearer {}", self.token),
-            )
-            .header(reqwest::header::USER_AGENT, self.user_agent.to_string())
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(reqwest::header::CONTENT_LENGTH, report_body.len())
             .body(report_body)
             .send()
