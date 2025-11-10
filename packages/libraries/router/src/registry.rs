@@ -122,7 +122,7 @@ impl HiveRegistry {
         env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
         env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
 
-        let mut registry = HiveRegistry {
+        let registry = HiveRegistry {
             fetcher: SupergraphFetcher::try_new(
                 endpoint,
                 key,
@@ -130,6 +130,7 @@ impl HiveRegistry {
                 Duration::from_secs(5),
                 Duration::from_secs(60),
                 accept_invalid_certs,
+                3,
             )
             .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?,
             file_name,
@@ -156,9 +157,12 @@ impl HiveRegistry {
         Ok(())
     }
 
-    fn initial_supergraph(&mut self) -> Result<(), String> {
+    fn initial_supergraph(&self) -> Result<(), String> {
         let mut file = std::fs::File::create(self.file_name.clone()).map_err(|e| e.to_string())?;
-        let resp = self.fetcher.fetch_supergraph()?;
+        let resp = self
+            .fetcher
+            .fetch_supergraph()
+            .map_err(|err| err.to_string())?;
 
         match resp {
             Some(supergraph) => {
@@ -173,7 +177,7 @@ impl HiveRegistry {
         Ok(())
     }
 
-    fn poll(&mut self) {
+    fn poll(&self) {
         match self.fetcher.fetch_supergraph() {
             Ok(new_supergraph) => {
                 if let Some(new_supergraph) = new_supergraph {
