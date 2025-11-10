@@ -62,16 +62,13 @@ export const gateway = createGatewayRuntime({
 
 ## Compared to Stitching Runtime
 
-<Callout type="info" emoji="ℹ️">
+By default, Hive Gateway uses the [Stitching Runtime](https://the-guild.dev/graphql/stitching),
+which is a pure JavaScript implementation designed for flexibility and ease of use. The Stitching
+Runtime is well-suited for most applications, providing a robust and adaptable solution for GraphQL
+federation.
 
 While Router Runtime provides superior performance for many workloads, it sacrifices some of the
 flexibility and extensibility of the Stitching Runtime.
-
-</Callout>
-
-By default, Hive Gateway uses the Stitching Runtime, which is a pure JavaScript implementation
-designed for flexibility and ease of use. The Stitching Runtime is well-suited for most
-applications, providing a robust and adaptable solution for GraphQL federation.
 
 The following table provides a comprehensive comparison between the two runtimes:
 
@@ -117,3 +114,16 @@ Hive Gateway with Router Runtime maintains 100% compatibility in the
 [Federation-Compatibility Audit](https://the-guild.dev/graphql/hive/federation-gateway-audit). This
 ensures that your federated GraphQL architecture remains standards-compliant and interoperable
 across different Federation implementations.
+
+## Benchmarks
+
+<Callout type="info" emoji="🚀">
+
+Performance gains are achieved while maintaining full compatibility with Federation specification
+and providing better resource efficiency for production deployments.
+
+</Callout>
+
+Based on our internal measurements and performance testing, the Router Runtime demonstrates
+significant performance improvements over the Stitching Runtime with **up to 3x faster query
+planning** thanks to the Rust-powered query planner.
