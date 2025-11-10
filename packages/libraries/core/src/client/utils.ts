@@ -214,3 +214,15 @@ export function createHiveLogger(baseLogger: Logger, prefix: string): HiveLogger
     },
   };
 }
+
+export function isLegacyAccessToken(accessToken: string): boolean {
+  if (
+    !accessToken.startsWith('hvo1/') &&
+    !accessToken.startsWith('hvp1/') &&
+    !accessToken.startsWith('hvu1/')
+  ) {
+    return true;
+  }
+
+  return false;
+}

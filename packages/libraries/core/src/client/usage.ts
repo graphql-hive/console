@@ -24,6 +24,7 @@ import {
   cache,
   cacheDocumentKey,
   createHiveLogger,
+  isLegacyAccessToken,
   logIf,
   measureDuration,
   memo,
@@ -78,15 +79,15 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   const excludeSet = new Set(options.exclude ?? []);
 
   /** Access tokens using the `hvo1/` require a target. */
-  if (!options.target && pluginOptions.token.startsWith('hvo1/')) {
+  if (!options.target && !isLegacyAccessToken(pluginOptions.token)) {
     logger.error(
-      "Using an organization access token (starting with 'hvo1/') requires providing the 'target' option." +
+      "Your access token requires providing the 'target' option." +
         '\nUsage reporting is disabled.',
     );
     return noopUsageCollector;
   }
 
-  if (options.target && !pluginOptions.token.startsWith('hvo1/')) {
+  if (options.target && isLegacyAccessToken(pluginOptions.token)) {
     logger.error(
       "Using the 'target' option requires using an organization access token (starting with 'hvo1/')." +
         '\nUsage reporting is disabled.',
