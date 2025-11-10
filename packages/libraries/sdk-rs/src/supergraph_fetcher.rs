@@ -95,7 +95,7 @@ impl SupergraphFetcher {
                     .danger_accept_invalid_certs(accept_invalid_certs)
                     .connect_timeout(connect_timeout)
                     .timeout(request_timeout)
-                    .user_agent(user_agent_value.clone())
+                    .user_agent(user_agent_value)
                     .build()
                     .map_err(SupergraphFetcherError::FetcherCreationError)?;
                 let async_client = ClientBuilder::new(reqwest_agent)
@@ -108,7 +108,7 @@ impl SupergraphFetcher {
                     .danger_accept_invalid_certs(accept_invalid_certs)
                     .connect_timeout(connect_timeout)
                     .timeout(request_timeout)
-                    .user_agent(user_agent_value.clone())
+                    .user_agent(user_agent_value)
                     .build()
                     .map_err(SupergraphFetcherError::FetcherCreationError)?,
                 retry_count,
