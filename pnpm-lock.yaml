@@ -1239,17 +1239,17 @@ importers:
         specifier: 5.0.2
         version: 5.0.2
       '@envelop/graphql-jit':
-        specifier: 8.0.3
-        version: 8.0.3(@envelop/core@5.0.2)(graphql@16.9.0)
+        specifier: 11.0.0
+        version: 11.0.0(@envelop/core@5.0.2)(graphql@16.9.0)
       '@envelop/graphql-modules':
-        specifier: 7.0.1
-        version: 7.0.1(@envelop/core@5.0.2)(graphql-modules@3.0.0(graphql@16.9.0))(graphql@16.9.0)
+        specifier: 9.0.0
+        version: 9.0.0(@envelop/core@5.0.2)(graphql-modules@3.0.0(graphql@16.9.0))(graphql@16.9.0)
       '@envelop/opentelemetry':
-        specifier: 6.3.1
-        version: 6.3.1(@envelop/core@5.0.2)(graphql@16.9.0)
+        specifier: 9.0.0
+        version: 9.0.0(@envelop/core@5.0.2)(graphql@16.9.0)
       '@envelop/sentry':
-        specifier: 7.1.1
-        version: 7.1.1(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)
+        specifier: 15.0.0
+        version: 15.0.0(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)
       '@envelop/types':
         specifier: 5.0.0
         version: 5.0.0
@@ -1436,7 +1436,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 6.4.1
-        version: 6.4.1(graphql@16.11.0)
+        version: 6.4.1(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -3440,18 +3440,18 @@ packages:
     resolution: {integrity: sha512-n29V3vRqXvPcG76C8zE482LQykk0P66zv1mjpk7aHeGe9qnh8AzB/RvoX5SVFwApJQPp0ixob8NoYXg4FHKMGA==}
     engines: {node: '>=18.0.0'}
 
-  '@envelop/graphql-jit@8.0.3':
-    resolution: {integrity: sha512-IZnKc7dVOQV9jEi5s5RkG8fVKqc6Ss/mBN9PRt2iYFa9o6XkL/haPLJRfWFsS/CSJfFOQuzLyxYuALA8DaoOYw==}
+  '@envelop/graphql-jit@11.0.0':
+    resolution: {integrity: sha512-6chuNgtKDcr3x675b/y8VGynB5Rkcm/WwTmBY86q+0rgG7pX2cRONMYx5fTv0Hko+FaH3SWyW/2K2Tn/5CEZJw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.0.0
+      '@envelop/core': ^5.4.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@envelop/graphql-modules@7.0.1':
-    resolution: {integrity: sha512-l5RRREZrzibgZCuInE4+fyBLnZWn1w/oKbB5EGlSeE1CWa59lrI9SLgBMIZqHwF7JT3X2oCAYur5TJUYEVJdJg==}
+  '@envelop/graphql-modules@9.0.0':
+    resolution: {integrity: sha512-be6X8mRTryO4Mp30AC2RGpl2e0cCc08Te2ME/igmtuLeN54KWoshi8VrKYrl/V0MQG4ne+NFKa+lfqw0d98Izg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.1.0
+      '@envelop/core': ^5.4.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       graphql-modules: ^1 || ^2.0.0 || ^3.0.0
 
@@ -3459,18 +3459,18 @@ packages:
     resolution: {integrity: sha512-cxgkB66RQB95H3X27jlnxCRNTmPuSTgmBAq6/4n2Dtv4hsk4yz8FadA1ggmd0uZzvKqWD6CR+WFgTjhDqg7eyw==}
     engines: {node: '>=18.0.0'}
 
-  '@envelop/on-resolve@4.1.0':
-    resolution: {integrity: sha512-2AXxf8jbBIepBUiY0KQtyCO6gnT7LKBEYdaARZBJ7ujy1+iQHQPORKvAwl51kIdD6v5x38eldZnm7A19jFimOg==}
+  '@envelop/on-resolve@7.0.0':
+    resolution: {integrity: sha512-OfQMO28bfrwYoKCJmd55O60WuZ8Suep26GH1sjEI4m+R7WOUcXIqMyPfMp/cmLsD5aFBIkCGBsH0P77dqfPUqw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.0.0
+      '@envelop/core': ^5.4.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@envelop/opentelemetry@6.3.1':
-    resolution: {integrity: sha512-paauYvPtk+XgGDmNKEM31LAq+BkF2QRszC/Th1NE9EEsCG3ivDmMYJ5doyw32Rd6RTiAKYFlnoE5zbIB+D85KA==}
+  '@envelop/opentelemetry@9.0.0':
+    resolution: {integrity: sha512-2iq5nzt4iwjcTOM5axv+ynDjIw+YUCyuDNfprXy/jXt1UPw7E/aMdgOIzxCo9+8s7mYlI2EDxZrHMtF57Rrltw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.0.1
+      '@envelop/core': ^5.4.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
   '@envelop/response-cache@6.1.2':
@@ -3487,12 +3487,12 @@ packages:
       '@envelop/core': ^5.2.3
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@envelop/sentry@7.1.1':
-    resolution: {integrity: sha512-dNq56ZaMQSj7U9czMSdcL+HqBuJVTTYyzLrX2nBRukohdI+kvDi+ptfpfAKtOXT+1fuKTlzvLupXDMMVjPbB8Q==}
+  '@envelop/sentry@15.0.0':
+    resolution: {integrity: sha512-gzRhpsKMpWyAtY+Ay7frrPNnhbYJOa+ne1y497L/OxDFO8wujWwOP2fdazYUNEceY62oFmXdS3z53W7vzlwVUQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.0.0
-      '@sentry/node': ^6 || ^7
+      '@envelop/core': ^5.4.0
+      '@sentry/node': ^8.0.0 || ^9.0.0 || ^10.0.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
   '@envelop/types@4.0.1':
@@ -3789,7 +3789,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -9304,6 +9303,14 @@ packages:
       ajv:
         optional: true
 
+  ajv-formats@3.0.1:
+    resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
+    peerDependencies:
+      ajv: ^8.0.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
+
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
@@ -11327,6 +11334,9 @@ packages:
   fast-json-stringify@5.12.0:
     resolution: {integrity: sha512-7Nnm9UPa7SfHRbHVA1kJQrGXCRzB7LMlAAqHXQFkEQqueJm1V8owm0FsE/2Do55/4CcdhwiLQERaKomOnKQkyA==}
 
+  fast-json-stringify@5.16.1:
+    resolution: {integrity: sha512-KAdnLvy1yu/XrRtP+LJnxbBGrhN+xXu+gt3EUvZhYGKCr3lFHq/7UFJHHFgmJKoqlh6B40bZLEv7w46B0mqn1g==}
+
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
 
@@ -11901,8 +11911,8 @@ packages:
     peerDependencies:
       graphql: '*'
 
-  graphql-jit@0.8.6:
-    resolution: {integrity: sha512-oVJteh/uYDpIA/M4UHrI+DmzPnX1zTD0a7Je++JA8q8P68L/KbuepimDyrT5FhL4HAq3filUxaFvfsL6/A4msw==}
+  graphql-jit@0.8.7:
+    resolution: {integrity: sha512-KGzCrsxQPfEiXOUIJCexWKiWF6ycjO89kAO6SdO8OWRGwYXbG0hsLuTnbFfMq0gj7d7/ib/Gh7jtst7FHZEEjw==}
     peerDependencies:
       graphql: '>=15'
 
@@ -17909,8 +17919,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -18062,11 +18072,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
+  '@aws-sdk/client-sso-oidc@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -18105,7 +18115,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -18282,11 +18291,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0':
+  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -18325,6 +18334,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -18475,7 +18485,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -18651,7 +18661,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0
+      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -18946,7 +18956,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -19899,15 +19909,15 @@ snapshots:
       '@whatwg-node/promise-helpers': 1.3.1
       tslib: 2.8.1
 
-  '@envelop/graphql-jit@8.0.3(@envelop/core@5.0.2)(graphql@16.9.0)':
+  '@envelop/graphql-jit@11.0.0(@envelop/core@5.0.2)(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
+      '@whatwg-node/promise-helpers': 1.3.1
       graphql: 16.9.0
-      graphql-jit: 0.8.6(graphql@16.9.0)
+      graphql-jit: 0.8.7(graphql@16.9.0)
       tslib: 2.8.1
-      value-or-promise: 1.0.12
 
-  '@envelop/graphql-modules@7.0.1(@envelop/core@5.0.2)(graphql-modules@3.0.0(graphql@16.9.0))(graphql@16.9.0)':
+  '@envelop/graphql-modules@9.0.0(@envelop/core@5.0.2)(graphql-modules@3.0.0(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
       graphql: 16.9.0
@@ -19919,15 +19929,16 @@ snapshots:
       '@whatwg-node/promise-helpers': 1.3.1
       tslib: 2.8.1
 
-  '@envelop/on-resolve@4.1.0(@envelop/core@5.0.2)(graphql@16.9.0)':
+  '@envelop/on-resolve@7.0.0(@envelop/core@5.0.2)(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
+      '@whatwg-node/promise-helpers': 1.3.1
       graphql: 16.9.0
 
-  '@envelop/opentelemetry@6.3.1(@envelop/core@5.0.2)(graphql@16.9.0)':
+  '@envelop/opentelemetry@9.0.0(@envelop/core@5.0.2)(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
-      '@envelop/on-resolve': 4.1.0(@envelop/core@5.0.2)(graphql@16.9.0)
+      '@envelop/on-resolve': 7.0.0(@envelop/core@5.0.2)(graphql@16.9.0)
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/sdk-trace-base': 1.30.0(@opentelemetry/api@1.9.0)
       graphql: 16.9.0
@@ -19954,7 +19965,7 @@ snapshots:
       lru-cache: 10.2.0
       tslib: 2.8.1
 
-  '@envelop/sentry@7.1.1(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)':
+  '@envelop/sentry@15.0.0(@envelop/core@5.0.2)(@sentry/node@7.120.2)(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
       '@sentry/node': 7.120.2
@@ -20628,13 +20639,6 @@ snapshots:
       dependency-graph: 0.11.0
       graphql: 16.9.0
       object-inspect: 1.12.3
-      tslib: 2.6.2
-
-  '@graphql-inspector/core@6.4.1(graphql@16.11.0)':
-    dependencies:
-      dependency-graph: 1.0.0
-      graphql: 16.11.0
-      object-inspect: 1.13.2
       tslib: 2.6.2
 
   '@graphql-inspector/core@6.4.1(graphql@16.9.0)':
@@ -27732,6 +27736,10 @@ snapshots:
     optionalDependencies:
       ajv: 8.17.1
 
+  ajv-formats@3.0.1(ajv@8.17.1):
+    optionalDependencies:
+      ajv: 8.17.1
+
   ajv@6.12.6:
     dependencies:
       fast-deep-equal: 3.1.3
@@ -30174,6 +30182,16 @@ snapshots:
       json-schema-ref-resolver: 1.0.1
       rfdc: 1.4.1
 
+  fast-json-stringify@5.16.1:
+    dependencies:
+      '@fastify/merge-json-schemas': 0.1.1
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      fast-deep-equal: 3.1.3
+      fast-uri: 2.3.0
+      json-schema-ref-resolver: 1.0.1
+      rfdc: 1.4.1
+
   fast-levenshtein@2.0.6: {}
 
   fast-levenshtein@3.0.0:
@@ -30860,10 +30878,10 @@ snapshots:
       arrify: 1.0.1
       graphql: 16.9.0
 
-  graphql-jit@0.8.6(graphql@16.9.0):
+  graphql-jit@0.8.7(graphql@16.9.0):
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.9.0)
-      fast-json-stringify: 5.12.0
+      fast-json-stringify: 5.16.1
       generate-function: 2.3.1
       graphql: 16.9.0
       lodash.memoize: 4.1.2
