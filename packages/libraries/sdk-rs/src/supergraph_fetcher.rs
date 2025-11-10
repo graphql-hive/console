@@ -135,7 +135,7 @@ impl SupergraphFetcher {
         };
 
         let resp = sync_client
-            .get(self.endpoint.clone())
+            .get(&self.endpoint)
             .headers(headers)
             .send()
             .map_err(SupergraphFetcherError::NetworkResponseError)?;
@@ -164,7 +164,7 @@ impl SupergraphFetcher {
         let headers = self.get_headers()?;
 
         let resp = async_client
-            .get(self.endpoint.clone())
+            .get(&self.endpoint)
             .headers(headers)
             .send()
             .await
