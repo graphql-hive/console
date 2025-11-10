@@ -141,14 +141,16 @@ export function ResourceSelector(props: {
   organization: FragmentType<typeof ResourceSelector_OrganizationFragment>;
   selection: ResourceSelection;
   onSelectionChange: (selection: ResourceSelection) => void;
+  /**
+   * Scope the resource selector to a specific project.
+   * If this property is provided, please make sure that the `selection` property contains the project.
+   * */
+  forProjectId?: string;
 }) {
   const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
-  const [breadcrumb, setBreadcrumb] = useState(
-    null as
-      | null
-      | { projectId: string; targetId?: undefined }
-      | { projectId: string; targetId: string },
-  );
+  const [breadcrumb, setBreadcrumb] = useState<
+    null | { projectId: string; targetId?: undefined } | { projectId: string; targetId: string }
+  >(props.forProjectId ? { projectId: props.forProjectId } : null);
   // whether we show the service or apps in the last tab
   const [serviceAppsState, setServiceAppsState] = useState(ServicesAppsState.service);
 
@@ -608,11 +610,33 @@ export function ResourceSelector(props: {
     props.onSelectionChange,
   ]);
 
+  const forIdProject = useMemo(() => {
+    if (!props.forProjectId) {
+      return null;
+    }
+
+    const project = props.selection.projects.find(
+      project => project.projectId === props.forProjectId,
+    );
+
+    if (!project) {
+      // Something is wrong
+      return null;
+    }
+
+    return project;
+  }, [props.forProjectId, props.selection.projects]);
+
+  const showProjectsTab = !props.forProjectId;
+
   return (
     <Tabs
       defaultValue="granular"
       value={
-        props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All ? 'full' : 'granular'
+        props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All ||
+        (forIdProject && forIdProject.targets.mode === GraphQLSchema.ResourceAssignmentModeType.All)
+          ? 'full'
+          : 'granular'
       }
     >
       <TabsList variant="content" className="mt-1">
@@ -620,11 +644,29 @@ export function ResourceSelector(props: {
           variant="content"
           value="full"
           onClick={() => {
+            if (!forIdProject) {
+              props.onSelectionChange({
+                ...props.selection,
+                mode: GraphQLSchema.ResourceAssignmentModeType.All,
+              });
+              setBreadcrumb(null);
+              return;
+            }
+
             props.onSelectionChange({
               ...props.selection,
-              mode: GraphQLSchema.ResourceAssignmentModeType.All,
+              mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+              projects: [
+                {
+                  ...forIdProject,
+                  targets: {
+                    ...forIdProject.targets,
+                    mode: GraphQLSchema.ResourceAssignmentModeType.All,
+                  },
+                },
+              ],
             });
-            setBreadcrumb(null);
+            setBreadcrumb({ projectId: forIdProject.projectId });
           }}
         >
           Full Access
@@ -633,9 +675,25 @@ export function ResourceSelector(props: {
           variant="content"
           value="granular"
           onClick={() => {
+            if (!forIdProject) {
+              props.onSelectionChange({
+                ...props.selection,
+                mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+              });
+              return;
+            }
             props.onSelectionChange({
               ...props.selection,
               mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+              projects: [
+                {
+                  ...forIdProject,
+                  targets: {
+                    ...forIdProject.targets,
+                    mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+                  },
+                },
+              ],
             });
           }}
         >
@@ -653,12 +711,14 @@ export function ResourceSelector(props: {
             <p className="mb-4 text-sm">The permissions are granted on the specified resources.</p>
             <div>
               <div className="flex text-sm">
-                <div className="flex-1 rounded-tl-sm border-l border-t border-transparent border-l-inherit border-t-inherit px-2 py-1 font-bold">
-                  Projects
-                </div>
+                {showProjectsTab && (
+                  <div className="flex-1 rounded-tl-sm border-l border-t border-transparent border-l-inherit border-t-inherit px-2 py-1 font-bold">
+                    Projects
+                  </div>
+                )}
                 <div className="flex flex-1 items-baseline border-l border-t border-transparent border-l-inherit border-t-inherit px-2 py-1">
                   <div className="font-bold">Targets</div>
-                  {targetState && (
+                  {targetState && showProjectsTab && (
                     <div className="ml-auto flex items-center text-xs">
                       <span className="mr-1">All</span>
                       <Checkbox
@@ -730,50 +790,57 @@ export function ResourceSelector(props: {
               </div>
               <div className="mt-0 flex min-h-[250px] flex-wrap rounded-sm">
                 {/** Projects Content */}
-                <div className="flex flex-1 flex-col border pt-2">
-                  <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
-                    access granted
+                {showProjectsTab && (
+                  <div className="flex flex-1 flex-col border pt-2">
+                    <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
+                      access granted
+                    </div>
+                    {projectState.selected.length ? (
+                      projectState.selected.map(selection => (
+                        <RowItem
+                          key={selection.project.id}
+                          title={
+                            selection.project.slug +
+                            (selection.projectSelection.targets.mode ===
+                            GraphQLSchema.ResourceAssignmentModeType.All
+                              ? ' (all targets, all services)'
+                              : ` (${selection.projectSelection.targets.targets?.length ?? 0} target${selection.projectSelection.targets.targets?.length === 1 ? '' : 's'})`)
+                          }
+                          isActive={projectState.activeProject?.project.id === selection.project.id}
+                          onClick={() => {
+                            setBreadcrumb({ projectId: selection.project.id });
+                          }}
+                          onDelete={() => projectState.removeProject(selection.project)}
+                        />
+                      ))
+                    ) : (
+                      <div className="px-2 text-xs">None selected</div>
+                    )}
+                    <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
+                      not selected
+                    </div>
+                    {projectState.notSelected.length ? (
+                      projectState.notSelected.map(project => (
+                        <RowItem
+                          key={project.id}
+                          title={project.slug}
+                          isActive={breadcrumb?.projectId === project.id}
+                          onClick={() => projectState.addProject(project)}
+                        />
+                      ))
+                    ) : (
+                      <div className="px-2 text-xs">All selected</div>
+                    )}
                   </div>
-                  {projectState.selected.length ? (
-                    projectState.selected.map(selection => (
-                      <RowItem
-                        key={selection.project.id}
-                        title={
-                          selection.project.slug +
-                          (selection.projectSelection.targets.mode ===
-                          GraphQLSchema.ResourceAssignmentModeType.All
-                            ? ' (all targets, all services)'
-                            : ` (${selection.projectSelection.targets.targets?.length ?? 0} target${selection.projectSelection.targets.targets?.length === 1 ? '' : 's'})`)
-                        }
-                        isActive={projectState.activeProject?.project.id === selection.project.id}
-                        onClick={() => {
-                          setBreadcrumb({ projectId: selection.project.id });
-                        }}
-                        onDelete={() => projectState.removeProject(selection.project)}
-                      />
-                    ))
-                  ) : (
-                    <div className="px-2 text-xs">None selected</div>
-                  )}
-                  <div className="text-muted-foreground mb-1 mt-3 px-2 text-xs uppercase">
-                    not selected
-                  </div>
-                  {projectState.notSelected.length ? (
-                    projectState.notSelected.map(project => (
-                      <RowItem
-                        key={project.id}
-                        title={project.slug}
-                        isActive={breadcrumb?.projectId === project.id}
-                        onClick={() => projectState.addProject(project)}
-                      />
-                    ))
-                  ) : (
-                    <div className="px-2 text-xs">All selected</div>
-                  )}
-                </div>
+                )}
 
                 {/** Targets Content */}
-                <div className="flex flex-1 flex-col border-y border-r pt-2">
+                <div
+                  className={cn(
+                    'flex flex-1 flex-col border-y border-r pt-2',
+                    !showProjectsTab && 'border-l',
+                  )}
+                >
                   {targetState === null ? (
                     <div className="text-muted-foreground px-2 text-sm">
                       Select a project for adjusting the target access.

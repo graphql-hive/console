@@ -18,8 +18,8 @@ const AccessTokensSubPage_OrganizationQuery = graphql(`
   query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      accessTokens(first: 10) {
-        ...AccessTokensTable_OrganizationAccessTokenConnectionFragment
+      allAccessTokens(first: 10) {
+        ...AccessTokensTable_AccessTokenConnectionFragment
       }
       ...CreateAccessTokenSheetContent_OrganizationFragment
       ...ResourceSelector_OrganizationFragment
@@ -27,7 +27,7 @@ const AccessTokensSubPage_OrganizationQuery = graphql(`
   }
 `);
 
-const enum CreateAccessTokenState {
+export const enum CreateAccessTokenState {
   closed,
   open,
   /** show confirmation dialog to ditch draft state of new access token */
@@ -52,10 +52,14 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
       <SubPageLayoutHeader
         subPageTitle="Access Tokens"
         description={
-          <>
+          <div className="max-w-[800px] space-y-2">
             <CardDescription>
               Access Tokens are used for the Hive CLI, Hive Public GraphQL API and Hive Usage
               Reporting. Granular resource based access can be granted based on permissions.
+            </CardDescription>
+            <CardDescription>
+              Here you can see, create and revoke access tokens issued within the whole organization
+              (including project, personal and organization scoped) access tokens.
             </CardDescription>
             <CardDescription>
               <DocsLink
@@ -65,7 +69,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
                 Learn more about Access Tokens
               </DocsLink>
             </CardDescription>
-          </>
+          </div>
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
@@ -124,7 +128,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         )}
         {query.data?.organization && (
           <AccessTokensTable
-            accessTokens={query.data.organization.accessTokens}
+            accessTokens={query.data.organization.allAccessTokens}
             organizationSlug={props.organizationSlug}
             refetch={refetchQuery}
           />

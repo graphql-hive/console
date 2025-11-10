@@ -1,31 +1,8 @@
-import { graphql } from '../../testkit/gql';
-import * as GraphQLSchema from '../../testkit/gql/graphql';
-import { execute } from '../../testkit/graphql';
-import { initSeed } from '../../testkit/seed';
-
-const CreateOrganizationAccessTokenMutation = graphql(`
-  mutation CreateOrganizationAccessToken($input: CreateOrganizationAccessTokenInput!) {
-    createOrganizationAccessToken(input: $input) {
-      ok {
-        privateAccessKey
-        createdOrganizationAccessToken {
-          id
-          title
-          description
-          permissions
-          createdAt
-        }
-      }
-      error {
-        message
-        details {
-          title
-          description
-        }
-      }
-    }
-  }
-`);
+import { createOrganizationAccessToken } from 'testkit/flow';
+import { graphql } from '../../../testkit/gql';
+import * as GraphQLSchema from '../../../testkit/gql/graphql';
+import { execute } from '../../../testkit/graphql';
+import { initSeed } from '../../../testkit/seed';
 
 const OrganizationProjectTargetQuery = graphql(`
   query OrganizationProjectTargetQuery(
@@ -60,7 +37,6 @@ const PaginatedAccessTokensQuery = graphql(`
             id
             title
             description
-            permissions
             createdAt
           }
         }
@@ -77,27 +53,25 @@ test.concurrent('create: success', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const result = await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'a access token',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
+
   expect(result.createOrganizationAccessToken.error).toEqual(null);
   expect(result.createOrganizationAccessToken.ok).toEqual({
     privateAccessKey: expect.any(String),
     createdOrganizationAccessToken: {
       id: expect.any(String),
-      title: 'a access token',
+      title: 'an access token',
       description: 'Some description',
       permissions: [],
       createdAt: expect.any(String),
@@ -109,21 +83,18 @@ test.concurrent('create: failure invalid title', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const result = await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: '   ',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: '   ',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createOrganizationAccessToken.ok).toEqual(null);
   expect(result.createOrganizationAccessToken.error).toMatchInlineSnapshot(`
     {
@@ -140,21 +111,18 @@ test.concurrent('create: failure invalid description', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const org = await createOrg();
 
-  const result = await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'a access token',
-        description: new Array(300).fill('A').join(''),
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: new Array(300).fill('A').join(''),
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createOrganizationAccessToken.ok).toEqual(null);
   expect(result.createOrganizationAccessToken.error).toMatchInlineSnapshot(`
     {
@@ -172,21 +140,18 @@ test.concurrent('create: failure because no access to organization', async ({ ex
   const actor2 = await initSeed().createOwner();
   const org = await actor1.createOrg();
 
-  const errors = await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'a access token',
-        description: 'Some description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: [],
+  const errors = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'Some description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: [],
     },
-    authToken: actor2.ownerToken,
-  }).then(e => e.expectGraphQLErrors());
+    actor2.ownerToken,
+  ).then(e => e.expectGraphQLErrors());
   expect(errors).toMatchObject([
     {
       extensions: {
@@ -204,21 +169,18 @@ test.concurrent('query GraphQL API on resources with access', async ({ expect })
   const org = await createOrg();
   const project = await org.createProject(GraphQLSchema.ProjectType.Federation);
 
-  const result = await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'a access token',
-        description: 'a description',
-        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-        permissions: ['organization:describe', 'project:describe'],
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'a description',
+      resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+      permissions: ['organization:describe', 'project:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createOrganizationAccessToken.error).toEqual(null);
   const organizationAccessToken = result.createOrganizationAccessToken.ok!.privateAccessKey;
 
@@ -253,31 +215,30 @@ test.concurrent('query GraphQL API on resources without access', async ({ expect
   const project1 = await org.createProject(GraphQLSchema.ProjectType.Federation);
   const project2 = await org.createProject(GraphQLSchema.ProjectType.Federation);
 
-  const result = await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'a access token',
-        description: 'a description',
-        resources: {
-          mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
-          projects: [
-            {
-              projectId: project1.project.id,
-              targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
-            },
-          ],
-        },
-        permissions: ['organization:describe', 'project:describe'],
+  const result = await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'an access token',
+      description: 'a description',
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
+        projects: [
+          {
+            projectId: project1.project.id,
+            targets: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
+          },
+        ],
+      },
+      permissions: ['organization:describe', 'project:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
   expect(result.createOrganizationAccessToken.error).toEqual(null);
   const organizationAccessToken = result.createOrganizationAccessToken.ok!.privateAccessKey;
+
+  expect(organizationAccessToken).toMatch(/^hvo1\//);
 
   const projectQuery = await execute({
     document: OrganizationProjectTargetQuery,
@@ -317,41 +278,35 @@ test.concurrent('pagination', async ({ expect }) => {
     },
   });
 
-  await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'first access token',
-        description: 'a description',
-        resources: {
-          mode: GraphQLSchema.ResourceAssignmentModeType.All,
-        },
-        permissions: ['organization:describe'],
+  await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'first access token',
+      description: 'a description',
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.All,
+      },
+      permissions: ['organization:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
 
-  await execute({
-    document: CreateOrganizationAccessTokenMutation,
-    variables: {
-      input: {
-        organization: {
-          byId: org.organization.id,
-        },
-        title: 'second access token',
-        description: 'a description',
-        resources: {
-          mode: GraphQLSchema.ResourceAssignmentModeType.All,
-        },
-        permissions: ['organization:describe'],
+  await createOrganizationAccessToken(
+    {
+      organization: {
+        byId: org.organization.id,
       },
+      title: 'second access token',
+      description: 'a description',
+      resources: {
+        mode: GraphQLSchema.ResourceAssignmentModeType.All,
+      },
+      permissions: ['organization:describe'],
     },
-    authToken: ownerToken,
-  }).then(e => e.expectNoGraphQLErrors());
+    ownerToken,
+  ).then(e => e.expectNoGraphQLErrors());
 
   paginatedResult = await execute({
     document: PaginatedAccessTokensQuery,
@@ -370,7 +325,6 @@ test.concurrent('pagination', async ({ expect }) => {
           createdAt: expect.any(String),
           description: 'a description',
           id: expect.any(String),
-          permissions: ['organization:describe'],
           title: 'second access token',
         },
       },
@@ -400,7 +354,6 @@ test.concurrent('pagination', async ({ expect }) => {
           createdAt: expect.any(String),
           description: 'a description',
           id: expect.any(String),
-          permissions: ['organization:describe'],
           title: 'first access token',
         },
       },
