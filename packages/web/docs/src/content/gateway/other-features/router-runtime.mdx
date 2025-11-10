@@ -34,6 +34,20 @@ configuration:
 
 <Tabs.Tab>
 
+You can either run Hive Gateway with a truthy `HIVE_ROUTER_RUNTIME` environment variable:
+
+```sh
+HIVE_ROUTER_RUNTIME=true hive-gateway supergraph
+```
+
+or use the `--hive-router-runtime` flag:
+
+```sh
+hive-gateway supergraph --hive-router-runtime
+```
+
+or provide the Router Runtime in your config file:
+
 ```ts filename="gateway.config.ts"
 import { defineConfig } from '@graphql-hive/gateway'
 import { unifiedGraphHandler } from '@graphql-hive/router-runtime'
