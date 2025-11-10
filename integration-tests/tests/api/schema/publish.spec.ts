@@ -2579,6 +2579,407 @@ describe('schema publishing changes are persisted', () => {
       type: 'REGISTRY_SERVICE_URL_CHANGED',
     },
   });
+
+  // DirectiveUsage tests
+  persistedTest({
+    name: 'DirectiveUsageEnumValueAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER @auth
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        enumName: 'Role',
+        enumValueName: 'USER',
+        addedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_ENUM_VALUE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageEnumValueRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER @auth
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        enumName: 'Role',
+        enumValueName: 'USER',
+        removedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_ENUM_VALUE_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageFieldDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String @deprecated
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'User',
+        fieldName: 'name',
+      },
+      type: 'FIELD_DEPRECATION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageFieldDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String @deprecated
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'User',
+        fieldName: 'name',
+      },
+      type: 'FIELD_DEPRECATION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID! @validate): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'Query',
+        fieldName: 'user',
+        argumentName: 'id',
+        addedDirectiveName: 'validate',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID! @validate): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'Query',
+        fieldName: 'user',
+        argumentName: 'id',
+        removedDirectiveName: 'validate',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageObjectAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User @auth {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        objectName: 'User',
+        addedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_OBJECT_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageObjectRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User @auth {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        objectName: 'User',
+        removedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_OBJECT_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInputFieldDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String!
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String! @validate
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        inputObjectName: 'UserInput',
+        inputFieldName: 'email',
+        addedDirectiveName: 'validate',
+      },
+      type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInputFieldDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String! @validate
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String!
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        inputObjectName: 'UserInput',
+        inputFieldName: 'email',
+        removedDirectiveName: 'validate',
+      },
+      type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInterfaceAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node @auth {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        interfaceName: 'Node',
+        addedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_INTERFACE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInterfaceRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node @auth {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        interfaceName: 'Node',
+        removedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_INTERFACE_REMOVED',
+    },
+  });
 });
 
 const SchemaCompareToPreviousVersionQuery = graphql(`

@@ -210,7 +210,7 @@ test.concurrent(
             typeType: object type,
           },
           path: Query.bruv,
-          reason: Removing a field is a breaking change. It is preferable to deprecate the field before removing it.,
+          reason: Removing a field is a breaking change. It is preferable to deprecate the field before removing it. This applies to removed union fields as well, since removal breaks client operations that contain fragments that reference the removed type through direct (... on RemovedType) or indirect means such as __typename in the consumers.,
           type: FIELD_REMOVED,
           usageStatistics: null,
         }
