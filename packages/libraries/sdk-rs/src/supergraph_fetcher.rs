@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
+use reqwest::header::InvalidHeaderValue;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::policies::ExponentialBackoff;
@@ -11,8 +12,7 @@ use reqwest_retry::RetryTransientMiddleware;
 
 #[derive(Debug)]
 pub struct SupergraphFetcher {
-    async_client: ClientWithMiddleware,
-    sync_client: reqwest::blocking::Client,
+    client: AsyncOrSyncClient,
     endpoint: String,
     headers: RwLock<HeaderMap>,
 }
@@ -22,8 +22,9 @@ pub enum SupergraphFetcherError {
     NetworkError(reqwest_middleware::Error),
     NetworkResponseError(reqwest::Error),
     HeadersLock(String),
-    InvalidKey(String),
-    InvalidUserAgent(String),
+    InvalidKey(InvalidHeaderValue),
+    InvalidUserAgent(InvalidHeaderValue),
+    AsyncInSyncMode,
 }
 
 impl Display for SupergraphFetcherError {
@@ -37,15 +38,30 @@ impl Display for SupergraphFetcherError {
                 write!(f, "Network response error: {}", e)
             }
             SupergraphFetcherError::HeadersLock(e) => write!(f, "Headers lock error: {}", e),
-            SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid key: {}", e),
+            SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid CDN key: {}", e),
             SupergraphFetcherError::InvalidUserAgent(e) => {
                 write!(f, "Invalid user agent: {}", e)
+            }
+            SupergraphFetcherError::AsyncInSyncMode => {
+                write!(f, "Attempted to use async client in sync fetch")
             }
         }
     }
 }
 
+pub enum FetcherMode {
+    Async,
+    Sync,
+}
+
+#[derive(Debug)]
+enum AsyncOrSyncClient {
+    Async(ClientWithMiddleware),
+    Sync(reqwest::blocking::Client),
+}
+
 impl SupergraphFetcher {
+    #[allow(clippy::too_many_arguments)]
     pub fn try_new(
         endpoint: String,
         key: String,
@@ -54,6 +70,7 @@ impl SupergraphFetcher {
         request_timeout: Duration,
         accept_invalid_certs: bool,
         retry_count: u32,
+        fetcher_mode: FetcherMode,
     ) -> Result<Self, SupergraphFetcherError> {
         let mut endpoint = endpoint;
         if !endpoint.ends_with("/supergraph") {
@@ -64,38 +81,44 @@ impl SupergraphFetcher {
             }
         }
 
+        let user_agent_value =
+            HeaderValue::from_str(&user_agent).map_err(SupergraphFetcherError::InvalidUserAgent)?;
+
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
 
-        let reqwest_agent = reqwest::Client::builder()
-            .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(connect_timeout)
-            .timeout(request_timeout)
-            .user_agent(&user_agent)
-            .build()
-            .map_err(SupergraphFetcherError::FetcherCreationError)?;
-
-        let async_client = ClientBuilder::new(reqwest_agent)
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build();
-
-        let sync_client = reqwest::blocking::Client::builder()
-            .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(connect_timeout)
-            .timeout(request_timeout)
-            .user_agent(&user_agent)
-            .build()
-            .map_err(SupergraphFetcherError::FetcherCreationError)?;
+        let client = match fetcher_mode {
+            FetcherMode::Async => {
+                let reqwest_agent = reqwest::Client::builder()
+                    .danger_accept_invalid_certs(accept_invalid_certs)
+                    .connect_timeout(connect_timeout)
+                    .timeout(request_timeout)
+                    .user_agent(user_agent_value.clone())
+                    .build()
+                    .map_err(SupergraphFetcherError::FetcherCreationError)?;
+                let async_client = ClientBuilder::new(reqwest_agent)
+                    .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+                    .build();
+                AsyncOrSyncClient::Async(async_client)
+            }
+            FetcherMode::Sync => AsyncOrSyncClient::Sync(
+                reqwest::blocking::Client::builder()
+                    .danger_accept_invalid_certs(accept_invalid_certs)
+                    .connect_timeout(connect_timeout)
+                    .timeout(request_timeout)
+                    .user_agent(user_agent_value.clone())
+                    .build()
+                    .map_err(SupergraphFetcherError::FetcherCreationError)?,
+            ),
+        };
 
         let mut headers = HeaderMap::new();
         headers.insert(
             "X-Hive-CDN-Key",
-            HeaderValue::from_str(&key)
-                .map_err(|err| SupergraphFetcherError::InvalidKey(err.to_string()))?,
+            HeaderValue::from_str(&key).map_err(SupergraphFetcherError::InvalidKey)?,
         );
 
         Ok(Self {
-            async_client,
-            sync_client,
+            client,
             endpoint,
             headers: RwLock::new(headers),
         })
@@ -104,8 +127,14 @@ impl SupergraphFetcher {
     pub fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
         let headers = self.get_headers()?;
 
-        let resp = self
-            .sync_client
+        let sync_client = match &self.client {
+            AsyncOrSyncClient::Async(_) => {
+                return Err(SupergraphFetcherError::AsyncInSyncMode);
+            }
+            AsyncOrSyncClient::Sync(sync_client) => sync_client,
+        };
+
+        let resp = sync_client
             .get(self.endpoint.clone())
             .headers(headers)
             .send()
@@ -126,10 +155,15 @@ impl SupergraphFetcher {
     }
 
     pub async fn fetch_supergraph_async(&self) -> Result<Option<String>, SupergraphFetcherError> {
+        // Switch to sync fetch if the client is sync
+        let async_client = match &self.client {
+            AsyncOrSyncClient::Async(async_client) => async_client,
+            AsyncOrSyncClient::Sync(_) => return self.fetch_supergraph(),
+        };
+
         let headers = self.get_headers()?;
 
-        let resp = self
-            .async_client
+        let resp = async_client
             .get(self.endpoint.clone())
             .headers(headers)
             .send()

@@ -1,6 +1,7 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
+use hive_console_sdk::supergraph_fetcher::FetcherMode;
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
 use sha2::Digest;
 use sha2::Sha256;
@@ -131,6 +132,7 @@ impl HiveRegistry {
                 Duration::from_secs(60),
                 accept_invalid_certs,
                 3,
+                FetcherMode::Sync,
             )
             .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?,
             file_name,
