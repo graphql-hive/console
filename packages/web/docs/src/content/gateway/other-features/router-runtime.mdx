@@ -1,0 +1,59 @@
+import { Callout } from '@theguild/components'
+
+# Router Runtime
+
+<Callout type="warning" emoji="⚠️">
+
+This feature is EXPERIMENTAL and is subject to extensive change in future releases. Some features
+might not work as expected or at all, and the API might change at any time. Please use with caution!
+
+</Callout>
+
+Hive Gateway can now use parts of [Hive Router's](/docs/router) runtime, like the Query Planner,
+introducing a new federation query planner in JavaScript that aims to optimize query execution
+performance by using Rust Hive Router's advanced planning algorithms through native addons.
+
+This integration allows Hive Gateway to leverage the high-performance capabilities of Hive Router's
+runtime while still operating within the Node.js or Bun environment and offering the full suite of
+JavaScript's ecosystem back to Hive Router.
+
+## How to Use?
+
+Start by installing the necessary package:
+
+```npm2yarn
+npm install @graphql-hive/router-runtime
+```
+
+Then, configure your Hive Gateway to use the Hive Router Runtime by updating your gateway's
+configuration:
+
+<Tabs items={['CLI', "Programmatic Usage"]}>
+
+<Tabs.Tab>
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { unifiedGraphHandler } from '@graphql-hive/router-runtime'
+
+export const gatewayConfig = defineConfig({
+  unifiedGraphHandler
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="index.ts"
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { unifiedGraphHandler } from '@graphql-hive/router-runtime'
+
+export const gateway = createGatewayRuntime({
+  unifiedGraphHandler
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
