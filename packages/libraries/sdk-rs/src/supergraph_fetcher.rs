@@ -1,47 +1,12 @@
-use std::fmt::Display;
-use std::sync::RwLock;
 use std::time::Duration;
-
-use reqwest::header::HeaderMap;
-use reqwest::header::HeaderValue;
-use reqwest_middleware::ClientBuilder;
-use reqwest_middleware::ClientWithMiddleware;
-use reqwest_retry::policies::ExponentialBackoff;
-use reqwest_retry::RetryTransientMiddleware;
 
 #[derive(Debug)]
 pub struct SupergraphFetcher {
-    agent: ClientWithMiddleware,
+    client: reqwest::blocking::Client,
     endpoint: String,
-    headers: RwLock<HeaderMap>,
-}
-
-pub enum SupergraphFetcherError {
-    FetcherCreationError(reqwest::Error),
-    NetworkError(reqwest_middleware::Error),
-    NetworkResponseError(reqwest::Error),
-    HeadersLock(String),
-    InvalidKey(String),
-    InvalidUserAgent(String),
-}
-
-impl Display for SupergraphFetcherError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SupergraphFetcherError::FetcherCreationError(e) => {
-                write!(f, "Creating fetcher failed: {}", e)
-            }
-            SupergraphFetcherError::NetworkError(e) => write!(f, "Network error: {}", e),
-            SupergraphFetcherError::NetworkResponseError(e) => {
-                write!(f, "Network response error: {}", e)
-            }
-            SupergraphFetcherError::HeadersLock(e) => write!(f, "Headers lock error: {}", e),
-            SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid key: {}", e),
-            SupergraphFetcherError::InvalidUserAgent(e) => {
-                write!(f, "Invalid user agent: {}", e)
-            }
-        }
-    }
+    key: String,
+    user_agent: String,
+    etag: Option<String>,
 }
 
 impl SupergraphFetcher {
@@ -52,96 +17,70 @@ impl SupergraphFetcher {
         connect_timeout: Duration,
         request_timeout: Duration,
         accept_invalid_certs: bool,
-        retry_count: u32,
-    ) -> Result<Self, SupergraphFetcherError> {
+    ) -> Result<Self, String> {
         let mut endpoint = endpoint;
         if !endpoint.ends_with("/supergraph") {
             if endpoint.ends_with("/") {
-                endpoint.push_str("supergraph");
+                endpoint.push_str("supergraph")
             } else {
-                endpoint.push_str("/supergraph");
+                endpoint.push_str("/supergraph")
             }
         }
 
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
-
-        let reqwest_agent = reqwest::Client::builder()
+        let client = reqwest::blocking::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
             .connect_timeout(connect_timeout)
             .timeout(request_timeout)
             .build()
-            .map_err(SupergraphFetcherError::FetcherCreationError)?;
-
-        let agent = ClientBuilder::new(reqwest_agent)
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build();
-
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            reqwest::header::USER_AGENT,
-            HeaderValue::from_str(&user_agent)
-                .map_err(|err| SupergraphFetcherError::InvalidUserAgent(err.to_string()))?,
-        );
-        headers.insert(
-            "X-Hive-CDN-Key",
-            HeaderValue::from_str(&key)
-                .map_err(|err| SupergraphFetcherError::InvalidKey(err.to_string()))?,
-        );
+            .map_err(|e| e.to_string())?;
 
         Ok(Self {
-            agent,
+            client,
             endpoint,
-            headers: RwLock::new(headers),
+            key,
+            user_agent,
+            etag: None,
         })
     }
 
-    pub async fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
-        let headers = self.get_headers()?;
+    pub fn fetch_supergraph(&mut self) -> Result<Option<String>, String> {
+        let mut headers = reqwest::header::HeaderMap::new();
+
+        headers.insert(
+            reqwest::header::USER_AGENT,
+            reqwest::header::HeaderValue::from_str(&self.user_agent).unwrap(),
+        );
+        headers.insert("X-Hive-CDN-Key", self.key.parse().unwrap());
+
+        if let Some(checksum) = &self.etag {
+            headers.insert("If-None-Match", checksum.parse().unwrap());
+        }
 
         let resp = self
-            .agent
-            .get(self.endpoint.clone())
+            .client
+            .get(self.endpoint.as_str())
             .headers(headers)
             .send()
-            .await
-            .map_err(SupergraphFetcherError::NetworkError)?;
+            .map_err(|e| e.to_string())?;
+
+        match resp.headers().get("etag") {
+            Some(checksum) => {
+                let etag = checksum.to_str().map_err(|e| e.to_string())?;
+                self.update_latest_etag(Some(etag.to_string()));
+            }
+            None => {
+                self.update_latest_etag(None);
+            }
+        }
 
         if resp.status().as_u16() == 304 {
             return Ok(None);
         }
 
-        let etag = resp.headers().get("etag");
-        self.update_latest_etag(etag)?;
-
-        let text = resp
-            .text()
-            .await
-            .map_err(SupergraphFetcherError::NetworkResponseError)?;
-
-        Ok(Some(text))
+        Ok(Some(resp.text().map_err(|e| e.to_string())?))
     }
 
-    fn get_headers(&self) -> Result<HeaderMap, SupergraphFetcherError> {
-        let guard = self.headers.try_read().map_err(|e| {
-            SupergraphFetcherError::HeadersLock(format!("Failed to read the etag record: {:?}", e))
-        })?;
-        Ok(guard.clone())
-    }
-
-    fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> Result<(), SupergraphFetcherError> {
-        let mut guard = self.headers.try_write().map_err(|e| {
-            SupergraphFetcherError::HeadersLock(format!(
-                "Failed to update the etag record: {:?}",
-                e
-            ))
-        })?;
-
-        if let Some(etag_value) = etag {
-            guard.insert("If-None-Match", etag_value.clone());
-        } else {
-            guard.remove("If-None-Match");
-        }
-
-        Ok(())
+    fn update_latest_etag(&mut self, etag: Option<String>) {
+        self.etag = etag;
     }
 }
