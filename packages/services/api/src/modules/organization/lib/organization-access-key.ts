@@ -14,22 +14,33 @@ type DecodedAccessKey = {
   id: string;
   /** string to compare against the hash within the database ("organization_access_tokens"."hash") */
   privateKey: string;
+  /** The category of the access token */
+  category: AccessTokenCategory;
 };
+
+export const enum AccessTokenCategory {
+  organization = 'o',
+  project = 'p',
+  personal = 'u',
+}
+
+type KeyPrefix = `hv${AccessTokenCategory}1/`;
 
 /**
  * Prefix for the organization access key.
  * We use this prefix so we can quickly identify whether an organization access token.
  *
  * **hv** -> Hive
- * **o**  -> Organization
+ * **o** or **p** or **u** -> Organization or Project or User
  * **1**  -> Version 1
  */
-const keyPrefix = 'hvo1/';
+const keyPrefix = (category: AccessTokenCategory): KeyPrefix =>
+  `hv${category}1/` satisfies KeyPrefix;
 const decodeError = { type: 'error' as const, reason: 'Invalid access token.' };
 
-function encode(recordId: string, secret: string) {
+function encode(recordId: string, secret: string, category: AccessTokenCategory) {
   const keyContents = [recordId, secret].join(':');
-  return keyPrefix + btoa(keyContents);
+  return keyPrefix(category) + btoa(keyContents);
 }
 
 /**
@@ -38,11 +49,21 @@ function encode(recordId: string, secret: string) {
 export function decode(
   accessToken: string,
 ): { type: 'error'; reason: string } | { type: 'ok'; accessKey: DecodedAccessKey } {
-  if (!accessToken.startsWith(keyPrefix)) {
+  let category: null | AccessTokenCategory = null;
+
+  if (accessToken.startsWith(keyPrefix(AccessTokenCategory.organization))) {
+    category = AccessTokenCategory.organization;
+  } else if (accessToken.startsWith(keyPrefix(AccessTokenCategory.project))) {
+    category = AccessTokenCategory.project;
+  } else if (accessToken.startsWith(keyPrefix(AccessTokenCategory.personal))) {
+    category = AccessTokenCategory.personal;
+  }
+
+  if (category === null) {
     return decodeError;
   }
 
-  accessToken = accessToken.slice(keyPrefix.length);
+  accessToken = accessToken.slice(keyPrefix(category).length);
 
   let str: string;
 
@@ -62,7 +83,7 @@ export function decode(
   const privateKey = parts.at(1);
 
   if (id && privateKey) {
-    return { type: 'ok', accessKey: { id, privateKey } } as const;
+    return { type: 'ok', accessKey: { id, privateKey, category } } as const;
   }
 
   return decodeError;
@@ -71,13 +92,13 @@ export function decode(
 /**
  * Creates a new organization access key/token for a provided UUID.
  */
-export async function create(id: string) {
+export async function create(id: string, category: AccessTokenCategory) {
   const secret = Crypto.createHash('sha256')
     .update(Crypto.randomBytes(20).toString())
     .digest('hex');
 
   const hash = await bcrypt.hash(secret, await bcrypt.genSalt());
-  const privateAccessToken = encode(id, secret);
+  const privateAccessToken = encode(id, secret, category);
   const firstCharacters = privateAccessToken.substr(0, 10);
 
   return {

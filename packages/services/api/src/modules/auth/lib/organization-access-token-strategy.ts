@@ -1,8 +1,10 @@
 import * as crypto from 'node:crypto';
 import { type FastifyReply, type FastifyRequest } from '@hive/service-common';
 import * as OrganizationAccessKey from '../../organization/lib/organization-access-key';
-import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
-import { OrganizationAccessTokensCache } from '../../organization/providers/organization-access-tokens-cache';
+import {
+  CachedAccessToken,
+  OrganizationAccessTokensCache,
+} from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 import { OrganizationAccessTokenValidationCache } from '../providers/organization-access-token-validation-cache';
 import {
@@ -19,7 +21,7 @@ function hashToken(token: string) {
 export class OrganizationAccessTokenSession extends Session {
   public readonly organizationId: string;
   private policies: Array<AuthorizationPolicyStatement>;
-  private organizationAccessToken: OrganizationAccessToken;
+  private organizationAccessToken: CachedAccessToken;
   readonly id: string;
 
   constructor(
@@ -27,7 +29,7 @@ export class OrganizationAccessTokenSession extends Session {
       id: string;
       organizationId: string;
       policies: Array<AuthorizationPolicyStatement>;
-      organizationAccessToken: OrganizationAccessToken;
+      organizationAccessToken: CachedAccessToken;
     },
     deps: {
       logger: Logger;
@@ -106,7 +108,25 @@ export class OrganizationAccessTokenStrategy extends AuthNStrategy<OrganizationA
       result.accessKey.id,
       this.logger,
     );
+
     if (!organizationAccessToken) {
+      return null;
+    }
+
+    // access token uses wrong prefix
+    // e.g. hvo1/ -> but has userId or hvp1/ but has no projectId
+    if (
+      (result.accessKey.category === OrganizationAccessKey.AccessTokenCategory.personal &&
+        organizationAccessToken.userId == null) ||
+      (result.accessKey.category === OrganizationAccessKey.AccessTokenCategory.project &&
+        organizationAccessToken.projectId == null) ||
+      (result.accessKey.category === OrganizationAccessKey.AccessTokenCategory.organization &&
+        (organizationAccessToken.projectId || organizationAccessToken.userId))
+    ) {
+      this.logger.debug(
+        'Someone is trying an access token with the wrong prefix. (category=%s)',
+        result.accessKey.category,
+      );
       return null;
     }
 

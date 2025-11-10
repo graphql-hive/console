@@ -35,6 +35,8 @@ export type SelectedPermissionOverviewProps = {
   isExpanded?: boolean;
   /** option for injecting additional content within a permission group. */
   additionalGroupContent?: (group: { level: PermissionLevelType }) => React.ReactNode;
+  /** Exclude organization for project settings. */
+  excludeOrganization?: boolean;
 };
 
 export function SelectedPermissionOverview(props: SelectedPermissionOverviewProps) {
@@ -47,11 +49,7 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
     [props.activePermissionIds],
   );
 
-  return [
-    {
-      level: PermissionLevelType.Organization,
-      title: 'Organization',
-    },
+  const items = [
     {
       level: PermissionLevelType.Project,
       title: 'Project',
@@ -68,7 +66,16 @@ export function SelectedPermissionOverview(props: SelectedPermissionOverviewProp
       level: PermissionLevelType.AppDeployment,
       title: 'App Deployment',
     },
-  ].map(group => (
+  ];
+
+  if (!props.excludeOrganization) {
+    items.unshift({
+      level: PermissionLevelType.Organization,
+      title: 'Organization',
+    });
+  }
+
+  return items.map(group => (
     <PermissionLevelGroup
       key={group.level}
       permissionLevel={group.level}

@@ -28,7 +28,7 @@ import { SelectedPermissionOverview } from '../../members/selected-permission-ov
 import { permissionLevelToResourceName, resolveResources } from './shared-helpers';
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-const TitleInputModel = z
+export const TitleInputModel = z
   .string()
   .trim()
   .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
@@ -36,7 +36,7 @@ const TitleInputModel = z
   .max(100, 'Maximum length is 100 characters.');
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-const DescriptionInputModel = z
+export const DescriptionInputModel = z
   .string()
   .trim()
   .max(248, 'Maximum length is 248 characters.')

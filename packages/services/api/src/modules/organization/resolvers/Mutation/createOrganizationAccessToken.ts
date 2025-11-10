@@ -4,7 +4,7 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const createOrganizationAccessToken: NonNullable<
   MutationResolvers['createOrganizationAccessToken']
 > = async (_, args, { injector }) => {
-  const result = await injector.get(OrganizationAccessTokens).create({
+  const result = await injector.get(OrganizationAccessTokens).createForOrganization({
     organization: args.input.organization,
     title: args.input.title,
     description: args.input.description ?? null,
@@ -16,7 +16,7 @@ export const createOrganizationAccessToken: NonNullable<
     return {
       ok: {
         __typename: 'CreateOrganizationAccessTokenResultOk',
-        createdOrganizationAccessToken: result.organizationAccessToken,
+        createdOrganizationAccessToken: result.accessToken,
         privateAccessKey: result.privateAccessKey,
       },
     };

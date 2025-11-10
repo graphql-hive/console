@@ -60,7 +60,7 @@ import {
 import { execute } from './graphql';
 import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from './schema-policy';
 import { collect, CollectedOperation, legacyCollect } from './usage';
-import { generateUnique } from './utils';
+import { generateUnique, getServiceHost } from './utils';
 
 export function initSeed() {
   function createConnectionPool() {
@@ -89,6 +89,15 @@ export function initSeed() {
     },
     authenticate,
     generateEmail: () => userEmail(generateUnique()),
+    async purgeOrganizationAccessTokenById(id: string) {
+      const registryAddress = await getServiceHost('server', 8082);
+      await fetch(
+        'http://' + registryAddress + '/cache/organization-access-token-cache/delete/' + id,
+        {
+          method: 'POST',
+        },
+      ).then(res => res.json());
+    },
     async createOwner() {
       const ownerEmail = userEmail(generateUnique());
       const auth = await authenticate(ownerEmail);
@@ -120,7 +129,7 @@ export function initSeed() {
             ) {
               const result = await createOrganizationAccessToken(
                 {
-                  title: 'A Access Token',
+                  title: 'an access token',
                   description: 'access token',
                   organization: {
                     byId: organization.id,
@@ -488,7 +497,7 @@ export function initSeed() {
                   return result.addAlertChannel;
                 },
                 /**
-                 * Create a access token for a given target.
+                 * Create an access token for a given target.
                  * This token can be used for usage reporting and all actions that would be performed by the CLI.
                  */
                 async createTargetAccessToken({

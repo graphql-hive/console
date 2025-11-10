@@ -5,7 +5,7 @@ import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
-import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
+import { CachedAccessToken } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 
 export type AuthorizationPolicyStatement = {
@@ -55,7 +55,7 @@ export type UserActor = {
 
 export type OrganizationAccessTokenActor = {
   type: 'organizationAccessToken';
-  organizationAccessToken: OrganizationAccessToken;
+  organizationAccessToken: CachedAccessToken;
 };
 
 type Actor = UserActor | OrganizationAccessTokenActor;
@@ -393,6 +393,7 @@ const permissionsByLevel = {
     z.literal('schemaLinting:modifyOrganizationRules'),
     z.literal('auditLog:export'),
     z.literal('accessToken:modify'),
+    z.literal('personalAccessToken:modify'),
   ],
   project: [
     z.literal('project:describe'),
@@ -401,6 +402,7 @@ const permissionsByLevel = {
     z.literal('alert:modify'),
     z.literal('schemaLinting:modifyProjectRules'),
     z.literal('target:create'),
+    z.literal('projectAccessToken:modify'),
   ],
   target: [
     z.literal('targetAccessToken:modify'),
@@ -524,7 +526,7 @@ type Actions = keyof typeof actionDefinitions;
 type ActionStrings = Actions | '*' | '*:describe';
 
 /** Unauthenticated session that is returned by default. */
-class UnauthenticatedSession extends Session {
+export class UnauthenticatedSession extends Session {
   protected loadPolicyStatementsForOrganization(
     _: string,
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement> {

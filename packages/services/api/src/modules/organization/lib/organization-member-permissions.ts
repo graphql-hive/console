@@ -17,6 +17,7 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Access support tickets',
         description: 'Member can access, create and reply to support tickets.',
       },
+
       {
         id: 'accessToken:modify',
         title: 'Manage organization access tokens',
@@ -135,8 +136,14 @@ export const permissionGroups: Array<PermissionGroup> = [
       },
       {
         id: 'project:modifySettings',
-        title: 'Modify Settings',
+        title: 'Modify project settings',
         description: 'Member can access the specified projects.',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'projectAccessToken:modify',
+        title: 'Manage project access token',
+        description: 'Create access tokens for performing actions within the project.',
         dependsOn: 'project:describe',
       },
     ],
@@ -234,6 +241,71 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Approve schema check',
         description: 'Member can approve failed schema checks.',
         dependsOn: 'project:describe',
+      },
+    ],
+  },
+  {
+    id: 'cli-actions',
+    title: 'CLI/API Actions',
+    permissions: [
+      {
+        id: 'personalAccessToken:modify',
+        title: 'Manage personal access tokens',
+        description: 'Member can create and use personal access tokens.',
+      },
+      {
+        id: 'schema:compose',
+        title: 'Compose schema',
+        description: 'Allow using "hive dev" command for local composition.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'schemaCheck:create',
+        title: 'Check schema/service/subgraph',
+        description: 'Grant access to run checks for services/schemas.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'schemaVersion:publish',
+        title: 'Publish schema/service/subgraph',
+        description: 'Grant access to publish services/schemas.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'schemaVersion:deleteService',
+        title: 'Delete service',
+        description: 'Deletes a service from the schema registry.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'appDeployment:create',
+        title: 'Create app deployment',
+        description: 'Grant access to creating app deployments.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'appDeployment:publish',
+        title: 'Publish app deployment',
+        description: 'Grant access to publishing app deployments.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'appDeployment:retire',
+        title: 'Retire app deployment',
+        description: 'Grant access to retring app deployments.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'usage:report',
+        title: 'Report usage data',
+        description: 'Grant access to report usage data.',
+        dependsOn: 'personalAccessToken:modify',
+      },
+      {
+        id: 'traces:report',
+        title: 'Report OTEL traces',
+        description: 'Grant access to reporting traces.',
+        dependsOn: 'personalAccessToken:modify',
       },
     ],
   },
