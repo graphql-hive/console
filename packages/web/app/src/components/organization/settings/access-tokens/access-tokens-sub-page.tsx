@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from 'urql';
-import * as AlertDialog from '@/components/ui/alert-dialog';
+import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
 import { DocsLink } from '@/components/ui/docs-note';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import * as Sheet from '@/components/ui/sheet';
+import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { graphql } from '@/gql';
 import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
@@ -73,7 +73,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         }
       />
       <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
-        <Sheet.Sheet
+        <Sheet
           open={createAccessTokenState !== CreateAccessTokenState.closed}
           onOpenChange={isOpen => {
             if (isOpen === false) {
@@ -83,11 +83,11 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
             setCreateAccessTokenState(CreateAccessTokenState.open);
           }}
         >
-          <Sheet.SheetTrigger asChild>
+          <SheetTrigger asChild>
             <Button data-cy="organization-settings-access-tokens-create-new">
               Create new access token
             </Button>
-          </Sheet.SheetTrigger>
+          </SheetTrigger>
           {createAccessTokenState !== CreateAccessTokenState.closed && query.data?.organization && (
             <>
               <CreateAccessTokenSheetContent
@@ -99,32 +99,12 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
               />
             </>
           )}
-        </Sheet.Sheet>
+        </Sheet>
         {createAccessTokenState === CreateAccessTokenState.closing && (
-          <AlertDialog.AlertDialog open>
-            <AlertDialog.AlertDialogContent>
-              <AlertDialog.AlertDialogHeader>
-                <AlertDialog.AlertDialogTitle>
-                  Do you want to discard the access token?
-                </AlertDialog.AlertDialogTitle>
-                <AlertDialog.AlertDialogDescription>
-                  If you cancel now, any draft information will be lost.
-                </AlertDialog.AlertDialogDescription>
-              </AlertDialog.AlertDialogHeader>
-              <AlertDialog.AlertDialogFooter>
-                <AlertDialog.AlertDialogCancel
-                  onClick={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
-                >
-                  Cancel
-                </AlertDialog.AlertDialogCancel>
-                <AlertDialog.AlertDialogAction
-                  onClick={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
-                >
-                  Close
-                </AlertDialog.AlertDialogAction>
-              </AlertDialog.AlertDialogFooter>
-            </AlertDialog.AlertDialogContent>
-          </AlertDialog.AlertDialog>
+          <DiscardAccessTokenDraft
+            continueFn={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+            discardFn={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
+          />
         )}
         {query.data?.organization && (
           <AccessTokensTable
