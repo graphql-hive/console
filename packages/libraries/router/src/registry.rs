@@ -1,12 +1,12 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
-use futures::executor::block_on;
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
 use std::io::Write;
+use std::thread;
 use std::time::Duration;
 
 #[derive(Debug)]
@@ -130,7 +130,6 @@ impl HiveRegistry {
                 Duration::from_secs(5),
                 Duration::from_secs(60),
                 accept_invalid_certs,
-                3,
             )
             .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?,
             file_name,
@@ -149,11 +148,9 @@ impl HiveRegistry {
             }
         }
 
-        tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(std::time::Duration::from_secs(poll_interval)).await;
-                registry.poll().await;
-            }
+        thread::spawn(move || loop {
+            thread::sleep(std::time::Duration::from_secs(poll_interval));
+            registry.poll()
         });
 
         Ok(())
@@ -161,7 +158,7 @@ impl HiveRegistry {
 
     fn initial_supergraph(&mut self) -> Result<(), String> {
         let mut file = std::fs::File::create(self.file_name.clone()).map_err(|e| e.to_string())?;
-        let resp = block_on(self.fetcher.fetch_supergraph()).map_err(|e| e.to_string())?;
+        let resp = self.fetcher.fetch_supergraph()?;
 
         match resp {
             Some(supergraph) => {
@@ -176,8 +173,8 @@ impl HiveRegistry {
         Ok(())
     }
 
-    async fn poll(&mut self) {
-        match self.fetcher.fetch_supergraph().await {
+    fn poll(&mut self) {
+        match self.fetcher.fetch_supergraph() {
             Ok(new_supergraph) => {
                 if let Some(new_supergraph) = new_supergraph {
                     let current_file = std::fs::read_to_string(self.file_name.clone())
