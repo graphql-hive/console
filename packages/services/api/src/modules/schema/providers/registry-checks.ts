@@ -2,7 +2,7 @@ import { URL } from 'node:url';
 import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { ChangeType, CriticalityLevel } from '@graphql-inspector/core';
+import { ChangeType, CriticalityLevel, TypeOfChangeType } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
 import { traceFn } from '@hive/service-common';
@@ -903,7 +903,7 @@ function compareAlphaNumeric(a: string, b: string) {
 }
 
 function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
-  if (ChangeType.InputFieldTypeChanged === (change.type as ChangeType)) {
+  if (ChangeType.InputFieldTypeChanged === (change.type as TypeOfChangeType)) {
     const oldType = change.meta.oldInputFieldType?.toString();
     const newType = change.meta.newInputFieldType?.toString();
     return `${oldType}!` === newType;
@@ -912,7 +912,7 @@ function requiresAdvancedNullabilityCheck(change: Awaited<ReturnType<Inspector['
 }
 
 function isNullToRequiredArgumentChange(change: Awaited<ReturnType<Inspector['diff']>>[number]) {
-  if (ChangeType.FieldArgumentTypeChanged === (change.type as ChangeType)) {
+  if (ChangeType.FieldArgumentTypeChanged === (change.type as TypeOfChangeType)) {
     const oldType = change.meta.oldArgumentType?.toString();
     const newType = change.meta.newArgumentType?.toString();
     return `${oldType}!` === newType;
