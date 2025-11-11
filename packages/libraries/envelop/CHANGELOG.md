@@ -1,5 +1,18 @@
 # @graphql-hive/envelop
 
+## 0.36.3
+
+### Patch Changes
+
+- [#7248](https://github.com/graphql-hive/console/pull/7248)
+  [`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support project and personal access tokens (`hvp1/`
+  and `hvu1/`).
+
+- Updated dependencies
+  [[`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)]:
+  - @graphql-hive/core@0.13.1
+
 ## 0.36.2
 
 ### Patch Changes

@@ -10,7 +10,7 @@ import { createPersistedDocuments } from './persisted-documents.js';
 import { createReporting } from './reporting.js';
 import type { HiveClient, HivePluginOptions } from './types.js';
 import { createUsage } from './usage.js';
-import { createHiveLogger, logIf } from './utils.js';
+import { createHiveLogger, isLegacyAccessToken, logIf } from './utils.js';
 
 export function createHive(options: HivePluginOptions): HiveClient {
   const logger = createHiveLogger(options?.agent?.logger ?? console, '[hive]');
@@ -53,7 +53,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
     await Promise.all([schemaReporter.dispose(), usage.dispose()]);
   }
 
-  const isOrganizationAccessToken = options.token?.startsWith('hvo1/') === true;
+  const isOrganizationAccessToken = !isLegacyAccessToken(options.token ?? '');
 
   // enabledOnly when `printTokenInfo` is `true` or `debug` is true and `printTokenInfo` is not `false`
   const printTokenInfo =
@@ -110,6 +110,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
 
           infoLogger.info('Fetching token details...');
 
+          const clientVersionForDetails = options.agent?.version || version;
           const response = await http.post(
             endpoint,
             JSON.stringify({
@@ -120,9 +121,9 @@ export function createHive(options: HivePluginOptions): HiveClient {
               headers: {
                 'content-type': 'application/json',
                 Authorization: `Bearer ${options.token}`,
-                'user-agent': `hive-client/${version}`,
-                'graphql-client-name': 'Hive Client',
-                'graphql-client-version': version,
+                'user-agent': `${options.agent?.name || 'hive-client'}/${clientVersionForDetails}`,
+                'graphql-client-name': `${options.agent?.name || 'Hive Client'}`,
+                'graphql-client-version': clientVersionForDetails,
               },
               timeout: 30_000,
               fetchImplementation: options?.agent?.fetch,

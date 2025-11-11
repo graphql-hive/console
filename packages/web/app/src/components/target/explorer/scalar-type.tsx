@@ -32,8 +32,8 @@ export function GraphQLScalarTypeComponent(props: {
       projectSlug={props.projectSlug}
       organizationSlug={props.organizationSlug}
     >
-      <div className="flex flex-row gap-4 p-4">
-        <div className="grow text-sm">
+      <div className="flex flex-row justify-between p-4">
+        <div className="max-w-2xl grow text-sm">
           {typeof ttype.description === 'string' ? <Markdown content={ttype.description} /> : null}
         </div>
         {typeof props.totalRequests === 'number' ? (

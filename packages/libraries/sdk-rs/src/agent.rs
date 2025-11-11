@@ -165,7 +165,7 @@ impl UsageAgent {
 
         let mut endpoint = endpoint;
 
-        if token.starts_with("hvo1/") {
+        if token.starts_with("hvo1/") || token.starts_with("hvu1/") || token.starts_with("hvp1/") {
             if let Some(target_id) = target_id {
                 endpoint.push_str(&format!("/{}", target_id));
             }
