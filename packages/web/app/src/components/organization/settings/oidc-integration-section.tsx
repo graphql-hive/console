@@ -821,8 +821,9 @@ function OIDCDefaultResourceSelector(props: {
         .then(data => {
           if (data.error) {
             setMutateState('error');
+          } else {
+            setMutateState('success');
           }
-          setMutateState('success');
           return data;
         })
         .catch((err: unknown) => {
@@ -842,6 +843,8 @@ function OIDCDefaultResourceSelector(props: {
     } else if (mutateState === 'success') {
       return <CheckIcon className="absolute right-0 top-0 text-emerald-500" />;
     }
+
+    return null;
   }
 
   const _setSelection = useCallback(
