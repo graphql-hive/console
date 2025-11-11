@@ -838,9 +838,13 @@ function OIDCDefaultResourceSelector(props: {
   function MutateState() {
     if (debouncedMutate.isPending() || mutateState === 'loading') {
       return <Spinner className="absolute right-0 top-0" />;
-    } else if (mutateState === 'error') {
+    }
+
+    if (mutateState === 'error') {
       return <XIcon className="absolute right-0 top-0 text-red-500" />;
-    } else if (mutateState === 'success') {
+    }
+
+    if (mutateState === 'success') {
       return <CheckIcon className="absolute right-0 top-0 text-emerald-500" />;
     }
 
