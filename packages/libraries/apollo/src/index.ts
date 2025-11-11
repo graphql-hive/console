@@ -9,6 +9,7 @@ import {
   isHiveClient,
   SupergraphSDLFetcherOptions,
 } from '@graphql-hive/core';
+import { version } from './version';
 
 export {
   atLeastOnceSampler,
@@ -78,6 +79,7 @@ export function createHive(clientOrOptions: HivePluginOptions) {
     ...clientOrOptions,
     agent: {
       name: 'hive-client-yoga',
+      version,
       ...clientOrOptions.agent,
     },
   });

@@ -1,7 +1,5 @@
 ---
 '@graphql-hive/core': patch
-'@graphql-hive/envelop': patch
-'@graphql-hive/yoga': patch
 ---
 
 Allow to provide `version` to `AgentOptions` in Hive Client integrations.
