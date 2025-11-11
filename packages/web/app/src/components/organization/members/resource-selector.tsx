@@ -522,7 +522,8 @@ export function ResourceSelector(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organizationQuery.data?.organization?.isAppDeploymentsEnabled
+      !organizationQuery.data?.organization?.isAppDeploymentsEnabled ||
+      !organizationProjectTarget.data?.organization?.project?.target
     ) {
       return null;
     }
@@ -555,6 +556,15 @@ export function ResourceSelector(props: {
     ];
 
     const notSelectedApps: Array<string> = [];
+
+    if (organizationProjectTarget.data.organization.project.target?.appDeployments != null) {
+      for (const appName of organizationProjectTarget.data.organization.project.target
+        .appDeployments) {
+        if (!notSelectedApps.find(app => app === appName)) {
+          notSelectedApps.push(appName);
+        }
+      }
+    }
 
     return {
       selection: {
