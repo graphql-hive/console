@@ -1134,13 +1134,13 @@ export async function createStorage(
               "organization_id"
               , "email"
               , "role_id"
-              , "resource_assignments"
+              , "assigned_resources"
             )
             VALUES (
               ${args.organizationId}
               , ${args.email}
               , ${args.roleId}
-              , ${args.resourceAssignments === null ? null : sql.json(args.resourceAssignments)}
+              , ${args.resourceAssignments === null ? null : sql.jsonb(args.resourceAssignments)}
             )
             RETURNING *
           `);
@@ -1222,7 +1222,7 @@ export async function createStorage(
               , "user_id"
               , "role_id"
               , "assigned_resources"
-              , "created_at",
+              , "created_at"
             )
             VALUES (
               ${organization}
