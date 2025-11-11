@@ -10,13 +10,13 @@ import {
 } from '@/components/ui/alert-dialog';
 
 type DiscardAccessTokenDraftProps = {
-  continueFn: () => void;
-  discardFn: () => void;
+  onContinue: () => void;
+  onDiscard: () => void;
 };
 
 export const DiscardAccessTokenDraft = ({
-  continueFn,
-  discardFn,
+  onContinue,
+  onDiscard,
 }: DiscardAccessTokenDraftProps) => {
   return (
     <AlertDialog open>
@@ -28,10 +28,10 @@ export const DiscardAccessTokenDraft = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => continueFn()}>
+          <AlertDialogCancel onClick={() => onContinue()}>
             Continue creating token
           </AlertDialogCancel>
-          <AlertDialogAction onClick={() => discardFn()}>Discard draft token</AlertDialogAction>
+          <AlertDialogAction onClick={() => onDiscard()}>Discard draft token</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

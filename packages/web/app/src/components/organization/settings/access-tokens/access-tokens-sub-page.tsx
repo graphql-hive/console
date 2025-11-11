@@ -102,8 +102,8 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
         </Sheet>
         {createAccessTokenState === CreateAccessTokenState.closing && (
           <DiscardAccessTokenDraft
-            continueFn={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
-            discardFn={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
+            onContinue={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
+            onDiscard={() => setCreateAccessTokenState(CreateAccessTokenState.closed)}
           />
         )}
         {query.data?.organization && (
