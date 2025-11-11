@@ -166,7 +166,7 @@ export function createAgent<TEvent>(
           accept: 'application/json',
           'content-type': 'application/json',
           Authorization: `Bearer ${options.token}`,
-          'User-Agent': `${options.name}/${version}`,
+          'User-Agent': `${options.name}/${options.version}`,
           ...headers(),
         },
         timeout: options.timeout,
