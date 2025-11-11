@@ -2,9 +2,12 @@ import { Callout, Tabs } from '@theguild/components'
 
 ## Introduction
 
-Hive Gateway can now use parts of [Hive Router's](/docs/router) runtime, like the Query Planner,
+Hive Gateway can use parts of [Hive Router's](/docs/router) runtime, like the Query Planner,
 introducing a new federation query planner in JavaScript that aims to optimize query execution
 performance by using Rust Hive Router's advanced planning algorithms through native addons.
+
+Running Hive Gateway with the Router Runtime is **up to 3x faster per core** with **up to 2x reduced
+latency**.
 
 This integration allows Hive Gateway to leverage the high-performance capabilities of Hive Router's
 runtime while still operating within the Node.js or Bun environment and offering the full suite of
@@ -134,6 +137,12 @@ and providing better resource efficiency for production deployments.
 
 </Callout>
 
-Based on our measurements and performance testing, the Router Runtime demonstrates significant
-performance improvements over the Default Runtime with **up to 3x faster query planning per core**
-thanks to the Rust-powered query planner.
+Based on our measurements and performance testing, the Router Runtime is **up to 3x faster per
+core** with **up to 2x reduced latency** compared the Default (Stitching) Runtime thanks to the
+Rust-powered query planner and optimizations for it.
+
+See the official benchmark results for
+[constant vus](https://github.com/graphql-hive/graphql-gateways-benchmark/blob/main/constant-vus-over-time_result.md)
+and
+[ramping vus](https://github.com/graphql-hive/graphql-gateways-benchmark/blob/main/ramping-vus_result.md)
+to get a feeling about how it performs side-by-side with other GraphQL Federation gateways.
