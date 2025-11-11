@@ -65,15 +65,15 @@ export const gateway = createGatewayRuntime({
 
 </Tabs>
 
-## Compared to Stitching Runtime
+## Compared to Default Runtime
 
-By default, Hive Gateway uses the [Stitching Runtime](https://the-guild.dev/graphql/stitching),
-which is a pure JavaScript implementation designed for flexibility and ease of use. The Stitching
-Runtime is well-suited for most applications, providing a robust and adaptable solution for GraphQL
+Hive Gateway uses the [Stitching Runtime](https://the-guild.dev/graphql/stitching) by default, which
+is a pure JavaScript implementation designed for flexibility and ease of use. The Stitching Runtime
+is well-suited for most applications, providing a robust and adaptable solution for GraphQL
 federation.
 
 While Router Runtime provides superior performance for many workloads, it sacrifices some of the
-flexibility and extensibility of the Stitching Runtime.
+flexibility and extensibility of the Default Runtime.
 
 The following table provides a comprehensive comparison between the two runtimes:
 
@@ -108,10 +108,12 @@ The following table provides a comprehensive comparison between the two runtimes
 | Request plugins              | ✅        | ✅                    | Request-level processing and modification                                                        |
 | Response plugins             | ✅        | ✅                    | Response-level processing and modification                                                       |
 
-## No Stitching Runtime Plugin Hooks
+## No Default Runtime Plugin Hooks
 
 All plugin hooks will work with Router Runtime except for those specific to stitching that will
-never work because the runtime is different (router runtime vs stitching runtime). Those hooks are:
+never work because the runtime is different (router runtime vs. stitching runtime).
+
+Those hooks are only the following two hooks:
 
 - [`onDelegationPlan`](/docs/gateway/other-features/custom-plugins#ondelegationplan)
 - [`onDelegationStageExecute`](/docs/gateway/other-features/custom-plugins#ondelegationstageexecute)
@@ -133,5 +135,5 @@ and providing better resource efficiency for production deployments.
 </Callout>
 
 Based on our measurements and performance testing, the Router Runtime demonstrates significant
-performance improvements over the Stitching Runtime with **up to 3x faster query planning per core**
+performance improvements over the Default Runtime with **up to 3x faster query planning per core**
 thanks to the Rust-powered query planner.
