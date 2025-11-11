@@ -13,37 +13,41 @@ import { cn } from '@/lib/utils';
 const ResourceSelector_OrganizationFragment = graphql(`
   fragment ResourceSelector_OrganizationFragment on Organization {
     id
-    slug
-    projects {
-      edges {
-        node {
-          id
-          slug
-          type
-        }
+  }
+`);
+
+const ResourceSelector_OrganizationQuery = graphql(`
+  query ResourceSelector_OrganizationQuery(
+    $organizationId: ID!
+    $intent: ResourceSelectorIntentType!
+  ) {
+    organization(reference: { byId: $organizationId }) {
+      id
+      projects: projectsForResourceSelector(intent: $intent) {
+        projectId
+        slug
+        type
       }
+      isAppDeploymentsEnabled
     }
-    isAppDeploymentsEnabled
   }
 `);
 
 const ResourceSelector_OrganizationProjectTargestQuery = graphql(`
   query ResourceSelector_OrganizationProjectTargestQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
+    $organizationId: ID!
+    $projectId: ID!
+    $intent: ResourceSelectorIntentType!
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+    organization(reference: { byId: $organizationId }) {
       id
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
+      project: projectForResourceSelector(projectId: $projectId, intent: $intent) {
+        projectId
+        slug
         type
         targets {
-          edges {
-            node {
-              id
-              slug
-            }
-          }
+          targetId
+          slug
         }
       }
     }
@@ -52,38 +56,22 @@ const ResourceSelector_OrganizationProjectTargestQuery = graphql(`
 
 const ResourceSelector_OrganizationProjectTargetQuery = graphql(`
   query ResourceSelector_OrganizationProjectTargetQuery(
-    $organizationSlug: String!
-    $projectSlug: String!
-    $targetSlug: String!
+    $organizationId: ID!
+    $projectId: ID!
+    $targetId: ID!
+    $intent: ResourceSelectorIntentType!
   ) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+    organization(reference: { byId: $organizationId }) {
       id
-      project: projectBySlug(projectSlug: $projectSlug) {
-        id
+      project: projectForResourceSelector(projectId: $projectId, intent: $intent) {
+        projectId
+        slug
         type
-        targets {
-          edges {
-            node {
-              id
-              slug
-            }
-          }
-        }
-        target: targetBySlug(targetSlug: $targetSlug) {
-          id
-          latestValidSchemaVersion {
-            id
-            schemas {
-              edges {
-                node {
-                  ... on CompositeSchema {
-                    id
-                    service
-                  }
-                }
-              }
-            }
-          }
+        target(targetId: $targetId) {
+          targetId
+          slug
+          services
+          appDeployments
         }
       }
     }
@@ -146,8 +134,18 @@ export function ResourceSelector(props: {
    * If this property is provided, please make sure that the `selection` property contains the project.
    * */
   forProjectId?: string;
+  intent?: GraphQLSchema.ResourceSelectorIntentType;
 }) {
-  const organization = useFragment(ResourceSelector_OrganizationFragment, props.organization);
+  const organizationId = useFragment(ResourceSelector_OrganizationFragment, props.organization).id;
+  const intent = props.intent ?? GraphQLSchema.ResourceSelectorIntentType.Admin;
+  const [organizationQuery] = useQuery({
+    query: ResourceSelector_OrganizationQuery,
+    variables: {
+      intent,
+      organizationId,
+    },
+  });
+
   const [breadcrumb, setBreadcrumb] = useState<
     null | { projectId: string; targetId?: undefined } | { projectId: string; targetId: string }
   >(props.forProjectId ? { projectId: props.forProjectId } : null);
@@ -164,93 +162,102 @@ export function ResourceSelector(props: {
   };
 
   const projectState = useMemo(() => {
+    if (organizationQuery.data?.organization?.projects == null) {
+      return null;
+    }
+
     if (props.selection.mode === GraphQLSchema.ResourceAssignmentModeType.All) {
       return null;
     }
 
+    const organization = organizationQuery.data.organization;
+
     type SelectedItem = {
-      project: (typeof organization.projects.edges)[number]['node'];
+      project: (typeof organization.projects)[number];
       projectSelection: GraphQLSchema.ProjectResourceAssignmentInput;
     };
 
-    type NotSelectedItem = (typeof organization.projects.edges)[number]['node'];
+    type NotSelectedItem = (typeof organization.projects)[number];
 
     const selectedProjects: Array<SelectedItem> = [];
     const notSelectedProjects: Array<NotSelectedItem> = [];
 
     let activeProject: null | SelectedItem = null;
 
-    for (const edge of organization.projects.edges) {
+    for (const project of organization.projects) {
       const projectSelection = props.selection.projects?.find(
-        item => item.projectId === edge.node.id,
+        item => item.projectId === project.projectId,
       );
 
       if (projectSelection) {
-        selectedProjects.push({ project: edge.node, projectSelection });
+        selectedProjects.push({ project, projectSelection });
 
-        if (breadcrumb?.projectId === edge.node.id) {
-          activeProject = { project: edge.node, projectSelection };
+        if (breadcrumb?.projectId === project.projectId) {
+          activeProject = { project, projectSelection };
         }
 
         continue;
       }
 
-      notSelectedProjects.push(edge.node);
+      notSelectedProjects.push(project);
     }
 
     return {
       selected: selectedProjects,
       notSelected: notSelectedProjects,
       activeProject,
-      addProject(item: (typeof organization.projects.edges)[number]['node']) {
+      addProject(item: (typeof organization.projects)[number]) {
         props.onSelectionChange(
           produce(props.selection, state => {
             state.projects?.push({
-              projectId: item.id,
+              projectId: item.projectId,
               projectSlug: item.slug,
               targets: {
                 mode: GraphQLSchema.ResourceAssignmentModeType.Granular,
                 targets: [],
               },
             });
-            setBreadcrumb({ projectId: item.id });
+            setBreadcrumb({ projectId: item.projectId });
           }),
         );
       },
-      removeProject(item: (typeof organization.projects.edges)[number]['node']) {
+      removeProject(item: (typeof organization.projects)[number]) {
         props.onSelectionChange(
           produce(props.selection, state => {
-            state.projects = state.projects?.filter(project => project.projectId !== item.id);
+            state.projects = state.projects?.filter(
+              project => project.projectId !== item.projectId,
+            );
           }),
         );
         setBreadcrumb(breadcrumb => {
-          if (breadcrumb?.projectId === item.id) {
+          if (breadcrumb?.projectId === item.projectId) {
             return null;
           }
           return breadcrumb;
         });
       },
     };
-  }, [organization.projects.edges, props.selection, breadcrumb?.projectId]);
+  }, [organizationQuery.data?.organization?.projects, props.selection, breadcrumb?.projectId]);
 
   const [organizationProjectTargets] = useQuery({
     query: ResourceSelector_OrganizationProjectTargestQuery,
     pause: !projectState?.activeProject,
     variables: {
-      organizationSlug: organization.slug,
-      projectSlug: projectState?.activeProject?.project.slug ?? '',
+      organizationId,
+      projectId: projectState?.activeProject?.project.projectId ?? '',
+      intent,
     },
   });
 
   const targetState = useMemo(() => {
     if (
-      !organizationProjectTargets?.data?.organization?.project?.targets?.edges ||
+      !organizationProjectTargets?.data?.organization?.project?.targets ||
       !projectState?.activeProject
     ) {
       return null;
     }
 
-    const projectId = projectState.activeProject.project.id;
+    const projectId = projectState.activeProject.project.projectId;
     const projectType = projectState.activeProject.project.type;
 
     if (
@@ -272,7 +279,7 @@ export function ResourceSelector(props: {
     }
 
     type SelectedItem = {
-      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
+      target: (typeof organizationProjectTargets.data.organization.project.targets)[number];
       targetSelection: Exclude<
         typeof projectState.activeProject.projectSelection.targets.targets,
         null | undefined
@@ -280,7 +287,7 @@ export function ResourceSelector(props: {
     };
 
     type NotSelectedItem =
-      (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
+      (typeof organizationProjectTargets.data.organization.project.targets)[number];
 
     const selected: Array<SelectedItem> = [];
     const notSelected: Array<NotSelectedItem> = [];
@@ -290,27 +297,27 @@ export function ResourceSelector(props: {
         typeof projectState.activeProject.projectSelection.targets.targets,
         null | undefined
       >[number];
-      target: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'];
+      target: (typeof organizationProjectTargets.data.organization.project.targets)[number];
     } = null;
 
-    for (const edge of organizationProjectTargets.data.organization.project.targets.edges) {
+    for (const target of organizationProjectTargets.data.organization.project.targets) {
       const targetSelection = projectState.activeProject.projectSelection.targets.targets?.find(
-        item => item.targetId === edge.node.id,
+        item => item.targetId === target.targetId,
       );
 
       if (targetSelection) {
-        selected.push({ target: edge.node, targetSelection });
+        selected.push({ target, targetSelection });
 
-        if (breadcrumb?.targetId === edge.node.id) {
+        if (breadcrumb?.targetId === target.targetId) {
           activeTarget = {
             targetSelection,
-            target: edge.node,
+            target,
           };
         }
         continue;
       }
 
-      notSelected.push(edge.node);
+      notSelected.push(target);
     }
 
     return {
@@ -321,14 +328,14 @@ export function ResourceSelector(props: {
       activeTarget,
       activeProject: projectState.activeProject,
       addTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
+        item: (typeof organizationProjectTargets.data.organization.project.targets)[number],
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
             const project = state.projects.find(project => project.projectId === projectId);
             if (!project) return;
             project.targets.targets.push({
-              targetId: item.id,
+              targetId: item.targetId,
               targetSlug: item.slug,
               appDeployments: {
                 mode: GraphQLSchema.ResourceAssignmentModeType.All,
@@ -343,24 +350,24 @@ export function ResourceSelector(props: {
                 services: [],
               },
             });
-            setBreadcrumb({ projectId: project.projectId, targetId: item.id });
+            setBreadcrumb({ projectId: project.projectId, targetId: item.targetId });
           }),
         );
       },
       removeTarget(
-        item: (typeof organizationProjectTargets.data.organization.project.targets.edges)[number]['node'],
+        item: (typeof organizationProjectTargets.data.organization.project.targets)[number],
       ) {
         props.onSelectionChange(
           produce(props.selection, state => {
             const project = state.projects?.find(project => project.projectId === projectId);
             if (!project) return;
             project.targets.targets = project.targets.targets?.filter(
-              target => target.targetId !== item.id,
+              target => target.targetId !== item.targetId,
             );
           }),
         );
         setBreadcrumb(breadcrumb => {
-          if (breadcrumb?.targetId === item.id) {
+          if (breadcrumb?.targetId === item.targetId) {
             return {
               ...breadcrumb,
               targetId: undefined,
@@ -382,7 +389,7 @@ export function ResourceSelector(props: {
     };
   }, [
     projectState?.activeProject,
-    organizationProjectTargets?.data?.organization?.project?.targets?.edges,
+    organizationProjectTargets?.data?.organization?.project?.targets,
     breadcrumb?.targetId,
   ]);
 
@@ -390,9 +397,10 @@ export function ResourceSelector(props: {
     query: ResourceSelector_OrganizationProjectTargetQuery,
     pause: !targetState?.activeTarget || !projectState?.activeProject,
     variables: {
-      organizationSlug: organization.slug,
-      projectSlug: projectState?.activeProject?.project.slug ?? '',
-      targetSlug: targetState?.activeTarget?.target?.slug ?? '',
+      organizationId,
+      projectId: projectState?.activeProject?.project.projectId ?? '',
+      targetId: targetState?.activeTarget?.target?.targetId ?? '',
+      intent,
     },
   });
 
@@ -401,7 +409,7 @@ export function ResourceSelector(props: {
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organizationProjectTarget.data?.organization?.project
+      !organizationProjectTarget.data?.organization?.project?.target
     ) {
       return null;
     }
@@ -440,18 +448,11 @@ export function ResourceSelector(props: {
     ];
     const notSelectedServices: Array<string> = [];
 
-    if (
-      organizationProjectTarget.data.organization.project.target?.latestValidSchemaVersion?.schemas
-    ) {
-      for (const edge of organizationProjectTarget.data.organization.project.target
-        .latestValidSchemaVersion.schemas.edges) {
-        const schema = edge.node;
-        if (
-          schema.__typename === 'CompositeSchema' &&
-          schema.service &&
-          !selectedServices.find(service => service.serviceName === schema.service)
-        ) {
-          notSelectedServices.push(schema.service);
+    if (organizationProjectTarget.data.organization.project.target?.services) {
+      for (const serviceName of organizationProjectTarget.data.organization.project.target
+        .services) {
+        if (!selectedServices.find(service => service.serviceName === serviceName)) {
+          notSelectedServices.push(serviceName);
         }
       }
     }
@@ -508,14 +509,20 @@ export function ResourceSelector(props: {
         );
       },
     };
-  }, [targetState?.activeTarget, breadcrumb, projectState?.activeProject, props.selection]);
+  }, [
+    targetState?.activeTarget,
+    breadcrumb,
+    projectState?.activeProject,
+    props.selection,
+    organizationProjectTarget.data?.organization?.project?.target,
+  ]);
 
   const appsState = useMemo(() => {
     if (
       !projectState?.activeProject ||
       !targetState?.activeTarget ||
       !breadcrumb?.targetId ||
-      !organization.isAppDeploymentsEnabled
+      !organizationQuery.data?.organization?.isAppDeploymentsEnabled
     ) {
       return null;
     }
@@ -546,7 +553,7 @@ export function ResourceSelector(props: {
     const selectedApps: GraphQLSchema.AppDeploymentResourceAssignmentInput[] = [
       ...(targetState.activeTarget.targetSelection.appDeployments.appDeployments ?? []),
     ];
-    // TODO: populate this with service state
+
     const notSelectedApps: Array<string> = [];
 
     return {
@@ -609,6 +616,7 @@ export function ResourceSelector(props: {
     breadcrumb?.targetId,
     props.selection,
     props.onSelectionChange,
+    organizationProjectTarget.data?.organization?.project?.target,
   ]);
 
   const forIdProject = useMemo(() => {
@@ -741,7 +749,7 @@ export function ResourceSelector(props: {
                 <div className="flex flex-1 items-baseline rounded-tr-sm border-x border-t border-transparent border-x-inherit border-t-inherit px-2 py-1">
                   <div className="flex grow items-center">
                     <span className="font-bold">
-                      {organization.isAppDeploymentsEnabled ? (
+                      {organizationQuery.data?.organization?.isAppDeploymentsEnabled ? (
                         <>
                           <button className="flex items-center" onClick={toggleServiceAppsState}>
                             <ArrowDownIcon
@@ -799,7 +807,7 @@ export function ResourceSelector(props: {
                     {projectState.selected.length ? (
                       projectState.selected.map(selection => (
                         <RowItem
-                          key={selection.project.id}
+                          key={selection.project.projectId}
                           title={
                             selection.project.slug +
                             (selection.projectSelection.targets.mode ===
@@ -807,9 +815,12 @@ export function ResourceSelector(props: {
                               ? ' (all targets, all services)'
                               : ` (${selection.projectSelection.targets.targets?.length ?? 0} target${selection.projectSelection.targets.targets?.length === 1 ? '' : 's'})`)
                           }
-                          isActive={projectState.activeProject?.project.id === selection.project.id}
+                          isActive={
+                            projectState.activeProject?.project.projectId ===
+                            selection.project.projectId
+                          }
                           onClick={() => {
-                            setBreadcrumb({ projectId: selection.project.id });
+                            setBreadcrumb({ projectId: selection.project.projectId });
                           }}
                           onDelete={() => projectState.removeProject(selection.project)}
                         />
@@ -823,9 +834,9 @@ export function ResourceSelector(props: {
                     {projectState.notSelected.length ? (
                       projectState.notSelected.map(project => (
                         <RowItem
-                          key={project.id}
+                          key={project.projectId}
                           title={project.slug}
-                          isActive={breadcrumb?.projectId === project.id}
+                          isActive={breadcrumb?.projectId === project.projectId}
                           onClick={() => projectState.addProject(project)}
                         />
                       ))
@@ -860,7 +871,7 @@ export function ResourceSelector(props: {
                           {targetState.selection.selected.length ? (
                             targetState.selection.selected.map(selection => (
                               <RowItem
-                                key={selection.target.id}
+                                key={selection.target.targetId}
                                 title={
                                   selection.target.slug +
                                   (targetState.activeProject.project.type ===
@@ -872,12 +883,13 @@ export function ResourceSelector(props: {
                                       : ` (${selection.targetSelection.services.services?.length ?? 0} service${selection.targetSelection.services?.services?.length === 1 ? '' : 's'})`)
                                 }
                                 isActive={
-                                  targetState.activeTarget?.target.id === selection.target.id
+                                  targetState.activeTarget?.target.targetId ===
+                                  selection.target.targetId
                                 }
                                 onClick={() => {
                                   setBreadcrumb({
-                                    projectId: targetState.activeProject.project.id,
-                                    targetId: selection.target.id,
+                                    projectId: targetState.activeProject.project.projectId,
+                                    targetId: selection.target.targetId,
                                   });
                                 }}
                                 onDelete={() => {
@@ -894,7 +906,7 @@ export function ResourceSelector(props: {
                           {targetState.selection.notSelected.length ? (
                             targetState.selection.notSelected.map(target => (
                               <RowItem
-                                key={target.id}
+                                key={target.targetId}
                                 title={target.slug}
                                 isActive={
                                   false /* state.breadcrumb?.target?.targetId === target.id */
@@ -990,7 +1002,7 @@ export function ResourceSelector(props: {
                   )}
 
                   {/** Apps Content */}
-                  {organization.isAppDeploymentsEnabled ? (
+                  {organizationQuery.data?.organization?.isAppDeploymentsEnabled ? (
                     <div
                       className={cn(
                         'flex items-baseline border-b border-transparent border-y-inherit px-2 py-1',
@@ -1120,7 +1132,7 @@ export function ResourceSelector(props: {
                   <button
                     onClick={() =>
                       projectState.activeProject &&
-                      setBreadcrumb({ projectId: projectState.activeProject.project.id })
+                      setBreadcrumb({ projectId: projectState.activeProject.project.projectId })
                     }
                   >
                     {projectState.activeProject.project.slug}

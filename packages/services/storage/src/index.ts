@@ -1718,21 +1718,21 @@ export async function createStorage(
         orgId: organization,
       };
     },
-    async getTargets({ organizationId: organization, projectId: project }) {
+    async getTargets({ organizationId, projectId }) {
       const results = await pool.query<unknown>(sql`/* getTargets */
         SELECT
           ${targetSQLFields}
         FROM
           targets
         WHERE
-          project_id = ${project}
+          project_id = ${projectId}
         ORDER BY
           created_at DESC
       `);
 
       return results.rows.map(r => ({
         ...TargetModel.parse(r),
-        orgId: organization,
+        orgId: organizationId,
       }));
     },
     findTargetsByIds: batchBy<
@@ -4611,6 +4611,52 @@ export async function createStorage(
         organizationId: args.organizationId,
       });
     },
+    // async getProjectsForResourceSelector(args) {
+    //   const projects = await this.getProjects({ organizationId: args.organizationId });
+
+    //   return await Promise.all(
+    //     projects.map(async p => {
+    //       const targets = await this.getTargets({
+    //         organizationId: args.organizationId,
+    //         projectId: p.id,
+    //       });
+    //       return {
+    //         id: p.id,
+    //         slug: p.slug,
+    //         type: p.type,
+    //         targets: await Promise.all(
+    //           targets.map(async t => {
+    //             const latest = await this.getMaybeLatestValidVersion({ targetId: t.id });
+    //             let services: string[] | undefined;
+    //             if (latest) {
+    //               services = await storage.getSchemaNamesOfVersion({
+    //                 versionId: latest.id,
+    //               });
+    //             }
+
+    //             const apps = await this.pool.query<{ name: string }>(
+    //               sql`
+    //               SELECT DISTINCT ON ("name")
+    //                 "name"
+    //               FROM
+    //                 "app_deployments"
+    //               WHERE
+    //                 "target_id" = ${t.id}
+    //                 AND "retired_at" IS NULL
+    //             `,
+    //             );
+    //             return {
+    //               id: t.id,
+    //               slug: t.slug,
+    //               services: services ?? [],
+    //               appDeployments: apps.rows.map(a => a.name),
+    //             };
+    //           }),
+    //         ),
+    //       };
+    //     }),
+    //   );
+    // },
     pool,
   };
 

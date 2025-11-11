@@ -797,6 +797,76 @@ export default gql`
     pageInfo: PageInfo!
   }
 
+  """
+  Defines the intent or context under which a resource selector is used.
+  """
+  enum ResourceSelectorIntentType {
+    """
+    Indicates administrative intent, typically for management or configuration tasks.
+    """
+    ADMIN
+
+    """
+    Indicates user intent, typically for personal or non-administrative operations.
+    """
+    USER
+  }
+
+  """
+  Represents a project and its associated targets for resource selection.
+  """
+  type ProjectForResourceSelector {
+    """
+    Unique identifier of the project.
+    """
+    projectId: ID!
+
+    """
+    Human-readable slug of the project.
+    """
+    slug: String!
+
+    """
+    Type of the project.
+    """
+    type: ProjectType!
+
+    """
+    List of targets that belong to the project and can be selected as resources.
+    """
+    targets: [TargetForResourceSelector!]!
+
+    """
+    Gat a specific target that belongs to the project and can be selected as resource.
+    """
+    target(targetId: ID!): TargetForResourceSelector
+  }
+
+  """
+  Represents a target and its selectable sub-resources for resource selection.
+  """
+  type TargetForResourceSelector {
+    """
+    Unique identifier of the target.
+    """
+    targetId: ID!
+
+    """
+    Human-readable slug of the target.
+    """
+    slug: String!
+
+    """
+    List of service identifiers available under this target. Empty if not existing (no federation or stitching project).
+    """
+    services: [String!]
+
+    """
+    List of application deployment identifiers available under this target.
+    """
+    appDeployments: [String!]
+  }
+
   type Organization {
     """
     Unique UUID of the organization
@@ -821,6 +891,39 @@ export default gql`
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
     ): MemberRoleConnection @tag(name: "public")
+
+    """
+    Retrieves a list of all projects and their targets available for resource selection
+    within the organization.
+
+    The result can be filtered by intent, which defines the context of selection
+    (e.g., administrative vs. user-level operations).
+    """
+    projectsForResourceSelector(
+      """
+      Defines the purpose or context for which targets are being selected.
+      """
+      intent: ResourceSelectorIntentType! = ADMIN
+    ): [ProjectForResourceSelector!]!
+
+    """
+    Retrieves a single project and its associated targets for resource selection
+    by its unique identifier.
+
+    The result can be filtered by intent to adjust access based on context.
+    """
+    projectForResourceSelector(
+      """
+      Unique identifier of the project.
+      """
+      projectId: ID!
+
+      """
+      Defines the purpose or context for which targets are being selected.
+      """
+      intent: ResourceSelectorIntentType! = ADMIN
+    ): ProjectForResourceSelector
+
     """
     Whether the viewer should be able to access the settings page within the app
     """

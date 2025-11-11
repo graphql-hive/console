@@ -306,6 +306,7 @@ export function CreateProjectAccessTokenSheetContent(
                                 selection={resourceSelection}
                                 onSelectionChange={setResourceSelection}
                                 forProjectId={project.id}
+                                intent={GraphQLSchema.ResourceSelectorIntentType.User}
                               />
                             </Form.FormControl>
                             <Form.FormMessage />
