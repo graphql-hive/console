@@ -82,6 +82,9 @@ The following table provides a comprehensive comparison between the two runtimes
 | Additional resolvers         | ✅        | ❌                    | Additional type resolvers not supported                                                          |
 | Schema transforms            | ✅        | ❌                    | Schema transformation pipeline not available in router runtime                                   |
 | Progressive Override         | ✅        | ❌                    | Apollo Federation's `@override` directive not supported at the moment                            |
+| Rate limiting                | ✅        | ❌                    | Field-level and global rate limiting not supported                                               |
+| EDFS                         | ✅        | ❌                    | Event-Driven Federation Subscriptions are not supported because it uses additional resolvers     |
+| Subscriptions                | ✅        | ⚠️ Limited support    | Cannot populate fields from other subgraphs when resolving the subscription                      |
 | Schema extensions            | ✅        | ⚠️ Limited support    | Schema-level modifications may be limited because hive router does not use an executable schema  |
 | Custom plugins               | ✅        | ⚠️ No stitching hooks | All plugins, except those using [stitching hooks](#no-stitching-runtime-plugin-hooks), will work |
 | Envelop plugins              | ✅        | ✅                    | All of envelop plugins will work                                                                 |
@@ -98,7 +101,6 @@ The following table provides a comprehensive comparison between the two runtimes
 | Custom spans                 | ✅        | ✅                    | Custom instrumentation can be added                                                              |
 | Request logging              | ✅        | ✅                    | Request/response logging and auditing                                                            |
 | JWT authentication           | ✅        | ✅                    | JSON Web Token validation and propagation                                                        |
-| Rate limiting                | ✅        | ✅                    | Field-level and global rate limiting                                                             |
 | Depth limiting               | ✅        | ✅                    | Query depth and complexity analysis                                                              |
 | Max tokens                   | ✅        | ✅                    | Token-based request limiting                                                                     |
 | HMAC signing                 | ✅        | ✅                    | Inter-service request signing and verification                                                   |
