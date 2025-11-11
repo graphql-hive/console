@@ -7,6 +7,7 @@ type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'
 export interface AgentOptions {
   enabled?: boolean;
   name?: string;
+  version?: string;
   /**
    * Hive endpoint or proxy
    */
@@ -76,6 +77,7 @@ export function createAgent<TEvent>(
     maxSize: 25,
     logger: console,
     name: 'hive-client',
+    version,
     ...pluginOptions,
   };
 
@@ -164,7 +166,7 @@ export function createAgent<TEvent>(
           accept: 'application/json',
           'content-type': 'application/json',
           Authorization: `Bearer ${options.token}`,
-          'User-Agent': `${options.name}/${version}`,
+          'User-Agent': `${options.name}/${options.version}`,
           ...headers(),
         },
         timeout: options.timeout,

@@ -270,6 +270,8 @@ export interface SchemaFetcherOptions {
   endpoint: string;
   key: string;
   logger?: Logger;
+  name?: string;
+  version?: string;
 }
 
 export interface ServicesFetcherOptions {

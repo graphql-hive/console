@@ -164,8 +164,8 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
       },
       headers() {
         return {
-          'graphql-client-name': 'Hive Client',
-          'graphql-client-version': version,
+          'graphql-client-name': pluginOptions.agent?.name ?? 'Hive Client',
+          'graphql-client-version': pluginOptions.agent?.version ?? version,
           'x-usage-api-version': '2',
         };
       },

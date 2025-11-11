@@ -10,6 +10,7 @@ import {
   isHiveClient,
 } from '@graphql-hive/core';
 import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
+import { version } from './version.js';
 
 export {
   atLeastOnceSampler,
@@ -33,6 +34,7 @@ export function createHive(clientOrOptions: HivePluginOptions) {
     ...clientOrOptions,
     agent: {
       name: 'hive-client-yoga',
+      version,
       ...clientOrOptions.agent,
     },
   });
