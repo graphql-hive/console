@@ -889,7 +889,11 @@ export function initSeed() {
                 },
               };
             },
-            async inviteAndJoinMember(inviteToken: string = ownerToken) {
+            async inviteAndJoinMember(
+              inviteToken: string = ownerToken,
+              memberRoleId: string | undefined = undefined,
+              resources: GraphQLSchema.ResourceAssignmentInput | undefined = undefined,
+            ) {
               const memberEmail = userEmail(generateUnique());
               const memberToken = await authenticate(memberEmail).then(r => r.access_token);
 
@@ -901,6 +905,8 @@ export function initSeed() {
                     },
                   },
                   email: memberEmail,
+                  memberRoleId,
+                  resources,
                 },
                 inviteToken,
               ).then(r => r.expectNoGraphQLErrors());
