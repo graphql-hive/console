@@ -821,9 +821,9 @@ function OIDCDefaultResourceSelector(props: {
         .then(data => {
           if (data.error) {
             setMutateState('error');
-          } else {
-            setMutateState('success');
           }
+
+          setMutateState('success');
           return data;
         })
         .catch((err: unknown) => {

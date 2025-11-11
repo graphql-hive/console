@@ -752,6 +752,7 @@ export default gql`
     organization: OrganizationReferenceInput! @tag(name: "public")
     email: String! @tag(name: "public")
     memberRoleId: ID @tag(name: "public")
+    resources: ResourceAssignmentInput @tag(name: "public")
   }
 
   input DeleteOrganizationInvitationInput {

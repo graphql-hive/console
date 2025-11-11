@@ -233,6 +233,7 @@ export async function createStorage(
       createdAt: invitation.created_at as any,
       expiresAt: invitation.expires_at as any,
       roleId: invitation.role.id,
+      assignedResources: invitation.assigned_resources as any,
     };
   }
 
@@ -1124,19 +1125,34 @@ export async function createStorage(
         `),
       );
     },
-    async createOrganizationInvitation({ organizationId: organization, email, roleId }) {
+    async createOrganizationInvitation(args) {
       return transformOrganizationInvitation(
         await tracedTransaction('createOrganizationInvitation', pool, async trx => {
           const invitation =
             await trx.one<organization_invitations>(sql`/* createOrganizationInvitation */
-          INSERT INTO organization_invitations (organization_id, email, role_id)
-          VALUES (${organization}, ${email}, ${roleId})
-          RETURNING *
-        `);
+            INSERT INTO "organization_invitations" (
+              "organization_id"
+              , "email"
+              , "role_id"
+              , "resource_assignments"
+            )
+            VALUES (
+              ${args.organizationId}
+              , ${args.email}
+              , ${args.roleId}
+              , ${args.resourceAssignments === null ? null : sql.json(args.resourceAssignments)}
+            )
+            RETURNING *
+          `);
 
           const role = await trx.one<organization_member_roles>(sql`/* getOrganizationRole */
-          SELECT * FROM organization_member_roles WHERE id = ${roleId} LIMIT 1
-        `);
+            SELECT *
+            FROM
+              "organization_member_roles"
+            WHERE
+              "id" = ${args.roleId}
+            LIMIT 1
+          `);
 
           return {
             ...invitation,
@@ -1184,18 +1200,37 @@ export async function createStorage(
       organizationId: organization,
     }) {
       await tracedTransaction('addOrganizationMemberViaInvitationCode', pool, async trx => {
-        const roleId = await trx.oneFirst<string>(sql`/* deleteInviteAndGetRoleId */
-          DELETE FROM organization_invitations
-          WHERE organization_id = ${organization} AND code = ${code}
-          RETURNING role_id
+        const { roleId, assignedResources } = await trx.one<{
+          roleId: string;
+          assignedResources: null | Record<string, any>;
+        }>(sql`/* deleteInviteAndGetRoleId */
+          DELETE
+          FROM
+            "organization_invitations"
+          WHERE
+            "organization_id" = ${organization}
+            AND "code" = ${code}
+          RETURNING
+            role_id as "roleId"
+            , assigned_resources as "assignedResources"
         `);
 
         await trx.query(
           sql`/* addOrganizationMemberViaInvitationCode */
-            INSERT INTO organization_member
-              (organization_id, user_id, role_id, created_at)
-            VALUES
-              (${organization}, ${user}, ${roleId}, now())
+            INSERT INTO "organization_member" (
+              "organization_id"
+              , "user_id"
+              , "role_id"
+              , "assigned_resources"
+              , "created_at",
+            )
+            VALUES (
+              ${organization}
+              , ${user}
+              , ${roleId}
+              , ${assignedResources === null ? null : sql.json(assignedResources)}
+              , now()
+            )
           `,
         );
       });

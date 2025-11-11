@@ -6,5 +6,9 @@ export default {
     ALTER TABLE "oidc_integrations"
       ADD COLUMN "default_assigned_resources" JSONB
     ;
+
+    ALTER TABLE "organization_invitations"
+      ADD COLUMN "default_assigned_resources" JSONB
+    ;
   `,
 } satisfies MigrationExecutor;

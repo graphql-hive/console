@@ -172,6 +172,7 @@ export interface organization_access_tokens {
 }
 
 export interface organization_invitations {
+  assigned_resources: any | null;
   code: string;
   created_at: Date;
   email: string;

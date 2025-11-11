@@ -140,7 +140,11 @@ export interface Storage {
   ): Promise<Organization | never>;
 
   createOrganizationInvitation(
-    _: OrganizationSelector & { email: string; roleId: string },
+    _: OrganizationSelector & {
+      email: string;
+      roleId: string;
+      resourceAssignments: ResourceAssignmentGroup | null;
+    },
   ): Promise<OrganizationInvitation | never>;
 
   deleteOrganizationInvitationByEmail(

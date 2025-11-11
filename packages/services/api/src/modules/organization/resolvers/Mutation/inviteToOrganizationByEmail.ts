@@ -7,7 +7,8 @@ export const inviteToOrganizationByEmail: NonNullable<
   const result = await injector.get(OrganizationManager).inviteByEmail({
     organization: input.organization,
     email: input.email,
-    role: input.memberRoleId,
+    role: input.memberRoleId ?? null,
+    resources: input.resources ?? null,
   });
 
   if (result.error) {

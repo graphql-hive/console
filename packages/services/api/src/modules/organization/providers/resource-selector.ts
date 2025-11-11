@@ -1,8 +1,8 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { sql } from 'slonik';
-import { AccessError } from '@hive/api/shared/errors';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, ProjectType } from '../../../shared/entities';
+import { AccessError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { Storage } from '../../shared/providers/storage';
 

@@ -206,6 +206,7 @@ export interface OrganizationInvitation {
   createdAt: string;
   expiresAt: string;
   roleId: string;
+  assignedResources: ResourceAssignmentGroup | null;
 }
 
 export interface OrganizationBilling {
