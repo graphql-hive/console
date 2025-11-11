@@ -53,6 +53,9 @@ export function createReporting(pluginOptions: HivePluginOptions): SchemaReporte
     reportingOptions.endpoint ??
     'https://app.graphql-hive.com/graphql';
 
+  const agentName = pluginOptions.agent?.name ?? 'hive-client';
+  const agentVersion = pluginOptions.agent?.version ?? version;
+
   return {
     async report({ schema }) {
       logger.info(`Publish schema`);
@@ -75,8 +78,8 @@ export function createReporting(pluginOptions: HivePluginOptions): SchemaReporte
           }),
           {
             headers: {
-              'graphql-client-name': 'Hive Client',
-              'graphql-client-version': version,
+              'graphql-client-name': agentName,
+              'graphql-client-version': agentVersion,
               authorization: `Bearer ${token}`,
               'content-type': 'application/json',
             },

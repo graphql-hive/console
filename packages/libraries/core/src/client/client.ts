@@ -110,6 +110,8 @@ export function createHive(options: HivePluginOptions): HiveClient {
 
           infoLogger.info('Fetching token details...');
 
+          const clientNameForDetails = options.agent?.name || 'hive-client';
+          const clientVersionForDetails = options.agent?.version || version;
           const response = await http.post(
             endpoint,
             JSON.stringify({
@@ -120,9 +122,9 @@ export function createHive(options: HivePluginOptions): HiveClient {
               headers: {
                 'content-type': 'application/json',
                 Authorization: `Bearer ${options.token}`,
-                'user-agent': `hive-client/${version}`,
-                'graphql-client-name': 'Hive Client',
-                'graphql-client-version': version,
+                'user-agent': `${clientNameForDetails}/${clientVersionForDetails}`,
+                'graphql-client-name': clientNameForDetails,
+                'graphql-client-version': clientVersionForDetails,
               },
               timeout: 30_000,
               fetchImplementation: options?.agent?.fetch,

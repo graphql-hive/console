@@ -100,6 +100,8 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
 
   const endpoint = baseEndpoint + (options?.target ? `/${options.target}` : '');
 
+  const agentName = pluginOptions.agent?.name ?? 'hive-client';
+  const agentVersion = pluginOptions.agent?.version ?? version;
   const agent = createAgent<AgentAction>(
     {
       ...(pluginOptions.agent ?? {
@@ -164,8 +166,8 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
       },
       headers() {
         return {
-          'graphql-client-name': 'Hive Client',
-          'graphql-client-version': version,
+          'graphql-client-name': agentName,
+          'graphql-client-version': agentVersion,
           'x-usage-api-version': '2',
         };
       },

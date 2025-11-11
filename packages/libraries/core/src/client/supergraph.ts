@@ -8,6 +8,8 @@ export interface SupergraphSDLFetcherOptions {
   key: string;
   logger?: Logger;
   fetchImplementation?: typeof fetch;
+  name?: string;
+  version?: string;
 }
 
 export function createSupergraphSDLFetcher(options: SupergraphSDLFetcherOptions) {
@@ -25,7 +27,7 @@ export function createSupergraphSDLFetcher(options: SupergraphSDLFetcherOptions)
       [key: string]: string;
     } = {
       'X-Hive-CDN-Key': options.key,
-      'User-Agent': `hive-client/${version}`,
+      'User-Agent': `${options?.name || 'hive-client'}/${options?.version || version}`,
     };
 
     if (cacheETag) {
