@@ -1,5 +1,14 @@
 # hive
 
+## 8.7.1
+
+### Patch Changes
+
+- [#7203](https://github.com/graphql-hive/console/pull/7203)
+  [`a7fed52`](https://github.com/graphql-hive/console/commit/a7fed52e17c8e2f1c38e93523e302a27b4d30f1b)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - handle escaped single-quoted strings
+  in schema changes
+
 ## 8.7.0
 
 ### Minor Changes
