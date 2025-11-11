@@ -1,9 +1,3 @@
-import {
-  forwardRef,
-  type ComponentPropsWithoutRef,
-  type ElementRef,
-  type ElementType,
-} from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -23,11 +17,4 @@ export function exhaustiveGuard(_value: never): never {
   throw new Error(
     `Reached forbidden guard function with unexpected value: ${JSON.stringify(_value)}`,
   );
-}
-
-// typescript utils
-
-/** this type inference helper cleans up some of our ui component code */
-export function createForwardRefComponent<T extends ElementType>(_Component: T) {
-  return forwardRef<ElementRef<T>, ComponentPropsWithoutRef<T>>;
 }
