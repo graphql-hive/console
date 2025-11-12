@@ -92,6 +92,9 @@ export async function makeFetchCall(
   let maxTimeout = 2000;
   let factor = 1.2;
 
+  const actionHeader =
+    config.method === 'POST' ? { 'x-client-action-id': crypto.randomUUID() } : undefined;
+
   if (config.retry !== false) {
     retries = config.retry?.retries ?? 5;
     minTimeout = config.retry?.minTimeout ?? 200;
@@ -117,6 +120,8 @@ export async function makeFetchCall(
         body: config.body,
         headers: {
           'x-request-id': requestId,
+          'x-client-timestamp': new Date().toISOString(),
+          ...actionHeader,
           ...config.headers,
         },
         signal,
