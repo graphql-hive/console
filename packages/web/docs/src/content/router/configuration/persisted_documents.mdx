@@ -6,7 +6,7 @@ title: 'persisted_documents'
 
 The `persisted_documents` configuration allows you to enable [Persisted Documents] on Hive Router
 that allows you to reduce the payload size of your GraphQL requests and secure your GraphQL API by
-allowing only operations that are know and trusted by your Router.
+allowing only operations that are known and trusted by your Router.
 
 [Learn more about Persisted Documents with Hive Console](/schema-registry/app-deployments#persisted-documents-on-graphql-server-and-gateway)
 
@@ -149,7 +149,7 @@ which can be sent like this using `curl`:
 
 ```bash
 curl -X POST -H 'Content-Type: application/json' http://localhost:4000/graphql \
-  -d '{"extensions":{"persistedQuery":{"version":1,"sha256Hash":"ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"}}}'
+  -d '{"extensions":{"per sistedQuery":{"version":1,"sha256Hash":"ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"}}}'
 ```
 
 Then the Router will look up the operation associated with the provided `sha256Hash` and execute it.
@@ -195,7 +195,7 @@ field:
 persisted_documents:
   enabled: true
   spec:
-    expression: request.params.customDocumentId
+    expression: .request.params.customDocumentId
 ```
 
 ##### Using Header to Provide Document ID
@@ -206,7 +206,7 @@ In this example, we extract the document ID from a custom header `x-document-id`
 persisted_documents:
   enabled: true
   spec:
-    expression: request.headers."x-document-id"
+    expression: .request.headers."x-document-id"
 ```
 
 Then the request should include the `x-document-id` header:
@@ -224,7 +224,7 @@ In this example, we extract the document ID from a query parameter `query_id`.
 persisted_documents:
   enabled: true
   spec:
-    expression: request.params.query_id
+    expression: .request.params.query_id
 ```
 
 Then the request URL should include the `query_id` query parameter:
@@ -265,7 +265,7 @@ To use a conditional allowance, set the `allow_arbitrary_operations` field to an
 persisted_documents:
   enabled: true
   allow_arbitrary_operations:
-    expression: request.headers."x-allow-arbitrary" == "true"
+    expression: .request.headers."x-allow-arbitrary" == "true"
 ```
 
 Then the Router will evaluate the provided expression for each request. If it evaluates to `true`,
