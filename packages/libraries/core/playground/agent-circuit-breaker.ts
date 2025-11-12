@@ -13,7 +13,7 @@ const agent = createAgent<{}>(
     debug: true,
     endpoint: 'http://127.0.0.1',
     token: 'noop',
-    async fetch(url, opts) {
+    async fetch(_url, _opts) {
       // throw new Error('FAIL FAIL');
       console.log('SENDING!');
       return new Response('ok', {
