@@ -1,8 +1,32 @@
+import CircuitBreaker from 'opossum';
+import { fetch as defaultFetch } from '@whatwg-node/fetch';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { Logger } from './types.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
+
+export type AgentCircuitBreakerConfiguration = {
+  /** after which time a request should be treated as a timeout in milleseconds */
+  timeout: number;
+  /** percentage after what the circuit breaker should kick in. */
+  errorThresholdPercentage: number;
+  /** count of requests before starting evaluating. */
+  volumeThreshold: number;
+  /** after what time the circuit breaker is resetted in milliseconds */
+  resetTimeout: number;
+};
+
+const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
+  // if call takes > 5s, count as a failure
+  timeout: 5000,
+  // trip if 50% of calls fail
+  errorThresholdPercentage: 50,
+  // need at least 5 calls before evaluating
+  volumeThreshold: 5,
+  // after 30s, try half-open state
+  resetTimeout: 30000,
+};
 
 export interface AgentOptions {
   enabled?: boolean;
@@ -48,7 +72,11 @@ export interface AgentOptions {
    * WHATWG Compatible fetch implementation
    * used by the agent to send reports
    */
-  fetch?: typeof fetch;
+  fetch?: typeof defaultFetch;
+  /**
+   * Circuit Breaker Configuration
+   */
+  circuitBreaker?: AgentCircuitBreakerConfiguration;
 }
 
 export function createAgent<TEvent>(
@@ -77,13 +105,14 @@ export function createAgent<TEvent>(
     maxSize: 25,
     logger: console,
     name: 'hive-client',
+    circuitBreaker: defaultCircuitBreakerConfiguration,
     version,
     ...pluginOptions,
   };
 
   const enabled = options.enabled !== false;
 
-  let timeoutID: any = null;
+  let timeoutID: ReturnType<typeof setTimeout> | null = null;
 
   function schedule() {
     if (timeoutID) {
@@ -133,20 +162,22 @@ export function createAgent<TEvent>(
 
     if (data.size() >= options.maxSize) {
       debugLog('Sending immediately');
-      setImmediate(() => send({ throwOnError: false, skipSchedule: true }));
+      setImmediate(() => breaker.fire({ throwOnError: false, skipSchedule: true }));
     }
   }
 
   function sendImmediately(event: TEvent): Promise<ReadOnlyResponse | null> {
     data.set(event);
     debugLog('Sending immediately');
-    return send({ throwOnError: true, skipSchedule: true });
+    return breaker.fire({ throwOnError: true, skipSchedule: true });
   }
 
   async function send(sendOptions?: {
     throwOnError?: boolean;
     skipSchedule: boolean;
   }): Promise<ReadOnlyResponse | null> {
+    const signal: AbortSignal = breaker.getSignal();
+
     if (!data.size() || !enabled) {
       if (!sendOptions?.skipSchedule) {
         schedule();
@@ -176,6 +207,7 @@ export function createAgent<TEvent>(
         },
         logger: options.logger,
         fetchImplementation: pluginOptions.fetch,
+        signal,
       })
       .then(res => {
         debugLog(`Report sent!`);
@@ -209,11 +241,20 @@ export function createAgent<TEvent>(
       await Promise.all(inProgressCaptures);
     }
 
-    await send({
+    await breaker.fire({
       skipSchedule: true,
       throwOnError: false,
     });
   }
+
+  const breaker = new CircuitBreaker(send, {
+    ...options.circuitBreaker,
+    autoRenewAbortController: true,
+  });
+
+  breaker.on('open', () => errorLog('circuit opened - backend unreachable'));
+  breaker.on('halfOpen', () => debugLog('testing backend connectivity'));
+  breaker.on('close', () => debugLog('backend recovered - circuit closed'));
 
   return {
     capture,

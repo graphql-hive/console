@@ -21,6 +21,8 @@ interface SharedConfig {
    * @default {response => response.ok}
    **/
   isRequestOk?: ResponseAssertFunction;
+  /** Optional abort signal */
+  signal?: AbortSignal;
 }
 
 /**
@@ -78,6 +80,8 @@ export async function makeFetchCall(
      * @default {response => response.ok}
      **/
     isRequestOk?: ResponseAssertFunction;
+    /** Optional abort signal */
+    signal?: AbortSignal;
   },
 ): Promise<Response> {
   const logger = config.logger;
@@ -104,7 +108,10 @@ export async function makeFetchCall(
       );
 
       const getDuration = measureTime();
-      const signal = AbortSignal.timeout(config.timeout ?? 20_000);
+      const timeoutSignal = AbortSignal.timeout(config.timeout ?? 20_000);
+      const signal = config.signal
+        ? AbortSignal.any([config.signal, timeoutSignal])
+        : timeoutSignal;
 
       const response = await (config.fetchImplementation ?? fetch)(endpoint, {
         method: config.method,
@@ -134,6 +141,12 @@ export async function makeFetchCall(
         logErrorMessage();
         throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
+
+      if (config.signal?.aborted === true) {
+        // TODO: maybe log some message?
+        bail(new Error('Request aborted.'));
+        return;
+      }
 
       if (isRequestOk(response)) {
         logger?.info(
