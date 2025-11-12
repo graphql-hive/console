@@ -83,9 +83,12 @@ export interface AgentOptions {
    */
   fetch?: typeof defaultFetch;
   /**
-   * Circuit Breaker Configuration
+   * Circuit Breaker Configuration.
+   * true -> Use default configuration
+   * false -> Disable
+   * object -> use custom configuration see {AgentCircuitBreakerConfiguration}
    */
-  circuitBreaker?: AgentCircuitBreakerConfiguration;
+  circuitBreaker?: boolean | AgentCircuitBreakerConfiguration;
 }
 
 export function createAgent<TEvent>(
@@ -104,7 +107,9 @@ export function createAgent<TEvent>(
     headers?(): Record<string, string>;
   },
 ) {
-  const options: Required<Omit<AgentOptions, 'fetch'>> = {
+  const options: Required<Omit<AgentOptions, 'fetch' | 'circuitBreaker'>> & {
+    circuitBreaker: null | AgentCircuitBreakerConfiguration;
+  } = {
     timeout: 30_000,
     debug: false,
     enabled: true,
@@ -113,9 +118,15 @@ export function createAgent<TEvent>(
     sendInterval: 10_000,
     maxSize: 25,
     name: 'hive-client',
-    circuitBreaker: defaultCircuitBreakerConfiguration,
     version,
     ...pluginOptions,
+    circuitBreaker:
+      pluginOptions.circuitBreaker === false
+        ? null
+        : pluginOptions.circuitBreaker === true
+          ? defaultCircuitBreakerConfiguration
+          : (pluginOptions.circuitBreaker ?? defaultCircuitBreakerConfiguration),
+
     logger: createHiveLogger(pluginOptions.logger ?? console, '[agent]'),
   };
 
@@ -258,47 +269,55 @@ export function createAgent<TEvent>(
     });
   }
 
-  /**
-   * We support Cloudflare, which does not has the `events` module.
-   * So we lazy load opossum which has `events` as a dependency.
-   */
-  const breakerLogger = createHiveLogger(options.logger, '[circuit breaker]');
-
   let breaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
     ReturnType<typeof sendHTTPCall>
   >;
+  let loadCircuitBreakerPromise: Promise<void> | null = null;
+  const breakerLogger = createHiveLogger(options.logger, '[circuit breaker]');
 
-  breakerLogger.info('initialize circuit breaker');
-  const loadCircuitBreakerPromise = loadCircuitBreaker(
-    CircuitBreaker => {
-      breakerLogger.info('started');
-      const realBreaker = new CircuitBreaker(sendHTTPCall, {
-        ...options.circuitBreaker,
-        autoRenewAbortController: true,
-      });
+  function noopBreaker(): typeof breaker {
+    return {
+      getSignal() {
+        return undefined;
+      },
+      fire: sendHTTPCall,
+    };
+  }
 
-      realBreaker.on('open', () =>
-        breakerLogger.error('circuit opened - backend seems unreachable.'),
-      );
-      realBreaker.on('halfOpen', () =>
-        breakerLogger.info('circuit half open - testing backend connectivity'),
-      );
-      realBreaker.on('close', () => breakerLogger.info('circuit closed - backend recovered '));
+  if (options.circuitBreaker) {
+    /**
+     * We support Cloudflare, which does not has the `events` module.
+     * So we lazy load opossum which has `events` as a dependency.
+     */
+    breakerLogger.info('initialize circuit breaker');
+    loadCircuitBreakerPromise = loadCircuitBreaker(
+      CircuitBreaker => {
+        breakerLogger.info('started');
+        const realBreaker = new CircuitBreaker(sendHTTPCall, {
+          ...options.circuitBreaker,
+          autoRenewAbortController: true,
+        });
 
-      // @ts-expect-error missing definition in typedefs for `opposum`
-      breaker = realBreaker;
-    },
-    () => {
-      breakerLogger.info('circuit breaker not supported on platform');
-      breaker = {
-        getSignal() {
-          return undefined;
-        },
-        fire: sendHTTPCall,
-      };
-    },
-  );
+        realBreaker.on('open', () =>
+          breakerLogger.error('circuit opened - backend seems unreachable.'),
+        );
+        realBreaker.on('halfOpen', () =>
+          breakerLogger.info('circuit half open - testing backend connectivity'),
+        );
+        realBreaker.on('close', () => breakerLogger.info('circuit closed - backend recovered '));
+
+        // @ts-expect-error missing definition in typedefs for `opposum`
+        breaker = realBreaker;
+      },
+      () => {
+        breakerLogger.info('circuit breaker not supported on platform');
+        breaker = noopBreaker();
+      },
+    );
+  } else {
+    breaker = noopBreaker();
+  }
 
   async function sendFromBreaker(...args: Parameters<typeof breaker.fire>) {
     if (!breaker) {
