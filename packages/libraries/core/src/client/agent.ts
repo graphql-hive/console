@@ -181,8 +181,8 @@ export function createAgent<TEvent>(
     return send({ throwOnError: true, skipSchedule: true });
   }
 
-  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>) {
-    const signal: AbortSignal = breaker.getSignal();
+  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>): Promise<Response> {
+    const signal = breaker.getSignal();
     return await http.post(options.endpoint, buffer, {
       headers: {
         accept: 'application/json',
@@ -291,10 +291,9 @@ export function createAgent<TEvent>(
     },
     () => {
       breakerLogger.info('circuit breaker not supported on platform');
-      const abortSignal = new AbortSignal();
       breaker = {
         getSignal() {
-          return abortSignal;
+          return undefined;
         },
         fire: sendHTTPCall,
       };
@@ -333,7 +332,7 @@ export function createAgent<TEvent>(
 
 type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
   fire(...args: TI): TR;
-  getSignal(): AbortSignal;
+  getSignal(): AbortSignal | undefined;
 };
 
 async function loadCircuitBreaker(
