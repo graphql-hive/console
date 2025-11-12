@@ -192,13 +192,23 @@ describe('read OIDC', () => {
         authToken: ownerToken,
       }).then(r => r.expectNoGraphQLErrors());
 
-      await execute({
+      const errors = await execute({
         document: AssignedResourcesSpec_ReadDefaultTest,
         variables: {
           organizationSlug: organization.slug,
         },
         authToken: readToken,
       }).then(r => r.expectGraphQLErrors());
+      expect(errors).toHaveLength(1);
+      expect(errors).toMatchObject([
+        {
+          extensions: {
+            code: 'UNAUTHORISED',
+          },
+          message: `No access (reason: "Missing permission for performing 'organization:describe' on resource")`,
+          path: ['organization'],
+        },
+      ]);
     });
   });
 });
@@ -206,7 +216,7 @@ describe('read OIDC', () => {
 describe('update OIDC default assigned resources', () => {
   describe('permissions="oidc:modify"', () => {
     test.concurrent('success', async ({ expect }) => {
-      const { organization, ownerToken, oidcIntegrationId } = await setup();
+      const { ownerToken, oidcIntegrationId } = await setup();
 
       const update = await execute({
         document: AssignedResourcesSpec_UpdateDefaultMutation,
@@ -249,7 +259,7 @@ describe('update OIDC default assigned resources', () => {
         },
       });
 
-      const update = await execute({
+      const errors = await execute({
         document: AssignedResourcesSpec_UpdateDefaultMutation,
         variables: {
           input: {
@@ -261,6 +271,16 @@ describe('update OIDC default assigned resources', () => {
         },
         authToken: accessToken,
       }).then(r => r.expectGraphQLErrors());
+      expect(errors).toHaveLength(1);
+      expect(errors).toMatchObject([
+        {
+          extensions: {
+            code: 'UNAUTHORISED',
+          },
+          message: `No access (reason: "Missing permission for performing 'oidc:modify' on resource")`,
+          path: ['updateOIDCDefaultResourceAssignment'],
+        },
+      ]);
     });
   });
 });
