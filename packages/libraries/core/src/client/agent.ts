@@ -162,14 +162,14 @@ export function createAgent<TEvent>(
 
     if (data.size() >= options.maxSize) {
       debugLog('Sending immediately');
-      setImmediate(() => breaker.fire({ throwOnError: false, skipSchedule: true }));
+      setImmediate(() => sendFromBreaker({ throwOnError: false, skipSchedule: true }));
     }
   }
 
   function sendImmediately(event: TEvent): Promise<ReadOnlyResponse | null> {
     data.set(event);
     debugLog('Sending immediately');
-    return breaker.fire({ throwOnError: true, skipSchedule: true });
+    return sendFromBreaker({ throwOnError: true, skipSchedule: true });
   }
 
   async function send(sendOptions?: {
@@ -241,7 +241,7 @@ export function createAgent<TEvent>(
       await Promise.all(inProgressCaptures);
     }
 
-    await breaker.fire({
+    await sendFromBreaker({
       skipSchedule: true,
       throwOnError: false,
     });
@@ -251,6 +251,25 @@ export function createAgent<TEvent>(
     ...options.circuitBreaker,
     autoRenewAbortController: true,
   });
+
+  async function sendFromBreaker(...args: Parameters<typeof breaker.fire>) {
+    try {
+      return await breaker.fire(...args);
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err) {
+        if (err.code === 'EOPENBREAKER') {
+          debugLog('Sending report skipped. (breaker circuit open)');
+          return null;
+        }
+        if (err.code === 'ETIMEDOUT') {
+          debugLog('Sending report skipped. (metric timed out)');
+          return null;
+        }
+      }
+
+      throw err;
+    }
+  }
 
   breaker.on('open', () => errorLog('circuit opened - backend unreachable'));
   breaker.on('halfOpen', () => debugLog('testing backend connectivity'));
