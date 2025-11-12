@@ -162,23 +162,42 @@ export function createAgent<TEvent>(
 
     if (data.size() >= options.maxSize) {
       debugLog('Sending immediately');
-      setImmediate(() => sendFromBreaker({ throwOnError: false, skipSchedule: true }));
+      setImmediate(() => send({ throwOnError: false, skipSchedule: true }));
     }
   }
 
   function sendImmediately(event: TEvent): Promise<ReadOnlyResponse | null> {
     data.set(event);
     debugLog('Sending immediately');
-    return sendFromBreaker({ throwOnError: true, skipSchedule: true });
+    return send({ throwOnError: true, skipSchedule: true });
+  }
+
+  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>) {
+    // @ts-expect-error missing definition in typedefs for `opposum`
+    const signal: AbortSignal = breaker.getSignal();
+    return await http.post(options.endpoint, buffer, {
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        Authorization: `Bearer ${options.token}`,
+        'User-Agent': `${options.name}/${options.version}`,
+        ...headers(),
+      },
+      timeout: options.timeout,
+      retry: {
+        retries: options.maxRetries,
+        factor: 2,
+      },
+      logger: options.logger,
+      fetchImplementation: pluginOptions.fetch,
+      signal,
+    });
   }
 
   async function send(sendOptions?: {
     throwOnError?: boolean;
     skipSchedule: boolean;
   }): Promise<ReadOnlyResponse | null> {
-    // @ts-expect-error missing definition in typedefs for `opposum`
-    const signal: AbortSignal = breaker.getSignal();
-
     if (!data.size() || !enabled) {
       if (!sendOptions?.skipSchedule) {
         schedule();
@@ -192,24 +211,7 @@ export function createAgent<TEvent>(
     data.clear();
 
     debugLog(`Sending report (queue ${dataToSend})`);
-    const response = await http
-      .post(options.endpoint, buffer, {
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          Authorization: `Bearer ${options.token}`,
-          'User-Agent': `${options.name}/${options.version}`,
-          ...headers(),
-        },
-        timeout: options.timeout,
-        retry: {
-          retries: options.maxRetries,
-          factor: 2,
-        },
-        logger: options.logger,
-        fetchImplementation: pluginOptions.fetch,
-        signal,
-      })
+    const response = sendFromBreaker(buffer)
       .then(res => {
         debugLog(`Report sent!`);
         return res;
@@ -242,13 +244,13 @@ export function createAgent<TEvent>(
       await Promise.all(inProgressCaptures);
     }
 
-    await sendFromBreaker({
+    await send({
       skipSchedule: true,
       throwOnError: false,
     });
   }
 
-  const breaker = new CircuitBreaker(send, {
+  const breaker = new CircuitBreaker(sendHTTPCall, {
     ...options.circuitBreaker,
     autoRenewAbortController: true,
   });
@@ -259,11 +261,11 @@ export function createAgent<TEvent>(
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err) {
         if (err.code === 'EOPENBREAKER') {
-          debugLog('Sending report skipped. (breaker circuit open)');
+          debugLog('[breaker circuit] circuit open - sending report skipped');
           return null;
         }
         if (err.code === 'ETIMEDOUT') {
-          debugLog('Sending report skipped. (metric timed out)');
+          debugLog('[breaker circuit] circuit open - sending report aborted - timed out');
           return null;
         }
       }
