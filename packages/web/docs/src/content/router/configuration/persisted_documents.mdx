@@ -1,0 +1,166 @@
+---
+title: 'persisted_documents'
+---
+
+# persisted_documents
+
+The `persisted_documents` configuration allows you to enable [Persisted Documents] on Hive Router
+that allows you to reduce the payload size of your GraphQL requests and secure your GraphQL API by
+allowing only operations that are know and trusted by your Router.
+
+[Learn more about Persisted Documents with Hive Console](/schema-registry/app-deployments#persisted-documents-on-graphql-server-and-gateway)
+
+## Configuration Structure
+
+The `persisted_documents` key is a top-level object in your `router.config.yaml`. It contains the
+following fields:
+
+First you need to enable persisted documents by setting the `enabled` field to `true`.
+
+```yaml
+persisted_documents:
+  enabled: true
+```
+
+### Source Configuration with `source`
+
+The `source` field defines where the Router will load the persisted documents from. It supports two
+sources: Hive Console CDN and a local file.
+
+- `source`: **(object)** The source configuration for persisted documents.
+
+#### Hive Console CDN
+
+Then we need a way to fetch the persisted documents. The recommended way is to use Hive Console as
+your persisted documents storage.
+
+- `hive`: **(object)** The Hive Console CDN source configuration.
+  - `endpoint`: **(string)** The Hive Console CDN endpoint to fetch persisted documents from.
+    Alternatively you can set the `HIVE_CDN_ENDPOINT` environment variable.
+  - `key`: **(string)** The Hive Console CDN API key to authenticate requests. Alternatively you can
+    set the `HIVE_CDN_KEY` environment variable.
+
+To do so, you can either use environment variables or directly set the `endpoint` and `key` fields.
+
+```yaml {2-4} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  source:
+    hive:
+      endpoint: https://cdn.graphql-hive.com/artifacts/v1/... # Use your Hive CDN endpoint here
+      key: hvABCD # Use your Hive CDN API key here
+```
+
+or using environment variables:
+
+```yaml {2-4} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+```
+
+Then set the following environment variables in your environment:
+
+```bash
+export HIVE_CDN_ENDPOINT="https://cdn.graphql-hive.com/artifacts/v1/..."
+export HIVE_CDN_KEY="hvABCD"
+```
+
+#### A Persisted Documents File as Source
+
+Alternatively, you can also load persisted documents from a local file.
+
+- `file`: **(string)** The path to the local persisted documents JSON file.
+
+```yaml {2-3} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  source:
+    file: ./persisted_documents.json # point to your local persisted documents file
+```
+
+That file must be a JSON file containing a map of document IDs to GraphQL operations, for example:
+
+```json
+{
+  "a1b2c3d4e5": "query GetUser($id: ID!) { user(id: $id) { id name } }",
+  "f6g7h8i9j0": "mutation UpdateUser($id: ID!, $name: String!) { updateUser(id: $id, name: $name) { id name } }"
+}
+```
+
+### Configure Extraction of Document ID from Requests with `spec`
+
+The `spec` field defines how the Router will extract the persisted document ID from incoming
+requests. By default it is set to `hive` which expects the document ID to be provided in the body as
+`documentId`.
+
+- `spec`: **(object)** The specification for extracting document IDs from requests.
+
+#### `documentId` in Request Body (Hive / Default)
+
+The default `hive` spec expects the persisted document ID to be provided in the request body as
+`documentId`.
+
+So the request body should look like this:
+
+```json
+{
+  "documentId": "my-app~my-version~a1b2c3d4e5",
+  "variables": {
+    "id": "123"
+  }
+}
+```
+
+Then the Router will look up the operation associated with the provided `documentId` and execute it.
+
+#### Apollo Persisted Documents Spec using `extensions.persistedQuery.sha256Hash`
+
+There is also support for the Apollo Persisted Documents spec, which expects the document ID to be
+provided in the `extensions.persistedQuery.sha256Hash` field of the request body.
+
+To use this spec, set the `spec` field to `apollo`:
+
+```yaml {3} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  spec: apollo
+```
+
+So the request body should look like this:
+
+```json
+{
+  "extensions": {
+    "persistedQuery": {
+      "version": 1,
+      "sha256Hash": "ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"
+    }
+  }
+}
+```
+
+which can be sent like this using `curl`:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' http://localhost:4000/graphql \
+  -d '{"extensions":{"persistedQuery":{"version":1,"sha256Hash":"ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"}}}'
+```
+
+Then the Router will look up the operation associated with the provided `sha256Hash` and execute it.
+
+### Allowing Non-Persisted Arbitrary Documents with `allow_arbitrary_operations`
+
+After enabling persisted documents, by default the Router will reject any requests that do not
+provide a valid persisted document ID.
+
+- `allow_arbitrary_operations`: **(boolean)** Whether to allow arbitrary operations alongside
+  persisted documents. Default is `false`.
+
+If you want to allow arbitrary operations alongside persisted documents, you can set the
+`allow_arbitrary_operations` field to `true`.
+
+```yaml {3} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  allow_arbitrary_operations: true
+```
