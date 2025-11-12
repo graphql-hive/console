@@ -1,4 +1,5 @@
 import asyncRetry from 'async-retry';
+import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import type { Logger } from './types.js';
 
@@ -109,9 +110,7 @@ export async function makeFetchCall(
 
       const getDuration = measureTime();
       const timeoutSignal = AbortSignal.timeout(config.timeout ?? 20_000);
-      const signal = config.signal
-        ? AbortSignal.any([config.signal, timeoutSignal])
-        : timeoutSignal;
+      const signal = config.signal ? abortSignalAny([config.signal, timeoutSignal]) : timeoutSignal;
 
       const response = await (config.fetchImplementation ?? fetch)(endpoint, {
         method: config.method,
