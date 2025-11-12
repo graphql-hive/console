@@ -251,6 +251,13 @@ persisted_documents:
     expression: .request.path_params.doc_id
 ```
 
+Then the request URL should include the document ID in the path:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' 'http://localhost:4000/graphql/a1b2c3d4e5' \
+  -d '{"variables":{"id":"123"}}'
+```
+
 ### Allowing Non-Persisted Arbitrary Documents with `allow_arbitrary_operations`
 
 After enabling persisted documents, by default the Router will reject any requests that do not
