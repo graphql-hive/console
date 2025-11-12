@@ -144,7 +144,6 @@ export async function makeFetchCall(
 
       if (config.signal?.aborted === true) {
         const error = config.signal.reason ?? new Error('Request aborted externally.');
-        // TODO: maybe log some message?
         bail(error);
         throw error;
       }
