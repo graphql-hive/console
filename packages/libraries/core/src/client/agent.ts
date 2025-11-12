@@ -176,7 +176,7 @@ export function createAgent<TEvent>(
     throwOnError?: boolean;
     skipSchedule: boolean;
   }): Promise<ReadOnlyResponse | null> {
-    // @ts-ignore missing definition in typedefs
+    // @ts-expect-error missing definition in typedefs for `opposum`
     const signal: AbortSignal = breaker.getSignal();
 
     if (!data.size() || !enabled) {
