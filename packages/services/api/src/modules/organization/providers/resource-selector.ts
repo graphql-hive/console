@@ -46,7 +46,9 @@ export class ResourceSelector {
     ]);
 
     if (!canDos.some(canDo => canDo)) {
-      throw new AccessError('Insufficient permissions.');
+      throw new AccessError(
+        `Insufficient permissions. Either 'member:modify', 'oidc:modify' or 'accessToken:modify' required.`,
+      );
     }
   }
 
@@ -61,20 +63,18 @@ export class ResourceSelector {
     } else {
       const filteredProjects: typeof projects = [];
       for (const project of projects) {
-        if (
-          false ===
-          (await this.session.canPerformAction({
-            action: 'project:describe',
+        const canDescribeProject = await this.session.canPerformAction({
+          action: 'project:describe',
+          organizationId: project.orgId,
+          params: {
             organizationId: project.orgId,
-            params: {
-              organizationId: project.orgId,
-              projectId: project.id,
-            },
-          }))
-        ) {
-          continue;
+            projectId: project.id,
+          },
+        });
+
+        if (canDescribeProject) {
+          filteredProjects.push(project);
         }
-        filteredProjects.push(project);
       }
       projects = filteredProjects;
     }

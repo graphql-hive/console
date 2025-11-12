@@ -904,7 +904,7 @@ export default gql`
       """
       Defines the purpose or context for which targets are being selected.
       """
-      intent: ResourceSelectorIntentType! = ADMIN
+      intent: ResourceSelectorIntentType!
     ): [ProjectForResourceSelector!]!
 
     """
@@ -922,7 +922,7 @@ export default gql`
       """
       Defines the purpose or context for which targets are being selected.
       """
-      intent: ResourceSelectorIntentType! = ADMIN
+      intent: ResourceSelectorIntentType!
     ): ProjectForResourceSelector
 
     """

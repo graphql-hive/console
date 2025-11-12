@@ -33,7 +33,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
@@ -42,6 +41,7 @@ import { useMutation as useRQMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
 import { RoleSelector } from '../members/common';
 import {
+  createResourceSelectionFromResourceAssignment,
   ResourceSelection,
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
@@ -743,30 +743,7 @@ function OIDCDefaultRoleSelector(props: {
 
 const OIDCDefaultResourceSelector_ResourceAssignmentFragment = graphql(`
   fragment OIDCDefaultResourceSelector_ResourceAssignmentFragment on ResourceAssignment {
-    mode
-    projects {
-      project {
-        id
-        slug
-      }
-      targets {
-        mode
-        targets {
-          target {
-            id
-            slug
-          }
-          services {
-            mode
-            services
-          }
-          appDeployments {
-            mode
-            appDeployments
-          }
-        }
-      }
-    }
+    ...createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment
   }
 `);
 
@@ -781,37 +758,9 @@ function OIDCDefaultResourceSelector(props: {
     props.resourceAssignment,
   );
   const [_, mutate] = useMutation(OIDCDefaultResourceSelector_UpdateMutation);
-
-  const [selection, setSelection] = useState<ResourceSelection>(() => ({
-    mode: resourceAssignment.mode ?? GraphQLSchema.ResourceAssignmentModeType.All,
-    projects: (resourceAssignment.projects ?? []).map(record => ({
-      projectId: record.project.id,
-      projectSlug: record.project.slug,
-      targets: {
-        mode: record.targets.mode,
-        targets: (record.targets.targets ?? []).map(target => ({
-          targetId: target.target.id,
-          targetSlug: target.target.slug,
-          services: {
-            mode: target.services.mode,
-            services: target.services.services?.map(
-              (service): GraphQLSchema.ServiceResourceAssignmentInput => ({
-                serviceName: service,
-              }),
-            ),
-          },
-          appDeployments: {
-            mode: target.appDeployments.mode,
-            appDeployments: target.appDeployments.appDeployments?.map(
-              (appDeploymentName): GraphQLSchema.AppDeploymentResourceAssignmentInput => ({
-                appDeployment: appDeploymentName,
-              }),
-            ),
-          },
-        })),
-      },
-    })),
-  }));
+  const [selection, setSelection] = useState<ResourceSelection>(() =>
+    createResourceSelectionFromResourceAssignment(resourceAssignment),
+  );
 
   const [mutateState, setMutateState] = useState<null | 'loading' | 'success' | 'error'>(null);
   const debouncedMutate = useDebouncedCallback(

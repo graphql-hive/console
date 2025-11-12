@@ -1200,3 +1200,74 @@ function RowItem(props: {
     </div>
   );
 }
+
+const createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment = graphql(`
+  fragment createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment on ResourceAssignment {
+    mode
+    projects {
+      project {
+        id
+        slug
+      }
+      targets {
+        mode
+        targets {
+          target {
+            id
+            slug
+          }
+          services {
+            mode
+            services
+          }
+          appDeployments {
+            mode
+            appDeployments
+          }
+        }
+      }
+    }
+  }
+`);
+
+export function createResourceSelectionFromResourceAssignment(
+  data: FragmentType<
+    typeof createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment
+  >,
+): ResourceSelection {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const resourceAssignment = useFragment(
+    createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment,
+    data,
+  );
+  return {
+    mode: resourceAssignment.mode ?? GraphQLSchema.ResourceAssignmentModeType.All,
+    projects: (resourceAssignment.projects ?? []).map(record => ({
+      projectId: record.project.id,
+      projectSlug: record.project.slug,
+      targets: {
+        mode: record.targets.mode,
+        targets: (record.targets.targets ?? []).map(target => ({
+          targetId: target.target.id,
+          targetSlug: target.target.slug,
+          services: {
+            mode: target.services.mode,
+            services: target.services.services?.map(
+              (service): GraphQLSchema.ServiceResourceAssignmentInput => ({
+                serviceName: service,
+              }),
+            ),
+          },
+          appDeployments: {
+            mode: target.appDeployments.mode,
+            appDeployments: target.appDeployments.appDeployments?.map(
+              (appDeploymentName): GraphQLSchema.AppDeploymentResourceAssignmentInput => ({
+                appDeployment: appDeploymentName,
+              }),
+            ),
+          },
+        })),
+      },
+    })),
+  };
+}

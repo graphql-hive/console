@@ -521,8 +521,12 @@ export async function createStorage(
                 )
               ),
               (
-                SELECT default_assigned_resources FROM oidc_integrations
-                WHERE id = ${args.oidcIntegrationId}
+                SELECT
+                  default_assigned_resources
+                FROM
+                  oidc_integrations
+                WHERE
+                  id = ${args.oidcIntegrationId}
               ),
               now()
             )
