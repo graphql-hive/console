@@ -1,5 +1,35 @@
 # @graphql-hive/core
 
+## 0.13.2
+
+### Patch Changes
+
+- [#7253](https://github.com/graphql-hive/console/pull/7253)
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)
+  Thanks [@ardatan](https://github.com/ardatan)! - Allow to provide `version` to `AgentOptions` in
+  Hive Client integrations.
+
+  ```ts
+  createHive({
+    agent: {
+      name: 'my-custom-agent',
+      version: '1.2.3' // new field
+    }
+  })
+  ```
+
+  Currently you can provide `name` but not `version`. This change allows to provide both `name` and
+  `version` to better identify the clients connecting to Hive Console. Previously the dependent
+  libraries like Yoga, Envelop and Hive Gateway integrations were incorrectly sending their names
+  with the version of `@graphql-hive/core` package. Now they will be able to send their own
+  versions.
+
+- [#7253](https://github.com/graphql-hive/console/pull/7253)
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)
+  Thanks [@ardatan](https://github.com/ardatan)! - Accept `name` and `version` to
+  `createSupergraphSDLFetcher` to build a more accurate user agent instead of passing `hive-client`
+  with `@graphql-hive/core`'s version
+
 ## 0.13.1
 
 ### Patch Changes
