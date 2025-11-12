@@ -3,29 +3,38 @@ import { fetch as defaultFetch } from '@whatwg-node/fetch';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { Logger } from './types.js';
+import { createHiveLogger } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
 
 export type AgentCircuitBreakerConfiguration = {
-  /** after which time a request should be treated as a timeout in milleseconds */
+  /**
+   * After which time a request should be treated as a timeout in milleseconds
+   * Default: 5_000
+   */
   timeout: number;
-  /** percentage after what the circuit breaker should kick in. */
+  /**
+   * Percentage after what the circuit breaker should kick in.
+   * Default: 50
+   */
   errorThresholdPercentage: number;
-  /** count of requests before starting evaluating. */
+  /**
+   * Count of requests before starting evaluating.
+   * Default: 5
+   */
   volumeThreshold: number;
-  /** after what time the circuit breaker is resetted in milliseconds */
+  /**
+   * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+   * Default: 30_000
+   */
   resetTimeout: number;
 };
 
 const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
-  // if call takes > 5s, count as a failure
-  timeout: 5000,
-  // trip if 50% of calls fail
+  timeout: 5_000,
   errorThresholdPercentage: 50,
-  // need at least 5 calls before evaluating
   volumeThreshold: 5,
-  // after 30s, try half-open state
-  resetTimeout: 30000,
+  resetTimeout: 30_000,
 };
 
 export interface AgentOptions {
@@ -103,11 +112,11 @@ export function createAgent<TEvent>(
     maxRetries: 3,
     sendInterval: 10_000,
     maxSize: 25,
-    logger: console,
     name: 'hive-client',
     circuitBreaker: defaultCircuitBreakerConfiguration,
     version,
     ...pluginOptions,
+    logger: createHiveLogger(pluginOptions.logger ?? console, '[agent]'),
   };
 
   const enabled = options.enabled !== false;
@@ -255,17 +264,19 @@ export function createAgent<TEvent>(
     autoRenewAbortController: true,
   });
 
+  const breakerLogger = createHiveLogger(options.logger, ' [circuit breaker]');
+
   async function sendFromBreaker(...args: Parameters<typeof breaker.fire>) {
     try {
       return await breaker.fire(...args);
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err) {
         if (err.code === 'EOPENBREAKER') {
-          debugLog('[breaker circuit] circuit open - sending report skipped');
+          breakerLogger.info('circuit open - sending report skipped');
           return null;
         }
         if (err.code === 'ETIMEDOUT') {
-          debugLog('[breaker circuit] circuit open - sending report aborted - timed out');
+          breakerLogger.info('circuit open - sending report aborted - timed out');
           return null;
         }
       }
@@ -274,13 +285,11 @@ export function createAgent<TEvent>(
     }
   }
 
-  breaker.on('open', () =>
-    errorLog('[breaker circuit] circuit opened - backend seems unreachable.'),
-  );
+  breaker.on('open', () => breakerLogger.error('circuit opened - backend seems unreachable.'));
   breaker.on('halfOpen', () =>
-    debugLog('[breaker circuit] circuit half open - testing backend connectivity'),
+    breakerLogger.info('circuit half open - testing backend connectivity'),
   );
-  breaker.on('close', () => debugLog('[breaker circuit] circuit closed - backend recovered '));
+  breaker.on('close', () => breakerLogger.info('circuit closed - backend recovered '));
 
   return {
     capture,
