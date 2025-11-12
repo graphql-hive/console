@@ -94,6 +94,12 @@ requests. By default it is set to `hive` which expects the document ID to be pro
 `documentId`.
 
 - `spec`: **(object)** The specification for extracting document IDs from requests.
+- Possible values are:
+  - `hive`: The default Hive specification using `documentId` in the request body.
+  - `apollo`: The Apollo Persisted Documents specification using
+    `extensions.persistedQuery.sha256Hash` in the request body.
+  - `relay`: The Relay specification using `doc_id` in the request body.
+  - `expression`: A custom specification using a user-defined expression.
 
 #### `documentId` in Request Body (Hive / Default)
 
@@ -148,13 +154,93 @@ curl -X POST -H 'Content-Type: application/json' http://localhost:4000/graphql \
 
 Then the Router will look up the operation associated with the provided `sha256Hash` and execute it.
 
+#### Relay Specification using `doc_id` in Request Body
+
+You can also use the Relay specification, which expects the persisted document ID to be provided in
+the request body as `doc_id`.
+
+To use this spec, set the `spec` field to `relay`:
+
+```yaml {3} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  spec: relay
+```
+
+Then the request body should look like this:
+
+```json
+{
+  "doc_id": "a1b2c3d4e5",
+  "variables": {
+    "id": "123"
+  }
+}
+```
+
+Then the Router will look up the operation associated with the provided `doc_id` and execute it.
+
+#### Custom Specification with `expression`
+
+If none of the built-in specifications fit your needs, you can define a custom specification using
+the `expression` option.
+
+- `expression`: **(string)** A [VRL expression](./expressions) that extracts the document ID from
+  the incoming request.
+
+To use a custom specification, set the `spec` field to `expression` and provide the `expression`
+field:
+
+```yaml {3-4} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  spec:
+    expression: request.params.customDocumentId
+```
+
+##### Using Header to Provide Document ID
+
+In this example, we extract the document ID from a custom header `x-document-id`.
+
+```yaml {3-4} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  spec:
+    expression: request.headers."x-document-id"
+```
+
+Then the request should include the `x-document-id` header:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' -H 'x-document-id: a1b2c3d4e5' http://localhost:4000/graphql \
+  -d '{"variables":{"id":"123"}}'
+```
+
+##### Using a Query Parameter to Provide Document ID
+
+In this example, we extract the document ID from a query parameter `query_id`.
+
+```yaml {3-4} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  spec:
+    expression: request.params.query_id
+```
+
+Then the request URL should include the `query_id` query parameter:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' 'http://localhost:4000/graphql?query_id=a1b2c3d4e5' \
+  -d '{"variables":{"id":"123"}}'
+```
+
 ### Allowing Non-Persisted Arbitrary Documents with `allow_arbitrary_operations`
 
 After enabling persisted documents, by default the Router will reject any requests that do not
 provide a valid persisted document ID.
 
-- `allow_arbitrary_operations`: **(boolean)** Whether to allow arbitrary operations alongside
-  persisted documents. Default is `false`.
+- `allow_arbitrary_operations`: **(boolean / object)** Whether to allow arbitrary operations
+  alongside persisted documents. Default is `false`.
 
 If you want to allow arbitrary operations alongside persisted documents, you can set the
 `allow_arbitrary_operations` field to `true`.
@@ -163,4 +249,32 @@ If you want to allow arbitrary operations alongside persisted documents, you can
 persisted_documents:
   enabled: true
   allow_arbitrary_operations: true
+```
+
+#### Conditional Allowance with `expression`
+
+Alternatively, you can conditionally allow arbitrary operations based on a user-defined expression.
+
+- `expression`: **(string)** A [VRL expression](./expressions) that evaluates to a boolean value to
+  determine whether to allow arbitrary operations.
+
+To use a conditional allowance, set the `allow_arbitrary_operations` field to an object with the
+`expression` field:
+
+```yaml {3-4} filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  allow_arbitrary_operations:
+    expression: request.headers."x-allow-arbitrary" == "true"
+```
+
+Then the Router will evaluate the provided expression for each request. If it evaluates to `true`,
+the Router will allow arbitrary operations; otherwise, it will enforce persisted documents only.
+
+In the example above, you can allow arbitrary operations by including the `x-allow-arbitrary: true`
+header in your request:
+
+```bash
+curl -X POST -H 'Content-Type: application/json' -H 'x-allow-arbitrary: true' http://localhost:4000/graphql \
+  -d '{"query":"query { user(id: \"123\") { id name } }"}'
 ```
