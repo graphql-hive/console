@@ -262,7 +262,7 @@ export function createAgent<TEvent>(
    * We support Cloudflare, which does not has the `events` module.
    * So we lazy load opossum which has `events` as a dependency.
    */
-  const breakerLogger = createHiveLogger(options.logger, ' [circuit breaker]');
+  const breakerLogger = createHiveLogger(options.logger, '[circuit breaker]');
 
   let breaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
