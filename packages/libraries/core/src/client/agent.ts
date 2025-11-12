@@ -176,6 +176,7 @@ export function createAgent<TEvent>(
     throwOnError?: boolean;
     skipSchedule: boolean;
   }): Promise<ReadOnlyResponse | null> {
+    // @ts-ignore missing definition in typedefs
     const signal: AbortSignal = breaker.getSignal();
 
     if (!data.size() || !enabled) {
@@ -271,9 +272,13 @@ export function createAgent<TEvent>(
     }
   }
 
-  breaker.on('open', () => errorLog('circuit opened - backend unreachable'));
-  breaker.on('halfOpen', () => debugLog('testing backend connectivity'));
-  breaker.on('close', () => debugLog('backend recovered - circuit closed'));
+  breaker.on('open', () =>
+    errorLog('[breaker circuit] circuit opened - backend seems unreachable.'),
+  );
+  breaker.on('halfOpen', () =>
+    debugLog('[breaker circuit] circuit half open - testing backend connectivity'),
+  );
+  breaker.on('close', () => debugLog('[breaker circuit] circuit closed - backend recovered '));
 
   return {
     capture,
