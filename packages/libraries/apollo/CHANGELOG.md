@@ -1,5 +1,19 @@
 # @graphql-hive/apollo
 
+## 0.40.2
+
+### Patch Changes
+
+- [#7253](https://github.com/graphql-hive/console/pull/7253)
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)
+  Thanks [@ardatan](https://github.com/ardatan)! - Send correct version of the client packages,
+  previously they were sending the version of `@graphql-hive/core` package.
+
+- Updated dependencies
+  [[`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee),
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)]:
+  - @graphql-hive/core@0.13.2
+
 ## 0.40.1
 
 ### Patch Changes
