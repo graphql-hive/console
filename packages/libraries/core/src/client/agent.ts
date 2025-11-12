@@ -270,11 +270,10 @@ export function createAgent<TEvent>(
   >;
 
   breakerLogger.info('initialize circuit breaker');
-  const p = loadCircuitBreaker(
-    breakerLogger,
-    API => {
+  const loadCircuitBreakerPromise = loadCircuitBreaker(
+    CircuitBreaker => {
       breakerLogger.info('started');
-      const realBreaker = new API(sendHTTPCall, {
+      const realBreaker = new CircuitBreaker(sendHTTPCall, {
         ...options.circuitBreaker,
         autoRenewAbortController: true,
       });
@@ -304,7 +303,7 @@ export function createAgent<TEvent>(
 
   async function sendFromBreaker(...args: Parameters<typeof breaker.fire>) {
     if (!breaker) {
-      await p;
+      await loadCircuitBreakerPromise;
     }
 
     try {
@@ -337,8 +336,7 @@ type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
   getSignal(): AbortSignal;
 };
 
-async function loadCircuitBreaker<TI extends unknown[] = unknown[], TR = unknown>(
-  logger: Logger,
+async function loadCircuitBreaker(
   success: (breaker: typeof CircuitBreaker) => void,
   error: () => void,
 ): Promise<void> {
