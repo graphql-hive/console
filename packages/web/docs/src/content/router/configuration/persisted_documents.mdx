@@ -234,6 +234,23 @@ curl -X POST -H 'Content-Type: application/json' 'http://localhost:4000/graphql?
   -d '{"variables":{"id":"123"}}'
 ```
 
+##### Using URL Path Parameters to Provide Document ID
+
+You can also the the request path to extract the persisted operation id. This requires you to also
+customize the GraphQL endpoint.
+
+This combination is powerful as it allows you to use the persisted operation id as it can easily be
+combined with any type of HTTP proxy cache.
+
+```yaml {3-5} filename="router.config.yaml"
+http:
+  graphql_endpoint: /graphql/:doc_id
+persisted_documents:
+  enabled: true
+  spec:
+    expression: .request.path_params.doc_id
+```
+
 ### Allowing Non-Persisted Arbitrary Documents with `allow_arbitrary_operations`
 
 After enabling persisted documents, by default the Router will reject any requests that do not

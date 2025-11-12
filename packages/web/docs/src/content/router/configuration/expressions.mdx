@@ -59,6 +59,9 @@ Represents the incoming HTTP request. It exposes nested fields such as:
 - `.request.url.host` - the request host (e.g. `api.example.com`).
 - `.request.url.port` - the request port (e.g. `443`).
 - `.request.url.path` - the request path (e.g. `/graphql`).
+- `.request.path_parameters` - a map of path parameters if your `graphql_endpoint` uses them. For
+  example, if your endpoint is `/graphql/:doc_id`, you can access the `doc_id` parameter with
+  `.request.path_parameters.doc_id`.
 - `.request.operation.name` - the name of the GraphQL operation being executed, if provided.
 - `.request.operation.type` - the type of GraphQL operation being executed (e.g. `"query"`,
   `"mutation"`, or `"subscription"`).
