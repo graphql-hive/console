@@ -1,4 +1,4 @@
-import CircuitBreaker from 'opossum';
+import type CircuitBreaker from 'opossum';
 import { fetch as defaultFetch } from '@whatwg-node/fetch';
 import { version } from '../version.js';
 import { http } from './http-client.js';
@@ -181,9 +181,8 @@ export function createAgent<TEvent>(
     return send({ throwOnError: true, skipSchedule: true });
   }
 
-  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>) {
-    // @ts-expect-error missing definition in typedefs for `opposum`
-    const signal: AbortSignal = breaker.getSignal();
+  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>): Promise<Response> {
+    const signal = breaker.getSignal();
     return await http.post(options.endpoint, buffer, {
       headers: {
         accept: 'application/json',
@@ -259,14 +258,53 @@ export function createAgent<TEvent>(
     });
   }
 
-  const breaker = new CircuitBreaker(sendHTTPCall, {
-    ...options.circuitBreaker,
-    autoRenewAbortController: true,
-  });
+  /**
+   * We support Cloudflare, which does not has the `events` module.
+   * So we lazy load opossum which has `events` as a dependency.
+   */
+  const breakerLogger = createHiveLogger(options.logger, '[circuit breaker]');
 
-  const breakerLogger = createHiveLogger(options.logger, ' [circuit breaker]');
+  let breaker: CircuitBreakerInterface<
+    Parameters<typeof sendHTTPCall>,
+    ReturnType<typeof sendHTTPCall>
+  >;
+
+  breakerLogger.info('initialize circuit breaker');
+  const loadCircuitBreakerPromise = loadCircuitBreaker(
+    CircuitBreaker => {
+      breakerLogger.info('started');
+      const realBreaker = new CircuitBreaker(sendHTTPCall, {
+        ...options.circuitBreaker,
+        autoRenewAbortController: true,
+      });
+
+      realBreaker.on('open', () =>
+        breakerLogger.error('circuit opened - backend seems unreachable.'),
+      );
+      realBreaker.on('halfOpen', () =>
+        breakerLogger.info('circuit half open - testing backend connectivity'),
+      );
+      realBreaker.on('close', () => breakerLogger.info('circuit closed - backend recovered '));
+
+      // @ts-expect-error missing definition in typedefs for `opposum`
+      breaker = realBreaker;
+    },
+    () => {
+      breakerLogger.info('circuit breaker not supported on platform');
+      breaker = {
+        getSignal() {
+          return undefined;
+        },
+        fire: sendHTTPCall,
+      };
+    },
+  );
 
   async function sendFromBreaker(...args: Parameters<typeof breaker.fire>) {
+    if (!breaker) {
+      await loadCircuitBreakerPromise;
+    }
+
     try {
       return await breaker.fire(...args);
     } catch (err: unknown) {
@@ -285,15 +323,27 @@ export function createAgent<TEvent>(
     }
   }
 
-  breaker.on('open', () => breakerLogger.error('circuit opened - backend seems unreachable.'));
-  breaker.on('halfOpen', () =>
-    breakerLogger.info('circuit half open - testing backend connectivity'),
-  );
-  breaker.on('close', () => breakerLogger.info('circuit closed - backend recovered '));
-
   return {
     capture,
     sendImmediately,
     dispose,
   };
+}
+
+type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
+  fire(...args: TI): TR;
+  getSignal(): AbortSignal | undefined;
+};
+
+async function loadCircuitBreaker(
+  success: (breaker: typeof CircuitBreaker) => void,
+  error: () => void,
+): Promise<void> {
+  const packageName = 'opossum';
+  try {
+    const module = await import(packageName);
+    success(module.default);
+  } catch (err) {
+    error();
+  }
 }
