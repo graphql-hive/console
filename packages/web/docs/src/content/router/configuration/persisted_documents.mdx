@@ -195,7 +195,7 @@ field:
 persisted_documents:
   enabled: true
   spec:
-    expression: .request.params.customDocumentId
+    expression: .request.body.customDocumentId
 ```
 
 ##### Using Header to Provide Document ID
@@ -224,7 +224,7 @@ In this example, we extract the document ID from a query parameter `query_id`.
 persisted_documents:
   enabled: true
   spec:
-    expression: .request.params.query_id
+    expression: .request.body.query_id
 ```
 
 Then the request URL should include the `query_id` query parameter:
