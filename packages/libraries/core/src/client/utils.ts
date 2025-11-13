@@ -197,11 +197,11 @@ function printPath(path: string) {
   return path;
 }
 
-export function createHiveLogger(baseLogger: Logger, prefix: string, debug?: boolean): HiveLogger {
+export function createHiveLogger(baseLogger: Logger, prefix: string, debug = true): HiveLogger {
   const context: HiveLogger[typeof hiveSymbol] = {
     path: '',
     logger: baseLogger,
-    debug: debug ?? false,
+    debug,
     // @ts-expect-error internal stuff
     ...baseLogger?.[hiveSymbol],
   };
@@ -234,7 +234,7 @@ export function createHiveLogger(baseLogger: Logger, prefix: string, debug?: boo
         logger.info(msg);
         return;
       }
-      logger.debug?.(msg);
+      logger.debug(msg);
     },
   };
 }

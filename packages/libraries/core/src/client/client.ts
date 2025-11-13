@@ -13,7 +13,11 @@ import { createUsage } from './usage.js';
 import { createHiveLogger, isLegacyAccessToken } from './utils.js';
 
 export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = createHiveLogger(options?.agent?.logger ?? console, '[hive]', options.debug);
+  const logger = createHiveLogger(
+    options?.agent?.logger ?? console,
+    '[hive]',
+    options.debug ?? false,
+  );
   let enabled = options.enabled ?? true;
 
   if (enabled === false && !options.experimental__persistedDocuments) {
