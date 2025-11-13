@@ -42,7 +42,7 @@ pub enum SupergraphFetcherError {
     FetcherCreationError(reqwest::Error),
     NetworkError(reqwest_middleware::Error),
     NetworkResponseError(reqwest::Error),
-    HeadersLock(String),
+    Lock(String),
     InvalidKey(InvalidHeaderValue),
 }
 
@@ -56,7 +56,7 @@ impl Display for SupergraphFetcherError {
             SupergraphFetcherError::NetworkResponseError(e) => {
                 write!(f, "Network response error: {}", e)
             }
-            SupergraphFetcherError::HeadersLock(e) => write!(f, "Headers lock error: {}", e),
+            SupergraphFetcherError::Lock(e) => write!(f, "Lock error: {}", e),
             SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid CDN key: {}", e),
         }
     }
@@ -237,10 +237,7 @@ impl<AsyncOrSync> SupergraphFetcher<AsyncOrSync> {
     fn get_latest_etag(&self) -> Result<Option<HeaderValue>, SupergraphFetcherError> {
         let guard: std::sync::RwLockReadGuard<'_, Option<HeaderValue>> =
             self.etag.try_read().map_err(|e| {
-                SupergraphFetcherError::HeadersLock(format!(
-                    "Failed to read the etag record: {:?}",
-                    e
-                ))
+                SupergraphFetcherError::Lock(format!("Failed to read the etag record: {:?}", e))
             })?;
 
         Ok(guard.clone())
@@ -249,10 +246,7 @@ impl<AsyncOrSync> SupergraphFetcher<AsyncOrSync> {
     fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> Result<(), SupergraphFetcherError> {
         let mut guard: std::sync::RwLockWriteGuard<'_, Option<HeaderValue>> =
             self.etag.try_write().map_err(|e| {
-                SupergraphFetcherError::HeadersLock(format!(
-                    "Failed to update the etag record: {:?}",
-                    e
-                ))
+                SupergraphFetcherError::Lock(format!("Failed to update the etag record: {:?}", e))
             })?;
 
         if let Some(etag_value) = etag {
