@@ -165,8 +165,6 @@ test('should send data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage][agent][circuit breaker] initialize circuit breaker
-    [INF] [hive][usage][agent][circuit breaker] started
     [INF] [hive][usage][agent] Disposing
     [INF] [hive][usage][agent] Sending report (queue 1)
     [INF] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
@@ -277,8 +275,6 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage][agent][circuit breaker] initialize circuit breaker
-    [INF] [hive][usage][agent][circuit breaker] started
     [INF] [hive][usage][agent] Disposing
     [INF] [hive][usage][agent] Sending report (queue 1)
     [INF] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
@@ -370,8 +366,6 @@ test('should not leak the exception', { retry: 3 }, async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage][agent][circuit breaker] initialize circuit breaker
-    [INF] [hive][usage][agent][circuit breaker] started
     [INF] [hive][usage][agent] Sending report (queue 1)
     [INF] [hive][usage][agent] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
     [ERR] [hive][usage][agent] Error: getaddrinfo ENOTFOUND 404.localhost.noop
@@ -542,9 +536,7 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage][agent][circuit breaker] initialize circuit breaker
     [INF] [hive][usage][agent] Disposing
-    [INF] [hive][usage][agent][circuit breaker] started
     [INF] [hive][usage][agent] Sending report (queue 2)
     [INF] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     [INF] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
@@ -648,8 +640,6 @@ test('should not send excluded operation name data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage][agent][circuit breaker] initialize circuit breaker
-    [INF] [hive][usage][agent][circuit breaker] started
     [INF] [hive][usage][agent] Disposing
     [INF] [hive][usage][agent] Sending report (queue 2)
     [INF] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
@@ -751,8 +741,6 @@ test('retry on non-200', async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage][agent][circuit breaker] initialize circuit breaker
-    [INF] [hive][usage][agent][circuit breaker] started
     [INF] [hive][usage][agent] Sending report (queue 1)
     [INF] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
     [ERR] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): No no no
