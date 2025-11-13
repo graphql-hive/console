@@ -1,7 +1,6 @@
 ---
 '@graphql-hive/core': minor
 '@graphql-hive/apollo': minor
-'@graphql-hive/cli': minor
 '@graphql-hive/envelop': minor
 ---
 
