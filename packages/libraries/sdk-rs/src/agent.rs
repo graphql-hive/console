@@ -107,8 +107,8 @@ impl Buffer {
 pub struct UsageAgent {
     buffer_size: usize,
     endpoint: String,
-    buffer: Arc<Buffer>,
-    processor: Arc<OperationProcessor>,
+    buffer: Buffer,
+    processor: OperationProcessor,
     client: ClientWithMiddleware,
     flush_interval: Duration,
 }
@@ -148,8 +148,6 @@ impl UsageAgent {
         flush_interval: Duration,
         user_agent: String,
     ) -> Result<Arc<Self>, AgentError> {
-        let processor = Arc::new(OperationProcessor::new());
-
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 
         let mut default_headers = HeaderMap::new();
@@ -178,7 +176,6 @@ impl UsageAgent {
         let client = ClientBuilder::new(reqwest_agent)
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
-        let buffer = Arc::new(Buffer::new());
 
         let mut endpoint = endpoint;
 
@@ -191,8 +188,8 @@ impl UsageAgent {
         Ok(Arc::new(Self {
             buffer_size,
             endpoint,
-            buffer,
-            processor,
+            buffer: Buffer::new(),
+            processor: OperationProcessor::new(),
             client,
             flush_interval,
         }))
