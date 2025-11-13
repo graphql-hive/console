@@ -1,9 +1,8 @@
-import type CircuitBreaker from 'opossum';
 import { fetch as defaultFetch } from '@whatwg-node/fetch';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { Logger } from './types.js';
-import { createHiveLogger } from './utils.js';
+import { CircuitBreakerInterface, createHiveLogger, loadCircuitBreaker } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
 
@@ -341,22 +340,4 @@ export function createAgent<TEvent>(
     sendImmediately,
     dispose,
   };
-}
-
-type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
-  fire(...args: TI): TR;
-  getSignal(): AbortSignal | undefined;
-};
-
-async function loadCircuitBreaker(
-  success: (breaker: typeof CircuitBreaker) => void,
-  error: () => void,
-): Promise<void> {
-  const packageName = 'opossum';
-  try {
-    const module = await import(packageName);
-    success(module.default);
-  } catch (err) {
-    error();
-  }
 }

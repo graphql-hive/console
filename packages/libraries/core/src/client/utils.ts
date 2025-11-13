@@ -1,3 +1,4 @@
+import type CircuitBreaker from 'opossum';
 import { crypto, TextEncoder } from '@whatwg-node/fetch';
 import { hiveClientSymbol } from './client.js';
 import type { HiveClient, HivePluginOptions, Logger } from './types.js';
@@ -226,3 +227,21 @@ export function isLegacyAccessToken(accessToken: string): boolean {
 
   return false;
 }
+
+export async function loadCircuitBreaker(
+  success: (breaker: typeof CircuitBreaker) => void,
+  error: () => void,
+): Promise<void> {
+  const packageName = 'opossum';
+  try {
+    const module = await import(packageName);
+    success(module.default);
+  } catch (err) {
+    error();
+  }
+}
+
+export type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
+  fire(...args: TI): TR;
+  getSignal(): AbortSignal | undefined;
+};
