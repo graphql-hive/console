@@ -2,7 +2,7 @@ use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
-use hive_console_sdk::supergraph_fetcher::SupergraphFetcherSyncClient;
+use hive_console_sdk::supergraph_fetcher::SupergraphFetcherSyncState;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
@@ -13,7 +13,7 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct HiveRegistry {
     file_name: String,
-    fetcher: SupergraphFetcher<SupergraphFetcherSyncClient>,
+    fetcher: SupergraphFetcher<SupergraphFetcherSyncState>,
     pub logger: Logger,
 }
 
@@ -123,7 +123,7 @@ impl HiveRegistry {
         env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
         env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
 
-        let fetcher = SupergraphFetcher::<SupergraphFetcherSyncClient>::try_new(
+        let fetcher = SupergraphFetcher::try_new_sync(
             endpoint,
             &key,
             format!("hive-apollo-router/{}", PLUGIN_VERSION),
