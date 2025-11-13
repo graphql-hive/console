@@ -1,6 +1,7 @@
 use std::fmt::Display;
 use std::sync::RwLock;
 use std::time::Duration;
+use std::time::SystemTime;
 
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
@@ -9,6 +10,8 @@ use reqwest::header::IF_NONE_MATCH;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::policies::ExponentialBackoff;
+use reqwest_retry::RetryDecision;
+use reqwest_retry::RetryPolicy;
 use reqwest_retry::RetryTransientMiddleware;
 
 #[derive(Debug)]
@@ -19,7 +22,7 @@ pub struct SupergraphFetcherAsyncClient {
 #[derive(Debug)]
 pub struct SupergraphFetcherSyncClient {
     reqwest_client: reqwest::blocking::Client,
-    retry_count: u32,
+    retry_policy: ExponentialBackoff,
 }
 
 #[derive(Debug)]
@@ -53,10 +56,11 @@ impl Display for SupergraphFetcherError {
     }
 }
 
-fn prepare_endpoint_and_header(
+fn prepare_client_config(
     mut endpoint: String,
     key: &str,
-) -> Result<(String, HeaderMap), SupergraphFetcherError> {
+    retry_count: u32,
+) -> Result<(String, HeaderMap, ExponentialBackoff), SupergraphFetcherError> {
     if !endpoint.ends_with("/supergraph") {
         if endpoint.ends_with("/") {
             endpoint.push_str("supergraph");
@@ -66,12 +70,14 @@ fn prepare_endpoint_and_header(
     }
 
     let mut headers = HeaderMap::new();
-    headers.insert(
-        "X-Hive-CDN-Key",
-        HeaderValue::from_str(key).map_err(SupergraphFetcherError::InvalidKey)?,
-    );
+    let mut cdn_key_header =
+        HeaderValue::from_str(key).map_err(SupergraphFetcherError::InvalidKey)?;
+    cdn_key_header.set_sensitive(true);
+    headers.insert("X-Hive-CDN-Key", cdn_key_header);
 
-    Ok((endpoint, headers))
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
+
+    Ok((endpoint, headers, retry_policy))
 }
 
 impl SupergraphFetcher<SupergraphFetcherSyncClient> {
@@ -85,7 +91,7 @@ impl SupergraphFetcher<SupergraphFetcherSyncClient> {
         accept_invalid_certs: bool,
         retry_count: u32,
     ) -> Result<Self, SupergraphFetcherError> {
-        let (endpoint, headers) = prepare_endpoint_and_header(endpoint, key)?;
+        let (endpoint, headers, retry_policy) = prepare_client_config(endpoint, key, retry_count)?;
 
         let client = SupergraphFetcherSyncClient {
             reqwest_client: reqwest::blocking::Client::builder()
@@ -96,7 +102,7 @@ impl SupergraphFetcher<SupergraphFetcherSyncClient> {
                 .default_headers(headers)
                 .build()
                 .map_err(SupergraphFetcherError::FetcherCreationError)?,
-            retry_count,
+            retry_policy,
         };
 
         Ok(Self {
@@ -107,8 +113,9 @@ impl SupergraphFetcher<SupergraphFetcherSyncClient> {
     }
 
     pub fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
+        let request_start_time = SystemTime::now();
         // Implementing retry logic for sync client
-        let mut attempts = 0;
+        let mut n_past_retries = 0;
         let resp = loop {
             let mut req = self.client.reqwest_client.get(&self.endpoint);
             let etag = self.get_latest_etag()?;
@@ -120,15 +127,23 @@ impl SupergraphFetcher<SupergraphFetcherSyncClient> {
             match response {
                 Ok(resp) => break resp,
                 Err(e) => {
-                    attempts += 1;
-                    if attempts > self.client.retry_count {
-                        return Err(SupergraphFetcherError::NetworkError(
-                            reqwest_middleware::Error::Reqwest(e),
-                        ));
+                    match self
+                        .client
+                        .retry_policy
+                        .should_retry(request_start_time, n_past_retries)
+                    {
+                        RetryDecision::DoNotRetry => {
+                            return Err(SupergraphFetcherError::NetworkError(
+                                reqwest_middleware::Error::Reqwest(e),
+                            ));
+                        }
+                        RetryDecision::Retry { execute_after } => {
+                            n_past_retries += 1;
+                            if let Ok(duration) = execute_after.elapsed() {
+                                std::thread::sleep(duration);
+                            }
+                        }
                     }
-                    // Exponential backoff before retrying
-                    let backoff_duration = Duration::from_millis(2u64.pow(attempts) * 100);
-                    std::thread::sleep(backoff_duration);
                 }
             }
         };
@@ -159,9 +174,8 @@ impl SupergraphFetcher<SupergraphFetcherAsyncClient> {
         accept_invalid_certs: bool,
         retry_count: u32,
     ) -> Result<Self, SupergraphFetcherError> {
-        let (endpoint, headers) = prepare_endpoint_and_header(endpoint, key)?;
+        let (endpoint, headers, retry_policy) = prepare_client_config(endpoint, key, retry_count)?;
 
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
         let reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(accept_invalid_certs)
             .connect_timeout(connect_timeout)

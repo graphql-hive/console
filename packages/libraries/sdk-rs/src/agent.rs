@@ -129,14 +129,18 @@ pub enum AgentError {
     Forbidden,
     #[error("unable to send report: rate limited")]
     RateLimited,
+    #[error("invalid token provided: {0}")]
+    InvalidToken(String),
+    #[error("unable to instantiate the http client for reports sending: {0}")]
+    HTTPClientCreationError(reqwest::Error),
     #[error("unable to send report: {0}")]
     Unknown(String),
 }
 
 impl UsageAgent {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        token: String,
+    pub fn try_new(
+        token: &str,
         endpoint: String,
         target_id: Option<String>,
         buffer_size: usize,
@@ -145,7 +149,7 @@ impl UsageAgent {
         accept_invalid_certs: bool,
         flush_interval: Duration,
         user_agent: String,
-    ) -> Self {
+    ) -> Result<Self, AgentError> {
         let processor = Arc::new(OperationProcessor::new());
 
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
@@ -154,10 +158,12 @@ impl UsageAgent {
 
         default_headers.insert("X-Usage-API-Version", HeaderValue::from_static("2"));
 
-        default_headers.insert(
-            reqwest::header::AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
-        );
+        let mut authorization_header = HeaderValue::from_str(&format!("Bearer {}", token))
+            .map_err(|_| AgentError::InvalidToken(token.to_string()))?;
+
+        authorization_header.set_sensitive(true);
+
+        default_headers.insert(reqwest::header::AUTHORIZATION, authorization_header);
 
         default_headers.insert(
             reqwest::header::CONTENT_TYPE,
@@ -170,8 +176,7 @@ impl UsageAgent {
             .timeout(request_timeout)
             .user_agent(user_agent)
             .build()
-            .map_err(|err| err.to_string())
-            .expect("Couldn't instantiate the http client for reports sending!");
+            .map_err(AgentError::HTTPClientCreationError)?;
         let client = ClientBuilder::new(reqwest_agent)
             .with(RetryTransientMiddleware::new_with_policy(retry_policy))
             .build();
@@ -185,14 +190,14 @@ impl UsageAgent {
             }
         }
 
-        UsageAgent {
+        Ok(Self {
             buffer,
             processor,
             endpoint,
             buffer_size,
             client,
             flush_interval,
-        }
+        })
     }
 
     fn produce_report(&self, reports: Vec<ExecutionReport>) -> Result<Report, AgentError> {

@@ -245,17 +245,20 @@ impl Plugin for UsagePlugin {
 
         let agent = if enabled {
             let flush_interval = Duration::from_secs(flush_interval);
-            let agent = Arc::new(UsageAgent::new(
-                token.expect("token is set"),
-                endpoint,
-                target_id,
-                buffer_size,
-                Duration::from_secs(connect_timeout),
-                Duration::from_secs(request_timeout),
-                accept_invalid_certs,
-                flush_interval,
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-            ));
+            let agent = Arc::new(
+                UsageAgent::try_new(
+                    &token.expect("token is set"),
+                    endpoint,
+                    target_id,
+                    buffer_size,
+                    Duration::from_secs(connect_timeout),
+                    Duration::from_secs(request_timeout),
+                    accept_invalid_certs,
+                    flush_interval,
+                    format!("hive-apollo-router/{}", PLUGIN_VERSION),
+                )
+                .map_err(Box::new)?,
+            );
             start_flush_interval(agent.clone());
             Some(agent)
         } else {
