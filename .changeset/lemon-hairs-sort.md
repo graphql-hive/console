@@ -8,15 +8,7 @@ Breaking;
 
 ```rust
 // Sync Mode
-let fetcher = SupergraphFetcher::<SupergraphFetcherSyncClient>::try_new(
-    endpoint,
-    &key,
-    format!("hive-apollo-router/{}", PLUGIN_VERSION),
-    Duration::from_secs(5),
-    Duration::from_secs(60),
-    accept_invalid_certs,
-    3,
-)
+let fetcher = SupergraphFetcher::<SupergraphFetcherSyncClient>::try_new(/* params */)
 .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
 
 // Use the fetcher to fetch the supergraph (Sync)
@@ -26,15 +18,7 @@ let supergraph = fetcher
 
 // Async Mode
 
-let fetcher = SupergraphFetcher::<SupergraphFetcherAsyncClient>::try_new(
-    endpoint,
-    &key,
-    format!("hive-apollo-router/{}", PLUGIN_VERSION),
-    Duration::from_secs(5),
-    Duration::from_secs(60),
-    accept_invalid_certs,
-    3,
-)
+let fetcher = SupergraphFetcher::<SupergraphFetcherAsyncClient>::try_new(/* params */)
 .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
 
 // Use the fetcher to fetch the supergraph (Async)
