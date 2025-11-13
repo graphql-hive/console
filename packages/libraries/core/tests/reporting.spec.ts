@@ -51,7 +51,8 @@ test('should not leak the exception', async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][reporting] Publish schema
     [DBG] [hive][reporting] POST http://127.0.0.1:55404 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [ERR] [hive][reporting] [object Object]
+    [ERR] [hive][reporting] Error: connect ECONNREFUSED 127.0.0.1:55404
+    [ERR] [hive][reporting]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:666:666)
     [DBG] [hive][reporting] POST http://127.0.0.1:55404 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). connect ECONNREFUSED 127.0.0.1:55404
   `);
 });

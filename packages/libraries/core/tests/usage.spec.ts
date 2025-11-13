@@ -368,7 +368,7 @@ test('should not leak the exception', { retry: 3 }, async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [DBG] [hive][usage][agent] Sending report (queue 1)
     [DBG] [hive][usage][agent] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
-    [ERR] [hive][usage][agent] [object Object]
+    [ERR] [hive][usage][agent] Error: getaddrinfo ENOTFOUND 404.localhost.noop
     [DBG] [hive][usage][agent] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
     [DBG] [hive][usage][agent] Disposing
   `);
