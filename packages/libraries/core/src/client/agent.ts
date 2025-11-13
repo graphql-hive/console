@@ -9,11 +9,6 @@ type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'
 
 export type AgentCircuitBreakerConfiguration = {
   /**
-   * After which time a request should be treated as a timeout in milleseconds
-   * Default: 5_000
-   */
-  timeout: number;
-  /**
    * Percentage after what the circuit breaker should kick in.
    * Default: 50
    */
@@ -31,7 +26,6 @@ export type AgentCircuitBreakerConfiguration = {
 };
 
 const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
-  timeout: 5_000,
   errorThresholdPercentage: 50,
   volumeThreshold: 5,
   resetTimeout: 30_000,
@@ -296,6 +290,7 @@ export function createAgent<TEvent>(
         breakerLogger.info('started');
         const realBreaker = new CircuitBreaker(sendHTTPCall, {
           ...options.circuitBreaker,
+          timeout: false,
           autoRenewAbortController: true,
         });
 

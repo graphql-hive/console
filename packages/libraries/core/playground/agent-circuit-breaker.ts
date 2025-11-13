@@ -21,7 +21,6 @@ const agent = createAgent<{}>(
       });
     },
     circuitBreaker: {
-      timeout: 1_000,
       errorThresholdPercentage: 1,
       resetTimeout: 10_000,
       volumeThreshold: 0,

@@ -23,11 +23,6 @@ const client = createClient({
        */
       volumeThreshold: 5,
       /**
-       * After which time a request should be treated as a timeout in milleseconds
-       * Default: 5_000
-       */
-      timeout: 5_000,
-      /**
        * Percentage of requests failing before the circuit breaker kicks in.
        * Default: 50
        */
