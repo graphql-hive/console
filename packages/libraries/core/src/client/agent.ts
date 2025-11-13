@@ -320,15 +320,9 @@ export function createAgent<TEvent>(
     try {
       return await breaker.fire(...args);
     } catch (err: unknown) {
-      if (err instanceof Error && 'code' in err) {
-        if (err.code === 'EOPENBREAKER') {
-          breakerLogger.info('circuit open - sending report skipped');
-          return null;
-        }
-        if (err.code === 'ETIMEDOUT') {
-          breakerLogger.info('circuit open - sending report aborted - timed out');
-          return null;
-        }
+      if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
+        breakerLogger.info('circuit open - sending report skipped');
+        return null;
       }
 
       throw err;
