@@ -27,7 +27,7 @@ export type AgentCircuitBreakerConfiguration = {
 
 const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
   errorThresholdPercentage: 50,
-  volumeThreshold: 5,
+  volumeThreshold: 10,
   resetTimeout: 30_000,
 };
 
@@ -115,12 +115,11 @@ export function createAgent<TEvent>(
     version,
     ...pluginOptions,
     circuitBreaker:
-      pluginOptions.circuitBreaker === false
-        ? null
-        : pluginOptions.circuitBreaker === true
-          ? defaultCircuitBreakerConfiguration
-          : (pluginOptions.circuitBreaker ?? defaultCircuitBreakerConfiguration),
-
+      pluginOptions.circuitBreaker == null || pluginOptions.circuitBreaker === true
+        ? defaultCircuitBreakerConfiguration
+        : pluginOptions.circuitBreaker === false
+          ? null
+          : pluginOptions.circuitBreaker,
     logger: createHiveLogger(pluginOptions.logger ?? console, '[agent]'),
   };
 
