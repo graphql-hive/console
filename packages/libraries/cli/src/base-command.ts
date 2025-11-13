@@ -221,9 +221,13 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
                   }
                 },
                 error: (...args) => {
-                  // Allow retrying requests without noise
                   if (isDebug) {
                     this.logWarning(...args);
+                  }
+                },
+                debug: (...args) => {
+                  if (isDebug) {
+                    this.logInfo(...args);
                   }
                 },
               },

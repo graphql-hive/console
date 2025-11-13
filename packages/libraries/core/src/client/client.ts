@@ -10,7 +10,7 @@ import { createPersistedDocuments } from './persisted-documents.js';
 import { createReporting } from './reporting.js';
 import type { HiveClient, HiveInternalPluginOptions, HivePluginOptions } from './types.js';
 import { createUsage } from './usage.js';
-import { createHiveLogger, isLegacyAccessToken, logIf } from './utils.js';
+import { createHiveLogger, isLegacyAccessToken } from './utils.js';
 
 export function createHive(options: HivePluginOptions): HiveClient {
   const logger = createHiveLogger(options?.agent?.logger ?? console, '[hive]', options.debug);

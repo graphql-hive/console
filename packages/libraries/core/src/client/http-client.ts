@@ -1,7 +1,7 @@
 import asyncRetry from 'async-retry';
 import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
-import { HiveLogger } from './utils';
+import { Logger } from './types';
 
 interface SharedConfig {
   headers: Record<string, string>;
@@ -15,7 +15,7 @@ interface SharedConfig {
   /** custom fetch implementation. */
   fetchImplementation?: typeof fetch;
   /** Logger for HTTP info and request errors. Uses `console` by default. */
-  logger?: HiveLogger;
+  logger?: Logger;
   /**
    * Function for determining whether the request response is okay.
    * You can override it if you want to accept other status codes as well.
@@ -74,7 +74,7 @@ export async function makeFetchCall(
     /** custom fetch implementation. */
     fetchImplementation?: typeof fetch;
     /** Logger for HTTP info and request errors. Uses `console` by default. */
-    logger?: HiveLogger;
+    logger?: Logger;
     /**
      * Function for determining whether the request response is okay.
      * You can override it if you want to accept other status codes as well.
@@ -106,7 +106,7 @@ export async function makeFetchCall(
     async (bail, attempt) => {
       const requestId = crypto.randomUUID();
 
-      logger?.debug(
+      logger?.debug?.(
         `${config.method} ${endpoint} (x-request-id=${requestId})` +
           (retries > 0 ? ' ' + getAttemptMessagePart(attempt, retries + 1) : ''),
       );
@@ -127,7 +127,7 @@ export async function makeFetchCall(
       }).catch((error: unknown) => {
         const logErrorMessage = () =>
           logger?.debug?.(
-            `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
+            `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}.` +
               getErrorMessage(error),
           );
 
@@ -167,7 +167,7 @@ export async function makeFetchCall(
           `${config.method} ${endpoint} (x-request-id=${requestId}) retry limit exceeded after ${attempt} attempts.`,
         );
       } else {
-        logger?.debug(
+        logger?.debug?.(
           `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
         );
       }
