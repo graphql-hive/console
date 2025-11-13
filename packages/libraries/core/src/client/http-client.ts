@@ -127,7 +127,7 @@ export async function makeFetchCall(
       }).catch((error: unknown) => {
         const logErrorMessage = () =>
           logger?.debug?.(
-            `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}.` +
+            `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
               getErrorMessage(error),
           );
 
