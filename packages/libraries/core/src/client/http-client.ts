@@ -120,7 +120,6 @@ export async function makeFetchCall(
         body: config.body,
         headers: {
           'x-request-id': requestId,
-          'x-client-timestamp': new Date().toISOString(),
           ...actionHeader,
           ...config.headers,
         },
