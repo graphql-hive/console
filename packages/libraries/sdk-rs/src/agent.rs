@@ -104,8 +104,6 @@ impl Buffer {
         Ok(reports)
     }
 }
-
-#[derive(Clone)]
 pub struct UsageAgent {
     buffer_size: usize,
     endpoint: String,
@@ -149,7 +147,7 @@ impl UsageAgent {
         accept_invalid_certs: bool,
         flush_interval: Duration,
         user_agent: String,
-    ) -> Result<Self, AgentError> {
+    ) -> Result<Arc<Self>, AgentError> {
         let processor = Arc::new(OperationProcessor::new());
 
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
@@ -190,14 +188,14 @@ impl UsageAgent {
             }
         }
 
-        Ok(Self {
+        Ok(Arc::new(Self {
+            buffer_size,
+            endpoint,
             buffer,
             processor,
-            endpoint,
-            buffer_size,
             client,
             flush_interval,
-        })
+        }))
     }
 
     fn produce_report(&self, reports: Vec<ExecutionReport>) -> Result<Report, AgentError> {
@@ -273,14 +271,6 @@ impl UsageAgent {
         Ok(report)
     }
 
-    pub fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
-        let size = self.buffer.push(execution_report)?;
-
-        self.flush_if_full(size)?;
-
-        Ok(())
-    }
-
     pub async fn send_report(&self, report: Report) -> Result<(), AgentError> {
         let report_body =
             serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
@@ -305,17 +295,6 @@ impl UsageAgent {
                 resp.text().await.unwrap_or_default()
             ))),
         }
-    }
-
-    pub fn flush_if_full(&self, size: usize) -> Result<(), AgentError> {
-        if size >= self.buffer_size {
-            let cloned_self = self.clone();
-            tokio::task::spawn(async move {
-                cloned_self.flush().await;
-            });
-        }
-
-        Ok(())
     }
 
     pub async fn flush(&self) {
@@ -353,5 +332,31 @@ impl UsageAgent {
                 self.flush().await;
             },
         }
+    }
+}
+
+pub trait UsageAgentExt {
+    fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError>;
+    fn flush_if_full(&self, size: usize) -> Result<(), AgentError>;
+}
+
+impl UsageAgentExt for Arc<UsageAgent> {
+    fn flush_if_full(&self, size: usize) -> Result<(), AgentError> {
+        if size >= self.buffer_size {
+            let cloned_self = self.clone();
+            tokio::task::spawn(async move {
+                cloned_self.flush().await;
+            });
+        }
+
+        Ok(())
+    }
+
+    fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
+        let size = self.buffer.push(execution_report)?;
+
+        self.flush_if_full(size)?;
+
+        Ok(())
     }
 }

@@ -223,6 +223,44 @@ impl SupergraphFetcher<SupergraphFetcherAsyncClient> {
 }
 
 impl<AsyncOrSync> SupergraphFetcher<AsyncOrSync> {
+    pub fn try_new_async(
+        endpoint: String,
+        key: &str,
+        user_agent: String,
+        connect_timeout: Duration,
+        request_timeout: Duration,
+        accept_invalid_certs: bool,
+        retry_count: u32,
+    ) -> Result<SupergraphFetcher<SupergraphFetcherAsyncClient>, SupergraphFetcherError> {
+        SupergraphFetcher::<SupergraphFetcherAsyncClient>::try_new(
+            endpoint,
+            key,
+            user_agent,
+            connect_timeout,
+            request_timeout,
+            accept_invalid_certs,
+            retry_count,
+        )
+    }
+    pub fn try_new_sync(
+        endpoint: String,
+        key: &str,
+        user_agent: String,
+        connect_timeout: Duration,
+        request_timeout: Duration,
+        accept_invalid_certs: bool,
+        retry_count: u32,
+    ) -> Result<SupergraphFetcher<SupergraphFetcherSyncClient>, SupergraphFetcherError> {
+        SupergraphFetcher::<SupergraphFetcherSyncClient>::try_new(
+            endpoint,
+            key,
+            user_agent,
+            connect_timeout,
+            request_timeout,
+            accept_invalid_certs,
+            retry_count,
+        )
+    }
     fn get_latest_etag(&self) -> Result<Option<HeaderValue>, SupergraphFetcherError> {
         let guard: std::sync::RwLockReadGuard<'_, Option<HeaderValue>> =
             self.etag.try_read().map_err(|e| {
