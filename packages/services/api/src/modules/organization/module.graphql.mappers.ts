@@ -9,6 +9,10 @@ import type {
 } from './providers/organization-access-tokens';
 import type { OrganizationMemberRole } from './providers/organization-member-roles';
 import type { OrganizationMembership } from './providers/organization-members';
+import type {
+  ProjectForResourceSelector,
+  TargetForResourceSelector,
+} from './providers/resource-selector';
 
 export type OrganizationConnectionMapper = readonly Organization[];
 export type OrganizationMapper = Organization;
@@ -26,3 +30,6 @@ export type WhoAmIMapper = {
     showAll: boolean,
   ) => Promise<Array<GraphQLResolvedResourcePermissionGroupOutput>>;
 };
+
+export type ProjectForResourceSelectorMapper = ProjectForResourceSelector;
+export type TargetForResourceSelectorMapper = TargetForResourceSelector;

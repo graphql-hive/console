@@ -4,6 +4,7 @@ import { OrganizationAccessTokens } from '../providers/organization-access-token
 import { OrganizationManager } from '../providers/organization-manager';
 import { OrganizationMemberRoles } from '../providers/organization-member-roles';
 import { OrganizationMembers } from '../providers/organization-members';
+import { ResourceSelector } from '../providers/resource-selector';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
@@ -23,6 +24,8 @@ export const Organization: Pick<
   | 'members'
   | 'name'
   | 'owner'
+  | 'projectForResourceSelector'
+  | 'projectsForResourceSelector'
   | 'slug'
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
@@ -246,5 +249,15 @@ export const Organization: Pick<
       first: args.first ?? null,
       after: args.after ?? null,
     });
+  },
+  projectForResourceSelector: async (organization, args, { injector }) => {
+    return await injector
+      .get(ResourceSelector)
+      .getProjectFromOrganizationForResourceSelector(organization, args.projectId, args.intent);
+  },
+  projectsForResourceSelector: async (organization, args, { injector }) => {
+    return await injector
+      .get(ResourceSelector)
+      .getProjectsFromOrganizationForResourceSelector(organization, args.intent);
   },
 };

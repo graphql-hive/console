@@ -146,6 +146,7 @@ export interface oidc_integrations {
   client_id: string;
   client_secret: string;
   created_at: Date;
+  default_assigned_resources: any | null;
   default_role_id: string | null;
   id: string;
   linked_organization_id: string;
@@ -171,6 +172,7 @@ export interface organization_access_tokens {
 }
 
 export interface organization_invitations {
+  assigned_resources: any | null;
   code: string;
   created_at: Date;
   email: string;

@@ -282,6 +282,7 @@ export function CreatePersonalAccessTokenSheetContent(
                                 organization={organization}
                                 selection={resourceSelection}
                                 onSelectionChange={setResourceSelection}
+                                intent={GraphQLSchema.ResourceSelectorIntentType.User}
                               />
                             </Form.FormControl>
                             <Form.FormMessage />
