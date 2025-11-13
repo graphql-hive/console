@@ -35,8 +35,6 @@ pub enum SupergraphFetcherError {
     NetworkResponseError(reqwest::Error),
     HeadersLock(String),
     InvalidKey(InvalidHeaderValue),
-    AsyncInSyncMode,
-    SyncInAsyncMode,
 }
 
 impl Display for SupergraphFetcherError {
@@ -51,12 +49,6 @@ impl Display for SupergraphFetcherError {
             }
             SupergraphFetcherError::HeadersLock(e) => write!(f, "Headers lock error: {}", e),
             SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid CDN key: {}", e),
-            SupergraphFetcherError::AsyncInSyncMode => {
-                write!(f, "Attempted to use async client in sync fetch")
-            }
-            SupergraphFetcherError::SyncInAsyncMode => {
-                write!(f, "Attempted to use sync client in async fetch")
-            }
         }
     }
 }
