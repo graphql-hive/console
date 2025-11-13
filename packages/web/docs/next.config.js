@@ -318,6 +318,11 @@ let config = withGuildDocs({
       destination: '/docs/schema-registry/self-hosting/:path*',
       permanent: true,
     },
+    {
+      source: '/docs/gateway/other-features/router-runtime',
+      destination: '/docs/gateway/other-features/rust-query-planner',
+      permanent: true,
+    },
   ],
   env: {
     SITE_URL: 'https://the-guild.dev/graphql/hive',

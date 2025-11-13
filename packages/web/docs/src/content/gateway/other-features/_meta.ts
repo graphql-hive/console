@@ -1,6 +1,6 @@
 export default {
   index: 'Overview',
-  'router-runtime': 'Router Runtime',
+  'rust-query-planner': 'Rust Query Planner',
   'upstream-reliability': 'Upstream Reliability',
   performance: 'Performance & Cache',
   security: 'Security',
