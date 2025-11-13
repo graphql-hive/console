@@ -1,8 +1,8 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
-use hive_console_sdk::supergraph_fetcher::FetcherMode;
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
+use hive_console_sdk::supergraph_fetcher::SupergraphFetcherSyncClient;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
@@ -13,7 +13,7 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct HiveRegistry {
     file_name: String,
-    fetcher: SupergraphFetcher,
+    fetcher: SupergraphFetcher<SupergraphFetcherSyncClient>,
     pub logger: Logger,
 }
 
@@ -123,18 +123,19 @@ impl HiveRegistry {
         env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
         env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
 
+        let fetcher = SupergraphFetcher::<SupergraphFetcherSyncClient>::try_new(
+            endpoint,
+            &key,
+            format!("hive-apollo-router/{}", PLUGIN_VERSION),
+            Duration::from_secs(5),
+            Duration::from_secs(60),
+            accept_invalid_certs,
+            3,
+        )
+        .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
+
         let registry = HiveRegistry {
-            fetcher: SupergraphFetcher::try_new(
-                endpoint,
-                key,
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-                Duration::from_secs(5),
-                Duration::from_secs(60),
-                accept_invalid_certs,
-                3,
-                FetcherMode::Sync,
-            )
-            .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?,
+            fetcher,
             file_name,
             logger,
         };
