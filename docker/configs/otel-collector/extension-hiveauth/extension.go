@@ -18,10 +18,10 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
 	"go.opentelemetry.io/collector/extension/extensionauth"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
-	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
