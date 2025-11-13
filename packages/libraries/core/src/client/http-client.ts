@@ -1,7 +1,7 @@
 import asyncRetry from 'async-retry';
 import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
-import type { Logger } from './types.js';
+import { HiveLogger } from './utils';
 
 interface SharedConfig {
   headers: Record<string, string>;
@@ -15,7 +15,7 @@ interface SharedConfig {
   /** custom fetch implementation. */
   fetchImplementation?: typeof fetch;
   /** Logger for HTTP info and request errors. Uses `console` by default. */
-  logger?: Logger;
+  logger?: HiveLogger;
   /**
    * Function for determining whether the request response is okay.
    * You can override it if you want to accept other status codes as well.
@@ -74,7 +74,7 @@ export async function makeFetchCall(
     /** custom fetch implementation. */
     fetchImplementation?: typeof fetch;
     /** Logger for HTTP info and request errors. Uses `console` by default. */
-    logger?: Logger;
+    logger?: HiveLogger;
     /**
      * Function for determining whether the request response is okay.
      * You can override it if you want to accept other status codes as well.
@@ -106,7 +106,7 @@ export async function makeFetchCall(
     async (bail, attempt) => {
       const requestId = crypto.randomUUID();
 
-      logger?.info(
+      logger?.debug(
         `${config.method} ${endpoint} (x-request-id=${requestId})` +
           (retries > 0 ? ' ' + getAttemptMessagePart(attempt, retries + 1) : ''),
       );
@@ -126,7 +126,7 @@ export async function makeFetchCall(
         signal,
       }).catch((error: unknown) => {
         const logErrorMessage = () =>
-          logger?.error(
+          logger?.debug?.(
             `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
               getErrorMessage(error),
           );
@@ -140,7 +140,7 @@ export async function makeFetchCall(
           throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
         }
 
-        logger?.error(error);
+        logger?.error({ error });
         logErrorMessage();
         throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
@@ -152,20 +152,23 @@ export async function makeFetchCall(
       }
 
       if (isRequestOk(response)) {
-        logger?.info(
+        logger?.debug?.(
           `${config.method} ${endpoint} (x-request-id=${requestId}) succeeded with status ${response.status} ${getDuration()}.`,
         );
 
         return response;
       }
 
-      logger?.error(
-        `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
-      );
-
       if (retries > 0 && attempt > retries) {
         logger?.error(
+          `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
+        );
+        logger?.error(
           `${config.method} ${endpoint} (x-request-id=${requestId}) retry limit exceeded after ${attempt} attempts.`,
+        );
+      } else {
+        logger?.debug(
+          `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
         );
       }
 
