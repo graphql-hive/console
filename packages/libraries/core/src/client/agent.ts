@@ -1,8 +1,34 @@
+import { fetch as defaultFetch } from '@whatwg-node/fetch';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { Logger } from './types.js';
+import { CircuitBreakerInterface, createHiveLogger, loadCircuitBreaker } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
+
+export type AgentCircuitBreakerConfiguration = {
+  /**
+   * Percentage after what the circuit breaker should kick in.
+   * Default: 50
+   */
+  errorThresholdPercentage: number;
+  /**
+   * Count of requests before starting evaluating.
+   * Default: 5
+   */
+  volumeThreshold: number;
+  /**
+   * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+   * Default: 30_000
+   */
+  resetTimeout: number;
+};
+
+const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
+  errorThresholdPercentage: 50,
+  volumeThreshold: 10,
+  resetTimeout: 30_000,
+};
 
 export interface AgentOptions {
   enabled?: boolean;
@@ -48,7 +74,14 @@ export interface AgentOptions {
    * WHATWG Compatible fetch implementation
    * used by the agent to send reports
    */
-  fetch?: typeof fetch;
+  fetch?: typeof defaultFetch;
+  /**
+   * Circuit Breaker Configuration.
+   * true -> Use default configuration
+   * false -> Disable
+   * object -> use custom configuration see {AgentCircuitBreakerConfiguration}
+   */
+  circuitBreaker?: boolean | AgentCircuitBreakerConfiguration;
 }
 
 export function createAgent<TEvent>(
@@ -67,7 +100,9 @@ export function createAgent<TEvent>(
     headers?(): Record<string, string>;
   },
 ) {
-  const options: Required<Omit<AgentOptions, 'fetch'>> = {
+  const options: Required<Omit<AgentOptions, 'fetch' | 'circuitBreaker'>> & {
+    circuitBreaker: null | AgentCircuitBreakerConfiguration;
+  } = {
     timeout: 30_000,
     debug: false,
     enabled: true,
@@ -75,15 +110,21 @@ export function createAgent<TEvent>(
     maxRetries: 3,
     sendInterval: 10_000,
     maxSize: 25,
-    logger: console,
     name: 'hive-client',
     version,
     ...pluginOptions,
+    circuitBreaker:
+      pluginOptions.circuitBreaker == null || pluginOptions.circuitBreaker === true
+        ? defaultCircuitBreakerConfiguration
+        : pluginOptions.circuitBreaker === false
+          ? null
+          : pluginOptions.circuitBreaker,
+    logger: createHiveLogger(pluginOptions.logger ?? console, '[agent]'),
   };
 
   const enabled = options.enabled !== false;
 
-  let timeoutID: any = null;
+  let timeoutID: ReturnType<typeof setTimeout> | null = null;
 
   function schedule() {
     if (timeoutID) {
@@ -143,6 +184,27 @@ export function createAgent<TEvent>(
     return send({ throwOnError: true, skipSchedule: true });
   }
 
+  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>): Promise<Response> {
+    const signal = breaker.getSignal();
+    return await http.post(options.endpoint, buffer, {
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        Authorization: `Bearer ${options.token}`,
+        'User-Agent': `${options.name}/${options.version}`,
+        ...headers(),
+      },
+      timeout: options.timeout,
+      retry: {
+        retries: options.maxRetries,
+        factor: 2,
+      },
+      logger: options.logger,
+      fetchImplementation: pluginOptions.fetch,
+      signal,
+    });
+  }
+
   async function send(sendOptions?: {
     throwOnError?: boolean;
     skipSchedule: boolean;
@@ -160,23 +222,7 @@ export function createAgent<TEvent>(
     data.clear();
 
     debugLog(`Sending report (queue ${dataToSend})`);
-    const response = await http
-      .post(options.endpoint, buffer, {
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          Authorization: `Bearer ${options.token}`,
-          'User-Agent': `${options.name}/${options.version}`,
-          ...headers(),
-        },
-        timeout: options.timeout,
-        retry: {
-          retries: options.maxRetries,
-          factor: 2,
-        },
-        logger: options.logger,
-        fetchImplementation: pluginOptions.fetch,
-      })
+    const response = sendFromBreaker(buffer)
       .then(res => {
         debugLog(`Report sent!`);
         return res;
@@ -213,6 +259,74 @@ export function createAgent<TEvent>(
       skipSchedule: true,
       throwOnError: false,
     });
+  }
+
+  let breaker: CircuitBreakerInterface<
+    Parameters<typeof sendHTTPCall>,
+    ReturnType<typeof sendHTTPCall>
+  >;
+  let loadCircuitBreakerPromise: Promise<void> | null = null;
+  const breakerLogger = createHiveLogger(options.logger, '[circuit breaker]');
+
+  function noopBreaker(): typeof breaker {
+    return {
+      getSignal() {
+        return undefined;
+      },
+      fire: sendHTTPCall,
+    };
+  }
+
+  if (options.circuitBreaker) {
+    /**
+     * We support Cloudflare, which does not has the `events` module.
+     * So we lazy load opossum which has `events` as a dependency.
+     */
+    breakerLogger.info('initialize circuit breaker');
+    loadCircuitBreakerPromise = loadCircuitBreaker(
+      CircuitBreaker => {
+        breakerLogger.info('started');
+        const realBreaker = new CircuitBreaker(sendHTTPCall, {
+          ...options.circuitBreaker,
+          timeout: false,
+          autoRenewAbortController: true,
+        });
+
+        realBreaker.on('open', () =>
+          breakerLogger.error('circuit opened - backend seems unreachable.'),
+        );
+        realBreaker.on('halfOpen', () =>
+          breakerLogger.info('circuit half open - testing backend connectivity'),
+        );
+        realBreaker.on('close', () => breakerLogger.info('circuit closed - backend recovered '));
+
+        // @ts-expect-error missing definition in typedefs for `opposum`
+        breaker = realBreaker;
+      },
+      () => {
+        breakerLogger.info('circuit breaker not supported on platform');
+        breaker = noopBreaker();
+      },
+    );
+  } else {
+    breaker = noopBreaker();
+  }
+
+  async function sendFromBreaker(...args: Parameters<typeof breaker.fire>) {
+    if (!breaker) {
+      await loadCircuitBreakerPromise;
+    }
+
+    try {
+      return await breaker.fire(...args);
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
+        breakerLogger.info('circuit open - sending report skipped');
+        return null;
+      }
+
+      throw err;
+    }
   }
 
   return {
