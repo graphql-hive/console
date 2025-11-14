@@ -2,7 +2,7 @@
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
 import { SerializableValue } from 'slonik';
-import { z, ZodBoolean, ZodNumber, ZodString } from 'zod';
+import { z, ZodBoolean, ZodNull, ZodNumber, ZodString } from 'zod';
 import {
   ChangeType,
   CriticalityLevel,
@@ -761,9 +761,11 @@ export const EnumValueAddedModel = implement<EnumValueAddedChange>().with({
     enumName: z.string(),
     addedEnumValueName: z.string(),
     /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedToNewType: z.boolean().default(false), // default for backwards compatibility
-    addedDirectiveDescription: z.string().nullable().optional(),
-  }) as any,
+    addedToNewType: z.boolean().default(false) as any as ZodBoolean, // default for backwards compatibility
+    addedDirectiveDescription: z.string().nullable().optional().default(null) as any as
+      | ZodString
+      | ZodNull,
+  }),
 });
 
 export const EnumValueDescriptionChangedModel = implement<EnumValueDescriptionChangedChange>().with(
