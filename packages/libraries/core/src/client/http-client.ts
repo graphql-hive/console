@@ -104,6 +104,7 @@ export async function makeFetchCall(
 
   return await asyncRetry(
     async (bail, attempt) => {
+      const isFinalAttempt = attempt > retries;
       const requestId = crypto.randomUUID();
 
       logger?.debug?.(
@@ -125,15 +126,25 @@ export async function makeFetchCall(
         },
         signal,
       }).catch((error: unknown) => {
-        const logErrorMessage = () =>
-          logger?.debug?.(
+        const logErrorMessage = () => {
+          const msg =
             `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
-              getErrorMessage(error),
-          );
+            getErrorMessage(error);
+
+          if (isFinalAttempt) {
+            logger?.error(msg);
+            return;
+          }
+          logger?.debug?.(msg);
+        };
 
         if (isAggregateError(error)) {
           for (const err of error.errors) {
-            logger?.error(err);
+            if (isFinalAttempt) {
+              logger?.error(err);
+              continue;
+            }
+            logger?.debug?.(String(err));
           }
 
           logErrorMessage();
@@ -159,7 +170,7 @@ export async function makeFetchCall(
         return response;
       }
 
-      if (retries > 0 && attempt > retries) {
+      if (isFinalAttempt) {
         logger?.error(
           `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
         );

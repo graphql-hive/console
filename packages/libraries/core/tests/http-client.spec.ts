@@ -18,7 +18,7 @@ test('HTTP call without retries and system level error', async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
     [ERR] Error: getaddrinfo ENOTFOUND ap.localhost.noop
-    [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
   `);
 });
 
@@ -40,7 +40,7 @@ test('HTTP with retries and system', async () => {
     [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
     [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (2/2)
     [ERR] Error: getaddrinfo ENOTFOUND ap.localhost.noop
-    [DBG] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
+    [ERR] GET https://ap.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND ap.localhost.noop
   `);
 });
 

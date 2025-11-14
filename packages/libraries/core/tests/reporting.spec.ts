@@ -678,12 +678,8 @@ test('retry on non-200', async () => {
   expect(logger.getLogs()).toMatchInlineSnapshot(`
     [INF] [hive][reporting] Publish schema
     [DBG] [hive][reporting] POST http://localhost/registry (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [ERR] [hive][reporting] Error: connect ECONNREFUSED ::1:80
-    [ERR] [hive][reporting]     at createConnectionError (node:net:666:666)
-    [ERR] [hive][reporting]     at afterConnectMultiple (node:net:666:666)
-    [ERR] [hive][reporting] Error: connect ECONNREFUSED 127.0.0.1:80
-    [ERR] [hive][reporting]     at createConnectionError (node:net:666:666)
-    [ERR] [hive][reporting]     at afterConnectMultiple (node:net:666:666)
+    [DBG] [hive][reporting] Error: connect ECONNREFUSED ::1:80
+    [DBG] [hive][reporting] Error: connect ECONNREFUSED 127.0.0.1:80
     [DBG] [hive][reporting] POST http://localhost/registry (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms).
   `);
 });
