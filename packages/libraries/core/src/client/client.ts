@@ -8,23 +8,20 @@ import { version } from '../version.js';
 import { http } from './http-client.js';
 import { createPersistedDocuments } from './persisted-documents.js';
 import { createReporting } from './reporting.js';
-import type { HiveClient, HivePluginOptions } from './types.js';
+import type { HiveClient, HiveInternalPluginOptions, HivePluginOptions } from './types.js';
 import { createUsage } from './usage.js';
-import { createHiveLogger, isLegacyAccessToken, logIf } from './utils.js';
+import { createHiveLogger, isLegacyAccessToken } from './utils.js';
 
 export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = createHiveLogger(options?.agent?.logger ?? console, '[hive]');
+  const logger = createHiveLogger(
+    options?.agent?.logger ?? console,
+    '[hive]',
+    options.debug ?? false,
+  );
   let enabled = options.enabled ?? true;
 
-  if (enabled === false) {
-    logIf(
-      options.debug === true &&
-        // hive client can be used only for persisted documents, without the cdn or usage reporting.
-        // hence, we dont want a misleading log message below saying that the plugin is disabled
-        !options.experimental__persistedDocuments,
-      'Plugin is not enabled.',
-      logger.info,
-    );
+  if (enabled === false && !options.experimental__persistedDocuments) {
+    logger.debug('Plugin is not enabled.');
   }
 
   if (!options.token && enabled) {
@@ -32,7 +29,11 @@ export function createHive(options: HivePluginOptions): HiveClient {
     logger.info('Missing token, disabling.');
   }
 
-  const mergedOptions: HivePluginOptions = { ...options, enabled } as HivePluginOptions;
+  const mergedOptions: HiveInternalPluginOptions = {
+    ...options,
+    enabled,
+    logger,
+  } as HiveInternalPluginOptions;
 
   const usage = createUsage(mergedOptions);
   const schemaReporter = createReporting(mergedOptions);

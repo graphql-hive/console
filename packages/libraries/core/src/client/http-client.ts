@@ -1,7 +1,7 @@
 import asyncRetry from 'async-retry';
 import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
-import type { Logger } from './types.js';
+import { Logger } from './types';
 
 interface SharedConfig {
   headers: Record<string, string>;
@@ -104,9 +104,10 @@ export async function makeFetchCall(
 
   return await asyncRetry(
     async (bail, attempt) => {
+      const isFinalAttempt = attempt > retries;
       const requestId = crypto.randomUUID();
 
-      logger?.info(
+      logger?.debug?.(
         `${config.method} ${endpoint} (x-request-id=${requestId})` +
           (retries > 0 ? ' ' + getAttemptMessagePart(attempt, retries + 1) : ''),
       );
@@ -125,15 +126,25 @@ export async function makeFetchCall(
         },
         signal,
       }).catch((error: unknown) => {
-        const logErrorMessage = () =>
-          logger?.error(
+        const logErrorMessage = () => {
+          const msg =
             `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
-              getErrorMessage(error),
-          );
+            getErrorMessage(error);
+
+          if (isFinalAttempt) {
+            logger?.error(msg);
+            return;
+          }
+          logger?.debug?.(msg);
+        };
 
         if (isAggregateError(error)) {
           for (const err of error.errors) {
-            logger?.error(err);
+            if (isFinalAttempt) {
+              logger?.error(err);
+              continue;
+            }
+            logger?.debug?.(String(err));
           }
 
           logErrorMessage();
@@ -152,20 +163,23 @@ export async function makeFetchCall(
       }
 
       if (isRequestOk(response)) {
-        logger?.info(
+        logger?.debug?.(
           `${config.method} ${endpoint} (x-request-id=${requestId}) succeeded with status ${response.status} ${getDuration()}.`,
         );
 
         return response;
       }
 
-      logger?.error(
-        `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
-      );
-
-      if (retries > 0 && attempt > retries) {
+      if (isFinalAttempt) {
+        logger?.error(
+          `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
+        );
         logger?.error(
           `${config.method} ${endpoint} (x-request-id=${requestId}) retry limit exceeded after ${attempt} attempts.`,
+        );
+      } else {
+        logger?.debug?.(
+          `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
         );
       }
 

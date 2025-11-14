@@ -214,19 +214,19 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
               variables: args.variables,
             }),
             {
-              logger: {
-                info: (...args) => {
-                  if (isDebug) {
-                    this.logInfo(...args);
+              logger: isDebug
+                ? {
+                    info: (...args) => {
+                      this.logInfo(...args);
+                    },
+                    error: (...args) => {
+                      this.logWarning(...args);
+                    },
+                    debug: (...args) => {
+                      this.logInfo(...args);
+                    },
                   }
-                },
-                error: (...args) => {
-                  // Allow retrying requests without noise
-                  if (isDebug) {
-                    this.logWarning(...args);
-                  }
-                },
-              },
+                : undefined,
               headers: requestHeaders,
               timeout: args.timeout,
             },

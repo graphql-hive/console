@@ -100,11 +100,10 @@ export function createAgent<TEvent>(
     headers?(): Record<string, string>;
   },
 ) {
-  const options: Required<Omit<AgentOptions, 'fetch' | 'circuitBreaker'>> & {
+  const options: Required<Omit<AgentOptions, 'fetch' | 'circuitBreaker' | 'logger' | 'debug'>> & {
     circuitBreaker: null | AgentCircuitBreakerConfiguration;
   } = {
     timeout: 30_000,
-    debug: false,
     enabled: true,
     minTimeout: 200,
     maxRetries: 3,
@@ -119,8 +118,9 @@ export function createAgent<TEvent>(
         : pluginOptions.circuitBreaker === false
           ? null
           : pluginOptions.circuitBreaker,
-    logger: createHiveLogger(pluginOptions.logger ?? console, '[agent]'),
   };
+
+  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]');
 
   const enabled = options.enabled !== false;
 
@@ -132,16 +132,6 @@ export function createAgent<TEvent>(
     }
 
     timeoutID = setTimeout(send, options.sendInterval);
-  }
-
-  function debugLog(msg: string) {
-    if (options.debug) {
-      options.logger.info(msg);
-    }
-  }
-
-  function errorLog(msg: string) {
-    options.logger.error(msg);
   }
 
   let scheduled = false;
@@ -173,14 +163,14 @@ export function createAgent<TEvent>(
     data.set(event);
 
     if (data.size() >= options.maxSize) {
-      debugLog('Sending immediately');
+      logger.debug('Sending immediately');
       setImmediate(() => send({ throwOnError: false, skipSchedule: true }));
     }
   }
 
   function sendImmediately(event: TEvent): Promise<ReadOnlyResponse | null> {
     data.set(event);
-    debugLog('Sending immediately');
+    logger.debug('Sending immediately');
     return send({ throwOnError: true, skipSchedule: true });
   }
 
@@ -199,7 +189,7 @@ export function createAgent<TEvent>(
         retries: options.maxRetries,
         factor: 2,
       },
-      logger: options.logger,
+      logger,
       fetchImplementation: pluginOptions.fetch,
       signal,
     });
@@ -221,14 +211,14 @@ export function createAgent<TEvent>(
 
     data.clear();
 
-    debugLog(`Sending report (queue ${dataToSend})`);
+    logger.debug(`Sending report (queue ${dataToSend})`);
     const response = sendFromBreaker(buffer)
       .then(res => {
-        debugLog(`Report sent!`);
+        logger.debug(`Report sent!`);
         return res;
       })
       .catch(error => {
-        errorLog(`Failed to send report.`);
+        logger.debug(`Failed to send report.`);
 
         if (sendOptions?.throwOnError) {
           throw error;
@@ -246,7 +236,7 @@ export function createAgent<TEvent>(
   }
 
   async function dispose() {
-    debugLog('Disposing');
+    logger.debug('Disposing');
     if (timeoutID) {
       clearTimeout(timeoutID);
     }
@@ -266,7 +256,7 @@ export function createAgent<TEvent>(
     ReturnType<typeof sendHTTPCall>
   >;
   let loadCircuitBreakerPromise: Promise<void> | null = null;
-  const breakerLogger = createHiveLogger(options.logger, '[circuit breaker]');
+  const breakerLogger = createHiveLogger(logger, '[circuit breaker]');
 
   function noopBreaker(): typeof breaker {
     return {

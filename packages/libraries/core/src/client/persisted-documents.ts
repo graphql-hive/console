@@ -1,7 +1,8 @@
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import LRU from 'tiny-lru';
 import { http } from './http-client.js';
-import type { Logger, PersistedDocumentsConfiguration } from './types';
+import type { PersistedDocumentsConfiguration } from './types';
+import type { HiveLogger } from './utils.js';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -9,7 +10,7 @@ type HeadersObject = {
 
 export function createPersistedDocuments(
   config: PersistedDocumentsConfiguration & {
-    logger: Logger;
+    logger: HiveLogger;
     fetch?: typeof fetch;
   },
 ): null | {
