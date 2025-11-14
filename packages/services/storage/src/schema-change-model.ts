@@ -933,8 +933,8 @@ export const FieldArgumentAddedModel = implement<FieldArgumentAddedChange>().wit
     addedArgumentType: z.string(),
     hasDefaultValue: z.boolean(),
     isAddedFieldArgumentBreaking: z.boolean(),
-    addedToNewField: z.boolean().optional(), // for backwards compatibility
-  }) as any, // @todo fix typing
+    addedToNewField: z.boolean().default(false) as unknown as ZodBoolean, // for backwards compatibility
+  }),
 });
 
 export const FieldArgumentRemovedModel = implement<FieldArgumentRemovedChange>().with({
@@ -965,9 +965,9 @@ export const InputFieldAddedModel = implement<InputFieldAddedChange>().with({
     addedInputFieldName: z.string(),
     isAddedInputFieldTypeNullable: z.boolean(),
     addedInputFieldType: z.string(),
-    addedToNewType: z.boolean().default(false), // default to make backwards compatible
+    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean, // default to make backwards compatible
     addedFieldDefault: z.string().optional(),
-  }) as any, // @todo fix typing
+  }),
 });
 
 export const InputFieldDescriptionAddedModel = implement<InputFieldDescriptionAddedChange>().with({
@@ -1080,8 +1080,9 @@ export const TypeAddedModel = implement<TypeAddedChange>().with({
   type: TypeAddedLiteral,
   meta: z.object({
     addedTypeName: z.string(),
-    addedTypeKind: z.string().optional(), // optional for backwards compatibility
-  }) as any, // @todo fix typing
+    addedTypeKind: z.string().default('') as unknown as ZodString, // optional for backwards compatibility
+    addedTypeIsOneOf: z.boolean().optional(),
+  }) as any,
 });
 
 export const TypeKindChangedModel = implement<TypeKindChangedChange>().with({
