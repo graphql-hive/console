@@ -13,6 +13,8 @@ import {
   directiveLocationAddedFromMeta,
   directiveLocationRemovedFromMeta,
   directiveRemovedFromMeta,
+  directiveRepeatableAddedFromMeta,
+  directiveRepeatableRemovedFromMeta,
   directiveUsageArgumentAddedFromMeta,
   directiveUsageArgumentDefinitionAddedFromMeta,
   directiveUsageArgumentDefinitionRemovedFromMeta,
@@ -279,6 +281,10 @@ export function schemaChangeFromSerializableChange(
       return unionMemberRemovedFromMeta(change);
     case ChangeType.UnionMemberAdded:
       return buildUnionMemberAddedMessageFromMeta(change);
+    case ChangeType.DirectiveRepeatableAdded:
+      return directiveRepeatableAddedFromMeta(change);
+    case ChangeType.DirectiveRepeatableRemoved:
+      return directiveRepeatableRemovedFromMeta(change);
     case 'REGISTRY_SERVICE_URL_CHANGED':
       return buildRegistryServiceURLFromMeta(change);
     default:
