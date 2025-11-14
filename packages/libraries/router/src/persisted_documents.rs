@@ -24,6 +24,8 @@ use std::time::Duration;
 use tower::{BoxError, ServiceBuilder, ServiceExt};
 use tracing::{debug, info, warn};
 
+use crate::consts::PLUGIN_VERSION;
+
 pub static PERSISTED_DOCUMENT_HASH_KEY: &str = "hive::persisted_document_hash";
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, Default)]
@@ -107,6 +109,7 @@ impl PersistedDocumentsPlugin {
                 Duration::from_secs(config.request_timeout.unwrap_or(15)),
                 config.retry_count.unwrap_or(3),
                 config.cache_size.unwrap_or(1000),
+                format!("hive-apollo-router/{}", PLUGIN_VERSION),
             ))),
             allow_arbitrary_documents,
         })
