@@ -1,5 +1,73 @@
 # @graphql-hive/core
 
+## 0.14.0
+
+### Minor Changes
+
+- [#7259](https://github.com/graphql-hive/console/pull/7259)
+  [`d1320b8`](https://github.com/graphql-hive/console/commit/d1320b823f799125bf7cde27b6bd0ae458603346)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support circuit breaking for usage reporting.
+
+  Circuit breaking is a fault-tolerance pattern that prevents a system from repeatedly calling a
+  failing service. When errors or timeouts exceed a set threshold, the circuit “opens,” blocking
+  further requests until the service recovers.
+
+  This ensures that during a network issue or outage, the service using the Hive SDK remains healthy
+  and is not overwhelmed by failed usage reports or repeated retries.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    agent: {
+      circuitBreaker: {
+        /**
+         * Count of requests before starting evaluating.
+         * Default: 5
+         */
+        volumeThreshold: 5,
+        /**
+         * Percentage of requests failing before the circuit breaker kicks in.
+         * Default: 50
+         */
+        errorThresholdPercentage: 1,
+        /**
+         * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+         * Default: 30_000
+         */
+        resetTimeout: 10_000
+      }
+    }
+  })
+  ```
+
+- [#7264](https://github.com/graphql-hive/console/pull/7264)
+  [`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce debug log level. HTTP retry log pollute
+  the error log. The retries are now logged to the debug level. In order to see debug logs set the
+  `debug` option to true.
+
+  ```ts
+  const hive = createHive({
+    debug: true
+  })
+  ```
+
+  If you are using a custom logger, make sure to provide a `debug` logging method implementation.
+
+  ```ts
+  const hive = createHive({
+    debug: true,
+    agent: {
+      logger: {
+        info() {},
+        error() {},
+        debug() {}
+      }
+    }
+  })
+  ```
+
 ## 0.13.2
 
 ### Patch Changes
