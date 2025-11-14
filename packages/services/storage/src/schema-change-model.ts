@@ -507,6 +507,7 @@ export const DirectiveUsageUnionMemberRemovedModel =
       directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
     }),
   });
+
 export const DirectiveUsageFieldDefinitionAddedModel =
   implement<DirectiveUsageFieldDefinitionAddedChange>().with({
     type: DirectiveUsageFieldDefinitionAddedLiteral,
@@ -595,6 +596,7 @@ export const DirectiveUsageEnumAddedModel = implement<DirectiveUsageEnumAddedCha
     directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
   }),
 });
+
 export const DirectiveUsageEnumRemovedModel = implement<DirectiveUsageEnumRemovedChange>().with({
   type: DirectiveUsageEnumRemovedLiteral,
   meta: z.object({
@@ -604,6 +606,7 @@ export const DirectiveUsageEnumRemovedModel = implement<DirectiveUsageEnumRemove
     directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
   }),
 });
+
 export const DirectiveUsageInputObjectAddedModel =
   implement<DirectiveUsageInputObjectAddedChange>().with({
     type: DirectiveUsageInputObjectAddedLiteral,
@@ -618,6 +621,7 @@ export const DirectiveUsageInputObjectAddedModel =
       directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
     }),
   });
+
 export const DirectiveUsageInputObjectRemovedModel =
   implement<DirectiveUsageInputObjectRemovedChange>().with({
     type: DirectiveUsageInputObjectRemovedLiteral,
@@ -631,6 +635,7 @@ export const DirectiveUsageInputObjectRemovedModel =
       directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
     }),
   });
+
 export const DirectiveUsageScalarAddedModel = implement<DirectiveUsageScalarAddedChange>().with({
   type: DirectiveUsageScalarAddedLiteral,
   meta: z.object({
@@ -641,6 +646,7 @@ export const DirectiveUsageScalarAddedModel = implement<DirectiveUsageScalarAdde
     directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
   }),
 });
+
 export const DirectiveUsageScalarRemovedModel = implement<DirectiveUsageScalarRemovedChange>().with(
   {
     type: DirectiveUsageScalarRemovedLiteral,
@@ -652,6 +658,7 @@ export const DirectiveUsageScalarRemovedModel = implement<DirectiveUsageScalarRe
     }),
   },
 );
+
 export const DirectiveUsageObjectAddedModel = implement<DirectiveUsageObjectAddedChange>().with({
   type: DirectiveUsageObjectAddedLiteral,
   meta: z.object({
@@ -662,6 +669,7 @@ export const DirectiveUsageObjectAddedModel = implement<DirectiveUsageObjectAdde
     directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
   }),
 });
+
 export const DirectiveUsageObjectRemovedModel = implement<DirectiveUsageObjectRemovedChange>().with(
   {
     type: DirectiveUsageObjectRemovedLiteral,
@@ -684,6 +692,7 @@ export const DirectiveUsageInterfaceAddedModel =
       directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
     }),
   });
+
 export const DirectiveUsageInterfaceRemovedModel =
   implement<DirectiveUsageInterfaceRemovedChange>().with({
     type: DirectiveUsageInterfaceRemovedLiteral,
@@ -694,6 +703,7 @@ export const DirectiveUsageInterfaceRemovedModel =
       directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
     }),
   });
+
 export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAddedChange>().with({
   type: DirectiveUsageSchemaAddedLiteral,
   meta: z.object({
@@ -704,6 +714,7 @@ export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAdde
     directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
   }),
 });
+
 export const DirectiveUsageSchemaRemovedModel = implement<DirectiveUsageSchemaRemovedChange>().with(
   {
     type: DirectiveUsageSchemaRemovedLiteral,
@@ -732,6 +743,7 @@ export const DirectiveUsageArgumentAddedModel = implement<DirectiveUsageArgument
     }),
   },
 );
+
 export const DirectiveUsageArgumentRemovedModel =
   implement<DirectiveUsageArgumentRemovedChange>().with({
     type: DirectiveUsageArgumentRemovedLiteral,
@@ -1211,8 +1223,6 @@ export const SchemaChangeModel = z.union([
   EnumValueDeprecationReasonAddedModel,
   EnumValueDeprecationReasonRemovedModel,
   FieldAddedModel,
-  FieldArgumentAddedModel,
-  FieldArgumentRemovedModel,
   FieldDeprecationAddedModel,
   FieldDeprecationReasonAddedModel,
   FieldDeprecationReasonChangedModel,
@@ -1223,12 +1233,14 @@ export const SchemaChangeModel = z.union([
   FieldDescriptionRemovedModel,
   FieldRemovedModel,
   FieldTypeChangedModel,
+  FieldArgumentAddedModel,
+  FieldArgumentRemovedModel,
+  InputFieldRemovedModel,
   InputFieldAddedModel,
   InputFieldDescriptionAddedModel,
   InputFieldDescriptionRemovedModel,
   InputFieldDescriptionChangedModel,
   InputFieldDefaultValueChangedModel,
-  InputFieldRemovedModel,
   InputFieldTypeChangedModel,
   ObjectTypeInterfaceAddedModel,
   ObjectTypeInterfaceRemovedModel,
