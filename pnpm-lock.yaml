@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@graphql-inspector/core': file:../graphql-inspector/packages/core
   esbuild: 0.25.9
   csstype: 3.1.2
   mjml-core@4.14.0>html-minifier: '-'
@@ -433,8 +432,8 @@ importers:
         specifier: workspace:*
         version: link:../core/dist
       '@graphql-inspector/core':
-        specifier: file:../../../../graphql-inspector/packages/core
-        version: file:../graphql-inspector/packages/core(graphql@16.9.0)
+        specifier: 7.0.2
+        version: 7.0.2(graphql@16.9.0)
       '@graphql-tools/code-file-loader':
         specifier: ~8.1.0
         version: 8.1.0(graphql@16.9.0)
@@ -735,8 +734,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       '@graphql-inspector/core':
-        specifier: file:../../../../graphql-inspector/packages/core
-        version: file:../graphql-inspector/packages/core(graphql@16.9.0)
+        specifier: 7.0.2
+        version: 7.0.2(graphql@16.9.0)
       '@graphql-tools/merge':
         specifier: 9.1.1
         version: 9.1.1(graphql@16.9.0)
@@ -1445,8 +1444,8 @@ importers:
   packages/services/storage:
     devDependencies:
       '@graphql-inspector/core':
-        specifier: file:../../../../graphql-inspector/packages/core
-        version: file:../graphql-inspector/packages/core(graphql@16.11.0)
+        specifier: 7.0.2
+        version: 7.0.2(graphql@16.11.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -4022,8 +4021,14 @@ packages:
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@graphql-inspector/core@file:../graphql-inspector/packages/core':
-    resolution: {directory: ../graphql-inspector/packages/core, type: directory}
+  '@graphql-inspector/core@5.0.2':
+    resolution: {integrity: sha512-pXHPCggwLmgi5NACPPV4qyf2xW/sQONnu6ZqCAid3k/S2APmVYN4Z3OvxvLA12NFhzby5Sz5K4fRsId43cK8ww==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+
+  '@graphql-inspector/core@7.0.2':
+    resolution: {integrity: sha512-bo+AOt6WU++m1v/f37btEUD6wqFnMFC1DP+Si/YkediCfHu5xcGbm99LtIVgClZws6EntkYdRy2jaxAWJrmKuA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -10664,6 +10669,10 @@ packages:
     resolution: {integrity: sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==}
     engines: {node: '>= 0.8'}
 
+  dependency-graph@0.11.0:
+    resolution: {integrity: sha512-JeMq7fEshyepOWDfcfHK06N3MhyPhz++vtqWhMT5O9A3K42rdsEDpfdVqjaqaAhsw6a+ZqeDvQVtD0hFHQWrzg==}
+    engines: {node: '>= 0.6.0'}
+
   dependency-graph@1.0.0:
     resolution: {integrity: sha512-cW3gggJ28HZ/LExwxP2B++aiKxhJXMSIt9K48FOXQkm+vuG5gyatXnLsONRJdzO/7VfjDIiaOOa/bs4l464Lwg==}
     engines: {node: '>=4'}
@@ -14175,6 +14184,9 @@ packages:
   object-hash@3.0.0:
     resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
     engines: {node: '>= 6'}
+
+  object-inspect@1.12.3:
+    resolution: {integrity: sha512-geUvdk7c+eizMNUDkRpW1wJwgfOiOeHbxBR/hLXK1aT6zmVSO0jsQcs7fj6MGw89jC/cjGfLcNOrtMYtGqm81g==}
 
   object-inspect@1.13.2:
     resolution: {integrity: sha512-IRZSRuzJiynemAXPYtPe5BoI/RESNYR7TYm50MC5Mqbd3Jmw5y790sErYw3V6SryFJD64b74qQQs9wn5Bg/k3g==}
@@ -20570,7 +20582,7 @@ snapshots:
   '@graphql-inspector/audit-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
       '@graphql-inspector/commands': 4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)
-      '@graphql-inspector/core': file:../graphql-inspector/packages/core(graphql@16.9.0)
+      '@graphql-inspector/core': 5.0.2(graphql@16.9.0)
       '@graphql-inspector/logger': 4.0.2
       '@graphql-tools/utils': 10.0.3(graphql@16.9.0)
       cli-table3: 0.6.3
@@ -20633,14 +20645,21 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.6.2
 
-  '@graphql-inspector/core@file:../graphql-inspector/packages/core(graphql@16.11.0)':
+  '@graphql-inspector/core@5.0.2(graphql@16.9.0)':
+    dependencies:
+      dependency-graph: 0.11.0
+      graphql: 16.9.0
+      object-inspect: 1.12.3
+      tslib: 2.6.2
+
+  '@graphql-inspector/core@7.0.2(graphql@16.11.0)':
     dependencies:
       dependency-graph: 1.0.0
       graphql: 16.11.0
       object-inspect: 1.13.2
       tslib: 2.6.2
 
-  '@graphql-inspector/core@file:../graphql-inspector/packages/core(graphql@16.9.0)':
+  '@graphql-inspector/core@7.0.2(graphql@16.9.0)':
     dependencies:
       dependency-graph: 1.0.0
       graphql: 16.9.0
@@ -20650,7 +20669,7 @@ snapshots:
   '@graphql-inspector/coverage-command@5.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
       '@graphql-inspector/commands': 4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)
-      '@graphql-inspector/core': file:../graphql-inspector/packages/core(graphql@16.9.0)
+      '@graphql-inspector/core': 5.0.2(graphql@16.9.0)
       '@graphql-inspector/logger': 4.0.2
       '@graphql-tools/utils': 10.0.3(graphql@16.9.0)
       graphql: 16.9.0
@@ -20663,7 +20682,7 @@ snapshots:
   '@graphql-inspector/diff-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
       '@graphql-inspector/commands': 4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)
-      '@graphql-inspector/core': file:../graphql-inspector/packages/core(graphql@16.9.0)
+      '@graphql-inspector/core': 5.0.2(graphql@16.9.0)
       '@graphql-inspector/logger': 4.0.2
       graphql: 16.9.0
       tslib: 2.6.2
@@ -20711,7 +20730,7 @@ snapshots:
   '@graphql-inspector/introspect-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
       '@graphql-inspector/commands': 4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)
-      '@graphql-inspector/core': file:../graphql-inspector/packages/core(graphql@16.9.0)
+      '@graphql-inspector/core': 5.0.2(graphql@16.9.0)
       '@graphql-inspector/logger': 4.0.2
       graphql: 16.9.0
       tslib: 2.6.2
@@ -20762,7 +20781,7 @@ snapshots:
   '@graphql-inspector/similar-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
       '@graphql-inspector/commands': 4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)
-      '@graphql-inspector/core': file:../graphql-inspector/packages/core(graphql@16.9.0)
+      '@graphql-inspector/core': 5.0.2(graphql@16.9.0)
       '@graphql-inspector/logger': 4.0.2
       graphql: 16.9.0
       tslib: 2.6.2
@@ -20785,7 +20804,7 @@ snapshots:
   '@graphql-inspector/validate-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
       '@graphql-inspector/commands': 4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)
-      '@graphql-inspector/core': file:../graphql-inspector/packages/core(graphql@16.9.0)
+      '@graphql-inspector/core': 5.0.2(graphql@16.9.0)
       '@graphql-inspector/logger': 4.0.2
       '@graphql-tools/utils': 10.0.3(graphql@16.9.0)
       graphql: 16.9.0
@@ -29247,6 +29266,8 @@ snapshots:
 
   depd@2.0.0: {}
 
+  dependency-graph@0.11.0: {}
+
   dependency-graph@1.0.0: {}
 
   dequal@2.0.3: {}
@@ -33766,6 +33787,8 @@ snapshots:
   object-assign@4.1.1: {}
 
   object-hash@3.0.0: {}
+
+  object-inspect@1.12.3: {}
 
   object-inspect@1.13.2: {}
 
