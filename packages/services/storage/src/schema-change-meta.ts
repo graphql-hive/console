@@ -13,8 +13,10 @@ import {
   directiveLocationAddedFromMeta,
   directiveLocationRemovedFromMeta,
   directiveRemovedFromMeta,
+  directiveUsageArgumentAddedFromMeta,
   directiveUsageArgumentDefinitionAddedFromMeta,
   directiveUsageArgumentDefinitionRemovedFromMeta,
+  directiveUsageArgumentRemovedFromMeta,
   directiveUsageEnumAddedFromMeta,
   directiveUsageEnumRemovedFromMeta,
   directiveUsageEnumValueAddedFromMeta,
@@ -195,6 +197,10 @@ export function schemaChangeFromSerializableChange(
       return directiveUsageInputFieldDefinitionAddedFromMeta(change);
     case ChangeType.DirectiveUsageInputFieldDefinitionRemoved:
       return directiveUsageInputFieldDefinitionRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentAdded:
+      return directiveUsageArgumentAddedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentRemoved:
+      return directiveUsageArgumentRemovedFromMeta(change);
     case ChangeType.EnumValueRemoved:
       return enumValueRemovedFromMeta(change);
     case ChangeType.EnumValueAdded:
