@@ -49,7 +49,9 @@ Refer to the
 for complete list of options and configurations you can pass to the Hive JavaScript Client of
 choice.
 
-#### Client Information
+#### Usage reporting
+
+##### Client Information
 
 By default, the client information is retrieved by looking up the `x-graphql-client-name` and
 `x-graphql-client-version` headers in the HTTP request. For operations executed via the
@@ -82,9 +84,9 @@ useHive({
 The context object is the context object as used within the GraphQL execution. Depending on your
 server framework and GraphQL protocol, the context object may contain different properties.
 
-We recommend to always try to safely decode the context.
+We recommend to safely decode the context in order to avoid runtime errors.
 
-#### Excluding Operations
+##### Excluding Operations
 
 You can pass a custom `exclude` array to the `HivePluginOptions` to ignore specific operations from
 being reported to Hive.
@@ -97,9 +99,9 @@ useHive({
 })
 ```
 
-#### Sampling
+##### Sampling
 
-##### Basic sampling
+###### Basic sampling
 
 With `sampleRate` option, you're able to control the sampling rate of the usage reporting. Setting
 it to `0.5` will result in 50% of the operations being sent to Hive. There is no guarantee that
@@ -116,7 +118,7 @@ useHive({
 })
 ```
 
-##### Dynamic sampling
+###### Dynamic sampling
 
 GraphQL Hive client accepts a function that returns a number between 0 and 1. This allows you to
 implement dynamic sampling based on the operation's context.
@@ -151,7 +153,7 @@ useHive({
 })
 ```
 
-##### At-least-once sampling
+###### At-least-once sampling
 
 If you want to make sure that every operation is reported at least once, you can use the
 `atLeastOnceSampler`. Every operation is reported at least once, but every next occurrence is
@@ -320,6 +322,72 @@ useHive({
 </Tabs.Tab>
 
 </Tabs>
+
+##### Agent
+
+The agent collects and schedules usage reporting call to the Hive Console usage reporting service.
+The configuration can be customized.
+
+###### `maxRetries`
+
+- Type: `boolean`
+- Default: `5`
+
+Configure the maximum amount of retries per usage reporting batch before dropping the reporting
+attempts.
+
+###### `maxSize`
+
+The maximum batch size of usage reports before sending the batch.
+
+###### `sendInterval`
+
+- Type: `boolean`
+- Default: `10_000`
+
+The amount of time after which a pending usage reporting batch should be sent in case before the
+`maxSize` amount is reached.
+
+###### `fetch`
+
+- Type: [`Fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch)
+- Default: `fetch`
+
+Provide a custom WHATWG `fetch` implementation
+
+###### `logger`
+
+- Type: [`console`](https://developer.mozilla.org/en-US/docs/Web/API/console)
+- Default: `globalThis.console`
+
+Console object to use for logging info, errors and debug information.
+
+###### `circuitBreaker`
+
+- Type: `AgentCircuitBreakerConfiguration`
+- Default:
+  ```js
+  {
+    /**
+     * Percentage after what the circuit breaker should kick in.
+     * Default: 50
+     */
+    errorThresholdPercentage: 50,
+    /**
+     * Count of requests before starting evaluating.
+     * Default: 5
+     */
+    volumeThreshold: 10,
+    /**
+     * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+     * Default: 30_000
+     */
+    resetTimeout: 30_000,
+  }
+  ```
+
+Configure the curcuit breaker for temporarily suspending sending usage reports in case of network
+issues or outages to avoid exhausting the service from being overwhelmed with failing HTTP requests.
 
 #### Persisted Documents
 

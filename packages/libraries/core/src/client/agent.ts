@@ -56,6 +56,7 @@ export interface AgentOptions {
   maxRetries?: number;
   /**
    * 200 by default
+   * @deprecated This is no longer used.
    */
   minTimeout?: number;
   /**
