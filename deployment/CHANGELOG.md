@@ -1,5 +1,19 @@
 # hive
 
+## 8.8.0
+
+### Minor Changes
+
+- [#7252](https://github.com/graphql-hive/console/pull/7252)
+  [`717b5aa`](https://github.com/graphql-hive/console/commit/717b5aa6e839c0e73b85322908331768f0cdcc57)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support selecting resources when inviting a user
+  via email.
+
+- [#7252](https://github.com/graphql-hive/console/pull/7252)
+  [`717b5aa`](https://github.com/graphql-hive/console/commit/717b5aa6e839c0e73b85322908331768f0cdcc57)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support assigning default resources for new OIDC
+  members.
+
 ## 8.7.1
 
 ### Patch Changes
