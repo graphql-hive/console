@@ -17,7 +17,7 @@ import type {
   ClientInfo,
   CollectUsageCallback,
   GraphQLErrorsResult,
-  HivePluginOptions,
+  HiveInternalPluginOptions,
   HiveUsagePluginOptions,
 } from './types.js';
 import {
@@ -61,7 +61,7 @@ const noopUsageCollector: UsageCollector = {
   collectSubscription() {},
 };
 
-export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
+export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageCollector {
   if (!pluginOptions.usage || pluginOptions.enabled === false) {
     return noopUsageCollector;
   }
@@ -74,7 +74,7 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   const options =
     typeof pluginOptions.usage === 'boolean' ? ({} as HiveUsagePluginOptions) : pluginOptions.usage;
   const selfHostingOptions = pluginOptions.selfHosting;
-  const logger = createHiveLogger(pluginOptions.agent?.logger ?? console, '[hive][usage]');
+  const logger = createHiveLogger(pluginOptions.logger, '[usage]');
   const collector = memo(createCollector, arg => arg.schema);
   const excludeSet = new Set(options.exclude ?? []);
 

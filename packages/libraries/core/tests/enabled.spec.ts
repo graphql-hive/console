@@ -53,6 +53,5 @@ test('should not throw exception about missing token when disabled', async () =>
     agent: { logger },
   });
 
-  expect(logger.info).not.toBeCalled();
   expect(hive.info()).toBeUndefined();
 });
