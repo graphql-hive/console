@@ -1,0 +1,48 @@
+---
+title: Invite Member and default OIDC Role Improvements
+description:
+  Select the default assigned resources for an invited user and newly signed-up OIDC users.
+date: 2025-11-14
+authors: [laurin]
+---
+
+Earlier this year, we introduced **customizable default member roles** for organizations using OIDC
+authentication. This made it possible to automatically assign roles to users as they signed in via
+OIDC.
+
+With this update, we’re extending that functionality to give organizations **much finer control over
+which resources new users receive access to**.
+
+### Granular Default Resource Assignment for OIDC Users
+
+Previously, newly signed-up OIDC users were granted the configured default role **across all
+resources**. You can now specify **exactly which resources** (e.g., projects, targets, services)
+should be assigned to new OIDC-authenticated users.
+
+This makes onboarding more secure and prevents automatic access to resources users don’t need.
+
+![Select default resources for OIDC default role](./oidc-default-role.png)
+
+### Improved Member Invitations
+
+It is now also possible to **invite members with predefined resources already assigned**. This
+allows administrators to configure the correct access **before** the user joins, removing the need
+for manual adjustments after their first sign-in.
+
+![Select resources for invitation](./member-invitation.png)
+
+### Conclusion
+
+These improvements offer:
+
+- More secure and controlled onboarding
+- Less manual work for administrators
+- More predictable access patterns for large teams and enterprises
+
+Together, these changes make role and resource management more intuitive, flexible, and aligned with
+real-world organizational structures.
+
+---
+
+- [Learn more about organization members and roles](/docs/schema-registry/management/members-roles-permissions)
+- [Learn more about open id connect (OIDC)](/docs/schema-registry/management/sso-oidc-provider)
