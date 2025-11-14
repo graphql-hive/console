@@ -561,7 +561,7 @@ export function GraphQLFields(props: {
         {fields.map((field, i) => {
           const coordinate = `${props.typeName}.${field.name}`;
           const isUsed = field.usage.total > 0;
-          const hasUnusedArguments = field.args.length > 0;
+          const hasArguments = field.args.length > 0;
           const showsUnusedSchema = typeof totalRequests !== 'number';
           const isDeprecated = field.isDeprecated;
 
@@ -572,7 +572,7 @@ export function GraphQLFields(props: {
                   <div>
                     {props.warnAboutUnusedArguments &&
                     isUsed &&
-                    hasUnusedArguments &&
+                    hasArguments &&
                     showsUnusedSchema ? (
                       <Tooltip>
                         <TooltipContent>
