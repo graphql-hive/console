@@ -1365,7 +1365,7 @@ export const HiveSchemaChangeModel = z
         breakingChangeSchemaCoordinate = change.path ?? null;
 
         if (
-          isInputFieldAddedChange(rawChange) &&
+          isInputFieldAddedChange(change) &&
           change.meta.isAddedInputFieldTypeNullable === false
         ) {
           breakingChangeSchemaCoordinate = change.meta.inputName;
