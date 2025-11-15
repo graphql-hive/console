@@ -818,6 +818,9 @@ describe('schema publishing changes are persisted', () => {
     equalsObject: {
       meta: {
         addedDirectiveName: 'foo',
+        addedDirectiveDescription: null,
+        addedDirectiveLocations: ['FIELD'],
+        addedDirectiveRepeatable: false,
       },
       type: 'DIRECTIVE_ADDED',
     },
@@ -1278,8 +1281,10 @@ describe('schema publishing changes are persisted', () => {
     `,
     equalsObject: {
       meta: {
+        addedDirectiveDescription: null,
         enumName: 'Foo',
         addedEnumValueName: 'b',
+        addedToNewType: false,
       },
       type: 'ENUM_VALUE_ADDED',
     },
@@ -1523,6 +1528,7 @@ describe('schema publishing changes are persisted', () => {
         typeName: 'Query',
         addedFieldName: 'b',
         typeType: 'object type',
+        addedFieldReturnType: 'String',
       },
       type: 'FIELD_ADDED',
     },
@@ -1786,6 +1792,7 @@ describe('schema publishing changes are persisted', () => {
         addedArgumentType: 'String!',
         hasDefaultValue: false,
         isAddedFieldArgumentBreaking: true,
+        addedToNewField: false,
       },
       type: 'FIELD_ARGUMENT_ADDED',
     },
@@ -1811,6 +1818,7 @@ describe('schema publishing changes are persisted', () => {
         addedArgumentType: 'String',
         hasDefaultValue: false,
         isAddedFieldArgumentBreaking: false,
+        addedToNewField: false,
       },
       type: 'FIELD_ARGUMENT_ADDED',
     },
@@ -1866,6 +1874,7 @@ describe('schema publishing changes are persisted', () => {
         addedInputFieldName: 'b',
         isAddedInputFieldTypeNullable: true,
         addedInputFieldType: 'String',
+        addedToNewType: false,
       },
       type: 'INPUT_FIELD_ADDED',
     },
@@ -1898,6 +1907,7 @@ describe('schema publishing changes are persisted', () => {
         addedInputFieldName: 'b',
         isAddedInputFieldTypeNullable: false,
         addedInputFieldType: 'String!',
+        addedToNewType: false,
       },
       type: 'INPUT_FIELD_ADDED',
     },
@@ -2125,6 +2135,7 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         objectTypeName: 'Query',
         addedInterfaceName: 'Foo',
+        addedToNewType: false,
       },
       type: 'OBJECT_TYPE_INTERFACE_ADDED',
     },
@@ -2337,6 +2348,7 @@ describe('schema publishing changes are persisted', () => {
     equalsObject: {
       meta: {
         addedTypeName: 'A',
+        addedTypeKind: 'ObjectTypeDefinition',
       },
       type: 'TYPE_ADDED',
     },
@@ -2508,13 +2520,14 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         unionName: 'C',
         addedUnionMemberTypeName: 'B',
+        addedToNewType: false,
       },
       type: 'UNION_MEMBER_ADDED',
     },
   });
 
   persistedTest({
-    name: 'UnionMemberAddedModel',
+    name: 'UnionMemberRemovedModel',
     schemaBefore: /* GraphQL */ `
       type Query {
         a: String!
@@ -2612,6 +2625,8 @@ describe('schema publishing changes are persisted', () => {
         enumName: 'Role',
         enumValueName: 'USER',
         addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_ENUM_VALUE_ADDED',
     },
@@ -2648,6 +2663,7 @@ describe('schema publishing changes are persisted', () => {
         enumName: 'Role',
         enumValueName: 'USER',
         removedDirectiveName: 'auth',
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_ENUM_VALUE_REMOVED',
     },
@@ -2681,6 +2697,7 @@ describe('schema publishing changes are persisted', () => {
     `,
     equalsObject: {
       meta: {
+        deprecationReason: 'No longer supported',
         typeName: 'User',
         fieldName: 'name',
       },
@@ -2745,6 +2762,8 @@ describe('schema publishing changes are persisted', () => {
         fieldName: 'user',
         argumentName: 'id',
         addedDirectiveName: 'validate',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED',
     },
@@ -2772,6 +2791,7 @@ describe('schema publishing changes are persisted', () => {
         fieldName: 'user',
         argumentName: 'id',
         removedDirectiveName: 'validate',
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED',
     },
@@ -2805,6 +2825,8 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         objectName: 'User',
         addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_OBJECT_ADDED',
     },
@@ -2838,6 +2860,7 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         objectName: 'User',
         removedDirectiveName: 'auth',
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_OBJECT_REMOVED',
     },
@@ -2874,6 +2897,9 @@ describe('schema publishing changes are persisted', () => {
         inputObjectName: 'UserInput',
         inputFieldName: 'email',
         addedDirectiveName: 'validate',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+        inputFieldType: 'String!',
       },
       type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED',
     },
@@ -2907,6 +2933,7 @@ describe('schema publishing changes are persisted', () => {
     `,
     equalsObject: {
       meta: {
+        directiveRepeatedTimes: 0,
         inputObjectName: 'UserInput',
         inputFieldName: 'email',
         removedDirectiveName: 'validate',
@@ -2943,6 +2970,8 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         interfaceName: 'Node',
         addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
       },
       type: 'DIRECTIVE_USAGE_INTERFACE_ADDED',
     },
@@ -2974,10 +3003,153 @@ describe('schema publishing changes are persisted', () => {
     `,
     equalsObject: {
       meta: {
+        directiveRepeatedTimes: 1,
         interfaceName: 'Node',
         removedDirectiveName: 'auth',
       },
       type: 'DIRECTIVE_USAGE_INTERFACE_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentAdded',
+    schemaBefore: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth(roles: ["node:read"]) {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        addedArgumentName: 'roles',
+        addedArgumentValue: '["node:read"]',
+        directiveName: 'auth',
+        directiveRepeatedTimes: 1,
+        oldArgumentValue: null,
+        parentArgumentName: null,
+        parentEnumValueName: null,
+        parentFieldName: null,
+        parentTypeName: 'Query',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentRemoved',
+    schemaBefore: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth(roles: ["node:read"]) {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+        directiveRepeatedTimes: 1,
+        parentArgumentName: null,
+        parentEnumValueName: null,
+        parentFieldName: null,
+        parentTypeName: 'Query',
+        removedArgumentName: 'roles',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveRepeatableAdded',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth repeatable on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+      },
+      type: 'DIRECTIVE_REPEATABLE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveRepeatableRemoved',
+    schemaBefore: /* GraphQL */ `
+      directive @auth repeatable on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+      },
+      type: 'DIRECTIVE_REPEATABLE_REMOVED',
     },
   });
 });
