@@ -1184,6 +1184,8 @@ export const SchemaChangeModel = z.union([
   DirectiveDescriptionChangedModel,
   DirectiveLocationAddedModel,
   DirectiveLocationRemovedModel,
+  DirectiveRepeatableAddedModel,
+  DirectiveRepeatableRemovedModel,
   DirectiveArgumentAddedModel,
   DirectiveArgumentRemovedModel,
   DirectiveArgumentDescriptionChangedModel,
