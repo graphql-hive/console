@@ -581,8 +581,8 @@ importers:
   packages/libraries/external-composition:
     devDependencies:
       '@apollo/composition':
-        specifier: 2.9.3
-        version: 2.9.3(graphql@16.9.0)
+        specifier: 2.9.5
+        version: 2.9.5(graphql@16.9.0)
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -1107,8 +1107,8 @@ importers:
   packages/services/external-composition/federation-2:
     devDependencies:
       '@apollo/composition':
-        specifier: 2.9.3
-        version: 2.9.3(graphql@16.9.0)
+        specifier: 2.9.5
+        version: 2.9.5(graphql@16.9.0)
       '@apollo/federation-internals':
         specifier: 2.9.3
         version: 2.9.3(graphql@16.9.0)
@@ -1448,7 +1448,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 6.4.1
-        version: 6.4.1(graphql@16.11.0)
+        version: 6.4.1(graphql@16.9.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -2292,8 +2292,8 @@ packages:
     peerDependencies:
       graphql: ^16.5.0
 
-  '@apollo/composition@2.9.3':
-    resolution: {integrity: sha512-dcIZ5K+9sBNNPzXkYtZa91IegeMc350fXN7UMKTggqx5EBbWrakU/ltC0fp8Tr0qqlPGtEWFzXMmoqXKVPQJ1w==}
+  '@apollo/composition@2.9.5':
+    resolution: {integrity: sha512-1hbAR2SDC2jH601uzkJw7NtAoL+BF2IWxQ0f1+EudktgJcMW81WupovHYvfTiiiFYE42UmIY7NQu5cmnIQxWHA==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
@@ -2306,6 +2306,12 @@ packages:
 
   '@apollo/federation-internals@2.9.3':
     resolution: {integrity: sha512-r50Ykc331CZUw4TxpcqprAZOlGkbzoHEiHObUqUhQopTx8i0aXNt+0pc3nzqUAoT9OD83yJqPJV1EiZF2vCupQ==}
+    engines: {node: '>=14.15.0'}
+    peerDependencies:
+      graphql: ^16.5.0
+
+  '@apollo/federation-internals@2.9.5':
+    resolution: {integrity: sha512-bQhGNWh/mzXGngB0Nwwj/URf0MMwvkvcXi8d4TuiE+foMDpooeliwgY4vyCN+/iWMqHNjRlTp2s6hXYjhYUo5w==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
@@ -2337,8 +2343,8 @@ packages:
     peerDependencies:
       graphql: ^16.5.0
 
-  '@apollo/query-graphs@2.9.3':
-    resolution: {integrity: sha512-FG0Jptr9wNTScWTRO3LFBD6mqCU5fLn4vI4NxEkK3IBNfLmWPUykyIXgrvjwg/TJkxfBBpfmBM47luvZpkbkYg==}
+  '@apollo/query-graphs@2.9.5':
+    resolution: {integrity: sha512-IzQvStW+1EaGg3fB1+f6+UQZCXqMxAPn0JS/3eV+BMBe/BJxV+6XoD2DiI4uC4ik0n2BUEs0c+XQwRlGSd/uUA==}
     engines: {node: '>=14.15.0'}
     peerDependencies:
       graphql: ^16.5.0
@@ -3801,7 +3807,6 @@ packages:
 
   '@fastify/vite@6.0.7':
     resolution: {integrity: sha512-+dRo9KUkvmbqdmBskG02SwigWl06Mwkw8SBDK1zTNH6vd4DyXbRvI7RmJEmBkLouSU81KTzy1+OzwHSffqSD6w==}
-    bundledDependencies: []
 
   '@floating-ui/core@1.2.6':
     resolution: {integrity: sha512-EvYTiXet5XqweYGClEmpu3BoxmsQ4hkj3QaYA6qEnigCWffTP3vNRwBReTdrwDwo7OoJ3wM8Uoe9Uk4n+d4hfg==}
@@ -17507,10 +17512,10 @@ snapshots:
       '@apollo/query-graphs': 2.10.1(graphql@16.9.0)
       graphql: 16.9.0
 
-  '@apollo/composition@2.9.3(graphql@16.9.0)':
+  '@apollo/composition@2.9.5(graphql@16.9.0)':
     dependencies:
-      '@apollo/federation-internals': 2.9.3(graphql@16.9.0)
-      '@apollo/query-graphs': 2.9.3(graphql@16.9.0)
+      '@apollo/federation-internals': 2.9.5(graphql@16.9.0)
+      '@apollo/query-graphs': 2.9.5(graphql@16.9.0)
       graphql: 16.9.0
 
   '@apollo/federation-internals@2.10.1(graphql@16.9.0)':
@@ -17522,6 +17527,14 @@ snapshots:
       uuid: 9.0.1
 
   '@apollo/federation-internals@2.9.3(graphql@16.9.0)':
+    dependencies:
+      '@types/uuid': 9.0.1
+      chalk: 4.1.2
+      graphql: 16.9.0
+      js-levenshtein: 1.1.6
+      uuid: 9.0.1
+
+  '@apollo/federation-internals@2.9.5(graphql@16.9.0)':
     dependencies:
       '@types/uuid': 9.0.1
       chalk: 4.1.2
@@ -17603,9 +17616,9 @@ snapshots:
       ts-graphviz: 1.5.5
       uuid: 9.0.1
 
-  '@apollo/query-graphs@2.9.3(graphql@16.9.0)':
+  '@apollo/query-graphs@2.9.5(graphql@16.9.0)':
     dependencies:
-      '@apollo/federation-internals': 2.9.3(graphql@16.9.0)
+      '@apollo/federation-internals': 2.9.5(graphql@16.9.0)
       deep-equal: 2.1.0
       graphql: 16.9.0
       ts-graphviz: 1.5.5
@@ -20588,13 +20601,6 @@ snapshots:
       dependency-graph: 0.11.0
       graphql: 16.9.0
       object-inspect: 1.12.3
-      tslib: 2.6.2
-
-  '@graphql-inspector/core@6.4.1(graphql@16.11.0)':
-    dependencies:
-      dependency-graph: 1.0.0
-      graphql: 16.11.0
-      object-inspect: 1.13.2
       tslib: 2.6.2
 
   '@graphql-inspector/core@6.4.1(graphql@16.9.0)':
