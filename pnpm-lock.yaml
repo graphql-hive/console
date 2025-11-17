@@ -541,9 +541,6 @@ importers:
       '@types/lodash.sortby':
         specifier: 4.7.9
         version: 4.7.9
-      '@types/node':
-        specifier: 22.10.5
-        version: 22.10.5
       graphql:
         specifier: 16.9.0
         version: 16.9.0
