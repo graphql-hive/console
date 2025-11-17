@@ -25,6 +25,22 @@ Router by almost 2x - all while maintaining 100% compatibility with the Federati
 Audit. This means your federated GraphQL architecture stays standards-compliant and interoperable,
 but now with Rust's unmatched speed under the hood.
 
+The following results benchmark the scenario runing 4 subgraphs and a GraphQL gateway with
+Federation spec, and runs a heavy query. It's being executed with a constant amount of VUs over a
+fixed amount of time.
+
+| Gateway                      | RPS ⬇️ |       Requests        |        Duration        |
+| :--------------------------- | :----: | :-------------------: | :--------------------: |
+| Hive Router                  |  1633  | 98510 total, 0 failed |  avg: 30ms, p95: 52ms  |
+| Grafbase                     |  1568  | 94625 total, 0 failed |  avg: 31ms, p95: 55ms  |
+| Cosmo                        |  650   | 39305 total, 0 failed | avg: 76ms, p95: 112ms  |
+| 🚀 Hive Gateway (Rust QP)    |  619   | 37616 total, 0 failed | avg: 79ms, p95: 110ms  |
+| Apollo Router                |  313   | 19100 total, 0 failed | avg: 157ms, p95: 208ms |
+| Hive Gateway (JavaScript QP) |  291   | 17933 total, 0 failed | avg: 167ms, p95: 279ms |
+| Apollo Gateway               |  118   | 7240 total, 0 failed  | avg: 415ms, p95: 488ms |
+
+_[See the full benchmark results.](https://github.com/graphql-hive/graphql-gateways-benchmark/blob/main/constant-vus-over-time_result.md)_
+
 ## Full JavaScript Ecosystem Support
 
 One of the key advantages of this integration is that it preserves the full power of the JavaScript
