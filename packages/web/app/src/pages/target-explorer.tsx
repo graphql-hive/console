@@ -7,8 +7,8 @@ import {
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import {
-  ArgumentVisibilityFilter,
   DateRangeFilter,
+  DescriptionsVisibilityFilter,
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
@@ -214,7 +214,7 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ArgumentVisibilityFilter />
+              <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}

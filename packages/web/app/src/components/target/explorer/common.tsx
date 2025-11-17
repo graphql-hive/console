@@ -1,4 +1,4 @@
-import React, { ReactElement, ReactNode, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { PulseIcon, UsersIcon } from '@/components/ui/icon';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,59 +9,21 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { capitalize } from '@/utils';
-import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
+import { useDescriptionsVisibleToggle } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { useExplorerFieldFiltering } from './utils';
 
 export function Description(props: { description: string }) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button title="Description is available" className="text-gray-500 hover:text-white">
-          <ChatBubbleIcon className="h-5 w-auto" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="max-w-screen-sm rounded-md p-4 text-sm shadow-md"
-        side="right"
-        sideOffset={5}
-      >
-        <PopoverArrow />
-        <Markdown content={props.description} />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-export function DescriptionInline(props: { description: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [canExpand, setCanExpand] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  useLayoutEffect(() => {
-    if (ref.current) {
-      setCanExpand(ref.current.scrollHeight > ref.current.clientHeight);
-    }
-  }, [props.description]);
+  const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
 
   return (
-    <div className="inline-block max-w-screen-sm">
-      <Markdown
-        ref={ref}
-        className={clsx('text-muted-foreground line-clamp-2 text-left text-sm', {
-          'line-clamp-none': isExpanded,
-        })}
-        content={props.description}
-      />
-      {canExpand ? (
-        <span
-          className="cursor-pointer text-xs text-orange-500"
-          onClick={() => setIsExpanded(prev => !prev)}
-        >
-          {isExpanded ? 'Show less' : 'Show more'}
-        </span>
-      ) : null}
+    <div
+      className={clsx('mx mb-2 mt-0 block max-w-screen-sm', {
+        hidden: !isDescriptionsVisible,
+      })}
+    >
+      <Markdown className={clsx('text-left text-sm text-gray-400')} content={props.description} />
     </div>
   );
 }
@@ -126,7 +88,7 @@ export function SchemaExplorerUsageStats(props: {
                     </li>
                   </ul>
 
-                  {Array.isArray(usage.topOperations) ? (
+                  {Array.isArray(usage.topOperations) && (
                     <table className="mt-4 table-auto">
                       <thead>
                         <tr>
@@ -161,7 +123,7 @@ export function SchemaExplorerUsageStats(props: {
                         ))}
                       </tbody>
                     </table>
-                  ) : null}
+                  )}
                 </div>
               )}
             </div>
@@ -291,7 +253,7 @@ export function GraphQLTypeCard(props: {
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
-            <div className="font-normal text-gray-500">{props.kind}</div>
+            <div className="font-normal text-gray-400">{props.kind}</div>
             <div className="font-semibold">
               <GraphQLTypeAsLink
                 organizationSlug={props.organizationSlug}
@@ -301,10 +263,10 @@ export function GraphQLTypeCard(props: {
               />
             </div>
           </div>
-          {props.description ? <DescriptionInline description={props.description} /> : null}
+          {props.description && <Description description={props.description} />}
         </div>
-        {Array.isArray(props.implements) && props.implements.length > 0 ? (
-          <div className="flex flex-row items-center text-sm text-gray-500">
+        {Array.isArray(props.implements) && props.implements.length > 0 && (
+          <div className="flex flex-row items-center text-sm text-gray-400">
             <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
@@ -318,8 +280,8 @@ export function GraphQLTypeCard(props: {
               ))}
             </div>
           </div>
-        ) : null}
-        {props.usage && typeof props.totalRequests !== 'undefined' ? (
+        )}
+        {props.usage && typeof props.totalRequests !== 'undefined' && (
           <SchemaExplorerUsageStats
             kindLabel={props.kind}
             totalRequests={props.totalRequests}
@@ -328,15 +290,15 @@ export function GraphQLTypeCard(props: {
             projectSlug={props.projectSlug}
             targetSlug={props.targetSlug}
           />
-        ) : null}
-        {supergraphMetadata ? (
+        )}
+        {supergraphMetadata && (
           <SupergraphMetadataList
             targetSlug={props.targetSlug}
             projectSlug={props.projectSlug}
             organizationSlug={props.organizationSlug}
             supergraphMetadata={supergraphMetadata}
           />
-        ) : null}
+        )}
       </div>
       <div>{props.children}</div>
     </div>
@@ -410,7 +372,7 @@ export function GraphQLInputFields(props: {
                     type={field.type}
                   />
                 </div>
-                {typeof props.totalRequests === 'number' ? (
+                {typeof props.totalRequests === 'number' && (
                   <SchemaExplorerUsageStats
                     totalRequests={props.totalRequests}
                     usage={field.usage}
@@ -418,9 +380,9 @@ export function GraphQLInputFields(props: {
                     projectSlug={props.projectSlug}
                     organizationSlug={props.organizationSlug}
                   />
-                ) : null}
+                )}
               </div>
-              {field.description ? <DescriptionInline description={field.description} /> : null}
+              {field.description && <Description description={field.description} />}
             </div>
           </GraphQLTypeCardListItem>
         );

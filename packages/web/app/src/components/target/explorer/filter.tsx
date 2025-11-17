@@ -27,7 +27,11 @@ import {
   useLocation,
   useRouter,
 } from '@tanstack/react-router';
-import { useArgumentListToggle, usePeriodSelector, useSchemaExplorerContext } from './provider';
+import {
+  useDescriptionsVisibleToggle,
+  usePeriodSelector,
+  useSchemaExplorerContext,
+} from './provider';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -195,28 +199,28 @@ export function DateRangeFilter() {
   );
 }
 
-export function ArgumentVisibilityFilter() {
-  const [collapsed, toggleCollapsed] = useArgumentListToggle();
+export function DescriptionsVisibilityFilter() {
+  const { isDescriptionsVisible, toggleDescriptionsVisible } = useDescriptionsVisibleToggle();
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="bg-secondary flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
             <div>
-              <Label htmlFor="filter-toggle-arguments" className="text-sm font-normal">
-                All arguments
+              <Label htmlFor="filter-toggle-descriptions" className="text-sm font-normal">
+                Show descriptions
               </Label>
             </div>
             <Switch
-              checked={!collapsed}
-              onCheckedChange={toggleCollapsed}
-              id="filter-toggle-arguments"
+              checked={!isDescriptionsVisible}
+              onCheckedChange={toggleDescriptionsVisible}
+              id="filter-toggle-descriptions"
             />
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          List of arguments is collapsed by default. You can toggle this setting to display all
-          arguments.
+          Descriptions are not visible by default. You can toggle this setting to display all
+          descriptions.
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -320,7 +324,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
       >
         {props.options.map(({ name, values }, i) => (
           <React.Fragment key={name}>
-            {i > 0 ? <DropdownMenuSeparator /> : null}
+            {i > 0 && <DropdownMenuSeparator />}
             <DropdownMenuGroup
               className="flex cursor-pointer overflow-x-hidden text-sm text-gray-400 hover:underline"
               onClick={() => {

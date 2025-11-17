@@ -16,8 +16,8 @@ import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { UTCDate } from '@date-fns/utc';
 
 type SchemaExplorerContextType = {
-  isArgumentListCollapsed: boolean;
-  setArgumentListCollapsed(isCollapsed: boolean): void;
+  isDescriptionsVisible: boolean;
+  setDescriptionsVisible(isCollapsed: boolean): void;
   setDataRetentionInDays(days: number): void;
   dataRetentionInDays: number;
   startDate: Date;
@@ -41,8 +41,8 @@ const defaultPeriod: Period = {
 };
 
 const SchemaExplorerContext = createContext<SchemaExplorerContextType>({
-  isArgumentListCollapsed: true,
-  setArgumentListCollapsed: () => {},
+  isDescriptionsVisible: true,
+  setDescriptionsVisible: () => {},
   dataRetentionInDays: 7,
   startDate: startOfDay(subDays(new UTCDate(), 7)),
   period: defaultPeriod,
@@ -72,7 +72,7 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
     [dataRetentionInDays],
   );
 
-  const [isArgumentListCollapsed, setArgumentListCollapsed] = useLocalStorageJson(
+  const [isDescriptionsVisible, setDescriptionsVisible] = useLocalStorageJson(
     'hive:schema-explorer:collapsed',
     z.boolean().default(true),
   );
@@ -86,8 +86,8 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
   return (
     <SchemaExplorerContext.Provider
       value={{
-        isArgumentListCollapsed,
-        setArgumentListCollapsed,
+        isDescriptionsVisible,
+        setDescriptionsVisible,
         period,
         setPeriod(period) {
           setPeriod(period);
@@ -142,13 +142,13 @@ export function useSchemaExplorerContext() {
   return useContext(SchemaExplorerContext);
 }
 
-export function useArgumentListToggle() {
-  const { isArgumentListCollapsed, setArgumentListCollapsed } = useSchemaExplorerContext();
-  const toggle = useCallback(() => {
-    setArgumentListCollapsed(!isArgumentListCollapsed);
-  }, [setArgumentListCollapsed, isArgumentListCollapsed]);
+export function useDescriptionsVisibleToggle() {
+  const { isDescriptionsVisible, setDescriptionsVisible } = useSchemaExplorerContext();
+  const toggleDescriptionsVisible = useCallback(() => {
+    setDescriptionsVisible(!isDescriptionsVisible);
+  }, [setDescriptionsVisible, isDescriptionsVisible]);
 
-  return [isArgumentListCollapsed, toggle] as const;
+  return { isDescriptionsVisible, toggleDescriptionsVisible };
 }
 
 export function usePeriodSelector() {
