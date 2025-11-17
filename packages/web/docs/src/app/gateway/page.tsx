@@ -1,4 +1,5 @@
-// import { Metadata } from 'next';
+import { Metadata } from 'next';
+
 // import {
 //   CallToAction,
 //   DecorationIsolation,
@@ -19,15 +20,15 @@
 // import { LetsGetAdvancedSection } from './lets-get-advanced-section';
 // import { OrchestrateYourWay } from './orchestrate-your-way';
 
-// export const metadata: Metadata = {
-//   title: 'Hive Gateway',
-//   description:
-//     'Unify and accelerate your data graph with Hive Gateway, which seamlessly integrates with Apollo Federation.',
-//   openGraph: {
-//     ...rootMetadata.openGraph,
-//     // url: '/gateway',
-//   },
-// };
+export const metadata: Metadata = {
+  title: 'Hive Gateway',
+  description:
+    'Unify and accelerate your data graph with Hive Gateway, which seamlessly integrates with Apollo Federation.',
+  // openGraph: {
+  //   ...rootMetadata.openGraph,
+  //   url: '/gateway',
+  // },
+};
 
 // export default function HiveGatewayPage() {
 //   return (
