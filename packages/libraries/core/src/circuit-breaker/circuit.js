@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import MemoryCache from './cache.js';
 import Semaphore from './semaphore.js';
-import Status from './status';
+import Status from './status.js';
 
 const STATE = Symbol('state');
 const OPEN = Symbol('open');
