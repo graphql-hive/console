@@ -2,7 +2,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   DeprecationNote,
-  DescriptionInline,
+  Description,
   GraphQLTypeAsLink,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
@@ -64,22 +64,22 @@ export function GraphQLFields(props: {
           return (
             <GraphQLTypeCardListItem key={field.name} index={i}>
               <div className="w-full">
-                <div className="flex w-full flex-row items-center justify-between">
+                <div className="flex w-full flex-row items-baseline justify-between">
                   <div>
                     {props.warnAboutUnusedArguments &&
-                    isUsed &&
-                    hasArguments &&
-                    showsUnusedSchema ? (
-                      <Tooltip>
-                        <TooltipContent>
-                          This field is used but the presented arguments are not.
-                        </TooltipContent>
-                        <TooltipTrigger>
-                          <span className="mr-1 text-sm text-orange-500">*</span>
-                        </TooltipTrigger>
-                      </Tooltip>
-                    ) : null}
-                    {props.warnAboutDeprecatedArguments && !isDeprecated ? (
+                      isUsed &&
+                      hasArguments &&
+                      showsUnusedSchema && (
+                        <Tooltip>
+                          <TooltipContent>
+                            This field is used but the presented arguments are not.
+                          </TooltipContent>
+                          <TooltipTrigger>
+                            <span className="mr-1 text-sm text-orange-500">*</span>
+                          </TooltipTrigger>
+                        </Tooltip>
+                      )}
+                    {props.warnAboutDeprecatedArguments && !isDeprecated && (
                       <Tooltip>
                         <TooltipContent>
                           This field is not deprecated but the presented arguments are.
@@ -88,7 +88,7 @@ export function GraphQLFields(props: {
                           <span className="mr-1 text-sm text-orange-500">*</span>
                         </TooltipTrigger>
                       </Tooltip>
-                    ) : null}
+                    )}
                     <DeprecationNote
                       styleDeprecated={props.styleDeprecated}
                       deprecationReason={field.deprecationReason}
@@ -103,7 +103,7 @@ export function GraphQLFields(props: {
                         {field.name}
                       </LinkToCoordinatePage>
                     </DeprecationNote>
-                    {field.args.length > 0 ? (
+                    {field.args.length > 0 && (
                       <GraphQLArguments
                         organizationSlug={props.organizationSlug}
                         projectSlug={props.projectSlug}
@@ -112,18 +112,18 @@ export function GraphQLFields(props: {
                         parentCoordinate={coordinate}
                         args={field.args}
                       />
-                    ) : null}
+                    )}
                     <span className="mr-1">:</span>
                     <GraphQLTypeAsLink
                       organizationSlug={props.organizationSlug}
                       projectSlug={props.projectSlug}
                       targetSlug={props.targetSlug}
-                      className="font-semibold text-gray-400"
+                      className="font-semibold text-gray-300"
                       type={field.type}
                     />
                   </div>
                   <div className="flex flex-row items-center">
-                    {field.supergraphMetadata ? (
+                    {field.supergraphMetadata && (
                       <div className="ml-1">
                         <SupergraphMetadataList
                           targetSlug={props.targetSlug}
@@ -132,8 +132,8 @@ export function GraphQLFields(props: {
                           supergraphMetadata={field.supergraphMetadata}
                         />
                       </div>
-                    ) : null}
-                    {typeof totalRequests === 'number' ? (
+                    )}
+                    {typeof totalRequests === 'number' && (
                       <SchemaExplorerUsageStats
                         totalRequests={totalRequests}
                         usage={field.usage}
@@ -141,10 +141,10 @@ export function GraphQLFields(props: {
                         projectSlug={props.projectSlug}
                         organizationSlug={props.organizationSlug}
                       />
-                    ) : null}
+                    )}
                   </div>
                 </div>
-                {field.description ? <DescriptionInline description={field.description} /> : null}
+                {field.description && <Description description={field.description} />}
               </div>
             </GraphQLTypeCardListItem>
           );
