@@ -22,7 +22,7 @@ services:
       - '5432:5432'
 
   redis:
-    image: bitnamilegacy/redis:7.4.2
+    image: valkey/valkey:8.1.4
     mem_limit: 50m
     networks:
       - 'stack'
