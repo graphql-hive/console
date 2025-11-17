@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     'Unify and accelerate your data graph with Hive Gateway, which seamlessly integrates with Apollo Federation.',
   openGraph: {
     ...rootMetadata.openGraph,
-    url: '/gateway',
+    // url: '/gateway',
   },
 };
 
