@@ -507,6 +507,9 @@ importers:
 
   packages/libraries/core:
     dependencies:
+      '@graphql-hive/signal':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@graphql-tools/utils':
         specifier: ^10.0.0
         version: 10.5.6(graphql@16.9.0)
@@ -516,6 +519,9 @@ importers:
       async-retry:
         specifier: ^1.3.3
         version: 1.3.3
+      events:
+        specifier: 3.3.0
+        version: 3.3.0
       js-md5:
         specifier: 0.8.3
         version: 0.8.3
@@ -3982,6 +3988,10 @@ packages:
   '@graphql-hive/signal@1.0.0':
     resolution: {integrity: sha512-RiwLMc89lTjvyLEivZ/qxAC5nBHoS2CtsWFSOsN35sxG9zoo5Z+JsFHM8MlvmO9yt+MJNIyC5MLE1rsbOphlag==}
     engines: {node: '>=18.0.0'}
+
+  '@graphql-hive/signal@2.0.0':
+    resolution: {integrity: sha512-Pz8wB3K0iU6ae9S1fWfsmJX24CcGeTo6hE7T44ucmV/ALKRj+bxClmqrYcDT7v3f0d12Rh4FAXBb6gon+WkDpQ==}
+    engines: {node: '>=20.0.0'}
 
   '@graphql-inspector/audit-command@4.0.3':
     resolution: {integrity: sha512-cm4EtieIp9PUSDBze+Sn5HHF80jDF9V7sYyXqFa7+Vtw4Jlet98Ig48dFVtoLuFCPtCv2eZ22I8JOkBKL5WgVA==}
@@ -20508,6 +20518,8 @@ snapshots:
       - utf-8-validate
 
   '@graphql-hive/signal@1.0.0': {}
+
+  '@graphql-hive/signal@2.0.0': {}
 
   '@graphql-inspector/audit-command@4.0.3(@graphql-inspector/config@4.0.2(graphql@16.9.0))(@graphql-inspector/loaders@4.0.3(@babel/core@7.22.9)(@graphql-inspector/config@4.0.2(graphql@16.9.0))(graphql@16.9.0))(graphql@16.9.0)(yargs@17.7.2)':
     dependencies:
