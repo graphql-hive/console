@@ -48,6 +48,9 @@ function prepareBatch(amount: number, operation: CollectedOperation) {
 
 test.concurrent(
   'collect operation and publish schema using WRITE access but read operations and check schema using READ access',
+  {
+    timeout: 15_000,
+  },
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -128,9 +131,6 @@ test.concurrent(
     expect(op.kind).toEqual('query');
     expect(op.name).toMatch('ping');
     expect(op.percentage).toBeGreaterThan(99);
-  },
-  {
-    timeout: 15_000,
   },
 );
 
