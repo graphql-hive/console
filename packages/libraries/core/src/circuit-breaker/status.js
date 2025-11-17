@@ -1,5 +1,7 @@
 'use strict';
 
+import EventEmitter from 'events';
+
 const WINDOW = Symbol('window');
 const BUCKETS = Symbol('buckets');
 const TIMEOUT = Symbol('timeout');
@@ -7,8 +9,6 @@ const PERCENTILES = Symbol('percentiles');
 const BUCKET_INTERVAL = Symbol('bucket-interval');
 const SNAPSHOT_INTERVAL = Symbol('snapshot-interval');
 const ROTATE_EVENT_NAME = Symbol('rotate-event-name');
-
-const EventEmitter = require('events').EventEmitter;
 
 /**
  * Tracks execution status for a given {@link CircuitBreaker}.
@@ -235,4 +235,4 @@ function calculatePercentile(percentile, arr) {
   return arr[idx - 1] || 0;
 }
 
-module.exports = exports = Status;
+export default Status;

@@ -39,7 +39,8 @@
   "typings": "dist/typings/index.d.ts",
   "scripts": {
     "build": "node ../../../scripts/generate-version.mjs && bob build",
-    "check:build": "bob check"
+    "check:build": "bob check",
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"

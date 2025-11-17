@@ -1,9 +1,7 @@
-'use strict';
-
-const EventEmitter = require('events');
-const Status = require('./status');
-const Semaphore = require('./semaphore');
-const MemoryCache = require('./cache');
+import EventEmitter from 'events';
+import MemoryCache from './cache.js';
+import Semaphore from './semaphore.js';
+import Status from './status';
 
 const STATE = Symbol('state');
 const OPEN = Symbol('open');
@@ -1009,4 +1007,4 @@ const nextName = () =>
     return v.toString(16);
   });
 
-module.exports = exports = CircuitBreaker;
+export default CircuitBreaker;

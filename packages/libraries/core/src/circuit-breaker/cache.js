@@ -62,4 +62,4 @@ class MemoryCache {
   }
 }
 
-module.exports = exports = MemoryCache;
+export default MemoryCache;

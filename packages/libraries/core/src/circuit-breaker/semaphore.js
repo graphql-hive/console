@@ -1,7 +1,3 @@
-'use strict';
-
-module.exports = exports = semaphore;
-
 function semaphore(count) {
   const resolvers = [];
   let counter = count;
@@ -52,3 +48,5 @@ function semaphore(count) {
     return take() && true;
   }
 }
+
+export default semaphore;

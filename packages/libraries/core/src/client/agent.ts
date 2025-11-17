@@ -1,4 +1,4 @@
-import CircuitBreaker from '../circuit-breaker/index.js';
+import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { Logger } from './types.js';
