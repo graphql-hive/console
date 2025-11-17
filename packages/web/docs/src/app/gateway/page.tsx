@@ -2,21 +2,21 @@ import { Metadata } from 'next';
 import {
   CallToAction,
   DecorationIsolation,
-  // ExploreMainProductCards,
-  // FrequentlyAskedQuestions,
+  ExploreMainProductCards,
+  FrequentlyAskedQuestions,
   Hero,
   HeroLogo,
   HiveGatewayIcon,
 } from '@theguild/components';
 // import { ErrorBoundary } from '../../components/error-boundary';
-// import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
+import { GetYourAPIGameRightList } from '../../components/get-your-api-game-right-list';
 import { LandingPageContainer } from '../../components/landing-page-container';
 import { metadata as rootMetadata } from '../layout';
-// import { CloudNativeSection } from './cloud-native-section';
+import { CloudNativeSection } from './cloud-native-section';
 // import { FederationCompatibleBenchmarksSection } from './federation-compatible-benchmarks';
 import { GatewayFeatureTabs } from './gateway-feature-tabs';
-// import GatewayLandingFAQ from './gateway-landing-faq.mdx';
-// import { LetsGetAdvancedSection } from './lets-get-advanced-section';
+import GatewayLandingFAQ from './gateway-landing-faq.mdx';
+import { LetsGetAdvancedSection } from './lets-get-advanced-section';
 import { OrchestrateYourWay } from './orchestrate-your-way';
 
 export const metadata: Metadata = {
@@ -62,15 +62,13 @@ export default function HiveGatewayPage() {
       >
         <FederationCompatibleBenchmarksSection />
       </ErrorBoundary> */}
-      {/* <LetsGetAdvancedSection /> */}
-      {/* <CloudNativeSection className="mx-4 mt-6 md:mx-6" /> */}
-      {/* <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" /> */}
-      {/* <FrequentlyAskedQuestions
-        faqPages={['/gateway']}
-      >
+      <LetsGetAdvancedSection />
+      <CloudNativeSection className="mx-4 mt-6 md:mx-6" />
+      <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" />
+      <FrequentlyAskedQuestions faqPages={['/gateway']}>
         <GatewayLandingFAQ />
-      </FrequentlyAskedQuestions> */}
-      {/* <GetYourAPIGameRightList className="mx-4 sm:mb-6 md:mx-6" /> */}
+      </FrequentlyAskedQuestions>
+      <GetYourAPIGameRightList className="mx-4 sm:mb-6 md:mx-6" />
     </LandingPageContainer>
   );
 }
