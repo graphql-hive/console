@@ -22,7 +22,6 @@ jobs:
           NEXT_BASE_PATH: ${{ github.ref == 'refs/heads/main' && '/graphql/hive' || '' }}
           SITE_URL:
             ${{ github.ref == 'refs/heads/main' && 'https://the-guild.dev/graphql/hive' || '' }}
-          DEBUG: '*'
         with:
           cloudflareApiToken: ${{ secrets.WEBSITE_CLOUDFLARE_API_TOKEN }}
           cloudflareAccountId: ${{ secrets.WEBSITE_CLOUDFLARE_ACCOUNT_ID }}

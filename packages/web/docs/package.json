@@ -6,7 +6,7 @@
     "#components/*": "./src/components/*"
   },
   "scripts": {
-    "build": "next build && next-sitemap",
+    "build": "next build --debug-prerender && next-sitemap",
     "build:analyze": "ANALYZE=true next build",
     "dev": "next --turbopack",
     "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
