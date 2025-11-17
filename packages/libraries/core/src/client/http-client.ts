@@ -42,7 +42,7 @@ function get(endpoint: string, config: SharedConfig) {
   });
 }
 
-function post(endpoint: string, data: string | Buffer, config: SharedConfig) {
+function post(endpoint: string, data: string | ArrayBuffer, config: SharedConfig) {
   return makeFetchCall(endpoint, {
     body: data,
     method: 'POST',
@@ -58,7 +58,7 @@ export const http = {
 export async function makeFetchCall(
   endpoint: URL | string,
   config: {
-    body?: string | Buffer;
+    body?: string | ArrayBuffer;
     method: 'GET' | 'POST';
     headers: Record<string, string>;
     /**

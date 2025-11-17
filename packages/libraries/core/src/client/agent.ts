@@ -149,7 +149,7 @@ export function createAgent<TEvent>(
 
     logger.debug(`Sending report (queue ${dataToSend})`);
     const response = await http
-      .post(options.endpoint, buffer, {
+      .post(options.endpoint, buffer as any, {
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',
