@@ -67,7 +67,11 @@ export default function HiveGatewayPage() {
       <ExploreMainProductCards className="max-lg:mx-4 max-lg:my-8" />
       <FrequentlyAskedQuestions
         /* todo: I'm pretty sure this prop is redundant, but okay */
-        faqPages={['/gateway']}
+        faqPages={
+          [
+            // '/gateway'
+          ]
+        }
       >
         <GatewayLandingFAQ />
       </FrequentlyAskedQuestions>
