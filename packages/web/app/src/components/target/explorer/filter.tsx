@@ -212,7 +212,7 @@ export function DescriptionsVisibilityFilter() {
               </Label>
             </div>
             <Switch
-              checked={!isDescriptionsVisible}
+              checked={isDescriptionsVisible}
               onCheckedChange={toggleDescriptionsVisible}
               id="filter-toggle-descriptions"
             />
