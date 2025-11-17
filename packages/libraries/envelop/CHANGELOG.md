@@ -1,5 +1,42 @@
 # @graphql-hive/envelop
 
+## 0.37.0
+
+### Minor Changes
+
+- [#7264](https://github.com/graphql-hive/console/pull/7264)
+  [`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce debug log level. HTTP retry log pollute
+  the error log. The retries are now logged to the debug level. In order to see debug logs set the
+  `debug` option to true.
+
+  ```ts
+  const hive = createHive({
+    debug: true
+  })
+  ```
+
+  If you are using a custom logger, make sure to provide a `debug` logging method implementation.
+
+  ```ts
+  const hive = createHive({
+    debug: true,
+    agent: {
+      logger: {
+        info() {},
+        error() {},
+        debug() {}
+      }
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)]:
+  - @graphql-hive/core@0.14.0
+
 ## 0.36.4
 
 ### Patch Changes
