@@ -1,0 +1,21 @@
+dist:
+  version: 0.140.0
+  name: otelcol-custom
+  description: Custom OTel Collector distribution
+  output_path: ./otelcol-custom
+
+receivers:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kafkareceiver v0.140.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.140.0
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.140.0
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.140.0
+
+extensions:
+  - gomod:
+      github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
+      v0.140.0

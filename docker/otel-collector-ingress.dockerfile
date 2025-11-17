@@ -1,6 +1,6 @@
 FROM scratch AS config
 
-COPY builder-config.yaml .
+COPY builder-config-ingress.yaml .
 COPY extension-hiveauth/ ./extension-hiveauth/
 COPY extension-statsviz/ ./extension-statsviz/
 
@@ -13,7 +13,7 @@ WORKDIR /build
 RUN go install go.opentelemetry.io/collector/cmd/builder@v${OTEL_VERSION}
 
 # Copy the manifest file and other necessary files
-COPY --from=config builder-config.yaml .
+COPY --from=config builder-config-ingress.yaml builder-config.yaml
 COPY --from=config extension-hiveauth/ ./extension-hiveauth/
 COPY --from=config extension-statsviz/ ./extension-statsviz/
 
@@ -27,7 +27,7 @@ WORKDIR /app
 
 # Copy the generated collector binary from the builder stage
 COPY --from=builder /build/otelcol-custom .
-COPY config.yaml /etc/otel-config.yaml
+COPY config-ingress.yaml /etc/otel-config.yaml
 
 # Create directory for queue storage
 RUN mkdir -p /var/lib/otelcol/file_storage

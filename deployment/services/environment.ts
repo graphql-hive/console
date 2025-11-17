@@ -80,9 +80,15 @@ export function prepareEnvironment(input: {
         memoryLimit: isProduction ? '1000Mi' : '300Mi',
       },
       tracingCollector: {
-        cpuLimit: isProduction || isStaging ? '1000m' : '100m',
-        memoryLimit: isProduction || isStaging ? '1000Mi' : '512Mi',
-        maxReplicas: isProduction || isStaging ? 3 : 1,
+        cpuLimit: '500m',
+        memoryLimit: '512Mi',
+        maxReplicas: 3,
+      },
+      redpanda: {
+        replicas: 1,
+        cpuLimit: '500m',
+        memoryLimit: '1000Mi',
+        storageSize: '20Gi',
       },
     },
   };

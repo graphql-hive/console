@@ -21,6 +21,7 @@ import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
 import { deployPublicGraphQLAPIGateway } from './services/public-graphql-api-gateway';
 import { deployRedis } from './services/redis';
+import { deployRedpanda } from './services/redpanda';
 import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
@@ -79,6 +80,7 @@ const clickhouse = deployClickhouse();
 const postgres = deployPostgres();
 const redis = deployRedis({ environment });
 const kafka = deployKafka();
+const redpanda = deployRedpanda({ environment });
 const s3 = deployS3();
 const s3Mirror = deployS3Mirror();
 const s3AuditLog = deployS3AuditLog();
@@ -290,6 +292,7 @@ const otelCollector = deployOTELCollector({
   graphql,
   dbMigrations,
   clickhouse,
+  redpanda,
   image: docker.factory.getImageId('otel-collector', imagesTag),
   docker,
 });
@@ -350,6 +353,8 @@ export const schemaApiServiceId = schema.service.id;
 export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
-export const otelCollectorId = otelCollector.deployment.id;
+export const otelCollectorIngressId = otelCollector.ingress.deployment.id;
+export const otelCollectorEgressId = otelCollector.egress.deployment.id;
+export const redpandaStatefulSetId = redpanda.statefulSet.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
 export const awsLambdaArtifactsFunctionUrl = lambdaFunction;

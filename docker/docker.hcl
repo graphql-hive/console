@@ -82,8 +82,15 @@ target "router-base" {
   }
 }
 
-target "otel-collector-base" {
-  dockerfile = "${PWD}/docker/otel-collector.dockerfile"
+target "otel-collector-ingress-base" {
+  dockerfile = "${PWD}/docker/otel-collector-ingress.dockerfile"
+  args = {
+    RELEASE = "${RELEASE}"
+  }
+}
+
+target "otel-collector-egress-base" {
+  dockerfile = "${PWD}/docker/otel-collector-egress.dockerfile"
   args = {
     RELEASE = "${RELEASE}"
   }
@@ -378,18 +385,33 @@ target "apollo-router" {
   ]
 }
 
-target "otel-collector" {
-  inherits = ["otel-collector-base", get_target()]
+target "otel-collector-ingress" {
+  inherits = ["otel-collector-ingress-base", get_target()]
   context = "${PWD}/docker/configs/otel-collector"
   args = {
-    IMAGE_TITLE = "graphql-hive/otel-collector"
-    IMAGE_DESCRIPTION = "OTEL Collector for GraphQL Hive."
+    IMAGE_TITLE = "graphql-hive/otel-collector-ingress"
+    IMAGE_DESCRIPTION = "OTEL Collector Ingress for GraphQL Hive."
   }
   tags = [
-    local_image_tag("otel-collector"),
-    stable_image_tag("otel-collector"),
-    image_tag("otel-collector", COMMIT_SHA),
-    image_tag("otel-collector", BRANCH_NAME)
+    local_image_tag("otel-collector-ingress"),
+    stable_image_tag("otel-collector-ingress"),
+    image_tag("otel-collector-ingress", COMMIT_SHA),
+    image_tag("otel-collector-ingress", BRANCH_NAME)
+  ]
+}
+
+target "otel-collector-egress" {
+  inherits = ["otel-collector-egress-base", get_target()]
+  context = "${PWD}/docker/configs/otel-collector"
+  args = {
+    IMAGE_TITLE = "graphql-hive/otel-collector-egress"
+    IMAGE_DESCRIPTION = "OTEL Collector Egress for GraphQL Hive."
+  }
+  tags = [
+    local_image_tag("otel-collector-egress"),
+    stable_image_tag("otel-collector-egress"),
+    image_tag("otel-collector-egress", COMMIT_SHA),
+    image_tag("otel-collector-egress", BRANCH_NAME)
   ]
 }
 
@@ -424,7 +446,8 @@ group "build" {
     "commerce",
     "composition-federation-2",
     "app",
-    "otel-collector"
+    "otel-collector-ingress",
+    "otel-collector-egress"
   ]
 }
 
@@ -441,7 +464,8 @@ group "integration-tests" {
     "webhooks",
     "server",
     "composition-federation-2",
-    "otel-collector"
+    "otel-collector-ingress",
+    "otel-collector-egress"
   ]
 }
 
