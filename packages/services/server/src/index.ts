@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './opossum-shim';
 import got from 'got';
 import { GraphQLError, stripIgnoredCharacters } from 'graphql';
 import supertokens from 'supertokens-node';
