@@ -1,5 +1,17 @@
 # @graphql-hive/cli
 
+## 0.53.3
+
+### Patch Changes
+
+- [#7264](https://github.com/graphql-hive/console/pull/7264)
+  [`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Ensure http debug logs are printed properly.
+
+- Updated dependencies
+  [[`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)]:
+  - @graphql-hive/core@0.14.0
+
 ## 0.53.2
 
 ### Patch Changes
