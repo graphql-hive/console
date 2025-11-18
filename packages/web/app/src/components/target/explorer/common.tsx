@@ -19,7 +19,7 @@ export function Description(props: { description: string }) {
 
   return (
     <div
-      className={clsx('mx mb-2 mt-0 block max-w-screen-sm', {
+      className={clsx('mb-2 mt-0 block max-w-screen-sm', {
         hidden: !isDescriptionsVisible,
       })}
     >
