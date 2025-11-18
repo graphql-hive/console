@@ -9,12 +9,50 @@ type User @key(fields: "id") @key(fields: "email") {
   alias: String
   totalProductsCreated: Int @shareable
   createdAt: DateTime
+  notifications: [Notification!]!
 }
 
 scalar DateTime
+
+interface NotificationItf {
+  id: ID!
+  message: String!
+}
+
+type ProductUpdateNotification implements NotificationItf {
+  id: ID!
+  message: String!
+  product: Product!
+  updatedAt: DateTime!
+}
+
+type ReviewPostedNotification implements NotificationItf {
+  id: ID!
+  message: String!
+  review: Review!
+  postedAt: DateTime!
+}
+
+type WelcomeNotification implements NotificationItf {
+  id: ID!
+  message: String!
+  createdAt: DateTime!
+}
+
+type Product @key(fields: "upc") {
+  upc: String!
+}
+
+type Review @key(fields: "id") {
+  id: ID!
+}
+
+union Notification = ProductUpdateNotification | ReviewPostedNotification | WelcomeNotification
 
 extend type Query {
   me: User
   user(id: ID!): User
   users: [User]
+  notification(id: ID!): Notification
+  notifications: [Notification!]!
 }
