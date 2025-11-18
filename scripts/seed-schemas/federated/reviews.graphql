@@ -8,6 +8,13 @@ type Query {
   review(id: Int!): Review
 }
 
+input CreateReviewInput {
+  productUpc: String!
+  userId: ID!
+  rating: Int!
+  body: String
+}
+
 type Review @key(fields: "id") {
   id: ID!
   body: String
@@ -25,4 +32,8 @@ extend type Product @key(fields: "upc") {
   reviews: [Review]
   reviewsCount: Int!
   reviewsScore: Float! @override(from: "products")
+}
+
+type Mutation {
+  createReview(input: CreateReviewInput!): Review!
 }

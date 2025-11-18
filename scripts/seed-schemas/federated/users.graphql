@@ -14,6 +14,30 @@ type User @key(fields: "id") @key(fields: "email") {
 
 scalar DateTime
 
+enum NotificationType {
+  PRODUCT_UPDATE
+  REVIEW_POSTED
+  WELCOME
+}
+
+input NotificationFilterInput {
+  searchText: String
+  types: [NotificationType!]
+  dateFrom: DateTime
+  dateTo: DateTime
+}
+
+input CreateUserInput {
+  email: String!
+  name: String!
+  alias: String
+}
+
+input UpdateUserInput {
+  name: String
+  alias: String
+}
+
 interface NotificationItf {
   id: ID!
   message: String!
@@ -55,4 +79,10 @@ extend type Query {
   users: [User]
   notification(id: ID!): Notification
   notifications: [Notification!]!
+  searchNotifications(filter: NotificationFilterInput!): [Notification!]!
+}
+
+extend type Mutation {
+  createUser(input: CreateUserInput!): User!
+  updateUser(id: ID!, input: UpdateUserInput!): User
 }

@@ -10,6 +10,7 @@ type Query {
   allProducts: [ProductItf]
   product(upc: String!): ProductItf
   topProducts(first: Int = 5): [ProductItf]
+  searchProducts(filter: ProductFilterInput!): [ProductItf!]!
 }
 
 interface ProductItf implements SkuItf {
@@ -50,6 +51,18 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
 enum ShippingClass {
   STANDARD
   EXPRESS
+}
+
+input PriceRangeInput {
+  min: Float
+  max: Float
+}
+
+input ProductFilterInput {
+  searchText: String
+  categories: [String!]
+  priceRange: PriceRangeInput
+  shippingClass: ShippingClass
 }
 
 type ProductDimension @shareable {
