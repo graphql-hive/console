@@ -55,11 +55,6 @@ export interface AgentOptions {
    */
   maxRetries?: number;
   /**
-   * 200 by default
-   * @deprecated This is no longer used.
-   */
-  minTimeout?: number;
-  /**
    * Send reports in interval (defaults to 10_000ms)
    */
   sendInterval?: number;
@@ -83,6 +78,8 @@ export interface AgentOptions {
    * object -> use custom configuration see {AgentCircuitBreakerConfiguration}
    */
   circuitBreaker?: boolean | AgentCircuitBreakerConfiguration;
+  /** @deprecated This is no longer used. */
+  minTimeout?: number;
 }
 
 export function createAgent<TEvent>(
