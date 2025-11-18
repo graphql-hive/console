@@ -13,6 +13,9 @@ type Query {
   searchProducts(filter: ProductFilterInput!): [ProductItf!]!
 }
 
+"""
+Product interface defining common product fields
+"""
 interface ProductItf implements SkuItf {
   upc: String!
   sku: String
@@ -25,10 +28,16 @@ interface ProductItf implements SkuItf {
   oldField: String @deprecated(reason: "refactored out")
 }
 
+"""
+SKU interface for items with stock keeping units
+"""
 interface SkuItf {
   sku: String
 }
 
+"""
+Product entity with full product information
+"""
 type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sku package") {
   """
   Universal Product Code. A standardized numeric global identifier
@@ -38,39 +47,114 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   SKUs are unique to the company and are used internally. Alphanumeric.
   """
   sku: String @tag(name: "internal")
+  """
+  Product name
+  """
   name: String @example(text: "Foo Bar")
+  """
+  Package type or size information
+  """
   package: String
+  """
+  Product variations (e.g., different sizes, colors)
+  """
   variations: [ProductItf]
+  """
+  Physical dimensions of the product
+  """
   dimensions: ProductDimension
+  """
+  User who created this product
+  """
   createdBy: User
+  """
+  Hidden internal field
+  """
   hidden: String
+  """
+  Aggregated review score for this product
+  """
   reviewsScore: Float!
+  """
+  Deprecated field that has been refactored out
+  """
   oldField: String
 }
 
+"""
+Available shipping classes for products
+"""
 enum ShippingClass {
+  """
+  Standard ground shipping
+  """
   STANDARD
+  """
+  Express overnight shipping
+  """
   EXPRESS
 }
 
+"""
+Price range filter for product searches
+"""
 input PriceRangeInput {
+  """
+  Minimum price (inclusive)
+  """
   min: Float
+  """
+  Maximum price (inclusive)
+  """
   max: Float
 }
 
+"""
+Filter criteria for searching products
+"""
 input ProductFilterInput {
+  """
+  Search text to match against product name and description
+  """
   searchText: String
+  """
+  Filter by product categories
+  """
   categories: [String!]
+  """
+  Filter by price range
+  """
   priceRange: PriceRangeInput
+  """
+  Filter by shipping class
+  """
   shippingClass: ShippingClass
 }
 
+"""
+Physical dimensions of a product (shared across subgraphs)
+"""
 type ProductDimension @shareable {
+  """
+  Size description (e.g., 'Small', 'Large', '10x5x3')
+  """
   size: String
+  """
+  Weight in pounds
+  """
   weight: Float
 }
 
+"""
+User stub reference (full definition in users subgraph)
+"""
 type User @key(fields: "id") {
+  """
+  Unique identifier for the user
+  """
   id: ID!
+  """
+  Total number of products created by this user
+  """
   totalProductsCreated: Int @shareable
 }

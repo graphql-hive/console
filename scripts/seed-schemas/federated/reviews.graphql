@@ -8,17 +8,47 @@ type Query {
   review(id: Int!): Review
 }
 
+"""
+Input for creating a new product review
+"""
 input CreateReviewInput {
+  """
+  Universal Product Code of the product being reviewed
+  """
   productUpc: String!
+  """
+  ID of the user creating the review
+  """
   userId: ID!
+  """
+  Rating score (e.g., 1-5 stars)
+  """
   rating: Int!
+  """
+  Review text content
+  """
   body: String
 }
 
+"""
+Product review written by a user
+"""
 type Review @key(fields: "id") {
+  """
+  Unique identifier for the review
+  """
   id: ID!
+  """
+  Review text content
+  """
   body: String
+  """
+  User who wrote the review
+  """
   author: User
+  """
+  Product being reviewed
+  """
   product: Product
 }
 
