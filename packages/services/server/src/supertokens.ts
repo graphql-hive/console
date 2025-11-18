@@ -17,6 +17,7 @@ import { createInternalApiCaller } from './api';
 import { env } from './environment';
 import {
   createOIDCSuperTokensProvider,
+  getLoggerFromUserContext,
   getOIDCSuperTokensOverrides,
   type BroadcastOIDCIntegrationLog,
 } from './supertokens/oidc-provider';
@@ -212,7 +213,7 @@ export const backendConfig = (requirements: {
 
 function extractIPFromUserContext(userContext: unknown): string {
   return (
-    (userContext as any)._default.request.getHeaderValue('CF-Connecting-IP') ||
+    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimitIPHeaderName) ||
     (userContext as any)._default.request.original.ip
   );
 }
@@ -245,6 +246,18 @@ const getEnsureUserOverrides = (
         throw Error('emailPasswordSignUpPOST is not available');
       }
 
+      const logger = getLoggerFromUserContext(input.userContext);
+      const ip = extractIPFromUserContext(input.userContext);
+      const rateLimiter = createRedisRateLimiter(redis);
+
+      if (await rateLimiter.isRateLimited('sign-up', ip)) {
+        logger.debug('email password sign up rate limited (ip=%s)', ip);
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again in a few minutes.',
+        };
+      }
+
       const response = await originalImplementation.emailPasswordSignUpPOST(input);
 
       const firstName = input.formFields.find(field => field.id === 'firstName')?.value ?? null;
@@ -267,10 +280,12 @@ const getEnsureUserOverrides = (
         throw Error('Should never come here');
       }
 
+      const logger = getLoggerFromUserContext(input.userContext);
       const ip = extractIPFromUserContext(input.userContext);
       const rateLimiter = createRedisRateLimiter(redis);
 
       if (await rateLimiter.isRateLimited('sign-in', ip)) {
+        logger.debug('email sign in rate limited (ip=%s)', ip);
         return {
           status: 'GENERAL_ERROR',
           message: 'Please try again in a few minutes.',
@@ -295,16 +310,6 @@ const getEnsureUserOverrides = (
     async thirdPartySignInUpPOST(input) {
       if (originalImplementation.thirdPartySignInUpPOST === undefined) {
         throw Error('Should never come here');
-      }
-
-      const ip = extractIPFromUserContext(input.userContext);
-      const rateLimiter = createRedisRateLimiter(redis);
-
-      if (await rateLimiter.isRateLimited('sign-up', ip)) {
-        return {
-          status: 'GENERAL_ERROR',
-          message: 'Please try again in a few minutes.',
-        };
       }
 
       function extractOidcId(args: typeof input) {
@@ -332,10 +337,12 @@ const getEnsureUserOverrides = (
       return response;
     },
     async passwordResetPOST(input) {
+      const logger = getLoggerFromUserContext(input.userContext);
       const ip = extractIPFromUserContext(input.userContext);
       const rateLimiter = createRedisRateLimiter(redis);
 
       if (await rateLimiter.isRateLimited('password-reset', ip)) {
+        logger.debug('password reset rate limited (ip=%s)', ip);
         return {
           status: 'GENERAL_ERROR',
           message: 'Please try again in a few minutes.',
