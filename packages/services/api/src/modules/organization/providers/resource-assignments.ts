@@ -7,10 +7,12 @@ import { AppDeploymentNameModel } from '../../app-deployments/providers/app-depl
 import {
   AuthorizationPolicyStatement,
   PermissionsPerResourceLevelAssignment,
+  ResourceLevel,
 } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import {
+  AssignedTarget,
   GranularAssignedProjects,
   TargetAssignmentModel,
   type ResourceAssignmentGroup,
@@ -112,7 +114,7 @@ export class ResourceAssignments {
    * that can be stored within our database
    *
    * - Projects and Targets that can not be found in our database are omitted from the resolved object.
-   * - Projects and Targets that do not follow the hierarchical structure are omitted from teh resolved object.
+   * - Projects and Targets that do not follow the hierarchical structure are omitted from the resolved object.
    *
    * These measures are done in order to prevent users to grant access to other organizations.
    */
@@ -248,6 +250,106 @@ export class ResourceAssignments {
     }
 
     return resourceAssignmentGroup;
+  }
+
+  /**
+   * Translate a resource assignment into resource ids grouped by resource level.
+   */
+  async resourceAssignmentToResourceIds(
+    organizationId: string,
+    resourceAssignment: ResourceAssignmentGroup,
+  ): Promise<Record<ResourceLevel, Array<string>>> {
+    const organization = await this.storage.getOrganization({ organizationId });
+    const orgBaseId = `${organization.slug}`;
+
+    const ids: Record<ResourceLevel, Array<string>> = {
+      organization: [orgBaseId],
+      project: [],
+      target: [],
+      service: [],
+      appDeployment: [],
+    };
+
+    if (resourceAssignment.mode === '*') {
+      ids.project.push(`${orgBaseId}/*`);
+      ids.target.push(`${orgBaseId}/*/*`);
+      ids.service.push(`${orgBaseId}/*/*/service/*`);
+      ids.appDeployment.push(`${orgBaseId}/*/*/appDeployment/*`);
+      return ids;
+    }
+
+    const projectIds = resourceAssignment.projects.map(project => project.id);
+    const projects = await this.storage.findProjectsByIds({ projectIds });
+
+    const targetLookupIds = new Set<string>();
+    const projectTargetAssignments: Array<{
+      projectBaseId: string;
+      project: Project;
+      target: AssignedTarget;
+    }> = [];
+
+    for (const projectAssignment of resourceAssignment.projects) {
+      const project = projects.get(projectAssignment.id);
+      if (!project || project.orgId !== organization.id) {
+        continue;
+      }
+
+      const projectBaseId = `${orgBaseId}/${project.slug}`;
+
+      ids.project.push(projectBaseId);
+
+      if (projectAssignment.targets.mode === '*') {
+        ids.target.push(`${projectBaseId}/*`);
+        ids.service.push(`${projectBaseId}/service/*`);
+        ids.appDeployment.push(`${projectBaseId}/appDeployment/*`);
+        continue;
+      }
+
+      for (const target of projectAssignment.targets.targets) {
+        targetLookupIds.add(target.id);
+        projectTargetAssignments.push({
+          projectBaseId,
+          project,
+          target,
+        });
+      }
+    }
+
+    const targets = await this.storage.findTargetsByIds({
+      organizationId,
+      targetIds: Array.from(targetLookupIds),
+    });
+
+    for (const projectTargetAssignment of projectTargetAssignments) {
+      const target = targets.get(projectTargetAssignment.target.id);
+      if (!target || target.projectId !== projectTargetAssignment.project.id) {
+        continue;
+      }
+      const targetBaseId = projectTargetAssignment.projectBaseId + '/' + target.slug;
+      ids.target.push(targetBaseId);
+
+      if (projectTargetAssignment.target.appDeployments.mode === '*') {
+        ids.appDeployment.push(targetBaseId + '/appDeployment/*');
+      } else {
+        ids.appDeployment.push(
+          ...projectTargetAssignment.target.appDeployments.appDeployments.map(
+            appDeployment => targetBaseId + '/appDeployment/' + appDeployment.appName,
+          ),
+        );
+      }
+
+      if (projectTargetAssignment.target.services.mode === '*') {
+        ids.service.push(targetBaseId + '/services/*');
+      } else {
+        ids.service.push(
+          ...projectTargetAssignment.target.services.services.map(
+            service => targetBaseId + '/services/' + service.serviceName,
+          ),
+        );
+      }
+    }
+
+    return ids;
   }
 }
 

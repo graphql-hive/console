@@ -1,7 +1,7 @@
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { SchemaFetcherOptions, ServicesFetcherOptions } from './types.js';
-import { createHash, joinUrl } from './utils.js';
+import { createHash, createHiveLogger, joinUrl } from './utils.js';
 
 interface Schema {
   sdl: string;
@@ -10,7 +10,7 @@ interface Schema {
 }
 
 function createFetcher(options: SchemaFetcherOptions & ServicesFetcherOptions) {
-  const logger = options.logger ?? console;
+  const logger = createHiveLogger(options.logger ?? console, '');
   let cacheETag: string | null = null;
   let cached: {
     id: string;
@@ -27,7 +27,7 @@ function createFetcher(options: SchemaFetcherOptions & ServicesFetcherOptions) {
     } = {
       'X-Hive-CDN-Key': options.key,
       accept: 'application/json',
-      'User-Agent': `hive-client/${version}`,
+      'User-Agent': `${options?.name || 'hive-client'}/${options?.version || version}`,
     };
 
     if (cacheETag) {

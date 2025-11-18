@@ -35,9 +35,15 @@ import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RoleSelector } from './common';
+import {
+  ResourceSelection,
+  ResourceSelector,
+  resourceSlectionToGraphQLSchemaResourceAssignmentInput,
+} from './resource-selector';
 
 const MemberInvitationForm_InviteByEmail = graphql(`
   mutation MemberInvitationForm_InviteByEmail($input: InviteToOrganizationByEmailInput!) {
@@ -74,6 +80,7 @@ const MemberInvitationForm_OrganizationFragment = graphql(`
         }
       }
     }
+    ...ResourceSelector_OrganizationFragment
   }
 `);
 
@@ -104,6 +111,11 @@ function MemberInvitationForm(props: {
   const viewerRole = organization.memberRoles?.edges.find(
     edge => edge.node.name === 'Viewer',
   )?.node;
+
+  const [selection, setSelection] = useState<ResourceSelection>(() => ({
+    mode: GraphQLSchema.ResourceAssignmentModeType.All,
+    projects: [],
+  }));
 
   const form = useForm<MemberInvitationFormValues>({
     resolver: zodResolver(memberInvitationFormSchema),
@@ -136,6 +148,7 @@ function MemberInvitationForm(props: {
           },
           email: data.email,
           memberRoleId: data.role,
+          resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(selection),
         },
       });
 
@@ -186,7 +199,7 @@ function MemberInvitationForm(props: {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent>
+        <DialogContent className="min-w-[800px]">
           <DialogHeader>
             <DialogTitle>Membership Invitation</DialogTitle>
             <DialogDescription>
@@ -239,6 +252,13 @@ function MemberInvitationForm(props: {
                 )}
               />
             </div>
+          </div>
+          <div>
+            <ResourceSelector
+              selection={selection}
+              onSelectionChange={setSelection}
+              organization={organization}
+            />
           </div>
           <DialogFooter>
             <Button

@@ -1,0 +1,153 @@
+import { Callout, Tabs } from '@theguild/components'
+
+## Introduction
+
+Hive Gateway can use the Rust Query Planner from [Hive Router](/docs/router), introducing a new
+federation query planner in JavaScript that aims to optimize query execution performance by using
+Rust Hive Router's advanced planning algorithms through native addons.
+
+Running Hive Gateway with the Rust Query Planner is
+[**up to 3x faster per core** with **2x reduced latency**](#benchmarks).
+
+This integration allows Hive Gateway to leverage the high-performance capabilities of Hive Router's
+runtime while still operating within the Node.js, Bun or Deno environment and offering the full
+suite of JavaScript's ecosystem back to Hive Router.
+
+## Getting Started
+
+Start by installing the necessary package:
+
+```sh npm2yarn
+npm install @graphql-hive/router-runtime
+```
+
+<Callout type="info" emoji="ℹ️">
+
+The package is named `@graphql-hive/router-runtime` because it is the runtime integrating into Hive
+Gateway using the Rust Query Planner and a purpose-built executor for Hive Gateway.
+
+</Callout>
+
+Then, configure your Hive Gateway to use the Rust Query Planner by updating your gateway's
+configuration:
+
+<Tabs items={['CLI', "Programmatic Usage"]}>
+
+<Tabs.Tab>
+
+You can either run Hive Gateway with a truthy `HIVE_ROUTER_RUNTIME` environment variable:
+
+```sh
+HIVE_ROUTER_RUNTIME=true hive-gateway supergraph
+```
+
+or use the `--hive-router-runtime` flag:
+
+```sh
+hive-gateway supergraph --hive-router-runtime
+```
+
+or use the Rust Query Planner in your config file:
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { unifiedGraphHandler } from '@graphql-hive/router-runtime'
+
+export const gatewayConfig = defineConfig({
+  unifiedGraphHandler
+})
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="index.ts"
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+import { unifiedGraphHandler } from '@graphql-hive/router-runtime'
+
+export const gateway = createGatewayRuntime({
+  unifiedGraphHandler
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Compared to JavaScript Query Planner
+
+Hive Gateway uses the [JavaScript Query Planner](https://the-guild.dev/graphql/stitching) by
+default, which is a pure JavaScript implementation designed for flexibility and ease of use. The
+JavaScript Query Planner is well-suited for most applications, providing a robust and adaptable
+solution for GraphQL federation.
+
+While the Rust Query Planner provides superior performance for many workloads, it sacrifices some of
+the flexibility and extensibility of the JavaScript Query Planner.
+
+The following table provides a comprehensive comparison between the two query planners:
+
+| Feature                      | JavaScript | Rust                  | Notes                                                                                                   |
+| ---------------------------- | ---------- | --------------------- | ------------------------------------------------------------------------------------------------------- |
+| Additional resolvers         | ✅         | ❌                    | Additional type resolvers not supported                                                                 |
+| Schema transforms            | ✅         | ❌                    | Schema transformation pipeline not available in router runtime                                          |
+| Progressive Override         | ✅         | ❌                    | Apollo Federation's `@override` directive not supported at the moment                                   |
+| Rate limiting                | ✅         | ❌                    | Field-level and global rate limiting not supported                                                      |
+| EDFS                         | ✅         | ❌                    | Event-Driven Federation Subscriptions are not supported because it uses additional resolvers            |
+| Subscriptions                | ✅         | ⚠️ Limited support    | Cannot populate fields from other subgraphs when resolving the subscription                             |
+| Schema extensions            | ✅         | ⚠️ Limited support    | Schema-level modifications may be limited because hive router does not use an executable schema         |
+| Custom plugins               | ✅         | ⚠️ No stitching hooks | All plugins, except those using [stitching hooks](#no-javascript-query-planner-plugin-hooks), will work |
+| Envelop plugins              | ✅         | ✅                    | All of envelop plugins will work                                                                        |
+| Yoga plugins                 | ✅         | ✅                    | All of Yoga plugins will work                                                                           |
+| Gateway plugins              | ✅         | ✅                    | All gateway plugins will work                                                                           |
+| Transports                   | ✅         | ✅                    | All transports that Hive Gateway supports work. HTTP, WS, SSE, gRPC, etc.                               |
+| Federation Query Planning    | ✅         | ✅                    | Uses advanced Rust query planner for better performance                                                 |
+| Response caching             | ✅         | ✅                    | In-memory and distributed caching (Redis, etc.)                                                         |
+| Request batching             | ✅         | ✅                    | Automatic batching of requests to subgraphs                                                             |
+| Parsing & validation caching | ✅         | ✅                    | Document parsing and validation optimization                                                            |
+| Query cost analysis          | ✅         | ✅                    | Query complexity and cost analysis                                                                      |
+| Prometheus metrics           | ✅         | ✅                    | Standard metrics collection and export                                                                  |
+| OpenTelemetry tracing        | ✅         | ✅                    | Distributed tracing and span creation                                                                   |
+| Custom spans                 | ✅         | ✅                    | Custom instrumentation can be added                                                                     |
+| Request logging              | ✅         | ✅                    | Request/response logging and auditing                                                                   |
+| JWT authentication           | ✅         | ✅                    | JSON Web Token validation and propagation                                                               |
+| Depth limiting               | ✅         | ✅                    | Query depth and complexity analysis                                                                     |
+| Max tokens                   | ✅         | ✅                    | Token-based request limiting                                                                            |
+| HMAC signing                 | ✅         | ✅                    | Inter-service request signing and verification                                                          |
+| Persisted documents          | ✅         | ✅                    | Operation allow-listing and security                                                                    |
+| Request plugins              | ✅         | ✅                    | Request-level processing and modification                                                               |
+| Response plugins             | ✅         | ✅                    | Response-level processing and modification                                                              |
+
+## No JavaScript Query Planner Plugin Hooks
+
+All plugin hooks will work with the Rust Query Planner except for those specific to stitching that
+will never work because the runtime is different (Rust Query Planner vs. JavaScript Query Planner).
+
+Those hooks are only the following two hooks:
+
+- [`onDelegationPlan`](/docs/gateway/other-features/custom-plugins#ondelegationplan)
+- [`onDelegationStageExecute`](/docs/gateway/other-features/custom-plugins#ondelegationstageexecute)
+
+## Federation Specification Compliance
+
+Hive Gateway with the Rust Query Planner maintains 100% compatibility in the
+[Federation-Compatibility Audit](https://the-guild.dev/graphql/hive/federation-gateway-audit). This
+ensures that your federated GraphQL architecture remains standards-compliant and interoperable
+across different Federation implementations.
+
+## Benchmarks
+
+<Callout type="info" emoji="🚀">
+
+Performance gains are achieved while maintaining full compatibility with Federation specification
+and providing better resource efficiency for production deployments.
+
+</Callout>
+
+Based on our measurements and performance testing, the Rust Query Planner is **up to 3x faster per
+core** with **2x reduced latency** compared the JavaScript Query Planner thanks to the Rust-powered
+query planner and optimizations for it.
+
+See the official benchmark results for
+[executions with a constant amount of VUs over a fixed amount of time](https://github.com/graphql-hive/graphql-gateways-benchmark/blob/main/constant-vus-over-time_result.md)
+to get a feeling about how it performs side-by-side with other GraphQL Federation gateways.

@@ -2,6 +2,7 @@ use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
+use hive_console_sdk::supergraph_fetcher::SupergraphFetcherSyncState;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
@@ -12,7 +13,7 @@ use std::time::Duration;
 #[derive(Debug)]
 pub struct HiveRegistry {
     file_name: String,
-    fetcher: SupergraphFetcher,
+    fetcher: SupergraphFetcher<SupergraphFetcherSyncState>,
     pub logger: Logger,
 }
 
@@ -122,16 +123,19 @@ impl HiveRegistry {
         env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
         env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
 
-        let mut registry = HiveRegistry {
-            fetcher: SupergraphFetcher::try_new(
-                endpoint,
-                key,
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-                Duration::from_secs(5),
-                Duration::from_secs(60),
-                accept_invalid_certs,
-            )
-            .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?,
+        let fetcher = SupergraphFetcher::try_new_sync(
+            endpoint,
+            &key,
+            format!("hive-apollo-router/{}", PLUGIN_VERSION),
+            Duration::from_secs(5),
+            Duration::from_secs(60),
+            accept_invalid_certs,
+            3,
+        )
+        .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
+
+        let registry = HiveRegistry {
+            fetcher,
             file_name,
             logger,
         };
@@ -156,9 +160,12 @@ impl HiveRegistry {
         Ok(())
     }
 
-    fn initial_supergraph(&mut self) -> Result<(), String> {
+    fn initial_supergraph(&self) -> Result<(), String> {
         let mut file = std::fs::File::create(self.file_name.clone()).map_err(|e| e.to_string())?;
-        let resp = self.fetcher.fetch_supergraph()?;
+        let resp = self
+            .fetcher
+            .fetch_supergraph()
+            .map_err(|err| err.to_string())?;
 
         match resp {
             Some(supergraph) => {
@@ -173,7 +180,7 @@ impl HiveRegistry {
         Ok(())
     }
 
-    fn poll(&mut self) {
+    fn poll(&self) {
         match self.fetcher.fetch_supergraph() {
             Ok(new_supergraph) => {
                 if let Some(new_supergraph) = new_supergraph {

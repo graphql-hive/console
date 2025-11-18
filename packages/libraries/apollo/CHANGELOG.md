@@ -1,5 +1,116 @@
 # @graphql-hive/apollo
 
+## 0.42.0
+
+### Minor Changes
+
+- [#7280](https://github.com/graphql-hive/console/pull/7280)
+  [`2cc443c`](https://github.com/graphql-hive/console/commit/2cc443c160e11313c905424b63a7c1362121d8d8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support circuit breaking for usage reporting.
+
+  Circuit breaking is a fault-tolerance pattern that prevents a system from repeatedly calling a
+  failing service. When errors or timeouts exceed a set threshold, the circuit “opens,” blocking
+  further requests until the service recovers.
+
+  This ensures that during a network issue or outage, the service using the Hive SDK remains healthy
+  and is not overwhelmed by failed usage reports or repeated retries.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    agent: {
+      circuitBreaker: {
+        /**
+         * Count of requests before starting evaluating.
+         * Default: 5
+         */
+        volumeThreshold: 5,
+        /**
+         * Percentage of requests failing before the circuit breaker kicks in.
+         * Default: 50
+         */
+        errorThresholdPercentage: 1,
+        /**
+         * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+         * Default: 30_000
+         */
+        resetTimeout: 10_000
+      }
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`2cc443c`](https://github.com/graphql-hive/console/commit/2cc443c160e11313c905424b63a7c1362121d8d8)]:
+  - @graphql-hive/core@0.15.0
+
+## 0.41.0
+
+### Minor Changes
+
+- [#7264](https://github.com/graphql-hive/console/pull/7264)
+  [`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce debug log level. HTTP retry log pollute
+  the error log. The retries are now logged to the debug level. In order to see debug logs set the
+  `debug` option to true.
+
+  ```ts
+  const hive = createHive({
+    debug: true
+  })
+  ```
+
+  If you are using a custom logger, make sure to provide a `debug` logging method implementation.
+
+  ```ts
+  const hive = createHive({
+    debug: true,
+    agent: {
+      logger: {
+        info() {},
+        error() {},
+        debug() {}
+      }
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)]:
+  - @graphql-hive/core@0.14.0
+
+## 0.40.2
+
+### Patch Changes
+
+- [#7253](https://github.com/graphql-hive/console/pull/7253)
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)
+  Thanks [@ardatan](https://github.com/ardatan)! - Send correct version of the client packages,
+  previously they were sending the version of `@graphql-hive/core` package.
+
+- Updated dependencies
+  [[`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee),
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)]:
+  - @graphql-hive/core@0.13.2
+
+## 0.40.1
+
+### Patch Changes
+
+- [#7248](https://github.com/graphql-hive/console/pull/7248)
+  [`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support project and personal access tokens (`hvp1/`
+  and `hvu1/`).
+
+- Updated dependencies
+  [[`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)]:
+  - @graphql-hive/core@0.13.1
+
 ## 0.40.0
 
 ### Minor Changes

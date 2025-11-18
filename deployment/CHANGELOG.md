@@ -1,5 +1,37 @@
 # hive
 
+## 8.8.0
+
+### Minor Changes
+
+- [#7252](https://github.com/graphql-hive/console/pull/7252)
+  [`717b5aa`](https://github.com/graphql-hive/console/commit/717b5aa6e839c0e73b85322908331768f0cdcc57)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support selecting resources when inviting a user
+  via email.
+
+- [#7252](https://github.com/graphql-hive/console/pull/7252)
+  [`717b5aa`](https://github.com/graphql-hive/console/commit/717b5aa6e839c0e73b85322908331768f0cdcc57)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support assigning default resources for new OIDC
+  members.
+
+## 8.7.1
+
+### Patch Changes
+
+- [#7203](https://github.com/graphql-hive/console/pull/7203)
+  [`a7fed52`](https://github.com/graphql-hive/console/commit/a7fed52e17c8e2f1c38e93523e302a27b4d30f1b)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - handle escaped single-quoted strings
+  in schema changes
+
+## 8.7.0
+
+### Minor Changes
+
+- [#7206](https://github.com/graphql-hive/console/pull/7206)
+  [`01963a0`](https://github.com/graphql-hive/console/commit/01963a089968f6d956c9dbc7d090dd6dc907c305)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce personal access tokens (PAT) and project
+  scoped access tokens.
+
 ## 8.6.0
 
 ### Minor Changes

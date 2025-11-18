@@ -18,15 +18,27 @@ import {
   directiveUsageArgumentDefinitionRemovedFromMeta,
   directiveUsageArgumentRemovedFromMeta,
   directiveUsageEnumAddedFromMeta,
+  directiveUsageEnumRemovedFromMeta,
   directiveUsageEnumValueAddedFromMeta,
+  directiveUsageEnumValueRemovedFromMeta,
+  directiveUsageFieldAddedFromMeta,
   directiveUsageFieldDefinitionAddedFromMeta,
+  directiveUsageFieldDefinitionRemovedFromMeta,
+  directiveUsageFieldRemovedFromMeta,
   directiveUsageInputFieldDefinitionAddedFromMeta,
+  directiveUsageInputFieldDefinitionRemovedFromMeta,
   directiveUsageInputObjectAddedFromMeta,
+  directiveUsageInputObjectRemovedFromMeta,
   directiveUsageInterfaceAddedFromMeta,
+  directiveUsageInterfaceRemovedFromMeta,
   directiveUsageObjectAddedFromMeta,
+  directiveUsageObjectRemovedFromMeta,
   directiveUsageScalarAddedFromMeta,
+  directiveUsageScalarRemovedFromMeta,
   directiveUsageSchemaAddedFromMeta,
+  directiveUsageSchemaRemovedFromMeta,
   directiveUsageUnionMemberAddedFromMeta,
+  directiveUsageUnionMemberRemovedFromMeta,
   enumValueAddedFromMeta,
   enumValueDeprecationReasonAddedFromMeta,
   enumValueDeprecationReasonChangedFromMeta,
@@ -137,6 +149,54 @@ export function schemaChangeFromSerializableChange(
       return directiveArgumentDefaultValueChangedFromMeta(change);
     case ChangeType.DirectiveArgumentTypeChanged:
       return directiveArgumentTypeChangedFromMeta(change);
+    case ChangeType.DirectiveUsageFieldAdded:
+      return directiveUsageFieldAddedFromMeta(change);
+    case ChangeType.DirectiveUsageFieldRemoved:
+      return directiveUsageFieldRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageEnumValueAdded:
+      return directiveUsageEnumValueAddedFromMeta(change);
+    case ChangeType.DirectiveUsageEnumValueRemoved:
+      return directiveUsageEnumValueRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageUnionMemberAdded:
+      return directiveUsageUnionMemberAddedFromMeta(change);
+    case ChangeType.DirectiveUsageUnionMemberRemoved:
+      return directiveUsageUnionMemberRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageEnumAdded:
+      return directiveUsageEnumAddedFromMeta(change);
+    case ChangeType.DirectiveUsageEnumRemoved:
+      return directiveUsageEnumRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageInputObjectAdded:
+      return directiveUsageInputObjectAddedFromMeta(change);
+    case ChangeType.DirectiveUsageInputObjectRemoved:
+      return directiveUsageInputObjectRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageScalarAdded:
+      return directiveUsageScalarAddedFromMeta(change);
+    case ChangeType.DirectiveUsageScalarRemoved:
+      return directiveUsageScalarRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageObjectAdded:
+      return directiveUsageObjectAddedFromMeta(change);
+    case ChangeType.DirectiveUsageObjectRemoved:
+      return directiveUsageObjectRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageInterfaceAdded:
+      return directiveUsageInterfaceAddedFromMeta(change);
+    case ChangeType.DirectiveUsageInterfaceRemoved:
+      return directiveUsageInterfaceRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentDefinitionAdded:
+      return directiveUsageArgumentDefinitionAddedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentDefinitionRemoved:
+      return directiveUsageArgumentDefinitionRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageSchemaAdded:
+      return directiveUsageSchemaAddedFromMeta(change);
+    case ChangeType.DirectiveUsageSchemaRemoved:
+      return directiveUsageSchemaRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageFieldDefinitionAdded:
+      return directiveUsageFieldDefinitionAddedFromMeta(change);
+    case ChangeType.DirectiveUsageFieldDefinitionRemoved:
+      return directiveUsageFieldDefinitionRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageInputFieldDefinitionAdded:
+      return directiveUsageInputFieldDefinitionAddedFromMeta(change);
+    case ChangeType.DirectiveUsageInputFieldDefinitionRemoved:
+      return directiveUsageInputFieldDefinitionRemovedFromMeta(change);
     case ChangeType.EnumValueRemoved:
       return enumValueRemovedFromMeta(change);
     case ChangeType.EnumValueAdded:
@@ -246,8 +306,7 @@ export function schemaChangeFromSerializableChange(
     case 'REGISTRY_SERVICE_URL_CHANGED':
       return buildRegistryServiceURLFromMeta(change);
     default:
-      // @todo unhandled change
-      return null;
+      throw new Error(`Unknown change type: ${(change as any).type}`);
   }
 }
 

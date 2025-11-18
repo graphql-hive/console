@@ -1,5 +1,55 @@
 # hive-console-sdk-rs
 
+## 0.2.0
+
+### Minor Changes
+
+- [#7246](https://github.com/graphql-hive/console/pull/7246)
+  [`cc6cd28`](https://github.com/graphql-hive/console/commit/cc6cd28eb52d774683c088ce456812d3541d977d)
+  Thanks [@ardatan](https://github.com/ardatan)! - Breaking;
+
+  - `SupergraphFetcher` now has two different modes: async and sync. You can choose between
+    `SupergraphFetcherAsyncClient` and `SupergraphFetcherSyncClient` based on your needs. See the
+    examples at the bottom.
+  - `SupergraphFetcher` now has a new `retry_count` parameter to specify how many times to retry
+    fetching the supergraph in case of failures.
+  - `PersistedDocumentsManager` new needs `user_agent` parameter to be sent to Hive Console when
+    fetching persisted queries.
+  - `UsageAgent::new` is now `UsageAgent::try_new` and it returns a `Result` with `Arc`, so you can
+    freely clone it across threads. This change was made to handle potential errors during the
+    creation of the HTTP client. Make sure to handle the `Result` when creating a `UsageAgent`.
+
+  ```rust
+  // Sync Mode
+  let fetcher = SupergraphFetcher::try_new_sync(/* params */)
+  .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
+
+  // Use the fetcher to fetch the supergraph (Sync)
+  let supergraph = fetcher
+      .fetch_supergraph()
+      .map_err(|e| anyhow!("Failed to fetch supergraph: {}", e))?;
+
+  // Async Mode
+
+  let fetcher = SupergraphFetcher::try_new_async(/* params */)
+  .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
+
+  // Use the fetcher to fetch the supergraph (Async)
+  let supergraph = fetcher
+      .fetch_supergraph()
+      .await
+      .map_err(|e| anyhow!("Failed to fetch supergraph: {}", e))?;
+  ```
+
+## 0.1.1
+
+### Patch Changes
+
+- [#7248](https://github.com/graphql-hive/console/pull/7248)
+  [`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support project and personal access tokens (`hvp1/`
+  and `hvu1/`).
+
 ## 0.1.0
 
 ### Minor Changes

@@ -31,6 +31,7 @@ export function createHiveTestingLogger() {
   return {
     error: (message: unknown) => fn('ERR', message),
     info: (message: unknown) => fn('INF', message),
+    debug: (message: unknown) => fn('DBG', message),
     getLogs() {
       return getLogLines(fn.mock.calls).join('\n');
     },

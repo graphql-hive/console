@@ -49,14 +49,14 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-Start your Hive Gatewayr and send a request for priming the cache (register the operation).
+Start your Hive Gateway and send a request for priming the cache (register the operation).
 
 ```bash filename="Execute GraphQL Operation to prime the cache"
 curl -X POST -H 'Content-Type: application/json' http://localhost:4000/graphql \
   -d '{"query":"{__typename}","extensions":{"persistedQuery":{"version":1,"sha256Hash":"ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"}}}'
 ```
 
-Then afterwards we can send the same payload again, but this time omit the `query` field.
+Afterwards, we can send the same payload again, but this time omit the `query` field.
 
 ```bash filename="Execute GraphQL Operation without query payload"
 curl -X POST -H 'Content-Type: application/json' http://localhost:4000/graphql \
@@ -183,6 +183,6 @@ export const gatewayConfig = defineConfig({
 Learn how to configure APQ in your subgraph servers using the following resources:
 
 - [APQ with GraphQL Yoga subgraph](https://the-guild.dev/graphql/yoga-server/docs/features/automatic-persisted-queries)
-- [APQ with Apollo Server subgraph](https://www.apollographql.com/docs/apollo-server/v2/performance/apq)
+- [APQ with Apollo Server subgraph](https://www.apollographql.com/docs/apollo-server/performance/apq)
 
 </Callout>

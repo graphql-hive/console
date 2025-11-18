@@ -165,11 +165,11 @@ test('should send data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] [hive][usage][agent] Disposing
+    [DBG] [hive][usage][agent] Sending report (queue 1)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] [hive][usage][agent] Report sent!
   `);
 
   // Map
@@ -275,11 +275,11 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] [hive][usage][agent] Disposing
+    [DBG] [hive][usage][agent] Sending report (queue 1)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] [hive][usage][agent] Report sent!
   `);
 
   // Map
@@ -366,11 +366,11 @@ test('should not leak the exception', { retry: 3 }, async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
-    [ERR] [hive][usage] Error: getaddrinfo ENOTFOUND 404.localhost.noop
-    [ERR] [hive][usage] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
-    [INF] [hive][usage] Disposing
+    [DBG] [hive][usage][agent] Sending report (queue 1)
+    [DBG] [hive][usage][agent] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [ERR] [hive][usage][agent] Error: getaddrinfo ENOTFOUND 404.localhost.noop
+    [DBG] [hive][usage][agent] POST http://404.localhost.noop (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). getaddrinfo ENOTFOUND 404.localhost.noop
+    [DBG] [hive][usage][agent] Disposing
   `);
 });
 
@@ -536,11 +536,11 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] [hive][usage][agent] Disposing
+    [DBG] [hive][usage][agent] Sending report (queue 2)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] [hive][usage][agent] Report sent!
   `);
 
   // Map
@@ -640,11 +640,11 @@ test('should not send excluded operation name data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Disposing
-    [INF] [hive][usage] Sending report (queue 2)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][usage] Report sent!
+    [DBG] [hive][usage][agent] Disposing
+    [DBG] [hive][usage][agent] Sending report (queue 2)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] [hive][usage][agent] Report sent!
   `);
 
   // Map
@@ -741,16 +741,108 @@ test('retry on non-200', async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][usage] Sending report (queue 1)
-    [INF] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
-    [ERR] [hive][usage] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): No no no
-    [INF] [hive][usage] Disposing
+    [DBG] [hive][usage][agent] Sending report (queue 1)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/2)
+    [DBG] [hive][usage][agent] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed with status 500 (666ms): No no no
+    [DBG] [hive][usage][agent] Disposing
   `);
 });
 
-test('constructs URL with usage.target', async ({ expect }) => {
+test('constructs URL with usage.target (hvo1/)', async ({ expect }) => {
   const logger = createHiveTestingLogger();
   const token = 'hvo1/brrrrt';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  await hive.dispose();
+});
+
+test('constructs URL with usage.target (hvp1/)', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvp1/brrrrt';
+  const dUrl = Promise.withResolvers<string>();
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch(url) {
+        dUrl.resolve(url.toString());
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  const url = await dUrl.promise;
+  expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
+  await hive.dispose();
+});
+
+test('constructs URL with usage.target (hvu1/)', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvu1/brrrrt';
   const dUrl = Promise.withResolvers<string>();
 
   const hive = createHive({

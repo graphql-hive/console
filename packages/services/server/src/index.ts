@@ -498,6 +498,7 @@ export async function main() {
       storage,
       crypto,
       logger: server.log,
+      redis,
       broadcastLog(id, message) {
         pubSub.publish('oidcIntegrationLogs', id, {
           timestamp: new Date().toISOString(),
@@ -568,6 +569,7 @@ export async function main() {
         required_error: 'Slug is required',
       }),
     });
+
     server.post('/auth-api/oidc-id-lookup', async (req, res) => {
       const inputResult = oidcIdLookupSchema.safeParse(req.body);
 
@@ -603,6 +605,15 @@ export async function main() {
       authN,
       targetsBySlugCache: registry.injector.get(TargetsBySlugCache),
       targetsByIdCache: registry.injector.get(TargetsByIdCache),
+    });
+
+    server.post('/cache/organization-access-token-cache/delete/:id', async (req, res) => {
+      void res.status(200).send({
+        deleted: await registry.injector
+          .get(OrganizationAccessTokensCache)
+          .purge({ id: (req.params as any).id }),
+      });
+      return;
     });
 
     if (env.cdn.providers.api !== null) {

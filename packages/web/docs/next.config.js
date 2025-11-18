@@ -17,6 +17,11 @@ let config = withGuildDocs({
   },
   redirects: async () => [
     {
+      source: '/docs/access-tokens',
+      destination: '/docs/schema-registry/management/access-tokens',
+      permanent: true,
+    },
+    {
       source: '/docs/get-started/organizations',
       destination: '/docs/management/organizations',
       permanent: true,
@@ -311,6 +316,11 @@ let config = withGuildDocs({
     {
       source: '/docs/self-hosting/:path*',
       destination: '/docs/schema-registry/self-hosting/:path*',
+      permanent: true,
+    },
+    {
+      source: '/docs/gateway/other-features/router-runtime',
+      destination: '/docs/gateway/other-features/rust-query-planner',
       permanent: true,
     },
   ],

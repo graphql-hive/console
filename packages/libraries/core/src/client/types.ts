@@ -3,6 +3,7 @@ import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import type { AgentOptions } from './agent.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
 import type { SchemaReporter } from './reporting.js';
+import { HiveLogger } from './utils.js';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -70,6 +71,7 @@ export interface ClientInfo {
 export interface Logger {
   info(msg: string): void;
   error(error: any, ...data: any[]): void;
+  debug?(msg: string): void;
 }
 
 export interface HiveUsagePluginOptions {
@@ -237,6 +239,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      *
      * **Note:** The new access tokens do not support printing the token info. For every access token starting with `hvo1/`
      * no information will be printed.
+     *
      * @deprecated This option will be removed in the future.
      */
     printTokenInfo?: boolean;
@@ -257,6 +260,10 @@ export type HivePluginOptions = OptionalWhenFalse<
   'token'
 >;
 
+export type HiveInternalPluginOptions = HivePluginOptions & {
+  logger: HiveLogger;
+};
+
 export type Maybe<T> = null | undefined | T;
 
 export interface GraphQLErrorsResult {
@@ -270,6 +277,8 @@ export interface SchemaFetcherOptions {
   endpoint: string;
   key: string;
   logger?: Logger;
+  name?: string;
+  version?: string;
 }
 
 export interface ServicesFetcherOptions {

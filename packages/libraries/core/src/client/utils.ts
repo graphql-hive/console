@@ -178,19 +178,29 @@ export function joinUrl(url: string, subdirectory: string) {
 
 const hiveSymbol = Symbol('hive-logger');
 
-type HiveLogger = {
+export type HiveLogger = {
   info(message: string): void;
+  debug(message: string): void;
   error(error: any, ...data: any[]): void;
   [hiveSymbol]: {
     path: string;
+    debug: boolean;
     logger: Logger;
   };
 };
 
-export function createHiveLogger(baseLogger: Logger, prefix: string): HiveLogger {
+function printPath(path: string) {
+  if (path.length) {
+    return path + ' ';
+  }
+  return path;
+}
+
+export function createHiveLogger(baseLogger: Logger, prefix: string, debug = true): HiveLogger {
   const context: HiveLogger[typeof hiveSymbol] = {
     path: '',
     logger: baseLogger,
+    debug,
     // @ts-expect-error internal stuff
     ...baseLogger?.[hiveSymbol],
   };
@@ -201,16 +211,41 @@ export function createHiveLogger(baseLogger: Logger, prefix: string): HiveLogger
   return {
     [hiveSymbol]: context,
     info: (message: string) => {
-      logger.info(`${path} ${message}`);
+      logger.info(printPath(path) + message);
     },
     error: (error: any, ...data: any[]) => {
       if (error.stack) {
+        const pth = printPath(path);
         for (const stack of error.stack.split('\n')) {
-          logger.error(`${path} ${stack}`);
+          logger.error(pth + stack);
         }
       } else {
-        logger.error(`${path} ${String(error)}`, ...data);
+        logger.error(printPath(path) + String(error), ...data);
       }
     },
+    debug: (message: string) => {
+      if (!context.debug) {
+        return;
+      }
+
+      const msg = printPath(path) + message;
+      if (!logger.debug) {
+        logger.info(msg);
+        return;
+      }
+      logger.debug(msg);
+    },
   };
+}
+
+export function isLegacyAccessToken(accessToken: string): boolean {
+  if (
+    !accessToken.startsWith('hvo1/') &&
+    !accessToken.startsWith('hvp1/') &&
+    !accessToken.startsWith('hvu1/')
+  ) {
+    return true;
+  }
+
+  return false;
 }

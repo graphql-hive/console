@@ -5,12 +5,20 @@ export const deleteOrganizationAccessToken: NonNullable<
   MutationResolvers['deleteOrganizationAccessToken']
 > = async (_parent, args, { injector }) => {
   const result = await injector.get(OrganizationAccessTokens).delete({
-    organizationAccessTokenId: args.input.organizationAccessToken.byId,
+    accessTokenId: args.input.organizationAccessToken.byId,
+    onlyOrganizationScoped: true,
   });
+
+  if (result.type === 'error') {
+    return {
+      error: {
+        message: result.message,
+      },
+    };
+  }
 
   return {
     ok: {
-      __typename: 'DeleteOrganizationAccessTokenResultOk',
       deletedOrganizationAccessTokenId: result.organizationAccessTokenId,
     },
   };

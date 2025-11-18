@@ -17,13 +17,14 @@ import type {
   ClientInfo,
   CollectUsageCallback,
   GraphQLErrorsResult,
-  HivePluginOptions,
+  HiveInternalPluginOptions,
   HiveUsagePluginOptions,
 } from './types.js';
 import {
   cache,
   cacheDocumentKey,
   createHiveLogger,
+  isLegacyAccessToken,
   logIf,
   measureDuration,
   memo,
@@ -60,7 +61,7 @@ const noopUsageCollector: UsageCollector = {
   collectSubscription() {},
 };
 
-export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
+export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageCollector {
   if (!pluginOptions.usage || pluginOptions.enabled === false) {
     return noopUsageCollector;
   }
@@ -73,20 +74,20 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
   const options =
     typeof pluginOptions.usage === 'boolean' ? ({} as HiveUsagePluginOptions) : pluginOptions.usage;
   const selfHostingOptions = pluginOptions.selfHosting;
-  const logger = createHiveLogger(pluginOptions.agent?.logger ?? console, '[hive][usage]');
+  const logger = createHiveLogger(pluginOptions.logger, '[usage]');
   const collector = memo(createCollector, arg => arg.schema);
   const excludeSet = new Set(options.exclude ?? []);
 
   /** Access tokens using the `hvo1/` require a target. */
-  if (!options.target && pluginOptions.token.startsWith('hvo1/')) {
+  if (!options.target && !isLegacyAccessToken(pluginOptions.token)) {
     logger.error(
-      "Using an organization access token (starting with 'hvo1/') requires providing the 'target' option." +
+      "Your access token requires providing the 'target' option." +
         '\nUsage reporting is disabled.',
     );
     return noopUsageCollector;
   }
 
-  if (options.target && !pluginOptions.token.startsWith('hvo1/')) {
+  if (options.target && isLegacyAccessToken(pluginOptions.token)) {
     logger.error(
       "Using the 'target' option requires using an organization access token (starting with 'hvo1/')." +
         '\nUsage reporting is disabled.',
@@ -163,8 +164,8 @@ export function createUsage(pluginOptions: HivePluginOptions): UsageCollector {
       },
       headers() {
         return {
-          'graphql-client-name': 'Hive Client',
-          'graphql-client-version': version,
+          'graphql-client-name': pluginOptions.agent?.name ?? 'Hive Client',
+          'graphql-client-version': pluginOptions.agent?.version ?? version,
           'x-usage-api-version': '2',
         };
       },

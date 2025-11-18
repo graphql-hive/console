@@ -520,7 +520,8 @@ export class OrganizationManager {
   async inviteByEmail(input: {
     organization: GraphQLSchema.OrganizationReferenceInput;
     email: string;
-    role?: string | null;
+    role: string | null;
+    resources: GraphQLSchema.ResourceAssignmentInput | null;
   }) {
     await this.inMemoryRateLimiter.check(
       'inviteToOrganizationByEmail',
@@ -604,11 +605,19 @@ export class OrganizationManager {
       email,
     });
 
+    const resourceAssignments = input.resources
+      ? await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+          organization.id,
+          input.resources,
+        )
+      : null;
+
     // create an invitation code (with 7d TTL)
     const invitation = await this.storage.createOrganizationInvitation({
       organizationId: organization.id,
       email,
       roleId: role.id,
+      resourceAssignments,
     });
 
     await Promise.all([
