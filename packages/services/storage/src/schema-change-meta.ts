@@ -13,6 +13,8 @@ import {
   directiveLocationAddedFromMeta,
   directiveLocationRemovedFromMeta,
   directiveRemovedFromMeta,
+  directiveRepeatableAddedFromMeta,
+  directiveRepeatableRemovedFromMeta,
   directiveUsageArgumentAddedFromMeta,
   directiveUsageArgumentDefinitionAddedFromMeta,
   directiveUsageArgumentDefinitionRemovedFromMeta,
@@ -121,7 +123,7 @@ export type RegistryServiceUrlChangeChange = RegistryServiceUrlChangeSerializabl
  */
 export function schemaChangeFromSerializableChange(
   change: SerializableChange,
-): Change | RegistryServiceUrlChangeChange | null {
+): Change | RegistryServiceUrlChangeChange {
   switch (change.type) {
     case ChangeType.FieldArgumentDescriptionChanged:
       return fieldArgumentDescriptionChangedFromMeta(change);
@@ -197,6 +199,10 @@ export function schemaChangeFromSerializableChange(
       return directiveUsageInputFieldDefinitionAddedFromMeta(change);
     case ChangeType.DirectiveUsageInputFieldDefinitionRemoved:
       return directiveUsageInputFieldDefinitionRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentAdded:
+      return directiveUsageArgumentAddedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentRemoved:
+      return directiveUsageArgumentRemovedFromMeta(change);
     case ChangeType.EnumValueRemoved:
       return enumValueRemovedFromMeta(change);
     case ChangeType.EnumValueAdded:
@@ -275,34 +281,10 @@ export function schemaChangeFromSerializableChange(
       return unionMemberRemovedFromMeta(change);
     case ChangeType.UnionMemberAdded:
       return buildUnionMemberAddedMessageFromMeta(change);
-    case ChangeType.DirectiveUsageArgumentDefinitionAdded:
-      return directiveUsageArgumentDefinitionAddedFromMeta(change);
-    case ChangeType.DirectiveUsageArgumentDefinitionRemoved:
-      return directiveUsageArgumentDefinitionRemovedFromMeta(change);
-    case ChangeType.DirectiveUsageInputFieldDefinitionAdded:
-      return directiveUsageInputFieldDefinitionAddedFromMeta(change);
-    case ChangeType.DirectiveUsageInputObjectAdded:
-      return directiveUsageInputObjectAddedFromMeta(change);
-    case ChangeType.DirectiveUsageInterfaceAdded:
-      return directiveUsageInterfaceAddedFromMeta(change);
-    case ChangeType.DirectiveUsageObjectAdded:
-      return directiveUsageObjectAddedFromMeta(change);
-    case ChangeType.DirectiveUsageEnumAdded:
-      return directiveUsageEnumAddedFromMeta(change);
-    case ChangeType.DirectiveUsageFieldDefinitionAdded:
-      return directiveUsageFieldDefinitionAddedFromMeta(change);
-    case ChangeType.DirectiveUsageUnionMemberAdded:
-      return directiveUsageUnionMemberAddedFromMeta(change);
-    case ChangeType.DirectiveUsageEnumValueAdded:
-      return directiveUsageEnumValueAddedFromMeta(change);
-    case ChangeType.DirectiveUsageSchemaAdded:
-      return directiveUsageSchemaAddedFromMeta(change);
-    case ChangeType.DirectiveUsageScalarAdded:
-      return directiveUsageScalarAddedFromMeta(change);
-    case ChangeType.DirectiveUsageArgumentAdded:
-      return directiveUsageArgumentAddedFromMeta(change);
-    case ChangeType.DirectiveUsageArgumentRemoved:
-      return directiveUsageArgumentRemovedFromMeta(change);
+    case ChangeType.DirectiveRepeatableAdded:
+      return directiveRepeatableAddedFromMeta(change);
+    case ChangeType.DirectiveRepeatableRemoved:
+      return directiveRepeatableRemovedFromMeta(change);
     case 'REGISTRY_SERVICE_URL_CHANGED':
       return buildRegistryServiceURLFromMeta(change);
     default:
