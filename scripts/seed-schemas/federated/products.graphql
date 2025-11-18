@@ -75,17 +75,21 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
 }
 
 """
-Available shipping classes for products
+Available shipping classes with delivery speeds
 """
-enum ShippingClass {
+enum ShippingClass @shareable {
   """
-  Standard ground shipping
+  Standard ground shipping (5-7 business days)
   """
   STANDARD
   """
-  Express overnight shipping
+  Express shipping (2-3 business days)
   """
   EXPRESS
+  """
+  Overnight shipping (next business day)
+  """
+  OVERNIGHT
 }
 
 """
@@ -156,7 +160,7 @@ type Query {
   """
   Get all products in the catalog
   """
-  allProducts: [ProductItf]
+  allProducts: [ProductItf!]!
   """
   Get a specific product by its UPC
   """
@@ -164,7 +168,7 @@ type Query {
   """
   Get the top N products (default: 5)
   """
-  topProducts(first: Int = 5): [ProductItf]
+  topProducts(first: Int = 5): [ProductItf!]!
   """
   Search and filter products based on criteria
   """
@@ -172,9 +176,9 @@ type Query {
   """
   Get products filtered by category and price range
   """
-  products(category: String, minPrice: Float, maxPrice: Float): [ProductItf]
+  products(category: String, minPrice: Float, maxPrice: Float): [ProductItf!]!
   """
   Get products filtered by physical dimensions and shipping class
   """
-  productsByDimensions(minWeight: Float, maxWeight: Float, size: String, shippingClass: ShippingClass): [ProductItf]
+  productsByDimensions(minWeight: Float, maxWeight: Float, size: String, shippingClass: ShippingClass): [ProductItf!]!
 }

@@ -53,7 +53,7 @@ type DeliveryEstimates {
 """
 Available shipping classes with delivery speeds
 """
-enum ShippingClass {
+enum ShippingClass @shareable {
   """
   Standard ground shipping (5-7 business days)
   """
