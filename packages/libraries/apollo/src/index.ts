@@ -2,12 +2,14 @@ import { GraphQLError, type DocumentNode } from 'graphql';
 import type { ApolloServerPlugin, HTTPGraphQLRequest } from '@apollo/server';
 import {
   autoDisposeSymbol,
+  CDNArtifactFetcherCircuitBreakerConfiguration,
+  createCDNArtifactFetcher,
   createHive as createHiveClient,
-  createSupergraphSDLFetcher,
   HiveClient,
   HivePluginOptions,
   isHiveClient,
-  SupergraphSDLFetcherOptions,
+  joinUrl,
+  Logger,
 } from '@graphql-hive/core';
 import { version } from './version.js';
 
@@ -17,14 +19,62 @@ export {
   createServicesFetcher,
   createSupergraphSDLFetcher,
 } from '@graphql-hive/core';
+
+/** @deprecated Use {CreateSupergraphManagerArgs} instead */
 export type { SupergraphSDLFetcherOptions } from '@graphql-hive/core';
 
-export function createSupergraphManager({
-  pollIntervalInMs,
-  ...superGraphFetcherOptions
-}: { pollIntervalInMs?: number } & SupergraphSDLFetcherOptions) {
-  pollIntervalInMs = pollIntervalInMs ?? 30_000;
-  const fetchSupergraph = createSupergraphSDLFetcher(superGraphFetcherOptions);
+/**
+ * Configuration for {createSupergraphManager}.
+ */
+export type CreateSupergraphManagerArgs = {
+  /**
+   * The artifact endpoint to poll.
+   * E.g. `https://cdn.graphql-hive.com/<uuid>/supergraph`
+   */
+  endpoint: string;
+  /**
+   * The CDN access key for fetching artifact.
+   */
+  key: string;
+  logger?: Logger;
+  /**
+   * The supergraph poll interval in milliseconds
+   * Default: 30_000
+   */
+  pollIntervalInMs?: number;
+  /** Circuit breaker configuration override. */
+  circuitBreaker?: CDNArtifactFetcherCircuitBreakerConfiguration;
+  fetchImplementation?: typeof fetch;
+  /**
+   * Client name override
+   * Default: `@graphql-hive/apollo`
+   */
+  name?: string;
+  /**
+   * Client version override
+   * Default: currents package version
+   */
+  version?: string;
+};
+
+export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
+  const pollIntervalInMs = args.pollIntervalInMs ?? 30_000;
+  const endpoint = args.endpoint.endsWith('/supergraph')
+    ? args.endpoint
+    : joinUrl(args.endpoint, 'supergraph');
+
+  const fetchSupergraph = createCDNArtifactFetcher({
+    endpoint,
+    accessKey: args.key,
+    client: {
+      name: args.name ?? '@graphql-hive/apollo',
+      version: args.version ?? version,
+    },
+    logger: args.logger,
+    fetch: args.fetchImplementation,
+    circuitBreaker: args.circuitBreaker,
+  });
+
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   return {
@@ -38,8 +88,8 @@ export function createSupergraphManager({
         timer = setTimeout(async () => {
           try {
             const result = await fetchSupergraph();
-            if (result.supergraphSdl) {
-              hooks.update?.(result.supergraphSdl);
+            if (result.contents) {
+              hooks.update?.(result.contents);
             }
           } catch (error) {
             console.error(
@@ -53,7 +103,7 @@ export function createSupergraphManager({
       poll();
 
       return {
-        supergraphSdl: initialResult.supergraphSdl,
+        supergraphSdl: initialResult.contents,
         cleanup: async () => {
           if (timer) {
             clearTimeout(timer);
