@@ -1,32 +1,12 @@
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
+import {
+  CircuitBreakerConfiguration,
+  defaultCircuitBreakerConfiguration,
+} from './circuit-breaker.js';
 import { http } from './http-client.js';
 import type { Logger } from './types.js';
 import { createHash, createHiveLogger } from './utils.js';
-
-export type CDNArtifactFetcherCircuitBreakerConfiguration = {
-  /**
-   * Percentage after what the circuit breaker should kick in.
-   * Default: 50
-   */
-  errorThresholdPercentage: number;
-  /**
-   * Count of requests before starting evaluating.
-   * Default: 5
-   */
-  volumeThreshold: number;
-  /**
-   * After what time the circuit breaker is attempting to retry sending requests in milliseconds
-   * Default: 30_000
-   */
-  resetTimeout: number;
-};
-
-const defaultCircuitBreakerConfiguration: CDNArtifactFetcherCircuitBreakerConfiguration = {
-  errorThresholdPercentage: 50,
-  volumeThreshold: 10,
-  resetTimeout: 30_000,
-};
 
 type CreateCDNArtifactFetcherArgs = {
   endpoint: string;
@@ -36,7 +16,7 @@ type CreateCDNArtifactFetcherArgs = {
     name: string;
     version: string;
   };
-  circuitBreaker?: CDNArtifactFetcherCircuitBreakerConfiguration;
+  circuitBreaker?: CircuitBreakerConfiguration;
   logger?: Logger;
   fetch?: typeof fetch;
 };

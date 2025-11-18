@@ -2,7 +2,6 @@ import { GraphQLError, type DocumentNode } from 'graphql';
 import type { ApolloServerPlugin, HTTPGraphQLRequest } from '@apollo/server';
 import {
   autoDisposeSymbol,
-  CDNArtifactFetcherCircuitBreakerConfiguration,
   createCDNArtifactFetcher,
   createHive as createHiveClient,
   HiveClient,
@@ -10,6 +9,7 @@ import {
   isHiveClient,
   joinUrl,
   Logger,
+  type CDNArtifactFetcherCircuitBreakerConfiguration,
 } from '@graphql-hive/core';
 import { version } from './version.js';
 
