@@ -330,19 +330,22 @@ The configuration can be customized.
 
 ###### `maxRetries`
 
-- Type: `boolean`
-- Default: `5`
+- Type: `number`
+- Default: `3`
 
 Configure the maximum amount of retries per usage reporting batch before dropping the reporting
 attempts.
 
 ###### `maxSize`
 
+- Type: `number`
+- Default: `25`
+
 The maximum batch size of usage reports before sending the batch.
 
 ###### `sendInterval`
 
-- Type: `boolean`
+- Type: `number`
 - Default: `10_000`
 
 The amount of time after which a pending usage reporting batch should be sent in case before the
@@ -375,7 +378,7 @@ Console object to use for logging info, errors and debug information.
     errorThresholdPercentage: 50,
     /**
      * Count of requests before starting evaluating.
-     * Default: 5
+     * Default: 10
      */
     volumeThreshold: 10,
     /**
