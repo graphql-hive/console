@@ -210,7 +210,7 @@ export const backendConfig = (requirements: {
   };
 };
 
-function extractIPFromUserContext(userContext: unknown) {
+function extractIPFromUserContext(userContext: unknown): string {
   return (
     (userContext as any)._default.request.getHeaderValue('CF-Connecting-IP') ||
     (userContext as any)._default.request.original.ip
