@@ -5,7 +5,7 @@ import { SchemaDiff } from '@/components/target/proposals/schema-diff/schema-dif
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Change } from '@graphql-inspector/core';
-import { patchSchema } from '@graphql-inspector/patch';
+import { errors, patchSchema } from '@graphql-inspector/patch';
 
 // @todo compose the changes subgraphs instead of modifying the supergraph...
 const ProposalSupergraphChangesQuery = graphql(/* GraphQL  */ `
@@ -99,27 +99,26 @@ function SupergraphDiff(props: {
   }
   try {
     const before = buildSchema(props.baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
-    const changes =
-      props.changes
-        ?.map((change): Change<any> | null => {
-          const c = useFragment(ProposalOverview_ChangeFragment, change);
-          if (c) {
-            return {
-              criticality: {
-                // isSafeBasedOnUsage: ,
-                // reason: ,
-                level: c.severityLevel as any,
-              },
-              message: c.message,
-              meta: c.meta,
-              type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
-              path: c.path?.join('.'),
-            };
-          }
-          return null;
-        })
-        .filter(c => !!c) ?? [];
-    const after = patchSchema(before, changes, { throwOnError: false });
+
+    const changes: Change<any>[] = [];
+    for (const change of props.changes ?? []) {
+      // @todo calling inside a loop can cause errors... fix.
+      const c = useFragment(ProposalOverview_ChangeFragment, change);
+      if (c) {
+        changes.push({
+          criticality: {
+            // isSafeBasedOnUsage: ,
+            // reason: ,
+            level: c.severityLevel as any,
+          },
+          message: c.message,
+          meta: c.meta,
+          type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
+          path: c.path?.join('.'),
+        });
+      }
+    }
+    const after = patchSchema(before, changes, { onError: errors.looseErrorHandler });
     return <SchemaDiff before={before} after={after} annotations={() => null} />;
   } catch (e: unknown) {
     return (

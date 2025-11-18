@@ -438,8 +438,8 @@ importers:
         specifier: workspace:*
         version: link:../core/dist
       '@graphql-inspector/core':
-        specifier: 7.0.0
-        version: 7.0.0(graphql@16.9.0)
+        specifier: 7.0.3
+        version: 7.0.3(graphql@16.9.0)
       '@graphql-tools/code-file-loader':
         specifier: ~8.1.0
         version: 8.1.0(graphql@16.9.0)
@@ -740,8 +740,8 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       '@graphql-inspector/core':
-        specifier: 7.0.0
-        version: 7.0.0(graphql@16.9.0)
+        specifier: 7.0.3
+        version: 7.0.3(graphql@16.9.0)
       '@graphql-tools/merge':
         specifier: 9.1.1
         version: 9.1.1(graphql@16.9.0)
@@ -1450,8 +1450,8 @@ importers:
   packages/services/storage:
     devDependencies:
       '@graphql-inspector/core':
-        specifier: 7.0.0
-        version: 7.0.0(graphql@16.11.0)
+        specifier: 7.0.3
+        version: 7.0.3(graphql@16.11.0)
       '@hive/service-common':
         specifier: workspace:*
         version: link:../service-common
@@ -4090,6 +4090,12 @@ packages:
 
   '@graphql-inspector/core@7.0.0':
     resolution: {integrity: sha512-ZEKbKqJUqkWlJhab1ywQ2U0hk225lF2nYenZxPCaTEmKx1ovHucgh/3kq+b6bA5aW2S3tXlpuIGcctymCtZ2/g==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+
+  '@graphql-inspector/core@7.0.3':
+    resolution: {integrity: sha512-85WkFZkC2GjGLTf+PB6L347zJhQLZ7FH5OoMz6EXoacFjd6iQ5Xf/Qdz3Vu1tjLY70ZKj7jddI4GEPompNSkJg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -20502,14 +20508,21 @@ snapshots:
       graphql: 16.9.0
       tslib: 2.6.2
 
-  '@graphql-inspector/core@7.0.0(graphql@16.11.0)':
+  '@graphql-inspector/core@7.0.0(graphql@16.9.0)':
+    dependencies:
+      dependency-graph: 1.0.0
+      graphql: 16.9.0
+      object-inspect: 1.13.2
+      tslib: 2.6.2
+
+  '@graphql-inspector/core@7.0.3(graphql@16.11.0)':
     dependencies:
       dependency-graph: 1.0.0
       graphql: 16.11.0
       object-inspect: 1.13.2
       tslib: 2.6.2
 
-  '@graphql-inspector/core@7.0.0(graphql@16.9.0)':
+  '@graphql-inspector/core@7.0.3(graphql@16.9.0)':
     dependencies:
       dependency-graph: 1.0.0
       graphql: 16.9.0

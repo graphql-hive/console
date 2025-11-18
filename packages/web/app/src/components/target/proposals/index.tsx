@@ -457,8 +457,8 @@ export function Proposal(props: {
    *
    * Odds are there will never be so many reviews/comments that this is even a problem.
    */
+  const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
   const [annotations, reviewssByCoordinate] = useMemo(() => {
-    const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
     const serviceReviews =
       reviewsConnection?.edges?.filter(edge => {
         return edge.node.serviceName === props.serviceName;

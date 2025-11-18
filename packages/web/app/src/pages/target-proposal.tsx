@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Change } from '@graphql-inspector/core';
-import { patchSchema } from '@graphql-inspector/patch';
+import { errors, patchSchema } from '@graphql-inspector/patch';
 import { NoopError } from '@graphql-inspector/patch/errors';
 import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
@@ -211,14 +211,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           const ignoredChanges: Array<{ change: Change; error: Error }> = [];
           const afterSchema = beforeSchema
             ? patchSchema(beforeSchema, allChanges, {
-                throwOnError: false,
                 onError(error, change) {
                   if (error instanceof NoopError) {
                     ignoredChanges.push({ change, error });
-                    return false;
                   }
                   conflictingChanges.push({ change, error });
-                  return true;
+                  return errors.looseErrorHandler(error, change);
                 },
               })
             : null;
