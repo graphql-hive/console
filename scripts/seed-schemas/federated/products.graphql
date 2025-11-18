@@ -29,7 +29,33 @@ interface SkuItf {
 }
 
 """
-Product entity with full product information
+# Product Entity
+
+The **Product** type represents physical or _digital items_ available in the catalog. Products are uniquely identified and federated across multiple subgraphs.
+
+## Key Capabilities
+
+### Unique Identification
+- Universal Product Code (`upc`) - primary key
+- SKU + package combination - composite key
+- Learn more about [federation keys](https://the-guild.dev/graphql/hive/federation)
+
+### Product Data
+1. Descriptive metadata (name, package)
+2. Physical specifications (dimensions, weight)
+3. Business metrics (reviews, creator info)
+
+> **Access Control**: The `hidden` field is marked `@inaccessible` and won't appear in the public schema.
+
+---
+
+**Query Pattern**: Fetch via `product(upc: String!)`
+**Variations**: Products can have multiple `variations` for sizes/colors
+**Reviews**: Aggregated score available in `reviewsScore` field
+
+![Product Schema Diagram](https://the-guild.dev/graphql/hive/_next/static/media/federation-diagram.dcf3cf6b.png)
+
+*Related types: `ProductItf`, `ProductDimension`, `ShippingClass`*
 """
 type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sku package") {
   """

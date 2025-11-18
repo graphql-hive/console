@@ -3,7 +3,19 @@ extend schema
 directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
 
 """
-Represents a user account in the system
+## User Account
+
+Represents a **registered user** in the system. User data is subject to *strict privacy controls*.
+
+### Key Features
+- Unique identification via `id` and `username`
+- Personal information (tagged as PII)
+- Notification preferences and history
+
+> **Important**: Email and name fields contain Personally Identifiable Information (PII) and must be handled according to data privacy regulations.
+
+**Authentication**: Users authenticate via email or username
+**Notifications**: See `NotificationItf` for available types
 """
 type User @key(fields: "id") @key(fields: "email") {
   """
