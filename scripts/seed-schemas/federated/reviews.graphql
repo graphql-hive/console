@@ -4,10 +4,6 @@ extend schema
     import: ["@key", "@override", "@external", "@provides"]
   )
 
-type Query {
-  review(id: Int!): Review
-}
-
 """
 Input for creating a new product review
 """
@@ -64,6 +60,16 @@ extend type Product @key(fields: "upc") {
   reviewsScore: Float! @override(from: "products")
 }
 
+type Query {
+  """
+  Get a specific review by ID
+  """
+  review(id: Int!): Review
+}
+
 type Mutation {
+  """
+  Create a new product review
+  """
   createReview(input: CreateReviewInput!): Review!
 }

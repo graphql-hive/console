@@ -6,13 +6,6 @@ extend schema
 
 directive @example(text: String!) on FIELD_DEFINITION
 
-type Query {
-  allProducts: [ProductItf]
-  product(upc: String!): ProductItf
-  topProducts(first: Int = 5): [ProductItf]
-  searchProducts(filter: ProductFilterInput!): [ProductItf!]!
-}
-
 """
 Product interface defining common product fields
 """
@@ -157,4 +150,23 @@ type User @key(fields: "id") {
   Total number of products created by this user
   """
   totalProductsCreated: Int @shareable
+}
+
+type Query {
+  """
+  Get all products in the catalog
+  """
+  allProducts: [ProductItf]
+  """
+  Get a specific product by its UPC
+  """
+  product(upc: String!): ProductItf
+  """
+  Get the top N products (default: 5)
+  """
+  topProducts(first: Int = 5): [ProductItf]
+  """
+  Search and filter products based on criteria
+  """
+  searchProducts(filter: ProductFilterInput!): [ProductItf!]!
 }
