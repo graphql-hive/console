@@ -70,7 +70,7 @@
     "@graphql-codegen/urql-introspection": "3.0.1",
     "@graphql-eslint/eslint-plugin": "3.20.1",
     "@graphql-inspector/cli": "6.0.0",
-    "@graphql-inspector/core": "7.0.0",
+    "@graphql-inspector/core": "7.0.3",
     "@graphql-inspector/patch": "0.0.1",
     "@graphql-tools/load": "8.1.2",
     "@manypkg/get-packages": "2.2.2",
