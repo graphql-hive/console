@@ -74,7 +74,7 @@ export function SchemaExplorerProvider({ children }: { children: ReactNode }): R
 
   const [isDescriptionsVisible, setDescriptionsVisible] = useLocalStorageJson(
     'hive:schema-explorer:collapsed',
-    z.boolean().default(true),
+    z.boolean().default(false),
   );
   const [period, setPeriod] = useLocalStorageJson(
     'hive:schema-explorer:period-1',
