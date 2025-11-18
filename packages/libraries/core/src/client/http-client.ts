@@ -1,4 +1,5 @@
 import asyncRetry from 'async-retry';
+import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import { Logger } from './types';
 
@@ -21,6 +22,8 @@ interface SharedConfig {
    * @default {response => response.ok}
    **/
   isRequestOk?: ResponseAssertFunction;
+  /** Optional abort signal */
+  signal?: AbortSignal;
 }
 
 /**
@@ -78,6 +81,8 @@ export async function makeFetchCall(
      * @default {response => response.ok}
      **/
     isRequestOk?: ResponseAssertFunction;
+    /** Optional abort signal */
+    signal?: AbortSignal;
   },
 ): Promise<Response> {
   const logger = config.logger;
@@ -86,6 +91,9 @@ export async function makeFetchCall(
   let minTimeout = 200;
   let maxTimeout = 2000;
   let factor = 1.2;
+
+  const actionHeader =
+    config.method === 'POST' ? { 'x-client-action-id': crypto.randomUUID() } : undefined;
 
   if (config.retry !== false) {
     retries = config.retry?.retries ?? 5;
@@ -105,13 +113,15 @@ export async function makeFetchCall(
       );
 
       const getDuration = measureTime();
-      const signal = AbortSignal.timeout(config.timeout ?? 20_000);
+      const timeoutSignal = AbortSignal.timeout(config.timeout ?? 20_000);
+      const signal = config.signal ? abortSignalAny([config.signal, timeoutSignal]) : timeoutSignal;
 
       const response = await (config.fetchImplementation ?? fetch)(endpoint, {
         method: config.method,
         body: config.body,
         headers: {
           'x-request-id': requestId,
+          ...actionHeader,
           ...config.headers,
         },
         signal,
@@ -145,6 +155,12 @@ export async function makeFetchCall(
         logErrorMessage();
         throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
+
+      if (config.signal?.aborted === true) {
+        const error = config.signal.reason ?? new Error('Request aborted externally.');
+        bail(error);
+        throw error;
+      }
 
       if (isRequestOk(response)) {
         logger?.debug?.(
