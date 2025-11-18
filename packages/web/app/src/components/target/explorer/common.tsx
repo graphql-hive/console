@@ -290,7 +290,6 @@ const GraphQLTypeCard_SupergraphMetadataFragment = graphql(`
 
 export function DeprecationNote(props: {
   deprecationReason: string | null | undefined;
-  styleDeprecated: boolean;
   children: ReactNode;
 }) {
   if (!props.deprecationReason) {
@@ -300,9 +299,7 @@ export function DeprecationNote(props: {
   return (
     <TooltipProvider delayDuration={100}>
       <Tooltip>
-        <TooltipTrigger
-          className={cn(props.styleDeprecated ? 'line-through hover:line-through' : '')}
-        >
+        <TooltipTrigger className="line-through hover:line-through">
           {props.children}
         </TooltipTrigger>
         <TooltipContent className="min-w-6 max-w-screen-md" side="right" sideOffset={5}>
@@ -391,7 +388,6 @@ export function GraphQLTypeCard(props: {
 function GraphQLArguments(props: {
   parentCoordinate: string;
   args: FragmentType<typeof GraphQLArguments_ArgumentFragment>[];
-  styleDeprecated: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -415,10 +411,7 @@ function GraphQLArguments(props: {
             const coordinate = `${props.parentCoordinate}.${arg.name}`;
             return (
               <div key={arg.name}>
-                <DeprecationNote
-                  styleDeprecated={props.styleDeprecated}
-                  deprecationReason={arg.deprecationReason}
-                >
+                <DeprecationNote deprecationReason={arg.deprecationReason}>
                   <LinkToCoordinatePage
                     organizationSlug={props.organizationSlug}
                     projectSlug={props.projectSlug}
@@ -453,10 +446,7 @@ function GraphQLArguments(props: {
           const coordinate = `${props.parentCoordinate}.${arg.name}`;
           return (
             <span key={arg.name}>
-              <DeprecationNote
-                styleDeprecated={props.styleDeprecated}
-                deprecationReason={arg.deprecationReason}
-              >
+              <DeprecationNote deprecationReason={arg.deprecationReason}>
                 <LinkToCoordinatePage
                   organizationSlug={props.organizationSlug}
                   projectSlug={props.projectSlug}
@@ -521,7 +511,6 @@ export function GraphQLFields(props: {
   filterValue?: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
   const { totalRequests, filterValue /** filterMeta */ } = props;
   const fieldsFromFragment = useFragment(GraphQLFields_FieldFragment, props.fields);
@@ -593,10 +582,7 @@ export function GraphQLFields(props: {
                         </TooltipTrigger>
                       </Tooltip>
                     ) : null}
-                    <DeprecationNote
-                      styleDeprecated={props.styleDeprecated}
-                      deprecationReason={field.deprecationReason}
-                    >
+                    <DeprecationNote deprecationReason={field.deprecationReason}>
                       <LinkToCoordinatePage
                         organizationSlug={props.organizationSlug}
                         projectSlug={props.projectSlug}
@@ -612,7 +598,6 @@ export function GraphQLFields(props: {
                         organizationSlug={props.organizationSlug}
                         projectSlug={props.projectSlug}
                         targetSlug={props.targetSlug}
-                        styleDeprecated={props.styleDeprecated}
                         parentCoordinate={coordinate}
                         args={field.args}
                       />
@@ -674,7 +659,6 @@ export function GraphQLInputFields(props: {
   targetSlug: string;
   projectSlug: string;
   organizationSlug: string;
-  styleDeprecated: boolean;
   filterValue?: string;
 }): ReactElement {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
@@ -712,10 +696,7 @@ export function GraphQLInputFields(props: {
             <div>
               <div className="flex w-full flex-row items-center justify-between">
                 <div className="text-gray-400">
-                  <DeprecationNote
-                    styleDeprecated={props.styleDeprecated}
-                    deprecationReason={field.deprecationReason}
-                  >
+                  <DeprecationNote deprecationReason={field.deprecationReason}>
                     <LinkToCoordinatePage
                       organizationSlug={props.organizationSlug}
                       projectSlug={props.projectSlug}

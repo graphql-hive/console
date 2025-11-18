@@ -46,7 +46,6 @@ export function GraphQLEnumTypeComponent(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  styleDeprecated: boolean;
 }) {
   const router = useRouter();
   const searchObj = router.latestLocation.search;
@@ -86,10 +85,7 @@ export function GraphQLEnumTypeComponent(props: {
         {values.map((value, i) => (
           <GraphQLTypeCardListItem key={value.name} index={i}>
             <div className="flex flex-col">
-              <DeprecationNote
-                styleDeprecated={props.styleDeprecated}
-                deprecationReason={value.deprecationReason}
-              >
+              <DeprecationNote deprecationReason={value.deprecationReason}>
                 <LinkToCoordinatePage
                   organizationSlug={props.organizationSlug}
                   projectSlug={props.projectSlug}

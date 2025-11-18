@@ -205,7 +205,6 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
               targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments={false}
               warnAboutUnusedArguments
-              styleDeprecated
             />
           );
         })}

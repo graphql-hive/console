@@ -146,7 +146,6 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
               targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments
               warnAboutUnusedArguments={false}
-              styleDeprecated={false}
             />
           );
         })}
