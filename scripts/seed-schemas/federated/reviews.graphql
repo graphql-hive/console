@@ -65,6 +65,10 @@ type Query {
   Get a specific review by ID
   """
   review(id: Int!): Review
+  """
+  Get reviews filtered by product and rating range
+  """
+  reviews(productUpc: String, minRating: Int, maxRating: Int): [Review]
 }
 
 type Mutation {

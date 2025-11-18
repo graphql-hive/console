@@ -169,4 +169,12 @@ type Query {
   Search and filter products based on criteria
   """
   searchProducts(filter: ProductFilterInput!): [ProductItf!]!
+  """
+  Get products filtered by category and price range
+  """
+  products(category: String, minPrice: Float, maxPrice: Float): [ProductItf]
+  """
+  Get products filtered by physical dimensions and shipping class
+  """
+  productsByDimensions(minWeight: Float, maxWeight: Float, size: String, shippingClass: ShippingClass): [ProductItf]
 }
