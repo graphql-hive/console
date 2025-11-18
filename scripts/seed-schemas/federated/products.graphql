@@ -180,5 +180,10 @@ type Query {
   """
   Get products filtered by physical dimensions and shipping class
   """
-  productsByDimensions(minWeight: Float, maxWeight: Float, size: String, shippingClass: ShippingClass): [ProductItf!]!
+  productsByDimensions(
+    minWeight: Float
+    maxWeight: Float
+    size: String
+    shippingClass: ShippingClass
+  ): [ProductItf!]!
 }
