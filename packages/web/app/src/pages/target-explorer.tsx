@@ -60,7 +60,6 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={query}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
@@ -73,7 +72,6 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={mutation}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
@@ -86,7 +84,6 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={subscription}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}

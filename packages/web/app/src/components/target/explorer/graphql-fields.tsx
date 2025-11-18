@@ -36,7 +36,6 @@ export function GraphQLFields(props: {
   typeName: string;
   fields: Array<FragmentType<typeof GraphQLFields_FieldFragment>>;
   totalRequests?: number;
-  collapsed?: boolean;
   targetSlug: string;
   projectSlug: string;
   organizationSlug: string;
