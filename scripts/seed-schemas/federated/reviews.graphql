@@ -13,10 +13,6 @@ input CreateReviewInput {
   """
   productUpc: String!
   """
-  ID of the user creating the review
-  """
-  userId: ID!
-  """
   Rating score (e.g., 1-5 stars)
   """
   rating: Int!
