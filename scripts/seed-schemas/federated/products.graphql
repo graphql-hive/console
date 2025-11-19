@@ -168,10 +168,7 @@ type ProductDimension @shareable {
   weight: Float
 }
 
-"""
-User stub reference (full definition in users subgraph)
-"""
-type User @key(fields: "id") {
+extend type User @key(fields: "id") {
   """
   Unique identifier for the user
   """
