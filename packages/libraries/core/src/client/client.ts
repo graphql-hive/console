@@ -10,14 +10,61 @@ import { createPersistedDocuments } from './persisted-documents.js';
 import { createReporting } from './reporting.js';
 import type { HiveClient, HiveInternalPluginOptions, HivePluginOptions } from './types.js';
 import { createUsage } from './usage.js';
-import { createHiveLogger, isLegacyAccessToken } from './utils.js';
+import { createHiveLogger, HiveLogger, isLegacyAccessToken } from './utils.js';
 
-export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = createHiveLogger(
+function chooseDefaultLogger(options: HivePluginOptions): HiveLogger {
+  if (options.logger === 'debug') {
+    return createHiveLogger(
+      {
+        debug(...args) {
+          console.debug(...args);
+        },
+        info(...args) {
+          console.info(...args);
+        },
+        error(...args) {
+          console.error(...args);
+        },
+      },
+      '[hive]',
+    );
+  }
+  if (options.logger === 'info') {
+    return createHiveLogger(
+      {
+        debug() {},
+        info(...args) {
+          console.info(...args);
+        },
+        error(...args) {
+          console.error(...args);
+        },
+      },
+      '[hive]',
+    );
+  }
+  if (options.logger === 'error') {
+    return createHiveLogger(
+      {
+        debug() {},
+        info() {},
+        error(...args) {
+          console.error(...args);
+        },
+      },
+      '[hive]',
+    );
+  }
+
+  return createHiveLogger(
     options?.logger ?? options?.agent?.logger ?? console,
     '[hive]',
     options.debug,
   );
+}
+
+export function createHive(options: HivePluginOptions): HiveClient {
+  const logger = chooseDefaultLogger(options);
   let enabled = options.enabled ?? true;
 
   if (enabled === false && !options.experimental__persistedDocuments) {
