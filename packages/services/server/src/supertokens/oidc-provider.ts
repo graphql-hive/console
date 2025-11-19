@@ -29,7 +29,7 @@ export const getOIDCSuperTokensOverrides = (): ThirdPartEmailPasswordTypeInput['
 
 export type BroadcastOIDCIntegrationLog = (oidcId: string, message: string) => void;
 
-function getLoggerFromUserContext(userContext: unknown): FastifyBaseLogger {
+export function getLoggerFromUserContext(userContext: unknown): FastifyBaseLogger {
   return (userContext as any)._default.request.request.log;
 }
 

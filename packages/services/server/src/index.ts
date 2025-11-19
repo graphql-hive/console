@@ -497,6 +497,7 @@ export async function main() {
       storage,
       crypto,
       logger: server.log,
+      redis,
       broadcastLog(id, message) {
         pubSub.publish('oidcIntegrationLogs', id, {
           timestamp: new Date().toISOString(),

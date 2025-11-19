@@ -1,4 +1,5 @@
 import type { FastifyBaseLogger } from 'fastify';
+import type Redis from 'ioredis';
 import { CryptoProvider } from 'packages/services/api/src/modules/shared/providers/crypto';
 import { OverrideableBuilder } from 'supertokens-js-override/lib/build/index.js';
 import supertokens from 'supertokens-node';
@@ -16,6 +17,7 @@ import { createInternalApiCaller } from './api';
 import { env } from './environment';
 import {
   createOIDCSuperTokensProvider,
+  getLoggerFromUserContext,
   getOIDCSuperTokensOverrides,
   type BroadcastOIDCIntegrationLog,
 } from './supertokens/oidc-provider';
@@ -34,6 +36,7 @@ export const backendConfig = (requirements: {
   crypto: CryptoProvider;
   logger: FastifyBaseLogger;
   broadcastLog: BroadcastOIDCIntegrationLog;
+  redis: Redis;
 }): TypeInput => {
   const { logger } = requirements;
   const emailsService = createTRPCProxyClient<EmailsApi>({
@@ -146,7 +149,7 @@ export const backendConfig = (requirements: {
           }),
         },
         override: composeSuperTokensOverrides([
-          getEnsureUserOverrides(internalApi),
+          getEnsureUserOverrides(internalApi, requirements.redis),
           env.auth.organizationOIDC ? getOIDCSuperTokensOverrides() : null,
         ]),
       }),
@@ -208,14 +211,51 @@ export const backendConfig = (requirements: {
   };
 };
 
+function extractIPFromUserContext(userContext: unknown): string {
+  return (
+    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimitIPHeaderName) ||
+    (userContext as any)._default.request.original.ip
+  );
+}
+
+function createRedisRateLimiter(redis: Redis, windowSeconds = 5 * 60, maxRequests = 10) {
+  async function isRateLimited(action: string, ip: string): Promise<boolean> {
+    const key = `supertokens-rate-limit:${action}:${ip}`;
+    const current = await redis.incr(key);
+    if (current === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+    if (current > maxRequests) {
+      return true;
+    }
+
+    return false;
+  }
+
+  return { isRateLimited };
+}
+
 const getEnsureUserOverrides = (
   internalApi: ReturnType<typeof createInternalApiCaller>,
+  redis: Redis,
 ): ThirdPartEmailPasswordTypeInput['override'] => ({
   apis: originalImplementation => ({
     ...originalImplementation,
     emailPasswordSignUpPOST: async input => {
       if (!originalImplementation.emailPasswordSignUpPOST) {
         throw Error('emailPasswordSignUpPOST is not available');
+      }
+
+      const logger = getLoggerFromUserContext(input.userContext);
+      const ip = extractIPFromUserContext(input.userContext);
+      const rateLimiter = createRedisRateLimiter(redis);
+
+      if (await rateLimiter.isRateLimited('sign-up', ip)) {
+        logger.debug('email password sign up rate limited (ip=%s)', ip);
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again in a few minutes.',
+        };
       }
 
       const response = await originalImplementation.emailPasswordSignUpPOST(input);
@@ -238,6 +278,18 @@ const getEnsureUserOverrides = (
     async emailPasswordSignInPOST(input) {
       if (originalImplementation.emailPasswordSignInPOST === undefined) {
         throw Error('Should never come here');
+      }
+
+      const logger = getLoggerFromUserContext(input.userContext);
+      const ip = extractIPFromUserContext(input.userContext);
+      const rateLimiter = createRedisRateLimiter(redis);
+
+      if (await rateLimiter.isRateLimited('sign-in', ip)) {
+        logger.debug('email sign in rate limited (ip=%s)', ip);
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again in a few minutes.',
+        };
       }
 
       const response = await originalImplementation.emailPasswordSignInPOST(input);
@@ -285,6 +337,18 @@ const getEnsureUserOverrides = (
       return response;
     },
     async passwordResetPOST(input) {
+      const logger = getLoggerFromUserContext(input.userContext);
+      const ip = extractIPFromUserContext(input.userContext);
+      const rateLimiter = createRedisRateLimiter(redis);
+
+      if (await rateLimiter.isRateLimited('password-reset', ip)) {
+        logger.debug('password reset rate limited (ip=%s)', ip);
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again in a few minutes.',
+        };
+      }
+
       const result = await originalImplementation.passwordResetPOST!(input);
 
       // For security reasons we revoke all sessions when a password reset is performed.
@@ -349,6 +413,7 @@ export function initSupertokens(requirements: {
   crypto: CryptoProvider;
   logger: FastifyBaseLogger;
   broadcastLog: BroadcastOIDCIntegrationLog;
+  redis: Redis;
 }) {
   supertokens.init(backendConfig(requirements));
 }
