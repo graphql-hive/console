@@ -123,7 +123,7 @@ export function createAgent<TEvent>(
           ? null
           : pluginOptions.circuitBreaker,
   };
-  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]', pluginOptions.debug);
+  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]');
 
   let circuitBreaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
