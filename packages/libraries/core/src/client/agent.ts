@@ -67,7 +67,11 @@ export interface AgentOptions {
    */
   maxSize?: number;
   /**
-   * Custom logger (defaults to console)
+   * Custom logger.
+   *
+   * Default: console based logger
+   *
+   * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
   logger?: Logger;
   /**

@@ -14,9 +14,9 @@ import { createHiveLogger, isLegacyAccessToken } from './utils.js';
 
 export function createHive(options: HivePluginOptions): HiveClient {
   const logger = createHiveLogger(
-    options?.agent?.logger ?? console,
+    options?.logger ?? options?.agent?.logger ?? console,
     '[hive]',
-    options.debug ?? false,
+    options.debug,
   );
   let enabled = options.enabled ?? true;
 

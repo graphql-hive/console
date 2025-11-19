@@ -885,3 +885,149 @@ test('constructs URL with usage.target (hvu1/)', async ({ expect }) => {
   expect(url).toEqual('http://localhost/the-guild/graphql-hive/staging');
   await hive.dispose();
 });
+
+test('no debug property -> logger.debug is invoked', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logger.getLogs()).toMatchInlineSnapshot(`
+    [DBG] [hive][usage][agent] Disposing
+    [DBG] [hive][usage][agent] Sending immediately
+    [DBG] [hive][usage][agent] Sending report (queue 1)
+    [DBG] [hive][usage][agent] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [DBG] [hive][usage][agent] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [DBG] [hive][usage][agent] Report sent!
+  `);
+});
+
+test('debug: false -> logger.debug is not invoked', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    debug: false,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logger.getLogs()).toMatchInlineSnapshot(``);
+});
+
+test('debug: true and missing logger.debug method -> logger.info is invoked (to cover legacy logger implementation)', async ({
+  expect,
+}) => {
+  const logger = createHiveTestingLogger();
+  // @ts-expect-error
+  logger.debug = undefined;
+  const token = 'hvu1/brrrrt';
+
+  const hive = createHive({
+    enabled: true,
+    debug: true,
+    agent: {
+      timeout: 500,
+      maxRetries: 0,
+      sendInterval: 1,
+      maxSize: 1,
+      async fetch() {
+        return new Response('', {
+          status: 200,
+        });
+      },
+      logger,
+    },
+    token,
+    selfHosting: {
+      graphqlEndpoint: 'http://localhost:2/graphql',
+      applicationUrl: 'http://localhost:1',
+      usageEndpoint: 'http://localhost',
+    },
+    usage: {
+      target: 'the-guild/graphql-hive/staging',
+    },
+  });
+
+  await hive.collectUsage()(
+    {
+      schema,
+      document: op,
+      operationName: 'asd',
+    },
+    {},
+  );
+
+  await hive.dispose();
+  expect(logger.getLogs()).toMatchInlineSnapshot(`
+    [INF] [hive][usage][agent] Disposing
+    [INF] [hive][usage][agent] Sending immediately
+    [INF] [hive][usage][agent] Sending report (queue 1)
+    [INF] [hive][usage][agent] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    [INF] [hive][usage][agent] POST http://localhost/the-guild/graphql-hive/staging (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][usage][agent] Report sent!
+  `);
+});
