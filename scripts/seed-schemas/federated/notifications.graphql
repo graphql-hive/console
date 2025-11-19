@@ -131,10 +131,7 @@ extend type User @key(fields: "id") {
   notifications: [Notification!]!
 }
 
-"""
-Product stub reference (full definition in products subgraph)
-"""
-type Product @key(fields: "upc") {
+extend type Product @key(fields: "upc") {
   """
   Universal Product Code
   """

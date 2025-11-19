@@ -4,10 +4,7 @@ extend schema
     import: ["@key", "@shareable", "@external", "@requires"]
   )
 
-"""
-Product extension adding inventory and delivery information
-"""
-type Product @key(fields: "upc dimensions") {
+extend type Product @key(fields: "upc dimensions") {
   """
   Universal Product Code
   """
