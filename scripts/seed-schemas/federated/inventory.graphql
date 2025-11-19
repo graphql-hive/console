@@ -49,21 +49,3 @@ type DeliveryEstimates {
   """
   fastestDelivery: String
 }
-
-"""
-Available shipping classes with delivery speeds
-"""
-enum ShippingClass @shareable {
-  """
-  Standard ground shipping (5-7 business days)
-  """
-  STANDARD
-  """
-  Express shipping (2-3 business days)
-  """
-  EXPRESS
-  """
-  Overnight shipping (next business day)
-  """
-  OVERNIGHT
-}

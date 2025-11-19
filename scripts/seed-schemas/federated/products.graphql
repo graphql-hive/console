@@ -103,7 +103,7 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
 """
 Available shipping classes with delivery speeds
 """
-enum ShippingClass @shareable {
+enum ShippingClass {
   """
   Standard ground shipping (5-7 business days)
   """
