@@ -149,7 +149,17 @@ type Review @key(fields: "id") {
 }
 
 extend type Query {
-  notification(id: ID!): Notification
+  notification(
+    """
+    Unique identifier of the notification to retrieve
+    """
+    id: ID!
+  ): Notification
   notifications: [Notification!]!
-  searchNotifications(filter: NotificationFilterInput!): [Notification!]!
+  searchNotifications(
+    """
+    Filter criteria including search text, notification types, and date range
+    """
+    filter: NotificationFilterInput!
+  ): [Notification!]!
 }

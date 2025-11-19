@@ -16,7 +16,12 @@ extend type Product @key(fields: "upc dimensions") {
   """
   Delivery estimates for a given zip code (requires dimensions data)
   """
-  delivery(zip: String): DeliveryEstimates @requires(fields: "dimensions { size weight }")
+  delivery(
+    """
+    Zip code for delivery estimate calculation
+    """
+    zip: String
+  ): DeliveryEstimates @requires(fields: "dimensions { size weight }")
 }
 
 """
