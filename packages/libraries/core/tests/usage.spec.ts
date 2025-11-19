@@ -982,7 +982,7 @@ test('debug: true and missing logger.debug method -> logger.info is invoked (to 
   expect,
 }) => {
   const logger = createHiveTestingLogger();
-  // @ts-expect-error
+  // @ts-expect-error we remove this property to emulate logger without it
   logger.debug = undefined;
   const token = 'hvu1/brrrrt';
 
