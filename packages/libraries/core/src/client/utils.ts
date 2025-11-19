@@ -210,9 +210,6 @@ export function createHiveLogger(baseLogger: Logger, prefix: string, debug = tru
 
   return {
     [hiveSymbol]: context,
-    info: (message: string) => {
-      logger.info(printPath(path) + message);
-    },
     error: (error: any, ...data: any[]) => {
       if (error.stack) {
         const pth = printPath(path);
@@ -222,6 +219,9 @@ export function createHiveLogger(baseLogger: Logger, prefix: string, debug = tru
       } else {
         logger.error(printPath(path) + String(error), ...data);
       }
+    },
+    info: (message: string) => {
+      logger.info(printPath(path) + message);
     },
     debug: (message: string) => {
       if (!context.debug) {

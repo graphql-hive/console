@@ -217,9 +217,9 @@ export type HivePluginOptions = OptionalWhenFalse<
     /**
      * Custom logger.
      *
-     * Default: console based logger
+     * Default: 'info'
      */
-    logger?: Logger;
+    logger?: Logger | 'error' | 'info' | 'debug';
     /**
      * Access Token for usage reporting
      */
