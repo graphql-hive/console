@@ -1,4 +1,4 @@
-import type { APIGatewayEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { createServerAdapter } from '@whatwg-node/server';
 import { createArtifactRequestHandler } from './artifact-handler';
 import { ArtifactStorageReader } from './artifact-storage-reader';
@@ -50,10 +50,10 @@ const artifactHandler = createArtifactRequestHandler({
 const artifactRouteHandler = createServerAdapter(artifactHandler as any);
 
 export async function handler(
-  event: APIGatewayEvent,
+  event: APIGatewayProxyEventV2,
   lambdaContext: Context,
 ): Promise<APIGatewayProxyResult> {
-  const url = new URL(event.path, 'http://localhost');
+  const url = new URL(event.rawPath, 'http://localhost');
   if (event.queryStringParameters != null) {
     for (const name in event.queryStringParameters) {
       const value = event.queryStringParameters[name];
@@ -66,7 +66,7 @@ export async function handler(
   const response = await artifactRouteHandler.fetch(
     url,
     {
-      method: event.httpMethod,
+      method: event.requestContext.http.method,
       headers: event.headers as HeadersInit,
       body: undefined,
     },
