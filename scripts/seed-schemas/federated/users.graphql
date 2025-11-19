@@ -10,12 +10,12 @@ Represents a **registered user** in the system. User data is subject to *strict 
 ### Key Features
 - Unique identification via `id` and `username`
 - Personal information (tagged as PII)
-- Notification preferences and history
+- Account creation tracking
 
 > **Important**: Email and name fields contain Personally Identifiable Information (PII) and must be handled according to data privacy regulations.
 
 **Authentication**: Users authenticate via email or username
-**Notifications**: See `NotificationItf` for available types
+**Federation**: Extended by other subgraphs for additional user data
 """
 type User @key(fields: "id") @key(fields: "email") {
   """
@@ -42,56 +42,12 @@ type User @key(fields: "id") @key(fields: "email") {
   Timestamp when the user account was created
   """
   createdAt: DateTime
-  """
-  List of all notifications for this user
-  """
-  notifications: [Notification!]!
 }
 
 """
 ISO-8601 formatted date and time string
 """
 scalar DateTime
-
-"""
-Types of notifications that can be sent to users
-"""
-enum NotificationType {
-  """
-  Notification about a product update
-  """
-  PRODUCT_UPDATE
-  """
-  Notification when a new review is posted
-  """
-  REVIEW_POSTED
-  """
-  Welcome notification for new users
-  """
-  WELCOME
-}
-
-"""
-Filter criteria for searching notifications
-"""
-input NotificationFilterInput {
-  """
-  Search text to match against notification messages
-  """
-  searchText: String
-  """
-  Filter by specific notification types
-  """
-  types: [NotificationType!]
-  """
-  Only include notifications from this date onwards
-  """
-  dateFrom: DateTime
-  """
-  Only include notifications up to this date
-  """
-  dateTo: DateTime
-}
 
 """
 Input for creating a new user account
@@ -125,108 +81,10 @@ input UpdateUserInput {
   alias: String
 }
 
-"""
-Base interface for all notification types
-"""
-interface NotificationItf {
-  id: ID!
-  message: String!
-}
-
-"""
-Notification sent when a product is updated
-"""
-type ProductUpdateNotification implements NotificationItf {
-  """
-  Unique identifier for the notification
-  """
-  id: ID!
-  """
-  Human-readable notification message
-  """
-  message: String!
-  """
-  The product that was updated
-  """
-  product: Product!
-  """
-  Timestamp when the product was updated
-  """
-  updatedAt: DateTime!
-}
-
-"""
-Notification sent when a review is posted
-"""
-type ReviewPostedNotification implements NotificationItf {
-  """
-  Unique identifier for the notification
-  """
-  id: ID!
-  """
-  Human-readable notification message
-  """
-  message: String!
-  """
-  The review that was posted
-  """
-  review: Review!
-  """
-  Timestamp when the review was posted
-  """
-  postedAt: DateTime!
-}
-
-"""
-Welcome notification sent to new users
-"""
-type WelcomeNotification implements NotificationItf {
-  """
-  Unique identifier for the notification
-  """
-  id: ID!
-  """
-  Human-readable notification message
-  """
-  message: String!
-  """
-  Timestamp when the notification was created
-  """
-  createdAt: DateTime!
-}
-
-"""
-Product stub reference (full definition in products subgraph)
-"""
-type Product @key(fields: "upc") {
-  """
-  Universal Product Code
-  """
-  upc: String!
-}
-
-"""
-Review stub reference (full definition in reviews subgraph)
-"""
-type Review @key(fields: "id") {
-  """
-  Unique identifier for the review
-  """
-  id: ID!
-}
-
-"""
-Union of all possible notification types
-"""
-union Notification = ProductUpdateNotification | ReviewPostedNotification | WelcomeNotification
-
 extend type Query {
   me: User
   user(id: ID!): User
   users: [User]
-  notification(id: ID!): Notification
-  notifications: [Notification!]!
-  searchNotifications(filter: NotificationFilterInput!): [Notification!]!
 }
 
 extend type Mutation {
