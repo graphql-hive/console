@@ -7,6 +7,8 @@ function applyEnv(env: Record<string, string>) {
   }
 }
 
+const __dirname = import.meta.dirname;
+
 const serverEnvVars = parse(readFileSync(__dirname + '/../packages/services/server/.env', 'utf-8'));
 
 applyEnv({
