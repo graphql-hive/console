@@ -101,12 +101,12 @@ type Env = {
 
 **Runtime**: Node.js 22.x
 
-| Name                        | Required | Description                          | Example Value |
-| --------------------------- | -------- | ------------------------------------ | ------------- |
-| `AWS_S3_ACCESS_KEY_ID`      | **Yes**  | The port this service is running on. | `4013`        |
-| `AWS_S3_ACCESSS_KEY_SECRET` | **Yes**  | The port this service is running on. | `4013`        |
-| `AWS_S3_ACCESS_ENDPOINT`    | **Yes**  | The port this service is running on. | `4013`        |
-| `AWS_S3_BUCKET_NAME`        | **Yes**  | The port this service is running on. | `4013`        |
+| Name                        | Required | Description               | Example Value           |
+| --------------------------- | -------- | ------------------------- | ----------------------- |
+| `AWS_S3_ENDPOINT`           | **Yes**  | The S3 endpoint.          | `http://localhost:9000` |
+| `AWS_S3_BUCKET_NAME`        | **Yes**  | The S3 bucket name.       | `artifacts`             |
+| `AWS_S3_ACCESS_KEY_ID`      | **Yes**  | The S3 access key id.     | `minioadmin`            |
+| `AWS_S3_ACCESSS_KEY_SECRET` | **Yes**  | The S3 secret access key. | `minioadmin`            |
 
 All other configuration options available for Cloudflare Workers are currently not supported.
 
