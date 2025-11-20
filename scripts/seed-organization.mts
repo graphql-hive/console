@@ -1,3 +1,15 @@
+/**
+ * Script for seeding an org with lot of projects and users.
+ *
+ * Requirements:
+ * - Docker Compose is started (pnpm start)
+ * - emails, app and server service is running
+ *
+ * Recommended method of running this :
+ * `bun scripts/seed-organization.mts`
+ *
+ * Afterwards, log in with the printed credentials.
+ */
 import { PromisePool } from '@supercharge/promise-pool';
 
 process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
