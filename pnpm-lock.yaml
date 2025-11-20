@@ -2221,6 +2221,9 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../packages/libraries/core/dist
+      '@supercharge/promise-pool':
+        specifier: 3.2.0
+        version: 3.2.0
       immer:
         specifier: 10.1.1
         version: 10.1.1
@@ -8317,6 +8320,10 @@ packages:
   '@stripe/stripe-js@5.5.0':
     resolution: {integrity: sha512-lkfjyAd34aeMpTKKcEVfy8IUyEsjuAT3t9EXr5yZDtdIUncnZpedl/xLV16Dkd4z+fQwixScsCCDxSMNtBOgpQ==}
     engines: {node: '>=12.16'}
+
+  '@supercharge/promise-pool@3.2.0':
+    resolution: {integrity: sha512-pj0cAALblTZBPtMltWOlZTQSLT07jIaFNeM8TWoJD1cQMgDB9mcMlVMoetiB35OzNJpqQ2b+QEtwiR9f20mADg==}
+    engines: {node: '>=8'}
 
   '@swc/core-darwin-arm64@1.13.5':
     resolution: {integrity: sha512-lKNv7SujeXvKn16gvQqUQI5DdyY8v7xcoO3k06/FJbHJS90zEwZdQiMNRiqpYw/orU543tPaWgz7cIYWhbopiQ==}
@@ -26479,6 +26486,8 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
 
   '@stripe/stripe-js@5.5.0': {}
+
+  '@supercharge/promise-pool@3.2.0': {}
 
   '@swc/core-darwin-arm64@1.13.5':
     optional: true
