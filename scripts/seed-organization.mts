@@ -28,7 +28,7 @@ await PromisePool.withConcurrency(10)
   .for(new Array(100).fill(null))
   .process(() => org.createProject());
 
-console.log('Create 200 orgainzation members');
+console.log('Create 200 organization members');
 await PromisePool.withConcurrency(10)
   .for(new Array(100).fill(null))
   .process(() => org.inviteAndJoinMember());
