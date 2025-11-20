@@ -1,4 +1,3 @@
-import type EventEmitter from 'events';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import { http } from './http-client.js';
