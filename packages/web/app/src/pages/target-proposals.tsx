@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { StageFilter } from '@/components/target/proposals/stage-filter';
-import { UserFilter } from '@/components/target/proposals/user-filter';
 import { stageToColor } from '@/components/target/proposals/util';
 import { BadgeRounded } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -163,10 +162,10 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
   return (
     <>
       <div className="flex flex-col justify-start gap-2.5 pb-2.5 md:flex-row">
-        <UserFilter
+        {/* <UserFilter
           selectedUsers={props.filterUserIds ?? []}
           organizationSlug={props.organizationSlug}
-        />
+        /> */}
         <StageFilter selectedStages={props.filterStages ?? []} />
         {hasFilterSelection ? (
           <Button variant="outline" onClick={reset}>
@@ -224,7 +223,7 @@ const ProposalsListPage = (props: {
         )
           .sort()
           .map(s => s.toUpperCase() as SchemaProposalStage),
-        userIds: props.filterUserIds,
+        // userIds: props.filterUserIds,
       },
     },
     requestPolicy: 'cache-and-network',

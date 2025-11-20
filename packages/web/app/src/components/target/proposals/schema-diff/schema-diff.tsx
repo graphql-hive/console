@@ -11,8 +11,8 @@ export function SchemaDiff({
   annotations = () => null,
   // annotatedCoordinates = [],
 }: {
-  before: GraphQLSchema;
-  after: GraphQLSchema;
+  before: GraphQLSchema | null;
+  after: GraphQLSchema | null;
   annotations?: (coordinate: string) => ReactElement | null;
   /**
    * A list of all the annotated coordinates, used or unused.
@@ -28,8 +28,12 @@ export function SchemaDiff({
     removed: removedTypes,
   } = useMemo(() => {
     return compareLists(
-      Object.values(before.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
-      Object.values(after.getTypeMap()).filter(t => !isPrimitive(t) && !isIntrospectionType(t)),
+      Object.values(before?.getTypeMap() ?? {}).filter(
+        t => !isPrimitive(t) && !isIntrospectionType(t),
+      ),
+      Object.values(after?.getTypeMap() ?? {}).filter(
+        t => !isPrimitive(t) && !isIntrospectionType(t),
+      ),
     );
   }, [before, after]);
 
@@ -39,8 +43,8 @@ export function SchemaDiff({
     removed: removedDirectives,
   } = useMemo(() => {
     return compareLists(
-      before.getDirectives().filter(d => !isSpecifiedDirective(d)),
-      after.getDirectives().filter(d => !isSpecifiedDirective(d)),
+      before?.getDirectives().filter(d => !isSpecifiedDirective(d)) ?? [],
+      after?.getDirectives().filter(d => !isSpecifiedDirective(d)) ?? [],
     );
   }, [before, after]);
 

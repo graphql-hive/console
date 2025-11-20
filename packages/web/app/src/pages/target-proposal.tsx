@@ -104,6 +104,7 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
                 ...CompositionErrorsSection_SchemaErrorConnection
               }
             }
+            schemaSDL
             serviceName
             schemaChanges {
               edges {
@@ -252,7 +253,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   return errors.looseErrorHandler(error, change);
                 },
               })
-            : null;
+            : buildSchema(proposalVersion.schemaSDL, { assumeValid: true, assumeValidSDL: true });
 
           return {
             beforeSchema,

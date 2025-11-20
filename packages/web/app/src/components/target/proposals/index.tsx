@@ -503,16 +503,9 @@ export function Proposal(props: {
   try {
     // THIS IS IMPORTANT!! <SchemaDiff/> must be rendered first so that it sets up the state in the
     // AnnotatedContext for <DetachedAnnotations/>. Otherwise, the DetachedAnnotations will be empty.
-    const diff =
-      props.beforeSchema && props.afterSchema ? (
-        <SchemaDiff
-          before={props.beforeSchema}
-          after={props.afterSchema}
-          annotations={annotations}
-        />
-      ) : (
-        <></>
-      );
+    const diff = (
+      <SchemaDiff before={props.beforeSchema} after={props.afterSchema} annotations={annotations} />
+    );
 
     // @todo AnnotatedProvider doesnt work 100% of the time... A different solution must be found
     return (
