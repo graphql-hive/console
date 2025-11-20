@@ -47,6 +47,7 @@ export function GraphQLArguments(props: {
               </DeprecationNote>
               {': '}
               <GraphQLTypeAsLink
+                className="font-medium"
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
