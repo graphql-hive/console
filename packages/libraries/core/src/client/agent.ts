@@ -1,3 +1,4 @@
+import type EventEmitter from 'events';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import { http } from './http-client.js';
@@ -253,22 +254,25 @@ export function createAgent<TEvent>(
       skipSchedule: true,
       throwOnError: false,
     });
+
+    circuitBreaker.shutdown();
   }
 
   if (options.circuitBreaker) {
-    circuitBreaker = new CircuitBreaker(sendHTTPCall, {
+    const circuitBreakerInstance = new CircuitBreaker(sendHTTPCall, {
       ...options.circuitBreaker,
       timeout: false,
       autoRenewAbortController: true,
     });
+    circuitBreaker = circuitBreakerInstance;
 
-    (circuitBreaker as any).on('open', () =>
+    circuitBreakerInstance.on('open', () =>
       breakerLogger.error('circuit opened - backend seems unreachable.'),
     );
-    (circuitBreaker as any).on('halfOpen', () =>
+    circuitBreakerInstance.on('halfOpen', () =>
       breakerLogger.info('circuit half open - testing backend connectivity'),
     );
-    (circuitBreaker as any).on('close', () =>
+    circuitBreakerInstance.on('close', () =>
       breakerLogger.info('circuit closed - backend recovered '),
     );
   } else {
@@ -277,6 +281,7 @@ export function createAgent<TEvent>(
         return undefined;
       },
       fire: sendHTTPCall,
+      shutdown() {},
     };
   }
 
@@ -303,4 +308,5 @@ export function createAgent<TEvent>(
 type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
   fire(...args: TI): TR;
   getSignal(): AbortSignal | undefined;
+  shutdown(): void;
 };
