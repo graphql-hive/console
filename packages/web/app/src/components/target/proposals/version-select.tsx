@@ -53,7 +53,7 @@ export function VersionSelect(props: {
         >
           <span className="truncate">
             {selectedVersion
-              ? (selectedVersion.meta?.commit ?? selectedVersion.id)
+              ? selectedVersion.meta?.commit || selectedVersion.id
               : 'Invalid version'}
           </span>
           <ChevronsUpDown className="ml-2 flex size-4 shrink-0 opacity-50" />
@@ -83,13 +83,13 @@ export function VersionSelect(props: {
                     )}
                   >
                     <div className="max-w-[300px] grow flex-col truncate">
-                      {version.meta?.commit ?? version.id}
+                      {version.meta?.commit || version.id}
                     </div>
                     <div className="grow flex-col">
                       (<TimeAgo date={version.createdAt} />)
                     </div>
                     <div className="max-w-[200px] grow flex-col truncate">
-                      by {version.meta?.author ?? 'null'}
+                      by {version.meta?.author ?? 'undefined'}
                     </div>
                   </div>
                 </CommandItem>

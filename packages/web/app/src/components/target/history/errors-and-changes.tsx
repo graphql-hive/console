@@ -440,7 +440,7 @@ function SchemaChangeApproval(props: {
   );
 }
 
-const CompositionErrorsSection_SchemaErrorConnection = graphql(`
+export const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
     edges {
       node {

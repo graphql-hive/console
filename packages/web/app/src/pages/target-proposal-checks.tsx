@@ -47,7 +47,7 @@ export function TargetProposalChecksPage(props: {
             {...props}
             {...node}
             serviceName={node.serviceName ?? ''}
-            commit={node.meta?.commit}
+            commit={node.meta?.commit || node.id}
             author={node.meta?.author}
           />
         );
@@ -61,7 +61,7 @@ function CheckItem(props: {
   projectSlug: string;
   targetSlug: string;
   id: string;
-  commit?: string | null;
+  commit: string;
   author?: string | null;
   serviceName: string;
   createdAt: string;
@@ -80,7 +80,7 @@ function CheckItem(props: {
         schemaCheckId: props.id,
       }}
       className={cn(
-        'col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-xs hover:bg-gray-800 sm:col-span-5',
+        'col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-base hover:bg-gray-800 sm:col-span-5',
         props.className,
       )}
     >
@@ -88,14 +88,12 @@ function CheckItem(props: {
         <SchemaCheckIcon {...props} />
       </div>
       <div className="min-w-[100px] truncate">
-        {props.serviceName.length !== 0 && (
-          <div className="flex items-center text-sm font-semibold">
-            <CubeIcon className="mr-1 h-3" />
-            <div>{props.serviceName}</div>
-          </div>
-        )}
+        <div className="flex items-center text-base font-semibold">
+          <CubeIcon className="mr-1 h-3" />
+          <div className="truncate">{props.serviceName || 'single schema'}</div>
+        </div>
       </div>
-      <div className="truncate text-center text-gray-500">{props.commit ?? props.id}</div>
+      <div className="truncate text-center text-gray-500">{props.commit}</div>
       <div className="col-start-2 flex items-center sm:col-start-4 sm:justify-self-end">
         <CalendarIcon className="h-3" />
         <TimeAgo date={props.createdAt} />
@@ -113,7 +111,8 @@ function SchemaCheckIcon(props: {
   if (props.hasSchemaCompositionErrors || props.hasUnapprovedBreakingChanges) {
     return (
       <div className="text-red-500">
-        <XIcon className="inline-block h-4" /> ERROR
+        <XIcon className="inline-block h-4" />{' '}
+        {props.hasSchemaCompositionErrors ? 'ERROR' : 'FAILED'}
       </div>
     );
   }

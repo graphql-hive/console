@@ -1,4 +1,5 @@
 import { Fragment, useMemo } from 'react';
+import { CompositionErrorsSection } from '@/components/target/history/errors-and-changes';
 import { ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
 import { ChangeBlock } from '@/components/target/proposals/change-detail';
 import { ServiceHeading } from '@/components/target/proposals/service-heading';
@@ -27,7 +28,7 @@ export function TargetProposalDetailsPage(props: {
 }) {
   const mappedServices = useMemo(() => {
     return props.services?.map(
-      ({ allChanges, ignoredChanges, conflictingChanges, serviceName }) => {
+      ({ allChanges, ignoredChanges, conflictingChanges, serviceName, compositionErrors }) => {
         const changes = allChanges.map(c => {
           const conflict = conflictingChanges.find(({ change }) => c === change);
           if (conflict) {
@@ -61,6 +62,7 @@ export function TargetProposalDetailsPage(props: {
           }
         }
         return {
+          compositionErrors,
           hasChanges: allChanges.length > 0,
           safe,
           breaking,
@@ -74,39 +76,46 @@ export function TargetProposalDetailsPage(props: {
 
   return (
     <div className="w-full">
-      {mappedServices?.map(({ safe, dangerous, breaking, ignored, serviceName, hasChanges }) => {
-        // don't print service name if service was not changed
-        if (!hasChanges) {
-          return null;
-        }
-        return (
-          <Fragment key={serviceName}>
-            <ServiceHeading serviceName={serviceName} />
-            <div className="px-2 pb-8">
-              <ChangeBlock
-                changes={breaking}
-                title="Breaking Changes"
-                info="Changes that will break existing operations."
-              />
-              <ChangeBlock
-                changes={dangerous}
-                title="Dangerous Changes"
-                info="Changes that could cause different behavior that might cause issues for existing operations."
-              />
-              <ChangeBlock
-                changes={safe}
-                title="Safe Changes"
-                info="Changes that do not run a risk of breaking any existing operations."
-              />
-              <ChangeBlock
-                changes={ignored}
-                title="Ignored Changes"
-                info="Changes that result in no difference when applied to the current version of the schemas. These can be safely ignored but are kept as part of the proposal unless explicitly removed."
-              />
-            </div>
-          </Fragment>
-        );
-      })}
+      {mappedServices?.map(
+        ({ safe, dangerous, breaking, ignored, serviceName, hasChanges, compositionErrors }) => {
+          if (compositionErrors !== undefined) {
+            return (
+              <CompositionErrorsSection key={serviceName} compositionErrors={compositionErrors} />
+            );
+          }
+          // don't print service name if service was not changed
+          if (!hasChanges) {
+            return null;
+          }
+          return (
+            <Fragment key={serviceName}>
+              <ServiceHeading serviceName={serviceName} />
+              <div className="px-2 pb-8">
+                <ChangeBlock
+                  changes={breaking}
+                  title="Breaking Changes"
+                  info="Changes that will break existing operations."
+                />
+                <ChangeBlock
+                  changes={dangerous}
+                  title="Dangerous Changes"
+                  info="Changes that could cause different behavior that might cause issues for existing operations."
+                />
+                <ChangeBlock
+                  changes={safe}
+                  title="Safe Changes"
+                  info="Changes that do not run a risk of breaking any existing operations."
+                />
+                <ChangeBlock
+                  changes={ignored}
+                  title="Ignored Changes"
+                  info="Changes that result in no difference when applied to the current version of the schemas. These can be safely ignored but are kept as part of the proposal unless explicitly removed."
+                />
+              </div>
+            </Fragment>
+          );
+        },
+      )}
     </div>
   );
 }

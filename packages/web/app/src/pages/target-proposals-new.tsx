@@ -1,7 +1,7 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildSchema, parse, print } from 'graphql';
 import { editor } from 'monaco-editor';
-import { useQuery } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import z from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
@@ -30,7 +30,7 @@ import {
   GearIcon,
   MagicWandIcon,
 } from '@radix-ui/react-icons';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { SchemaEditor } from '@theguild/editor';
 
 type Service =
@@ -73,8 +73,30 @@ function prettier(source: string) {
   }
 }
 
+const ProposeChangesMutation = graphql(`
+  mutation Proposals_ProposeChanges($input: CreateSchemaProposalInput!) {
+    createSchemaProposal(input: $input) {
+      ok {
+        schemaProposal {
+          id
+        }
+      }
+      error {
+        details {
+          title
+          description
+        }
+      }
+    }
+  }
+`);
+
 const ProposalsNewProposalQuery = graphql(`
   query ProposalsNewProposalQuery($targetReference: TargetReferenceInput!) {
+    me {
+      id
+      displayName
+    }
     target(reference: $targetReference) {
       ...Proposals_SelectFragment
       ...Proposals_TargetProjectTypeFragment
@@ -269,6 +291,7 @@ function ConfirmationModal(props: {
 function ProposalsNewContent(
   props: Parameters<typeof TargetProposalsNewPage>[0] & { page?: string },
 ) {
+  const navigate = useNavigate();
   const [query] = useQuery({
     query: ProposalsNewProposalQuery,
     variables: {
@@ -281,6 +304,7 @@ function ProposalsNewContent(
       },
     },
   });
+  const [_, proposeChanges] = useMutation(ProposeChangesMutation);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // overview error
   const [overviewError, setOverviewError] = useState('');
@@ -301,7 +325,7 @@ function ProposalsNewContent(
   }> | null>(null);
   const onSubmitProposal = useCallback(() => {
     setIsSubmitting(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       let payload: { title: string; description: string } | undefined;
       try {
         payload = ProposalForm.parse({ title, description });
@@ -326,10 +350,14 @@ function ProposalsNewContent(
       const confs: typeof confirmations = [];
       for (const diff of serviceDiff) {
         if (diff.error) {
-          console.log('Found an error in the diff...');
-          setEditorError(`"${diff.title}" has an error: ${diff.error}`);
+          if (diff.title?.length) {
+            setEditorError(`"${diff.title}" has an error: ${diff.error}`);
+          } else {
+            setEditorError(`The SDL contains an error: ${diff.error}`);
+          }
           setPage('editor');
-          return setIsSubmitting(false);
+          setIsSubmitting(false);
+          return;
         }
 
         if (diff.changes.length === 0) {
@@ -347,7 +375,8 @@ function ProposalsNewContent(
       if (!hasChanges) {
         setEditorError('No changes found. Select a service to change or create a new one.');
         setPage('editor');
-        return setIsSubmitting(false);
+        setIsSubmitting(false);
+        return;
       }
 
       setEditorError('');
@@ -355,10 +384,62 @@ function ProposalsNewContent(
 
       // if nothing to confirm, then publish
       if (confs.length === 0) {
-        console.log(payload);
-        // @todo submit
+        try {
+          const { data, error } = await proposeChanges({
+            input: {
+              target: {
+                bySelector: {
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                },
+              },
+              title: payload?.title ?? '',
+              description: payload?.description,
+              isDraft: true,
+              initialChecks: changedServices.map(s => ({
+                sdl: s.source,
+                service: s.__typename === 'CompositeSchema' ? s.service : '',
+                meta: query.data?.me.displayName
+                  ? {
+                      author: query.data?.me.displayName,
+                      commit: '',
+                    }
+                  : null,
+                // @todo url, meta, etc...
+                // and set author in backend?...
+              })),
+            },
+          });
+
+          if (error || !data?.createSchemaProposal.ok) {
+            setEditorError(error?.message ?? 'An error occurred when submitting the proposal.');
+            return;
+          }
+          if (data?.createSchemaProposal.error) {
+            setOverviewError(
+              data.createSchemaProposal.error.details.title ??
+                data.createSchemaProposal.error.details.description ??
+                'Could not submit proposal.',
+            );
+            return;
+          }
+          setIsSubmitting(false);
+          await navigate({
+            to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
+            params: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
+              proposalId: data.createSchemaProposal.ok.schemaProposal.id,
+            },
+          });
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          setEditorError(message);
+          setIsSubmitting(false);
+        }
       }
-      return setIsSubmitting(false);
     });
   }, [changedServices, title, description, existingServices, serviceDiff]);
   useEffect(() => {
@@ -494,7 +575,7 @@ function ProposalsNewContent(
             <Button
               variant="ghost"
               className="mt-2 w-full justify-center px-3 font-bold"
-              disabled={query.fetching}
+              disabled={query.fetching || isSubmitting}
               onClick={onSubmitProposal}
             >
               {isSubmitting ? <Spinner /> : 'Submit Proposal'}
@@ -1007,7 +1088,7 @@ function OverviewTab(props: {
       {props.error}
       <div className="pb-10">
         <Label htmlFor="proposal-title" className="p-1">
-          Title
+          Title <span className="text-gray-500">(required)</span>
         </Label>
         <Input
           aria-label="title"

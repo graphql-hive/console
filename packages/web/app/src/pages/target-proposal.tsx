@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { buildSchema } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
   ProposalOverview_ChangeFragment,
   ProposalOverview_ReviewsFragment,
@@ -82,20 +83,22 @@ const ProposalQuery = graphql(/* GraphQL  */ `
 `);
 
 const ProposalChangesQuery = graphql(/* GraphQL */ `
-  query ProposalChangesQuery($id: ID!) {
+  query ProposalChanges($id: ID!) {
     schemaProposal(input: { id: $id }) {
       id
       checks(after: null, input: { latestPerService: true }) {
         edges {
-          __typename
           node {
             id
+            ... on FailedSchemaCheck {
+              compositionErrors {
+                ...CompositionErrorsSection_SchemaErrorConnection
+              }
+            }
             serviceName
-            hasSchemaChanges
             schemaChanges {
               edges {
                 node {
-                  __typename
                   ...ProposalOverview_ChangeFragment
                 }
               }
@@ -168,7 +171,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
       // @todo versionId
       // @todo deal with pagination
     },
-    requestPolicy: 'cache-and-network',
+    // don't cache this because caching can make it behave strangely --
+    // by giving it only partial results
+    requestPolicy: 'network-only',
   });
 
   const [_, reviewSchemaProposal] = useMutation(ReviewSchemaProposalMutation);
@@ -176,15 +181,28 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
   // This does a lot of heavy lifting to avoid having to reapply patching etc on each tab...
   // Takes all the data provided by the queries to apply the patch to the schema and
   // categorize changes.
+  const isDistributedGraph = useMemo(() => {
+    return (
+      query.data?.latestValidVersion?.schemas.edges.at(0)?.node?.__typename === 'CompositeSchema'
+    );
+  }, [query.data?.latestValidVersion?.schemas.edges]);
   const services = useMemo(() => {
     return (
       changesQuery.data?.schemaProposal?.checks?.edges?.map(
         ({ node: proposalVersion }): ServiceProposalDetails => {
+          let compositionErrors:
+            | FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>
+            | undefined;
+          if (proposalVersion.__typename === 'FailedSchemaCheck') {
+            compositionErrors = proposalVersion.compositionErrors ?? undefined;
+          }
+
           const existingSchema = query.data?.latestValidVersion?.schemas.edges.find(
             ({ node: latestSchema }) =>
               (latestSchema.__typename === 'CompositeSchema' &&
                 latestSchema.service === proposalVersion.serviceName) ||
-              (latestSchema.__typename === 'SingleSchema' && proposalVersion.serviceName == null),
+              latestSchema.__typename === 'SingleSchema' /* &&
+                (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
           const beforeSchema = existingSchema?.length
             ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
@@ -194,6 +212,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             proposalVersion.schemaChanges?.edges
               .filter(c => !!c)
               ?.map(({ node: change }): Change<any> => {
+                // @todo don't useFragment here...
                 const c = useFragment(ProposalOverview_ChangeFragment, change);
                 return {
                   criticality: {
@@ -229,6 +248,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             conflictingChanges,
             ignoredChanges,
             serviceName: proposalVersion.serviceName ?? '',
+            compositionErrors,
           };
         },
       ) ?? []
@@ -238,8 +258,55 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     changesQuery.data?.schemaProposal?.checks?.edges,
     query.data?.latestValidVersion?.schemas.edges,
   ]);
-
   const proposal = query.data?.schemaProposal;
+
+  const ChangesBody = useMemo(() => {
+    if (changesQuery.fetching) {
+      return <Spinner />;
+    }
+
+    if (changesQuery.error) {
+      return (
+        <>
+          <Title className="text-center">Unexpected Error</Title>
+          <Subtitle className="text-center">
+            An unexpected error occurred when requesting the schema proposal.
+            <br />
+            We've been notified of this issue. Try again later.
+          </Subtitle>
+        </>
+      );
+    }
+
+    if (!services.length) {
+      return (
+        <>
+          <Title className="text-center">No changes found</Title>
+          <Subtitle className="text-center">
+            This proposed version would result in no changes to the latest schemas.
+          </Subtitle>
+        </>
+      );
+    }
+    return (
+      <TabbedContent
+        {...props}
+        page={props.tab}
+        services={services ?? []}
+        reviews={proposal?.reviews ?? {}}
+        checks={proposal?.checks ?? null}
+        isDistributedGraph={isDistributedGraph}
+      />
+    );
+  }, [
+    services,
+    props.tab,
+    proposal?.reviews,
+    proposal?.checks,
+    changesQuery.error,
+    changesQuery.fetching,
+  ]);
+
   return (
     <>
       <div className="flex py-6">
@@ -311,24 +378,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             </>
           )
         )}
-        {changesQuery.fetching ? (
-          <Spinner />
-        ) : !services.length ? (
-          <>
-            <Title className="text-center">No changes found</Title>
-            <Subtitle className="text-center">
-              This proposed version would result in no changes to the latest schemas.
-            </Subtitle>
-          </>
-        ) : (
-          <TabbedContent
-            {...props}
-            page={props.tab}
-            services={services ?? []}
-            reviews={proposal?.reviews ?? {}}
-            checks={proposal?.checks ?? null}
-          />
-        )}
+        {ChangesBody}
       </div>
     </>
   );
@@ -343,6 +393,7 @@ function TabbedContent(props: {
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
+  isDistributedGraph: boolean;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
@@ -379,22 +430,24 @@ function TabbedContent(props: {
             Schema
           </Link>
         </TabsTrigger>
-        <TabsTrigger variant="menu" value={Tab.SUPERGRAPH} asChild>
-          <Link
-            to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
-            params={{
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              proposalId: props.proposalId,
-            }}
-            search={{ page: 'supergraph' }}
-            className="flex items-center"
-          >
-            <GraphQLIcon className="mr-2 h-4 w-auto flex-none" />
-            Supergraph Preview
-          </Link>
-        </TabsTrigger>
+        {props.isDistributedGraph ? (
+          <TabsTrigger variant="menu" value={Tab.SUPERGRAPH} asChild>
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"
+              params={{
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+                proposalId: props.proposalId,
+              }}
+              search={{ page: 'supergraph' }}
+              className="flex items-center"
+            >
+              <GraphQLIcon className="mr-2 h-4 w-auto flex-none" />
+              Supergraph Preview
+            </Link>
+          </TabsTrigger>
+        ) : null}
         <TabsTrigger variant="menu" value={Tab.CHECKS} asChild>
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"

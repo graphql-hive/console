@@ -37,7 +37,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
     path
     severityLevel
     meta {
-      __typename
       ... on FieldArgumentDescriptionChanged {
         argumentName
         fieldName
@@ -241,19 +240,19 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         inputFieldName
         inputName
         newInputFieldDescription
-        oldInputFieldDescription
+        # oldInputFieldDescription
       }
       ... on InputFieldDefaultValueChanged {
         inputFieldName
         inputName
         newDefaultValue
-        oldDefaultValue
+        # oldDefaultValue
       }
       ... on InputFieldTypeChanged {
         inputFieldName
         inputName
         newInputFieldType
-        oldInputFieldType
+        # oldInputFieldType
       }
       ... on ObjectTypeInterfaceAdded {
         addedInterfaceName
@@ -265,15 +264,15 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on SchemaQueryTypeChanged {
         newQueryTypeName
-        oldQueryTypeName
+        # oldQueryTypeName
       }
       ... on SchemaMutationTypeChanged {
         newMutationTypeName
-        oldMutationTypeName
+        # oldMutationTypeName
       }
       ... on SchemaSubscriptionTypeChanged {
         newSubscriptionTypeName
-        oldSubscriptionTypeName
+        # oldSubscriptionTypeName
       }
       ... on TypeRemoved {
         removedTypeName
@@ -289,7 +288,7 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on TypeDescriptionChanged {
         newTypeDescription
-        oldTypeDescription
+        # oldTypeDescription
         typeName
       }
       ... on TypeDescriptionAdded {
@@ -417,7 +416,7 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         addedArgumentName
         addedArgumentValue
         directiveName
-        oldArgumentValue
+        # oldArgumentValue
       }
       ... on DirectiveUsageArgumentRemoved {
         directiveName
