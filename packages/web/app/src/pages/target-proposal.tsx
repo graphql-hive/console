@@ -20,6 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { ProjectType } from '@/gql/graphql';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
 import { NoopError } from '@graphql-inspector/patch/errors';
@@ -44,7 +45,15 @@ enum Tab {
 }
 
 const ProposalQuery = graphql(/* GraphQL  */ `
-  query ProposalQuery($proposalId: ID!, $latestValidVersionReference: TargetReferenceInput) {
+  query ProposalQuery(
+    $proposalId: ID!
+    $projectRef: ProjectReferenceInput!
+    $latestValidVersionReference: TargetReferenceInput
+  ) {
+    project(reference: $projectRef) {
+      id
+      type
+    }
     schemaProposal(input: { id: $proposalId }) {
       id
       createdAt
@@ -151,6 +160,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
   const [query, refreshProposal] = useQuery({
     query: ProposalQuery,
     variables: {
+      projectRef: {
+        bySelector: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+        },
+      },
       latestValidVersionReference: {
         bySelector: {
           organizationSlug: props.organizationSlug,
@@ -178,14 +193,13 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
 
   const [_, reviewSchemaProposal] = useMutation(ReviewSchemaProposalMutation);
 
+  const projectType = query.data?.project?.type;
+  const isDistributedGraph =
+    projectType === ProjectType.Federation || projectType === ProjectType.Stitching;
+
   // This does a lot of heavy lifting to avoid having to reapply patching etc on each tab...
   // Takes all the data provided by the queries to apply the patch to the schema and
   // categorize changes.
-  const isDistributedGraph = useMemo(() => {
-    return (
-      query.data?.latestValidVersion?.schemas.edges.at(0)?.node?.__typename === 'CompositeSchema'
-    );
-  }, [query.data?.latestValidVersion?.schemas.edges]);
   const services = useMemo(() => {
     return (
       changesQuery.data?.schemaProposal?.checks?.edges?.map(

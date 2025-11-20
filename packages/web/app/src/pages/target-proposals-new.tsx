@@ -862,12 +862,24 @@ function EditorTab(props: {
     [changedServices],
   );
 
+  const projectType = useFragment(Proposals_TargetProjectTypeFragment, props.projectTypeFragment);
+
   useEffect(() => {
     if (props.existingServices.length === 1 && changedServices.length === 0) {
       const oneAndOnlySchema = props.existingServices[0];
       onAddService(oneAndOnlySchema.id);
+    } else if (
+      projectType?.project.type &&
+      props.existingServices.length === 0 &&
+      changedServices.length === 0
+    ) {
+      onAddNewService({
+        serviceName: 'new service',
+        serviceUrl: '',
+        type: projectType.project.type,
+      });
     }
-  }, [props.existingServices, onAddService]);
+  }, [props.existingServices, onAddService, onAddNewService, projectType?.project.type]);
 
   const serviceTabIds = useMemo(() => {
     return changedServices.map(s => s.id);
@@ -894,7 +906,6 @@ function EditorTab(props: {
   };
   /** A reference to the monaco editor so we can force set the value on prettify */
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor | null>(null);
-  const projectType = useFragment(Proposals_TargetProjectTypeFragment, props.projectTypeFragment);
 
   return (
     <TabsContent value="editor">
