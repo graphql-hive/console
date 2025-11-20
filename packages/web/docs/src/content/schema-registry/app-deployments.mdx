@@ -318,7 +318,7 @@ const yoga = createYoga({
       experimental__persistedDocuments: {
         cdn: {
           // replace <target_id> and <cdn_access_token> with your values
-          endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
           accessToken: '<cdn_access_token>'
         }
       }
@@ -354,7 +354,7 @@ const server = new ApolloServer({
       experimental__persistedDocuments: {
         cdn: {
           // replace <target_id> and <cdn_access_token> with your values
-          endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
           accessToken: '<cdn_access_token>'
         }
       }
@@ -421,7 +421,7 @@ GET https://cdn.graphql-hive.com/artifacts/v1/<target_id>/apps/<app_name>/<app_v
 curl \
   -L \
   -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
-  https://cdn.graphql-hive.com/<target_id>/apps/<app_name>/<app_version>/<document_hash>
+  https://cdn.graphql-hive.com/artifacts/v1/<target_id>/apps/<app_name>/<app_version>/<document_hash>
 ```
 
 **Expected responses:**
