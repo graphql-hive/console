@@ -807,10 +807,10 @@ export function ResourceSelector(props: {
                   </div>
                 </div>
               </div>
-              <div className="mt-0 flex min-h-[250px] flex-wrap rounded-sm">
+              <div className="mt-0 flex h-64 flex-wrap rounded-sm">
                 {/** Projects Content */}
                 {showProjectsTab && (
-                  <div className="flex flex-1 flex-col border pt-2">
+                  <div className="flex h-full flex-1 flex-col overflow-auto border pt-2">
                     <div className="text-muted-foreground mb-1 px-2 text-xs uppercase">
                       access granted
                     </div>
@@ -859,7 +859,7 @@ export function ResourceSelector(props: {
                 {/** Targets Content */}
                 <div
                   className={cn(
-                    'flex flex-1 flex-col border-y border-r pt-2',
+                    'flex h-full flex-1 flex-col overflow-auto border-y border-r pt-2',
                     !showProjectsTab && 'border-l',
                   )}
                 >
@@ -933,7 +933,7 @@ export function ResourceSelector(props: {
                   )}
                 </div>
 
-                <div className="flex flex-1 flex-col border-y border-r">
+                <div className="flex h-full flex-1 flex-col overflow-auto border-y border-r">
                   {/** Services Content */}
                   {serviceAppsState === ServicesAppsState.service && (
                     <div className="py-2">
