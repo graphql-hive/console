@@ -1,4 +1,5 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { z } from 'zod';
 import { createServerAdapter } from '@whatwg-node/server';
 import { createArtifactRequestHandler } from './artifact-handler';
 import { ArtifactStorageReader } from './artifact-storage-reader';
@@ -6,16 +7,23 @@ import { AwsClient } from './aws';
 import { createIsAppDeploymentActive } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
 
-const process = (globalThis as any).process;
+const env = z
+  .object({
+    AWS_S3_ACCESS_KEY_ID: z.string(),
+    AWS_S3_ACCESSS_KEY_SECRET: z.string(),
+    AWS_S3_ACCESS_ENDPOINT: z.string(),
+    AWS_S3_BUCKET_NAME: z.string(),
+  })
+  .parse((globalThis as any).process.env);
 
 const s3 = {
   client: new AwsClient({
-    accessKeyId: process.env.AWS_S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_S3_ACCESSS_KEY_SECRET,
+    accessKeyId: env.AWS_S3_ACCESS_KEY_ID,
+    secretAccessKey: env.AWS_S3_ACCESSS_KEY_SECRET,
     service: 's3',
   }),
-  endpoint: process.env.AWS_S3_ACCESS_ENDPOINT,
-  bucketName: process.env.AWS_S3_BUCKET_NAME,
+  endpoint: env.AWS_S3_ACCESS_ENDPOINT,
+  bucketName: env.AWS_S3_BUCKET_NAME,
 };
 
 const s3Mirror = null;
@@ -31,13 +39,7 @@ const artifactHandler = createArtifactRequestHandler({
     },
     getCache: null,
     waitUntil: null,
-    captureException(error) {
-      // captureException(error, {
-      //   extra: {
-      //     source: 'artifactRequestHandler',
-      //   },
-      // });
-    },
+    captureException() {},
   }),
   artifactStorageReader,
   isAppDeploymentActive: createIsAppDeploymentActive({
