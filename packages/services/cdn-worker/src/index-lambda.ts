@@ -55,6 +55,7 @@ export async function handler(
   event: APIGatewayProxyEventV2,
   lambdaContext: Context,
 ): Promise<APIGatewayProxyResult> {
+  console.log(event.requestContext.http.method, event.rawPath);
   const url = new URL(event.rawPath, 'http://localhost');
   if (event.queryStringParameters != null) {
     for (const name in event.queryStringParameters) {
@@ -78,7 +79,13 @@ export async function handler(
     },
   );
 
-  console.log(response);
+  if (!response) {
+    return {
+      statusCode: 404,
+      body: '',
+      isBase64Encoded: false,
+    };
+  }
 
   const responseHeaders: Record<string, string> = {};
 
