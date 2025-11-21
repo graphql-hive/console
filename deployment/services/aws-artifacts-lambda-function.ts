@@ -57,7 +57,6 @@ export function deployAWSArtifactsLambdaFunction(args: {
 
   const example = new aws.lambda.FunctionUrl('awsLambdaArtifactsHandlerUrl', {
     functionName: awsLambdaArtifactsHandler.arn,
-    qualifier: args.environment.envVars.RELEASE,
     authorizationType: 'NONE',
     invokeMode: 'BUFFERED',
     region: 'us-east-2',
