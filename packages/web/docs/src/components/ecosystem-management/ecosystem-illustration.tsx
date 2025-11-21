@@ -124,20 +124,30 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       {/* Col 4: Right Connections */}
       <div
-        className="hidden h-full grid-rows-2 justify-center md:grid"
+        className="relative hidden h-0 min-h-full shrink grow-0 grid-flow-col-dense grid-cols-1 grid-rows-4 place-items-center justify-center md:grid"
         style={{ paddingBlock: halfBoxHeight }}
       >
-        {/* Top-Right Line: Connects Top-Center to Side-Center */}
         <DashedLine
-          className="translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700"
+          className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700"
           fill="none"
           stroke="currentColor"
         />
-        {/* Bottom-Right Line: Connects Bottom-Center to Side-Center */}
         <DashedLine
-          className="translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700"
+          className="row-span-4 row-start-4 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700"
           fill="none"
           stroke="currentColor"
+        />
+        <DashedLine
+          className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700"
+          fill="none"
+          stroke="currentColor"
+          short
+        />
+        <DashedLine
+          className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700"
+          fill="none"
+          stroke="currentColor"
+          short
         />
       </div>
 

@@ -14,10 +14,14 @@
 
 @keyframes dash {
   to {
-    stroke-dashoffset: 300;
+    stroke-dashoffset: -18px; /* 2 * 9px pattern */
   }
 }
 
 .animate-dash path {
-  animation: dash 20s linear infinite;
+  animation: dash 0.75s linear infinite;
+}
+
+.animate-dash-reverse path {
+  animation: dash 0.75s linear infinite reverse;
 }
