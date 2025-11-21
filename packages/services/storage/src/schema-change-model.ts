@@ -1,8 +1,9 @@
 /** These mirror DB models from  */
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
+import { Kind } from 'graphql';
 import { SerializableValue } from 'slonik';
-import { z, ZodArray, ZodBoolean, ZodNullable, ZodNumber, ZodString } from 'zod';
+import { z } from 'zod';
 import {
   ChangeType,
   CriticalityLevel,
@@ -84,7 +85,6 @@ import {
   TypeDescriptionChangedChange,
   TypeDescriptionRemovedChange,
   TypeKindChangedChange,
-  TypeOfChangeType,
   TypeRemovedChange,
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
@@ -255,19 +255,8 @@ const DirectiveUsageArgumentAddedLiteral = z.literal("DIRECTIVE_USAGE_ARGUMENT_A
 // prettier-ignore
 const DirectiveUsageArgumentRemovedLiteral = z.literal("DIRECTIVE_USAGE_ARGUMENT_REMOVED" satisfies `${typeof ChangeType.DirectiveUsageArgumentRemoved}`)
 
-/**
- * @source https://github.com/colinhacks/zod/issues/372#issuecomment-1280054492
- */
 type Implements<Model> = {
-  [key in keyof Model]-?: undefined extends Model[key]
-    ? null extends Model[key]
-      ? z.ZodNullableType<z.ZodOptionalType<z.ZodType<Model[key]>>>
-      : z.ZodOptionalType<z.ZodType<Model[key]>>
-    : null extends Model[key]
-      ? z.ZodNullableType<z.ZodType<Model[key]>>
-      : Model[key] extends TypeOfChangeType
-        ? z.ZodLiteral<`${Model[key]}`>
-        : z.ZodType<Model[key]>;
+  [K in keyof Model]-?: z.ZodTypeAny & { _output: Model[K] };
 };
 
 export function implement<Model = never>() {
@@ -345,12 +334,9 @@ export const DirectiveAddedModel = implement<DirectiveAddedChange>().with({
   meta: z.object({
     addedDirectiveName: z.string(),
     // for backwards compatibility
-    addedDirectiveRepeatable: z.boolean().default(false) as unknown as ZodBoolean, // boolean;
-    addedDirectiveLocations: z.array(z.string()).default([]) as unknown as ZodArray<ZodString>, // string[];
-    addedDirectiveDescription: z
-      .string()
-      .nullish()
-      .default(null) as unknown as ZodNullable<ZodString>, // string | null;
+    addedDirectiveRepeatable: z.boolean().default(false),
+    addedDirectiveLocations: z.array(z.string()).default([]),
+    addedDirectiveDescription: z.string().nullish().default(null), // string | null;
   }),
 });
 
@@ -386,12 +372,11 @@ export const DirectiveArgumentAddedModel = implement<DirectiveArgumentAddedChang
   meta: z.object({
     directiveName: z.string(),
     addedDirectiveArgumentName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedDirectiveArgumentTypeIsNonNull: z.boolean().default(false) as any as ZodBoolean,
-    addedDirectiveArgumentType: z.string().default('') as any as ZodString,
-    addedToNewDirective: z.boolean().default(false) as any as ZodBoolean,
-    addedDirectiveArgumentDescription: z.optional(z.string()), // string | null;
-    addedDirectiveDefaultValue: z.optional(z.string()), // string | null
+    addedDirectiveArgumentTypeIsNonNull: z.boolean().default(false),
+    addedDirectiveArgumentType: z.string().default(''),
+    addedToNewDirective: z.boolean().default(false),
+    addedDirectiveArgumentDescription: z.optional(z.string()),
+    addedDirectiveDefaultValue: z.optional(z.string()),
   }),
 });
 
@@ -444,9 +429,8 @@ export const DirectiveUsageEnumValueAddedModel =
       enumName: z.string(),
       enumValueName: z.string(),
       addedDirectiveName: z.string(),
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -457,8 +441,7 @@ export const DirectiveUsageEnumValueRemovedModel =
       enumName: z.string(),
       enumValueName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -468,8 +451,7 @@ export const DirectiveUsageFieldAddedModel = implement<DirectiveUsageFieldAddedC
     typeName: z.string(),
     fieldName: z.string(),
     addedDirectiveName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -479,8 +461,7 @@ export const DirectiveUsageFieldRemovedModel = implement<DirectiveUsageFieldRemo
     typeName: z.string(),
     fieldName: z.string(),
     removedDirectiveName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -491,9 +472,8 @@ export const DirectiveUsageUnionMemberAddedModel =
       unionName: z.string(),
       addedUnionMemberTypeName: z.string(),
       addedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 export const DirectiveUsageUnionMemberRemovedModel =
@@ -503,8 +483,7 @@ export const DirectiveUsageUnionMemberRemovedModel =
       unionName: z.string(),
       removedUnionMemberTypeName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -515,9 +494,8 @@ export const DirectiveUsageFieldDefinitionAddedModel =
       typeName: z.string(),
       fieldName: z.string(),
       addedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -528,8 +506,7 @@ export const DirectiveUsageFieldDefinitionRemovedModel =
       typeName: z.string(),
       fieldName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -540,10 +517,9 @@ export const DirectiveUsageInputFieldDefinitionAddedModel =
       inputObjectName: z.string(),
       inputFieldName: z.string(),
       addedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      inputFieldType: z.string().default('') as any as ZodString,
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      inputFieldType: z.string().default(''),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -554,8 +530,7 @@ export const DirectiveUsageInputFieldDefinitionRemovedModel =
       inputObjectName: z.string(),
       inputFieldName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -567,9 +542,8 @@ export const DirectiveUsageArgumentDefinitionAddedModel =
       fieldName: z.string(),
       argumentName: z.string(),
       addedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -581,8 +555,7 @@ export const DirectiveUsageArgumentDefinitionRemovedModel =
       fieldName: z.string(),
       argumentName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -591,9 +564,8 @@ export const DirectiveUsageEnumAddedModel = implement<DirectiveUsageEnumAddedCha
   meta: z.object({
     enumName: z.string(),
     addedDirectiveName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -602,8 +574,7 @@ export const DirectiveUsageEnumRemovedModel = implement<DirectiveUsageEnumRemove
   meta: z.object({
     enumName: z.string(),
     removedDirectiveName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -616,9 +587,8 @@ export const DirectiveUsageInputObjectAddedModel =
       isAddedInputFieldTypeNullable: z.boolean(),
       addedInputFieldType: z.string(),
       addedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -631,8 +601,7 @@ export const DirectiveUsageInputObjectRemovedModel =
       isRemovedInputFieldTypeNullable: z.boolean(),
       removedInputFieldType: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -641,9 +610,8 @@ export const DirectiveUsageScalarAddedModel = implement<DirectiveUsageScalarAdde
   meta: z.object({
     scalarName: z.string(),
     addedDirectiveName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -653,8 +621,7 @@ export const DirectiveUsageScalarRemovedModel = implement<DirectiveUsageScalarRe
     meta: z.object({
       scalarName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
@@ -664,9 +631,8 @@ export const DirectiveUsageObjectAddedModel = implement<DirectiveUsageObjectAdde
   meta: z.object({
     objectName: z.string(),
     addedDirectiveName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -676,8 +642,7 @@ export const DirectiveUsageObjectRemovedModel = implement<DirectiveUsageObjectRe
     meta: z.object({
       objectName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
@@ -687,9 +652,8 @@ export const DirectiveUsageInterfaceAddedModel =
     meta: z.object({
       interfaceName: z.string(),
       addedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -699,8 +663,7 @@ export const DirectiveUsageInterfaceRemovedModel =
     meta: z.object({
       interfaceName: z.string(),
       removedDirectiveName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -709,9 +672,8 @@ export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAdde
   meta: z.object({
     addedDirectiveName: z.string(),
     schemaTypeName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean,
-    directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -721,8 +683,7 @@ export const DirectiveUsageSchemaRemovedModel = implement<DirectiveUsageSchemaRe
     meta: z.object({
       removedDirectiveName: z.string(),
       schemaTypeName: z.string(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
@@ -738,8 +699,7 @@ export const DirectiveUsageArgumentAddedModel = implement<DirectiveUsageArgument
       parentFieldName: z.string().nullable(),
       parentArgumentName: z.string().nullable(),
       parentEnumValueName: z.string().nullable(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
@@ -754,8 +714,7 @@ export const DirectiveUsageArgumentRemovedModel =
       parentFieldName: z.string().nullable(),
       parentArgumentName: z.string().nullable(),
       parentEnumValueName: z.string().nullable(),
-      /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-      directiveRepeatedTimes: z.number().default(1) as unknown as ZodNumber,
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -775,13 +734,8 @@ export const EnumValueAddedModel = implement<EnumValueAddedChange>().with({
   meta: z.object({
     enumName: z.string(),
     addedEnumValueName: z.string(),
-    /** Default for backwards compatibility, but it breaks the typing. @todo fix typing */
-    addedToNewType: z.boolean().default(false) as any as ZodBoolean, // default for backwards compatibility
-    addedDirectiveDescription: z
-      .string()
-      .nullable()
-      .optional()
-      .default(null) as unknown as ZodNullable<ZodString>,
+    addedToNewType: z.boolean().default(false),
+    addedDirectiveDescription: z.string().nullable().optional().default(null),
   }),
 });
 
@@ -846,7 +800,7 @@ export const FieldAddedModel = implement<FieldAddedChange>().with({
     typeName: z.string(),
     addedFieldName: z.string(),
     typeType: z.string(),
-    addedFieldReturnType: z.string().default('') as unknown as ZodString, // optional for backwards compatibility
+    addedFieldReturnType: z.string().default(''), // optional for backwards compatibility
   }),
 });
 
@@ -882,7 +836,7 @@ export const FieldDeprecationAddedModel = implement<FieldDeprecationAddedChange>
   meta: z.object({
     typeName: z.string(),
     fieldName: z.string(),
-    deprecationReason: z.string().default('No longer supported') as unknown as ZodString, // for backwards compatibility
+    deprecationReason: z.string().default('No longer supported'), // for backwards compatibility
   }),
 });
 
@@ -945,7 +899,7 @@ export const FieldArgumentAddedModel = implement<FieldArgumentAddedChange>().wit
     addedArgumentType: z.string(),
     hasDefaultValue: z.boolean(),
     isAddedFieldArgumentBreaking: z.boolean(),
-    addedToNewField: z.boolean().default(false) as unknown as ZodBoolean, // for backwards compatibility
+    addedToNewField: z.boolean().default(false), // for backwards compatibility
   }),
 });
 
@@ -977,7 +931,7 @@ export const InputFieldAddedModel = implement<InputFieldAddedChange>().with({
     addedInputFieldName: z.string(),
     isAddedInputFieldTypeNullable: z.boolean(),
     addedInputFieldType: z.string(),
-    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean, // default to make backwards compatible
+    addedToNewType: z.boolean().default(false), // default to make backwards compatible
     addedFieldDefault: z.string().optional(),
   }),
 });
@@ -1041,7 +995,7 @@ export const ObjectTypeInterfaceAddedModel = implement<ObjectTypeInterfaceAddedC
   meta: z.object({
     objectTypeName: z.string(),
     addedInterfaceName: z.string(),
-    addedToNewType: z.boolean().default(false) as unknown as ZodBoolean, // optional for backwards compatibility
+    addedToNewType: z.boolean().default(false), // optional for backwards compatibility
   }),
 });
 
@@ -1090,11 +1044,26 @@ export const TypeRemovedModel = implement<TypeRemovedChange>().with({
 
 export const TypeAddedModel = implement<TypeAddedChange>().with({
   type: TypeAddedLiteral,
-  meta: z.object({
-    addedTypeName: z.string(),
-    addedTypeKind: z.string().default('') as unknown as ZodString, // optional for backwards compatibility
-    addedTypeIsOneOf: z.boolean().optional(),
-  }) as any,
+  meta: z.union([
+    z.object({
+      addedTypeName: z.string(),
+      addedTypeKind: z.literal(Kind.INPUT_OBJECT_TYPE_DEFINITION),
+      addedTypeIsOneOf: z.boolean().default(false),
+    }),
+    z.object({
+      addedTypeName: z.string(),
+      addedTypeKind: z
+        .union([
+          z.literal(Kind.ENUM_TYPE_DEFINITION),
+          z.literal(Kind.OBJECT_TYPE_DEFINITION),
+          z.literal(Kind.INTERFACE_TYPE_DEFINITION),
+          z.literal(Kind.UNION_TYPE_DEFINITION),
+          z.literal(Kind.SCALAR_TYPE_DEFINITION),
+        ])
+        /** Default isn't important for old changes b/c they won't be patched but it keeps the model safe for them. */
+        .default(Kind.OBJECT_TYPE_DEFINITION),
+    }),
+  ]),
 });
 
 export const TypeKindChangedModel = implement<TypeKindChangedChange>().with({
@@ -1145,7 +1114,7 @@ export const UnionMemberAddedModel = implement<UnionMemberAddedChange>().with({
   meta: z.object({
     unionName: z.string(),
     addedUnionMemberTypeName: z.string(),
-    addedToNewType: z.boolean().default(false) as any as ZodBoolean, // default for backwards compatibility
+    addedToNewType: z.boolean().default(false), // default for backwards compatibility
   }),
 });
 
