@@ -3,9 +3,9 @@ FROM scratch AS config
 COPY builder-config.yaml .
 COPY extension-hiveauth/ ./extension-hiveauth/
 
-FROM golang:1.23.7-bookworm AS builder
+FROM golang:1.25-bookworm AS builder
 
-ARG OTEL_VERSION=0.122.0
+ARG OTEL_VERSION=0.140.0
 
 WORKDIR /build
 
