@@ -8,12 +8,19 @@ import type { SchemaProposalResolvers } from './../../../__generated__/types';
 // @todo
 export const SchemaProposal: SchemaProposalResolvers = {
   async author(proposal, _, { injector }) {
+    if (proposal.author) {
+      return proposal.author;
+    }
+
+    // @todo this feels hacky...
     const userId = (proposal as any)?.userId;
     if (userId) {
       const user = await injector.get(Storage).getUserById(userId);
-      return user?.displayName ?? '';
+      if (user?.displayName) {
+        return user.displayName;
+      }
     }
-    return '';
+    return proposal.checks?.edges[0]?.node.meta?.author ?? '';
   },
   async rebasedSchemaSDL(proposal, args, { injector }) {
     if (proposal.rebasedSchemaSDL) {

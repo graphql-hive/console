@@ -36,8 +36,8 @@ export class SchemaProposalManager {
     description: string;
     isDraft: boolean;
     user: {
-      id: string;
-      displayName: string;
+      id: string | null;
+      displayName: string | null;
     } | null;
     initialChecks: ReadonlyArray<SchemaProposalCheckInput>;
   }) {

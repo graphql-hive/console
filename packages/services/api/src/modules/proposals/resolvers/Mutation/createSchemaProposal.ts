@@ -33,7 +33,10 @@ export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaPr
           id: user.id,
           displayName: user.displayName,
         }
-      : null,
+      : {
+          id: null,
+          displayName: initialChecks.find(c => c.meta?.author)?.meta?.author ?? null,
+        },
     initialChecks,
   });
 
