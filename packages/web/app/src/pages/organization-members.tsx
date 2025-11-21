@@ -11,6 +11,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { cn } from '@/lib/utils';
+import { organizationMembersRoute } from '../router';
 
 const OrganizationMembersPage_OrganizationFragment = graphql(`
   fragment OrganizationMembersPage_OrganizationFragment on Organization {
@@ -106,7 +107,7 @@ function PageContent(props: {
 }
 
 const OrganizationMembersPageQuery = graphql(`
-  query OrganizationMembersPageQuery($organizationSlug: String!) {
+  query OrganizationMembersPageQuery($organizationSlug: String!, $searchTerm: String) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...OrganizationMembersPage_OrganizationFragment
       viewerCanSeeMembers
@@ -119,10 +120,13 @@ function OrganizationMembersPageContent(props: {
   page: SubPage;
   onPageChange(page: SubPage): void;
 }) {
+  const search = organizationMembersRoute.useSearch();
+
   const [query, refetch] = useQuery({
     query: OrganizationMembersPageQuery,
     variables: {
       organizationSlug: props.organizationSlug,
+      searchTerm: search.search || undefined,
     },
   });
 
