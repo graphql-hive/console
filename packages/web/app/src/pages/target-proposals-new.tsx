@@ -443,7 +443,8 @@ function ProposalsNewContent(
             setEditorError(error?.message ?? 'An error occurred when submitting the proposal.');
             setPage('editor');
             return;
-          } else if (data?.createSchemaProposal.error || !data?.createSchemaProposal.ok) {
+          }
+          if (data?.createSchemaProposal.error || !data?.createSchemaProposal.ok) {
             const err = data?.createSchemaProposal.error;
             setOverviewError(
               err?.details.title ??
