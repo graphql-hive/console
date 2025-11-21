@@ -65,9 +65,7 @@ interface NotificationItf @meta(name: "domain", content: "notifications") {
 """
 Notification sent when a product is updated
 """
-type ProductUpdateNotification implements NotificationItf
-  @meta(name: "domain", content: "notifications")
-  @meta(name: "category", content: "product-updates") {
+type ProductUpdateNotification implements NotificationItf {
   """
   Unique identifier for the notification
   """
@@ -89,9 +87,7 @@ type ProductUpdateNotification implements NotificationItf
 """
 Notification sent when a review is posted
 """
-type ReviewPostedNotification implements NotificationItf
-  @meta(name: "domain", content: "notifications")
-  @meta(name: "category", content: "reviews") {
+type ReviewPostedNotification implements NotificationItf {
   """
   Unique identifier for the notification
   """
@@ -113,9 +109,7 @@ type ReviewPostedNotification implements NotificationItf
 """
 Welcome notification sent to new users
 """
-type WelcomeNotification implements NotificationItf
-  @meta(name: "domain", content: "notifications")
-  @meta(name: "category", content: "user-onboarding") {
+type WelcomeNotification implements NotificationItf {
   """
   Unique identifier for the notification
   """
