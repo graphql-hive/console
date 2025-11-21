@@ -25,10 +25,11 @@ export function deployAWSArtifactsLambdaFunction(args: {
   const awsLambdaArtifactsHandler = new aws.lambda.Function('awsLambdaArtifactsHandler', {
     name: `hive-artifacts-handler-${args.environment.envName}`,
     runtime: aws.lambda.Runtime.NodeJS22dX,
-    handler: 'index.worker.mjs',
+    handler: 'index.handler',
+    packageType: 'Zip',
     architectures: ['arm64'],
     code: new pulumi.asset.AssetArchive({
-      'index.worker.mjs':
+      'index.mjs':
         process.env.AWS_LAMBDA_ARTIFACT_PATH ||
         resolve(__dirname, '../../packages/services/cdn-worker/dist/index.lambda.mjs'),
     }),
