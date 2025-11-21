@@ -20,7 +20,7 @@ export function EcosystemIllustration(props: { className?: string }) {
   return (
     <div
       className={cn(
-        'grid grid-cols-1 items-center gap-y-0 overflow-visible md:grid-cols-[min-content_auto_min-content_auto_min-content]',
+        'grid grid-cols-[min-content_1fr_min-content_1fr_min-content] items-center gap-y-0 overflow-visible',
         props.className,
         styles.container,
       )}
@@ -36,7 +36,7 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       {/* Col 2: Left Connections */}
       <div
-        className="hidden h-full w-[107px] grid-rows-2 justify-center md:grid"
+        className="hidden h-full grid-rows-2 justify-center md:grid"
         style={{ paddingBlock: halfBoxHeight }}
       >
         {/* Top-Left Line: Connects Top-Center to Side-Center */}
@@ -113,7 +113,7 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       {/* Col 4: Right Connections */}
       <div
-        className="hidden h-full w-[107px] grid-rows-2 justify-center md:grid"
+        className="hidden h-full grid-rows-2 justify-center md:grid"
         style={{ paddingBlock: halfBoxHeight }}
       >
         {/* Top-Right Line: Connects Top-Center to Side-Center */}
