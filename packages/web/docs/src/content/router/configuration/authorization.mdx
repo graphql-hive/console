@@ -1,0 +1,171 @@
+---
+title: 'authorization'
+---
+
+# authorization
+
+The `authorization` configuration lets you control fine-grained access to your GraphQL schema using
+directives. This allows you to restrict which fields authenticated users can access based on their
+authentication status or specific scopes.
+
+## How Authorization Works
+
+The router supports two modes for handling unauthorized field access:
+
+- **`filter` (default mode):** This mode silently removes any fields from the incoming GraphQL
+  operation that the user is not authorized to access. For each field removed, a corresponding
+  authorization error is added to the `errors` list in the GraphQL response, while the rest of
+  the accessible data is returned as requested.
+- **`reject` mode:** In this mode, the router will reject any GraphQL operation that attempts to
+  access one or more unauthorized fields. The entire request is denied, and a descriptive error is
+  returned.
+
+## Directives
+
+Access control is defined within the supergraph schema using the following directives:
+
+### `@authenticated`
+
+Restricts access to a field to only authenticated users. Any request without valid authentication
+(such as requests without a JWT token) will be prevented from accessing the field.
+
+**Usage:**
+
+```graphql
+type Query {
+  me: User @authenticated
+  publicData: String
+}
+```
+
+### `@requiresScopes(scopes: [[String]])`
+
+Provides more granular control by requiring the user to possess specific scopes. The directive
+supports:
+
+- **`AND` logic** for scopes within a nested list (e.g., `[["read:users", "write:users"]]`) - the
+  user must have all scopes in the list
+- **`OR` logic** for scopes across nested lists (e.g., `[["read:users"], ["admin:users"]]`) - the
+  user must have scopes from at least one of the nested lists
+
+**Usage:**
+
+```graphql
+type Query {
+  # User must have both scopes
+  users: [User] @requiresScopes(scopes: [["read:users", "write:users"]])
+
+  # User must have either scope
+  admin: AdminPanel @requiresScopes(scopes: [["admin:users"], ["admin:system"]])
+
+  # User must have read:users AND (admin:users OR admin:system)
+  reports: [Report] @requiresScopes(scopes: [["read:users", "admin:users"], ["read:users", "admin:system"]])
+}
+```
+
+## Configuration Options
+
+### `enabled`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Whether to enable authorization directives processing. Set to `false` to disable authorization checks entirely.
+
+### `unauthorized.mode`
+
+- **Type:** `string`
+- **Allowed values:** `"filter"` or `"reject"`
+- **Default:** `"filter"`
+
+Controls how the router handles unauthorized field access:
+
+- `"filter"`: Remove unauthorized fields and continue processing (returns errors for removed fields)
+- `"reject"`: Reject the entire request if any unauthorized fields are accessed
+
+## Examples
+
+### Filter Mode (Default)
+
+With `filter` mode, unauthorized fields are silently removed from the operation, but the query
+continues to execute and return the data the user can access:
+
+```yaml filename="router.config.yaml"
+authorization:
+  directives:
+    enabled: true
+    unauthorized:
+      mode: filter
+```
+
+**Request:**
+
+```graphql
+query {
+  publicData
+  me {
+    name
+    email
+  }
+}
+```
+
+If the user is not authenticated, the response might look like:
+
+```json
+{
+  "data": {
+    "publicData": "available",
+    "me": null
+  },
+  "errors": [
+    {
+      "message": "Unauthorized field or type",
+      "extensions": {
+        "code": "UNAUTHORIZED_FIELD_OR_TYPE",
+        "affectedPath": "me"
+      }
+    }
+  ]
+}
+```
+
+### Reject Mode
+
+With `reject` mode, if any field is unauthorized, the entire request is rejected:
+
+```yaml filename="router.config.yaml"
+authorization:
+  directives:
+    enabled: true
+    unauthorized:
+      mode: reject
+```
+
+**Request (same as above):**
+
+```graphql
+query {
+  publicData
+  me {
+    name
+    email
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unauthorized field or type",
+      "extensions": {
+        "code": "UNAUTHORIZED_FIELD_OR_TYPE"
+      }
+    }
+  ]
+}
+```

@@ -13,18 +13,19 @@ Some configuration variables can be overridden at runtime using
 This page covers all the main configuration options available. Each option links to a detailed page
 that explains how to use that feature.
 
-- [`cors`](./configuration/cors): Control cross-origin requests to your API.
-- [`csrf`](./configuration/csrf): Protect against cross-site request forgery attacks.
-- [`headers`](./configuration/headers): Modify HTTP headers between clients and subgraphs.
-- [`http`](./configuration/http): Set the host and port for your router.
-- [`jwt`](./configuration/jwt): Add JWT-based authentication to secure your endpoint.
-- [`log`](./configuration/log): Control what the router logs and how it formats log messages.
-- [`override_subgraph_urls`](./configuration/override_subgraph_urls): Route requests to different
+- [`authorization`](./authorization): Define field-level access control using directives.
+- [`cors`](./cors): Control cross-origin requests to your API.
+- [`csrf`](./csrf): Protect against cross-site request forgery attacks.
+- [`headers`](./headers): Modify HTTP headers between clients and subgraphs.
+- [`http`](./http): Set the host and port for your router.
+- [`jwt`](./jwt): Add JWT-based authentication to secure your endpoint.
+- [`log`](./log): Control what the router logs and how it formats log messages.
+- [`override_subgraph_urls`](./override_subgraph_urls): Route requests to different
   subgraph URLs dynamically.
-- [`override_labels`](./configuration/override_labels): Dynamically activate or deactivate
+- [`override_labels`](./override_labels): Dynamically activate or deactivate
   progressive override labels.
-- [`query_planner`](./configuration/query_planner): Add safety limits and debugging for query
+- [`query_planner`](./query_planner): Add safety limits and debugging for query
   planning.
-- [`supergraph`](./configuration/supergraph): Tell the router where to find your supergraph schema.
-- [`traffic_shaping`](./configuration/traffic_shaping): Manage connection pooling and request
+- [`supergraph`](./supergraph): Tell the router where to find your supergraph schema.
+- [`traffic_shaping`](./traffic_shaping): Manage connection pooling and request
   handling to subgraphs.
