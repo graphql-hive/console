@@ -20,6 +20,34 @@ When a GraphQL request comes to the router, it goes through these steps:
 
 The key insight is that authorization happens **before** your subgraphs are even called. This protects sensitive fields at the router level.
 
+## Integration with JWT Authentication
+
+Authorization directives work alongside your [JWT authentication setup](./jwt-authentication.mdx). Here's the flow:
+
+1. **Client sends request** with JWT token in the `Authorization` header
+2. **Router validates JWT** using your configured JWKS provider
+3. **Router extracts scopes** from the JWT claims (`scope` field)
+4. **Router checks authorization directives** against the extracted scopes
+5. **Query proceeds or fails** based on authorization result
+
+**Configuration example:**
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: false  # Allow anonymous requests
+  jwks_providers:
+    - source: remote
+      url: https://your-auth-provider.com/.well-known/jwks.json
+
+authorization:
+  directives:
+    enabled: true
+    unauthorized:
+      mode: filter  # Or 'reject' for stricter enforcement
+```
+
+With this setup, your GraphQL API allows both anonymous and authenticated requests, but authorization directives control which fields each user can access.
+
 ## The Two Authorization Directives
 
 ### `@authenticated`
@@ -256,34 +284,6 @@ query {
   ]
 }
 ```
-
-## Integration with JWT Authentication
-
-Authorization directives work alongside your [JWT authentication setup](./jwt-authentication.mdx). Here's the flow:
-
-1. **Client sends request** with JWT token in the `Authorization` header
-2. **Router validates JWT** using your configured JWKS provider
-3. **Router extracts scopes** from the JWT claims (`scope` field)
-4. **Router checks authorization directives** against the extracted scopes
-5. **Query proceeds or fails** based on authorization result
-
-**Configuration example:**
-
-```yaml filename="router.config.yaml"
-jwt:
-  require_authentication: false  # Allow anonymous requests
-  jwks_providers:
-    - source: remote
-      url: https://your-auth-provider.com/.well-known/jwks.json
-
-authorization:
-  directives:
-    enabled: true
-    unauthorized:
-      mode: filter  # Or 'reject' for stricter enforcement
-```
-
-With this setup, your GraphQL API allows both anonymous and authenticated requests, but authorization directives control which fields each user can access.
 
 
 ## Specification
