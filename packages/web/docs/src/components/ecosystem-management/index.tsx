@@ -104,7 +104,14 @@ export function EcosystemManagementSection({ className }: { className?: string }
         </div>
         <EcosystemIllustration />
       </div>
-      <DecorationIsolation>
+      <DecorationIsolation
+        style={{
+          maskImage:
+            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.2) 8%, rgba(0,0,0,0.75) 20%, rgba(0,0,0,1) 32%)',
+          WebkitMaskImage:
+            'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.2) 8%, rgba(0,0,0,0.75) 20%, rgba(0,0,0,1) 32%)',
+        }}
+      >
         <HighlightDecoration className="pointer-events-none absolute right-0 top-[-22px] overflow-visible" />
       </DecorationIsolation>
     </section>
