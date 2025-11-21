@@ -1,5 +1,14 @@
 # @graphql-hive/core
 
+## 0.15.1
+
+### Patch Changes
+
+- [#7297](https://github.com/graphql-hive/console/pull/7297)
+  [`64c8368`](https://github.com/graphql-hive/console/commit/64c8368c4b94b4ad2178d341442f0a0ffb4013f1)
+  Thanks [@ardatan](https://github.com/ardatan)! - Shutdown Circuit Breaker properly while disposing
+  Hive Client
+
 ## 0.15.0
 
 ### Minor Changes

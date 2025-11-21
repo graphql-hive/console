@@ -1,5 +1,23 @@
 # hive
 
+## 8.9.0
+
+### Minor Changes
+
+- [#7281](https://github.com/graphql-hive/console/pull/7281)
+  [`791c025`](https://github.com/graphql-hive/console/commit/791c0252a0933d0f5c933eef9053227d7f00c87e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce rate limiting for email sign up, sign in
+  and password rest. The IP value to use for the rate limiting can be specified via the
+  `SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME` environment variable. By default the `CF-Connecting-IP`
+  header is being used.
+
+### Patch Changes
+
+- [#7295](https://github.com/graphql-hive/console/pull/7295)
+  [`76c700f`](https://github.com/graphql-hive/console/commit/76c700f322d8ec81a4fcea0333283427633f8412)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fixes a UI bug in
+  MembershipInvitation modal when there are many projects/targets/services.
+
 ## 8.8.0
 
 ### Minor Changes
