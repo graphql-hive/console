@@ -151,4 +151,8 @@ export const gatewayConfig = defineConfig({
   },
   maxTokens: 1_000,
   maxDepth: 20,
+  cors: {
+    origin: '*', // allow all origins
+    credentials: false, // do not allow credentials in cross-origin requests
+  },
 });
