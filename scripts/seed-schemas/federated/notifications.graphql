@@ -1,4 +1,13 @@
-extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "notifications-team")
+  @meta(name: "contact", content: "#notifications-channel")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 """
 ISO-8601 formatted date and time string
@@ -48,7 +57,7 @@ input NotificationFilterInput {
 """
 Base interface for all notification types
 """
-interface NotificationItf {
+interface NotificationItf @meta(name: "domain", content: "notifications") {
   id: ID!
   message: String!
 }
@@ -56,7 +65,9 @@ interface NotificationItf {
 """
 Notification sent when a product is updated
 """
-type ProductUpdateNotification implements NotificationItf {
+type ProductUpdateNotification implements NotificationItf
+  @meta(name: "domain", content: "notifications")
+  @meta(name: "category", content: "product-updates") {
   """
   Unique identifier for the notification
   """
@@ -78,7 +89,9 @@ type ProductUpdateNotification implements NotificationItf {
 """
 Notification sent when a review is posted
 """
-type ReviewPostedNotification implements NotificationItf {
+type ReviewPostedNotification implements NotificationItf
+  @meta(name: "domain", content: "notifications")
+  @meta(name: "category", content: "reviews") {
   """
   Unique identifier for the notification
   """
@@ -100,7 +113,9 @@ type ReviewPostedNotification implements NotificationItf {
 """
 Welcome notification sent to new users
 """
-type WelcomeNotification implements NotificationItf {
+type WelcomeNotification implements NotificationItf
+  @meta(name: "domain", content: "notifications")
+  @meta(name: "category", content: "user-onboarding") {
   """
   Unique identifier for the notification
   """
