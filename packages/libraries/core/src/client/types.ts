@@ -210,8 +210,16 @@ export type HivePluginOptions = OptionalWhenFalse<
      * Debugging mode
      *
      * Default: false
+     *
+     * @deprecated Use the {logger} property instead.
      */
     debug?: boolean;
+    /**
+     * Custom logger.
+     *
+     * Default: 'info'
+     */
+    logger?: Logger | 'error' | 'info' | 'debug';
     /**
      * Access Token for usage reporting
      */

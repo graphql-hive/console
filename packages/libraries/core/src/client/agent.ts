@@ -67,7 +67,11 @@ export interface AgentOptions {
    */
   maxSize?: number;
   /**
-   * Custom logger (defaults to console)
+   * Custom logger.
+   *
+   * Default: console based logger
+   *
+   * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
   logger?: Logger;
   /**
@@ -119,7 +123,7 @@ export function createAgent<TEvent>(
           ? null
           : pluginOptions.circuitBreaker,
   };
-  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]', pluginOptions.debug);
+  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]');
 
   let circuitBreaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
