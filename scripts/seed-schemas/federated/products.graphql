@@ -3,13 +3,21 @@ extend schema
     url: "https://specs.apollo.dev/federation/v2.3"
     import: ["@key", "@shareable", "@inaccessible", "@tag", "@external"]
   )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "products-team")
+  @meta(name: "contact", content: "#products-channel")
 
 directive @example(text: String!) on FIELD_DEFINITION
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 """
 Product interface defining common product fields
 """
-interface ProductItf implements SkuItf {
+interface ProductItf implements SkuItf @meta(name: "domain", content: "products") {
   upc: String!
   sku: String
   name: String
@@ -57,7 +65,7 @@ The **Product** type represents physical or _digital items_ available in the cat
 
 *Related types: `ProductItf`, `ProductDimension`, `ShippingClass`*
 """
-type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sku package") {
+type Product implements ProductItf & SkuItf {
   """
   Universal Product Code. A standardized numeric global identifier
   """
@@ -65,7 +73,7 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   """
   SKUs are unique to the company and are used internally. Alphanumeric.
   """
-  sku: String @tag(name: "internal")
+  sku: String @tag(name: "internal") @meta(name: "sensitivity", content: "internal")
   """
   Product name
   """
@@ -93,7 +101,7 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   """
   Aggregated review score for this product
   """
-  reviewsScore: Float!
+  reviewsScore: Float! @meta(name: "category", content: "analytics")
   """
   Deprecated field that has been refactored out
   """
@@ -183,7 +191,7 @@ type Query {
   """
   Get all products in the catalog
   """
-  allProducts: [ProductItf!]!
+  allProducts: [ProductItf!]! @meta(name: "priority", content: "tier1")
   """
   Get a specific product by its UPC
   """
