@@ -1,6 +1,4 @@
-// @ts-expect-error not a dependency
-import { defineConfig } from '@graphql-hive/gateway';
-// @ts-expect-error not a dependency
+import { defineConfig, Logger } from '@graphql-hive/gateway';
 import { hiveTracingSetup } from '@graphql-hive/plugin-opentelemetry/setup';
 import type { Context } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
@@ -69,6 +67,11 @@ if (
     // Noop is only there to not raise an exception in case we do not hive console tracing.
     target: process.env['HIVE_HIVE_TARGET'] ?? 'noop',
     contextManager: new AsyncLocalStorageContextManager(),
+    resource: {
+      serviceName: 'public-graphql-api-gateway',
+      serviceVersion: '0.0.0', // TODO: use actual version
+    },
+    // @ts-expect-error types are incorrect?
     processor: new MultiSpanProcessor([
       ...(process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN'] &&
       process.env['HIVE_HIVE_TRACE_ENDPOINT'] &&
@@ -103,7 +106,10 @@ const defaultQuery = `#
 #
 `;
 
+const log = new Logger();
+
 export const gatewayConfig = defineConfig({
+  logging: log,
   transportEntries: {
     graphql: {
       location: process.env['GRAPHQL_SERVICE_ENDPOINT'],
@@ -111,8 +117,8 @@ export const gatewayConfig = defineConfig({
   },
   supergraph: {
     type: 'hive',
-    endpoint: process.env['SUPERGRAPH_ENDPOINT'],
-    key: process.env['HIVE_CDN_ACCESS_TOKEN'],
+    endpoint: process.env['SUPERGRAPH_ENDPOINT'] || '',
+    key: process.env['HIVE_CDN_ACCESS_TOKEN'] || '',
   },
   graphiql: {
     title: 'Hive Console - GraphQL API',
@@ -127,12 +133,16 @@ export const gatewayConfig = defineConfig({
     },
   },
   disableWebsockets: true,
-  prometheus: true,
+  prometheus: {
+    log,
+    metrics: {
+      // use defaults
+    },
+  },
   openTelemetry:
     process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']
       ? {
           traces: true,
-          serviceName: 'public-graphql-api-gateway',
         }
       : undefined,
   demandControl: {
