@@ -82,8 +82,23 @@ export class SchemaProposalManager {
       }
     });
 
-    // @todo handle errors... rollback?
-    await Promise.all(checkPromises);
+    // @todo roll back the proposal creation... Or run checks first and then associate them with the proposal
+    const checksResult = await Promise.all(checkPromises);
+    const errorResult = checksResult.find(check => check?.errors.length);
+    if (errorResult !== undefined) {
+      // has errors
+      return {
+        type: 'error' as const,
+        error: {
+          message:
+            errorResult.message ?? errorResult.errors.map(e => `- ${e.message}`).join('\n') ?? '',
+          details: {
+            title: null,
+            description: null,
+          },
+        },
+      };
+    }
 
     // @todo consider mapping this here vs using the nested resolver... This is more efficient but riskier bc logic lives in two places.
     // const checkEdges = checks.map(check => ({

@@ -82,6 +82,7 @@ const ProposeChangesMutation = graphql(`
         }
       }
       error {
+        message
         details {
           title
           description
@@ -217,6 +218,19 @@ const ProposalForm = z.strictObject({
   description: z.optional(z.string()).default(() => ''),
 });
 
+const ServiceDiff = z.strictObject({
+  title: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(
+      /^[a-zA-Z][\w_-]*$/g,
+      'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+    ),
+  changes: z.array(z.any()),
+  error: z.optional(z.string()),
+});
+
 function ConfirmationModal(props: {
   confirmations: Confirmation[];
   setConfirmations: (c: Confirmation[]) => void;
@@ -343,6 +357,19 @@ function ProposalsNewContent(
         return setIsSubmitting(false);
       }
 
+      try {
+        for (const service of serviceDiff) {
+          ServiceDiff.parse(service);
+        }
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          setEditorError(error.issues[0]?.message);
+          // go to overview page because that's where the issue is
+          setPage('editor');
+          return setIsSubmitting(false);
+        }
+      }
+
       // if the proposal has real, tangible changes
       let hasChanges = false;
 
@@ -411,20 +438,22 @@ function ProposalsNewContent(
               })),
             },
           });
-
-          if (error || !data?.createSchemaProposal.ok) {
+          setIsSubmitting(false);
+          if (error) {
             setEditorError(error?.message ?? 'An error occurred when submitting the proposal.');
+            setPage('editor');
             return;
-          }
-          if (data?.createSchemaProposal.error) {
+          } else if (data?.createSchemaProposal.error || !data?.createSchemaProposal.ok) {
+            const err = data?.createSchemaProposal.error;
             setOverviewError(
-              data.createSchemaProposal.error.details.title ??
-                data.createSchemaProposal.error.details.description ??
+              err?.details.title ??
+                err?.details.description ??
+                err?.message ??
                 'Could not submit proposal.',
             );
+            setPage('overview');
             return;
           }
-          setIsSubmitting(false);
           await navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
             params: {
