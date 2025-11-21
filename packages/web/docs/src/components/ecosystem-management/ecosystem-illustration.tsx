@@ -53,9 +53,7 @@ export function EcosystemIllustration(props: { className?: string }) {
         />
       </div>
 
-      {/* Col 3: Center Stack */}
-      <div className="flex w-max flex-col items-center">
-        {/* Row 1: Top Icons */}
+      <div className="flex h-full w-max flex-col items-center">
         <div className="z-20 flex justify-center pb-4 md:pb-0">
           <div className="flex gap-4 rounded-2xl border border-green-700/50 bg-white/5 p-4">
             <ReactLogo className="size-8" />
@@ -65,20 +63,25 @@ export function EcosystemIllustration(props: { className?: string }) {
           </div>
         </div>
 
-        {/* Vertical Line */}
-        <div className="h-12 w-px bg-green-700/50 md:h-16" />
+        <div className="h-12 w-[3px] flex-1 bg-green-700/50" />
 
-        {/* Row 2: Stellate */}
         <div className="z-20 flex justify-center">
-          <Node title="Stellate" description="GraphQL Edge Security and Caching Layer">
+          <Node
+            title="Stellate"
+            description={
+              <>
+                GraphQL Edge Security
+                <br />
+                and Caching Layer
+              </>
+            }
+          >
             <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
         </div>
 
-        {/* Vertical Line */}
-        <div className="h-12 w-px bg-green-700/50 md:h-16" />
+        <div className="h-12 w-[3px] flex-1 bg-green-700/50" />
 
-        {/* Row 3: Gateway */}
         <div className="z-20 flex justify-center">
           <Node title={null} description={null} className="flex-row gap-8 px-8">
             <div className="flex flex-col items-center gap-2">
@@ -97,10 +100,8 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        {/* Vertical Line */}
-        <div className="h-12 w-px bg-green-700/50 md:h-16" />
+        <div className="h-12 w-[3px] flex-1 bg-green-700/50" />
 
-        {/* Row 4: Bottom Icons */}
         <div className="z-20 flex justify-center">
           <div className="flex gap-4 rounded-2xl border border-green-700/50 bg-white/5 p-4">
             <GraphQLLogo className="size-8" />
@@ -195,13 +196,14 @@ function Node({ title, description, children, className, ...rest }: NodeProps) {
         'relative z-10 flex min-h-[96px] items-center gap-2 rounded-2xl p-4 xl:gap-4 xl:p-[22px]' +
           ' bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))]' +
           ' [&>svg]:flex-shrink-0',
+        description && 'flex-row',
         className,
       )}
       {...rest}
     >
       {children}
       {(title || description) && (
-        <div>
+        <div className="flex flex-col text-left">
           <div className="font-medium text-green-100">{title}</div>
           {description && (
             <div className={cn('mt-0.5 text-sm leading-5 text-green-200', styles.desc)}>

@@ -3,9 +3,9 @@ export function ReactLogo(props: React.SVGProps<SVGSVGElement>) {
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="-11.5 -10.23174 23 20.46348" {...props}>
       <rect
         x={-11.5}
-        y={-10.23174}
+        y={-10.231_74}
         width={23}
-        height={20.46348}
+        height={20.463_48}
         fill="url(#react_paint0_linear)"
         mask="url(#react_logo_mask)"
       />
@@ -23,18 +23,18 @@ export function ReactLogo(props: React.SVGProps<SVGSVGElement>) {
           maskUnits="userSpaceOnUse"
           maskContentUnits="userSpaceOnUse"
           x={-11.5}
-          y={-10.23174}
+          y={-10.231_74}
           width={23}
-          height={20.46348}
+          height={20.463_48}
         >
           <use href="#react_logo_icon" />
         </mask>
         <linearGradient
           id="react_paint0_linear"
           x1={-11.5}
-          y1={-10.23174}
+          y1={-10.231_74}
           x2={11.5}
-          y2={10.23174}
+          y2={10.231_74}
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="#8CBEB3" />
