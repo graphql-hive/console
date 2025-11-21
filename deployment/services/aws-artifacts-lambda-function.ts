@@ -9,7 +9,7 @@ export function deployAWSArtifactsLambdaFunction(args: {
   /** Note: We run this mirror only on the AWS S3 Bucket on purpose. */
   s3Mirror: S3;
 }) {
-  const lambdaRole = new aws.iam.Role('lambdaRole', {
+  const lambdaRole = new aws.iam.Role('awsLambdaArtifactsHandlerRole', {
     assumeRolePolicy: {
       Version: '2012-10-17',
       Statement: [
@@ -30,7 +30,7 @@ export function deployAWSArtifactsLambdaFunction(args: {
     code: new pulumi.asset.AssetArchive({
       'index.worker.mjs':
         process.env.AWS_LAMBDA_ARTIFACT_PATH ||
-        resolve(__dirname, '../../packages/services/cdn-worker/dist/index.worker.mjs'),
+        resolve(__dirname, '../../packages/services/cdn-worker/dist/index.lambda.mjs'),
     }),
     role: lambdaRole.arn,
     region: 'us-east-2',
