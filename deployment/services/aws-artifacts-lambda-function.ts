@@ -23,6 +23,11 @@ export function deployAWSArtifactsLambdaFunction(args: {
     },
   });
 
+  new aws.iam.RolePolicyAttachment('lambdaBasicExecution', {
+    role: lambdaRole.name,
+    policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
+  });
+
   const awsLambdaArtifactsHandler = new aws.lambda.Function('awsLambdaArtifactsHandler', {
     name: `hive-artifacts-handler-${args.environment.envName}`,
     runtime: aws.lambda.Runtime.NodeJS22dX,
