@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
@@ -29,9 +30,13 @@ export function deployAWSArtifactsLambdaFunction(args: {
     packageType: 'Zip',
     architectures: ['arm64'],
     code: new pulumi.asset.AssetArchive({
-      'index.mjs':
-        process.env.AWS_LAMBDA_ARTIFACT_PATH ||
-        resolve(__dirname, '../../packages/services/cdn-worker/dist/index.lambda.mjs'),
+      'index.mjs': new pulumi.asset.StringAsset(
+        readFileSync(
+          process.env.AWS_LAMBDA_ARTIFACT_PATH ||
+            resolve(__dirname, '../../packages/services/cdn-worker/dist/index.lambda.mjs'),
+          'utf-8',
+        ),
+      ),
     }),
     role: lambdaRole.arn,
     region: 'us-east-2',
