@@ -1,4 +1,5 @@
 import { cn } from '../../lib/utils';
+import css from './ecosystem-management.module.css';
 
 export function DashedLine(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -9,7 +10,7 @@ export function DashedLine(props: React.SVGProps<SVGSVGElement>) {
       stroke="currentColor"
       fill="none"
       {...props}
-      className={cn('overflow-visible', props.className)}
+      className={cn('overflow-visible', css['animate-dash'], props.className)}
     >
       <path
         d="M 150 0 H 77.659 c -13.255 0 -24 10.745 -24 24 V 303.5 c 0 13.255 -10.746 24 -24 24 H 0"

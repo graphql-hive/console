@@ -11,3 +11,13 @@
     display: none;
   }
 }
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: 300;
+  }
+}
+
+.animate-dash path {
+  animation: dash 20s linear infinite;
+}
