@@ -1,6 +1,7 @@
 /** These mirror DB models from  */
 import crypto from 'node:crypto';
 import stableJSONStringify from 'fast-json-stable-stringify';
+import { Kind } from 'graphql';
 import { SerializableValue } from 'slonik';
 import { z } from 'zod';
 import {
@@ -16,9 +17,12 @@ import {
   DirectiveLocationAddedChange,
   DirectiveLocationRemovedChange,
   DirectiveRemovedChange,
+  DirectiveRepeatableAddedChange,
+  DirectiveRepeatableRemovedChange,
+  DirectiveUsageArgumentAddedChange,
   DirectiveUsageArgumentDefinitionAddedChange,
-  DirectiveUsageArgumentDefinitionChange,
   DirectiveUsageArgumentDefinitionRemovedChange,
+  DirectiveUsageArgumentRemovedChange,
   DirectiveUsageEnumAddedChange,
   DirectiveUsageEnumRemovedChange,
   DirectiveUsageEnumValueAddedChange,
@@ -81,7 +85,6 @@ import {
   TypeDescriptionChangedChange,
   TypeDescriptionRemovedChange,
   TypeKindChangedChange,
-  TypeOfChangeType,
   TypeRemovedChange,
   UnionMemberAddedChange,
   UnionMemberRemovedChange,
@@ -99,6 +102,10 @@ const FieldArgumentDefaultChangedLiteral =  z.literal("FIELD_ARGUMENT_DEFAULT_CH
 const FieldArgumentTypeChangedLiteral =  z.literal("FIELD_ARGUMENT_TYPE_CHANGED" satisfies `${typeof ChangeType.FieldArgumentTypeChanged}`)
 // prettier-ignore
 const DirectiveRemovedLiteral =  z.literal("DIRECTIVE_REMOVED" satisfies `${typeof ChangeType.DirectiveRemoved}`)
+// prettier-ignore
+const DirectiveRepeatableAddedLiteral =  z.literal("DIRECTIVE_REPEATABLE_ADDED" satisfies `${typeof ChangeType.DirectiveRepeatableAdded}`)
+// prettier-ignore
+const DirectiveRepeatableRemovedLiteral =  z.literal("DIRECTIVE_REPEATABLE_REMOVED" satisfies `${typeof ChangeType.DirectiveRepeatableRemoved}`)
 // prettier-ignore
 const DirectiveAddedLiteral =  z.literal("DIRECTIVE_ADDED" satisfies `${typeof ChangeType.DirectiveAdded}`)
 // prettier-ignore
@@ -243,20 +250,13 @@ const TypeDescriptionAddedLiteral =  z.literal("TYPE_DESCRIPTION_ADDED" satisfie
 const UnionMemberRemovedLiteral =  z.literal("UNION_MEMBER_REMOVED" satisfies `${typeof ChangeType.UnionMemberRemoved}`)
 // prettier-ignore
 const UnionMemberAddedLiteral =  z.literal("UNION_MEMBER_ADDED" satisfies `${typeof ChangeType.UnionMemberAdded}`)
+// prettier-ignore
+const DirectiveUsageArgumentAddedLiteral = z.literal("DIRECTIVE_USAGE_ARGUMENT_ADDED" satisfies `${typeof ChangeType.DirectiveUsageArgumentAdded}`)
+// prettier-ignore
+const DirectiveUsageArgumentRemovedLiteral = z.literal("DIRECTIVE_USAGE_ARGUMENT_REMOVED" satisfies `${typeof ChangeType.DirectiveUsageArgumentRemoved}`)
 
-/**
- * @source https://github.com/colinhacks/zod/issues/372#issuecomment-1280054492
- */
 type Implements<Model> = {
-  [key in keyof Model]-?: undefined extends Model[key]
-    ? null extends Model[key]
-      ? z.ZodNullableType<z.ZodOptionalType<z.ZodType<Model[key]>>>
-      : z.ZodOptionalType<z.ZodType<Model[key]>>
-    : null extends Model[key]
-      ? z.ZodNullableType<z.ZodType<Model[key]>>
-      : Model[key] extends TypeOfChangeType
-        ? z.ZodLiteral<`${Model[key]}`>
-        : z.ZodType<Model[key]>;
+  [K in keyof Model]-?: z.ZodTypeAny & { _output: Model[K] };
 };
 
 export function implement<Model = never>() {
@@ -315,10 +315,28 @@ export const DirectiveRemovedModel = implement<DirectiveRemovedChange>().with({
   }),
 });
 
+export const DirectiveRepeatableAddedModel = implement<DirectiveRepeatableAddedChange>().with({
+  type: DirectiveRepeatableAddedLiteral,
+  meta: z.object({
+    directiveName: z.string(),
+  }),
+});
+
+export const DirectiveRepeatableRemovedModel = implement<DirectiveRepeatableRemovedChange>().with({
+  type: DirectiveRepeatableRemovedLiteral,
+  meta: z.object({
+    directiveName: z.string(),
+  }),
+});
+
 export const DirectiveAddedModel = implement<DirectiveAddedChange>().with({
   type: DirectiveAddedLiteral,
   meta: z.object({
     addedDirectiveName: z.string(),
+    // for backwards compatibility
+    addedDirectiveRepeatable: z.boolean().default(false),
+    addedDirectiveLocations: z.array(z.string()).default([]),
+    addedDirectiveDescription: z.string().nullish().default(null), // string | null;
   }),
 });
 
@@ -354,7 +372,11 @@ export const DirectiveArgumentAddedModel = implement<DirectiveArgumentAddedChang
   meta: z.object({
     directiveName: z.string(),
     addedDirectiveArgumentName: z.string(),
-    addedDirectiveArgumentTypeIsNonNull: z.boolean(),
+    addedDirectiveArgumentTypeIsNonNull: z.boolean().default(false),
+    addedDirectiveArgumentType: z.string().default(''),
+    addedToNewDirective: z.boolean().default(false),
+    addedDirectiveArgumentDescription: z.optional(z.string()),
+    addedDirectiveDefaultValue: z.optional(z.string()),
   }),
 });
 
@@ -407,6 +429,8 @@ export const DirectiveUsageEnumValueAddedModel =
       enumName: z.string(),
       enumValueName: z.string(),
       addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -417,6 +441,7 @@ export const DirectiveUsageEnumValueRemovedModel =
       enumName: z.string(),
       enumValueName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -426,6 +451,7 @@ export const DirectiveUsageFieldAddedModel = implement<DirectiveUsageFieldAddedC
     typeName: z.string(),
     fieldName: z.string(),
     addedDirectiveName: z.string(),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -435,6 +461,7 @@ export const DirectiveUsageFieldRemovedModel = implement<DirectiveUsageFieldRemo
     typeName: z.string(),
     fieldName: z.string(),
     removedDirectiveName: z.string(),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -445,9 +472,10 @@ export const DirectiveUsageUnionMemberAddedModel =
       unionName: z.string(),
       addedUnionMemberTypeName: z.string(),
       addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
-
 export const DirectiveUsageUnionMemberRemovedModel =
   implement<DirectiveUsageUnionMemberRemovedChange>().with({
     type: DirectiveUsageUnionMemberRemovedLiteral,
@@ -455,6 +483,7 @@ export const DirectiveUsageUnionMemberRemovedModel =
       unionName: z.string(),
       removedUnionMemberTypeName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -465,6 +494,8 @@ export const DirectiveUsageFieldDefinitionAddedModel =
       typeName: z.string(),
       fieldName: z.string(),
       addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -475,6 +506,7 @@ export const DirectiveUsageFieldDefinitionRemovedModel =
       typeName: z.string(),
       fieldName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -485,6 +517,9 @@ export const DirectiveUsageInputFieldDefinitionAddedModel =
       inputObjectName: z.string(),
       inputFieldName: z.string(),
       addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      inputFieldType: z.string().default(''),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -495,6 +530,7 @@ export const DirectiveUsageInputFieldDefinitionRemovedModel =
       inputObjectName: z.string(),
       inputFieldName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -506,17 +542,8 @@ export const DirectiveUsageArgumentDefinitionAddedModel =
       fieldName: z.string(),
       argumentName: z.string(),
       addedDirectiveName: z.string(),
-    }),
-  });
-
-export const DirectiveUsageArgumentDefinitionModel =
-  implement<DirectiveUsageArgumentDefinitionChange>().with({
-    type: DirectiveUsageArgumentDefinitionAddedLiteral,
-    meta: z.object({
-      typeName: z.string(),
-      fieldName: z.string(),
-      argumentName: z.string(),
-      addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -528,6 +555,7 @@ export const DirectiveUsageArgumentDefinitionRemovedModel =
       fieldName: z.string(),
       argumentName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -536,6 +564,8 @@ export const DirectiveUsageEnumAddedModel = implement<DirectiveUsageEnumAddedCha
   meta: z.object({
     enumName: z.string(),
     addedDirectiveName: z.string(),
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -544,6 +574,7 @@ export const DirectiveUsageEnumRemovedModel = implement<DirectiveUsageEnumRemove
   meta: z.object({
     enumName: z.string(),
     removedDirectiveName: z.string(),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -556,6 +587,8 @@ export const DirectiveUsageInputObjectAddedModel =
       isAddedInputFieldTypeNullable: z.boolean(),
       addedInputFieldType: z.string(),
       addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -568,6 +601,7 @@ export const DirectiveUsageInputObjectRemovedModel =
       isRemovedInputFieldTypeNullable: z.boolean(),
       removedInputFieldType: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -576,6 +610,8 @@ export const DirectiveUsageScalarAddedModel = implement<DirectiveUsageScalarAdde
   meta: z.object({
     scalarName: z.string(),
     addedDirectiveName: z.string(),
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -585,6 +621,7 @@ export const DirectiveUsageScalarRemovedModel = implement<DirectiveUsageScalarRe
     meta: z.object({
       scalarName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
@@ -594,6 +631,8 @@ export const DirectiveUsageObjectAddedModel = implement<DirectiveUsageObjectAdde
   meta: z.object({
     objectName: z.string(),
     addedDirectiveName: z.string(),
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -603,16 +642,18 @@ export const DirectiveUsageObjectRemovedModel = implement<DirectiveUsageObjectRe
     meta: z.object({
       objectName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
-
 export const DirectiveUsageInterfaceAddedModel =
   implement<DirectiveUsageInterfaceAddedChange>().with({
     type: DirectiveUsageInterfaceAddedLiteral,
     meta: z.object({
       interfaceName: z.string(),
       addedDirectiveName: z.string(),
+      addedToNewType: z.boolean().default(false),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -622,6 +663,7 @@ export const DirectiveUsageInterfaceRemovedModel =
     meta: z.object({
       interfaceName: z.string(),
       removedDirectiveName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   });
 
@@ -630,6 +672,8 @@ export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAdde
   meta: z.object({
     addedDirectiveName: z.string(),
     schemaTypeName: z.string(),
+    addedToNewType: z.boolean().default(false),
+    directiveRepeatedTimes: z.number().default(1),
   }),
 });
 
@@ -639,9 +683,40 @@ export const DirectiveUsageSchemaRemovedModel = implement<DirectiveUsageSchemaRe
     meta: z.object({
       removedDirectiveName: z.string(),
       schemaTypeName: z.string(),
+      directiveRepeatedTimes: z.number().default(1),
     }),
   },
 );
+export const DirectiveUsageArgumentAddedModel = implement<DirectiveUsageArgumentAddedChange>().with(
+  {
+    type: DirectiveUsageArgumentAddedLiteral,
+    meta: z.object({
+      directiveName: z.string(),
+      addedArgumentName: z.string(),
+      addedArgumentValue: z.string(),
+      oldArgumentValue: z.string().nullable(),
+      parentTypeName: z.string().nullable(),
+      parentFieldName: z.string().nullable(),
+      parentArgumentName: z.string().nullable(),
+      parentEnumValueName: z.string().nullable(),
+      directiveRepeatedTimes: z.number().default(1),
+    }),
+  },
+);
+
+export const DirectiveUsageArgumentRemovedModel =
+  implement<DirectiveUsageArgumentRemovedChange>().with({
+    type: DirectiveUsageArgumentRemovedLiteral,
+    meta: z.object({
+      directiveName: z.string(),
+      removedArgumentName: z.string(),
+      parentTypeName: z.string().nullable(),
+      parentFieldName: z.string().nullable(),
+      parentArgumentName: z.string().nullable(),
+      parentEnumValueName: z.string().nullable(),
+      directiveRepeatedTimes: z.number().default(1),
+    }),
+  });
 
 // Enum
 
@@ -654,11 +729,13 @@ export const EnumValueRemovedModel = implement<EnumValueRemovedChange>().with({
   }),
 });
 
-export const EnumValueAdded = implement<EnumValueAddedChange>().with({
+export const EnumValueAddedModel = implement<EnumValueAddedChange>().with({
   type: EnumValueAddedLiteral,
   meta: z.object({
     enumName: z.string(),
     addedEnumValueName: z.string(),
+    addedToNewType: z.boolean().default(false),
+    addedDirectiveDescription: z.string().nullable().optional().default(null),
   }),
 });
 
@@ -723,6 +800,7 @@ export const FieldAddedModel = implement<FieldAddedChange>().with({
     typeName: z.string(),
     addedFieldName: z.string(),
     typeType: z.string(),
+    addedFieldReturnType: z.string().default(''), // optional for backwards compatibility
   }),
 });
 
@@ -758,6 +836,7 @@ export const FieldDeprecationAddedModel = implement<FieldDeprecationAddedChange>
   meta: z.object({
     typeName: z.string(),
     fieldName: z.string(),
+    deprecationReason: z.string().default('No longer supported'), // for backwards compatibility
   }),
 });
 
@@ -820,6 +899,7 @@ export const FieldArgumentAddedModel = implement<FieldArgumentAddedChange>().wit
     addedArgumentType: z.string(),
     hasDefaultValue: z.boolean(),
     isAddedFieldArgumentBreaking: z.boolean(),
+    addedToNewField: z.boolean().default(false), // for backwards compatibility
   }),
 });
 
@@ -851,6 +931,8 @@ export const InputFieldAddedModel = implement<InputFieldAddedChange>().with({
     addedInputFieldName: z.string(),
     isAddedInputFieldTypeNullable: z.boolean(),
     addedInputFieldType: z.string(),
+    addedToNewType: z.boolean().default(false), // default to make backwards compatible
+    addedFieldDefault: z.string().optional(),
   }),
 });
 
@@ -913,6 +995,7 @@ export const ObjectTypeInterfaceAddedModel = implement<ObjectTypeInterfaceAddedC
   meta: z.object({
     objectTypeName: z.string(),
     addedInterfaceName: z.string(),
+    addedToNewType: z.boolean().default(false), // optional for backwards compatibility
   }),
 });
 
@@ -961,9 +1044,26 @@ export const TypeRemovedModel = implement<TypeRemovedChange>().with({
 
 export const TypeAddedModel = implement<TypeAddedChange>().with({
   type: TypeAddedLiteral,
-  meta: z.object({
-    addedTypeName: z.string(),
-  }),
+  meta: z.union([
+    z.object({
+      addedTypeName: z.string(),
+      addedTypeKind: z.literal(Kind.INPUT_OBJECT_TYPE_DEFINITION),
+      addedTypeIsOneOf: z.boolean().default(false),
+    }),
+    z.object({
+      addedTypeName: z.string(),
+      addedTypeKind: z
+        .union([
+          z.literal(Kind.ENUM_TYPE_DEFINITION),
+          z.literal(Kind.OBJECT_TYPE_DEFINITION),
+          z.literal(Kind.INTERFACE_TYPE_DEFINITION),
+          z.literal(Kind.UNION_TYPE_DEFINITION),
+          z.literal(Kind.SCALAR_TYPE_DEFINITION),
+        ])
+        /** Default isn't important for old changes b/c they won't be patched but it keeps the model safe for them. */
+        .default(Kind.OBJECT_TYPE_DEFINITION),
+    }),
+  ]),
 });
 
 export const TypeKindChangedModel = implement<TypeKindChangedChange>().with({
@@ -1014,6 +1114,7 @@ export const UnionMemberAddedModel = implement<UnionMemberAddedChange>().with({
   meta: z.object({
     unionName: z.string(),
     addedUnionMemberTypeName: z.string(),
+    addedToNewType: z.boolean().default(false), // default for backwards compatibility
   }),
 });
 
@@ -1052,11 +1153,15 @@ export const SchemaChangeModel = z.union([
   DirectiveDescriptionChangedModel,
   DirectiveLocationAddedModel,
   DirectiveLocationRemovedModel,
+  DirectiveRepeatableAddedModel,
+  DirectiveRepeatableRemovedModel,
   DirectiveArgumentAddedModel,
   DirectiveArgumentRemovedModel,
   DirectiveArgumentDescriptionChangedModel,
   DirectiveArgumentDefaultValueChangedModel,
   DirectiveArgumentTypeChangedModel,
+  DirectiveUsageArgumentAddedModel,
+  DirectiveUsageArgumentRemovedModel,
   DirectiveUsageEnumValueAddedModel,
   DirectiveUsageEnumValueRemovedModel,
   DirectiveUsageFieldAddedModel,
@@ -1068,7 +1173,6 @@ export const SchemaChangeModel = z.union([
   DirectiveUsageInputFieldDefinitionAddedModel,
   DirectiveUsageInputFieldDefinitionRemovedModel,
   DirectiveUsageArgumentDefinitionAddedModel,
-  DirectiveUsageArgumentDefinitionModel,
   DirectiveUsageArgumentDefinitionRemovedModel,
   DirectiveUsageEnumAddedModel,
   DirectiveUsageEnumRemovedModel,
@@ -1083,9 +1187,10 @@ export const SchemaChangeModel = z.union([
   DirectiveUsageSchemaAddedModel,
   DirectiveUsageSchemaRemovedModel,
   EnumValueRemovedModel,
-  EnumValueAdded,
+  EnumValueAddedModel,
   EnumValueDescriptionChangedModel,
   EnumValueDeprecationReasonChangedModel,
+  DirectiveArgumentTypeChangedModel,
   EnumValueDeprecationReasonAddedModel,
   EnumValueDeprecationReasonRemovedModel,
   FieldRemovedModel,
@@ -1229,10 +1334,10 @@ export const HiveSchemaChangeModel = z
         breakingChangeSchemaCoordinate = change.path ?? null;
 
         if (
-          isInputFieldAddedChange(rawChange) &&
-          rawChange.meta.isAddedInputFieldTypeNullable === false
+          isInputFieldAddedChange(change) &&
+          change.meta.isAddedInputFieldTypeNullable === false
         ) {
-          breakingChangeSchemaCoordinate = rawChange.meta.inputName;
+          breakingChangeSchemaCoordinate = change.meta.inputName;
         }
       }
 
