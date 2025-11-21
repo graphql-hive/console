@@ -11,7 +11,7 @@ const env = z
   .object({
     AWS_S3_ACCESS_KEY_ID: z.string(),
     AWS_S3_ACCESSS_KEY_SECRET: z.string(),
-    AWS_S3_ACCESS_ENDPOINT: z.string(),
+    AWS_S3_ENDPOINT: z.string(),
     AWS_S3_BUCKET_NAME: z.string(),
   })
   .parse((globalThis as any).process.env);
@@ -22,7 +22,7 @@ const s3 = {
     secretAccessKey: env.AWS_S3_ACCESSS_KEY_SECRET,
     service: 's3',
   }),
-  endpoint: env.AWS_S3_ACCESS_ENDPOINT,
+  endpoint: env.AWS_S3_ENDPOINT,
   bucketName: env.AWS_S3_BUCKET_NAME,
 };
 
