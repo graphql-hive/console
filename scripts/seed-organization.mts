@@ -23,17 +23,20 @@ const password = 'ilikebigturtlesandicannotlie47';
 
 const org = await owner.createOrg();
 
-console.log('Create 100 projects');
+const ITEMS_COUNT = 100;
+
+console.log(`Create ${ITEMS_COUNT}  projects`);
+
 await PromisePool.withConcurrency(10)
   .for(new Array(100).fill(null))
   .process(() => org.createProject());
 
-console.log('Create 100 organization members');
+console.log(`Create ${ITEMS_COUNT}  organization members`);
 
 const RATE_LIMIT_COUNT = 6;
 const RATE_LIMIT_WINDOW_MS = 5000;
 
-const members = new Array(100).fill(null);
+const members = new Array(ITEMS_COUNT).fill(null);
 
 // Split into batches of 6
 const batches = Array.from({ length: Math.ceil(members.length / RATE_LIMIT_COUNT) }, (_, i) =>
@@ -54,7 +57,7 @@ for (const [index, batch] of batches.entries()) {
   }
 }
 
-console.log('Completed creating 100 organization members');
+console.log(`Completed creating ${ITEMS_COUNT} organization members`);
 
 console.log(`
 Seed User Credentials:
