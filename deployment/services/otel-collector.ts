@@ -5,6 +5,7 @@ import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { GraphQL } from './graphql';
+import { Redpanda } from './redpanda';
 
 export type OTELCollector = ReturnType<typeof deployOTELCollector>;
 
@@ -15,9 +16,13 @@ export function deployOTELCollector(args: {
   clickhouse: Clickhouse;
   dbMigrations: DbMigrations;
   graphql: GraphQL;
+  redpanda: Redpanda;
 }) {
-  return new ServiceDeployment(
-    'otel-collector',
+  const kafkaBroker = args.redpanda.brokerEndpoint;
+
+  // Ingress: OTLP -> Redpanda
+  const ingress = new ServiceDeployment(
+    'otel-collector-ingress',
     {
       image: args.image,
       imagePullSecret: args.docker.secret,
@@ -26,6 +31,7 @@ export function deployOTELCollector(args: {
         HIVE_OTEL_AUTH_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(
           value => value + '/otel-auth',
         ),
+        KAFKA_BROKER: kafkaBroker,
       },
       /**
        * We are using the healthcheck extension.
@@ -40,11 +46,40 @@ export function deployOTELCollector(args: {
       pdb: true,
       availabilityOnEveryNode: true,
       port: 4318,
-      memoryLimit: args.environment.podsConfig.tracingCollector.memoryLimit,
+      memoryLimit: '512Mi',
       autoScaling: {
         maxReplicas: args.environment.podsConfig.tracingCollector.maxReplicas,
         cpu: {
-          limit: args.environment.podsConfig.tracingCollector.cpuLimit,
+          limit: '500m',
+          cpuAverageToScale: 80,
+        },
+      },
+    },
+    [args.dbMigrations],
+  ).deploy();
+
+  // Egress: Redpanda -> ClickHouse
+  const egress = new ServiceDeployment(
+    'otel-collector-egress',
+    {
+      image: args.image,
+      imagePullSecret: args.docker.secret,
+      env: {
+        ...args.environment.envVars,
+        KAFKA_BROKER: kafkaBroker,
+      },
+      probePort: 13133,
+      readinessProbe: '/',
+      livenessProbe: '/',
+      startupProbe: '/',
+      exposesMetrics: true,
+      replicas: args.environment.podsConfig.tracingCollector.maxReplicas,
+      pdb: true,
+      memoryLimit: '512Mi',
+      autoScaling: {
+        maxReplicas: args.environment.podsConfig.tracingCollector.maxReplicas,
+        cpu: {
+          limit: '500m',
           cpuAverageToScale: 80,
         },
       },
@@ -57,4 +92,12 @@ export function deployOTELCollector(args: {
     .withSecret('CLICKHOUSE_PASSWORD', args.clickhouse.secret, 'password')
     .withSecret('CLICKHOUSE_PROTOCOL', args.clickhouse.secret, 'protocol')
     .deploy();
+
+  return {
+    ingress,
+    egress,
+    // For backward compatibility, expose ingress as the main deployment
+    deployment: ingress.deployment,
+    service: ingress.service,
+  };
 }
