@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { MoreHorizontalIcon, MoveDownIcon, MoveUpIcon } from 'lucide-react';
+import { ChangeEvent, useCallback, useState } from 'react';
+import { MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { useMutation } from 'urql';
@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { Link } from '@/components/ui/link';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
@@ -27,6 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
+import { useRouter } from '@tanstack/react-router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
@@ -94,7 +96,6 @@ const OrganizationMemberRow_MemberFragment = graphql(`
 function OrganizationMemberRow(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   member: FragmentType<typeof OrganizationMemberRow_MemberFragment>;
-  refetchMembers(): void;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const member = useFragment(OrganizationMemberRow_MemberFragment, props.member);
@@ -286,7 +287,7 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     owner {
       id
     }
-    members {
+    members(filters: { searchTerm: $searchTerm }) {
       edges {
         node {
           id
@@ -313,46 +314,28 @@ export function OrganizationMembers(props: {
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = organization.members?.edges?.map(edge => edge.node);
-  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc' | null>(null);
-  const [sortByKey, setSortByKey] = useState<'name' | 'role'>('name');
 
-  const sortedMembers = useMemo(() => {
-    if (!members) {
-      return [];
-    }
+  const router = useRouter();
 
-    if (!orderDirection) {
-      return members ?? [];
-    }
-
-    const sorted = [...members].sort((a, b) => {
-      if (sortByKey === 'name') {
-        return a.user.displayName.localeCompare(b.user.displayName);
-      }
-
-      if (sortByKey === 'role') {
-        return (a.role?.name ?? 'Select role').localeCompare(b.role?.name ?? 'Select role') ?? 0;
-      }
-
-      return 0;
-    });
-
-    return orderDirection === 'asc' ? sorted : sorted.reverse();
-  }, [members, orderDirection, sortByKey]);
-
-  const updateSorting = useCallback(
-    (newSortBy: 'name' | 'role') => {
-      if (newSortBy === sortByKey) {
-        setOrderDirection(
-          orderDirection === 'asc' ? 'desc' : orderDirection === 'desc' ? null : 'asc',
-        );
-      } else {
-        setSortByKey(newSortBy);
-        setOrderDirection('asc');
-      }
+  const onChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      void router.navigate({
+        search: {
+          ...router.latestLocation.search,
+          search: e.target.value === '' ? undefined : e.target.value,
+        },
+        // don't write to history
+        replace: true,
+      });
     },
-    [sortByKey, orderDirection],
+    [router],
   );
+
+  const initialValue =
+    'search' in router.latestLocation.search &&
+    typeof router.latestLocation.search.search === 'string'
+      ? router.latestLocation.search.search
+      : '';
 
   return (
     <SubPageLayout>
@@ -360,6 +343,12 @@ export function OrganizationMembers(props: {
         subPageTitle="List of organization members"
         description="Manage the members of your organization and their permissions."
       >
+        <Input
+          className="w-[200px] grow cursor-text"
+          placeholder="Filter by field name"
+          onChange={onChange}
+          defaultValue={initialValue}
+        />
         {organization.viewerCanManageInvitations && (
           <MemberInvitationButton
             refetchInvitations={props.refetchMembers}
@@ -373,45 +362,18 @@ export function OrganizationMembers(props: {
             <th
               colSpan={2}
               className="relative cursor-pointer select-none py-3 text-left text-sm font-semibold"
-              onClick={() => updateSorting('name')}
             >
               Member
-              <span className="inline-block">
-                {sortByKey === 'name' ? (
-                  orderDirection === 'asc' ? (
-                    <MoveUpIcon className="relative top-[3px] size-4" />
-                  ) : orderDirection === 'desc' ? (
-                    <MoveDownIcon className="relative top-[3px] size-4" />
-                  ) : null
-                ) : null}
-              </span>
             </th>
-            <th
-              className="relative w-[300px] cursor-pointer select-none py-3 text-center align-middle text-sm font-semibold"
-              onClick={() => updateSorting('role')}
-            >
+            <th className="relative w-[300px] cursor-pointer select-none py-3 text-center align-middle text-sm font-semibold">
               Assigned Role
-              <span className="inline-block">
-                {sortByKey === 'role' ? (
-                  orderDirection === 'asc' ? (
-                    <MoveUpIcon className="relative top-[3px] size-4" />
-                  ) : orderDirection === 'desc' ? (
-                    <MoveDownIcon className="relative top-[3px] size-4" />
-                  ) : null
-                ) : null}
-              </span>
             </th>
             <th className="w-12 py-3 text-right text-sm font-semibold" />
           </tr>
         </thead>
         <tbody className="divide-y-[1px] divide-gray-500/20">
-          {sortedMembers.map(node => (
-            <OrganizationMemberRow
-              key={node.id}
-              refetchMembers={props.refetchMembers}
-              organization={props.organization}
-              member={node}
-            />
+          {members.map(node => (
+            <OrganizationMemberRow key={node.id} organization={props.organization} member={node} />
           ))}
         </tbody>
       </table>
