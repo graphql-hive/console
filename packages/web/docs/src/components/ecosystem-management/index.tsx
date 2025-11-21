@@ -20,7 +20,7 @@ export function EcosystemManagementSection({ className }: { className?: string }
         className,
       )}
     >
-      <div className="relative mx-auto flex w-[1392px] max-w-full flex-col gap-x-4 gap-y-6 md:gap-y-12 lg:flex-row [@media(min-width:1400px)]:gap-x-[120px]">
+      <div className="relative mx-auto flex w-[1392px] max-w-full flex-col gap-x-4 gap-y-6 md:gap-y-12 lg:flex-row">
         <div className="flex flex-col gap-12 lg:w-[488px]">
           <Heading as="h2" size="sm">
             360° GraphQL API Management

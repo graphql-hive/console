@@ -41,13 +41,13 @@ export function EcosystemIllustration(props: { className?: string }) {
       >
         {/* Top-Left Line: Connects Top-Center to Side-Center */}
         <DashedLine
-          className="translate-x-[1.5px] self-start text-green-700/50"
+          className="translate-x-[1.5px] translate-y-[-1.5px] self-start text-green-700"
           fill="none"
           stroke="currentColor"
         />
         {/* Bottom-Left Line: Connects Bottom-Center to Side-Center */}
         <DashedLine
-          className="translate-x-[1.5px] -scale-y-100 self-end text-green-700/50"
+          className="translate-x-[1.5px] translate-y-[1.5px] -scale-y-100 self-end text-green-700"
           fill="none"
           stroke="currentColor"
         />
@@ -55,7 +55,7 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       <div className="flex h-full w-max flex-col items-center">
         <div className="z-20 flex justify-center pb-4 md:pb-0">
-          <div className="flex gap-4 rounded-2xl border border-green-700/50 bg-white/5 p-4">
+          <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
             <ReactLogo className="size-8" />
             <AppleLogo className="size-8" />
             <AndroidLogo className="size-8" />
@@ -63,7 +63,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </div>
         </div>
 
-        <div className="h-12 w-[3px] flex-1 bg-green-700/50" />
+        <div className="h-12 w-[3px] flex-1 bg-green-700" />
 
         <div className="z-20 flex justify-center">
           <Node
@@ -80,7 +80,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        <div className="h-12 w-[3px] flex-1 bg-green-700/50" />
+        <div className="h-12 w-[3px] flex-1 bg-green-700" />
 
         <div className="z-20 flex justify-center">
           <Node title={null} description={null} className="flex-row gap-8 px-8">
@@ -88,7 +88,7 @@ export function EcosystemIllustration(props: { className?: string }) {
               <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
               <span className="font-medium text-green-100">Hive Gateway</span>
             </div>
-            <div className="w-px bg-green-700/50" />
+            <div className="w-px bg-green-700" />
             <div className="flex flex-col items-center gap-2">
               <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
               <span className="text-center font-medium text-green-100">
@@ -100,10 +100,10 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        <div className="h-12 w-[3px] flex-1 bg-green-700/50" />
+        <div className="h-12 w-[3px] flex-1 bg-green-700" />
 
         <div className="z-20 flex justify-center">
-          <div className="flex gap-4 rounded-2xl border border-green-700/50 bg-white/5 p-4">
+          <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
             <GraphQLLogo className="size-8" />
             <OpenAPILogo className="size-8" />
             <GrpcLogo className="size-8" />
@@ -118,13 +118,13 @@ export function EcosystemIllustration(props: { className?: string }) {
       >
         {/* Top-Right Line: Connects Top-Center to Side-Center */}
         <DashedLine
-          className="translate-x-[-1.5px] -scale-x-100 self-start text-green-700/50"
+          className="translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700"
           fill="none"
           stroke="currentColor"
         />
         {/* Bottom-Right Line: Connects Bottom-Center to Side-Center */}
         <DashedLine
-          className="translate-x-[-1.5px] -scale-100 self-end text-green-700/50"
+          className="translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700"
           fill="none"
           stroke="currentColor"
         />
