@@ -20,7 +20,7 @@ export function EcosystemIllustration(props: { className?: string }) {
   return (
     <div
       className={cn(
-        'grid grid-cols-[min-content_1fr_min-content_1fr_min-content] items-center gap-y-0 overflow-visible',
+        'grid flex-1 grid-cols-1 items-center gap-y-0 overflow-visible md:grid-cols-[auto_minmax(2rem,1fr)_min-content_minmax(2rem,1fr)_auto]',
         props.className,
         styles.container,
       )}
@@ -29,7 +29,17 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       {/* Col 1: Codegen (Desktop) */}
       <div className="hidden items-center justify-end md:flex">
-        <Node title="Codegen" description="GraphQL Code Generation" className="z-20">
+        <Node
+          title="Codegen"
+          description={
+            <>
+              GraphQL Code
+              <br />
+              Generation
+            </>
+          }
+          className="z-20"
+        >
           <CodegenIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
         </Node>
       </div>
@@ -53,8 +63,8 @@ export function EcosystemIllustration(props: { className?: string }) {
         />
       </div>
 
-      <div className="flex h-full w-max flex-col items-center">
-        <div className="z-20 flex justify-center pb-4 md:pb-0">
+      <div className="flex h-full w-max flex-col items-center max-md:mx-auto">
+        <div className="z-20 flex justify-center">
           <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
             <ReactLogo className="size-8" />
             <AppleLogo className="size-8" />
@@ -63,7 +73,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </div>
         </div>
 
-        <div className="h-12 w-[3px] flex-1 bg-green-700" />
+        <div className="h-6 w-[3px] bg-green-700 sm:h-12 md:flex-1" />
 
         <div className="z-20 flex justify-center">
           <Node
@@ -75,15 +85,16 @@ export function EcosystemIllustration(props: { className?: string }) {
                 and Caching Layer
               </>
             }
+            className="max-md:px-6"
           >
             <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
         </div>
 
-        <div className="h-12 w-[3px] flex-1 bg-green-700" />
+        <div className="h-6 w-[3px] bg-green-700 sm:h-12 md:flex-1" />
 
         <div className="z-20 flex justify-center">
-          <Node title={null} description={null} className="flex-row gap-8 px-8">
+          <Node title={null} description={null} className="flex-row gap-2 px-8">
             <div className="flex flex-col items-center gap-2">
               <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
               <span className="font-medium text-green-100">Hive Gateway</span>
@@ -100,7 +111,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        <div className="h-12 w-[3px] flex-1 bg-green-700" />
+        <div className="h-6 w-[3px] bg-green-700 sm:h-12 md:flex-1" />
 
         <div className="z-20 flex justify-center">
           <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
@@ -138,21 +149,15 @@ export function EcosystemIllustration(props: { className?: string }) {
               <span className={styles.smHidden}>Hive</span> Console
             </>
           }
-          description="Schema registry and monitoring"
+          description={
+            <>
+              Schema registry
+              <br />
+              and monitoring
+            </>
+          }
           className="z-20"
         >
-          <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
-        </Node>
-      </div>
-
-      {/* Mobile Only Nodes (inserted into flow for mobile) */}
-      <div className="col-start-1 flex justify-center pb-4 md:hidden">
-        <Node title="Codegen" description="GraphQL Code Generation">
-          <CodegenIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
-        </Node>
-      </div>
-      <div className="col-start-1 flex justify-center pb-4 md:hidden">
-        <Node title="Hive Console" description="Schema registry and monitoring">
           <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
         </Node>
       </div>
@@ -193,9 +198,7 @@ function Node({ title, description, children, className, ...rest }: NodeProps) {
     <div
       className={cn(
         styles.node,
-        'relative z-10 flex min-h-[96px] items-center gap-2 rounded-2xl p-4 xl:gap-4 xl:p-[22px]' +
-          ' bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))]' +
-          ' [&>svg]:flex-shrink-0',
+        'relative z-10 flex min-h-[96px] items-center gap-4 rounded-2xl bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))] p-4 backdrop-blur-md xl:p-[22px] [&>svg]:shrink-0',
         description && 'flex-row',
         className,
       )}

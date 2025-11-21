@@ -92,7 +92,7 @@ export default function IndexPage(): ReactElement {
       </Hero>
       <LandingPageFeatureTabs className="relative mt-6 sm:mt-[-72px]" />
       <TrustedBySection className="mx-auto my-8 md:my-16 lg:my-24" />
-      <EcosystemManagementSection className="mx-4 md:mx-6" />
+      <EcosystemManagementSection className="max-sm:rounded-none sm:mx-4 md:mx-6" />
       <StatsList className="mt-6 md:mt-0">
         <StatsItem label="GitHub commits" value={7} suffix="K" decimal />
         <StatsItem label="Active developers" value={9.6} suffix="K" decimal />

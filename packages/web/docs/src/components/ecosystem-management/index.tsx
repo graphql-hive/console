@@ -15,12 +15,11 @@ export function EcosystemManagementSection({ className }: { className?: string }
   return (
     <section
       className={cn(
-        'bg-green-1000 relative isolate overflow-hidden rounded-3xl text-white',
-        'p-8 pb-[180px] sm:pb-[128px] md:p-[72px] md:pb-[128px] lg:pb-[72px]',
+        'bg-green-1000 relative isolate overflow-hidden rounded-3xl p-8 px-4 pb-[180px] text-white sm:pb-[128px] md:p-[72px] md:pb-[128px] md:pr-8 lg:pb-[72px]',
         className,
       )}
     >
-      <div className="relative mx-auto flex w-[1392px] max-w-full flex-col gap-x-4 gap-y-6 md:gap-y-12 lg:flex-row">
+      <div className="relative mx-auto flex w-[1392px] max-w-full flex-col gap-x-4 gap-y-6 md:gap-x-6 md:gap-y-12 lg:flex-row">
         <div className="flex flex-col gap-12 lg:w-[488px]">
           <Heading as="h2" size="sm">
             360° GraphQL API Management
