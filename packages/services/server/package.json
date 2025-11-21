@@ -36,7 +36,7 @@
     "@theguild/federation-composition": "0.20.2",
     "@trpc/client": "10.45.2",
     "@trpc/server": "10.45.2",
-    "@whatwg-node/server": "0.10.5",
+    "@whatwg-node/server": "0.10.17",
     "dotenv": "16.4.7",
     "fastify": "4.29.1",
     "got": "14.4.7",

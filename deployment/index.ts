@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import { deployApp } from './services/app';
+import { deployAWSArtifactsLambdaFunction } from './services/aws-artifacts-lambda-function';
 import { deployCFBroker } from './services/cf-broker';
 import { deployCFCDN } from './services/cf-cdn';
 import { deployClickhouse } from './services/clickhouse';
@@ -86,6 +87,11 @@ const cdn = deployCFCDN({
   s3,
   s3Mirror,
   sentry,
+  environment,
+});
+
+const lambdaFunction = deployAWSArtifactsLambdaFunction({
+  s3Mirror,
   environment,
 });
 
@@ -346,3 +352,4 @@ export const webhooksApiServiceId = webhooks.service.id;
 export const appId = app.deployment.id;
 export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
+export const awsLambdaArtifactsFunctionUrl = lambdaFunction;

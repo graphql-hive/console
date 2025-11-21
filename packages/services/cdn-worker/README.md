@@ -43,3 +43,72 @@ CF_BASE_PATH=http://localhost:4010
 ```
 
 This way, your local Hive instance will be able to send schema to the locally running CDN Worker.
+
+### Deployment
+
+There is two variants being built that can be deployed independently.
+
+- `Cloudflare Worker`: `dist/index.worker.mjs`
+- `AWS Lambda`: `dist/index.lambda.mjs`
+
+#### Cloudflare Worker
+
+THe documentation is work in progress and will be improved in the future.
+
+```
+type Env = {
+  S3_ENDPOINT: string;
+  S3_ACCESS_KEY_ID: string;
+  S3_SECRET_ACCESS_KEY: string;
+  S3_BUCKET_NAME: string;
+  S3_SESSION_TOKEN?: string;
+
+  S3_MIRROR_ENDPOINT: string;
+  S3_MIRROR_ACCESS_KEY_ID: string;
+  S3_MIRROR_SECRET_ACCESS_KEY: string;
+  S3_MIRROR_BUCKET_NAME: string;
+  S3_MIRROR_SESSION_TOKEN?: string;
+
+  SENTRY_DSN: string;
+  /**
+   * Name of the environment, e.g. staging, production
+   */
+  SENTRY_ENVIRONMENT: string;
+  /**
+   * Id of the release
+   */
+  SENTRY_RELEASE: string;
+  /**
+   * Worker's Analytics Engines
+   */
+  USAGE_ANALYTICS: AnalyticsEngine;
+  ERROR_ANALYTICS: AnalyticsEngine;
+  RESPONSE_ANALYTICS: AnalyticsEngine;
+  R2_ANALYTICS: AnalyticsEngine;
+  S3_ANALYTICS: AnalyticsEngine;
+  KEY_VALIDATION_ANALYTICS: AnalyticsEngine;
+  /**
+   * Base URL of the KV storage, used to fetch the schema from the KV storage.
+   * If not provided, the schema will be fetched from default KV storage value.
+   *
+   * @default https://key-cache.graphql-hive.com
+   */
+  KV_STORAGE_BASE_URL?: string;
+};
+```
+
+#### AWS Lambda
+
+**Runtime**: Node.js 22.x
+
+| Name                        | Required | Description               | Example Value           |
+| --------------------------- | -------- | ------------------------- | ----------------------- |
+| `AWS_S3_ENDPOINT`           | **Yes**  | The S3 endpoint.          | `http://localhost:9000` |
+| `AWS_S3_BUCKET_NAME`        | **Yes**  | The S3 bucket name.       | `artifacts`             |
+| `AWS_S3_ACCESS_KEY_ID`      | **Yes**  | The S3 access key id.     | `minioadmin`            |
+| `AWS_S3_ACCESSS_KEY_SECRET` | **Yes**  | The S3 secret access key. | `minioadmin`            |
+
+All other configuration options available for Cloudflare Workers are currently not supported.
+
+We recommend deploying the function to AWS Lambda, create a AWS Lambda Function invocation URL and
+then add the function as origin to CloudFront.
