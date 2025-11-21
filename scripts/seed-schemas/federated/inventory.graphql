@@ -4,24 +4,45 @@ extend schema
     import: ["@key", "@shareable", "@external", "@requires"]
   )
 
-type Product @key(fields: "upc dimensions") {
+extend type Product @key(fields: "upc dimensions") {
+  """
+  Universal Product Code
+  """
   upc: String!
+  """
+  Physical dimensions (from products subgraph)
+  """
   dimensions: ProductDimension @external
+  """
+  Delivery estimates for a given zip code (requires dimensions data)
+  """
   delivery(zip: String): DeliveryEstimates @requires(fields: "dimensions { size weight }")
 }
 
+"""
+Physical dimensions of a product (shared across subgraphs)
+"""
 type ProductDimension @shareable {
+  """
+  Size description (e.g., 'Small', 'Large', '10x5x3')
+  """
   size: String
+  """
+  Weight in pounds
+  """
   weight: Float
 }
 
+"""
+Delivery time estimates for a product
+"""
 type DeliveryEstimates {
+  """
+  Estimated standard delivery date
+  """
   estimatedDelivery: String
+  """
+  Fastest possible delivery date
+  """
   fastestDelivery: String
-}
-
-enum ShippingClass {
-  STANDARD
-  EXPRESS
-  OVERNIGHT
 }

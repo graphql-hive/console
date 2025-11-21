@@ -6,12 +6,9 @@ extend schema
 
 directive @example(text: String!) on FIELD_DEFINITION
 
-type Query {
-  allProducts: [ProductItf]
-  product(upc: String!): ProductItf
-  topProducts(first: Int = 5): [ProductItf]
-}
-
+"""
+Product interface defining common product fields
+"""
 interface ProductItf implements SkuItf {
   upc: String!
   sku: String
@@ -24,10 +21,42 @@ interface ProductItf implements SkuItf {
   oldField: String @deprecated(reason: "refactored out")
 }
 
+"""
+SKU interface for items with stock keeping units
+"""
 interface SkuItf {
   sku: String
 }
 
+"""
+# Product Entity
+
+The **Product** type represents physical or _digital items_ available in the catalog. Products are uniquely identified and federated across multiple subgraphs.
+
+## Key Capabilities
+
+### Unique Identification
+- Universal Product Code (`upc`) - primary key
+- SKU + package combination - composite key
+- Learn more about [federation keys](https://the-guild.dev/graphql/hive/federation)
+
+### Product Data
+1. Descriptive metadata (name, package)
+2. Physical specifications (dimensions, weight)
+3. Business metrics (reviews, creator info)
+
+> **Access Control**: The `hidden` field is marked `@inaccessible` and won't appear in the public schema.
+
+---
+
+**Query Pattern**: Fetch via `product(upc: String!)`
+**Variations**: Products can have multiple `variations` for sizes/colors
+**Reviews**: Aggregated score available in `reviewsScore` field
+
+![Product Schema Diagram](https://the-guild.dev/graphql/hive/_next/static/media/federation-diagram.dcf3cf6b.png)
+
+*Related types: `ProductItf`, `ProductDimension`, `ShippingClass`*
+"""
 type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sku package") {
   """
   Universal Product Code. A standardized numeric global identifier
@@ -37,27 +66,147 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   SKUs are unique to the company and are used internally. Alphanumeric.
   """
   sku: String @tag(name: "internal")
+  """
+  Product name
+  """
   name: String @example(text: "Foo Bar")
+  """
+  Package type or size information
+  """
   package: String
+  """
+  Product variations (e.g., different sizes, colors)
+  """
   variations: [ProductItf]
+  """
+  Physical dimensions of the product
+  """
   dimensions: ProductDimension
+  """
+  User who created this product
+  """
   createdBy: User
+  """
+  Hidden internal field
+  """
   hidden: String
+  """
+  Aggregated review score for this product
+  """
   reviewsScore: Float!
+  """
+  Deprecated field that has been refactored out
+  """
   oldField: String
 }
 
+"""
+Available shipping classes with delivery speeds
+"""
 enum ShippingClass {
+  """
+  Standard ground shipping (5-7 business days)
+  """
   STANDARD
+  """
+  Express shipping (2-3 business days)
+  """
   EXPRESS
+  """
+  Overnight shipping (next business day)
+  """
+  OVERNIGHT
 }
 
+"""
+Price range filter for product searches
+"""
+input PriceRangeInput {
+  """
+  Minimum price (inclusive)
+  """
+  min: Float
+  """
+  Maximum price (inclusive)
+  """
+  max: Float
+}
+
+"""
+Filter criteria for searching products
+"""
+input ProductFilterInput {
+  """
+  Search text to match against product name and description
+  """
+  searchText: String
+  """
+  Filter by product categories
+  """
+  categories: [String!]
+  """
+  Filter by price range
+  """
+  priceRange: PriceRangeInput
+  """
+  Filter by shipping class
+  """
+  shippingClass: ShippingClass
+}
+
+"""
+Physical dimensions of a product (shared across subgraphs)
+"""
 type ProductDimension @shareable {
+  """
+  Size description (e.g., 'Small', 'Large', '10x5x3')
+  """
   size: String
+  """
+  Weight in pounds
+  """
   weight: Float
 }
 
-type User @key(fields: "id") {
+extend type User @key(fields: "id") {
+  """
+  Unique identifier for the user
+  """
   id: ID!
+  """
+  Total number of products created by this user
+  """
   totalProductsCreated: Int @shareable
+}
+
+type Query {
+  """
+  Get all products in the catalog
+  """
+  allProducts: [ProductItf!]!
+  """
+  Get a specific product by its UPC
+  """
+  product(upc: String!): ProductItf
+  """
+  Get the top N products (default: 5)
+  """
+  topProducts(first: Int = 5): [ProductItf!]!
+  """
+  Search and filter products based on criteria
+  """
+  searchProducts(filter: ProductFilterInput!): [ProductItf!]!
+  """
+  Get products filtered by category and price range
+  """
+  products(category: String, minPrice: Float, maxPrice: Float): [ProductItf!]!
+  """
+  Get products filtered by physical dimensions and shipping class
+  """
+  productsByDimensions(
+    minWeight: Float
+    maxWeight: Float
+    size: String
+    shippingClass: ShippingClass
+  ): [ProductItf!]!
 }

@@ -1,0 +1,155 @@
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+
+"""
+ISO-8601 formatted date and time string
+"""
+scalar DateTime
+
+"""
+Types of notifications that can be sent to users
+"""
+enum NotificationType {
+  """
+  Notification about a product update
+  """
+  PRODUCT_UPDATE
+  """
+  Notification when a new review is posted
+  """
+  REVIEW_POSTED
+  """
+  Welcome notification for new users
+  """
+  WELCOME
+}
+
+"""
+Filter criteria for searching notifications
+"""
+input NotificationFilterInput {
+  """
+  Search text to match against notification messages
+  """
+  searchText: String
+  """
+  Filter by specific notification types
+  """
+  types: [NotificationType!]
+  """
+  Only include notifications from this date onwards
+  """
+  dateFrom: DateTime
+  """
+  Only include notifications up to this date
+  """
+  dateTo: DateTime
+}
+
+"""
+Base interface for all notification types
+"""
+interface NotificationItf {
+  id: ID!
+  message: String!
+}
+
+"""
+Notification sent when a product is updated
+"""
+type ProductUpdateNotification implements NotificationItf {
+  """
+  Unique identifier for the notification
+  """
+  id: ID!
+  """
+  Human-readable notification message
+  """
+  message: String!
+  """
+  The product that was updated
+  """
+  product: Product!
+  """
+  Timestamp when the product was updated
+  """
+  updatedAt: DateTime!
+}
+
+"""
+Notification sent when a review is posted
+"""
+type ReviewPostedNotification implements NotificationItf {
+  """
+  Unique identifier for the notification
+  """
+  id: ID!
+  """
+  Human-readable notification message
+  """
+  message: String!
+  """
+  The review that was posted
+  """
+  review: Review!
+  """
+  Timestamp when the review was posted
+  """
+  postedAt: DateTime!
+}
+
+"""
+Welcome notification sent to new users
+"""
+type WelcomeNotification implements NotificationItf {
+  """
+  Unique identifier for the notification
+  """
+  id: ID!
+  """
+  Human-readable notification message
+  """
+  message: String!
+  """
+  Timestamp when the notification was created
+  """
+  createdAt: DateTime!
+}
+
+"""
+Union of all possible notification types
+"""
+union Notification = ProductUpdateNotification | ReviewPostedNotification | WelcomeNotification
+
+extend type User @key(fields: "id") {
+  """
+  Unique identifier for the user
+  """
+  id: ID! @external
+  """
+  List of all notifications for this user
+  """
+  notifications: [Notification!]!
+}
+
+extend type Product @key(fields: "upc") {
+  """
+  Universal Product Code
+  """
+  upc: String!
+}
+
+"""
+Review stub reference (full definition in reviews subgraph)
+"""
+type Review @key(fields: "id") {
+  """
+  Unique identifier for the review
+  """
+  id: ID!
+}
+
+extend type Query {
+  notification(id: ID!): Notification
+  notifications: [Notification!]!
+  searchNotifications(filter: NotificationFilterInput!): [Notification!]!
+}

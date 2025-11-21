@@ -4,14 +4,43 @@ extend schema
     import: ["@key", "@override", "@external", "@provides"]
   )
 
-type Query {
-  review(id: Int!): Review
+"""
+Input for creating a new product review
+"""
+input CreateReviewInput {
+  """
+  Universal Product Code of the product being reviewed
+  """
+  productUpc: String!
+  """
+  Rating score (e.g., 1-5 stars)
+  """
+  rating: Int!
+  """
+  Review text content
+  """
+  body: String
 }
 
+"""
+Product review written by a user
+"""
 type Review @key(fields: "id") {
+  """
+  Unique identifier for the review
+  """
   id: ID!
+  """
+  Review text content
+  """
   body: String
+  """
+  User who wrote the review
+  """
   author: User
+  """
+  Product being reviewed
+  """
   product: Product
 }
 
@@ -25,4 +54,22 @@ extend type Product @key(fields: "upc") {
   reviews: [Review]
   reviewsCount: Int!
   reviewsScore: Float! @override(from: "products")
+}
+
+type Query {
+  """
+  Get a specific review by ID
+  """
+  review(id: Int!): Review
+  """
+  Get reviews filtered by product and rating range
+  """
+  reviews(productUpc: String, minRating: Int, maxRating: Int): [Review]
+}
+
+type Mutation {
+  """
+  Create a new product review
+  """
+  createReview(input: CreateReviewInput!): Review!
 }
