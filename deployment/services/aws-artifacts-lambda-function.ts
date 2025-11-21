@@ -47,7 +47,8 @@ export function deployAWSArtifactsLambdaFunction(args: {
     region: 'us-east-2',
     environment: {
       variables: {
-        // yeah this is illegal but I frist need to figure out how to use secret store or some stuff
+        // This could be done better with secrets manager etc.
+        // But it adds a lot of complexity and overhead and runtime logic
         AWS_S3_ENDPOINT: args.s3Mirror.secret.raw.endpoint,
         AWS_S3_BUCKET_NAME: args.s3Mirror.secret.raw.bucket,
         AWS_S3_ACCESS_KEY_ID: args.s3Mirror.secret.raw.accessKeyId,
