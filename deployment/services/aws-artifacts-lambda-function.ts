@@ -49,7 +49,7 @@ export function deployAWSArtifactsLambdaFunction(args: {
     timeout: 10,
   });
 
-  const example = new aws.lambda.FunctionUrl('example', {
+  const example = new aws.lambda.FunctionUrl('awsLambdaArtifactsHandlerUrl', {
     functionName: awsLambdaArtifactsHandler.name,
     qualifier: args.environment.envVars.RELEASE,
     authorizationType: 'NONE',
