@@ -65,11 +65,13 @@ The **Product** type represents physical or _digital items_ available in the cat
 
 *Related types: `ProductItf`, `ProductDimension`, `ShippingClass`*
 """
-type Product implements ProductItf & SkuItf {
+type Product implements ProductItf & SkuItf
+  @key(fields: "upc")
+  @key(fields: "sku package") {
   """
   Universal Product Code. A standardized numeric global identifier
   """
-  upc: String!
+  upc: String! @shareable
   """
   SKUs are unique to the company and are used internally. Alphanumeric.
   """
