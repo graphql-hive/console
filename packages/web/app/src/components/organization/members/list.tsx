@@ -373,13 +373,10 @@ export function OrganizationMembers(props: {
       <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
         <thead>
           <tr>
-            <th
-              colSpan={2}
-              className="relative cursor-pointer select-none py-3 text-left text-sm font-semibold"
-            >
+            <th colSpan={2} className="relative select-none py-3 text-left text-sm font-semibold">
               Member
             </th>
-            <th className="relative w-[300px] cursor-pointer select-none py-3 text-center align-middle text-sm font-semibold">
+            <th className="relative w-[300px] select-none py-3 text-center align-middle text-sm font-semibold">
               Assigned Role
             </th>
             <th className="w-12 py-3 text-right text-sm font-semibold" />
@@ -393,7 +390,10 @@ export function OrganizationMembers(props: {
       </table>
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-gray-500">Page {props.currentPage + 1}</div>
+        <div className="text-sm text-gray-500">
+          Page {props.currentPage + 1}
+          {search && ` - search results for "${search}"`}
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
