@@ -3,7 +3,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
-  DescriptionInline,
+  Description,
   GraphQLTypeCard,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
@@ -99,16 +99,16 @@ export function GraphQLEnumTypeComponent(props: {
                   {value.name}
                 </LinkToCoordinatePage>
               </DeprecationNote>
-              {value.description ? <DescriptionInline description={value.description} /> : null}
+              {value.description && <Description description={value.description} />}
             </div>
-            {value.supergraphMetadata ? (
+            {value.supergraphMetadata && (
               <SupergraphMetadataList
                 targetSlug={props.targetSlug}
                 projectSlug={props.projectSlug}
                 organizationSlug={props.organizationSlug}
                 supergraphMetadata={value.supergraphMetadata}
               />
-            ) : null}
+            )}
           </GraphQLTypeCardListItem>
         ))}
       </div>
