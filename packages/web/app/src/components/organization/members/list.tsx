@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useState } from 'react';
+import { useState } from 'react';
 import { MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
@@ -28,7 +28,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
-import { useRouter } from '@tanstack/react-router';
+import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
@@ -315,27 +315,7 @@ export function OrganizationMembers(props: {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = organization.members?.edges?.map(edge => edge.node);
 
-  const router = useRouter();
-
-  const onChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      void router.navigate({
-        search: {
-          ...router.latestLocation.search,
-          search: e.target.value === '' ? undefined : e.target.value,
-        },
-        // don't write to history
-        replace: true,
-      });
-    },
-    [router],
-  );
-
-  const initialValue =
-    'search' in router.latestLocation.search &&
-    typeof router.latestLocation.search.search === 'string'
-      ? router.latestLocation.search.search
-      : '';
+  const [search, setSearch] = useSearchParamsFilter<string>('search', '');
 
   return (
     <SubPageLayout>
@@ -343,18 +323,20 @@ export function OrganizationMembers(props: {
         subPageTitle="List of organization members"
         description="Manage the members of your organization and their permissions."
       >
-        <Input
-          className="w-[200px] grow cursor-text"
-          placeholder="Filter by field name"
-          onChange={onChange}
-          defaultValue={initialValue}
-        />
-        {organization.viewerCanManageInvitations && (
-          <MemberInvitationButton
-            refetchInvitations={props.refetchMembers}
-            organization={organization}
+        <div className="flex flex-row gap-4">
+          <Input
+            className="w-[220px] grow cursor-text"
+            placeholder="Search by username or email"
+            onChange={e => setSearch(e.target.value)}
+            defaultValue={search}
           />
-        )}
+          {organization.viewerCanManageInvitations && (
+            <MemberInvitationButton
+              refetchInvitations={props.refetchMembers}
+              organization={organization}
+            />
+          )}
+        </div>
       </SubPageLayoutHeader>
       <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
         <thead>
