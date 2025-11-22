@@ -1,6 +1,15 @@
 extend schema
   @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@tag", "@shareable"])
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "users-team")
+  @meta(name: "contact", content: "#users-channel")
+
 directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 """
 ## User Account
@@ -17,7 +26,11 @@ Represents a **registered user** in the system. User data is subject to *strict 
 **Authentication**: Users authenticate via email or username
 **Federation**: Extended by other subgraphs for additional user data
 """
-type User @key(fields: "id") @key(fields: "email") {
+type User
+  @key(fields: "id")
+  @key(fields: "email")
+  @meta(name: "domain", content: "users")
+  @meta(name: "priority", content: "tier1") {
   """
   Unique identifier for the user
   """
@@ -25,11 +38,11 @@ type User @key(fields: "id") @key(fields: "email") {
   """
   User's email address (tagged as PII for data privacy compliance)
   """
-  email: String! @tag(name: "pii")
+  email: String! @tag(name: "pii") @meta(name: "sensitivity", content: "pii")
   """
   User's full name
   """
-  name: String
+  name: String @meta(name: "sensitivity", content: "pii")
   """
   User's display alias or username
   """

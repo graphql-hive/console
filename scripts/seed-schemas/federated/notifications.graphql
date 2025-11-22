@@ -1,4 +1,13 @@
-extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "notifications-team")
+  @meta(name: "contact", content: "#notifications-channel")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 """
 ISO-8601 formatted date and time string
@@ -48,7 +57,7 @@ input NotificationFilterInput {
 """
 Base interface for all notification types
 """
-interface NotificationItf {
+interface NotificationItf @meta(name: "domain", content: "notifications") {
   id: ID!
   message: String!
 }

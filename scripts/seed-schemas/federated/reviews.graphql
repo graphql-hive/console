@@ -3,6 +3,14 @@ extend schema
     url: "https://specs.apollo.dev/federation/v2.3"
     import: ["@key", "@override", "@external", "@provides"]
   )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "reviews-team")
+  @meta(name: "contact", content: "#reviews-channel")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 """
 Input for creating a new product review
@@ -25,7 +33,7 @@ input CreateReviewInput {
 """
 Product review written by a user
 """
-type Review @key(fields: "id") {
+type Review @key(fields: "id") @meta(name: "domain", content: "reviews") {
   """
   Unique identifier for the review
   """
@@ -52,8 +60,8 @@ extend type User @key(fields: "id") {
 extend type Product @key(fields: "upc") {
   upc: String!
   reviews: [Review]
-  reviewsCount: Int!
-  reviewsScore: Float! @override(from: "products")
+  reviewsCount: Int! @meta(name: "category", content: "analytics")
+  reviewsScore: Float! @override(from: "products") @meta(name: "category", content: "analytics")
 }
 
 type Query {

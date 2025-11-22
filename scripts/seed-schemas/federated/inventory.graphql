@@ -3,6 +3,14 @@ extend schema
     url: "https://specs.apollo.dev/federation/v2.3"
     import: ["@key", "@shareable", "@external", "@requires"]
   )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "inventory-team")
+  @meta(name: "contact", content: "#inventory-channel")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 extend type Product @key(fields: "upc dimensions") {
   """
@@ -16,12 +24,9 @@ extend type Product @key(fields: "upc dimensions") {
   """
   Delivery estimates for a given zip code (requires dimensions data)
   """
-  delivery(
-    """
-    Zip code for delivery estimate calculation
-    """
-    zip: String
-  ): DeliveryEstimates @requires(fields: "dimensions { size weight }")
+  delivery(zip: String): DeliveryEstimates
+    @requires(fields: "dimensions { size weight }")
+    @meta(name: "priority", content: "tier2")
 }
 
 """
@@ -41,7 +46,7 @@ type ProductDimension @shareable {
 """
 Delivery time estimates for a product
 """
-type DeliveryEstimates {
+type DeliveryEstimates @meta(name: "domain", content: "inventory") {
   """
   Estimated standard delivery date
   """
