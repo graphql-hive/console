@@ -18,7 +18,11 @@ export function useSearchParamsFilter<TValue extends SearchParamsFilter>(
       search: {
         ...searchParams,
         [name]:
-          Array.isArray(value) && value.length === 0 ? undefined : serializeSearchValue(value),
+          value.length === 0
+            ? undefined
+            : Array.isArray(value) && value.length === 0
+              ? undefined
+              : serializeSearchValue(value),
       },
       replace: true,
     });

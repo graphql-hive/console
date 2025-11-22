@@ -868,6 +868,14 @@ export default gql`
     appDeployments: [String!]
   }
 
+  input MembersFilter {
+    """
+    Part of a user's email or username that is used to filter the list of
+    members.
+    """
+    searchTerm: String
+  }
+
   type Organization {
     """
     Unique UUID of the organization
@@ -881,8 +889,11 @@ export default gql`
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member! @tag(name: "public")
     me: Member!
-    members(first: Int @tag(name: "public"), after: String @tag(name: "public")): MemberConnection!
-      @tag(name: "public")
+    members(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      filters: MembersFilter
+    ): MemberConnection! @tag(name: "public")
     invitations(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
