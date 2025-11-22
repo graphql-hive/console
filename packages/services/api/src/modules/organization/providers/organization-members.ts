@@ -188,7 +188,7 @@ export class OrganizationMembers {
               `
             : sql``
         }
-        ${searching ? sql`AND to_tsvector("u"."display_name" || ' ' || "u"."email") @@ to_tsquery('simple', ${searchTerm + ':*'})` : sql``}
+        ${searching ? sql`AND ("u"."display_name" ILIKE ${'%' + searchTerm + '%'} OR "u"."email" ILIKE ${'%' + searchTerm + '%'})` : sql``}
       ORDER BY
         "om"."organization_id" DESC
         , "om"."created_at" DESC
