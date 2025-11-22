@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'urql';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
@@ -18,6 +18,14 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
+    members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
     viewerCanManageInvitations
     viewerCanManageRoles
   }
@@ -45,6 +53,9 @@ function PageContent(props: {
   onPageChange(page: SubPage): void;
   organization: FragmentType<typeof OrganizationMembersPage_OrganizationFragment>;
   refetchQuery(): void;
+  currentPage: number;
+  onNextPage(): void;
+  onPreviousPage(): void;
 }) {
   const organization = useFragment(
     OrganizationMembersPage_OrganizationFragment,
@@ -90,7 +101,13 @@ function PageContent(props: {
       </NavLayout>
       <PageLayoutContent>
         {props.page === 'list' ? (
-          <OrganizationMembers refetchMembers={props.refetchQuery} organization={organization} />
+          <OrganizationMembers
+            refetchMembers={props.refetchQuery}
+            organization={organization}
+            currentPage={props.currentPage}
+            onNextPage={props.onNextPage}
+            onPreviousPage={props.onPreviousPage}
+          />
         ) : null}
         {props.page === 'roles' && organization.viewerCanManageRoles ? (
           <OrganizationMemberRoles organization={organization} />
@@ -107,7 +124,12 @@ function PageContent(props: {
 }
 
 const OrganizationMembersPageQuery = graphql(`
-  query OrganizationMembersPageQuery($organizationSlug: String!, $searchTerm: String) {
+  query OrganizationMembersPageQuery(
+    $organizationSlug: String!
+    $searchTerm: String
+    $first: Int
+    $after: String
+  ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...OrganizationMembersPage_OrganizationFragment
       viewerCanSeeMembers
@@ -122,18 +144,57 @@ function OrganizationMembersPageContent(props: {
 }) {
   const search = organizationMembersRoute.useSearch();
 
-  const [query, refetch] = useQuery({
-    query: OrganizationMembersPageQuery,
-    variables: {
+  // Pagination state
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCursorHistory([null]);
+    setCurrentPage(0);
+  }, [search.search]);
+
+  const queryVariables = useMemo(
+    () => ({
       organizationSlug: props.organizationSlug,
       searchTerm: search.search || undefined,
-    },
+      first: 20,
+      after: cursorHistory[currentPage],
+    }),
+    [props.organizationSlug, search.search, cursorHistory, currentPage],
+  );
+
+  const [query, refetch] = useQuery({
+    query: OrganizationMembersPageQuery,
+    variables: queryVariables,
   });
 
-  const currentOrganization = query.data?.organization;
+  const organization = useFragment(
+    OrganizationMembersPage_OrganizationFragment,
+    query.data?.organization,
+  );
+  const pageInfo = organization?.members?.pageInfo;
+
+  // Navigation handlers
+  const handleNextPage = useCallback(() => {
+    if (pageInfo?.hasNextPage && pageInfo.endCursor) {
+      setCursorHistory(prev => [...prev, pageInfo.endCursor!]);
+      setCurrentPage(prev => prev + 1);
+    }
+  }, [pageInfo?.hasNextPage, pageInfo?.endCursor]);
+
+  const handlePreviousPage = useCallback(() => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  }, [currentPage]);
+
+  const refetchQuery = useCallback(() => {
+    refetch({ requestPolicy: 'network-only' });
+  }, [refetch]);
 
   useRedirect({
-    canAccess: currentOrganization?.viewerCanSeeMembers === true,
+    canAccess: query.data?.organization?.viewerCanSeeMembers === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug',
@@ -142,10 +203,10 @@ function OrganizationMembersPageContent(props: {
         },
       });
     },
-    entity: currentOrganization,
+    entity: query.data?.organization,
   });
 
-  if (currentOrganization?.viewerCanSeeMembers === false) {
+  if (query.data?.organization?.viewerCanSeeMembers === false) {
     return null;
   }
 
@@ -159,14 +220,15 @@ function OrganizationMembersPageContent(props: {
       page={Page.Members}
       className="flex flex-col gap-y-10"
     >
-      {currentOrganization ? (
+      {query.data?.organization ? (
         <PageContent
           page={props.page}
           onPageChange={props.onPageChange}
-          refetchQuery={() => {
-            refetch({ requestPolicy: 'network-only' });
-          }}
-          organization={currentOrganization}
+          refetchQuery={refetchQuery}
+          organization={query.data.organization}
+          currentPage={currentPage}
+          onNextPage={handleNextPage}
+          onPreviousPage={handlePreviousPage}
         />
       ) : null}
     </OrganizationLayout>

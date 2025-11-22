@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { MoreHorizontalIcon } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import debounce from 'lodash.debounce';
+import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { useMutation } from 'urql';
@@ -93,7 +94,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
   }
 `);
 
-function OrganizationMemberRow(props: {
+const OrganizationMemberRow = React.memo(function OrganizationMemberRow(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   member: FragmentType<typeof OrganizationMemberRow_MemberFragment>;
 }) {
@@ -213,7 +214,7 @@ function OrganizationMemberRow(props: {
       </tr>
     </>
   );
-}
+});
 
 const MemberRole_OrganizationFragment = graphql(`
   fragment MemberRole_OrganizationFragment on Organization {
@@ -287,8 +288,9 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     owner {
       id
     }
-    members(filters: { searchTerm: $searchTerm }) {
+    members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
       edges {
+        cursor
         node {
           id
           user {
@@ -301,6 +303,12 @@ const OrganizationMembers_OrganizationFragment = graphql(`
           ...OrganizationMemberRow_MemberFragment
         }
       }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
     }
     viewerCanManageInvitations
     ...MemberInvitationForm_OrganizationFragment
@@ -311,11 +319,35 @@ const OrganizationMembers_OrganizationFragment = graphql(`
 export function OrganizationMembers(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   refetchMembers(): void;
+  currentPage: number;
+  onNextPage(): void;
+  onPreviousPage(): void;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = organization.members?.edges?.map(edge => edge.node);
+  const pageInfo = organization.members?.pageInfo;
 
   const [search, setSearch] = useSearchParamsFilter<string>('search', '');
+
+  // Debounced search to prevent excessive queries
+  const debouncedSetSearch = useMemo(
+    () => debounce((value: string) => setSearch(value), 300),
+    [setSearch],
+  );
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      debouncedSetSearch(e.target.value);
+    },
+    [debouncedSetSearch],
+  );
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetSearch.cancel();
+    };
+  }, [debouncedSetSearch]);
 
   return (
     <SubPageLayout>
@@ -327,7 +359,7 @@ export function OrganizationMembers(props: {
           <Input
             className="w-[220px] grow cursor-text"
             placeholder="Search by username or email"
-            onChange={e => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             defaultValue={search}
           />
           {organization.viewerCanManageInvitations && (
@@ -359,6 +391,30 @@ export function OrganizationMembers(props: {
           ))}
         </tbody>
       </table>
+      {/* Pagination Controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-gray-500">Page {props.currentPage + 1}</div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={props.onPreviousPage}
+            disabled={props.currentPage === 0}
+          >
+            <ChevronLeftIcon className="mr-1 size-4" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={props.onNextPage}
+            disabled={!pageInfo?.hasNextPage}
+          >
+            Next
+            <ChevronRightIcon className="ml-1 size-4" />
+          </Button>
+        </div>
+      </div>
     </SubPageLayout>
   );
 }
