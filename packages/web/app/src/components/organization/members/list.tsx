@@ -398,7 +398,12 @@ export function OrganizationMembers(props: {
           <Button
             variant="outline"
             size="sm"
-            onClick={props.onPreviousPage}
+            onClick={() => {
+              props.onPreviousPage();
+              setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }, 0);
+            }}
             disabled={props.currentPage === 0}
           >
             <ChevronLeftIcon className="mr-1 size-4" />
@@ -407,7 +412,12 @@ export function OrganizationMembers(props: {
           <Button
             variant="outline"
             size="sm"
-            onClick={props.onNextPage}
+            onClick={() => {
+              props.onNextPage();
+              setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }, 0);
+            }}
             disabled={!pageInfo?.hasNextPage}
           >
             Next
