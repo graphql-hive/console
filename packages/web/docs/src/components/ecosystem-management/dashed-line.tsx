@@ -24,8 +24,8 @@ export function DashedLine(props: DashedLineProps) {
       >
         <path
           d="M0 112.5H31.3352C44.59 112.5 55.3351 101.755 55.3352 88.5001L55.3355 25.4999C55.3356 12.2451 66.0807 1.50001 79.3355 1.5L111 1.5"
-          stroke-width="3"
-          stroke-dasharray="3 6"
+          strokeWidth="3"
+          strokeDasharray="3 6"
         />
       </svg>
     );

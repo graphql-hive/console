@@ -92,7 +92,7 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       <div className="flex h-full w-max flex-col items-center max-md:mx-auto">
         <div className="z-20 flex justify-center">
-          <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
+          <div className="firefox:[backdrop-filter:blur(12px)] flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
             <ReactLogo className="size-8" />
             <AppleLogo className="size-8" />
             <AndroidLogo className="size-8" />
@@ -145,7 +145,7 @@ export function EcosystemIllustration(props: { className?: string }) {
         <VerticalEdge />
 
         <div className="z-20 flex justify-center">
-          <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
+          <div className="firefox:[backdrop-filter:blur(12px)] flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
             <GraphQLLogo className="size-8" />
             <OpenAPILogo className="size-8" />
             <GrpcLogo className="size-8" />
@@ -189,7 +189,7 @@ function Node({ title, description, children, className, ...rest }: NodeProps) {
     <div
       className={cn(
         styles.node,
-        'relative z-10 flex min-h-[96px] items-center gap-4 rounded-2xl bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))] p-4 backdrop-blur-md xl:p-[22px] [&>svg]:shrink-0',
+        'firefox:[backdrop-filter:blur(12px)] relative z-10 flex min-h-[96px] items-center gap-4 rounded-2xl bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))] p-4 backdrop-blur-md xl:p-[22px] [&>svg]:shrink-0',
         description && 'flex-row',
         className,
       )}
@@ -239,11 +239,11 @@ function RightConnections() {
       <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
       <DashedLine className="row-span-2 row-start-3 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
       <DashedLine
-        className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700"
+        className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700 [mask-image:linear-gradient(to_bottom,black_30%,transparent_40%)]"
         short
       />
       <DashedLine
-        className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700"
+        className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700 [mask-image:linear-gradient(to_top,transparent_57%,black_75%)]"
         short
       />
     </div>
