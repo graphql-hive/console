@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import debounce from 'lodash.debounce';
+import React, { useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { useMutation } from 'urql';
+import { useDebouncedCallback } from 'use-debounce';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -329,25 +329,9 @@ export function OrganizationMembers(props: {
 
   const [search, setSearch] = useSearchParamsFilter<string>('search', '');
 
-  // Debounced search to prevent excessive queries
-  const debouncedSetSearch = useMemo(
-    () => debounce((value: string) => setSearch(value), 300),
-    [setSearch],
-  );
-
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      debouncedSetSearch(e.target.value);
-    },
-    [debouncedSetSearch],
-  );
-
-  // Cleanup debounced function on unmount
-  useEffect(() => {
-    return () => {
-      debouncedSetSearch.cancel();
-    };
-  }, [debouncedSetSearch]);
+  const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, 300);
 
   return (
     <SubPageLayout>
