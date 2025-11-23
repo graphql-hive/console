@@ -50,17 +50,9 @@ export function EcosystemIllustration(props: { className?: string }) {
         style={{ paddingBlock: halfBoxHeight }}
       >
         {/* Top-Left Line: Connects Top-Center to Side-Center */}
-        <DashedLine
-          className="translate-x-[1.5px] translate-y-[-1.5px] self-start text-green-700"
-          fill="none"
-          stroke="currentColor"
-        />
+        <DashedLine className="translate-x-[1.5px] translate-y-[-1.5px] self-start text-green-700" />
         {/* Bottom-Left Line: Connects Bottom-Center to Side-Center */}
-        <DashedLine
-          className="translate-x-[1.5px] translate-y-[1.5px] -scale-y-100 self-end text-green-700"
-          fill="none"
-          stroke="currentColor"
-        />
+        <DashedLine className="translate-x-[1.5px] translate-y-[1.5px] -scale-y-100 self-end text-green-700" />
       </div>
 
       <div className="flex h-full w-max flex-col items-center max-md:mx-auto">
@@ -127,26 +119,14 @@ export function EcosystemIllustration(props: { className?: string }) {
         className="relative hidden h-0 min-h-full shrink grow-0 grid-flow-col-dense grid-cols-1 grid-rows-4 place-items-center justify-center md:grid"
         style={{ paddingBlock: halfBoxHeight }}
       >
-        <DashedLine
-          className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700"
-          fill="none"
-          stroke="currentColor"
-        />
-        <DashedLine
-          className="row-span-4 row-start-4 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700"
-          fill="none"
-          stroke="currentColor"
-        />
+        <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
+        <DashedLine className="row-span-4 row-start-4 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
         <DashedLine
           className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700"
-          fill="none"
-          stroke="currentColor"
           short
         />
         <DashedLine
           className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700"
-          fill="none"
-          stroke="currentColor"
           short
         />
       </div>
@@ -172,29 +152,6 @@ export function EcosystemIllustration(props: { className?: string }) {
         </Node>
       </div>
     </div>
-  );
-}
-
-interface EdgeProps extends React.HTMLAttributes<HTMLElement> {
-  top?: boolean;
-  left?: boolean;
-  bottom?: boolean;
-}
-
-function Edge({ top, bottom, left, className, ...rest }: EdgeProps) {
-  return (
-    <div
-      className={cn(
-        className,
-        '[&>:nth-child(odd)]:border-green-700',
-        top &&
-          (bottom
-            ? '[&>:nth-child(1)]:border-t [&>:nth-child(3)]:border-b'
-            : '[&>:nth-child(odd)]:border-t'),
-        left && '[&>:nth-child(odd)]:border-l',
-      )}
-      {...rest}
-    />
   );
 }
 
