@@ -1,5 +1,3 @@
-'use client';
-
 import { ReactNode } from 'react';
 import { cn, CodegenIcon, HiveGatewayIcon, HiveIcon } from '@theguild/components';
 import { DashedLine } from './dashed-line';
@@ -13,6 +11,37 @@ import { OpenAPILogo } from './logos/openapi';
 import { ReactLogo } from './logos/react';
 import styles from './ecosystem-management.module.css';
 
+/**
+ *           +-----------------------------+
+ *           |   Clients / Applications    |
+ *       .-->| (React, iOS, Android, etc.) |<--.
+ *       |   +--------------+--------------+   |
+ *       |                  |                  |
+ *       |                  |                  |
+ *       |        +---------v---------+        |
+ *       |        |     Stellate      |        |
+ *       |        |   (Edge Security  |        |
+ *       |        |  & Caching Layer) |        |
+ *       |        +---------+---------+        |
+ *       |                  |                  |
+ * +-----+-------+          |          +-------+-----+
+ * |   Codegen   |          |          | Hive Console|
+ * |  (GraphQL   |          |          |   (Schema   |
+ * | Code Gen.)  |          |          |  Registry)  |
+ * +-----+-------+          |          +-------+-----+
+ *       |                  v                  ^
+ *       |        +-------------------+        |
+ *       |        |    Hive Gateway   |        |
+ *       |        |         &         |--------|
+ *       |        |    Hive Router    |        |
+ *       |        +---------+---------+        |
+ *       |                  |                  |
+ *       |                  |                  |
+ *       |        +---------v---------+        |
+ *       `------->|     Services      |<-------'
+ *                |  (GraphQL, gRPC)  |
+ *                +-------------------+
+ */
 export function EcosystemIllustration(props: { className?: string }) {
   const boxHeight = 66; // p-4 (16*2) + size-8 (32) + border (2)
   const halfBoxHeight = boxHeight / 2;
