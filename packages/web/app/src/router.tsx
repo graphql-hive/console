@@ -446,7 +446,7 @@ export const organizationMembersRoute = createRoute({
     const navigate = useNavigate({ from: organizationMembersRoute.fullPath });
     const onPageChange = useCallback(
       (newPage: z.infer<typeof OrganizationMembersRouteSearch>['page']) => {
-        void navigate({ search: { page: newPage, search: '' } });
+        void navigate({ search: { page: newPage, search: undefined } });
       },
       [navigate],
     );
