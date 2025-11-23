@@ -41,3 +41,40 @@ http:
   host: '127.0.0.1'
   port: 8080
 ```
+
+### `graphql_endpoint`
+
+- **Type:** `string`
+- **Default:** `"/graphql"`
+
+The `graphql_endpoint` property allows you to customize the HTTP path where the GraphQL API is
+exposed. By default, Hive Router serves the GraphQL API at the `/graphql` endpoint.
+
+For example, to change the GraphQL endpoint to `/api/graphql`, you would configure it as follows:
+
+```yaml filename="router.config.yaml"
+http:
+  graphql_endpoint: /api/graphql
+```
+
+This configuration is useful if you want to namespace your GraphQL API under a specific path or if
+you have multiple services running on the same domain and want to avoid path conflicts.
+
+You can also use path parameters in the `graphql_endpoint` to capture dynamic segments of the URL.
+This can be useful such features like Persisted Documents where the document ID can be part of the
+URL path.
+
+`path_params` will be available in the request object inside the VRL expression context for further
+processing.
+
+[Learn more about using path parameters with Persisted Documents](/docs/router/configuration/persisted_documents#using-url-path-parameters-to-provide-document-id).
+[Learn more about the request object in the VRL expressions](/docs/router/configuration/expressions#request).
+
+```yaml filename="router.config.yaml"
+http:
+  graphql_endpoint: /graphql/:doc_id
+persisted_documents:
+  enabled: true
+  spec:
+    expression: .request.path_params.doc_id
+```
