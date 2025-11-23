@@ -233,7 +233,8 @@ function RightConnections() {
       style={{
         paddingBlock: halfBoxHeight,
         height: fullHeight,
-        gridTemplateRows: `${firstRow} calc(${secondRow} + 18px) calc(${thirdRow} - 12px) 1fr`,
+        // todo: change 20px and 14px to something based on cqi or vars?
+        gridTemplateRows: `${firstRow} calc(${secondRow} + 20px) calc(${thirdRow} - 14px) 1fr`,
       }}
     >
       <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
