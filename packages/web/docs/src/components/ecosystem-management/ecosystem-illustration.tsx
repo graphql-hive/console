@@ -232,7 +232,8 @@ function RightConnections() {
       className="relative hidden shrink grow-0 grid-flow-col-dense grid-cols-1 place-items-center justify-center md:grid"
       style={{
         paddingBlock: halfBoxHeight,
-        gridTemplateRows: `${firstRow} ${secondRow} ${thirdRow} ${fourthRow}`,
+        height: fullHeight,
+        gridTemplateRows: `${firstRow} calc(${secondRow} + 18px) calc(${thirdRow} - 12px) 1fr`,
       }}
     >
       <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />

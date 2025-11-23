@@ -1,5 +1,5 @@
 .container {
-  container-type: inline-size;
+  container-type: block-size;
 }
 
 @container (width < 586px) {
