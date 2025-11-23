@@ -13,3 +13,7 @@ export { isHiveClient, isAsyncIterable, createHash, joinUrl } from './client/uti
 export { http, URL } from './client/http-client.js';
 export { createSupergraphSDLFetcher } from './client/supergraph.js';
 export type { SupergraphSDLFetcherOptions } from './client/supergraph.js';
+export {
+  createCDNArtifactFetcher,
+  type CDNArtifactFetcherCircuitBreakerConfiguration,
+} from './client/artifacts.js';

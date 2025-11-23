@@ -1,6 +1,7 @@
 import type { ExecutionArgs } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import type { AgentOptions } from './agent.js';
+import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
 import type { SchemaReporter } from './reporting.js';
 import { HiveLogger } from './utils.js';
@@ -318,6 +319,7 @@ export type PersistedDocumentsConfiguration = {
    * used for doing HTTP requests.
    */
   fetch?: typeof fetch;
+  circuitBreaker?: CircuitBreakerConfiguration;
 };
 
 export type AllowArbitraryDocumentsFunction = (context: {
