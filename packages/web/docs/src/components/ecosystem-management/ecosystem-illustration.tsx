@@ -11,6 +11,17 @@ import { OpenAPILogo } from './logos/openapi';
 import { ReactLogo } from './logos/react';
 import styles from './ecosystem-management.module.css';
 
+const boxHeight = 66;
+const halfBoxHeight = boxHeight / 2;
+const stellateHeight = 96;
+const gatewayHeight = 136;
+
+const firstRow = `calc(${halfBoxHeight}px + var(--edge) + ${stellateHeight / 2}px)`;
+const secondRow = `calc(${stellateHeight / 2}px + (var(--edge) / 2))`;
+const thirdRow = `calc((var(--edge) / 2) + ${gatewayHeight / 2}px)`;
+const fourthRow = `calc(${gatewayHeight / 2}px + (var(--edge) / 2) + ${halfBoxHeight}px)`;
+const fullHeight = `calc(${boxHeight}px + var(--edge) + ${stellateHeight}px + var(--edge) + ${gatewayHeight}px + var(--edge) + ${boxHeight}px)`;
+
 /**
  *                      +-----------------------------+
  *                      |   Clients / Applications    |
@@ -43,18 +54,13 @@ import styles from './ecosystem-management.module.css';
  *                           +-------------------+
  */
 export function EcosystemIllustration(props: { className?: string }) {
-  const boxHeight = 66;
-  const halfBoxHeight = boxHeight / 2;
-  const stellateHeight = 96;
-  const gatewayHeight = 136;
-
   return (
     <div
       className={cn(
-        'grid flex-1 grid-cols-1 items-center gap-y-0 overflow-visible md:grid-cols-[auto_minmax(2rem,1fr)_min-content_minmax(2rem,1fr)_auto]',
+        'grid h-min flex-1 grid-cols-1 items-center gap-y-0 overflow-visible md:grid-cols-[auto_minmax(2rem,1fr)_min-content_minmax(2rem,1fr)_auto]',
         props.className,
         styles.container,
-        '[--edge:24px] sm:[--edge:48px]',
+        '[--edge:32px] sm:[--edge:48px] md:[--edge:96px]',
       )}
       style={
         {
@@ -82,16 +88,7 @@ export function EcosystemIllustration(props: { className?: string }) {
         </Node>
       </div>
 
-      {/* Col 2: Left Connections */}
-      <div
-        className="hidden grid-rows-2 justify-center md:grid"
-        style={{ paddingBlock: halfBoxHeight }}
-      >
-        {/* Top-Left Line: Connects Top-Center to Side-Center */}
-        <DashedLine className="translate-x-[1.5px] translate-y-[-1.5px] self-start text-green-700" />
-        {/* Bottom-Left Line: Connects Bottom-Center to Side-Center */}
-        <DashedLine className="translate-x-[1.5px] translate-y-[1.5px] -scale-y-100 self-end text-green-700" />
-      </div>
+      <LeftConnections />
 
       <div className="flex h-full w-max flex-col items-center max-md:mx-auto">
         <div className="z-20 flex justify-center">
@@ -103,10 +100,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </div>
         </div>
 
-        <div
-          className="w-[3px] bg-green-700"
-          style={{ height: 'calc(var(--edge) + var(--stellate-height) / 2)' }}
-        />
+        <VerticalEdge />
 
         <div className="z-20 flex justify-center">
           <Node
@@ -124,10 +118,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        <div
-          className="w-[3px] bg-green-700"
-          style={{ height: 'calc(var(--stellate-height) / 2 + var(--gateway-height) / 2)' }}
-        />
+        <VerticalEdge />
 
         <div className="z-20 flex justify-center">
           <Node
@@ -151,10 +142,7 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        <div
-          className="w-[3px] bg-green-700"
-          style={{ height: 'calc(var(--edge) + var(--gateway-height) / 2)' }}
-        />
+        <VerticalEdge />
 
         <div className="z-20 flex justify-center">
           <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
@@ -165,22 +153,7 @@ export function EcosystemIllustration(props: { className?: string }) {
         </div>
       </div>
 
-      {/* Col 4: Right Connections */}
-      <div
-        className="relative hidden shrink grow-0 grid-flow-col-dense grid-cols-1 grid-rows-[1fr,129px,111px,1fr] place-items-center justify-center md:grid"
-        style={{ paddingBlock: halfBoxHeight }}
-      >
-        <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
-        <DashedLine className="row-span-2 row-start-3 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
-        <DashedLine
-          className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700"
-          short
-        />
-        <DashedLine
-          className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700"
-          short
-        />
-      </div>
+      <RightConnections />
 
       {/* Col 5: Console (Desktop) */}
       <div className="hidden items-center justify-start md:flex">
@@ -233,6 +206,45 @@ function Node({ title, description, children, className, ...rest }: NodeProps) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function VerticalEdge() {
+  return <div className="h-[--edge] w-[3px] bg-green-700" />;
+}
+
+function LeftConnections() {
+  return (
+    <div
+      className="hidden flex-col items-center justify-center md:flex"
+      style={{ paddingBlock: halfBoxHeight, height: fullHeight }}
+    >
+      <DashedLine className="h-1/2 translate-x-[1.5px] translate-y-[-1.5px] text-green-700" />
+      <DashedLine className="h-1/2 translate-x-[1.5px] translate-y-[1.5px] -scale-y-100 text-green-700" />
+    </div>
+  );
+}
+
+function RightConnections() {
+  return (
+    <div
+      className="relative hidden shrink grow-0 grid-flow-col-dense grid-cols-1 place-items-center justify-center md:grid"
+      style={{
+        paddingBlock: halfBoxHeight,
+        gridTemplateRows: `${firstRow} ${secondRow} ${thirdRow} ${fourthRow}`,
+      }}
+    >
+      <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
+      <DashedLine className="row-span-2 row-start-3 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
+      <DashedLine
+        className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700"
+        short
+      />
+      <DashedLine
+        className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700"
+        short
+      />
     </div>
   );
 }
