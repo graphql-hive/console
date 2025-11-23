@@ -154,15 +154,12 @@ function OrganizationMembersPageContent(props: {
     setCurrentPage(0);
   }, [search.search]);
 
-  const queryVariables = useMemo(
-    () => ({
-      organizationSlug: props.organizationSlug,
-      searchTerm: search.search || undefined,
-      first: 20,
-      after: cursorHistory[currentPage],
-    }),
-    [props.organizationSlug, search.search, cursorHistory, currentPage],
-  );
+  const queryVariables = {
+    organizationSlug: props.organizationSlug,
+    searchTerm: search.search || undefined,
+    first: 20,
+    after: cursorHistory[currentPage],
+  };
 
   const [query, refetch] = useQuery({
     query: OrganizationMembersPageQuery,
