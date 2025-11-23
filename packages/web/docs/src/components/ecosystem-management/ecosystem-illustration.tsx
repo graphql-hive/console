@@ -32,7 +32,7 @@ import styles from './ecosystem-management.module.css';
  *                  |                  |                  |
  *                  |        +-------------------+        |
  *                  |        |    Hive Gateway   |        |
- *                  |        |         &         |<-------|
+ *                  |        |         &         |<-------+
  *                  |        |    Hive Router    |        |
  *                  |        +---------+---------+        |
  *                  |                  |                  |
@@ -43,8 +43,10 @@ import styles from './ecosystem-management.module.css';
  *                           +-------------------+
  */
 export function EcosystemIllustration(props: { className?: string }) {
-  const boxHeight = 66; // p-4 (16*2) + size-8 (32) + border (2)
+  const boxHeight = 66;
   const halfBoxHeight = boxHeight / 2;
+  const stellateHeight = 96;
+  const gatewayHeight = 136;
 
   return (
     <div
@@ -52,7 +54,14 @@ export function EcosystemIllustration(props: { className?: string }) {
         'grid flex-1 grid-cols-1 items-center gap-y-0 overflow-visible md:grid-cols-[auto_minmax(2rem,1fr)_min-content_minmax(2rem,1fr)_auto]',
         props.className,
         styles.container,
+        '[--edge:24px] sm:[--edge:48px]',
       )}
+      style={
+        {
+          '--stellate-height': `${stellateHeight}px`,
+          '--gateway-height': `${gatewayHeight}px`,
+        } as React.CSSProperties
+      }
     >
       <IconGradientDefs />
 
@@ -75,7 +84,7 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       {/* Col 2: Left Connections */}
       <div
-        className="hidden h-full grid-rows-2 justify-center md:grid"
+        className="hidden grid-rows-2 justify-center md:grid"
         style={{ paddingBlock: halfBoxHeight }}
       >
         {/* Top-Left Line: Connects Top-Center to Side-Center */}
@@ -94,7 +103,10 @@ export function EcosystemIllustration(props: { className?: string }) {
           </div>
         </div>
 
-        <div className="h-6 w-[3px] bg-green-700 sm:h-12 md:flex-1" />
+        <div
+          className="w-[3px] bg-green-700"
+          style={{ height: 'calc(var(--edge) + var(--stellate-height) / 2)' }}
+        />
 
         <div className="z-20 flex justify-center">
           <Node
@@ -106,16 +118,23 @@ export function EcosystemIllustration(props: { className?: string }) {
                 and Caching Layer
               </>
             }
-            className="max-md:px-6"
+            className="h-[--stellate-height] max-md:px-6"
           >
             <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
         </div>
 
-        <div className="h-6 w-[3px] bg-green-700 sm:h-12 md:flex-1" />
+        <div
+          className="w-[3px] bg-green-700"
+          style={{ height: 'calc(var(--stellate-height) / 2 + var(--gateway-height) / 2)' }}
+        />
 
         <div className="z-20 flex justify-center">
-          <Node title={null} description={null} className="flex-row gap-2 px-8">
+          <Node
+            title={null}
+            description={null}
+            className="h-[--gateway-height] flex-row gap-2 px-8"
+          >
             <div className="flex flex-col items-center gap-2">
               <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
               <span className="font-medium text-green-100">Hive Gateway</span>
@@ -132,7 +151,10 @@ export function EcosystemIllustration(props: { className?: string }) {
           </Node>
         </div>
 
-        <div className="h-6 w-[3px] bg-green-700 sm:h-12 md:flex-1" />
+        <div
+          className="w-[3px] bg-green-700"
+          style={{ height: 'calc(var(--edge) + var(--gateway-height) / 2)' }}
+        />
 
         <div className="z-20 flex justify-center">
           <div className="flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
@@ -145,11 +167,11 @@ export function EcosystemIllustration(props: { className?: string }) {
 
       {/* Col 4: Right Connections */}
       <div
-        className="relative hidden h-0 min-h-full shrink grow-0 grid-flow-col-dense grid-cols-1 grid-rows-4 place-items-center justify-center md:grid"
+        className="relative hidden shrink grow-0 grid-flow-col-dense grid-cols-1 grid-rows-[1fr,129px,111px,1fr] place-items-center justify-center md:grid"
         style={{ paddingBlock: halfBoxHeight }}
       >
         <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
-        <DashedLine className="row-span-4 row-start-4 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
+        <DashedLine className="row-span-2 row-start-3 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
         <DashedLine
           className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700"
           short
