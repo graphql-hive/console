@@ -15,7 +15,7 @@ import { type OTELCollector } from './otel-collector';
  * Hive Gateway Docker Image Version
  * Bump this to update the used gateway version.
  */
-const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.18';
+const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.19';
 
 const gatewayConfigDirectory = path.resolve(
   __dirname,
