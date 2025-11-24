@@ -23,10 +23,5 @@
     "tiny-lru": "8.0.2",
     "tslib": "2.8.1",
     "zod": "3.25.76"
-  },
-  "buildOptions": {
-    "external": [
-      "ansi-color"
-    ]
   }
 }

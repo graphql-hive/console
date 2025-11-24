@@ -30,9 +30,6 @@
     "tags": [
       "backend"
     ],
-    "banner": "../../../scripts/banner.js",
-    "external": [
-      "ansi-color"
-    ]
+    "banner": "../../../scripts/banner.js"
   }
 }
