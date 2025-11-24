@@ -1,4 +1,3 @@
-import { Logger } from '@graphql-hive/logger';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import { http } from './http-client.js';
@@ -74,7 +73,7 @@ export interface AgentOptions {
    *
    * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
-  logger?: LegacyLogger | Logger;
+  logger?: LegacyLogger;
   /**
    * Circuit Breaker Configuration.
    * true -> Use default configuration

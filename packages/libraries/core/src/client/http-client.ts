@@ -2,7 +2,7 @@ import asyncRetry from 'async-retry';
 import { Logger } from '@graphql-hive/logger';
 import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
-import { LegacyLogger } from './types';
+import type { LegacyLogger } from './types';
 
 interface SharedConfig {
   headers: Record<string, string>;
@@ -16,7 +16,7 @@ interface SharedConfig {
   /** custom fetch implementation. */
   fetchImplementation?: typeof fetch;
   /** Logger for HTTP info and request errors. Uses `console` by default. */
-  logger?: LegacyLogger | Logger;
+  logger?: LegacyLogger;
   /**
    * Function for determining whether the request response is okay.
    * You can override it if you want to accept other status codes as well.
@@ -108,7 +108,7 @@ export async function makeFetchCall(
     /** custom fetch implementation. */
     fetchImplementation?: typeof fetch;
     /** Logger for HTTP info and request errors. Uses `console` by default. */
-    logger?: LegacyLogger | Logger;
+    logger?: LegacyLogger;
     /**
      * Function for determining whether the request response is okay.
      * You can override it if you want to accept other status codes as well.
