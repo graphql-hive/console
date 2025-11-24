@@ -69,18 +69,19 @@ export default class ArtifactsFetch extends Command<typeof ArtifactsFetch> {
         retry: {
           retries: 3,
         },
-        logger: {
-          info: (...args) => {
-            if (this.flags.debug) {
-              console.info(...args);
+        logger: this.flags.debug
+          ? {
+              info: (...args: Array<unknown>) => {
+                this.logInfo(...args);
+              },
+              error: (...args: Array<unknown>) => {
+                this.logFailure(...args);
+              },
+              debug: (...args: Array<unknown>) => {
+                this.logInfo(...args);
+              },
             }
-          },
-          error: (...args) => {
-            if (this.flags.debug) {
-              console.error(...args);
-            }
-          },
-        },
+          : undefined,
       });
     } catch (e: any) {
       const sourceError = e?.cause ?? e;
