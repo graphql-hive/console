@@ -220,22 +220,22 @@ As you can see, the second group is a superset of the first and third groups, so
 
 The composition process automatically simplified the merged policy by removing redundant scope groups.
 
-## Authorization Rules by GraphQL Type
+### Usage on Interface Types
 
-### Object Types
-Auth directives can be applied at type and field levels. Requirements are combined using AND.
+Auth directives **cannot be applied directly to interface definitions**. Instead, authorization rules are **inherited** from the concrete types that implement the interface. When you query an interface or its fields, the authorization check applies the combined policies from all implementing types using logical `AND`. 
 
-### Scalars and Enums
-Can have auth directives applied. When returned in a field, combined with field-level requirements.
+<Callout type="note">
+ Interface authorization is computed during composition of the supergraph schema. 
+</Callout>
 
-### Interface Types
-Auth directives on interfaces are **disallowed**. Instead, apply directives to concrete implementing types. The effective policy for an interface is the logical `AND` of all implementing types' policies.
+Look at this example with an `Item` interface implemented by `Book` and `Video` types, each with its own authorization requirements:
 
-```graphql
-# Disallowed
-interface Item @authenticated { ... }
+```graphql filename="Subgraph Schema"
+interface Item {
+  id: ID!
+  title: String
+}
 
-# Allowed - apply to concrete types
 type Book implements Item @authenticated {
   id: ID!
   title: String @requiresScopes(scopes: [["book:read"]])
@@ -247,14 +247,22 @@ type Video implements Item @requiresScopes(scopes: [["video:read"]]) {
 }
 ```
 
-When querying the interface directly, the combined policy from all implementing types is applied.
+After the composition phase, the `Item` interface will have the combined authorization requirements from both `Book` and `Video`.
 
-### Union Types
-Auth directives on unions are **prohibited**. Apply directives to concrete member types instead. This aligns with federation rules and avoids ambiguity.
+```graphql filename="Supergraph Schema"
+interface Item @authenticated @requiresScopes(scopes: [["video:read"]]) {
+  id: ID!
+  title: String @requiresScopes(scopes: [["book:read"]])
+}
+```
 
-## Field-Level Dependencies (`@requires`)
+In this example, when querying items through the `Item` interface, both the `Book` and `Video` type requirements must be satisfied.
 
-A field using `@requires` to access fields from another entity must define an authorization policy that is a **superset** of the policies on all required fields. This prevents bypassing security policies through federated queries.
+### Fields with `@requires`
+
+A field using `@requires` to access fields from another entity must define an authorization policy that is a **superset** of the policies on all required fields. This prevents bypassing security policies by accessing protected fields through other fields.
+
+
 
 ## Handling Authorization Errors
 
