@@ -367,16 +367,34 @@ export function OrganizationMembers(props: {
           </tr>
         </thead>
         <tbody className="divide-y-[1px] divide-gray-500/20">
-          {members.map(node => (
-            <OrganizationMemberRow key={node.id} organization={props.organization} member={node} />
-          ))}
+          {members.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="py-16">
+                <div className="flex flex-col items-center justify-center px-4">
+                  <h3 className="mb-2 text-lg font-semibold text-gray-100">No members found</h3>
+
+                  <p className="max-w-sm text-center text-sm text-gray-200">
+                    {`No results for "${search}". Try adjusting your search term.`}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            members.map(node => (
+              <OrganizationMemberRow
+                key={node.id}
+                organization={props.organization}
+                member={node}
+              />
+            ))
+          )}
         </tbody>
       </table>
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-gray-500">
           Page {props.currentPage + 1}
-          {search && ` - search results for "${search}"`}
+          {search && members.length > 0 && ` - search results for "${search}"`}
         </div>
         <div className="flex items-center gap-2">
           <Button
