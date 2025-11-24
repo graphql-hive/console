@@ -179,14 +179,10 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         ? clientOrOptions
         : createHive({
             ...clientOrOptions,
+            // TODO: How to convert yoga.logger into HiveLogger here?
+            logger: clientOrOptions.logger ?? yoga.logger,
             agent: clientOrOptions.agent
               ? {
-                  logger: {
-                    // Hive Plugin should respect the given Yoga logger
-                    error: (...args: Array<unknown>) => yoga.logger.error(...args),
-                    info: (...args: Array<unknown>) => yoga.logger.info(...args),
-                    debug: (...args: Array<unknown>) => yoga.logger.debug(...args),
-                  },
                   // Hive Plugin should respect the given FetchAPI, note that this is not `yoga.fetch`
                   fetch: (...args) => yoga.fetchAPI.fetch(...args),
                   ...clientOrOptions.agent,
