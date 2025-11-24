@@ -26,7 +26,8 @@
   },
   "buildOptions": {
     "external": [
-      "pg-native"
+      "pg-native",
+      "ansi-color"
     ]
   }
 }
