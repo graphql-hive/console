@@ -1,5 +1,33 @@
 # hive
 
+## 8.9.0
+
+### Minor Changes
+
+- [#7281](https://github.com/graphql-hive/console/pull/7281)
+  [`791c025`](https://github.com/graphql-hive/console/commit/791c0252a0933d0f5c933eef9053227d7f00c87e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce rate limiting for email sign up, sign in
+  and password rest. The IP value to use for the rate limiting can be specified via the
+  `SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME` environment variable. By default the `CF-Connecting-IP`
+  header is being used.
+
+- [#7292](https://github.com/graphql-hive/console/pull/7292)
+  [`9c19215`](https://github.com/graphql-hive/console/commit/9c19215cabd37ee00c9bbd0115e242b7a315e7db)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add AWS Lambda CDN Artifact Handler.
+
+### Patch Changes
+
+- [#7304](https://github.com/graphql-hive/console/pull/7304)
+  [`172ee83`](https://github.com/graphql-hive/console/commit/172ee83a0ee69f75107525a2d6d3cb1cfadd6530)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Upgrade OpenTelemetry Collector to
+  v0.140.0 (from v0.122.0) and Go to 1.25 (from 1.23). This includes updating all collector
+  component dependencies and adapting the hive auth extension for API compatibility changes.
+
+- [#7295](https://github.com/graphql-hive/console/pull/7295)
+  [`76c700f`](https://github.com/graphql-hive/console/commit/76c700f322d8ec81a4fcea0333283427633f8412)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fixes a UI bug in
+  MembershipInvitation modal when there are many projects/targets/services.
+
 ## 8.8.0
 
 ### Minor Changes
