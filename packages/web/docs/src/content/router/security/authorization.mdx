@@ -2,15 +2,17 @@
 title: 'Authorization'
 ---
 
+import { Callout } from '#components/callout';
+
 # Authorization
 
-Authorization directives allow you to define fine-grained access control directly in your GraphQL schema. Instead of handling authorization logic in resolvers or middleware, you declare which fields and types require authentication or specific scopes using directives. The router enforces these rules at the router level, ensuring consistent protection across your entire federated graph.
+Authorization directives allow you to define fine-grained access control directly in your GraphQL schema. Instead of handling authorization logic in resolvers, you declare which fields and types require authentication or specific scopes using directives. The router enforces these rules before calling your subgraphs, ensuring consistent protection across your federated graph.
 
-This guide explains the core concepts and shows you how to implement authorization directives. For the complete configuration reference, see [`authorization` configuration](../configuration/authorization).
+For the complete configuration reference, see [`authorization` configuration](../configuration/authorization).
 
 ## How Authorization Directives Work
 
-When a GraphQL request comes to the router, it goes through these steps:
+When a GraphQL request arrives at the router, it goes through these steps:
 
 1. **Request arrives** with user credentials (typically a JWT token)
 2. **Router extracts user information** from the token (authentication status and scopes)
@@ -18,23 +20,18 @@ When a GraphQL request comes to the router, it goes through these steps:
 4. **Access is allowed or denied** based on the field's directive requirements and the user's credentials
 5. **Response is returned** with either the requested data, errors, or a full rejection
 
-The key insight is that authorization happens **before** your subgraphs are even called. This protects sensitive fields at the router level.
+
+<Callout type="note">
+    Authorization happens **before** your subgraphs are called, protecting sensitive fields at the router level.
+</Callout>
 
 ## Integration with JWT Authentication
 
-Authorization directives work alongside your [JWT authentication setup](./jwt-authentication.mdx). Here's the flow:
-
-1. **Client sends request** with JWT token in the `Authorization` header
-2. **Router validates JWT** using your configured JWKS provider
-3. **Router extracts scopes** from the JWT claims (`scope` field)
-4. **Router checks authorization directives** against the extracted scopes
-5. **Query proceeds or fails** based on authorization result
-
-**Configuration example:**
+Authorization directives work alongside your [JWT authentication setup](./jwt-authentication.mdx). When a request arrives, the router validates the JWT token and extracts scopes from the JWT claims (in the `scope` field). It then checks the authorization directives in your schema against these extracted scopes to determine if the query should proceed or fail.
 
 ```yaml filename="router.config.yaml"
 jwt:
-  require_authentication: false  # Allow anonymous requests
+  require_authentication: false
   jwks_providers:
     - source: remote
       url: https://your-auth-provider.com/.well-known/jwks.json
@@ -43,180 +40,221 @@ authorization:
   directives:
     enabled: true
     unauthorized:
-      mode: filter  # Or 'reject' for stricter enforcement
+      mode: filter  # Or 'reject'
 ```
 
-With this setup, your GraphQL API allows both anonymous and authenticated requests, but authorization directives control which fields each user can access.
-
-## The Two Authorization Directives
+## Authorization Directives
 
 ### `@authenticated`
 
-The `@authenticated` directive marks a field or type as requiring the user to be authenticated. Anonymous requests (without a valid token) cannot access these fields.
-
-**Example:**
+Marks a field or type as requiring authentication. Anonymous requests cannot access these fields.
 
 ```graphql
+extend schema @link(
+  url: "https://specs.apollo.dev/federation/v2.9"
+  import: ["@authenticated"]
+)
+
 type Query {
-  # Anyone can search public posts
-  searchPublicPosts(query: String!): [Post]
-
-  # Only logged-in users can access their drafts
-  myDraftPosts: [Post] @authenticated
-
-  # Only logged-in users can see their profile
-  me: User @authenticated
+  publicPosts: [Post]               # Anyone
+  myDrafts: [Post] @authenticated   # Authenticated users only
 }
 
 type User {
   id: ID!
   username: String!
-  
-  # Public information
   bio: String
-  
-  # Private information - requires authentication
-  email: String @authenticated
-  notifications: [Notification!] @authenticated
+  email: String @authenticated      # Private field
 }
 ```
-
-In this example:
-- `searchPublicPosts` is accessible to everyone
-- `myDraftPosts` requires authentication
-- `me` requires authentication
-- On `User`, `email` and `notifications` require authentication, but `id`, `username`, and `bio` don't
 
 ### `@requiresScopes`
 
-The `@requiresScopes` directive provides more granular control by requiring specific scopes. Scopes are permissions granted to a user, typically stored in their JWT token (under `scope` claim as string - separated by space). This is how you implement role-based and permission-based access control.
+Provides granular control by requiring specific scopes (permissions stored in JWT token).
 
-**Scope logic:**
-
-- **Within a single list** (AND logic): User must have ALL scopes
-  - Example: `@requiresScopes(scopes: [["read:users", "write:users"]])` means the user needs both scopes
-  
-- **Across multiple lists** (OR logic): User must satisfy at least ONE complete list
-  - Example: `@requiresScopes(scopes: [["read:users"], ["admin"]])` means the user needs either the `read:users` scope OR the `admin` scope
-
-**Example:**
+- **Single list** (AND logic): User must have **all** scopes in the list
+- **Multiple lists** (OR logic): User must satisfy **any** complete list
 
 ```graphql
+extend schema @link(
+  url: "https://specs.apollo.dev/federation/v2.9"
+  import: ["@requiresScopes"]
+)
+
 type Query {
-  # Anyone can view public users
   users: [User]
-
-  # Requires read:users scope
-  userDetails(id: ID!): User @requiresScopes(scopes: [["read:users"]])
-
-  # Requires either read:admin OR manage:users scope
-  allUsers: [User] @requiresScopes(scopes: [["read:admin"], ["manage:users"]])
-
-  # Requires both admin scope AND billing:read scope
+  # Requires both scopes
   billingReport: String @requiresScopes(scopes: [["admin", "billing:read"]])
-}
-
-type Mutation {
-  # Requires write:users scope
-  updateUser(id: ID!, input: UserInput!): User 
-    @requiresScopes(scopes: [["write:users"]])
-
-  # Requires admin scope
-  deleteUser(id: ID!): Boolean 
-    @requiresScopes(scopes: [["admin"]])
-
-  # Requires delete:orders scope
-  deleteOrder(id: ID!): Boolean 
-    @requiresScopes(scopes: [["delete:orders"]])
+  # Requires either scope
+  allUsers: [User] @requiresScopes(scopes: [["read:admin"], ["manage:users"]])
 }
 
 type User {
   id: ID!
   username: String!
-
-  # Public information - no restriction
-  bio: String
-
-  # Private information - requires read:email scope
-  email: String @requiresScopes(scopes: [["read:email"]])
-
-  # Admin-only information - requires admin scope
-  internalNotes: String @requiresScopes(scopes: [["admin"]])
-
-  # Requires either admin scope OR support:user:read scope
-  supportTickets: [SupportTicket!] 
-    @requiresScopes(scopes: [["admin"], ["support:user:read"]])
+  email: String @requiresScopes(scopes: [["email:read"]])
 }
 ```
 
-## Combining Directives Across Types
+## Directives on Types and Fields
 
-When a type is defined across multiple subgraphs (federation), authorization requirements are combined using logical `AND`. This means a user must satisfy all requirements from all subgraphs to access that type.
-
-**Example:**
-
-Imagine a `Product` type that exists in multiple services:
-
-`inventory` subgraph:
-```graphql
-type Product @key(fields: "id") @authenticated {
-  id: ID!
-  sku: String!
-  inStock: Int
-}
-```
-
-`pricing` subgraph:
-```graphql
-type Product @key(fields: "id") @requiresScopes(scopes: [["pricing:read"]]) {
-  id: ID!
-  price: Float
-  discounts: [Discount!]
-}
-```
-
-**Resulting requirement:** To access any `Product` field, a user must be:
-- `@authenticated` (from inventory subgraph)
-- Have `pricing:read` scope (from pricing subgraph)
-
-So querying `product.inStock` requires both authentication and the pricing scope.
-
-## Type-Level vs Field-Level Directives
-
-Authorization can be applied at two levels:
-
-### Type-Level Protection
-
-When you put a directive on a type, it protects ALL fields of that type by default:
+**Type-level directives** protect all fields of that type:
 
 ```graphql
 type AdminPanel @authenticated {
   users: [User!]
   logs: [String!]
-  settings: SystemSettings
 }
 ```
 
-Any request trying to access `users`, `logs`, or `settings` must be authenticated.
-
-### Field-Level Protection
-
-When you put a directive on a specific field, it adds additional restrictions beyond any type-level protection:
+**Field-level directives** add additional restrictions beyond type-level protection:
 
 ```graphql
 type User @authenticated {
   id: ID!
   username: String!
-
-  # This field requires authentication (from type) PLUS email:read scope
-  email: String @requiresScopes(scopes: [["email:read"]])
-
-  # This field requires only authentication (from type)
-  name: String
+  email: String @requiresScopes(scopes: [["email:read"]])  # Requires auth + scope
+  name: String  # Requires auth only
 }
 ```
 
-**The key principle:** Field-level requirements are combined with type-level requirements using `AND` logic. The field is more restrictive.
+Field requirements are combined with type requirements using `AND` logic.
+
+## Combining Directives Across Federated Types
+
+When a type is defined across multiple subgraphs, all authorization requirements are combined using `AND`. A user must satisfy requirements from all subgraphs.
+
+### Type-Level Composition
+
+Consider a `Product` type split across inventory and pricing services. Each subgraph applies its own authorization directive, and when the type is composed in the supergraph, both requirements must be met.
+
+```graphql filename="Inventory subgraph"
+type Product @key(fields: "id") @authenticated {
+  id: ID!
+  inStock: Int
+}
+```
+
+```graphql filename="Pricing subgraph"
+type Product @key(fields: "id") @requiresScopes(scopes: [["pricing:read"]]) {
+  id: ID!
+  price: Float
+}
+```
+
+To access `Product`, user must be authenticated **AND** have `pricing:read` scope.
+
+```graphql filename="Supergraph"
+type Product @authenticated @requiresScopes(scopes: [["pricing:read"]]) {
+  id: ID!
+  price: Float
+  inStock: Int
+}
+```
+
+### Field-Level Composition
+
+When the same field exists in multiple subgraphs with different authorization directives, the requirements are merged. Consider a `username` field that appears in both the accounts and profile services with different access controls:
+
+```graphql filename="Accounts subgraph"
+type User @key(fields: "id") {
+  id: ID!
+  username: String @shareable @requiresScopes(scopes: [["user:read"]])
+}
+```
+
+```graphql filename="Profile subgraph"
+type User @key(fields: "id") {
+  id: ID!
+  username: String @shareable @requiresScopes(scopes: [["profile:read"]])
+}
+```
+
+In the supergraph, both requirements are combined using `AND`:
+
+```graphql filename="Supergraph"
+type User {
+  id: ID!
+  username: String @requiresScopes(scopes: [["user:read", "profile:read"]])
+}
+```
+
+To access `User.username`, a client must have **both** `user:read` AND `profile:read` scopes, ensuring they meet the access requirements from all subgraphs where the field is defined.
+
+### Merging `@requiresScopes`
+
+When `@requiresScopes` appears on the same entity across multiple subgraphs, the policies are merged by combining scope groups with logical AND:
+
+1. **Combine groups**: For each pair of scope groups (one from each policy), create a new group containing the union of both.
+2. **Remove redundant groups**: Drop any group that is a superset of another - this eliminates overly permissive conditions that would make stricter requirements redundant.
+
+Let's illustrate this with an example, where two subgraphs define different scope requirements for the same entity.
+
+```graphql filename="Subgraph A"
+@requiresScopes(scopes:[["user:read", "user:email:read"], ["admin"]])
+```
+
+```graphql filename="Subgraph B"
+@requiresScopes(scopes:[["user:read", "billing:read"], ["admin", "billing:invoice:read"]])
+```
+
+The merged state of intermediate groups before simplification:
+
+```graphql
+@requiresScopes(scopes: [
+  ["user:read", "user:email:read", "billing:read"],
+  ["user:read", "user:email:read", "admin", "billing:invoice:read"],
+  ["admin", "user:read", "billing:read"],
+  ["admin", "billing:invoice:read"]
+])
+```
+
+As you can see, the second group is a superset of the first and third groups, so they can be removed.
+
+```graphql
+@requiresScopes(scopes: [
+  ["user:read", "user:email:read", "billing:read"],
+  ["admin", "billing:invoice:read"]
+])
+```
+
+The composition process automatically simplified the merged policy by removing redundant scope groups.
+
+## Authorization Rules by GraphQL Type
+
+### Object Types
+Auth directives can be applied at type and field levels. Requirements are combined using AND.
+
+### Scalars and Enums
+Can have auth directives applied. When returned in a field, combined with field-level requirements.
+
+### Interface Types
+Auth directives on interfaces are **disallowed**. Instead, apply directives to concrete implementing types. The effective policy for an interface is the logical `AND` of all implementing types' policies.
+
+```graphql
+# Disallowed
+interface Item @authenticated { ... }
+
+# Allowed - apply to concrete types
+type Book implements Item @authenticated {
+  id: ID!
+  title: String @requiresScopes(scopes: [["book:read"]])
+}
+
+type Video implements Item @requiresScopes(scopes: [["video:read"]]) {
+  id: ID!
+  title: String
+}
+```
+
+When querying the interface directly, the combined policy from all implementing types is applied.
+
+### Union Types
+Auth directives on unions are **prohibited**. Apply directives to concrete member types instead. This aligns with federation rules and avoids ambiguity.
+
+## Field-Level Dependencies (`@requires`)
+
+A field using `@requires` to access fields from another entity must define an authorization policy that is a **superset** of the policies on all required fields. This prevents bypassing security policies through federated queries.
 
 ## Handling Authorization Errors
 
@@ -224,19 +262,18 @@ The router supports two modes for handling authorization violations:
 
 ### Filter Mode (Default)
 
-When a user tries to access an unauthorized field in **filter mode**, the router removes that field from the response but continues processing the rest of the query. An error is added for the removed field, but the query doesn't completely fail.
+Unauthorized fields are removed from the response, but the query continues processing. An error is added for each removed field.
 
 ```graphql
-# User Query (user has authentication but not admin scope)
 query {
   dashboard {
-    publicMetrics
-    adminPanel  # User not authorized
+    publicMetrics      # Authorized ✓
+    adminPanel         # Unauthorized - filtered out
   }
 }
 ```
 
-**Response:**
+Response:
 ```json
 {
   "data": {
@@ -248,9 +285,7 @@ query {
   "errors": [
     {
       "message": "Unauthorized field or type",
-      "extensions": {
-        "code": "UNAUTHORIZED_FIELD_OR_TYPE",
-      }
+      "extensions": { "code": "UNAUTHORIZED_FIELD_OR_TYPE" }
     }
   ]
 }
@@ -258,471 +293,28 @@ query {
 
 ### Reject Mode
 
-In **reject mode**, if a user tries to access any unauthorized field, the entire request is rejected. No data is returned, only an error.
+If a user tries to access any unauthorized field, the entire request is rejected and no data is returned.
 
 ```graphql
-# Same query as above, but with reject mode enabled
 query {
   dashboard {
-    publicMetrics
-    adminPanel  # User not authorized
+    publicMetrics      # Authorized
+    adminPanel         # Unauthorized - entire request rejected
   }
 }
 ```
 
-**Response:**
+Response:
 ```json
 {
   "data": null,
   "errors": [
     {
       "message": "Unauthorized field or type",
-      "extensions": {
-        "code": "UNAUTHORIZED_FIELD_OR_TYPE",
-      }
+      "extensions": { "code": "UNAUTHORIZED_FIELD_OR_TYPE" }
     }
   ]
 }
 ```
 
-
-## Specification
-
-### 1. Overview
-
-This document specifies the behavior and application of authorization directives.
-It defines the rules for applying these directives to various type definitions to ensure consistent and predictable security enforcement across all subgraphs.
-
-### 2. Authorization Directives
-
-The primary authorization directives are:
-
-| `@authenticated` | Requires the requesting client to be authenticated. |
-| --- | --- |
-| `@requiresScopes` | Requires the authenticated client's access token to possess a specific set of scopes. |
-| `@policy` | Requires the request to satisfy a specific authorization policy, evaluated by the gateway. The logic is provided by the user, typically as a gateway plugin. |
-
-Collectively, these are referred to as "auth directives".
-
-### 3. General Principles
-
-#### 3.1. Composition Logic
-
-When auth directives are applied at multiple levels (e.g., on a type and its field) or across different subgraphs for the same type, their requirements are combined using a logical `AND`.
-A request must satisfy the combined set of all applicable authorization policies to access the protected resource.
-
-#### 3.2. Scope of Protection
-
-Auth directives protect **output types**. They are applied when a field, type, enum, or scalar is being returned in a response.
-They do not apply to their usage in input types (e.g., arguments), as this constitutes data provided by the client.
-
-#### 3.3 Merging and Normalizing `@requiresScopes`
-
-When an entity (like a type or field) is protected by multiple `@requiresScopes` directives, typically from different subgraphs, the resulting policy is the logical `AND` of all individual scope policies. The composition must compute a single, normalized `scopes` argument that represents this combined requirement.
-
-For clarity, remember the logic of the `scopes` argument:
-
-- The outer list represents a logical `OR`.
-- The inner list of scopes represents a logical `AND`.
-- Example: `scopes: [["user:read", "user:email"], ["admin"]]` means the client must have (`user:read` AND `user:email`) OR (`admin`).
-
-##### 3.3.1. The Merging Algorithm
-
-The process involves two main steps: creating a combined set of scope groups, and then pruning redundant groups from the result.
-
-**Step 1: Create Combined Groups**
-
-To satisfy `PolicyA AND PolicyB`, a client must satisfy at least one scope group from `PolicyA` and at least one scope group from `PolicyB`. The new, combined scope groups are formed by taking the **union** of every possible pairing of a scope group from the first policy with a scope group from the second.
-
-**Step 2: Prune Redundant Groups**
-
-After generating the combined list, simplify it by removing any group that is a superset of another group in the list. A scope group is considered redundant if another, more permissive group (i.e., a subset with fewer requirements) exists. If a client can satisfy the subset, they can automatically satisfy the superset, making the superset unnecessary to list.
-
-##### 3.3.2. Example
-
-Let's apply this algorithm to a `User` type that is defined across an `accounts` service and a `billing` service.
-
-`accounts` subgraph
-
-```graphql
-@requiresScopes(scopes: 
-	[
-		["user:read", "user:email:read"],
-		["admin"]
-	]
-)
-
-```
-
-Logical meaning
-
-```graphql
-("user:read" AND "user:email:read")
- OR 
-("admin")
-```
-
-`billing` subgraph
-
-```graphql
-@requiresScopes(scopes: 
-	[
-		["user:read", "billing:read"],
-		["admin", "billing:invoice:read"],
-		["support:user:read"]
-	]
-)
-```
-
-Logical meaning
-
-```graphql
-("user:read" AND "billing:read")
- OR 
-("admin" AND "billing:invoice:read")
- OR 
-("support:user:read")
-```
-
-Applying the Algorithm:
-
-**1. Create the Cross-Product:**
-
-We will pair each of the 2 groups from the `accounts` policy with each of the 3 groups from the `billing` policy, creating 2 * 3 = 6 new combined groups.
-
-```graphql
-["user:read", "user:email:read"] ∪ ["user:read", "billing:read"] 
-	-> ["user:read", "user:email:read", "billing:read"]
-
-["user:read", "user:email:read"] ∪ ["admin", "billing:invoice:read"] 
-	-> ["user:read", "user:email:read", "admin", "billing:invoice:read"]
-
-["user:read", "user:email:read"] ∪ ["support:user:read"] 
-	-> ["user:read", "user:email:read", "support:user:read"]`
-
-["admin"] ∪ ["user:read", "billing:read"] 
-	-> ["admin", "user:read", "billing:read"]
-
-["admin"] ∪ ["admin", "billing:invoice:read"] 
-	-> ["admin", "billing:invoice:read"]
-
-["admin"] ∪ ["support:user:read"] 
-	-> ["admin", "support:user:read"]
-```
-
-**2. Prune Redundant Groups:**
-
-Now we examine the raw list for groups that are supersets of others.
-
-The group `["user:read", "user:email:read", "admin", "billing:invoice:read"]` contains all the scopes from `["admin", "billing:invoice:read"]`. Therefore, the first group is a redundant superset and is **removed**.
-
-The final, merged directive on the global `User` type is:
-
-```graphql
-@requiresScopes(scopes: [
-  ["user:read", "user:email:read", "billing:read"],
-  ["user:read", "user:email:read", "support:user:read"],
-  ["admin", "user:read", "billing:read"],
-  ["admin", "billing:invoice:read"],
-  ["admin", "support:user:read"]
-])
-```
-
-This deterministic process ensures that the combined policy is both logically correct and expressed in its simplest form.
-
-### 4. Rules by GraphQL Type
-
-#### 4.1. Object Types
-
-The use of auth directives on object types and their fields is **allowed**.
-
-- **Type-Level Application**: When an auth directive is applied to an object type, it establishes a baseline authorization requirement for accessing any field on that type.
-- **Field-Level Application**: Directives on a specific field add to any requirements inherited from the object type.
-- **Composition**: The effective authorization policy for a field is the logical `AND` of its own directives and any directives applied to its parent object type.
-
-##### 4.1.1. Federated Object Type Scenarios
-
-When an object type is extended across multiple subgraphs, the type-level auth directives from all definitions are combined using `AND` logic to form a global baseline requirement for that type.
-
-**Scenario: Merging Type-Level Directives**
-
-Consider a `Product` type defined in an `inventory` subgraph and extended in a `reviews` subgraph.
-
-`inventory` subgraph
-
-```graphql
-type Product
-	@key(fields: "upc")
-	@authenticated
-{
-  upc: ID!
-  inStock: Int
-}
-```
-
-`reviews` subgraph
-
-```graphql
-type Product
-	@key(fields: "upc")
-	@requiresScopes(scopes: [["product:read"]])
-{
-  upc: ID!
-  reviews: [Review!]
-}
-```
-
-**Resulting Policy:**
-
-The global `Product` type effectively has `@authenticated AND @requiresScopes(scopes: [["product:read"]])` applied.
-
-- To query `Product.inStock`, the client must be authenticated **AND** have the `product:read` scope.
-- To query `Product.reviews`, the client must also be authenticated **AND** have the `product:read` scope.
-
-**Scenario: Field-Level Directives on Federated Types**
-
-Field-level directives are combined with the *globally merged* type-level directives.
-
-`accounts` subgraph
-
-```graphql
-type User @key(fields: "id")
-	@authenticated
-{
-  id: ID!
-  email: String
-	  @requiresScopes(scopes: [["email:read"]])
-}
-```
-
-`profiles` subgraph
-
-```graphql
-type User @key(fields: "id")
-	@policy(policies: [["PublicProfile"]])
-{
-  id: ID!
-  profile: Profile
-}
-```
-
-**Resulting Policy:**
-
-The global `User` type has a baseline policy of `@authenticated AND @policy(policies: [["PublicProfile"]])`.
-
-- To query `User.profile`, the client must be authenticated **AND** satisfy the `PublicProfile` policy.
-- To query `User.email`, the client must be authenticated, satisfy the `PublicProfile` policy, **AND** have the `email:read` scope.
-
-#### 4.2. Enums and Scalars
-
-The use of auth directives on enum and scalar types is **allowed**.
-
-##### 4.2.1. Federated Enum and Scalar Scenarios
-
-If multiple subgraphs define the same custom scalar or enum with different auth directives, the requirements are combined globally using `AND` logic.
-Any field in the supergraph that returns that type will be protected by the combined policy.
-
-**Scenario: Merging Scalar Directives**
-
-Consider a `SensitiveString` scalar defined with different protections in two subgraphs.
-
-`pii` subgraph
-
-```graphql
-scalar SensitiveString
-	@requiresScopes(scopes: [["pii:read"]])
-```
-
-`compliance` subgraph
-
-```graphql
-scalar SensitiveString
-	@policy(policies: [["GDPR_Compliant"]])
-```
-
-**Resulting Policy:**
-
-Any field across the entire federated graph that returns a `SensitiveString` will require the client to have the `pii:read` scope **AND** satisfy the `GDPR_Compliant` policy.
-
-```graphql
-# In a third subgraph (e.g., users)
-type User {
-  nationalId: SensitiveString # Accessing this field requires both protections
-}
-
-```
-
-#### 4.3. Interface
-
-The use of auth directives on interface types and its fields is **disallowed**.
-
-Instead, they are applied to the concrete `type` definitions that implement the interface.
-The composition is responsible for computing the effective policy for the interface based on its implementing types.
-
-**Interface Type Policy**
-The effective authorization policy for an interface type is the logical `AND` of the policies of all its implementing object types across the entire federation.
-
-**Interface Field Policy**
-The effective authorization policy for a field on an interface is the logical `AND` of the policies on that same field across all corresponding implementing object types.
-
-**Rationale**
-This aligns with limitations in the `@apollo/subgraph` library and avoids ambiguity in policy enforcement across implementing types. Authorization should be defined on the concrete object types that implement the interface.
-
-##### 4.3.1. Example Schema
-
-Consider an `Item` interface implemented by `Book` and `Video` across two subgraphs. We will add a field unique to each implementing type (`author` and `director`) to better illustrate query behavior.
-
-`books` subgraph
-
-```graphql
-interface Item {
-  id: ID!
-  title: String
-}
-
-type Book implements Item
-	@authenticated
-{
-  id: ID!
-  title: String
-	  @requiresScopes(scopes: [["book:read"]])
-  author: String
-	  # Inherits @authenticated from the Book type
-}
-```
-
-`videos` subgraph
-
-```graphql
-type Video implements Item 
-	@policy(policies: [["VideoAccess"]])
-{
-  id: ID!
-  title: String
-	  @requiresScopes(scopes: [["video:read"]])
-  director: String
-	  @requiresScopes(scopes: [["video:metadata"]])
-}
-
-```
-
-**Resulting Effective Policies on the `Item` Interface:**
-
-- **`Item` Interface Type**: The effective policy is `@authenticated AND @policy(policies: [["VideoAccess"]])`.
-- **`Item.title` Field**: The effective policy is `@requiresScopes(scopes: [["book:read"]]) AND @requiresScopes(scopes: [["video:read"]])`.
-
-##### 4.3.2. Query Scenarios with Interfaces
-
-Here is how these policies are applied to different queries.
-
-**Scenario 1: Querying a Common Interface Field**
-
-When you query a field directly on the interface, the most restrictive, combined policy is applied.
-
-```graphql
-query GetItemTitle {
-  item(id: "123") {
-    title
-  }
-}
-```
-
-**Authorization Analysis:**
-
-1. The `item` field returns the `Item` interface, so its type policy (`@authenticated AND @policy(policies: [["VideoAccess"]])`) is checked first.
-2. The `title` field is being accessed on the `Item` interface, so its combined field policy (`@requiresScopes(scopes: [["book:read"]]) AND @requiresScopes(scopes: [["video:read"]])`) is checked.
-3. **Total Requirement**: The client must be authenticated, satisfy the `VideoAccess` policy, and possess **both** the `book:read` and `video:read` scopes to execute this query successfully, regardless of whether the returned item is a `Book` or a `Video`.
-
-**Scenario 2: Querying with Inline Fragments**
-
-When you use inline fragments, authorization is applied based on the concrete type within the fragment. This allows for more granular access.
-
-```graphql
-query GetSpecificItem {
-  item(id: "123") {
-    ... on Book {
-      author
-    }
-    ... on Video {
-      director
-    }
-  }
-}
-```
-
-**Authorization Analysis:**
-
-1. The `item` field's type policy (`@authenticated AND @policy(policies: [["VideoAccess"]])`) is always checked first.
-2. The gateway resolves `item(id: "123")` and determines its concrete type.
-3. **If the item is a `Book`**:
-    - The `... on Book` fragment is entered.
-    - The policy for `Book.author` is checked, which is `@authenticated` (inherited from the `Book` type).
-    - **Total Requirement**: `@authenticated AND @policy(policies: [["VideoAccess"]])`.
-4. **If the item is a `Video`**:
-    - The `... on Video` fragment is entered.
-    - The policy for `Video.director` is checked, which is `@requiresScopes(scopes: [["video:metadata"]])`.
-    - **Total Requirement**: `@authenticated AND @policy(policies: [["VideoAccess"]]) AND @requiresScopes(scopes: [["video:metadata"]])`.
-
-This demonstrates how inline fragments allow clients to access data for which they are specifically authorized, even if they don't have the superset of permissions required to query all fields on the interface directly.
-
-**Scenario 3: Querying Both Common and Specific Fields**
-
-When a query asks for a common field and also uses an inline fragment, all applicable policies are checked.
-
-```graphql
-query GetItemDetails {
-  item(id: "456") {
-    title
-    ... on Book {
-      author
-    }
-  }
-}
-```
-
-**Authorization Analysis:**
-
-1. The `item` field's type policy is checked first: `@authenticated AND @policy(policies: [][["VideoAccess"]])`.
-2. The `title` field's interface-level policy is checked: `@requiresScopes(scopes: [["book:read"]]) AND @requiresScopes(scopes: [["video:read"]])`.
-3. The gateway resolves the item's type. If it's a `Book`, the `... on Book` fragment is entered, and the policy for `Book.author` (`@authenticated`) is also confirmed.
-4. **Total Requirement**: A client must satisfy the policies from steps 1 and 2 to even attempt this query. If the resolved item is a `Book`, the policies from step 3 are also relevant, but they are already covered by the more restrictive policies from the preceding steps.
-
-#### 4.4. Unions
-
-The use of auth directives on union types is **prohibited**.
-
-**Rationale**: Union types do not have fields and cannot be queried directly. Authorization policies should be placed on the concrete object types that constitute the union's possible members.
-
-### 5. Field-level Dependencies (`@requires`)
-
-A field utilizing the `@requires` directive to access fields from another entity must define an authorization policy that is a superset of the policies on all the required fields.
-This ensures that a federated query does not create a loophole to bypass the security policies of the underlying fields.
-
-Example
-
-Assume the `products` subgraph defines `Product.price`.
-
-```graphql
-type Product @key(fields: "id") {
-  id: ID!
-  price: Float @requiresScopes(scopes: [["read:price"]])
-}
-```
-
-In the `reviews` subgraph, the `Review` type must ensure its own authorization accommodates the `read:price` requirement if it needs to access `Product.price`.
-
-```graphql
-type Product @key(fields: "id") {
-  id: ID!
-  price: Float @external
-}
-
-type Review {
-  body: String
-  # This field's policy MUST be a superset of Product.price's policy.
-  # The following is valid because it requires the necessary scope.
-  productPrice: Float
-	  @requires(fields: "product { price }")
-	  @requiresScopes(scopes: [["read:price"]])
-}
-```
+Enable reject mode by setting `unauthorized.mode: reject` in your router configuration.
