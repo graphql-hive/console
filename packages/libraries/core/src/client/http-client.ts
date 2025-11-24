@@ -71,6 +71,7 @@ function chooseLogger(logger: SharedConfig['logger']): Logger {
   }
 
   return new Logger({
+    level: 'debug',
     writers: [
       {
         write(level, _attrs, msg) {
