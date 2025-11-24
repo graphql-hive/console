@@ -67,10 +67,6 @@ if (
     // Noop is only there to not raise an exception in case we do not hive console tracing.
     target: process.env['HIVE_HIVE_TARGET'] ?? 'noop',
     contextManager: new AsyncLocalStorageContextManager(),
-    resource: {
-      serviceName: 'public-graphql-api-gateway',
-      serviceVersion: '0.0.0', // TODO: use actual version
-    },
     // @ts-expect-error types are incorrect?
     processor: new MultiSpanProcessor([
       ...(process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN'] &&
