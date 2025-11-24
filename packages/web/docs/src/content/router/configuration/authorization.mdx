@@ -17,8 +17,8 @@ The router supports two modes for handling unauthorized field access:
 
 - **`filter` (default mode):** This mode silently removes any fields from the incoming GraphQL
   operation that the user is not authorized to access. For each field removed, a corresponding
-  authorization error is added to the `errors` list in the GraphQL response, while the rest of
-  the accessible data is returned as requested.
+  authorization error is added to the `errors` list in the GraphQL response, while the rest of the
+  accessible data is returned as requested.
 - **`reject` mode:** In this mode, the router will reject any GraphQL operation that attempts to
   access one or more unauthorized fields. The entire request is denied, and a descriptive error is
   returned.
@@ -62,7 +62,8 @@ type Query {
   admin: AdminPanel @requiresScopes(scopes: [["admin:users"], ["admin:system"]])
 
   # User must have read:users AND (admin:users OR admin:system)
-  reports: [Report] @requiresScopes(scopes: [["read:users", "admin:users"], ["read:users", "admin:system"]])
+  reports: [Report]
+    @requiresScopes(scopes: [["read:users", "admin:users"], ["read:users", "admin:system"]])
 }
 ```
 
@@ -73,7 +74,8 @@ type Query {
 - **Type:** `boolean`
 - **Default:** `true`
 
-Whether to enable authorization directives processing. Set to `false` to disable authorization checks entirely.
+Whether to enable authorization directives processing. Set to `false` to disable authorization
+checks entirely.
 
 ### `unauthorized.mode`
 
