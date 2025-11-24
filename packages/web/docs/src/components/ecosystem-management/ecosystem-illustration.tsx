@@ -19,7 +19,6 @@ const gatewayHeight = 136;
 const firstRow = `calc(${halfBoxHeight}px + var(--edge) + ${stellateHeight / 2}px)`;
 const secondRow = `calc(${stellateHeight / 2}px + (var(--edge) / 2))`;
 const thirdRow = `calc((var(--edge) / 2) + ${gatewayHeight / 2}px)`;
-const fourthRow = `calc(${gatewayHeight / 2}px + (var(--edge) / 2) + ${halfBoxHeight}px)`;
 const fullHeight = `calc(${boxHeight}px + var(--edge) + ${stellateHeight}px + var(--edge) + ${gatewayHeight}px + var(--edge) + ${boxHeight}px)`;
 
 /**
