@@ -81,7 +81,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -108,7 +108,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -135,7 +135,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -159,7 +159,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -202,7 +202,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -246,7 +246,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -305,7 +305,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -349,7 +349,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -381,7 +381,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -414,7 +414,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/schema/fetch.ts)_
 
 ## `hive schema:publish FILE`
 
@@ -458,7 +458,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/schema/publish.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -520,7 +520,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.53.4/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.53.5/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 
