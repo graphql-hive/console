@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@apollo/subgraph": "2.9.3",
-    "@theguild/federation-composition": "0.20.2",
+    "@theguild/federation-composition": "0.21.0",
     "graphql": "16.9.0",
     "graphql-yoga": "5.13.3"
   },
