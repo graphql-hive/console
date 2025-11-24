@@ -267,7 +267,7 @@ by your Gateway.
 Hive serves as the source of truth for the allowed persisted documents and provides a CDN for
 fetching these documents as they are requested.
 
-<Tabs items={['Hive Gateway', 'GraphQL Yoga', 'Apollo Server', 'Apollo Router', 'Custom Third-Party Integration']}>
+<Tabs items={['Hive Gateway', 'Hive Router', 'GraphQL Yoga', 'Apollo Server', 'Apollo Router', 'Custom Third-Party Integration']}>
 
 {/* Hive Gateway */}
 
@@ -292,6 +292,35 @@ export const gatewayConfig = defineConfig({
 
 For further information, please refer to the
 [Hive Gateway documentation for persisted documents](/docs/gateway/persisted-documents).
+
+</Tabs.Tab>
+
+{/* Hive Router */}
+
+<Tabs.Tab>
+
+For Hive Router, you can choose the Hive source for resolving persisted documents. Adjust your
+`router.config.yaml` file as follows.
+
+```yaml filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+  source:
+    hive:
+      endpoint: https://cdn.graphql-hive.com/artifacts/v1/... # Use your Hive CDN endpoint here
+      key: hvABCD # Use your Hive CDN API key here
+```
+
+Or you can just use the environment variables `HIVE_CDN_ENDPOINT` and `HIVE_CDN_KEY` to configure
+the CDN access, then you can simplify the configuration as follows:
+
+```yaml filename="router.config.yaml"
+persisted_documents:
+  enabled: true
+```
+
+For further configuration options, please refer to the
+[Hive Router documentation for `persisted_documents`](/docs/router/configuration/persisted_documents)
 
 </Tabs.Tab>
 
