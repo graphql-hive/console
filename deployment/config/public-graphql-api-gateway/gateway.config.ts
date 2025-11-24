@@ -1,4 +1,4 @@
-import { defineConfig, Logger } from '@graphql-hive/gateway';
+import { defineConfig } from '@graphql-hive/gateway';
 import { hiveTracingSetup } from '@graphql-hive/plugin-opentelemetry/setup';
 import type { Context } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
@@ -67,7 +67,8 @@ if (
     // Noop is only there to not raise an exception in case we do not hive console tracing.
     target: process.env['HIVE_HIVE_TARGET'] ?? 'noop',
     contextManager: new AsyncLocalStorageContextManager(),
-    // @ts-expect-error types are incorrect?
+    // @ts-expect-error console uses otel v1 and hive gateway uses v2
+    // TODO: upgrade console to otel v2
     processor: new MultiSpanProcessor([
       ...(process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN'] &&
       process.env['HIVE_HIVE_TRACE_ENDPOINT'] &&
@@ -102,10 +103,7 @@ const defaultQuery = `#
 #
 `;
 
-const log = new Logger();
-
 export const gatewayConfig = defineConfig({
-  logging: log,
   transportEntries: {
     graphql: {
       location: process.env['GRAPHQL_SERVICE_ENDPOINT'],
@@ -130,10 +128,7 @@ export const gatewayConfig = defineConfig({
   },
   disableWebsockets: true,
   prometheus: {
-    log,
-    metrics: {
-      // use defaults
-    },
+    metrics: true,
   },
   openTelemetry:
     process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']
