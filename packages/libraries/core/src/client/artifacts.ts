@@ -9,21 +9,39 @@ import type { Logger } from './types.js';
 import { createHash, createHiveLogger } from './utils.js';
 
 type CreateCDNArtifactFetcherArgs = {
-  endpoint: string;
+  /**
+   * The endpoint that should be fetched.
+   *
+   * It is possible to provide an endpoint list. The first endpoint will be treated as the primary source.
+   * The secondary endpoint will be used in case the first endpoint fails to respond.
+   *
+   * Example:
+   *
+   * ```
+   * [
+   *          "https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph",
+   *   "https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph"
+   * ]
+   * ```
+   */
+  endpoint: string | [string, string];
+  /**
+   * The access key that is used for authenticating on the endpoints (via the `X-Hive-CDN-Key` header).
+   */
   accessKey: string;
-  /** client meta data */
+  logger?: Logger;
+  circuitBreaker?: CircuitBreakerConfiguration;
+  /**
+   * Custom fetch implementation used for calling the endpoint.
+   */
+  fetch?: typeof fetch;
+  /**
+   * Optional client meta configuration.
+   **/
   client?: {
     name: string;
     version: string;
   };
-  circuitBreaker?: CircuitBreakerConfiguration;
-  logger?: Logger;
-  fetch?: typeof fetch;
-};
-
-type CDNFetcherArgs = {
-  logger?: Logger;
-  fetch?: typeof fetch;
 };
 
 type CDNFetchResult = {
@@ -48,47 +66,67 @@ export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs) {
   let cached: CDNFetchResult | null = null;
   const clientInfo = args.client ?? { name: 'hive-client', version };
   const circuitBreakerConfig = args.circuitBreaker ?? defaultCircuitBreakerConfiguration;
+  const logger = createHiveLogger(args.logger ?? console, '');
 
-  const circuitBreaker = new CircuitBreaker(
-    function runFetch(fetchArgs?: CDNFetcherArgs) {
-      const signal = circuitBreaker.getSignal();
-      const logger = createHiveLogger(fetchArgs?.logger ?? args.logger ?? console, '');
-      const fetchImplementation = fetchArgs?.fetch ?? args.fetch;
+  const endpoints = Array.isArray(args.endpoint) ? args.endpoint : [args.endpoint];
 
-      const headers: {
-        [key: string]: string;
-      } = {
-        'X-Hive-CDN-Key': args.accessKey,
-        'User-Agent': `${clientInfo.name}/${clientInfo.version}`,
-      };
+  // TODO: we should probably do some endpoint validation
+  // And print some errors if the enpoint paths do not match?
+  // e.g. the only difference should be the domain name
 
-      if (cacheETag) {
-        headers['If-None-Match'] = cacheETag;
+  const circuitBreakers = endpoints.map(endpoint => {
+    const circuitBreaker = new CircuitBreaker(
+      function runFetch() {
+        const signal = circuitBreaker.getSignal();
+
+        const headers: {
+          [key: string]: string;
+        } = {
+          'X-Hive-CDN-Key': args.accessKey,
+          'User-Agent': `${clientInfo.name}/${clientInfo.version}`,
+        };
+
+        if (cacheETag) {
+          headers['If-None-Match'] = cacheETag;
+        }
+
+        return http.get(endpoint, {
+          headers,
+          isRequestOk,
+          retry: {
+            retries: 10,
+            maxTimeout: 200,
+            minTimeout: 1,
+          },
+          logger,
+          fetchImplementation: args.fetch,
+          signal,
+        });
+      },
+      {
+        ...circuitBreakerConfig,
+        timeout: false,
+        autoRenewAbortController: true,
+      },
+    );
+    return circuitBreaker;
+  });
+
+  return async function fetchArtifact(): Promise<CDNFetchResult> {
+    // TODO: we can probably do that better...
+    // If an items is half open, we would probably want to try both the opened and half opened one
+    const fetcher = circuitBreakers.find(item => item.opened || item.halfOpen);
+
+    if (!fetcher) {
+      if (cached !== null) {
+        return cached;
       }
 
-      return http.get(args.endpoint, {
-        headers,
-        isRequestOk,
-        retry: {
-          retries: 10,
-          maxTimeout: 200,
-          minTimeout: 1,
-        },
-        logger,
-        fetchImplementation,
-        signal,
-      });
-    },
-    {
-      ...circuitBreakerConfig,
-      timeout: false,
-      autoRenewAbortController: true,
-    },
-  );
+      throw new Error('Failed to retrieve artifact.');
+    }
 
-  return async function fetchArtifact(fetchArgs?: CDNFetcherArgs): Promise<CDNFetchResult> {
     try {
-      const response = await circuitBreaker.fire(fetchArgs);
+      const response = await fetcher.fire();
 
       if (response.status === 304) {
         if (cached !== null) {
