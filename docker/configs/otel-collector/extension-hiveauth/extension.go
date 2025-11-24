@@ -16,6 +16,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/extension"
 	"go.opentelemetry.io/collector/extension/extensionauth"
 	"go.uber.org/zap"
 	"golang.org/x/sync/singleflight"
@@ -23,7 +24,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-var _ extensionauth.Server = (*hiveAuthExtension)(nil)
+var (
+	_ extension.Extension = (*hiveAuthExtension)(nil)
+	_ extensionauth.Server = (*hiveAuthExtension)(nil)
+)
 
 var _ client.AuthData = (*authData)(nil)
 
@@ -269,7 +273,7 @@ func newHiveAuthExtension(
 	logger *zap.Logger,
 	cfg component.Config,
 	telemetrySettings component.TelemetrySettings,
-) (extensionauth.Server, error) {
+) (extension.Extension, error) {
 	c, ok := cfg.(*Config)
 	if !ok {
 		return nil, errors.New("invalid configuration")

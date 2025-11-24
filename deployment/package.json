@@ -1,6 +1,6 @@
 {
   "name": "hive",
-  "version": "8.8.0",
+  "version": "8.9.0",
   "private": true,
   "scripts": {
     "generate": "tsx generate.ts",
@@ -10,6 +10,7 @@
   "dependencies": {
     "@lbrlabs/pulumi-grafana": "0.1.0",
     "@manypkg/get-packages": "2.2.2",
+    "@pulumi/aws": "7.12.0",
     "@pulumi/cloudflare": "4.16.0",
     "@pulumi/command": "1.0.1",
     "@pulumi/kubernetes": "4.23.0",
