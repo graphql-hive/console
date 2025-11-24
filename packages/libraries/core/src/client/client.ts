@@ -4,67 +4,31 @@ import {
   type GraphQLSchema,
   type subscribe as SubscribeImplementation,
 } from 'graphql';
+import { Logger } from '@graphql-hive/logger';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import { createPersistedDocuments } from './persisted-documents.js';
 import { createReporting } from './reporting.js';
 import type { HiveClient, HiveInternalPluginOptions, HivePluginOptions } from './types.js';
 import { createUsage } from './usage.js';
-import { createHiveLogger, HiveLogger, isLegacyAccessToken } from './utils.js';
+import { chooseLogger, isLegacyAccessToken } from './utils.js';
 
-function chooseDefaultLogger(options: HivePluginOptions): HiveLogger {
-  if (options.logger === 'debug') {
-    return createHiveLogger(
-      {
-        debug(...args) {
-          console.debug(...args);
-        },
-        info(...args) {
-          console.info(...args);
-        },
-        error(...args) {
-          console.error(...args);
-        },
-      },
-      '[hive]',
-    );
-  }
-  if (options.logger === 'info') {
-    return createHiveLogger(
-      {
-        debug() {},
-        info(...args) {
-          console.info(...args);
-        },
-        error(...args) {
-          console.error(...args);
-        },
-      },
-      '[hive]',
-    );
-  }
-  if (options.logger === 'error') {
-    return createHiveLogger(
-      {
-        debug() {},
-        info() {},
-        error(...args) {
-          console.error(...args);
-        },
-      },
-      '[hive]',
-    );
+function resolveLoggerFromConfigOptions(options: HivePluginOptions): Logger {
+  if (typeof options.logger == 'string') {
+    return new Logger({
+      level: options.logger,
+    });
   }
 
-  return createHiveLogger(
-    options?.logger ?? options?.agent?.logger ?? console,
-    '[hive]',
-    options.debug,
-  );
+  if (options.logger instanceof Logger) {
+    return options.logger;
+  }
+
+  return chooseLogger(options.logger ?? options.agent?.logger, options.debug);
 }
 
 export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = chooseDefaultLogger(options);
+  const logger = resolveLoggerFromConfigOptions(options).child('[hive]');
   let enabled = options.enabled ?? true;
 
   if (enabled === false && !options.experimental__persistedDocuments) {
@@ -111,7 +75,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
       ? options.printTokenInfo === true || (!!options.debug && options.printTokenInfo !== false)
       : false;
 
-  const infoLogger = createHiveLogger(logger, '[info]');
+  const infoLogger = logger.child('[info]');
 
   const info = printTokenInfo
     ? async () => {

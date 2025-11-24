@@ -1,7 +1,8 @@
 import asyncRetry from 'async-retry';
+import { Logger } from '@graphql-hive/logger';
 import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
-import { Logger } from './types';
+import { LegacyLogger } from './types';
 
 interface SharedConfig {
   headers: Record<string, string>;
@@ -15,7 +16,7 @@ interface SharedConfig {
   /** custom fetch implementation. */
   fetchImplementation?: typeof fetch;
   /** Logger for HTTP info and request errors. Uses `console` by default. */
-  logger?: Logger;
+  logger?: LegacyLogger | Logger;
   /**
    * Function for determining whether the request response is okay.
    * You can override it if you want to accept other status codes as well.
@@ -58,6 +59,38 @@ export const http = {
   post,
 };
 
+function chooseLogger(logger: SharedConfig['logger']): Logger {
+  if (!logger) {
+    return new Logger({
+      writers: [{ write() {} }],
+    });
+  }
+
+  if (logger instanceof Logger) {
+    return logger;
+  }
+
+  return new Logger({
+    writers: [
+      {
+        write(level, _attrs, msg) {
+          if (level === 'debug' && logger.debug && msg) {
+            logger.debug(msg);
+            return;
+          }
+          if (level === 'info' && msg) {
+            logger.info(msg);
+            return;
+          }
+          if (level === 'error' && msg) {
+            logger.error(msg);
+          }
+        },
+      },
+    ],
+  });
+}
+
 export async function makeFetchCall(
   endpoint: URL | string,
   config: {
@@ -74,7 +107,7 @@ export async function makeFetchCall(
     /** custom fetch implementation. */
     fetchImplementation?: typeof fetch;
     /** Logger for HTTP info and request errors. Uses `console` by default. */
-    logger?: Logger;
+    logger?: LegacyLogger | Logger;
     /**
      * Function for determining whether the request response is okay.
      * You can override it if you want to accept other status codes as well.
@@ -85,7 +118,7 @@ export async function makeFetchCall(
     signal?: AbortSignal;
   },
 ): Promise<Response> {
-  const logger = config.logger;
+  const logger = chooseLogger(config.logger);
   const isRequestOk: ResponseAssertFunction = config.isRequestOk ?? (response => response.ok);
   let retries = 0;
   let minTimeout = 200;
@@ -107,7 +140,7 @@ export async function makeFetchCall(
       const isFinalAttempt = attempt > retries;
       const requestId = crypto.randomUUID();
 
-      logger?.debug?.(
+      logger.debug(
         `${config.method} ${endpoint} (x-request-id=${requestId})` +
           (retries > 0 ? ' ' + getAttemptMessagePart(attempt, retries + 1) : ''),
       );
@@ -132,26 +165,26 @@ export async function makeFetchCall(
             getErrorMessage(error);
 
           if (isFinalAttempt) {
-            logger?.error(msg);
+            logger.error({ error }, msg);
             return;
           }
-          logger?.debug?.(msg);
+          logger.debug({ error }, msg);
         };
 
         if (isAggregateError(error)) {
           for (const err of error.errors) {
             if (isFinalAttempt) {
-              logger?.error(err);
+              logger.error({ error: err });
               continue;
             }
-            logger?.debug?.(String(err));
+            logger.debug(String(err));
           }
 
           logErrorMessage();
           throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
         }
 
-        logger?.error(error);
+        logger.error({ error }, String(error));
         logErrorMessage();
         throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
@@ -171,14 +204,14 @@ export async function makeFetchCall(
       }
 
       if (isFinalAttempt) {
-        logger?.error(
+        logger.error(
           `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
         );
-        logger?.error(
+        logger.error(
           `${config.method} ${endpoint} (x-request-id=${requestId}) retry limit exceeded after ${attempt} attempts.`,
         );
       } else {
-        logger?.debug?.(
+        logger.debug(
           `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status} ${getDuration()}: ${(await response.text()) || '<empty response body>'}`,
         );
       }
@@ -189,7 +222,7 @@ export async function makeFetchCall(
 
       if (response.status >= 400 && response.status < 500) {
         if (retries > 0) {
-          logger?.error(`Abort retry because of status code ${response.status}.`);
+          logger.error(`Abort retry because of status code ${response.status}.`);
         }
         bail(error);
       }

@@ -1,8 +1,9 @@
+import { Logger } from '@graphql-hive/logger';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import { http } from './http-client.js';
-import type { Logger } from './types.js';
-import { createHiveLogger } from './utils.js';
+import type { LegacyLogger } from './types.js';
+import { chooseLogger } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
 
@@ -73,7 +74,7 @@ export interface AgentOptions {
    *
    * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
-  logger?: Logger;
+  logger?: LegacyLogger | Logger;
   /**
    * Circuit Breaker Configuration.
    * true -> Use default configuration
@@ -123,13 +124,13 @@ export function createAgent<TEvent>(
           ? null
           : pluginOptions.circuitBreaker,
   };
-  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]');
+  const logger = chooseLogger(pluginOptions.logger).child('[agent]');
 
   let circuitBreaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
     ReturnType<typeof sendHTTPCall>
   >;
-  const breakerLogger = createHiveLogger(logger, '[circuit breaker]');
+  const breakerLogger = logger.child('[circuit breaker]');
 
   const enabled = options.enabled !== false;
   let timeoutID: ReturnType<typeof setTimeout> | null = null;
