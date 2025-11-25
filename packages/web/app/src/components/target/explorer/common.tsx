@@ -7,8 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
-import { capitalize } from '@/utils';
+import { capitalize, cn } from '@/lib/utils';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
 import { useDescriptionsVisibleToggle } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';

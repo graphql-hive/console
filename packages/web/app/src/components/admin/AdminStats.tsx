@@ -26,7 +26,7 @@ import { CHART_PRIMARY_COLOR } from '@/constants';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { ChevronUpIcon } from '@radix-ui/react-icons';
 import {
   createColumnHelper,
