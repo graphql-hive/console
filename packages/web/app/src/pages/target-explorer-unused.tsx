@@ -253,7 +253,13 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   }
 `);
 
-function UnusedSchemaExplorer(props: {
+function UnusedSchemaExplorer({
+  dataRetentionInDays,
+  hasCollectedOperations,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: {
   dataRetentionInDays: number;
   hasCollectedOperations: boolean;
   organizationSlug: string;
@@ -261,18 +267,19 @@ function UnusedSchemaExplorer(props: {
   targetSlug: string;
 }) {
   const dateRangeController = useDateRangeController({
-    dataRetentionInDays: props.dataRetentionInDays,
+    dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
   const [query, refresh] = useQuery({
     query: UnusedSchemaExplorer_UnusedSchemaQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       period: dateRangeController.resolvedRange,
     },
+    pause: !hasCollectedOperations,
   });
 
   useEffect(() => {
@@ -284,7 +291,7 @@ function UnusedSchemaExplorer(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -312,15 +319,15 @@ function UnusedSchemaExplorer(props: {
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
           <SchemaVariantFilter
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
             variant="unused"
           />
         </div>
       </div>
 
-      {!props.hasCollectedOperations ? (
+      {!hasCollectedOperations ? (
         <div className="py-8">
           <EmptyList
             title="Hive is waiting for your first collected operation"
@@ -347,9 +354,9 @@ function UnusedSchemaExplorer(props: {
                     <Link
                       to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
                       params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+                        organizationSlug,
+                        projectSlug,
+                        targetSlug,
                         versionId: latestSchemaVersion.id,
                       }}
                     >
@@ -361,9 +368,9 @@ function UnusedSchemaExplorer(props: {
               <UnusedSchemaView
                 totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.unusedSchema}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
+                organizationSlug={organizationSlug}
+                projectSlug={projectSlug}
+                targetSlug={targetSlug}
               />
             </>
           ) : (
