@@ -1,4 +1,4 @@
-import { Logger } from '@graphql-hive/logger';
+import { Attributes, Logger } from '@graphql-hive/logger';
 import { crypto, TextEncoder } from '@whatwg-node/fetch';
 import { hiveClientSymbol } from './client.js';
 import type { HiveClient, HivePluginOptions, LegacyLogger } from './types.js';
@@ -204,13 +204,25 @@ export function chooseLogger(logger: LegacyLogger | Logger | undefined, debug?: 
     level: 'debug',
     writers: [
       {
-        write(level, _attrs, msg) {
+        write(level, attrs, msg) {
+          const errors = getErrorsFromAttrs(attrs);
+
           if (level === 'debug' && msg) {
             if (logger.debug) {
+              if (errors) {
+                for (const error of errors) {
+                  logger.debug(error);
+                }
+              }
               logger.debug(msg);
               return;
             }
             if (debug === true) {
+              if (errors) {
+                for (const error of errors) {
+                  logger.info(error);
+                }
+              }
               logger.info(msg);
               return;
             }
@@ -218,14 +230,42 @@ export function chooseLogger(logger: LegacyLogger | Logger | undefined, debug?: 
             return;
           }
           if (level === 'info' && msg) {
+            if (errors) {
+              for (const error of errors) {
+                logger.info(error);
+              }
+            }
             logger.info(msg);
             return;
           }
           if (level === 'error' && msg) {
+            if (errors) {
+              for (const error of errors) {
+                logger.error(error);
+              }
+            }
             logger.error(msg);
           }
         },
       },
     ],
   });
+}
+
+function getErrorsFromAttrs(attrs: Attributes | null | undefined): Array<string> | null {
+  if (!attrs || Array.isArray(attrs)) {
+    return null;
+  }
+
+  const error = attrs?.error;
+
+  if (!error) {
+    return null;
+  }
+
+  if (error?.errors) {
+    return error.errors.map((error: any) => `${error.name ?? error.class}: ${error.message}`);
+  }
+
+  return [`${error.name ?? error.class}: ${error.message}`];
 }

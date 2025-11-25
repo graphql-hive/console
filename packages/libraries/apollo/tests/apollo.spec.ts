@@ -102,9 +102,9 @@ test('should not interrupt the process', async () => {
   await waitFor(200);
   await apollo.stop();
   clean();
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('[hive][info]'));
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('[hive][usage]'));
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('[hive][reporting]'));
+  expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('[hive][info]'));
+  expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('[hive][usage]'));
+  expect(logger.info).toHaveBeenCalledWith(expect.stringContaining('[hive][reporting]'));
 }, 1_000);
 
 test('should capture client name and version headers', async () => {

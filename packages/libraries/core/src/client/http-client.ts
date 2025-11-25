@@ -160,33 +160,16 @@ export async function makeFetchCall(
         },
         signal,
       }).catch((error: unknown) => {
-        const logErrorMessage = () => {
-          const msg =
-            `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
-            getErrorMessage(error);
+        const msg =
+          `${config.method} ${endpoint} (x-request-id=${requestId}) failed ${getDuration()}. ` +
+          getErrorMessage(error);
 
-          if (isFinalAttempt) {
-            logger.error({ error }, msg);
-            return;
-          }
+        if (isFinalAttempt) {
+          logger.error({ error }, msg);
+        } else {
           logger.debug({ error }, msg);
-        };
-
-        if (isAggregateError(error)) {
-          for (const err of error.errors) {
-            if (isFinalAttempt) {
-              logger.error({ error: err });
-              continue;
-            }
-            logger.debug(String(err));
-          }
-
-          logErrorMessage();
-          throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
         }
 
-        logger.error({ error });
-        logErrorMessage();
         throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
 
