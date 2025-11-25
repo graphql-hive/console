@@ -255,6 +255,7 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
 
 function UnusedSchemaExplorer(props: {
   dataRetentionInDays: number;
+  hasCollectedOperations: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -318,7 +319,16 @@ function UnusedSchemaExplorer(props: {
           />
         </div>
       </div>
-      {!query.fetching && !query.stale ? (
+
+      {!props.hasCollectedOperations ? (
+        <div className="py-8">
+          <EmptyList
+            title="Hive is waiting for your first collected operation"
+            description="You can collect usage of your GraphQL API with Hive Client"
+            docsUrl="/features/usage-reporting"
+          />
+        </div>
+      ) : !query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.unusedSchema && latestSchemaVersion ? (
             <>
@@ -426,21 +436,10 @@ function ExplorerUnusedSchemaPageContent(props: {
     return null;
   }
 
-  if (!hasCollectedOperations) {
-    return (
-      <div className="py-8">
-        <EmptyList
-          title="Hive is waiting for your first collected operation"
-          description="You can collect usage of your GraphQL API with Hive Client"
-          docsUrl="/features/usage-reporting"
-        />
-      </div>
-    );
-  }
-
   return (
     <UnusedSchemaExplorer
       dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      hasCollectedOperations={hasCollectedOperations}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
