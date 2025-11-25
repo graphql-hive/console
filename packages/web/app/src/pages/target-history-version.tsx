@@ -242,15 +242,11 @@ const DefaultSchemaVersionView_SchemaVersionFragment = graphql(`
     log {
       ... on PushedSchemaLog {
         id
-        author
-        service
-        commit
         serviceSdl
         previousServiceSdl
       }
       ... on DeletedSchemaLog {
         id
-        deletedService
         previousServiceSdl
       }
     }
@@ -443,9 +439,6 @@ function DefaultSchemaVersionView(props: {
 const ContractVersionView_ContractVersionFragment = graphql(`
   fragment ContractVersionView_ContractVersionFragment on ContractVersion {
     id
-    contractName
-    isComposable
-    hasSchemaChanges
     isFirstComposableVersion
     supergraphSDL
     compositeSchemaSDL
