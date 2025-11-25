@@ -185,7 +185,7 @@ export async function makeFetchCall(
           throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
         }
 
-        logger.error({ error }, String(error));
+        logger.error({ error });
         logErrorMessage();
         throw new Error(`Unexpected HTTP error. (x-request-id=${requestId})`, { cause: error });
       });
