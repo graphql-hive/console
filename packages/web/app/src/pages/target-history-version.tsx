@@ -654,11 +654,22 @@ function ActiveSchemaVersion(props: {
   const schemaVersion = project?.target?.schemaVersion;
   const projectType = query.data?.project?.type;
 
+  // Order of these conditionals is important...relocate carefully!
   if (!isValidVersionId) {
     return (
       <NotFoundContent
         heading="Invalid version ID"
         subheading="The provided version ID is not a valid UUID format."
+        includeBackButton={false}
+      />
+    );
+  }
+
+  if (!isLoading && !schemaVersion) {
+    return (
+      <NotFoundContent
+        heading="Version ID does not exist"
+        subheading="The provided version ID is not in our database."
         includeBackButton={false}
       />
     );
