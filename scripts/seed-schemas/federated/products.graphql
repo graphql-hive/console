@@ -3,13 +3,21 @@ extend schema
     url: "https://specs.apollo.dev/federation/v2.3"
     import: ["@key", "@shareable", "@inaccessible", "@tag", "@external"]
   )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "products-team")
+  @meta(name: "contact", content: "#products-channel")
 
 directive @example(text: String!) on FIELD_DEFINITION
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
 
 """
 Product interface defining common product fields
 """
-interface ProductItf implements SkuItf {
+interface ProductItf implements SkuItf @meta(name: "domain", content: "products") {
   upc: String!
   sku: String
   name: String
@@ -61,11 +69,11 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   """
   Universal Product Code. A standardized numeric global identifier
   """
-  upc: String!
+  upc: String! @shareable
   """
   SKUs are unique to the company and are used internally. Alphanumeric.
   """
-  sku: String @tag(name: "internal")
+  sku: String @tag(name: "internal") @meta(name: "sensitivity", content: "internal")
   """
   Product name
   """
@@ -93,7 +101,7 @@ type Product implements ProductItf & SkuItf @key(fields: "upc") @key(fields: "sk
   """
   Aggregated review score for this product
   """
-  reviewsScore: Float!
+  reviewsScore: Float! @meta(name: "category", content: "analytics")
   """
   Deprecated field that has been refactored out
   """
@@ -183,30 +191,91 @@ type Query {
   """
   Get all products in the catalog
   """
-  allProducts: [ProductItf!]!
+  allProducts: [ProductItf!]! @meta(name: "priority", content: "tier1")
   """
   Get a specific product by its UPC
   """
-  product(upc: String!): ProductItf
+  product(
+    """
+    Universal Product Code of the product to retrieve
+    """
+    upc: String!
+  ): ProductItf
   """
   Get the top N products (default: 5)
   """
-  topProducts(first: Int = 5): [ProductItf!]!
+  topProducts(
+    """
+    Number of products to return (default: 5)
+    """
+    first: Int = 5
+  ): [ProductItf!]!
   """
   Search and filter products based on criteria
   """
-  searchProducts(filter: ProductFilterInput!): [ProductItf!]!
+  searchProducts(
+    """
+    ## Product Search Filter
+
+    Comprehensive filter criteria for searching and filtering products in the catalog. The **ProductFilterInput** supports multiple filtering dimensions that can be _combined_ for precise results.
+
+    ### Available Filter Options
+
+    - **Search Text** (`searchText`) - Full-text search across product names and descriptions
+    - **Categories** (`categories`) - Filter by one or more product categories
+    - **Price Range** (`priceRange`) - Min/max price boundaries (inclusive)
+    - **Shipping Class** (`shippingClass`) - Filter by delivery speed (STANDARD, EXPRESS, OVERNIGHT)
+
+    ### Common Usage Patterns
+
+    1. Text search only: `{ searchText: "laptop" }`
+    2. Category + price: `{ categories: ["Electronics"], priceRange: { min: 100, max: 500 } }`
+    3. Multiple filters: `{ searchText: "tablet", categories: ["Electronics", "Computers"], shippingClass: EXPRESS }`
+
+    > **Tip**: All filter fields are optional - combine them as needed for your search requirements
+
+    ---
+
+    *See `ProductFilterInput` type for complete field definitions and constraints*
+    """
+    filter: ProductFilterInput!
+  ): [ProductItf!]!
   """
   Get products filtered by category and price range
   """
-  products(category: String, minPrice: Float, maxPrice: Float): [ProductItf!]!
+  products(
+    """
+    Optional category name to filter products
+    """
+    category: String
+    """
+    Minimum price threshold (inclusive)
+    """
+    minPrice: Float
+    """
+    Maximum price threshold (inclusive)
+    """
+    maxPrice: Float
+  ): [ProductItf!]!
   """
   Get products filtered by physical dimensions and shipping class
   """
   productsByDimensions(
+    """
+    Minimum weight in pounds (inclusive)
+    """
     minWeight: Float
+    """
+    Maximum weight in pounds (inclusive)
+    """
     maxWeight: Float
+    """
+    Size description to match (e.g., 'Small', 'Large', '10x5x3')
+    """
     size: String
+    """
+    Shipping class filter (STANDARD, EXPRESS, or OVERNIGHT)
+    """
     shippingClass: ShippingClass
   ): [ProductItf!]!
 }

@@ -1,6 +1,4 @@
-// @ts-expect-error not a dependency
 import { defineConfig } from '@graphql-hive/gateway';
-// @ts-expect-error not a dependency
 import { hiveTracingSetup } from '@graphql-hive/plugin-opentelemetry/setup';
 import type { Context } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
@@ -69,6 +67,8 @@ if (
     // Noop is only there to not raise an exception in case we do not hive console tracing.
     target: process.env['HIVE_HIVE_TARGET'] ?? 'noop',
     contextManager: new AsyncLocalStorageContextManager(),
+    // @ts-expect-error console uses otel v1 and hive gateway uses v2
+    // TODO: upgrade console to otel v2
     processor: new MultiSpanProcessor([
       ...(process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN'] &&
       process.env['HIVE_HIVE_TRACE_ENDPOINT'] &&
@@ -111,8 +111,8 @@ export const gatewayConfig = defineConfig({
   },
   supergraph: {
     type: 'hive',
-    endpoint: process.env['SUPERGRAPH_ENDPOINT'],
-    key: process.env['HIVE_CDN_ACCESS_TOKEN'],
+    endpoint: process.env['SUPERGRAPH_ENDPOINT'] || '',
+    key: process.env['HIVE_CDN_ACCESS_TOKEN'] || '',
   },
   graphiql: {
     title: 'Hive Console - GraphQL API',
@@ -127,12 +127,13 @@ export const gatewayConfig = defineConfig({
     },
   },
   disableWebsockets: true,
-  prometheus: true,
+  prometheus: {
+    metrics: true,
+  },
   openTelemetry:
     process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT'] || process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']
       ? {
           traces: true,
-          serviceName: 'public-graphql-api-gateway',
         }
       : undefined,
   demandControl: {
@@ -141,4 +142,8 @@ export const gatewayConfig = defineConfig({
   },
   maxTokens: 1_000,
   maxDepth: 20,
+  cors: {
+    origin: '*', // allow all origins
+    credentials: false, // do not allow credentials in cross-origin requests
+  },
 });
