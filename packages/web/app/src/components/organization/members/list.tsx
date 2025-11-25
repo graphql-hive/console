@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { memo, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
@@ -94,7 +94,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
   }
 `);
 
-const OrganizationMemberRow = React.memo(function OrganizationMemberRow(props: {
+const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   member: FragmentType<typeof OrganizationMemberRow_MemberFragment>;
 }) {
