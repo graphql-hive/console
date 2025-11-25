@@ -16,16 +16,6 @@ const darkChartStyles = {
 
 export function useChartStyles() {
   return darkChartStyles;
-  // TODO: fix it when Hive will have white theme
-  // useColorModeValue(
-  //   {
-  //     backgroundColor: '#fff',
-  //     textStyle: { color: '#52525b' },
-  //     legend: {
-  //       textStyle: { color: '#52525b' },
-  //     },
-  //   },
-  // );
 }
 
 // Strings
