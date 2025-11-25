@@ -264,12 +264,4 @@ function formatTimestamp(timestamp: number): string {
   return parts.join(':');
 }
 
-interface AggregateError extends Error {
-  errors: Error[];
-}
-
-function isAggregateError(error: unknown): error is AggregateError {
-  return !!error && typeof error === 'object' && 'errors' in error && Array.isArray(error.errors);
-}
-
 export { URL };
