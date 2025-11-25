@@ -18,14 +18,7 @@ const OrganizationMembersPage_OrganizationFragment = graphql(`
     ...OrganizationInvitations_OrganizationFragment
     ...OrganizationMemberRoles_OrganizationFragment
     ...OrganizationMembers_OrganizationFragment
-    members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
-    }
+
     viewerCanManageInvitations
     viewerCanManageRoles
   }
@@ -54,7 +47,7 @@ function PageContent(props: {
   organization: FragmentType<typeof OrganizationMembersPage_OrganizationFragment>;
   refetchQuery(): void;
   currentPage: number;
-  onNextPage(): void;
+  onNextPage(endCursor: string): void;
   onPreviousPage(): void;
 }) {
   const organization = useFragment(
@@ -166,19 +159,10 @@ function OrganizationMembersPageContent(props: {
     variables: queryVariables,
   });
 
-  const organization = useFragment(
-    OrganizationMembersPage_OrganizationFragment,
-    query.data?.organization,
-  );
-  const pageInfo = organization?.members?.pageInfo;
-
-  // Navigation handlers
-  const handleNextPage = useCallback(() => {
-    if (pageInfo?.hasNextPage && pageInfo.endCursor) {
-      setCursorHistory(prev => [...prev, pageInfo.endCursor!]);
-      setCurrentPage(prev => prev + 1);
-    }
-  }, [pageInfo?.hasNextPage, pageInfo?.endCursor]);
+  const handleNextPage = useCallback((endCursor: string) => {
+    setCursorHistory(prev => [...prev, endCursor]);
+    setCurrentPage(prev => prev + 1);
+  }, []);
 
   const handlePreviousPage = useCallback(() => {
     if (currentPage > 0) {

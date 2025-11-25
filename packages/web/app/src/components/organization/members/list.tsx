@@ -85,7 +85,6 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     role {
       id
-      name
     }
     isOwner
     viewerCanRemove
@@ -235,7 +234,6 @@ const MemberRole_MemberFragment = graphql(`
       projects {
         project {
           id
-          slug
         }
       }
     }
@@ -291,23 +289,16 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     }
     members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
       edges {
-        cursor
         node {
           id
-          user {
-            displayName
-          }
           role {
             id
-            name
           }
           ...OrganizationMemberRow_MemberFragment
         }
       }
       pageInfo {
         hasNextPage
-        hasPreviousPage
-        startCursor
         endCursor
       }
     }
@@ -321,7 +312,7 @@ export function OrganizationMembers(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   refetchMembers(): void;
   currentPage: number;
-  onNextPage(): void;
+  onNextPage(endCursor: string): void;
   onPreviousPage(): void;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
@@ -416,7 +407,9 @@ export function OrganizationMembers(props: {
             variant="outline"
             size="sm"
             onClick={() => {
-              props.onNextPage();
+              if (pageInfo?.endCursor) {
+                props.onNextPage(pageInfo.endCursor);
+              }
               setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }, 0);
