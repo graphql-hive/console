@@ -22,6 +22,7 @@
     "prettier": "3.4.2"
   },
   "devDependencies": {
+    "@graphql-hive/gateway": "^2.1.19",
     "@types/js-yaml": "4.0.9",
     "@types/mime-types": "2.1.4",
     "@types/node": "22.10.5",
