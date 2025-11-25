@@ -9,6 +9,7 @@ import {
   isAsyncIterable,
   isHiveClient,
 } from '@graphql-hive/core';
+import { Logger } from '@graphql-hive/logger';
 import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
 import { version } from './version.js';
 
@@ -49,6 +50,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
 
   let hive: HiveClient;
   let yoga: YogaServer<any, any>;
+
   return {
     onYogaInit(payload) {
       yoga = payload.yoga;
@@ -179,8 +181,18 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         ? clientOrOptions
         : createHive({
             ...clientOrOptions,
-            // TODO: How to convert yoga.logger into HiveLogger here?
-            logger: clientOrOptions.logger ?? yoga.logger,
+            logger:
+              clientOrOptions.logger ??
+              new Logger({
+                writers: [
+                  {
+                    write(level, attrs, msg) {
+                      level = level === 'trace' ? 'debug' : level;
+                      yoga.logger[level](msg, attrs);
+                    },
+                  },
+                ],
+              }),
             agent: clientOrOptions.agent
               ? {
                   // Hive Plugin should respect the given FetchAPI, note that this is not `yoga.fetch`
