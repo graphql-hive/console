@@ -41,7 +41,7 @@ export class BreakingSchemaChangeUsageHelper {
         // causing a zero devision and GraphQL exception,
         // because we aggressively poll for the schema change after publishing usage data
         // it seems like clickhouse slighty lags behind for the materialized view here.
-        // since it only happens in contetx of an integration test (no production issues)
+        // since it only happens in context of an integration test (no production issues)
         // we can safely treat 0 as 1 request.
         const totalRequestCount = Math.max(1, metadata.usage.totalRequestCount);
         const percentage = (operation.count / totalRequestCount) * 100;
@@ -57,7 +57,7 @@ export class BreakingSchemaChangeUsageHelper {
         // causing a zero devision and GraphQL exception,
         // because we aggressively poll for the schema change after publishing usage data
         // it seems like clickhouse slighty lags behind for the materialized view here.
-        // since it only happens in contetx of an integration test (no production issues)
+        // since it only happens in context of an integration test (no production issues)
         // we can safely treat 0 as 1 request.
         const totalRequestCount = Math.max(1, metadata.usage.totalRequestCount);
         const percentage = (client.count / totalRequestCount) * 100;
