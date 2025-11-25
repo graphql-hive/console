@@ -28,7 +28,7 @@ import {
   useFormattedThroughput,
 } from '@/lib/hooks';
 import { pick } from '@/lib/object';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './Fallback';
 import { resolutionToMilliseconds } from './utils';

@@ -18,7 +18,7 @@ import { Card } from '@/components/v2/card';
 import Stat from '@/components/v2/stat';
 import { graphql, useFragment } from '@/gql';
 import { formatNumber } from '@/lib/hooks';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const DateFormatter = Intl.DateTimeFormat('en-US', {
