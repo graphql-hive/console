@@ -403,6 +403,7 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       prometheus: env.prometheus,
     });
 
