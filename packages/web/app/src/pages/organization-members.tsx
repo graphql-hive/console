@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from 'urql';
+import { useQuery, UseQueryExecute } from 'urql';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
 import { OrganizationMembers } from '@/components/organization/members/list';
@@ -45,10 +45,8 @@ function PageContent(props: {
   page: SubPage;
   onPageChange(page: SubPage): void;
   organization: FragmentType<typeof OrganizationMembersPage_OrganizationFragment>;
-  refetchQuery(): void;
-  currentPage: number;
-  onNextPage(endCursor: string): void;
-  onPreviousPage(): void;
+  refetchQuery: UseQueryExecute;
+  setAfter: (after: string | null) => void;
 }) {
   const organization = useFragment(
     OrganizationMembersPage_OrganizationFragment,
@@ -97,9 +95,7 @@ function PageContent(props: {
           <OrganizationMembers
             refetchMembers={props.refetchQuery}
             organization={organization}
-            currentPage={props.currentPage}
-            onNextPage={props.onNextPage}
-            onPreviousPage={props.onPreviousPage}
+            setAfter={props.setAfter}
           />
         ) : null}
         {props.page === 'roles' && organization.viewerCanManageRoles ? (
@@ -136,43 +132,22 @@ function OrganizationMembersPageContent(props: {
   onPageChange(page: SubPage): void;
 }) {
   const search = organizationMembersRoute.useSearch();
+  const [after, setAfter] = useState<string | null>(null);
 
-  // Pagination state
-  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
-  const [currentPage, setCurrentPage] = useState(0);
-
-  // Reset pagination when search changes
+  // Reset cursor when search changes
   useEffect(() => {
-    setCursorHistory([null]);
-    setCurrentPage(0);
+    setAfter(null);
   }, [search.search]);
-
-  const queryVariables = {
-    organizationSlug: props.organizationSlug,
-    searchTerm: search.search || undefined,
-    first: 20,
-    after: cursorHistory[currentPage],
-  };
 
   const [query, refetch] = useQuery({
     query: OrganizationMembersPageQuery,
-    variables: queryVariables,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      searchTerm: search.search || undefined,
+      first: 20,
+      after,
+    },
   });
-
-  const handleNextPage = useCallback((endCursor: string) => {
-    setCursorHistory(prev => [...prev, endCursor]);
-    setCurrentPage(prev => prev + 1);
-  }, []);
-
-  const handlePreviousPage = useCallback(() => {
-    if (currentPage > 0) {
-      setCurrentPage(prev => prev - 1);
-    }
-  }, [currentPage]);
-
-  const refetchQuery = useCallback(() => {
-    refetch({ requestPolicy: 'network-only' });
-  }, [refetch]);
 
   useRedirect({
     canAccess: query.data?.organization?.viewerCanSeeMembers === true,
@@ -186,6 +161,10 @@ function OrganizationMembersPageContent(props: {
     },
     entity: query.data?.organization,
   });
+
+  const refetchQuery = useCallback(() => {
+    refetch({ requestPolicy: 'network-only' });
+  }, [refetch]);
 
   if (query.data?.organization?.viewerCanSeeMembers === false) {
     return null;
@@ -203,13 +182,11 @@ function OrganizationMembersPageContent(props: {
     >
       {query.data?.organization ? (
         <PageContent
-          page={props.page}
-          onPageChange={props.onPageChange}
-          refetchQuery={refetchQuery}
           organization={query.data.organization}
-          currentPage={currentPage}
-          onNextPage={handleNextPage}
-          onPreviousPage={handlePreviousPage}
+          onPageChange={props.onPageChange}
+          page={props.page}
+          refetchQuery={refetchQuery}
+          setAfter={setAfter}
         />
       ) : null}
     </OrganizationLayout>

@@ -1,8 +1,8 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
-import { useMutation } from 'urql';
+import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import {
   AlertDialog,
@@ -29,6 +29,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
+import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
@@ -310,20 +311,50 @@ const OrganizationMembers_OrganizationFragment = graphql(`
 
 export function OrganizationMembers(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
-  refetchMembers(): void;
-  currentPage: number;
-  onNextPage(endCursor: string): void;
-  onPreviousPage(): void;
+  refetchMembers: UseQueryExecute;
+  /**
+   * The setter for the reactive "after" variable required by urql
+   */
+  setAfter: (after: string | null) => void;
 }) {
+  // Pagination state
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const search = organizationMembersRoute.useSearch();
+
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = organization.members?.edges?.map(edge => edge.node);
   const pageInfo = organization.members?.pageInfo;
 
-  const [search, setSearch] = useSearchParamsFilter<string>('search', '');
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCursorHistory([null]);
+    setCurrentPage(0);
+    props.setAfter(null);
+  }, [search.search]);
+
+  useEffect(() => {
+    // Update the cursor in parent, which will trigger query refetch
+    props.setAfter(cursorHistory[currentPage]);
+  }, [currentPage]);
+
+  const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
 
   const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
+    setSearchValue(e.target.value);
   }, 300);
+
+  const handleNextPage = (endCursor: string) => {
+    setCursorHistory(prev => [...prev, endCursor]);
+    setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
 
   return (
     <SubPageLayout>
@@ -336,7 +367,7 @@ export function OrganizationMembers(props: {
             className="w-[220px] grow cursor-text"
             placeholder="Search by username or email"
             onChange={handleSearchChange}
-            defaultValue={search}
+            defaultValue={searchValue}
           />
           {organization.viewerCanManageInvitations && (
             <MemberInvitationButton
@@ -366,7 +397,7 @@ export function OrganizationMembers(props: {
                   <h3 className="mb-2 text-lg font-semibold text-gray-100">No members found</h3>
 
                   <p className="max-w-sm text-center text-sm text-gray-200">
-                    {`No results for "${search}". Try adjusting your search term.`}
+                    {`No results for "${searchValue}". Try adjusting your search term.`}
                   </p>
                 </div>
               </td>
@@ -385,20 +416,20 @@ export function OrganizationMembers(props: {
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-gray-500">
-          Page {props.currentPage + 1}
-          {search && members.length > 0 && ` - search results for "${search}"`}
+          Page {currentPage + 1}
+          {searchValue && members.length > 0 && ` - showing results for "${searchValue}"`}
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
-              props.onPreviousPage();
+              handlePreviousPage();
               setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }, 0);
             }}
-            disabled={props.currentPage === 0}
+            disabled={currentPage === 0}
           >
             <ChevronLeftIcon className="mr-1 size-4" />
             Previous
@@ -408,7 +439,7 @@ export function OrganizationMembers(props: {
             size="sm"
             onClick={() => {
               if (pageInfo?.endCursor) {
-                props.onNextPage(pageInfo.endCursor);
+                handleNextPage(pageInfo.endCursor);
               }
               setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
