@@ -96,11 +96,30 @@ input UpdateUserInput {
 
 extend type Query {
   me: User
-  user(id: ID!): User
+  user(
+    """
+    Unique identifier of the user to retrieve
+    """
+    id: ID!
+  ): User
   users: [User]
 }
 
 extend type Mutation {
-  createUser(input: CreateUserInput!): User!
-  updateUser(id: ID!, input: UpdateUserInput!): User
+  createUser(
+    """
+    User creation data including email, name, and optional alias
+    """
+    input: CreateUserInput!
+  ): User!
+  updateUser(
+    """
+    Unique identifier of the user to update
+    """
+    id: ID!
+    """
+    User update data including optional name and alias changes
+    """
+    input: UpdateUserInput!
+  ): User
 }
