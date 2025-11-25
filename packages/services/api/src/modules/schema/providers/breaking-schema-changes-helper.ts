@@ -36,7 +36,11 @@ export class BreakingSchemaChangeUsageHelper {
 
     return {
       topAffectedOperations: schemaChange.usageStatistics.topAffectedOperations.map(operation => {
-        const percentage = (operation.count / metadata.usage.totalRequestCount) * 100;
+        let percentage = (operation.count / metadata.usage.totalRequestCount) * 100;
+        if (percentage === Infinity) {
+          percentage = 0;
+        }
+
         return {
           ...operation,
           percentage,
@@ -44,7 +48,10 @@ export class BreakingSchemaChangeUsageHelper {
         };
       }),
       topAffectedClients: schemaChange.usageStatistics.topAffectedClients.map(client => {
-        const percentage = (client.count / metadata.usage.totalRequestCount) * 100;
+        let percentage = (client.count / metadata.usage.totalRequestCount) * 100;
+        if (percentage === Infinity) {
+          percentage = 0;
+        }
 
         return {
           ...client,
