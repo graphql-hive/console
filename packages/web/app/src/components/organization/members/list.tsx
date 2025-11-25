@@ -22,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Link } from '@/components/ui/link';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -266,7 +265,9 @@ function MemberRole(props: {
       {organization.viewerCanAssignUserRoles && (
         <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
           <Sheet.SheetTrigger asChild>
-            <Link>change</Link>
+            <button className="font-medium text-orange-500 transition-colors hover:underline">
+              change
+            </button>
           </Sheet.SheetTrigger>
           {isOpen && (
             <MemberRolePicker
