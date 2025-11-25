@@ -45,6 +45,7 @@
     "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin --filter hive-console-sdk-rs sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
+    "seed:traces": "tsx scripts/seed-traces/seed-traces-bulk.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",
     "start": "pnpm run local:setup",
     "test": "vitest",
