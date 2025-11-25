@@ -1,6 +1,7 @@
 import { ReactElement, useMemo, useState } from 'react';
 import { CheckIcon, GitCompareIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import {
   ChangesBlock,
   CompositionErrorsSection,
@@ -15,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { DiffEditor, TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType, SeverityLevelType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
+import { cn, isValidUUID } from '@/lib/utils';
 import {
   CheckCircledIcon,
   CrossCircledIcon,
@@ -633,6 +634,8 @@ function ActiveSchemaVersion(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
+  const isValidVersionId = isValidUUID(props.versionId);
+
   const [query] = useQuery({
     query: ActiveSchemaVersion_SchemaVersionQuery,
     variables: {
@@ -641,6 +644,7 @@ function ActiveSchemaVersion(props: {
       targetSlug: props.targetSlug,
       versionId: props.versionId,
     },
+    pause: !isValidVersionId,
   });
 
   const { error } = query;
@@ -649,6 +653,16 @@ function ActiveSchemaVersion(props: {
   const project = query.data?.project;
   const schemaVersion = project?.target?.schemaVersion;
   const projectType = query.data?.project?.type;
+
+  if (!isValidVersionId) {
+    return (
+      <NotFoundContent
+        heading="Invalid version ID"
+        subheading="The provided version ID is not a valid UUID format."
+        includeBackButton={false}
+      />
+    );
+  }
 
   if (isLoading || !schemaVersion || !projectType) {
     return (
