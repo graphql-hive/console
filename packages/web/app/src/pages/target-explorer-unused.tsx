@@ -253,25 +253,33 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
   }
 `);
 
-function UnusedSchemaExplorer(props: {
+function UnusedSchemaExplorer({
+  dataRetentionInDays,
+  hasCollectedOperations,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: {
   dataRetentionInDays: number;
+  hasCollectedOperations: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 }) {
   const dateRangeController = useDateRangeController({
-    dataRetentionInDays: props.dataRetentionInDays,
+    dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
   const [query, refresh] = useQuery({
     query: UnusedSchemaExplorer_UnusedSchemaQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
+      organizationSlug,
+      projectSlug,
+      targetSlug,
       period: dateRangeController.resolvedRange,
     },
+    pause: !hasCollectedOperations,
   });
 
   useEffect(() => {
@@ -283,7 +291,7 @@ function UnusedSchemaExplorer(props: {
   if (query.error) {
     return (
       <QueryError
-        organizationSlug={props.organizationSlug}
+        organizationSlug={organizationSlug}
         error={query.error}
         showLogoutButton={false}
       />
@@ -311,14 +319,23 @@ function UnusedSchemaExplorer(props: {
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
           <SchemaVariantFilter
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
             variant="unused"
           />
         </div>
       </div>
-      {!query.fetching && !query.stale ? (
+
+      {!hasCollectedOperations ? (
+        <div className="py-8">
+          <EmptyList
+            title="Hive is waiting for your first collected operation"
+            description="You can collect usage of your GraphQL API with Hive Client"
+            docsUrl="/features/usage-reporting"
+          />
+        </div>
+      ) : !query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.unusedSchema && latestSchemaVersion ? (
             <>
@@ -337,9 +354,9 @@ function UnusedSchemaExplorer(props: {
                     <Link
                       to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
                       params={{
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
+                        organizationSlug,
+                        projectSlug,
+                        targetSlug,
                         versionId: latestSchemaVersion.id,
                       }}
                     >
@@ -351,9 +368,9 @@ function UnusedSchemaExplorer(props: {
               <UnusedSchemaView
                 totalRequests={query.data?.target?.operationsStats.totalRequests ?? 0}
                 explorer={latestValidSchemaVersion.unusedSchema}
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
+                organizationSlug={organizationSlug}
+                projectSlug={projectSlug}
+                targetSlug={targetSlug}
               />
             </>
           ) : (
@@ -426,21 +443,10 @@ function ExplorerUnusedSchemaPageContent(props: {
     return null;
   }
 
-  if (!hasCollectedOperations) {
-    return (
-      <div className="py-8">
-        <EmptyList
-          title="Hive is waiting for your first collected operation"
-          description="You can collect usage of your GraphQL API with Hive Client"
-          docsUrl="/features/usage-reporting"
-        />
-      </div>
-    );
-  }
-
   return (
     <UnusedSchemaExplorer
       dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      hasCollectedOperations={hasCollectedOperations}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
