@@ -49,11 +49,10 @@ test('should not leak the exception', async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://127.0.0.1:55404 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [ERR] [hive][reporting] Error: connect ECONNREFUSED 127.0.0.1:55404
-    [ERR] [hive][reporting]     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:666:666)
-    [DBG] [hive][reporting] POST http://127.0.0.1:55404 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). connect ECONNREFUSED 127.0.0.1:55404
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://127.0.0.1:55404 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] Error: connect ECONNREFUSED 127.0.0.1:55404
+    [DBG] [hive][reporting]POST http://127.0.0.1:55404 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms). connect ECONNREFUSED 127.0.0.1:55404
   `);
 });
 
@@ -124,10 +123,10 @@ test('should send data to Hive', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Published schema
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Published schema
   `);
 });
 
@@ -197,10 +196,10 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Published schema
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Published schema
   `);
 
   expect(body.variables.input.sdl).toBe(`type Query{foo:String}`);
@@ -272,10 +271,10 @@ test('should send data to app.graphql-hive.com/graphql by default', async () => 
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST https://app.graphql-hive.com/graphql (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST https://app.graphql-hive.com/graphql (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Published schema
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST https://app.graphql-hive.com/graphql (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST https://app.graphql-hive.com/graphql (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Published schema
   `);
 
   expect(body.variables.input.sdl).toBe(`type Query{foo:String}`);
@@ -345,13 +344,13 @@ test('should send data to Hive immediately', async () => {
     `),
   });
 
-  expect(logger.getLogs()).toMatchInlineSnapshot(`[INF] [hive][reporting] Publish schema`);
+  expect(logger.getLogs()).toMatchInlineSnapshot(`[INF] [hive][reporting]Publish schema`);
   logger.clear();
   await waitFor(50);
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Successfully published schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Successfully published schema
   `);
   expect(body.variables.input.sdl).toBe(`type Query{foo:String}`);
   expect(body.variables.input.author).toBe(author);
@@ -362,9 +361,9 @@ test('should send data to Hive immediately', async () => {
 
   await waitFor(100);
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Successfully published schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Successfully published schema
   `);
 
   await hive.dispose();
@@ -432,10 +431,10 @@ test('should send original schema of a federated (v1) service', async () => {
   await hive.dispose();
   const logs = logger.getLogs();
   expect(logs).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Published schema
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Published schema
   `);
   http.done();
 });
@@ -501,10 +500,10 @@ test('should send original schema of a federated (v2) service', async () => {
   await hive.dispose();
   const logs = logger.getLogs();
   expect(logs).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [INF] [hive][reporting] Published schema
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [INF] [hive][reporting]Published schema
   `);
   http.done();
 });
@@ -562,10 +561,10 @@ test('should display SchemaPublishMissingServiceError', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [ERR] [hive][reporting] Failed to report schema: Service name is not defined
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [ERR] [hive][reporting]Failed to report schema: Service name is not defined
   `);
 });
 
@@ -623,10 +622,10 @@ test('should display SchemaPublishMissingUrlError', async () => {
   http.done();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [ERR] [hive][reporting] Failed to report schema: Service url is not defined
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] [hive][reporting]POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
+    [ERR] [hive][reporting]Failed to report schema: Service url is not defined
   `);
 
   expect(logger.getLogs()).toContain(
@@ -676,10 +675,10 @@ test('retry on non-200', async () => {
   await hive.dispose();
 
   expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [INF] [hive][reporting] Publish schema
-    [DBG] [hive][reporting] POST http://localhost/registry (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
-    [DBG] [hive][reporting] Error: connect ECONNREFUSED ::1:80
-    [DBG] [hive][reporting] Error: connect ECONNREFUSED 127.0.0.1:80
-    [DBG] [hive][reporting] POST http://localhost/registry (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms).
+    [INF] [hive][reporting]Publish schema
+    [DBG] [hive][reporting]POST http://localhost/registry (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) Attempt (1/6)
+    [DBG] Error: connect ECONNREFUSED ::1:80
+    [DBG] Error: connect ECONNREFUSED 127.0.0.1:80
+    [DBG] [hive][reporting]POST http://localhost/registry (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) failed (666ms).
   `);
 });

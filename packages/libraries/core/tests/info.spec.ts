@@ -23,7 +23,7 @@ test('should not leak the exception', async () => {
     .then(() => 'OK')
     .catch(() => 'ERROR');
 
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining(`[hive][info] Error`));
+  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining(`[hive][info]Error`));
   expect(result).toBe('OK');
 });
 
@@ -80,7 +80,7 @@ test('should use selfHosting.graphqlEndpoint if provided', async () => {
     .then(() => 'OK')
     .catch(() => 'ERROR');
 
-  expect(logger.info).toHaveBeenCalledWith(expect.stringContaining(`[hive][info] Token details`));
+  expect(logger.info).toHaveBeenCalledWith(expect.stringContaining(`[hive][info]Token details`));
   expect(logger.info).toHaveBeenCalledWith(expect.stringMatching(/Token name: \s+ My Token/));
   expect(logger.info).toHaveBeenCalledWith(
     expect.stringMatching(/Organization: \s+ Org \s+ http:\/\/localhost\/org-id/),

@@ -1,9 +1,9 @@
 import type { ExecutionArgs } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
+import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
 import type { AgentOptions } from './agent.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
 import type { SchemaReporter } from './reporting.js';
-import { HiveLogger } from './utils.js';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -68,7 +68,8 @@ export interface ClientInfo {
   version: string;
 }
 
-export interface Logger {
+/** @deprecated Instead provide a logger instance from `@graphql-hive/logger`. */
+export interface LegacyLogger {
   info(msg: string): void;
   error(error: any, ...data: any[]): void;
   debug?(msg: string): void;
@@ -219,7 +220,7 @@ export type HivePluginOptions = OptionalWhenFalse<
      *
      * Default: 'info'
      */
-    logger?: Logger | 'error' | 'info' | 'debug';
+    logger?: Logger | HiveLoggerLevel;
     /**
      * Access Token for usage reporting
      */
@@ -269,7 +270,7 @@ export type HivePluginOptions = OptionalWhenFalse<
 >;
 
 export type HiveInternalPluginOptions = HivePluginOptions & {
-  logger: HiveLogger;
+  logger: Logger;
 };
 
 export type Maybe<T> = null | undefined | T;
