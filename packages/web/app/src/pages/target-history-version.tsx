@@ -675,7 +675,7 @@ function ActiveSchemaVersion(props: {
     );
   }
 
-  if (isLoading || !schemaVersion || !projectType) {
+  if (isLoading || !projectType) {
     return (
       <div className="flex size-full flex-col items-center justify-center self-center text-sm text-gray-500">
         <Spinner className="mb-3 size-8" />
