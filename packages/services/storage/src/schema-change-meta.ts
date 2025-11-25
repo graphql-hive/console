@@ -13,8 +13,12 @@ import {
   directiveLocationAddedFromMeta,
   directiveLocationRemovedFromMeta,
   directiveRemovedFromMeta,
+  directiveRepeatableAddedFromMeta,
+  directiveRepeatableRemovedFromMeta,
+  directiveUsageArgumentAddedFromMeta,
   directiveUsageArgumentDefinitionAddedFromMeta,
   directiveUsageArgumentDefinitionRemovedFromMeta,
+  directiveUsageArgumentRemovedFromMeta,
   directiveUsageEnumAddedFromMeta,
   directiveUsageEnumRemovedFromMeta,
   directiveUsageEnumValueAddedFromMeta,
@@ -195,6 +199,10 @@ export function schemaChangeFromSerializableChange(
       return directiveUsageInputFieldDefinitionAddedFromMeta(change);
     case ChangeType.DirectiveUsageInputFieldDefinitionRemoved:
       return directiveUsageInputFieldDefinitionRemovedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentAdded:
+      return directiveUsageArgumentAddedFromMeta(change);
+    case ChangeType.DirectiveUsageArgumentRemoved:
+      return directiveUsageArgumentRemovedFromMeta(change);
     case ChangeType.EnumValueRemoved:
       return enumValueRemovedFromMeta(change);
     case ChangeType.EnumValueAdded:
@@ -273,6 +281,10 @@ export function schemaChangeFromSerializableChange(
       return unionMemberRemovedFromMeta(change);
     case ChangeType.UnionMemberAdded:
       return buildUnionMemberAddedMessageFromMeta(change);
+    case ChangeType.DirectiveRepeatableAdded:
+      return directiveRepeatableAddedFromMeta(change);
+    case ChangeType.DirectiveRepeatableRemoved:
+      return directiveRepeatableRemovedFromMeta(change);
     case 'REGISTRY_SERVICE_URL_CHANGED':
       return buildRegistryServiceURLFromMeta(change);
     default:

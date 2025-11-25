@@ -16,7 +16,7 @@
     "db:generate": "schemats generate --config schemats.cjs -o src/db/types.ts && prettier --write src/db/types.ts"
   },
   "devDependencies": {
-    "@graphql-inspector/core": "6.4.1",
+    "@graphql-inspector/core": "7.0.3",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "7.120.2",
     "@sentry/types": "7.120.2",
@@ -26,6 +26,7 @@
     "dotenv": "16.4.7",
     "fast-json-stable-stringify": "2.1.0",
     "got": "14.4.7",
+    "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
     "pg-promise": "11.10.2",
     "slonik": "30.4.4",
     "slonik-interceptor-query-logging": "46.4.0",
