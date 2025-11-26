@@ -322,7 +322,9 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersion(selector: TargetSelector & { versionId: string }) {
+  async getSchemaVersion(
+    selector: TargetSelector & { versionId: string },
+  ): Promise<SchemaVersion | null> {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
 
     if (isUUID(selector.versionId) === false) {
@@ -331,6 +333,10 @@ export class SchemaManager {
     }
 
     const result = await this.storage.getMaybeVersion(selector);
+
+    if (!result) {
+      return null;
+    }
 
     return {
       projectId: selector.projectId,
