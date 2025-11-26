@@ -47,6 +47,14 @@ functionality can also be verified at a high level (e.g., retrieving the databas
 call). For critical features, it is acceptable to test low-level database in output in addition to
 high-level output.
 
+#### I/O and Configuration
+
+- Do not access `process.env` directly in your code.
+- Define environment variables in `packages/services/*/src/environment.ts` using Zod schemas
+- Parse and validate database results or network HTTP calls to services/third-party services using
+  Zod schemas.
+- Avoid using `fetch` or `node-fetch` directly, as it does not have built-in retries
+
 ### Anti Patterns
 
 #### Adding new major logic to `/packages/services/storage`
