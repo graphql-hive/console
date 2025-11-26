@@ -73,7 +73,7 @@ export function createUsage(pluginOptions: HiveInternalPluginOptions): UsageColl
   const options =
     typeof pluginOptions.usage === 'boolean' ? ({} as HiveUsagePluginOptions) : pluginOptions.usage;
   const selfHostingOptions = pluginOptions.selfHosting;
-  const logger = pluginOptions.logger.child('[usage]');
+  const logger = pluginOptions.logger.child({ module: 'hive-usage' });
   const collector = memo(createCollector, arg => arg.schema);
   const excludeSet = new Set(options.exclude ?? []);
 

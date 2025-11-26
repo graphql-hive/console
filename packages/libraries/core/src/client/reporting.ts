@@ -30,7 +30,7 @@ export function createReporting(pluginOptions: HiveInternalPluginOptions): Schem
   const token = pluginOptions.token;
   const selfHostingOptions = pluginOptions.selfHosting;
   const reportingOptions = pluginOptions.reporting;
-  const logger = pluginOptions.logger.child('[reporting]');
+  const logger = pluginOptions.logger.child({ module: 'hive-reporting' });
 
   logIf(
     typeof reportingOptions.author !== 'string' || reportingOptions.author.length === 0,

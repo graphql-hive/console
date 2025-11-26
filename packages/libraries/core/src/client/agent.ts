@@ -123,13 +123,12 @@ export function createAgent<TEvent>(
           ? null
           : pluginOptions.circuitBreaker,
   };
-  const logger = chooseLogger(pluginOptions.logger).child('[agent]');
+  const logger = chooseLogger(pluginOptions.logger).child({ module: 'hive-agent' });
 
   let circuitBreaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
     ReturnType<typeof sendHTTPCall>
   >;
-  const breakerLogger = logger.child('[circuit breaker]');
 
   const enabled = options.enabled !== false;
   let timeoutID: ReturnType<typeof setTimeout> | null = null;
@@ -270,14 +269,12 @@ export function createAgent<TEvent>(
     circuitBreaker = circuitBreakerInstance;
 
     circuitBreakerInstance.on('open', () =>
-      breakerLogger.error('circuit opened - backend seems unreachable.'),
+      logger.error('circuit opened - backend seems unreachable.'),
     );
     circuitBreakerInstance.on('halfOpen', () =>
-      breakerLogger.info('circuit half open - testing backend connectivity'),
+      logger.info('circuit half open - testing backend connectivity'),
     );
-    circuitBreakerInstance.on('close', () =>
-      breakerLogger.info('circuit closed - backend recovered '),
-    );
+    circuitBreakerInstance.on('close', () => logger.info('circuit closed - backend recovered '));
   } else {
     circuitBreaker = {
       getSignal() {
@@ -293,7 +290,7 @@ export function createAgent<TEvent>(
       return await circuitBreaker.fire(...args);
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
-        breakerLogger.info('circuit open - sending report skipped');
+        logger.info('circuit open - sending report skipped');
         return null;
       }
 

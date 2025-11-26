@@ -28,7 +28,7 @@ function resolveLoggerFromConfigOptions(options: HivePluginOptions): Logger {
 }
 
 export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = resolveLoggerFromConfigOptions(options).child('[hive]');
+  const logger = resolveLoggerFromConfigOptions(options).child({ module: 'hive' });
   let enabled = options.enabled ?? true;
 
   if (enabled === false && !options.experimental__persistedDocuments) {
@@ -75,8 +75,6 @@ export function createHive(options: HivePluginOptions): HiveClient {
       ? options.printTokenInfo === true || (!!options.debug && options.printTokenInfo !== false)
       : false;
 
-  const infoLogger = logger.child('[info]');
-
   const info = printTokenInfo
     ? async () => {
         try {
@@ -120,7 +118,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
             }
           `;
 
-          infoLogger.info('Fetching token details...');
+          logger.info('Fetching token details...');
 
           const clientVersionForDetails = options.agent?.version || version;
           const response = await http.post(
@@ -139,7 +137,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
               },
               timeout: 30_000,
               fetchImplementation: options?.agent?.fetch,
-              logger: infoLogger,
+              logger,
             },
           );
 
@@ -171,7 +169,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
               const projectUrl = `${organizationUrl}/${project.slug}`;
               const targetUrl = `${projectUrl}/${target.slug}`;
 
-              infoLogger.info(
+              logger.info(
                 [
                   'Token details',
                   '',
@@ -187,21 +185,17 @@ export function createHive(options: HivePluginOptions): HiveClient {
                 ].join('\n'),
               );
             } else if (result.data?.tokenInfo.message) {
-              infoLogger.error(`Token not found. Reason: ${result.data?.tokenInfo.message}`);
-              infoLogger.info(
-                `How to create a token? https://docs.graphql-hive.com/features/tokens`,
-              );
+              logger.error(`Token not found. Reason: ${result.data?.tokenInfo.message}`);
+              logger.info(`How to create a token? https://docs.graphql-hive.com/features/tokens`);
             } else {
-              infoLogger.error(`${result.errors![0].message}`);
-              infoLogger.info(
-                `How to create a token? https://docs.graphql-hive.com/features/tokens`,
-              );
+              logger.error(`${result.errors![0].message}`);
+              logger.info(`How to create a token? https://docs.graphql-hive.com/features/tokens`);
             }
           } else {
-            infoLogger.error(`Error ${response.status}: ${response.statusText}`);
+            logger.error(`Error ${response.status}: ${response.statusText}`);
           }
         } catch (error) {
-          infoLogger.error(`Error ${(error as Error)?.message ?? error}`);
+          logger.error(`Error ${(error as Error)?.message ?? error}`);
         }
       }
     : () => {};
