@@ -4,7 +4,7 @@ export type {
   HivePluginOptions,
   HiveClient,
   CollectUsageCallback,
-  Logger,
+  LegacyLogger as Logger,
 } from './client/types.js';
 export { createSchemaFetcher, createServicesFetcher } from './client/gateways.js';
 export { createHive, autoDisposeSymbol } from './client/client.js';

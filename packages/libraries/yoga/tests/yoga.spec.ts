@@ -101,20 +101,12 @@ test('should not interrupt the process', async () => {
   );
   await waitFor(50);
 
-  const reportingLogs = logger
-    .getLogs()
-    .split(`\n`)
-    .filter(item => item.includes(`[hive][reporting]`))
-    .join(`\n`);
+  const reportingLogs = logger.getLogs().split(`\n`).join(`\n`);
 
   expect(reportingLogs).includes('Publish schema');
   expect(reportingLogs).includes('POST http://404.localhost.noop/registry');
 
-  const usageLogs = logger
-    .getLogs()
-    .split(`\n`)
-    .filter(item => item.includes(`[hive][usage]`))
-    .join(`\n`);
+  const usageLogs = logger.getLogs().split(`\n`).join(`\n`);
 
   expect(usageLogs).includes('POST http://404.localhost.noop/usage');
 
