@@ -3,7 +3,7 @@ import LRU from 'tiny-lru';
 import { Logger } from '@graphql-hive/logger';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { defaultCircuitBreakerConfiguration } from './circuit-breaker.js';
-import { http } from './http-client.js';
+import { http, HttpCallConfig } from './http-client.js';
 import type { PersistedDocumentsConfiguration } from './types';
 
 type HeadersObject = {
@@ -24,6 +24,8 @@ export function createPersistedDocuments(
   config: PersistedDocumentsConfiguration & {
     logger: Logger;
     fetch?: typeof fetch;
+    retry?: HttpCallConfig['retry'];
+    timeout?: HttpCallConfig['retry'];
   },
 ): PersistedDocuments {
   const persistedDocumentsCache = LRU<string>(config.cache ?? 10_000);
@@ -60,6 +62,7 @@ export function createPersistedDocuments(
             isRequestOk,
             fetchImplementation: config.fetch,
             signal,
+            retry: config.retry,
           })
           .then(async response => {
             if (response.status !== 200) {
@@ -95,14 +98,20 @@ export function createPersistedDocuments(
       .then(async () => {
         const cdnDocumentId = documentId.replaceAll('~', '/');
 
+        let lastError: unknown = null;
+
         for (const breaker of circuitBreakers) {
           try {
             return await breaker.fire(cdnDocumentId);
           } catch (error: unknown) {
             config.logger.debug({ error });
+            lastError = error;
           }
         }
-        throw new Error('Failed to look up artifact.');
+        if (lastError) {
+          config.logger.error({ error: lastError });
+        }
+        throw new Error('Failed to look up persisted operation.');
       })
       .then(result => {
         persistedDocumentsCache.set(documentId, result);
