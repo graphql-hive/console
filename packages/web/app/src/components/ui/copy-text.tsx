@@ -15,7 +15,7 @@ export function CopyText(props: { children: ReactNode; copy?: string; className?
       </div>
       <TooltipProvider delayDuration={0}>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button
               className="invisible -my-3 p-2 py-3 group-hover:visible"
               variant="link"
