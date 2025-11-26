@@ -46,6 +46,7 @@
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
   },
   "dependencies": {
+    "@graphql-hive/logger": "^1.0.9",
     "@graphql-hive/signal": "^2.0.0",
     "@graphql-tools/utils": "^10.0.0",
     "@whatwg-node/fetch": "^0.10.13",
