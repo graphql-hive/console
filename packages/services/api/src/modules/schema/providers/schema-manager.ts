@@ -327,7 +327,7 @@ export class SchemaManager {
 
     if (isUUID(selector.versionId) === false) {
       this.logger.debug('Invalid UUID provided. (versionId=%s)', selector.versionId);
-      throw new HiveError('Invalid UUID provided.');
+      return null;
     }
 
     const result = await this.storage.getMaybeVersion(selector);
