@@ -60,7 +60,7 @@ function SubgraphChip(props: {
     >
       {props.text}
       <PackageIcon size={10} className="ml-1 inline-block" />
-      {props.metadata?.length ? <span className="inline-block text-[8px] font-bold">*</span> : null}
+      {props.metadata?.length && <span className="inline-block text-[8px] font-bold">*</span>}
     </Link>
   );
 
@@ -196,7 +196,7 @@ export function SupergraphMetadataList(props: {
     <div className="flex w-full justify-end">
       {meta}
       {previewItems}{' '}
-      {allItems ? (
+      {allItems && (
         <Tooltip
           content={
             <>
@@ -220,7 +220,7 @@ export function SupergraphMetadataList(props: {
             + {allItems.length - previewItems.length} more
           </span>
         </Tooltip>
-      ) : null}
+      )}
     </div>
   );
 }

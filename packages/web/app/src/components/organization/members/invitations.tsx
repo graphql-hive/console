@@ -195,11 +195,10 @@ function MemberInvitationForm(props: {
     );
   }
 
-  // TODO: fix visibility when screen is too small (height - elements are not visible... - this can happen when there's a lot of roles)
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogContent className="min-w-[800px]">
+        <DialogContent className="min-w-[800px] max-w-[70vw]">
           <DialogHeader>
             <DialogTitle>Membership Invitation</DialogTitle>
             <DialogDescription>

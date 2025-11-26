@@ -79,6 +79,7 @@ jobs:
           files:
             packages/services/broker-worker/dist/index.worker.mjs
             packages/services/cdn-worker/dist/index.worker.mjs
+            packages/services/cdn-worker/dist/index.lambda.mjs
           dest: ${{ inputs.imageTag }}.zip
 
       - name: upload artifact

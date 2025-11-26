@@ -110,10 +110,12 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
 
 1. Use `Start Hive` to run your local Hive instance
 2. Make sure `usage` and `usage-ingestor` are running as well (with `pnpm dev`)
-3. Open Hive app, create a project and a target, then create a token
-4. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
-5. This should report a dummy schema
-6. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
+3. (Optional) Seed a organization with many projects and users `pnpm seed:org`
+4. Open Hive app, create a project and a target, then create a token (or use the previously created
+   one)
+5. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
+6. This should report a dummy schema
+7. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
    to test features e2e: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:usage`
 
 > Note: You can set `STAGE=<dev|staging|local>` in order to target a specific Hive environment and

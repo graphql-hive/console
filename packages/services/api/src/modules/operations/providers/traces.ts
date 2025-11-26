@@ -45,8 +45,9 @@ export class Traces {
         WHERE
           "trace_id" IN (${sql.array(traceIds, 'String')})
         LIMIT 1 BY "trace_id"
+        SETTINGS max_threads = 8
       `,
-      timeout: 10_000,
+      timeout: 30_000,
       queryId: 'Traces.findTraceByTraceId',
     });
 
@@ -99,11 +100,13 @@ export class Traces {
           ${spanFields}
         FROM
           "otel_traces"
-        WHERE
+        PREWHERE
           "TraceId" = ${traceId}
-          AND "SpanAttributes"['hive.target_id'] = ${targetId}
+        WHERE
+          "SpanAttributes"['hive.target_id'] = ${targetId}
+        SETTINGS max_threads = 8
       `,
-      timeout: 10_000,
+      timeout: 30_000,
       queryId: 'Traces.findSpansForTraceId',
     });
 
@@ -174,11 +177,11 @@ export class Traces {
         const operator = sort?.direction === 'ASC' ? sql`>` : sql`<`;
         paginationSQLFragmentPart = sql`
           AND (
-            (
-               "timestamp" = ${cursor.timestamp}
-               AND "trace_id" < ${cursor.traceId}
+            "timestamp" ${operator} ${cursor.timestamp}
+            OR (
+              "timestamp" = ${cursor.timestamp}
+              AND "trace_id" < ${cursor.traceId}
             )
-            OR "timestamp" ${operator} ${cursor.timestamp}
           )
         `;
       }
@@ -186,26 +189,47 @@ export class Traces {
 
     const sqlConditions = buildTraceFilterSQLConditions(filter, false);
 
-    const filterSQLFragment = sqlConditions.length
-      ? sql`AND ${sql.join(sqlConditions, ' AND ')}`
+    const timestampPrewhereConditions: SqlValue[] = [];
+    const otherFilterConditions: SqlValue[] = [];
+
+    for (const condition of sqlConditions) {
+      if (condition.sql.includes('"otel_traces_normalized"."timestamp"')) {
+        timestampPrewhereConditions.push(condition);
+      } else {
+        otherFilterConditions.push(condition);
+      }
+    }
+
+    const filterSQLFragment = otherFilterConditions.length
+      ? sql`AND ${sql.join(otherFilterConditions, ' AND ')}`
       : sql``;
 
+    const prewhereTimestampFragment = timestampPrewhereConditions.length
+      ? sql`AND ${sql.join(timestampPrewhereConditions, ' AND ')}`
+      : sql``;
+
+    const query = sql`
+      SELECT
+        ${traceFields}
+      FROM
+        "otel_traces_normalized"
+      PREWHERE
+        target_id = ${targetId}
+        ${prewhereTimestampFragment}
+      WHERE
+        true
+        ${paginationSQLFragmentPart}
+        ${filterSQLFragment}
+      ORDER BY
+        ${orderByFragment}
+      LIMIT ${sql.raw(String(limit + 1))}
+      SETTINGS max_threads = 8
+    `;
+
     const tracesQuery = await this.clickHouse.query<unknown>({
-      query: sql`
-        SELECT
-          ${traceFields}
-        FROM
-          "otel_traces_normalized"
-        WHERE
-          target_id = ${targetId}
-          ${paginationSQLFragmentPart}
-          ${filterSQLFragment}
-        ORDER BY
-          ${orderByFragment}
-        LIMIT ${sql.raw(String(limit + 1))}
-      `,
+      query,
       queryId: 'traces',
-      timeout: 10_000,
+      timeout: 30_000,
     });
 
     let traces = TraceListModel.parse(tracesQuery.data);
@@ -298,7 +322,7 @@ export class Traces {
             , sumIf(1, "graphql_error_count" != 0 ${filterSQLFragment}) AS "error_count_filtered"
           FROM
             "otel_traces_normalized"
-          WHERE
+          PREWHERE
             "target_id" = ${targetId}
             AND "otel_traces_normalized"."timestamp" >= toDateTime(${formatDate(startDate)}, 'UTC')
             AND "otel_traces_normalized"."timestamp" <= toDateTime(${formatDate(endDate)}, 'UTC')
@@ -306,9 +330,10 @@ export class Traces {
             "time_bucket_start"
           ) AS "t"
         ON "t"."time_bucket_start" = "time_bucket_list"."time_bucket"
+        SETTINGS max_threads = 8
       `,
       queryId: `trace_status_breakdown_for_target_id_`,
-      timeout: 10_000,
+      timeout: 30_000,
     });
 
     return TraceStatusBreakdownBucketList.parse(result.data);
@@ -344,6 +369,17 @@ export class TraceBreakdownLoader {
       const arrJoinColumnAlias = 'arr_join_column_value';
 
       for (const { key, columnExpression, limit, arrayJoinColumn } of inputs) {
+        const prewhereConditions: SqlValue[] = [];
+        const whereConditions: SqlValue[] = [];
+
+        for (const condition of this.conditions) {
+          if (condition.sql.includes('target_id') || condition.sql.includes('"timestamp"')) {
+            prewhereConditions.push(condition);
+          } else {
+            whereConditions.push(condition);
+          }
+        }
+
         statements.push(sql`
           SELECT
             '${sql.raw(key)}' AS "key"
@@ -351,8 +387,8 @@ export class TraceBreakdownLoader {
             , count(*) AS "count"
           FROM "otel_traces_normalized"
             ${sql.raw(arrayJoinColumn ? `ARRAY JOIN ${arrayJoinColumn} AS "${arrJoinColumnAlias}"` : '')}
-          WHERE
-            ${sql.join(this.conditions, ' AND ')}
+          ${prewhereConditions.length ? sql`PREWHERE ${sql.join(prewhereConditions, ' AND ')}` : sql``}
+          ${whereConditions.length ? sql`WHERE ${sql.join(whereConditions, ' AND ')}` : sql``}
           GROUP BY
             "value"
           ORDER BY
@@ -363,6 +399,7 @@ export class TraceBreakdownLoader {
 
       const query = sql`
         ${sql.join(statements, ' UNION ALL ')}
+        SETTINGS max_threads = 8
       `;
 
       const results = await this.clickhouse.query<{
@@ -372,7 +409,7 @@ export class TraceBreakdownLoader {
       }>({
         query,
         queryId: 'traces_filter_options',
-        timeout: 10_000,
+        timeout: 30_000,
       });
 
       const rowsGroupedByKey = results.data.reduce(
@@ -402,6 +439,14 @@ export class TraceBreakdownLoader {
     this.logger = logger.child({ source: 'TraceBreakdownLoader' });
 
     this.conditions = [sql`target_id = ${targetId}`];
+
+    if (filter?.period) {
+      const period = parseDateRangeInput(filter.period);
+      this.conditions.push(
+        sql`"timestamp" >= toDateTime(${formatDate(period.from)}, 'UTC')`,
+        sql`"timestamp" <= toDateTime(${formatDate(period.to)}, 'UTC')`,
+      );
+    }
 
     if (filter?.traceIds?.length) {
       this.conditions.push(sql`"trace_id" IN (${sql.array(filter.traceIds, 'String')})`);
@@ -571,7 +616,6 @@ const traceFields = sql`
   , "http_url" AS "httpUrl"
   , "duration"
   , "graphql_operation_name" AS "graphqlOperationName"
-  , "graphql_operation_document" AS "graphqlOperationDocument"
   , "graphql_operation_hash" AS "graphqlOperationHash"
   , "client_name" AS "clientName"
   , "client_version" AS "clientVersion"

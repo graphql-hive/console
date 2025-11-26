@@ -1,6 +1,6 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useRouter } from '@tanstack/react-router';
-import { GraphQLFields, GraphQLTypeCard } from './common';
+import { GraphQLTypeCard } from './common';
+import { GraphQLFields } from './graphql-fields';
 
 const GraphQLObjectTypeComponent_TypeFragment = graphql(`
   fragment GraphQLObjectTypeComponent_TypeFragment on GraphQLObjectType {
@@ -22,7 +22,6 @@ const GraphQLObjectTypeComponent_TypeFragment = graphql(`
 export function GraphQLObjectTypeComponent(props: {
   type: FragmentType<typeof GraphQLObjectTypeComponent_TypeFragment>;
   totalRequests?: number;
-  collapsed?: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -30,12 +29,6 @@ export function GraphQLObjectTypeComponent(props: {
   warnAboutDeprecatedArguments: boolean;
 }) {
   const ttype = useFragment(GraphQLObjectTypeComponent_TypeFragment, props.type);
-  const router = useRouter();
-  const searchObj = router.latestLocation.search;
-  const search =
-    'search' in searchObj && typeof searchObj.search === 'string'
-      ? searchObj.search.toLowerCase()
-      : undefined;
 
   return (
     <GraphQLTypeCard
@@ -51,9 +44,7 @@ export function GraphQLObjectTypeComponent(props: {
       <GraphQLFields
         typeName={ttype.name}
         fields={ttype.fields}
-        filterValue={search}
         totalRequests={props.totalRequests}
-        collapsed={props.collapsed}
         targetSlug={props.targetSlug}
         projectSlug={props.projectSlug}
         organizationSlug={props.organizationSlug}

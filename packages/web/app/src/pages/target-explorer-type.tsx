@@ -7,8 +7,8 @@ import {
 } from '@/components/target/explorer/common';
 import { GraphQLEnumTypeComponent } from '@/components/target/explorer/enum-type';
 import {
-  ArgumentVisibilityFilter,
   DateRangeFilter,
+  DescriptionsVisibilityFilter,
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
@@ -232,7 +232,7 @@ function TypeExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ArgumentVisibilityFilter />
+              <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}

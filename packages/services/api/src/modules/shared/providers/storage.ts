@@ -405,7 +405,7 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
-  getVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | never>;
+  getMaybeVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | null>;
   deleteSchema(
     _: {
       serviceName: string;

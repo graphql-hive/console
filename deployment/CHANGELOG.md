@@ -1,5 +1,68 @@
 # hive
 
+## 8.10.0
+
+### Minor Changes
+
+- [#7306](https://github.com/graphql-hive/console/pull/7306)
+  [`29de664`](https://github.com/graphql-hive/console/commit/29de664960f3bcbadd3672645ed7fff5126aa012)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updated federation-composition to
+  v0.21.0
+
+  - **Enhanced auth directive validation**: The federation-composition now enforces correct
+    placement of auth directives (`@authenticated`, `@requiresScopes`, `@policy`) by rejecting
+    attempts to place them on interfaces, interface fields, or interface objects with the new
+    `AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE` validation rule.
+  - **Transitive auth requirements checking**: Added a new validation rule that ensures fields using
+    `@requires` specify at least the auth requirements of the fields they select. If a field doesn't
+    carry forward required auth directives, composition fails with a
+    `MISSING_TRANSITIVE_AUTH_REQUIREMENTS` error.
+  - **Auth requirements inheritance**: Interface types and fields now properly inherit
+    `@authenticated`, `@requiresScopes`, and `@policy` directives from the object types that
+    implement them.
+  - **`@cost` directive restrictions**: The `@cost` directive can no longer be placed on interface
+    types, their fields, or field arguments. Invalid placements now result in composition errors
+    instead of being silently accepted.
+  - **Improved `@listSize` validation**: The directive now validates that `sizedFields` point to
+    actual list fields rather than integer counters. Additionally, `slicingArguments` validation has
+    been added to ensure only arguments that exist in all subgraphs are retained.
+  - **Fixed `EXTERNAL_MISSING_ON_BASE` rule**: Resolved false positives when handling
+    `@interfaceObject` corner-cases, particularly for `@external` fields on object types provided by
+    interface objects.
+
+- [#7291](https://github.com/graphql-hive/console/pull/7291)
+  [`802315e`](https://github.com/graphql-hive/console/commit/802315eb849c4933b5e5292c9dcc5245df3aad8b)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - eliminate clickhouse query timeouts
+  and improve read times of large amounts of traces in dashboard
+
+## 8.9.0
+
+### Minor Changes
+
+- [#7281](https://github.com/graphql-hive/console/pull/7281)
+  [`791c025`](https://github.com/graphql-hive/console/commit/791c0252a0933d0f5c933eef9053227d7f00c87e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce rate limiting for email sign up, sign in
+  and password rest. The IP value to use for the rate limiting can be specified via the
+  `SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME` environment variable. By default the `CF-Connecting-IP`
+  header is being used.
+
+- [#7292](https://github.com/graphql-hive/console/pull/7292)
+  [`9c19215`](https://github.com/graphql-hive/console/commit/9c19215cabd37ee00c9bbd0115e242b7a315e7db)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add AWS Lambda CDN Artifact Handler.
+
+### Patch Changes
+
+- [#7304](https://github.com/graphql-hive/console/pull/7304)
+  [`172ee83`](https://github.com/graphql-hive/console/commit/172ee83a0ee69f75107525a2d6d3cb1cfadd6530)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Upgrade OpenTelemetry Collector to
+  v0.140.0 (from v0.122.0) and Go to 1.25 (from 1.23). This includes updating all collector
+  component dependencies and adapting the hive auth extension for API compatibility changes.
+
+- [#7295](https://github.com/graphql-hive/console/pull/7295)
+  [`76c700f`](https://github.com/graphql-hive/console/commit/76c700f322d8ec81a4fcea0333283427633f8412)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fixes a UI bug in
+  MembershipInvitation modal when there are many projects/targets/services.
+
 ## 8.8.0
 
 ### Minor Changes

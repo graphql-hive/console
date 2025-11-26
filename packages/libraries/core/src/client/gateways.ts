@@ -1,7 +1,7 @@
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import type { SchemaFetcherOptions, ServicesFetcherOptions } from './types.js';
-import { createHash, createHiveLogger, joinUrl } from './utils.js';
+import { chooseLogger, createHash, joinUrl } from './utils.js';
 
 interface Schema {
   sdl: string;
@@ -10,7 +10,7 @@ interface Schema {
 }
 
 function createFetcher(options: SchemaFetcherOptions & ServicesFetcherOptions) {
-  const logger = createHiveLogger(options.logger ?? console, '');
+  const logger = chooseLogger(options.logger ?? console);
   let cacheETag: string | null = null;
   let cached: {
     id: string;

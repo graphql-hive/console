@@ -47,7 +47,7 @@ export function GraphQLUnionTypeComponent(props: {
         {ttype.members.map((member, i) => (
           <GraphQLTypeCardListItem key={member.name} index={i}>
             <div>{member.name}</div>
-            {typeof props.totalRequests === 'number' ? (
+            {typeof props.totalRequests === 'number' && (
               <SchemaExplorerUsageStats
                 totalRequests={props.totalRequests}
                 usage={member.usage}
@@ -55,15 +55,15 @@ export function GraphQLUnionTypeComponent(props: {
                 projectSlug={props.projectSlug}
                 organizationSlug={props.organizationSlug}
               />
-            ) : null}
-            {member.supergraphMetadata ? (
+            )}
+            {member.supergraphMetadata && (
               <SupergraphMetadataList
                 targetSlug={props.targetSlug}
                 projectSlug={props.projectSlug}
                 organizationSlug={props.organizationSlug}
                 supergraphMetadata={member.supergraphMetadata}
               />
-            ) : null}
+            )}
           </GraphQLTypeCardListItem>
         ))}
       </div>

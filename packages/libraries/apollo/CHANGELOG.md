@@ -1,5 +1,60 @@
 # @graphql-hive/apollo
 
+## 0.42.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`64c8368`](https://github.com/graphql-hive/console/commit/64c8368c4b94b4ad2178d341442f0a0ffb4013f1)]:
+  - @graphql-hive/core@0.15.1
+
+## 0.42.0
+
+### Minor Changes
+
+- [#7280](https://github.com/graphql-hive/console/pull/7280)
+  [`2cc443c`](https://github.com/graphql-hive/console/commit/2cc443c160e11313c905424b63a7c1362121d8d8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support circuit breaking for usage reporting.
+
+  Circuit breaking is a fault-tolerance pattern that prevents a system from repeatedly calling a
+  failing service. When errors or timeouts exceed a set threshold, the circuit “opens,” blocking
+  further requests until the service recovers.
+
+  This ensures that during a network issue or outage, the service using the Hive SDK remains healthy
+  and is not overwhelmed by failed usage reports or repeated retries.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    agent: {
+      circuitBreaker: {
+        /**
+         * Count of requests before starting evaluating.
+         * Default: 5
+         */
+        volumeThreshold: 5,
+        /**
+         * Percentage of requests failing before the circuit breaker kicks in.
+         * Default: 50
+         */
+        errorThresholdPercentage: 1,
+        /**
+         * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+         * Default: 30_000
+         */
+        resetTimeout: 10_000
+      }
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`2cc443c`](https://github.com/graphql-hive/console/commit/2cc443c160e11313c905424b63a7c1362121d8d8)]:
+  - @graphql-hive/core@0.15.0
+
 ## 0.41.0
 
 ### Minor Changes
