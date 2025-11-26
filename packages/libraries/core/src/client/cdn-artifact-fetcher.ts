@@ -5,7 +5,7 @@ import {
   CircuitBreakerConfiguration,
   defaultCircuitBreakerConfiguration,
 } from './circuit-breaker.js';
-import { http } from './http-client.js';
+import { http, HttpCallConfig } from './http-client.js';
 import { chooseLogger, createHash } from './utils.js';
 
 type CreateCDNArtifactFetcherArgs = {
@@ -35,6 +35,10 @@ type CreateCDNArtifactFetcherArgs = {
    * Custom fetch implementation used for calling the endpoint.
    */
   fetch?: typeof fetch;
+  /** Amount of retries per endpoint lookup attempt */
+  retry?: HttpCallConfig['retry'];
+  /** Timeout per retry for endpoint lookup */
+  timeout?: HttpCallConfig['timeout'];
   /**
    * Optional client meta configuration.
    **/
@@ -92,11 +96,12 @@ export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs): CD
     return http.get(endpoint, {
       headers,
       isRequestOk,
-      retry: {
+      retry: args.retry ?? {
         retries: 10,
         maxTimeout: 200,
         minTimeout: 1,
       },
+      timeout: args.timeout,
       logger,
       fetchImplementation: args.fetch,
       signal,
