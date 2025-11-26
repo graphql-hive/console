@@ -324,7 +324,13 @@ export class SchemaManager {
 
   async getSchemaVersion(selector: TargetSelector & { versionId: string }) {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
-    const result = await this.storage.getVersion(selector);
+
+    if (isUUID(selector.versionId) === false) {
+      this.logger.debug('Invalid UUID provided. (versionId=%s)', selector.versionId);
+      throw new HiveError('Invalid UUID provided.');
+    }
+
+    const result = await this.storage.getMaybeVersion(selector);
 
     return {
       projectId: selector.projectId,

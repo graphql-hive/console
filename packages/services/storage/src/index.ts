@@ -2316,8 +2316,8 @@ export async function createStorage(
       return { serviceName: after.service_name, after: after.sdl, before: before?.sdl ?? null };
     },
 
-    async getVersion({ projectId: project, targetId: target, versionId: version }) {
-      const result = await pool.one(sql`/* getVersion */
+    async getMaybeVersion({ projectId: project, targetId: target, versionId: version }) {
+      const result = await pool.maybeOne(sql`/* getMaybeVersion */
         SELECT
           ${schemaVersionSQLFields(sql`sv.`)}
         FROM schema_versions as sv
