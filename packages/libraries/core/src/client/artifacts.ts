@@ -1,3 +1,4 @@
+import { Logger } from '@graphql-hive/logger';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import {
@@ -5,8 +6,7 @@ import {
   defaultCircuitBreakerConfiguration,
 } from './circuit-breaker.js';
 import { http } from './http-client.js';
-import type { Logger } from './types.js';
-import { createHash, createHiveLogger } from './utils.js';
+import { chooseLogger, createHash } from './utils.js';
 
 type CreateCDNArtifactFetcherArgs = {
   /**
@@ -57,22 +57,53 @@ function isRequestOk(response: Response) {
   return response.status === 304 || response.ok;
 }
 
+type CDNArtifactFetcher = {
+  /** Call the CDN and retrieve the lastest artifact version. */
+  fetch(): Promise<CDNFetchResult>;
+  /** Dispose the fetcher and cleanup existing timers (e.g. used for circuit breaker) */
+  dispose(): void;
+};
+
 /**
  * Create a handler for fetching a CDN artifact with built-in cache and circuit breaker.
  * It is intended for polling supergraph, schema sdl or services.
  */
-export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs) {
+export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs): CDNArtifactFetcher {
+  const logger = chooseLogger(args.logger);
   let cacheETag: string | null = null;
   let cached: CDNFetchResult | null = null;
   const clientInfo = args.client ?? { name: 'hive-client', version };
   const circuitBreakerConfig = args.circuitBreaker ?? defaultCircuitBreakerConfiguration;
-  const logger = createHiveLogger(args.logger ?? console, '');
-
   const endpoints = Array.isArray(args.endpoint) ? args.endpoint : [args.endpoint];
 
-  // TODO: we should probably do some endpoint validation
-  // And print some errors if the enpoint paths do not match?
-  // e.g. the only difference should be the domain name
+  function createFetch(endpoint: string) {
+    return function runFetch(circuitBreaker: CircuitBreaker) {
+      const signal = circuitBreaker.getSignal();
+      const headers: {
+        [key: string]: string;
+      } = {
+        'X-Hive-CDN-Key': args.accessKey,
+        'User-Agent': `${clientInfo.name}/${clientInfo.version}`,
+      };
+
+      if (cacheETag) {
+        headers['If-None-Match'] = cacheETag;
+      }
+
+      return http.get(endpoint, {
+        headers,
+        isRequestOk,
+        retry: {
+          retries: 10,
+          maxTimeout: 200,
+          minTimeout: 1,
+        },
+        logger,
+        fetchImplementation: args.fetch,
+        signal,
+      });
+    };
+  }
 
   const circuitBreakers = endpoints.map(endpoint => {
     const circuitBreaker = new CircuitBreaker(
@@ -112,51 +143,50 @@ export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs) {
     return circuitBreaker;
   });
 
-  return async function fetchArtifact(): Promise<CDNFetchResult> {
-    // TODO: we can probably do that better...
-    // If an items is half open, we would probably want to try both the opened and half opened one
-    const fetcher = circuitBreakers.find(item => item.opened || item.halfOpen);
+  async function attempt(breaker: CircuitBreaker) {
+    const response: Response = await breaker.fire();
 
-    if (!fetcher) {
+    if (response.status === 304) {
       if (cached !== null) {
         return cached;
       }
-
-      throw new Error('Failed to retrieve artifact.');
+      throw new Error('Unexpected 304 with no cache');
     }
 
-    try {
-      const response = await fetcher.fire();
+    const contents = await response.text();
+    const result: CDNFetchResult = {
+      hash: await createHash('SHA-256').update(contents).digest('base64'),
+      contents,
+      schemaVersionId: response.headers.get('x-hive-schema-version-id') ?? null,
+    };
 
-      if (response.status === 304) {
-        if (cached !== null) {
-          return cached;
-        }
-        throw new Error('This should never happen.');
-      }
-
-      const contents = await response.text();
-      const result: CDNFetchResult = {
-        hash: await createHash('SHA-256').update(contents).digest('base64'),
-        contents,
-        schemaVersionId: response.headers.get('x-hive-schema-version-id') || null,
-      };
-
-      const etag = response.headers.get('etag');
-      if (etag) {
-        cached = result;
-        cacheETag = etag;
-      }
-
-      return result;
-    } catch (err) {
-      if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
-        if (cached) {
-          return cached;
-        }
-      }
-
-      throw err;
+    const etag = response.headers.get('etag');
+    if (etag) {
+      cached = result;
+      cacheETag = etag;
     }
+
+    return result;
+  }
+
+  return {
+    async fetch(): Promise<CDNFetchResult> {
+      for (const [index, breaker] of circuitBreakers.entries()) {
+        try {
+          return await attempt(breaker);
+        } catch (error: unknown) {
+          logger.debug({ error });
+          if (index === circuitBreakers.length - 1) {
+            if (cached) {
+              return cached;
+            }
+          }
+        }
+      }
+      throw new Error('Could not retrieve artifact.');
+    },
+    dispose() {
+      circuitBreakers.forEach(breaker => breaker.shutdown());
+    },
   };
 }

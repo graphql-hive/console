@@ -8,9 +8,9 @@ import {
   HivePluginOptions,
   isHiveClient,
   joinUrl,
-  Logger,
-  type CDNArtifactFetcherCircuitBreakerConfiguration,
+  type CircuitBreakerConfiguration,
 } from '@graphql-hive/core';
+import { Logger } from '@graphql-hive/logger';
 import { version } from './version.js';
 
 export {
@@ -43,7 +43,7 @@ export type CreateSupergraphManagerArgs = {
    */
   pollIntervalInMs?: number;
   /** Circuit breaker configuration override. */
-  circuitBreaker?: CDNArtifactFetcherCircuitBreakerConfiguration;
+  circuitBreaker?: CircuitBreakerConfiguration;
   fetchImplementation?: typeof fetch;
   /**
    * Client name override
@@ -58,6 +58,7 @@ export type CreateSupergraphManagerArgs = {
 };
 
 export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
+  const logger = args.logger ?? new Logger({ level: false });
   const pollIntervalInMs = args.pollIntervalInMs ?? 30_000;
   const endpoint = args.endpoint.endsWith('/supergraph')
     ? args.endpoint
@@ -70,7 +71,7 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
       name: args.name ?? '@graphql-hive/apollo',
       version: args.version ?? version,
     },
-    logger: args.logger,
+    logger,
     fetch: args.fetchImplementation,
     circuitBreaker: args.circuitBreaker,
   });
@@ -92,9 +93,7 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
               hooks.update?.(result.contents);
             }
           } catch (error) {
-            console.error(
-              `Failed to update supergraph: ${error instanceof Error ? error.message : error}`,
-            );
+            logger.error({ error }, `Failed to update supergraph.`);
           }
           poll();
         }, pollIntervalInMs);
