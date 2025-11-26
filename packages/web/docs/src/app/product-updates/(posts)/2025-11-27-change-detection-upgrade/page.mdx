@@ -1,21 +1,17 @@
 ---
-title: Change Detection Upgrade
+title: Enhanced Schema Change Detection with Directive Support and Input Value Tracking
 description:
-  GraphQL Inspector version 7.x is a major upgrade to "diff" detection, with more accurate severity
-  levels and directive support.
+  A major upgrade to change detection, with more accurate severity levels and directive support.
 date: 2025-11-27
 authors: [jdolle]
 ---
 
-Breaking change detection is complicated, but it's an incredibly valuable tool. In our latest
-release, we upgraded our version of [GraphQL Inspector](https://the-guild.dev/graphql/inspector),
-which is used by Hive for change detection.
+Breaking change detection is complicated, but it's an incredibly valuable tool for any API. In our
+latest release, we upgraded this detection to make breaking changes even more accurate and provide a
+more complete set of changes for schema checks.
 
-What this means for you is a more complete set of changes get displayed for checks and schema change
-history, and breaking changes are even more accurate.
-
-Our hope is that this change goes mostly unnoticed because that means it's working and that the
-changes are tracked accurately.
+These have been highly requested features, but our hope is that this change goes mostly unnoticed
+because that means it's working and that the changes are tracked accurately.
 
 The technical set of changes are:
 
@@ -31,7 +27,8 @@ The technical set of changes are:
 ---
 
 This upgrade also lays the foundation for the upcoming feature, schema proposals, which is powered
-by GraphQL Inspector for change capture and rebasing changes on top of schemas.
+by [GraphQL Inspector](https://the-guild.dev/graphql/inspector) for change capture and rebasing
+changes on top of schemas.
 
 For more insights on the schema proposals work being done, refer to our
 [Schema Proposal Review](https://the-guild.dev/graphql/hive/product-updates/2025-09-03-schema-proposals)
