@@ -2330,6 +2330,10 @@ export async function createStorage(
         LIMIT 1
       `);
 
+      if (!result) {
+        return null;
+      }
+
       return SchemaVersionModel.parse(result);
     },
     async getPaginatedSchemaVersionsForTargetId(args) {
