@@ -11,7 +11,18 @@ export function useSearchParamsFilter<TValue extends SearchParamsFilter>(
 
   const rawSearchValue =
     ((name as string) in searchParams && (searchParams[name] as string)) || null;
-  const searchValue = (deserializeSearchValue(rawSearchValue) ?? defaultState) as TValue;
+
+  /**
+   * If our extracted search params (rawSearchValue) is an array, we deserialize.
+   * Otherwise, it's just a simple string.
+   */
+  const searchValue = (
+    rawSearchValue
+      ? Array.isArray(defaultState)
+        ? deserializeSearchValue(rawSearchValue)
+        : rawSearchValue
+      : defaultState
+  ) as TValue;
 
   const setSearchValue = (value: TValue) => {
     void router.navigate({
