@@ -1,9 +1,7 @@
 ---
 '@graphql-hive/core': minor
 '@graphql-hive/apollo': minor
-'@graphql-hive/apollo': minor
 '@graphql-hive/yoga': minor
-
 ---
 
 **Persisted Documents Improvements**
