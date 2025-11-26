@@ -1,8 +1,8 @@
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
 import { http } from './http-client.js';
-import type { Logger } from './types.js';
-import { createHiveLogger } from './utils.js';
+import type { LegacyLogger } from './types.js';
+import { chooseLogger } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
 
@@ -67,9 +67,13 @@ export interface AgentOptions {
    */
   maxSize?: number;
   /**
-   * Custom logger (defaults to console)
+   * Custom logger.
+   *
+   * Default: console based logger
+   *
+   * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
-  logger?: Logger;
+  logger?: LegacyLogger;
   /**
    * Circuit Breaker Configuration.
    * true -> Use default configuration
@@ -119,13 +123,12 @@ export function createAgent<TEvent>(
           ? null
           : pluginOptions.circuitBreaker,
   };
-  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]', pluginOptions.debug);
+  const logger = chooseLogger(pluginOptions.logger).child({ module: 'hive-agent' });
 
   let circuitBreaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
     ReturnType<typeof sendHTTPCall>
   >;
-  const breakerLogger = createHiveLogger(logger, '[circuit breaker]');
 
   const enabled = options.enabled !== false;
   let timeoutID: ReturnType<typeof setTimeout> | null = null;
@@ -266,14 +269,12 @@ export function createAgent<TEvent>(
     circuitBreaker = circuitBreakerInstance;
 
     circuitBreakerInstance.on('open', () =>
-      breakerLogger.error('circuit opened - backend seems unreachable.'),
+      logger.error('circuit opened - backend seems unreachable.'),
     );
     circuitBreakerInstance.on('halfOpen', () =>
-      breakerLogger.info('circuit half open - testing backend connectivity'),
+      logger.info('circuit half open - testing backend connectivity'),
     );
-    circuitBreakerInstance.on('close', () =>
-      breakerLogger.info('circuit closed - backend recovered '),
-    );
+    circuitBreakerInstance.on('close', () => logger.info('circuit closed - backend recovered '));
   } else {
     circuitBreaker = {
       getSignal() {
@@ -289,7 +290,7 @@ export function createAgent<TEvent>(
       return await circuitBreaker.fire(...args);
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
-        breakerLogger.info('circuit open - sending report skipped');
+        logger.info('circuit open - sending report skipped');
         return null;
       }
 
