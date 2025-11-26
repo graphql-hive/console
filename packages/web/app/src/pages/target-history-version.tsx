@@ -674,7 +674,7 @@ function ActiveSchemaVersion(props: {
   }
 
   // if we're here, we have a valid UUID for versionId but the schemaVersion is doesn't exist
-  if (!isLoading || !schemaVersion) {
+  if (!schemaVersion) {
     return (
       <NotFoundContent
         heading="Schema Version not found."
