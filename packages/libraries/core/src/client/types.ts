@@ -305,7 +305,7 @@ export type PersistedDocumentsConfiguration = {
      * CDN endpoint
      * @example https://cdn.graphql-hive.com/artifacts/v1/5d80a1c2-2532-419c-8bb5-75bb04ea1112
      */
-    endpoint: string;
+    endpoint: string | [string, string];
     /**
      * CDN access token
      * @example hv2ZjUxNGUzN2MtNjVhNS0=

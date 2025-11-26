@@ -57,7 +57,7 @@ function isRequestOk(response: Response) {
   return response.status === 304 || response.ok;
 }
 
-type CDNArtifactFetcher = {
+export type CDNArtifactFetcher = {
   /** Call the CDN and retrieve the lastest artifact version. */
   fetch(): Promise<CDNFetchResult>;
   /** Dispose the fetcher and cleanup existing timers (e.g. used for circuit breaker) */
@@ -76,63 +76,37 @@ export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs): CD
   const circuitBreakerConfig = args.circuitBreaker ?? defaultCircuitBreakerConfiguration;
   const endpoints = Array.isArray(args.endpoint) ? args.endpoint : [args.endpoint];
 
-  function createFetch(endpoint: string) {
-    return function runFetch(circuitBreaker: CircuitBreaker) {
-      const signal = circuitBreaker.getSignal();
-      const headers: {
-        [key: string]: string;
-      } = {
-        'X-Hive-CDN-Key': args.accessKey,
-        'User-Agent': `${clientInfo.name}/${clientInfo.version}`,
-      };
-
-      if (cacheETag) {
-        headers['If-None-Match'] = cacheETag;
-      }
-
-      return http.get(endpoint, {
-        headers,
-        isRequestOk,
-        retry: {
-          retries: 10,
-          maxTimeout: 200,
-          minTimeout: 1,
-        },
-        logger,
-        fetchImplementation: args.fetch,
-        signal,
-      });
+  function runFetch(circuitBreaker: CircuitBreaker, endpoint: string) {
+    const signal = circuitBreaker.getSignal();
+    const headers: {
+      [key: string]: string;
+    } = {
+      'X-Hive-CDN-Key': args.accessKey,
+      'User-Agent': `${clientInfo.name}/${clientInfo.version}`,
     };
+
+    if (cacheETag) {
+      headers['If-None-Match'] = cacheETag;
+    }
+
+    return http.get(endpoint, {
+      headers,
+      isRequestOk,
+      retry: {
+        retries: 10,
+        maxTimeout: 200,
+        minTimeout: 1,
+      },
+      logger,
+      fetchImplementation: args.fetch,
+      signal,
+    });
   }
 
   const circuitBreakers = endpoints.map(endpoint => {
     const circuitBreaker = new CircuitBreaker(
-      function runFetch() {
-        const signal = circuitBreaker.getSignal();
-
-        const headers: {
-          [key: string]: string;
-        } = {
-          'X-Hive-CDN-Key': args.accessKey,
-          'User-Agent': `${clientInfo.name}/${clientInfo.version}`,
-        };
-
-        if (cacheETag) {
-          headers['If-None-Match'] = cacheETag;
-        }
-
-        return http.get(endpoint, {
-          headers,
-          isRequestOk,
-          retry: {
-            retries: 10,
-            maxTimeout: 200,
-            minTimeout: 1,
-          },
-          logger,
-          fetchImplementation: args.fetch,
-          signal,
-        });
+      async function fire() {
+        return await runFetch(circuitBreaker, endpoint);
       },
       {
         ...circuitBreakerConfig,

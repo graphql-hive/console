@@ -64,7 +64,7 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
     ? args.endpoint
     : joinUrl(args.endpoint, 'supergraph');
 
-  const fetchSupergraph = createCDNArtifactFetcher({
+  const artifactsFetcher = createCDNArtifactFetcher({
     endpoint,
     accessKey: args.key,
     client: {
@@ -83,12 +83,12 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
       supergraphSdl: string;
       cleanup?: () => Promise<void>;
     }> {
-      const initialResult = await fetchSupergraph();
+      const initialResult = await artifactsFetcher.fetch();
 
       function poll() {
         timer = setTimeout(async () => {
           try {
-            const result = await fetchSupergraph();
+            const result = await artifactsFetcher.fetch();
             if (result.contents) {
               hooks.update?.(result.contents);
             }
@@ -107,6 +107,7 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
           if (timer) {
             clearTimeout(timer);
           }
+          artifactsFetcher.dispose();
         },
       };
     },
