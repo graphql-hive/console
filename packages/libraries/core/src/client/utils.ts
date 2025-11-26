@@ -1,6 +1,7 @@
+import { Attributes, Logger } from '@graphql-hive/logger';
 import { crypto, TextEncoder } from '@whatwg-node/fetch';
 import { hiveClientSymbol } from './client.js';
-import type { HiveClient, HivePluginOptions, Logger } from './types.js';
+import type { HiveClient, HivePluginOptions, LegacyLogger } from './types.js';
 
 async function digest(algo: 'SHA-256' | 'SHA-1', output: 'hex' | 'base64', data: string) {
   const buffer = await crypto.subtle.digest(algo, new TextEncoder().encode(data));
@@ -176,68 +177,6 @@ export function joinUrl(url: string, subdirectory: string) {
   return normalizedUrl + '/' + normalizedSubdirectory;
 }
 
-const hiveSymbol = Symbol('hive-logger');
-
-export type HiveLogger = {
-  info(message: string): void;
-  debug(message: string): void;
-  error(error: any, ...data: any[]): void;
-  [hiveSymbol]: {
-    path: string;
-    debug: boolean;
-    logger: Logger;
-  };
-};
-
-function printPath(path: string) {
-  if (path.length) {
-    return path + ' ';
-  }
-  return path;
-}
-
-export function createHiveLogger(baseLogger: Logger, prefix: string, debug = true): HiveLogger {
-  const context: HiveLogger[typeof hiveSymbol] = {
-    path: '',
-    logger: baseLogger,
-    debug,
-    // @ts-expect-error internal stuff
-    ...baseLogger?.[hiveSymbol],
-  };
-  context.path = context.path + prefix;
-
-  const { logger, path } = context;
-
-  return {
-    [hiveSymbol]: context,
-    info: (message: string) => {
-      logger.info(printPath(path) + message);
-    },
-    error: (error: any, ...data: any[]) => {
-      if (error.stack) {
-        const pth = printPath(path);
-        for (const stack of error.stack.split('\n')) {
-          logger.error(pth + stack);
-        }
-      } else {
-        logger.error(printPath(path) + String(error), ...data);
-      }
-    },
-    debug: (message: string) => {
-      if (!context.debug) {
-        return;
-      }
-
-      const msg = printPath(path) + message;
-      if (!logger.debug) {
-        logger.info(msg);
-        return;
-      }
-      logger.debug(msg);
-    },
-  };
-}
-
 export function isLegacyAccessToken(accessToken: string): boolean {
   if (
     !accessToken.startsWith('hvo1/') &&
@@ -248,4 +187,85 @@ export function isLegacyAccessToken(accessToken: string): boolean {
   }
 
   return false;
+}
+
+export function chooseLogger(logger: LegacyLogger | Logger | undefined, debug?: boolean): Logger {
+  if (!logger) {
+    return new Logger({
+      writers: [{ write() {} }],
+    });
+  }
+
+  if (logger instanceof Logger) {
+    return logger;
+  }
+
+  return new Logger({
+    level: 'debug',
+    writers: [
+      {
+        write(level, attrs, msg) {
+          const errors = getErrorsFromAttrs(attrs);
+
+          if (level === 'debug' && msg) {
+            if (logger.debug) {
+              if (errors) {
+                for (const error of errors) {
+                  logger.debug(error);
+                }
+              }
+              logger.debug(msg);
+              return;
+            }
+            if (debug === true) {
+              if (errors) {
+                for (const error of errors) {
+                  logger.info(error);
+                }
+              }
+              logger.info(msg);
+              return;
+            }
+
+            return;
+          }
+          if (level === 'info' && msg) {
+            if (errors) {
+              for (const error of errors) {
+                logger.info(error);
+              }
+            }
+            logger.info(msg);
+            return;
+          }
+          if (level === 'error' && msg) {
+            if (errors) {
+              for (const error of errors) {
+                logger.error(error);
+              }
+            }
+            logger.error(msg);
+          }
+        },
+      },
+    ],
+  });
+}
+
+function getErrorsFromAttrs(attrs: Attributes | null | undefined): Array<string> | null {
+  if (!attrs || Array.isArray(attrs)) {
+    return null;
+  }
+
+  const error = attrs?.error;
+
+  if (!error) {
+    return null;
+  }
+
+  if (error?.errors) {
+    return error.errors.map((error: any) => `${error.name ?? error.class}: ${error.message}`);
+  }
+
+  return [`${error.name ?? error.class}: ${error.message}`];
 }
