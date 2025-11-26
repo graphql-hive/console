@@ -31,7 +31,7 @@ export type CreateSupergraphManagerArgs = {
    * The artifact endpoint to poll.
    * E.g. `https://cdn.graphql-hive.com/<uuid>/supergraph`
    */
-  endpoint: string;
+  endpoint: string | [string, string];
   /**
    * The CDN access key for fetching artifact.
    */
@@ -60,12 +60,14 @@ export type CreateSupergraphManagerArgs = {
 export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
   const logger = args.logger ?? new Logger({ level: false });
   const pollIntervalInMs = args.pollIntervalInMs ?? 30_000;
-  const endpoint = args.endpoint.endsWith('/supergraph')
-    ? args.endpoint
-    : joinUrl(args.endpoint, 'supergraph');
+  let endpoints = Array.isArray(args.endpoint) ? args.endpoint : [args.endpoint];
+
+  const endpoint = endpoints.map(endpoint =>
+    endpoint.endsWith('/supergraph') ? endpoint : joinUrl(endpoint, 'supergraph'),
+  );
 
   const artifactsFetcher = createCDNArtifactFetcher({
-    endpoint,
+    endpoint: endpoint as [string, string],
     accessKey: args.key,
     client: {
       name: args.name ?? '@graphql-hive/apollo',
