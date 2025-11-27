@@ -244,6 +244,7 @@ export async function createStorage(
       orgId: project.org_id,
       name: project.name,
       type: project.type as ProjectType,
+      createdAt: new Date(project.created_at).toISOString(),
       buildUrl: project.build_url,
       validationUrl: project.validation_url,
       gitRepository: project.git_repository as `${string}/${string}` | null,
