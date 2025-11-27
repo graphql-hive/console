@@ -205,7 +205,6 @@ const GraphQLTypeCard_SupergraphMetadataFragment = graphql(`
 
 export function DeprecationNote(props: {
   deprecationReason: string | null | undefined;
-  styleDeprecated: boolean;
   children: ReactNode;
 }) {
   if (!props.deprecationReason) {
@@ -215,9 +214,7 @@ export function DeprecationNote(props: {
   return (
     <TooltipProvider delayDuration={100}>
       <Tooltip>
-        <TooltipTrigger
-          className={cn(props.styleDeprecated ? 'line-through hover:line-through' : '')}
-        >
+        <TooltipTrigger className="line-through hover:line-through">
           {props.children}
         </TooltipTrigger>
         <TooltipContent className="min-w-6 max-w-screen-md" side="right" sideOffset={5}>
@@ -331,7 +328,6 @@ export function GraphQLInputFields(props: {
   targetSlug: string;
   projectSlug: string;
   organizationSlug: string;
-  styleDeprecated: boolean;
 }): ReactElement {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
 
@@ -348,10 +344,7 @@ export function GraphQLInputFields(props: {
             <div>
               <div className="flex w-full flex-row items-center justify-between">
                 <div className="text-gray-400">
-                  <DeprecationNote
-                    styleDeprecated={props.styleDeprecated}
-                    deprecationReason={field.deprecationReason}
-                  >
+                  <DeprecationNote deprecationReason={field.deprecationReason}>
                     <LinkToCoordinatePage
                       organizationSlug={props.organizationSlug}
                       projectSlug={props.projectSlug}

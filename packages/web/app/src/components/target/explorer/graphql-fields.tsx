@@ -41,7 +41,6 @@ export function GraphQLFields(props: {
   organizationSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
   const { totalRequests } = props;
   const fieldsFromFragment = useFragment(GraphQLFields_FieldFragment, props.fields);
@@ -88,10 +87,7 @@ export function GraphQLFields(props: {
                         </TooltipTrigger>
                       </Tooltip>
                     )}
-                    <DeprecationNote
-                      styleDeprecated={props.styleDeprecated}
-                      deprecationReason={field.deprecationReason}
-                    >
+                    <DeprecationNote deprecationReason={field.deprecationReason}>
                       <LinkToCoordinatePage
                         organizationSlug={props.organizationSlug}
                         projectSlug={props.projectSlug}
@@ -107,7 +103,6 @@ export function GraphQLFields(props: {
                         organizationSlug={props.organizationSlug}
                         projectSlug={props.projectSlug}
                         targetSlug={props.targetSlug}
-                        styleDeprecated={props.styleDeprecated}
                         parentCoordinate={coordinate}
                         args={field.args}
                       />
