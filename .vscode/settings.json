@@ -10,9 +10,13 @@
   "commands.commands": [
     {
       "command": "terminals.runTerminals",
-      "color": "#eab308",
-      "text": "$(rocket) Start Hive $(rocket)",
+      "text": "$(rocket) Start Hive",
       "tooltip": "Start dev environment"
+    },
+    {
+      "command": "terminals.kill",
+      "text": "$(stop)",
+      "tooltip": "Stop dev environment"
     }
   ],
   "files.associations": {
