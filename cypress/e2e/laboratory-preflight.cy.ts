@@ -232,9 +232,9 @@ describe('Execution', () => {
     const baseHeaders = {
       accept: 'application/json, multipart/mixed',
     };
-    cy.intercept({ headers: baseHeaders }).as('integrityCheck');
+    cy.intercept('POST', '**/api/lab/**').as('integrityCheck');
     cy.get(selectors.graphiql.buttonExecute).click();
-    cy.wait('@integrityCheck');
+    cy.wait('@integrityCheck').its('request.headers.accept').should('include', baseHeaders.accept);
     // Setup Preflight Script
     const preflightHeaders = {
       accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',
