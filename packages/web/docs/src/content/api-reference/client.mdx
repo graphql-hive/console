@@ -358,13 +358,6 @@ The amount of time after which a pending usage reporting batch should be sent in
 
 Provide a custom WHATWG `fetch` implementation
 
-###### `logger`
-
-- Type: [`console`](https://developer.mozilla.org/en-US/docs/Web/API/console)
-- Default: `globalThis.console`
-
-Console object to use for logging info, errors and debug information.
-
 ###### `circuitBreaker`
 
 - Type: `AgentCircuitBreakerConfiguration`
@@ -467,6 +460,25 @@ useHive({
   }
 })
 ```
+
+#### Logging
+
+You can customize the logging level or provide your own (JSON) logger implementation.
+
+#### `logger`
+
+- Type: [`Logger`](/docs/logger) or log level string
+- Default: `info`
+
+It is possible to provide the following options:
+
+- `'trace'`
+- `'debug'`
+- `'info'` default
+- `'warn'`
+- `'error'`
+
+Alternatvily, you can also provide your own [`Logger`](/docs/logger) (or API compatible) instance.
 
 #### Custom Integration
 
