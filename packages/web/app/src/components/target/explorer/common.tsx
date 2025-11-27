@@ -212,7 +212,7 @@ export function DeprecationNote(props: {
   }
 
   return (
-    <TooltipProvider delayDuration={100}>
+    <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger className="line-through hover:line-through">
           {props.children}
