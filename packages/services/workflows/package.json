@@ -1,0 +1,17 @@
+{
+  "name": "@hive/workflows",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsx ../../../scripts/runify.ts",
+    "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@graphql-hive/logger": "1.0.9",
+    "@openworkflow/backend-postgres": "0.3.0",
+    "openworkflow": "0.3.0",
+    "zod": "3.25.76"
+  }
+}
