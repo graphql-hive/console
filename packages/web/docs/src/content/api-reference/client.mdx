@@ -478,7 +478,16 @@ It is possible to provide the following options:
 - `'warn'`
 - `'error'`
 
-Alternatvily, you can also provide your own [`Logger`](/docs/logger) (or API compatible) instance.
+```ts filename="Example: Set debug level based on environment variable"
+import { createHive } from '@graphql-hive/core'
+
+const client = createHive({
+  logger: process.env.DEBUG === '1' ? 'debug' : 'info'
+})
+```
+
+Alternatively, you can also provide your own [`Logger`](/docs/logger) (or any API-compatible
+implementation) to integrate Hive logs with your web server or logging solution.
 
 #### Custom Integration
 
