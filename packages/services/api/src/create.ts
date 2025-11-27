@@ -29,6 +29,7 @@ import { oidcIntegrationsModule } from './modules/oidc-integrations';
 import { OIDC_INTEGRATIONS_ENABLED } from './modules/oidc-integrations/providers/tokens';
 import { operationsModule } from './modules/operations';
 import { CLICKHOUSE_CONFIG, ClickHouseConfig } from './modules/operations/providers/tokens';
+import { OTEL_TRACING_ENABLED } from './modules/operations/providers/traces';
 import { organizationModule } from './modules/organization';
 import { schemaPolicyModule } from './modules/policy';
 import {
@@ -113,6 +114,7 @@ export function createRegistry({
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
+  otelTracingEnabled,
   prometheus,
 }: {
   logger: Logger;
@@ -157,6 +159,7 @@ export function createRegistry({
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
+  otelTracingEnabled: boolean;
   prometheus: null | Record<string, unknown>;
 }) {
   const s3Config: S3Config = [
@@ -282,6 +285,11 @@ export function createRegistry({
     {
       provide: APP_DEPLOYMENTS_ENABLED,
       useValue: appDeploymentsEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: OTEL_TRACING_ENABLED,
+      useValue: otelTracingEnabled,
       scope: Scope.Singleton,
     },
     {

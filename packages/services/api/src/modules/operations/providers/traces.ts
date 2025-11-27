@@ -1,6 +1,6 @@
 import DataLoader from 'dataloader';
 import stableJSONStringify from 'fast-json-stable-stringify';
-import { Injectable } from 'graphql-modules';
+import { Inject, Injectable, InjectionToken } from 'graphql-modules';
 import { z } from 'zod';
 import { subDays } from '@/lib/date-time';
 import * as GraphQLSchema from '../../../__generated__/types';
@@ -12,6 +12,8 @@ import { ClickHouse, sql } from './clickhouse-client';
 import { formatDate } from './operations-reader';
 import { SqlValue } from './sql';
 
+export const OTEL_TRACING_ENABLED = new InjectionToken<boolean>('OTEL_TRACING_ENABLED');
+
 @Injectable({
   global: true,
 })
@@ -20,11 +22,12 @@ export class Traces {
     private clickHouse: ClickHouse,
     private logger: Logger,
     private storage: Storage,
+    @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
   ) {}
 
   async viewerCanAccessTraces(organizationId: string) {
     const organization = await this.storage.getOrganization({ organizationId });
-    return organization.featureFlags.otelTracing;
+    return organization.featureFlags.otelTracing || this.otelTracingEnabled;
   }
 
   private async _guardViewerCanAccessTraces(organizationId: string) {
