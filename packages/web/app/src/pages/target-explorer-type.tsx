@@ -49,7 +49,6 @@ export function TypeRenderer(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
   const ttype = useFragment(TypeRenderFragment, props.type);
   switch (ttype.__typename) {
@@ -63,7 +62,6 @@ export function TypeRenderer(props: {
           organizationSlug={props.organizationSlug}
           warnAboutUnusedArguments={props.warnAboutUnusedArguments}
           warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLInterfaceType':
@@ -76,7 +74,6 @@ export function TypeRenderer(props: {
           organizationSlug={props.organizationSlug}
           warnAboutUnusedArguments={props.warnAboutUnusedArguments}
           warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLUnionType':
@@ -97,7 +94,6 @@ export function TypeRenderer(props: {
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLInputObjectType':
@@ -108,7 +104,6 @@ export function TypeRenderer(props: {
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
-          styleDeprecated={props.styleDeprecated}
         />
       );
     case 'GraphQLScalarType':
@@ -264,7 +259,6 @@ function TypeExplorerPageContent(props: {
           targetSlug={props.targetSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : type ? (
         <NoSchemaVersion
