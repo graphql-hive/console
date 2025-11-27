@@ -1,5 +1,17 @@
 # hive
 
+## 8.11.0
+
+### Minor Changes
+
+- [#7267](https://github.com/graphql-hive/console/pull/7267)
+  [`114cd80`](https://github.com/graphql-hive/console/commit/114cd80a8e419d6ff631631fee28a9922a7b9e5a)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
 ## 8.10.0
 
 ### Minor Changes

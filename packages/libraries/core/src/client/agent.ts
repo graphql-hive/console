@@ -55,10 +55,6 @@ export interface AgentOptions {
    */
   maxRetries?: number;
   /**
-   * 200 by default
-   */
-  minTimeout?: number;
-  /**
    * Send reports in interval (defaults to 10_000ms)
    */
   sendInterval?: number;
@@ -86,6 +82,8 @@ export interface AgentOptions {
    * used by the agent to send reports
    */
   fetch?: typeof fetch;
+  /** @deprecated This is no longer used. */
+  minTimeout?: number;
 }
 
 export function createAgent<TEvent>(
