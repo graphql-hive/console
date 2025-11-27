@@ -22,6 +22,7 @@ import {
   resourceLevelToHumanReadableName,
   resourceLevelToResourceLevelType,
 } from '../../auth/resolvers/Permission';
+import { OTEL_TRACING_ENABLED } from '../../operations/providers/traces';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -152,6 +153,7 @@ export class OrganizationAccessTokens {
     private storage: Storage,
     private members: OrganizationMembers,
     logger: Logger,
+    @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
   ) {
     this.logger = logger.child({
       source: 'OrganizationAccessTokens',
@@ -890,7 +892,7 @@ export class OrganizationAccessTokens {
 
   private createFeatureFlagPermissionFilter(organization: Organization) {
     const isAppDeplymentsEnabled = organization.featureFlags.appDeployments;
-    const isOTELTracingEnabled = organization.featureFlags.otelTracing;
+    const isOTELTracingEnabled = organization.featureFlags.otelTracing || this.otelTracingEnabled;
 
     return (id: Permission) =>
       (!isAppDeplymentsEnabled && id.startsWith('appDeployment:')) ||
