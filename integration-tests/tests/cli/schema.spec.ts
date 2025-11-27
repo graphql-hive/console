@@ -1,5 +1,6 @@
 /* eslint-disable no-process-env */
 import { createHash } from 'node:crypto';
+import stripAnsi from 'strip-ansi';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import type { CompositeSchema } from '@hive/api/__generated__/types';
@@ -972,5 +973,35 @@ test.concurrent(
         'fixtures/breaking-schema.graphql',
       ]),
     ).rejects.toThrow('Failed to auto-approve: Schema check has schema policy errors');
+  },
+);
+
+test.concurrent(
+  'schema:check displays enum deprecation reason with single quotes correctly',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Test',
+      '--commit',
+      'init',
+      'fixtures/enum-with-deprecation-init.graphql',
+    ]);
+
+    const result = await schemaCheck([
+      '--registry.accessToken',
+      secret,
+      'fixtures/enum-with-deprecation-change.graphql',
+    ]);
+
+    expect(stripAnsi(result)).toContain(
+      "Enum value Status.INACTIVE was deprecated with reason Use 'DISABLED' instead, it's clearer",
+    );
   },
 );

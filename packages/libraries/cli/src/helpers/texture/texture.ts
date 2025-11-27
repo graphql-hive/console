@@ -21,11 +21,15 @@ export const trimEnd = (value: string) => value.replace(/\s+$/g, '');
  * Convert quoted text to bolded text. Quotes are stripped.
  */
 export const boldQuotedWords = (value: string) => {
-  const singleQuotedTextRegex = /'([^']+)'/gim;
-  const doubleQuotedTextRegex = /"([^"]+)"/gim;
+  const singleQuotedTextRegex = /'((?:[^'\\]|\\.)+?)'/g;
+  const doubleQuotedTextRegex = /"((?:[^"\\]|\\.)+?)"/g;
   return value
-    .replace(singleQuotedTextRegex, (_, capturedValue: string) => colors.bold(capturedValue))
-    .replace(doubleQuotedTextRegex, (_, capturedValue: string) => colors.bold(capturedValue));
+    .replace(singleQuotedTextRegex, (_, capturedValue: string) =>
+      colors.bold(capturedValue.replace(/\\'/g, "'")),
+    )
+    .replace(doubleQuotedTextRegex, (_, capturedValue: string) =>
+      colors.bold(capturedValue.replace(/\\"/g, '"')),
+    );
 };
 
 export const prefixedInspect =
