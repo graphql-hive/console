@@ -15,7 +15,6 @@ export const GraphQLArguments_ArgumentFragment = graphql(`
 export function GraphQLArguments(props: {
   parentCoordinate: string;
   args: FragmentType<typeof GraphQLArguments_ArgumentFragment>[];
-  styleDeprecated: boolean;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -32,10 +31,7 @@ export function GraphQLArguments(props: {
           const coordinate = `${props.parentCoordinate}.${arg.name}`;
           return (
             <div key={arg.name}>
-              <DeprecationNote
-                styleDeprecated={props.styleDeprecated}
-                deprecationReason={arg.deprecationReason}
-              >
+              <DeprecationNote deprecationReason={arg.deprecationReason}>
                 <LinkToCoordinatePage
                   organizationSlug={props.organizationSlug}
                   projectSlug={props.projectSlug}

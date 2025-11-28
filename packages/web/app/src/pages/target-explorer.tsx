@@ -65,7 +65,6 @@ function SchemaView(props: {
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {mutation ? (
@@ -77,7 +76,6 @@ function SchemaView(props: {
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {subscription ? (
@@ -89,7 +87,6 @@ function SchemaView(props: {
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
     </div>

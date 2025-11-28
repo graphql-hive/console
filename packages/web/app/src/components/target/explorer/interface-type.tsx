@@ -27,7 +27,6 @@ export function GraphQLInterfaceTypeComponent(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
   const ttype = useFragment(GraphQLInterfaceTypeComponent_TypeFragment, props.type);
   return (
@@ -50,7 +49,6 @@ export function GraphQLInterfaceTypeComponent(props: {
         organizationSlug={props.organizationSlug}
         warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
         warnAboutUnusedArguments={props.warnAboutUnusedArguments}
-        styleDeprecated={props.styleDeprecated}
       />
     </GraphQLTypeCard>
   );

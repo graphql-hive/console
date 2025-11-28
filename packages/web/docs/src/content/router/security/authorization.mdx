@@ -1,0 +1,430 @@
+---
+title: 'Authorization'
+---
+
+import { Callout } from '#components/callout'
+import { Tabs } from '@theguild/components'
+
+# Authorization
+
+Authorization directives allow you to define fine-grained access control directly in your GraphQL
+schema. Instead of handling authorization logic in resolvers, you declare which fields and types
+require authentication or specific scopes using directives. The router enforces these rules before
+calling your subgraphs, ensuring consistent protection across your federated graph.
+
+For the complete configuration reference, see
+[`authorization` configuration](../configuration/authorization).
+
+## How Authorization Directives Work
+
+When a GraphQL request arrives at the router, it goes through these steps:
+
+1. **Request arrives** with user credentials (typically a JWT token)
+2. **Router extracts user information** from the token (authentication status and scopes)
+3. **Router checks each field** in the requested query against authorization directives
+4. **Access is allowed or denied** based on the field's directive requirements and the user's
+   credentials
+5. **Response is returned** with either the requested data, errors, or a full rejection
+
+<Callout type="note">
+  Authorization happens **before** your subgraphs are called, protecting sensitive fields at the
+  router level.
+</Callout>
+
+## Integration with JWT Authentication
+
+Authorization directives work alongside your [JWT authentication setup](./jwt-authentication.mdx).
+When a request arrives, the router validates the JWT token and extracts scopes from the JWT claims
+(in the `scope` field). It then checks the authorization directives in your schema against these
+extracted scopes to determine if the query should proceed or fail.
+
+```yaml filename="router.config.yaml"
+jwt:
+  require_authentication: false
+  jwks_providers:
+    - source: remote
+      url: https://your-auth-provider.com/.well-known/jwks.json
+
+authorization:
+  directives:
+    enabled: true
+    unauthorized:
+      mode: filter # Or 'reject'
+```
+
+<Callout type="warning" title={`Scope Requirement`}>
+  Ensure your JWT tokens include the necessary scopes in the `scope` claim as a space-separated
+  string (e.g., `"read:users write:posts"`) or an array of scopes (e.g., `["read:users",
+  "write:posts"]`).
+</Callout>
+
+## Authorization Directives
+
+### `@authenticated`
+
+Marks a field or type as requiring authentication. Anonymous requests cannot access these fields.
+
+```graphql
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.9", import: ["@authenticated"])
+
+type Query {
+  publicPosts: [Post] # Anyone
+  myDrafts: [Post] @authenticated # Authenticated users only
+}
+
+type Post {
+  title: String!
+  content: String!
+  author: User!
+}
+
+type User {
+  name: String!
+  bio: String
+  email: String @authenticated # Private field
+}
+```
+
+In this example, `myDrafts` and `email` will only be accessible to authenticated users.
+Unauthenticated requests will receive an error and have these fields filtered out.
+
+### `@requiresScopes`
+
+Provides granular control by requiring specific scopes (permissions stored in JWT token).
+
+- **Single list** (AND logic): User must have **all** scopes in the list
+- **Multiple lists** (OR logic): User must satisfy **any** complete list
+
+```graphql
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.9", import: ["@requiresScopes"])
+
+type Query {
+  users: [User]
+  # Requires both scopes
+  billingReport: String @requiresScopes(scopes: [["admin", "billing:read"]])
+  # Requires either scope
+  allUsers: [User] @requiresScopes(scopes: [["read:admin"], ["manage:users"]])
+}
+
+type User {
+  id: ID!
+  username: String!
+  email: String @requiresScopes(scopes: [["email:read"]])
+}
+```
+
+In this example, `billingReport` requires a user to have both `admin` and `billing:read` scopes. The
+`allUsers` field requires either the `read:admin` or the `manage:users` scope, but `email` only the
+`email:read` scope.
+
+## Directives on Types and Fields
+
+**Type-level directives** protect all fields of that type.
+
+```graphql
+type AdminPanel @authenticated {
+  users: [User!]
+  logs: [String!]
+}
+```
+
+When querying `AdminPanel`, the user must be authenticated to access any of its fields.
+
+**Field-level directives** add additional restrictions beyond type-level protection.
+
+```graphql
+type User @authenticated {
+  id: ID!
+  username: String!
+  email: String @requiresScopes(scopes: [["email:read"]]) # Requires auth + scope
+  name: String # Requires auth only
+}
+```
+
+Field requirements are combined with type requirements using `AND` logic, so accessing `email`
+requires both authentication (to access the `User` type) and the `email:read` scope.
+
+## Combining Directives Across Federated Types
+
+When a type is defined across multiple subgraphs, all authorization requirements are combined using
+`AND`. A user must satisfy requirements from all subgraphs.
+
+### Type-Level Composition
+
+Consider a `Product` type split across inventory and pricing services. Each subgraph applies its own
+authorization directive, and when the type is composed in the supergraph, both requirements must be
+met.
+
+```graphql filename="Inventory subgraph"
+type Product @key(fields: "id") @authenticated {
+  id: ID!
+  inStock: Int
+}
+```
+
+```graphql filename="Pricing subgraph"
+type Product @key(fields: "id") @requiresScopes(scopes: [["pricing:read"]]) {
+  id: ID!
+  price: Float
+}
+```
+
+To access `Product`, user must be authenticated **AND** have `pricing:read` scope.
+
+```graphql filename="Supergraph"
+type Product @authenticated @requiresScopes(scopes: [["pricing:read"]]) {
+  id: ID!
+  price: Float
+  inStock: Int
+}
+```
+
+### Field-Level Composition
+
+When the same field exists in multiple subgraphs with different authorization directives, the
+requirements are merged. Consider a `username` field that appears in both the accounts and profile
+services with different access controls:
+
+```graphql filename="Accounts subgraph"
+type User @key(fields: "id") {
+  id: ID!
+  username: String @shareable @requiresScopes(scopes: [["user:read"]])
+}
+```
+
+```graphql filename="Profile subgraph"
+type User @key(fields: "id") {
+  id: ID!
+  username: String @shareable @requiresScopes(scopes: [["profile:read"]])
+  age: Int
+}
+```
+
+In the supergraph, both requirements are combined using `AND`:
+
+```graphql filename="Supergraph"
+type User {
+  id: ID!
+  username: String @requiresScopes(scopes: [["user:read", "profile:read"]])
+  age: Int
+}
+```
+
+To access `User.username`, a client must have **both** `user:read` and `profile:read` scopes,
+ensuring they meet the access requirements from all subgraphs where the field is defined.
+
+### Merging `@requiresScopes`
+
+When `@requiresScopes` appears on the same entity across multiple subgraphs, the policies are merged
+by combining scope groups with logical AND. The simplified composition process is as follows:
+
+1. **Combine groups**: For each pair of scope groups (one from each policy), create a new group
+   containing the union of both.
+2. **Remove redundant groups**: Drop any group that is a superset of another - this eliminates
+   overly permissive conditions that would make stricter requirements redundant.
+
+Let's illustrate this with an example, where two subgraphs define different scope requirements for
+the same entity.
+
+```graphql filename="Subgraph A"
+@requiresScopes(scopes:[["user:read", "user:email:read"], ["admin"]])
+```
+
+```graphql filename="Subgraph B"
+@requiresScopes(scopes:[["user:read", "billing:read"], ["admin", "billing:invoice:read"]])
+```
+
+The merged state of intermediate groups before simplification:
+
+```graphql
+@requiresScopes(scopes: [
+  ["user:read", "user:email:read", "billing:read"],
+  ["user:read", "user:email:read", "admin", "billing:invoice:read"],
+  ["admin", "user:read", "billing:read"],
+  ["admin", "billing:invoice:read"]
+])
+```
+
+As you can see, the second group is a superset of the first and third groups, so they can be
+removed.
+
+```graphql
+@requiresScopes(scopes: [
+  ["user:read", "user:email:read", "billing:read"],
+  ["admin", "billing:invoice:read"]
+])
+```
+
+The composition process automatically simplified the merged policy by removing redundant scope
+groups.
+
+### Usage on Interface Types
+
+Auth directives **cannot be applied directly to interface definitions**. Instead, authorization
+rules are **inherited** from the concrete types that implement the interface. When you query an
+interface or its fields, the authorization check applies the combined policies from all implementing
+types using logical `AND`.
+
+<Callout type="info" title="Composition">
+  Interface authorization is computed during composition of the supergraph schema, based on the
+  implementing types' directives.
+</Callout>
+
+Look at this example with an `Item` interface implemented by `Book` and `Video` types, each with its
+own authorization requirements:
+
+```graphql filename="Subgraph Schema"
+interface Item {
+  id: ID!
+  title: String
+}
+
+type Book implements Item @authenticated {
+  id: ID!
+  title: String @requiresScopes(scopes: [["book:read"]])
+}
+
+type Video implements Item @requiresScopes(scopes: [["video:read"]]) {
+  id: ID!
+  title: String
+}
+```
+
+After the composition phase, the `Item` interface will have the combined authorization requirements
+from both `Book` and `Video`.
+
+```graphql filename="Supergraph Schema"
+interface Item @authenticated @requiresScopes(scopes: [["video:read"]]) {
+  id: ID!
+  title: String @requiresScopes(scopes: [["book:read"]])
+}
+```
+
+In this example, when querying items through the `Item` interface, both the `Book` and `Video` type
+requirements must be satisfied.
+
+### Fields with `@requires`
+
+A field using `@requires` to access fields from another subgraph must define an authorization policy
+that is a **superset** of the policies on all required fields. This prevents bypassing security
+policies by accessing protected fields through other fields.
+
+```graphql filename="Users subgraph"
+type User @key(fields: "id") @authenticated {
+  id: ID!
+  email: String @requiresScopes(scopes: [["email:read"]])
+}
+```
+
+```graphql filename="Orders subgraph"
+type Order {
+  id: ID!
+  cost: Float
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  email: String @external
+  orders: [Order!]!
+    @requires(fields: "email")
+    @authenticated
+    @requiresScopes(scopes: [["email:read"]])
+}
+```
+
+In this example, the `User.orders` field uses `@requires` to fetch the user's email from another
+subgraph.
+
+Since `User.email` requires authentication, the `User.orders` field must also require authentication
+(or have stricter requirements) to prevent clients from bypassing the email field's authorization by
+accessing it through the `orders`.
+
+Without this rule, a client could potentially access the `orders` field without being authenticated,
+thus indirectly accessing the protected `email` field.
+
+<Callout type="success" title="Automatic Security Checks">
+  Console will raise a `MISSING_TRANSITIVE_AUTH_REQUIREMENTS` error during [Schema
+  Check](../../schema-registry#check-a-schema) or [Schema
+  Publish](../../schema-registry#publish-a-schema) if a field with `@requires` lacks sufficient
+  authorization requirements, protecting you from security gaps.
+</Callout>
+
+## Handling Authorization Errors
+
+The router supports two modes for handling authorization violations. Both serve to protect sensitive
+data, but they differ in how they communicate issues back to the client and how much data is
+returned.
+
+<Tabs items={["Filter Mode (default)", "Reject mode"]}>
+
+<Tabs.Tab>
+
+Unauthorized fields are removed from the response, but the query continues processing. An error is
+added for each removed field.
+
+```graphql filename="GraphQL query"
+query {
+  dashboard {
+    publicMetrics { ... }   # Authorized
+    adminPanel              # Unauthorized - filtered out
+  }
+}
+```
+
+```json filename="GraphQL response"
+{
+  "data": {
+    "dashboard": {
+      "publicMetrics": { ... },
+      "adminPanel": null
+    }
+  },
+  "errors": [
+    {
+      "message": "Unauthorized field or type",
+      "extensions": { "code": "UNAUTHORIZED_FIELD_OR_TYPE" }
+    }
+  ]
+}
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+If a user tries to access any unauthorized field, the entire request is rejected and no data is
+returned.
+
+```graphql filename="GraphQL query"
+query {
+  dashboard {
+    publicMetrics { ... }   # Authorized
+    adminPanel              # Unauthorized - entire request rejected
+  }
+}
+```
+
+```json filename="GraphQL response"
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unauthorized field or type",
+      "extensions": { "code": "UNAUTHORIZED_FIELD_OR_TYPE" }
+    }
+  ]
+}
+```
+
+Enable reject mode by setting `unauthorized.mode: reject` in your router configuration:
+
+```yaml filename="router.config.yaml"
+authorization:
+  directives:
+    unauthorized:
+      mode: reject
+```
+
+</Tabs.Tab>
+
+</Tabs>
