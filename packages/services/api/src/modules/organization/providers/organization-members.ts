@@ -148,21 +148,31 @@ export class OrganizationMembers {
 
   async getPaginatedOrganizationMembersForOrganization(
     organization: Organization,
-    args: { first: number | null; after: string | null },
+    args: { first: number | null; after: string | null; searchTerm: string | null },
   ) {
     this.logger.debug(
       'Find paginated organization members for organization. (organizationId=%s)',
       organization.id,
     );
 
-    const first = args.first;
+    const first = args.first ? Math.min(args.first, 50) : 50;
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
+    const searchTerm = args.searchTerm?.trim() ?? '';
+    const searching = searchTerm.length > 0;
 
     const query = sql`
       SELECT
         ${organizationMemberFields(sql`"om"`)}
       FROM
         "organization_member" AS "om"
+      ${
+        searching
+          ? sql`
+            JOIN "users" as "u"
+            ON "om"."user_id" = "u"."id"
+          `
+          : sql``
+      }
       WHERE
         "om"."organization_id" = ${organization.id}
         ${
@@ -178,11 +188,12 @@ export class OrganizationMembers {
               `
             : sql``
         }
+        ${searching ? sql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : sql``}
       ORDER BY
         "om"."organization_id" DESC
+        , "om"."created_at" DESC
         , "om"."user_id" DESC
-        , "om"."user_id" DESC
-      ${first ? sql`LIMIT ${first + 1}` : sql``}
+      LIMIT ${first + 1}
     `;
 
     const result = await this.pool.any<unknown>(query);

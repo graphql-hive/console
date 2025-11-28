@@ -67,6 +67,7 @@ export const Organization: Pick<
       .getPaginatedOrganizationMembersForOrganization(organization, {
         first: args.first ?? null,
         after: args.after ?? null,
+        searchTerm: args.filters?.searchTerm ?? null,
       });
   },
   invitations: async (organization, args, { injector }) => {
