@@ -1,0 +1,127 @@
+---
+title: 'authorization'
+---
+
+# authorization
+
+The `authorization` configuration lets you control fine-grained access to your GraphQL schema using
+directives like `@authenticated` and `@requiresScopes`. This allows you to restrict which fields
+authenticated users can access based on their authentication status or specific scopes.
+
+For practical examples and a guide to authorization concepts, see
+**["Authorization"](../security/authorization)** in the documentation.
+
+## Directives
+
+Access control is defined within the supergraph schema using the following directives:
+
+- `@authenticated` - restricts access to authenticated users only
+- `@requiresScopes(scopes: [[String]])` - restricts access based on specific scopes
+
+## Configuration Options
+
+### `enabled`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Whether to enable authorization directives processing. Set to `false` to disable authorization
+checks entirely.
+
+### `unauthorized.mode`
+
+- **Type:** `string`
+- **Allowed values:** `"filter"` or `"reject"`
+- **Default:** `"filter"`
+
+Controls how the router handles unauthorized field access:
+
+- `"filter"`: Remove unauthorized fields and continue processing (returns errors for removed fields)
+- `"reject"`: Reject the entire request if any unauthorized fields are accessed
+
+## Examples
+
+### Filter Mode (Default)
+
+With `filter` mode, unauthorized fields are silently removed from the operation, but the query
+continues to execute and return the data the user can access:
+
+```yaml filename="router.config.yaml"
+authorization:
+  directives:
+    enabled: true
+    unauthorized:
+      mode: filter
+```
+
+**Request:**
+
+```graphql
+query {
+  publicData
+  me {
+    name
+    email
+  }
+}
+```
+
+If the user is not authenticated, the response might look like:
+
+```json
+{
+  "data": {
+    "publicData": "available",
+    "me": null
+  },
+  "errors": [
+    {
+      "message": "Unauthorized field or type",
+      "extensions": {
+        "code": "UNAUTHORIZED_FIELD_OR_TYPE",
+        "affectedPath": "me"
+      }
+    }
+  ]
+}
+```
+
+### Reject Mode
+
+With `reject` mode, if any field is unauthorized, the entire request is rejected:
+
+```yaml filename="router.config.yaml"
+authorization:
+  directives:
+    enabled: true
+    unauthorized:
+      mode: reject
+```
+
+**Request (same as above):**
+
+```graphql
+query {
+  publicData
+  me {
+    name
+    email
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "data": null,
+  "errors": [
+    {
+      "message": "Unauthorized field or type",
+      "extensions": {
+        "code": "UNAUTHORIZED_FIELD_OR_TYPE"
+      }
+    }
+  ]
+}
+```
