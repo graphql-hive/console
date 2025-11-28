@@ -4,11 +4,11 @@ import { InputCopy } from './input-copy';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 /** Renders readonly properties for resources. Used on settings pages. */
-export function ResourceDetails(props: { id: string }): ReactElement {
+export function ResourceDetails(props: { id: string; label: string }): ReactElement {
   return (
     <div className="flex items-center">
       <div className="border-input text-muted-foreground h-10 whitespace-nowrap rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
-        Resource ID
+        {props.label}
       </div>
       <InputCopy value={props.id} className="rounded-l-none" />
       <TooltipProvider delayDuration={0}>

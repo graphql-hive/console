@@ -1287,7 +1287,7 @@ const TargetSettingsPageQuery = graphql(`
 function TargetInfo(props: { targetId: string }) {
   return (
     <div>
-      <ResourceDetails id={props.targetId} />
+      <ResourceDetails id={props.targetId} label="Target ID" />
     </div>
   );
 }

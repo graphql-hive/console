@@ -266,7 +266,7 @@ const OrganizationSettingsContent = (props: {
 
   return (
     <div className="space-y-12">
-      <ResourceDetails id={organization.id} />
+      <ResourceDetails id={organization.id} label="Organization ID" />
       {organization.viewerCanModifySlug && (
         <Form {...slugForm}>
           <form onSubmit={slugForm.handleSubmit(onSlugFormSubmit)}>

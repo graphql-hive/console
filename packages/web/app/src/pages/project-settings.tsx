@@ -614,7 +614,7 @@ function ProjectSettingsContent(props: {
         <div className="space-y-12">
           {resolvedPage.key === 'general' ? (
             <>
-              <ResourceDetails id={project.id} />
+              <ResourceDetails id={project.id} label="Project ID" />
               <ProjectSettingsPage_SlugForm
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
