@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { declareWorkflow, workflow } from '../kit';
+import { defineTask, implementTask } from '../postgraphile-kit.js';
 
-export const schemaChangeNotification = declareWorkflow({
+export const SchemaChangeNotificationTask = defineTask({
   name: 'schemaChangeNotification',
   schema: z.object({
     endpoint: z.string().nonempty(),
@@ -35,6 +35,4 @@ export const schemaChangeNotification = declareWorkflow({
   }),
 });
 
-export const register = workflow(schemaChangeNotification, async args => {
-  await args.step.run({ name: 'send-webhook' }, async () => {});
-});
+export const task = implementTask(SchemaChangeNotificationTask, async args => {});
