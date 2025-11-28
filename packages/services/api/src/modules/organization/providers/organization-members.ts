@@ -157,7 +157,7 @@ export class OrganizationMembers {
 
     const first = args.first ? Math.min(args.first, 50) : 50;
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
-    const searchTerm = args.searchTerm?.trim().toLowerCase() ?? '';
+    const searchTerm = args.searchTerm?.trim() ?? '';
     const searching = searchTerm.length > 0;
 
     const query = sql`
@@ -188,7 +188,7 @@ export class OrganizationMembers {
               `
             : sql``
         }
-        ${searching ? sql`AND (LOWER("u"."display_name" || ' ' || "u"."email") LIKE ${'%' + searchTerm + '%'})` : sql``}
+        ${searching ? sql`AND "u"."display_name" || ' ' || "u"."email" ILIKE ${'%' + searchTerm + '%'}` : sql``}
       ORDER BY
         "om"."organization_id" DESC
         , "om"."created_at" DESC
