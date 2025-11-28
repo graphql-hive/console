@@ -59,7 +59,7 @@ decisions.
 Within the `expression`, you have access to two key variables:
 
 - `.request`: The incoming HTTP request object, including its headers.
-- `.original_url`: The original subgraph URL from the supergraph schema, which should be used as a
+- `.default`: The original subgraph URL from the supergraph schema, which should be used as a
   fallback.
 
 ```yaml
@@ -70,6 +70,6 @@ override_subgraph_urls:
         if .request.headers."x-region" == "eu" {
           "https://reviews.eu.api/graphql"
         } else {
-          .original_url
+          .default
         }
 ```

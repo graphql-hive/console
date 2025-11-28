@@ -22,7 +22,7 @@ For each request, the router evaluates your expression and routes to the URL it 
 **What you have access to:**
 
 - `.request` - The incoming HTTP request (headers, method, etc.)
-- `.original_url` - The default URL from your supergraph schema
+- `.default` - The default URL from your supergraph schema
 
 Simple example configuration that routes based on a runtime condition:
 
@@ -34,7 +34,7 @@ override_subgraph_urls:
         if .router.headers."x-use-special-instance" == "true" {
           "https://special-instance.com/graphql"
         } else {
-          .original_url  # Always provide a fallback
+          .default  # Always provide a fallback
         }
 ```
 
@@ -61,7 +61,7 @@ override_subgraph_urls:
         if .request.headers."x-deploy-track" == "canary" {
           "https://products-canary.example.com/graphql"
         } else {
-          .original_url
+          .default
         }
 ```
 
@@ -82,7 +82,7 @@ override_subgraph_urls:
         if random_int(1, 100) <= 10 {
           "https://products-canary.example.com/graphql"
         } else {
-          .original_url
+          .default
         }
 ```
 
@@ -110,6 +110,6 @@ override_subgraph_urls:
           "https://reviews-ap.example.com/graphql"
         } else {
           # Default to primary region
-          .original_url
+          .default
         }
 ```
