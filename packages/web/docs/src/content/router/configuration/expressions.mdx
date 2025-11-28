@@ -31,7 +31,7 @@ control‑flow. For example:
 if .request.headers."x-feature-toggle" == "beta" {
   "https://beta.example.com/graphql"
 } else {
-  .original_url
+  .default
 }
 ```
 
@@ -89,13 +89,23 @@ While not a full object, the special variable `.timestamp` yields the current UN
 header manipulation guide demonstrates using `.timestamp` to add a `X‑Request‑Time` header. This is
 useful for debugging and tracing requests.
 
-### `.original_url`
+### `.default`
 
 This variable is only available in [dynamic routing expressions](./override_subgraph_urls). It holds
 the default URL for the current subgraph, as declared in your supergraph schema. Because the
-expression must return a URL, you should always provide a fallback using `.original_url` so that
+expression must return a URL, you should always provide a fallback using `.default` so that
 requests are routed somewhere when no condition matches. The configuration reference emphasises this
-by showing a pattern where the expression returns `.original_url` in the `else` branch.
+by showing a pattern where the expression returns `.default` in the `else` branch.
+
+### `.default`
+
+This variable is available in [dynamic routing expressions](./override_subgraph_urls) and [traffic shaping expressions](./traffic_shaping).
+It holds the default value for the context in which it is used:
+- In **dynamic routing**, it holds the default URL for the current subgraph, as declared in your supergraph schema.
+- In **traffic shaping**, it holds the default timeout value set at the global level (available for subgraph overrides).
+
+When writing expressions with conditional logic (like `if` statements), you must ensure a value is returned for all paths. You may return any valid value, but `.default` is commonly used as a fallback. This allows you to override the configuration for specific conditions while maintaining the originally assigned value for all other cases.
+
 
 ## Available functions
 
