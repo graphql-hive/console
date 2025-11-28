@@ -1,34 +1,58 @@
-import { OpenWorkflow } from 'openworkflow';
-import { BackendPostgres } from '@openworkflow/backend-postgres';
+import {
+  Logger as GraphileLogger,
+  LogLevel as GraphileLogLevel,
+  run,
+  Runner,
+} from 'graphile-worker';
+import { createPool } from 'slonik';
+import { Logger } from '@graphql-hive/logger';
 import { Context } from './context.js';
 
-const databaseUrl = 'postgresql://postgres:postgres@localhost:5432/postgres';
+// TODO: slonik interop
+//
+const databaseUrl = 'postgresql://postgres:postgres@localhost:5432/registry';
 
-const backend = await BackendPostgres.connect(databaseUrl);
-const ow = new OpenWorkflow({ backend });
-
-const context: Context = {
-  email: {}, // TODO
-  logger: {}, // TODO
-};
+const pool = await createPool(databaseUrl);
 
 const modules = await Promise.all([
-  import('./workflows/audit-log-export.js'),
-  import('./workflows/email-verification.js'),
-  import('./workflows/organization-invite.js'),
-  import('./workflows/organization-ownership-transfer.js'),
-  import('./workflows/password-reset.js'),
-  import('./workflows/schema-change-notification.js'),
-  import('./workflows/usage-rate-limit-exceeded.js'),
-  import('./workflows/usage-rate-limit-warning.js'),
+  import('./tasks/audit-log-export.js'),
+  import('./tasks/email-verification.js'),
+  import('./tasks/organization-invite.js'),
+  import('./tasks/organization-ownership-transfer.js'),
+  import('./tasks/password-reset.js'),
+  import('./tasks/schema-change-notification.js'),
+  import('./tasks/usage-rate-limit-exceeded.js'),
+  import('./tasks/usage-rate-limit-warning.js'),
+  import('./workflows/user-onboarding.js'),
 ]);
 
-for (const module of modules) {
-  module.register(ow, context);
+const logger = new Logger({ level: 'debug' });
+
+const context: Context = { logger, email: {} };
+
+function logLevel(level: GraphileLogLevel) {
+  switch (level) {
+    case 'warning':
+      return 'warn' as const;
+    case 'info': {
+      return 'info' as const;
+    }
+    case 'debug': {
+      return 'debug' as const;
+    }
+    case 'error': {
+      return 'error' as const;
+    }
+  }
+  throw new Error('nooop');
 }
 
-ow.newWorker({
-  concurrency: 4,
-}).start();
-
-/////////// SCRATCH PAD
+let runner: Runner = await run({
+  logger: new GraphileLogger(scope => (level, message, meta) => {
+    logger[logLevel(level)](message);
+  }),
+  crontab: ' ',
+  connectionString: databaseUrl,
+  taskList: Object.fromEntries(modules.map(module => module.task(context))),
+  
+});
