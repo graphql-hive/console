@@ -1,13 +1,23 @@
 import NextImage from 'next/image'
-import { Callout, Cards, FileTree, Steps, Tabs } from '@theguild/components'
+import { Callout } from '#components/callout'
+import { Cards, FileTree, Steps, Tabs } from '@theguild/components'
+import accessTokensConfirmImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
+import accessTokensCreateNewImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
+import accessTokensPermissionsImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
+import accessTokensResourcesImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
+import accessTokensSuccessImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
 import cdnAccessTokenSettings from '../../../../public/docs/pages/get-started/apollo-federation/cdn-access-token-settings.png'
 import createAccessToken from '../../../../public/docs/pages/get-started/apollo-federation/create-access-token.png'
 import cdnAccessTokenCreate from '../../../../public/docs/pages/get-started/apollo-federation/create-cdn-access-token.png'
 import createdAccessToken from '../../../../public/docs/pages/get-started/apollo-federation/created-access-token.png'
 import cdnAccessTokenCreated from '../../../../public/docs/pages/get-started/apollo-federation/created-cdn-access-token.png'
+import HiveDashboardInsightsImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-dashboard-insights.png'
+import HiveGatewayGraphiqlImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-graphiql.png'
+import HiveGatewayLandingPageImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-landing-page.png'
 import publishFirstSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-first-schema-version-ui.png'
 import publishSecondSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-second-schema-version-ui.png'
 import publishThirdSchemaVersionUi from '../../../../public/docs/pages/get-started/apollo-federation/publish-third-schema-version-ui.png'
+import targetOverview from '../../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 # Get started with GraphQL Federation
 
@@ -116,8 +126,6 @@ Within your organization, open the `Settings` tab and select the `Access Token` 
 
 Click `Create new access token` and enter a name for the access token.
 
-import accessTokensCreateNewImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-create-new.png'
-
 <NextImage
   src={accessTokensCreateNewImage}
   alt="Create new access token button within the organization settings access token section"
@@ -126,8 +134,6 @@ import accessTokensCreateNewImage from '../../../../public/docs/pages/get-starte
 
 Click `Next` and select `Allowed` for `Check schema/service subgraph`,
 `Publish schema/service/subgraph`, and `Report usage data`.
-
-import accessTokensPermissionsImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-permissions.png'
 
 <NextImage
   src={accessTokensPermissionsImage}
@@ -138,8 +144,6 @@ import accessTokensPermissionsImage from '../../../../public/docs/pages/get-star
 Click `Next` and in the next step keep the `Full Access` selection for the resources. For the
 purpose of this guide there is no need to further restirct the resources.
 
-import accessTokensResourcesImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-resources.png'
-
 <NextImage
   src={accessTokensResourcesImage}
   alt="Grant full access on all resources"
@@ -147,8 +151,6 @@ import accessTokensResourcesImage from '../../../../public/docs/pages/get-starte
 />
 
 One last time click `Next` and review the access token.
-
-import accessTokensConfirmImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-confirm.png'
 
 <NextImage
   src={accessTokensConfirmImage}
@@ -158,8 +160,6 @@ import accessTokensConfirmImage from '../../../../public/docs/pages/get-started/
 
 Then click the `Create Access Token` button. A confirmation dialogue will open that shows the you
 generated token.
-
-import accessTokensSuccessImage from '../../../../public/docs/pages/get-started/apollo-federation/access-tokens-success.png'
 
 <NextImage
   src={accessTokensSuccessImage}
@@ -174,8 +174,6 @@ Make sure to copy your token and keep it safe. **You won't be able to see it aga
 As you may have noticed, Hive has created three targets under your project: `development`,
 `staging`, and `production`. Each of these targets represent a different environment. You can remove
 or create new targets as needed, for modelling the different environments of your project.
-
-import targetOverview from '../../../../public/docs/pages/get-started/apollo-federation/target-overview.png'
 
 <NextImage
   src={targetOverview}
@@ -200,7 +198,7 @@ registry.
 - Replace `<YOUR_PROJECT>` with the slug of your project within the organization
 - Replace `<YOUR_TOKEN_HERE>` with the access token we just created.
 
-<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+<Tabs items={['Binary', 'NodeJS', 'Docker']} storageKey="cli-distribution-choice">
 
 {/* Binary */}
 
@@ -276,7 +274,7 @@ new schema you just published 🎉
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
 
-<Callout type="info">
+<Callout type="tip">
   You should also check out the **Explorer** tab: you can see the schema you just published, and
   explore the API types, fields, and arguments.
 </Callout>
@@ -284,7 +282,7 @@ new schema you just published 🎉
 Next, we will publish the **Products** subgraph schema to Hive. Again, let's start by copying the
 schema to a local file.
 
-<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+<Tabs items={['Binary', 'NodeJS', 'Docker']} storageKey="cli-distribution-choice">
 
 {/* Binary */}
 
@@ -364,7 +362,7 @@ schema to a local file.
 
 Then, we run the following command in your terminal.
 
-<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+<Tabs items={['Binary', 'NodeJS', 'Docker']} storageKey="cli-distribution-choice">
 
 {/* Binary */}
 
@@ -440,12 +438,12 @@ On your target's **Explorer** page now, you'll be able to see the schema of all 
 
 Congratulations on publishing and composing your first subgraphs with the Hive schema registry!
 
-### Hive Gateway
+### Gateway
 
 The next step is to spin up our GraphQL gateway that will serve the federated GraphQL schema
 composed out of the subgraphs we published to the Hive schema registry.
 
-The Gateway will delegate the requests from the clients to the appropriate subgraph services, and
+The gateway will delegate the requests from the clients to the appropriate subgraph services, and
 then merge the results into a single response.
 
 The Hive schema registry publishes the supergraph (artifact of the composed schemas that contains
@@ -457,7 +455,7 @@ The gateway can poll the supergraph from the CDN and serve the composed GraphQL 
 ```mermaid
 
 flowchart LR
-    A["Hive Gateway"] -. Poll supergraph .-> C
+    A["Hive Gateway \n\/\nHive Router"] -. Poll supergraph .-> C
     subgraph hive [Hive]
       direction TB
       B[Registry] -. Publish supergraph .-> C["HA CDN
@@ -504,12 +502,20 @@ keep it safe.
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
 
-#### Run the Gateway
+#### Run the gateway
+
+Hive platform supports two orchestrators for GraphQL Federation:
+[Hive Gateway (JavaScript)](/docs/gateway) and [Hive Router (Rust)](/docs/router). They provide the
+same core functionality but differ in performance characteristics and runtime.
+
+<Tabs items={['Hive Gateway (JavaScript)', 'Hive Router (Rust)']} storageKey="gateway-choice">
+
+<Tabs.Tab>
 
 Hive Gateway is the Federation Gateway that seamlessly integrates with the Hive registry. You can
-run Hive Gateay either as a Docker image, binary or NPM package.
+run Hive Gateway either as a Docker image, binary or NPM package.
 
-<Tabs items={['Binary', 'Docker', 'Node.js Package']}>
+<Tabs items={['Binary', 'Docker', 'Node.js Package']} storageKey="gateway-distribution-choice">
 
 {/* Binary */}
 
@@ -589,8 +595,6 @@ npx hive-gateway supergraph \
 If you now navigate to `http://localhost:4000`, you should see the Hive Gateway page with
 information about the supergraph and subgraphs.
 
-import HiveGatewayLandingPageImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-landing-page.png'
-
 <NextImage
   alt="Hive Gateway Landing Page"
   src={HiveGatewayLandingPageImage}
@@ -599,8 +603,6 @@ import HiveGatewayLandingPageImage from '../../../../public/docs/pages/get-start
 
 Now, if you navigate to `http://localhost:4000/graphql`, you should see the GraphiQL interface where
 you can write and execute queries against the supergraph.
-
-import HiveGatewayGraphiqlImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-gateway-graphiql.png'
 
 <NextImage
   alt="Hive Gateway GraphiQL"
@@ -632,6 +634,106 @@ query TopProductsWithReview {
 
 [Execute Query on Hive Gateway GraphiQL](http://localhost:4000/graphql?query=query+TopProductsWithReview+%7B%0A++topProducts%28first%3A+2%29+%7B%0A++++upc%0A++++name%0A++++price%0A++++reviews+%7B%0A++++++body%0A++++++author+%7B%0A++++++++id%0A++++++++username%0A++++++%7D%0A++++%7D%0A++%7D%0A%7D)
 
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+Hive Router is the Federation Gateway that seamlessly integrates with the Hive registry. You can run
+Hive Router either as a Docker image or binary.
+
+To start, create a configuration file `router.config.yaml` with the following content:
+
+```yaml filename="router.config.yaml"
+supergraph:
+  type: hive
+  endpoint: '<hive_cdn_endpoint>'
+  key: '<hive_cdn_access_key>'
+```
+
+| Parameter             | Description                      |
+| --------------------- | -------------------------------- |
+| `hive_cdn_endpoint`   | The endpoint of your Hive target |
+| `hive_cdn_access_key` | The Hive CDN access key          |
+
+<Tabs items={['Binary', 'Docker']} storageKey="router-distribution-choice">
+
+{/* Binary */}
+
+<Tabs.Tab>
+
+The single executable binary for the Hive Router is available without any dependencies. You can
+download and setup the binary on your machine.
+
+```sh
+curl -o- https://raw.githubusercontent.com/graphql-hive/router/main/install.sh | sh
+```
+
+and start the Hive Router with this command:
+
+```sh
+./hive-router
+```
+
+</Tabs.Tab>
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+The Docker image for Hive Router is published to the GitHub docker registry. You can simply run the
+following command to start a Hive Router instance from your existing Hive target.
+
+```sh
+docker run \
+  --name hive-router -rm \
+  -p 4000:4000 \
+  -v ./router.config.yaml:/app/router.config.yaml \
+  ghcr.io/graphql-hive/router:latest
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+If you now navigate to `http://localhost:4000`, you should see the Hive
+
+If you navigate to `http://localhost:4000/graphql`, you should see the GraphiQL interface where you
+can write and execute queries against the supergraph.
+
+<NextImage
+  alt="Hive Gateway GraphiQL"
+  src={HiveGatewayGraphiqlImage}
+  className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
+/>
+
+Here you can execute GraphQL operations against the supergraph, which will be delegate to the single
+subgraph services.
+
+Here is a sample query to execute:
+
+```graphql filename="Sample Query using multiple Subgraphs"
+query TopProductsWithReview {
+  topProducts(first: 2) {
+    upc
+    name
+    price
+    reviews {
+      body
+      author {
+        id
+        username
+      }
+    }
+  }
+}
+```
+
+[Execute Query on Hive Router GraphiQL](http://localhost:4000/graphql?query=query+TopProductsWithReview+%7B%0A++topProducts%28first%3A+2%29+%7B%0A++++upc%0A++++name%0A++++price%0A++++reviews+%7B%0A++++++body%0A++++++author+%7B%0A++++++++id%0A++++++++username%0A++++++%7D%0A++++%7D%0A++%7D%0A%7D)
+
+</Tabs.Tab>
+
+</Tabs>
+
 #### Usage reporting
 
 Up next let's report the usage from our gateway to the registry, so we can see on the dashboard how
@@ -640,7 +742,26 @@ the API is being used.
 For this, we will reuse the previously create access token that already has the `Report usage data`
 permissions.
 
-<Tabs items={['Binary', 'Docker', 'Node.js Package']}>
+You will also need to know the target ID of your project's target.
+
+<Callout type="info" title="What is Target ID?">
+
+Target can either be an UUID or a slug following the format
+`$organizationSlug/$projectSlug/$targetSlug`:
+
+- `the-guild/graphql-hive/staging`
+- `a0f4c605-6541-4350-8cfe-b31f21a4bf80`
+
+Be aware that using the UUID is more resilient in case you rename either your organization, project
+or target.
+
+</Callout>
+
+<Tabs items={['Hive Gateway (JavaScript)', 'Hive Router (Rust)']} storageKey="gateway-choice">
+
+<Tabs.Tab>
+
+<Tabs items={['Binary', 'Docker', 'Node.js Package']} storageKey="gateway-distribution-choice">
 
 {/* Binary */}
 
@@ -654,11 +775,12 @@ hive-gateway supergraph \
   --hive-access-token "<hive_usage_access_token>"
 ```
 
-| Parameter               | Description                                 |
-| ----------------------- | ------------------------------------------- |
-| `<hive_cdn_endpoint>`   | The endpoint of your Hive target            |
-| `<hive_cdn_access_key>` | The Hive CDN access key                     |
-| `<hive_registry_token>` | The Hive registry token for usage reporting |
+| Parameter               | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `<hive_cdn_endpoint>`   | The endpoint of your Hive target                               |
+| `<hive_cdn_access_key>` | The Hive CDN access key                                        |
+| `<hive_usage_target>`   | The registry target which the usage data should be reported to |
+| `<hive_registry_token>` | The Hive registry token for usage reporting                    |
 
 </Tabs.Tab>
 
@@ -678,11 +800,12 @@ docker run --name hive-gateway -rm \
   --hive-access-token "<hive_usage_access_token>"
 ```
 
-| Parameter               | Description                                 |
-| ----------------------- | ------------------------------------------- |
-| `<hive_cdn_endpoint>`   | The endpoint of your Hive target            |
-| `<hive_cdn_access_key>` | The Hive CDN access key                     |
-| `<hive_registry_token>` | The Hive registry token for usage reporting |
+| Parameter               | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `<hive_cdn_endpoint>`   | The endpoint of your Hive target                               |
+| `<hive_cdn_access_key>` | The Hive CDN access key                                        |
+| `<hive_usage_target>`   | The registry target which the usage data should be reported to |
+| `<hive_registry_token>` | The Hive registry token for usage reporting                    |
 
 </Tabs.Tab>
 
@@ -698,19 +821,77 @@ npx hive-gateway supergraph \
   --hive-access-token "<hive_usage_access_token>"
 ```
 
-| Parameter                   | Description                                                            |
-| --------------------------- | ---------------------------------------------------------------------- |
-| `<hive_cdn_endpoint>`       | The endpoint of your Hive target                                       |
-| `<hive_cdn_access_key>`     | The Hive CDN access key                                                |
-| `<hive_usage_target>`       | The Hive registry target to which the usage data should be reported to |
-| `<hive_usage_access_token>` | The Hive registry token for usage reporting                            |
+| Parameter               | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `<hive_cdn_endpoint>`   | The endpoint of your Hive target                               |
+| `<hive_cdn_access_key>` | The Hive CDN access key                                        |
+| `<hive_usage_target>`   | The registry target which the usage data should be reported to |
+| `<hive_registry_token>` | The Hive registry token for usage reporting                    |
+
+</Tabs.Tab>
+
+</Tabs>
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+To enable usage reporting, we need to update our configuration file:
+
+```diff filename="router.config.yaml"
+supergraph:
+  type: hive
+  endpoint: "<hive_cdn_endpoint>"
+  key: "<hive_cdn_access_key>"
++ usage_reporting:
++   enabled: true
++   target_id: "<hive_usage_target>"
++   access_token: "<hive_registry_token>"
+```
+
+| Parameter               | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `<hive_cdn_endpoint>`   | The endpoint of your Hive target                               |
+| `<hive_cdn_access_key>` | The Hive CDN access key                                        |
+| `<hive_usage_target>`   | The registry target which the usage data should be reported to |
+| `<hive_registry_token>` | The Hive registry token for usage reporting                    |
+
+Once the configuration file is ready, you can start the Hive Router with the following command:
+
+<Tabs items={['Binary', 'Docker']} storageKey="router-distribution-choice">
+
+{/* Binary */}
+
+<Tabs.Tab>
+
+```sh
+./hive-router
+```
+
+</Tabs.Tab>
+
+{/* Docker */}
+
+<Tabs.Tab>
+
+```sh
+docker run \
+  --name hive-router -rm \
+  -p 4000:4000 \
+  -v ./router.config.yaml:/app/router.config.yaml \
+  ghcr.io/graphql-hive/router:latest
+```
+
+</Tabs.Tab>
+
+</Tabs>
 
 </Tabs.Tab>
 
 </Tabs>
 
 After starting the gateway with the usage reporting token, we can no execute some queries using the
-gateways built-in GraphiQL interface.
+built-in GraphiQL interface.
 
 ```graphql filename="Sample Query using multiple Subgraphs"
 query TopProductsWithReview {
@@ -729,12 +910,8 @@ query TopProductsWithReview {
 }
 ```
 
-[Execute Query on Hive Gateway GraphiQL](http://localhost:4000/graphql?query=query+TopProductsWithReview+%7B%0A++topProducts%28first%3A+2%29+%7B%0A++++upc%0A++++name%0A++++price%0A++++reviews+%7B%0A++++++body%0A++++++author+%7B%0A++++++++id%0A++++++++username%0A++++++%7D%0A++++%7D%0A++%7D%0A%7D)
-
 After executing the query, a few times, let's switch back to the Hive dashboard and navigate to the
 insights page.
-
-import HiveDashboardInsightsImage from '../../../../public/docs/pages/get-started/apollo-federation/hive-dashboard-insights.png'
 
 <NextImage
   alt="Hive Gateway GraphiQL"
@@ -742,7 +919,7 @@ import HiveDashboardInsightsImage from '../../../../public/docs/pages/get-starte
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
 
-Here we can now see the GraphQL operations from our Gateway being reported to the registry.
+Here we can now see the GraphQL operations from our gateway being reported to the registry.
 
 ### Schema checks
 
@@ -777,7 +954,7 @@ extend type Product @key(fields: "upc") {
 Now, run the Hive CLI with the `schema:check` command and your modified `subgraphs/reviews.graphql`
 file:
 
-<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+<Tabs items={['Binary', 'NodeJS', 'Docker']} storageKey="cli-distribution-choice">
 
 {/* Binary */}
 
@@ -860,7 +1037,7 @@ extend type Product @key(fields: "upc") {
 }
 ```
 
-<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+<Tabs items={['Binary', 'NodeJS', 'Docker']} storageKey="cli-distribution-choice">
 
 {/* Binary */}
 
@@ -956,7 +1133,7 @@ extend type Product @key(fields: "upc") {
 Run the Hive CLI with the `schema:check` command again and the modified `subgraphs/reviews.graphql`
 file:
 
-<Tabs items={['Binary', 'NodeJS', 'Docker']}>
+<Tabs items={['Binary', 'NodeJS', 'Docker']} storageKey="cli-distribution-choice">
 
 {/* Binary */}
 
@@ -1040,7 +1217,8 @@ learn about all the features of the Hive platform.
 
 <Cards>
   <Cards.Card arrow title="Learn about the Schema Registry" href="/docs/schema-registry" />
-  <Cards.Card arrow title="Learn about Hive Gateway" href="/docs/gateway" />
+  <Cards.Card arrow title="Learn about Hive Gateway (JavaScript)" href="/docs/gateway" />
+  <Cards.Card arrow title="Learn about Hive Router (Rust)" href="/docs/router" />
   <Cards.Card
     arrow
     title="Learn about Organization Members, Roles, and Permissions"
