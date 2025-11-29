@@ -222,7 +222,7 @@ export function OrganizationLayout({
         ) : null}
 
         {currentOrganization ? (
-          <div className={className}>{children}childnred</div>
+          <div className={className}>{children}</div>
         ) : (
           <NotFoundContent
             heading="Organization not found"
