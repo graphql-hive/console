@@ -3,6 +3,7 @@ import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -219,7 +220,16 @@ export function OrganizationLayout({
             <RateLimitWarn organization={currentOrganization} />
           </>
         ) : null}
-        <div className={className}>{children}</div>
+
+        {currentOrganization ? (
+          <div className={className}>{children}childnred</div>
+        ) : (
+          <NotFoundContent
+            heading="Organization not found"
+            subheading="Use the empty dropdown in the header to select an organization to which you have access."
+            includeBackButton={false}
+          />
+        )}
       </div>
     </>
   );
