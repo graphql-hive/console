@@ -4,7 +4,7 @@ import { abortSignalAny } from '@graphql-hive/signal';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import type { LegacyLogger } from './types';
 
-interface SharedConfig {
+export interface HttpCallConfig {
   headers: Record<string, string>;
   /**
    * timeout in milliseconds (for each single fetch call)
@@ -32,9 +32,9 @@ interface SharedConfig {
  */
 type ResponseAssertFunction = (response: Response) => boolean;
 
-type RetryOptions = Parameters<typeof asyncRetry>[1];
+export type RetryOptions = Parameters<typeof asyncRetry>[1];
 
-function get(endpoint: string, config: SharedConfig) {
+function get(endpoint: string, config: HttpCallConfig) {
   return makeFetchCall(endpoint, {
     method: 'GET',
     headers: config.headers,
@@ -46,7 +46,7 @@ function get(endpoint: string, config: SharedConfig) {
   });
 }
 
-function post(endpoint: string, data: string | Buffer, config: SharedConfig) {
+function post(endpoint: string, data: string | Buffer, config: HttpCallConfig) {
   return makeFetchCall(endpoint, {
     body: data,
     method: 'POST',
@@ -59,7 +59,7 @@ export const http = {
   post,
 };
 
-function chooseLogger(logger: SharedConfig['logger']): Logger {
+function chooseLogger(logger: HttpCallConfig['logger']): Logger {
   if (!logger) {
     return new Logger({
       writers: [{ write() {} }],

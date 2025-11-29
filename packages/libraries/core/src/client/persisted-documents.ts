@@ -1,22 +1,33 @@
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import LRU from 'tiny-lru';
 import { Logger } from '@graphql-hive/logger';
-import { http } from './http-client.js';
+import CircuitBreaker from '../circuit-breaker/circuit.js';
+import { defaultCircuitBreakerConfiguration } from './circuit-breaker.js';
+import { http, HttpCallConfig } from './http-client.js';
 import type { PersistedDocumentsConfiguration } from './types';
 
 type HeadersObject = {
   get(name: string): string | null;
 };
 
+function isRequestOk(response: Response) {
+  return response.status === 200 || response.status === 404;
+}
+
+type PersistedDocuments = {
+  resolve(documentId: string): PromiseOrValue<string | null>;
+  allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
+  dispose: () => void;
+};
+
 export function createPersistedDocuments(
   config: PersistedDocumentsConfiguration & {
     logger: Logger;
     fetch?: typeof fetch;
+    retry?: HttpCallConfig['retry'];
+    timeout?: HttpCallConfig['retry'];
   },
-): null | {
-  resolve(documentId: string): PromiseOrValue<string | null>;
-  allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
-} {
+): PersistedDocuments {
   const persistedDocumentsCache = LRU<string>(config.cache ?? 10_000);
 
   let allowArbitraryDocuments: (context: { headers?: HeadersObject }) => PromiseOrValue<boolean>;
@@ -33,6 +44,44 @@ export function createPersistedDocuments(
   /** if there is already a in-flight request for a document, we re-use it. */
   const fetchCache = new Map<string, Promise<string | null>>();
 
+  const endpoints = Array.isArray(config.cdn.endpoint)
+    ? config.cdn.endpoint
+    : [config.cdn.endpoint];
+
+  const circuitBreakers = endpoints.map(endpoint => {
+    const circuitBreaker = new CircuitBreaker(
+      async function doFetch(cdnDocumentId: string) {
+        const signal = circuitBreaker.getSignal();
+
+        return await http
+          .get(endpoint + '/apps/' + cdnDocumentId, {
+            headers: {
+              'X-Hive-CDN-Key': config.cdn.accessToken,
+            },
+            logger: config.logger,
+            isRequestOk,
+            fetchImplementation: config.fetch,
+            signal,
+            retry: config.retry,
+          })
+          .then(async response => {
+            if (response.status !== 200) {
+              return null;
+            }
+            const text = await response.text();
+            return text;
+          });
+      },
+      {
+        ...(config.circuitBreaker ?? defaultCircuitBreakerConfiguration),
+        timeout: false,
+        autoRenewAbortController: true,
+      },
+    );
+
+    return circuitBreaker;
+  });
+
   /** Batch load a persisted documents */
   function loadPersistedDocument(documentId: string) {
     const document = persistedDocumentsCache.get(documentId);
@@ -40,35 +89,39 @@ export function createPersistedDocuments(
       return document;
     }
 
-    const cdnDocumentId = documentId.replaceAll('~', '/');
-
-    const url = config.cdn.endpoint + '/apps/' + cdnDocumentId;
-    let promise = fetchCache.get(url);
-
-    if (!promise) {
-      promise = http
-        .get(url, {
-          headers: {
-            'X-Hive-CDN-Key': config.cdn.accessToken,
-          },
-          logger: config.logger,
-          isRequestOk: response => response.status === 200 || response.status === 404,
-          fetchImplementation: config.fetch,
-        })
-        .then(async response => {
-          if (response.status !== 200) {
-            return null;
-          }
-          const text = await response.text();
-          persistedDocumentsCache.set(documentId, text);
-          return text;
-        })
-        .finally(() => {
-          fetchCache.delete(url);
-        });
-
-      fetchCache.set(url, promise);
+    let promise = fetchCache.get(documentId);
+    if (promise) {
+      return promise;
     }
+
+    promise = Promise.resolve()
+      .then(async () => {
+        const cdnDocumentId = documentId.replaceAll('~', '/');
+
+        let lastError: unknown = null;
+
+        for (const breaker of circuitBreakers) {
+          try {
+            return await breaker.fire(cdnDocumentId);
+          } catch (error: unknown) {
+            config.logger.debug({ error });
+            lastError = error;
+          }
+        }
+        if (lastError) {
+          config.logger.error({ error: lastError });
+        }
+        throw new Error('Failed to look up persisted operation.');
+      })
+      .then(result => {
+        persistedDocumentsCache.set(documentId, result);
+        return result;
+      })
+      .finally(() => {
+        fetchCache.delete(documentId);
+      });
+
+    fetchCache.set(documentId, promise);
 
     return promise;
   }
@@ -76,5 +129,8 @@ export function createPersistedDocuments(
   return {
     allowArbitraryDocuments,
     resolve: loadPersistedDocument,
+    dispose() {
+      circuitBreakers.map(breaker => breaker.shutdown());
+    },
   };
 }

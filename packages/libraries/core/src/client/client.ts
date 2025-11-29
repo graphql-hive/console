@@ -48,6 +48,13 @@ export function createHive(options: HivePluginOptions): HiveClient {
 
   const usage = createUsage(mergedOptions);
   const schemaReporter = createReporting(mergedOptions);
+  const persistedDocuments = options.experimental__persistedDocuments
+    ? createPersistedDocuments({
+        ...options.experimental__persistedDocuments,
+        logger,
+        fetch: options.experimental__persistedDocuments.fetch,
+      })
+    : null;
 
   function reportSchema({ schema }: { schema: GraphQLSchema }) {
     schemaReporter.report({ schema });
@@ -62,7 +69,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
   }
 
   async function dispose() {
-    await Promise.all([schemaReporter.dispose(), usage.dispose()]);
+    await Promise.all([schemaReporter.dispose(), usage.dispose(), persistedDocuments?.dispose()]);
   }
 
   const isOrganizationAccessToken = !isLegacyAccessToken(options.token ?? '');
@@ -236,13 +243,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
     collectSubscriptionUsage: usage.collectSubscription,
     createInstrumentedSubscribe,
     createInstrumentedExecute,
-    experimental__persistedDocuments: options.experimental__persistedDocuments
-      ? createPersistedDocuments({
-          ...options.experimental__persistedDocuments,
-          logger,
-          fetch: options.experimental__persistedDocuments.fetch,
-        })
-      : null,
+    experimental__persistedDocuments: persistedDocuments,
   };
 }
 

@@ -4,6 +4,9 @@ import { http } from './http-client.js';
 import type { LegacyLogger } from './types.js';
 import { createHash, joinUrl } from './utils.js';
 
+/**
+ * @deprecated Please use {createCDNArtifactFetcher} instead of createSupergraphSDLFetcher.
+ */
 export interface SupergraphSDLFetcherOptions {
   endpoint: string;
   key: string;
@@ -13,6 +16,9 @@ export interface SupergraphSDLFetcherOptions {
   version?: string;
 }
 
+/**
+ * @deprecated Please use {createCDNArtifactFetcher} instead.
+ */
 export function createSupergraphSDLFetcher(options: SupergraphSDLFetcherOptions) {
   let cacheETag: string | null = null;
   let cached: {
