@@ -1,0 +1,35 @@
+---
+title: Enhanced Schema Change Detection with Directive Support and Input Value Tracking
+description:
+  A major upgrade to change detection, with more accurate severity levels and directive support.
+date: 2025-11-27
+authors: [jdolle]
+---
+
+Breaking change detection is complicated, but it's an incredibly valuable tool for any API. In our
+latest release, we upgraded this detection to make breaking changes even more accurate and provide a
+more complete set of changes for schema checks.
+
+These have been highly requested features, but our hope is that this change goes mostly unnoticed
+because that means it's working and that the changes are tracked accurately.
+
+The technical set of changes are:
+
+- `FieldDeprecationRemoved` severity is changing from "dangerous" to "non-breaking". This is because
+  deprecation does not impact behavior.
+- `InputFieldAdded` is now "non-breaking" IF a default value is set for the input. Previously only
+  nullability was taken into account. This is because the default value will be provided
+  automatically, so non-nullable inputs still don't need passed by clients.
+- A redundant DeprecationAdded and DeprecationRemoved change was removed.
+- And `DirectiveUsage` changes are being tracked. E.g. `DirectiveUsageEnumRemoved` and
+  `DirectiveUsageObjectAdded`. A similar set of usage events were added for arguments as well.
+
+---
+
+This upgrade also lays the foundation for the upcoming feature, schema proposals, which is powered
+by [GraphQL Inspector](https://the-guild.dev/graphql/inspector) for change capture and rebasing
+changes on top of schemas.
+
+For more insights on the schema proposals work being done, refer to our
+[Schema Proposal Review](https://the-guild.dev/graphql/hive/product-updates/2025-09-03-schema-proposals)
+update.
