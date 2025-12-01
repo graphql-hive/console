@@ -75,7 +75,7 @@
   })
   ```
 
-  In addition to that, the underlying logic for looking up documents now uses a circuit breaker. If
+  In addition to that, the underlying logic for fetching the supergraph now uses a circuit breaker. If
   a single endpoint is unreachable, further lookups on that endpoint are skipped.
 
   ```ts
