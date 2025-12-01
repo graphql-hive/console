@@ -38,8 +38,7 @@ Head to our [Hive Logger documentation](https://the-guild.dev/graphql/hive/docs/
 
 ___
 
-**The `HivePluginOptions.debug` option is now deprecated.** Instead, please provide the option `debug`
-instead for the logger.
+**The `HivePluginOptions.debug` option is now deprecated.** Instead, please use the `logger` option to control logging levels.
 
 ```diff
  import { createHive } from '@graphql-hive/core'

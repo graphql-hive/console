@@ -2,4 +2,4 @@
 '@graphql-hive/cli': patch
 ---
 
-handle escaped single-quoted strings in schema changes
+Fixes an issue where schema changes containing escaped single-quoted strings were not handled correctly.
