@@ -1,5 +1,183 @@
 # @graphql-hive/apollo
 
+## 0.45.0
+
+### Minor Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for providing a logger object via
+  `HivePluginOptions`.
+
+  It is possible to provide the following options:
+
+  - **'trace'**
+  - **'debug'**
+  - **'info'** default
+  - **'warn'**
+  - **'error'**
+
+  ```ts
+  import { createHive } from '@graphql-hive/core'
+
+  const client = createHive({
+    logger: 'info'
+  })
+  ```
+
+  In addition to that, it is also possible to provide a Hive Logger instance, that allows more
+  control over how you want to log and forward logs.
+
+  ```ts
+  import { createHive } from '@graphql-hive/core'
+  import { Logger } from '@graphql-hive/logger'
+
+  const client = createHive({
+    logger: new Logger()
+  })
+  ```
+
+  Head to our [Hive Logger documentation](https://the-guild.dev/graphql/hive/docs/logger) to learn
+  more.
+
+  ***
+
+  **The `HivePluginOptions.debug` option is now deprecated.** Instead, please use the `logger`
+  option to control logging levels.
+
+  ```diff
+   import { createHive } from '@graphql-hive/core'
+
+   const client = createHive({
+  -  debug: process.env.DEBUG === "1",
+  +  logger: process.env.DEBUG === "1" ? "debug" : "info",
+   })
+  ```
+
+  **Note**: If the `logger` property is provided, the `debug` option is ignored.
+
+  ***
+
+  **The `HivePluginOptions.agent.logger` option is now deprecated.** Instead, please provide
+  `HivePluginOptions.logger`.
+
+  ```diff
+   import { createHive } from '@graphql-hive/core'
+
+   const logger = new Logger()
+
+   const client = createHive({
+     agent: {
+  -    logger,
+     },
+  +  logger,
+   })
+  ```
+
+  **Note**: If both options are provided, the `agent` option is ignored.
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Persisted Documents Improvements**
+
+  Persisted documents now support specifying a mirror endpoint that will be used in case the main
+  CDN is unreachable. Provide an array of endpoints to the client configuration.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    experimental__persistedDocuments: {
+      cdn: {
+        endpoint: [
+          'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+          'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+        ],
+        accessToken: ''
+      }
+    }
+  })
+  ```
+
+  In addition to that, the underlying logic for looking up documents now uses a circuit breaker. If
+  a single endpoint is unreachable, further lookups on that endpoint are skipped.
+
+  The behaviour of the circuit breaker can be customized via the `circuitBreaker` configuration.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    experimental__persistedDocuments: {
+      cdn: {
+        endpoint: [
+          'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+          'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+        ],
+        accessToken: ''
+      },
+      circuitBreaker: {
+        // open circuit if 50 percent of request result in an error
+        errorThresholdPercentage: 50,
+        // start monitoring the circuit after 10 requests
+        volumeThreshold: 10,
+        // time before the backend is tried again after the circuit is open
+        resetTimeout: 30_000
+      }
+    }
+  })
+  ```
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Supergraph Manager Improvements**
+
+  Persisted documents now support specifying a mirror endpoint that will be used in case the main
+  CDN is unreachable. Provide an array of endpoints to the supergraph manager configuration.
+
+  ```ts
+  import { createSupergraphManager } from '@graphql-hive/apollo'
+
+  const supergraphManager = createSupergraphManager({
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph'
+    ],
+    key: ''
+  })
+  ```
+
+  In addition to that, the underlying logic for looking up documents now uses a circuit breaker. If
+  a single endpoint is unreachable, further lookups on that endpoint are skipped.
+
+  ```ts
+  import { createSupergraphManager } from '@graphql-hive/apollo'
+
+  const supergraphManager = createSupergraphManager({
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph'
+    ],
+    key: '',
+    circuitBreaker: {
+      // open circuit if 50 percent of request result in an error
+      errorThresholdPercentage: 50,
+      // start monitoring the circuit after 10 requests
+      volumeThreshold: 10,
+      // time before the backend is tried again after the circuit is open
+      resetTimeout: 30_000
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)]:
+  - @graphql-hive/core@0.18.0
+
 ## 0.42.1
 
 ### Patch Changes
