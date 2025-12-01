@@ -60,7 +60,7 @@
   [`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3)
   Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Supergraph Manager Improvements**
 
-  Persisted documents now support specifying a mirror endpoint that will be used in case the main
+  The supergraph manager now supports specifying a mirror endpoint that will be used in case the main
   CDN is unreachable. Provide an array of endpoints to the supergraph manager configuration.
 
   ```ts
