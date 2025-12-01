@@ -695,10 +695,9 @@ docker run \
 
 </Tabs>
 
-If you now navigate to `http://localhost:4000`, you should see the Hive
-
-If you navigate to `http://localhost:4000/graphql`, you should see the GraphiQL interface where you
-can write and execute queries against the supergraph.
+If you now navigate to `http://localhost:4000`, you should see the Hive Router default page. This
+page points to `http://localhost:4000/graphql`, where you can access the GraphQL IDE to write and
+execute queries against the supergraph.
 
 <NextImage
   alt="Hive Gateway GraphiQL"
@@ -706,8 +705,8 @@ can write and execute queries against the supergraph.
   className="mt-10 max-w-2xl rounded-lg drop-shadow-md"
 />
 
-Here you can execute GraphQL operations against the supergraph, which will be delegate to the single
-subgraph services.
+Here you can execute GraphQL operations against the supergraph, which will be delegated to the
+single subgraph services.
 
 Here is a sample query to execute:
 
@@ -890,7 +889,7 @@ docker run \
 
 </Tabs>
 
-After starting the gateway with the usage reporting token, we can no execute some queries using the
+After starting the gateway with the usage reporting token, we can now execute some queries using the
 built-in GraphiQL interface.
 
 ```graphql filename="Sample Query using multiple Subgraphs"
