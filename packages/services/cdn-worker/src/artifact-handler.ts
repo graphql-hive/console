@@ -52,6 +52,23 @@ const ParamsModel = zod.object({
     .transform(value => value ?? null),
 });
 
+const VersionedParamsModel = zod.object({
+  targetId: zod.string(),
+  versionId: zod.string().uuid(),
+  artifactType: zod.union([
+    zod.literal('metadata'),
+    zod.literal('sdl'),
+    zod.literal('sdl.graphql'),
+    zod.literal('sdl.graphqls'),
+    zod.literal('services'),
+    zod.literal('supergraph'),
+  ]),
+  contractName: zod
+    .string()
+    .optional()
+    .transform(value => value ?? null),
+});
+
 const PersistedOperationParamsModel = zod.object({
   targetId: zod.string(),
   appName: zod.string(),
@@ -218,6 +235,130 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
     }
   }
 
+  async function handlerV1Versioned(request: itty.IRequest & Request) {
+    const parseResult = VersionedParamsModel.safeParse(request.params);
+
+    if (parseResult.success === false) {
+      analytics.track(
+        { type: 'error', value: ['invalid-params'] },
+        request.params?.targetId ?? 'unknown',
+      );
+      return createResponse(
+        analytics,
+        'Not found.',
+        {
+          status: 404,
+        },
+        request.params?.targetId ?? 'unknown',
+        request,
+      );
+    }
+
+    const params = parseResult.data;
+
+    breadcrumb(
+      `Artifact v1 versioned handler (type=${params.artifactType}, targetId=${params.targetId}, versionId=${params.versionId}, contractName=${params.contractName})`,
+    );
+
+    const maybeResponse = await authenticate(request, params.targetId);
+
+    if (maybeResponse !== null) {
+      return maybeResponse;
+    }
+
+    analytics.track(
+      { type: 'artifact', value: params.artifactType, version: 'v1-versioned' },
+      params.targetId,
+    );
+
+    const eTag = request.headers.get('if-none-match');
+
+    const result = await deps.artifactStorageReader.readArtifact(
+      params.targetId,
+      params.contractName,
+      params.artifactType,
+      eTag,
+      params.versionId,
+    );
+
+    if (result.type === 'notModified') {
+      return createResponse(
+        analytics,
+        null,
+        {
+          status: 304,
+        },
+        params.targetId,
+        request,
+      );
+    }
+
+    if (result.type === 'notFound') {
+      return createResponse(analytics, 'Not found.', { status: 404 }, params.targetId, request);
+    }
+
+    if (result.type === 'response') {
+      const etag = result.headers.get('etag');
+      const text = result.body;
+
+      if (params.artifactType === 'metadata') {
+        // Legacy handling for SINGLE project metadata (same as handlerV1)
+        // Metadata in SINGLE projects is only Mesh's Metadata, and it always defines _schema
+        const isMeshArtifact = text.includes(`"#/definitions/_schema"`);
+        const hasTopLevelArray = text.startsWith('[') && text.endsWith(']');
+
+        // Mesh's Metadata shared by Mesh is always an object.
+        // The top-level array was caused #3291 and fixed now, but we still need to handle the old data.
+        if (isMeshArtifact && hasTopLevelArray) {
+          return createResponse(
+            analytics,
+            text.substring(1, text.length - 1),
+            {
+              status: 200,
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'public, max-age=31536000, immutable',
+                ...(etag ? { etag } : {}),
+              },
+            },
+            params.targetId,
+            request,
+          );
+        }
+      }
+
+      return createResponse(
+        analytics,
+        text,
+        {
+          status: 200,
+          headers: {
+            'Content-Type':
+              params.artifactType === 'metadata' || params.artifactType === 'services'
+                ? 'application/json'
+                : 'text/plain',
+            // Versioned artifacts are immutable - aggressive caching
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            ...(etag ? { etag } : {}),
+          },
+        },
+        params.targetId,
+        request,
+      );
+    }
+
+    // Exhaustive check - should never reach here
+    result satisfies never;
+  }
+
+  // Versioned artifact routes (must be before non-versioned routes)
+  router.get(
+    '/artifacts/v1/:targetId/version/:versionId/contracts/:contractName/:artifactType',
+    handlerV1Versioned,
+  );
+  router.get('/artifacts/v1/:targetId/version/:versionId/:artifactType', handlerV1Versioned);
+
+  // Non-versioned artifact routes (latest)
   router.get('/artifacts/v1/:targetId/contracts/:contractName/:artifactType', handlerV1);
   router.get('/artifacts/v1/:targetId/:artifactType', handlerV1);
   router.get(
