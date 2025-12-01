@@ -33,7 +33,9 @@ test('matching origin -> send correct CORS headers', async () => {
       origin: ensureEnv('HIVE_APP_BASE_URL'),
     },
   });
-  expect(request.headers.get('access-control-allow-origin')).toEqual('http://localhost:3000');
+  expect(request.headers.get('access-control-allow-origin')).toEqual(
+    ensureEnv('HIVE_APP_BASE_URL'),
+  );
   expect(request.headers.get('access-control-allow-credentials')).toEqual('true');
   expect(request.status).toEqual(200);
   expect(await request.text()).toMatchInlineSnapshot(
