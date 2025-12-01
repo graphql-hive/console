@@ -1,5 +1,110 @@
 # @graphql-hive/apollo
 
+## 0.44.0
+
+### Minor Changes
+
+- [#7287](https://github.com/graphql-hive/console/pull/7287)
+  [`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Persisted Documents Improvements**
+
+  Persisted documents now support specifying a mirror endpoint that will be used in case the main
+  CDN is unreachable. Provide an array of endpoints to the client configuration.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    experimental__persistedDocuments: {
+      cdn: {
+        endpoint: [
+          'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+          'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+        ],
+        accessToken: ''
+      }
+    }
+  })
+  ```
+
+  In addition to that, the underlying logic for looking up documents now uses a circuit breaker. If
+  a single endpoint is unreachable, further lookups on that endpoint are skipped.
+
+  The behaviour of the circuit breaker can be customized via the `circuitBreaker` configuration.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    experimental__persistedDocuments: {
+      cdn: {
+        endpoint: [
+          'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+          'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+        ],
+        accessToken: ''
+      },
+      circuitBreaker: {
+        // open circuit if 50 percent of request result in an error
+        errorThresholdPercentage: 50,
+        // start monitoring the circuit after 10 requests
+        volumeThreshold: 10,
+        // time before the backend is tried again after the circuit is open
+        resetTimeout: 30_000
+      }
+    }
+  })
+  ```
+
+- [#7287](https://github.com/graphql-hive/console/pull/7287)
+  [`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Supergraph Manager Improvements**
+
+  The supergraph manager now supports specifying a mirror endpoint that will be used in case the main
+  CDN is unreachable. Provide an array of endpoints to the supergraph manager configuration.
+
+  ```ts
+  import { createSupergraphManager } from '@graphql-hive/apollo'
+
+  const supergraphManager = createSupergraphManager({
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph'
+    ],
+    key: ''
+  })
+  ```
+
+  In addition to that, the underlying logic for fetching the supergraph now uses a circuit breaker. If
+  a single endpoint is unreachable, further lookups on that endpoint are skipped.
+
+  ```ts
+  import { createSupergraphManager } from '@graphql-hive/apollo'
+
+  const supergraphManager = createSupergraphManager({
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph'
+    ],
+    key: '',
+    circuitBreaker: {
+      // open circuit if 50 percent of request result in an error
+      errorThresholdPercentage: 50,
+      // start monitoring the circuit after 10 requests
+      volumeThreshold: 10,
+      // time before the backend is tried again after the circuit is open
+      resetTimeout: 30_000
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3),
+  [`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3)]:
+  - @graphql-hive/core@0.17.0
+
 ## 0.43.0
 
 ### Minor Changes
