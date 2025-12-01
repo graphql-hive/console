@@ -396,6 +396,9 @@ importers:
       '@graphql-hive/core':
         specifier: workspace:*
         version: link:../core/dist
+      '@graphql-hive/logger':
+        specifier: ^1.0.9
+        version: 1.0.9
     devDependencies:
       '@apollo/server':
         specifier: 5.0.0
