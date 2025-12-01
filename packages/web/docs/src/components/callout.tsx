@@ -1,5 +1,3 @@
-import { cn } from '../lib/utils';
-
 type CalloutType = 'note' | 'tip' | 'warning' | 'critical' | 'info' | 'success';
 
 interface CalloutProps {
@@ -63,10 +61,10 @@ export function Callout({ type, children, title }: CalloutProps) {
   }
 
   return (
-    <div className={cn(config.bgColor, config.borderColor, 'mt-6 rounded-r-lg border-l-2 p-4')}>
+    <div className={`${config.bgColor} ${config.borderColor} mt-6 rounded-r-lg border-l-2 p-4`}>
       <div className="min-w-0 flex-1 dark:text-white">
         <div
-          className={cn('mb-2 font-mono text-sm font-medium uppercase', config.titleColor)}
+          className={`mb-2 font-mono text-sm font-medium uppercase ${config.titleColor}`}
           style={{
             letterSpacing: '0.05em',
           }}
@@ -74,7 +72,7 @@ export function Callout({ type, children, title }: CalloutProps) {
           {title ?? config.title}
         </div>
         {/* I used [&_*]:!leading-[inherit] to override line-height forced by nextra */}
-        <div className={cn('[&_*]:!leading-[inherit]')}>{children}</div>
+        <div className="[&_*]:!leading-[inherit]">{children}</div>
       </div>
     </div>
   );
