@@ -1,4 +1,5 @@
-import { getServiceHost } from 'testkit/utils';
+import { ensureEnv } from '../../testkit/env';
+import { getServiceHost } from '../../testkit/utils';
 
 const registryAddress = await getServiceHost('server', 8082);
 
@@ -23,9 +24,7 @@ test('unmatching origin -> cors error', async () => {
 test('matching -> cors!', async () => {
   const request = await fetch(`${endpoint}/graphql`, {
     headers: {
-      origin: process.env.RUN_AGAINST_LOCAL_SERVICES
-        ? 'http://localhost:3000'
-        : 'http://localhost:8080',
+      origin: ensureEnv('HIVE_APP_BASE_URL'),
     },
   });
   expect(request.headers.get('access-control-allow-origin')).toEqual('http://localhost:3000');
