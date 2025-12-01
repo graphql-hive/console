@@ -23,7 +23,9 @@ test('unmatching origin -> cors error', async () => {
 test('matching -> cors!', async () => {
   const request = await fetch(`${endpoint}/graphql`, {
     headers: {
-      origin: 'http://localhost:3000',
+      origin: process.env.RUN_AGAINST_LOCAL_SERVICES
+        ? 'http://localhost:3000'
+        : 'http://localhost:8080',
     },
   });
   expect(request.headers.get('access-control-allow-origin')).toEqual('http://localhost:3000');
