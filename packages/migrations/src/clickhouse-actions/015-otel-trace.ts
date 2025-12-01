@@ -241,6 +241,8 @@ export const action: Action = async exec => {
       , "http_host" String CODEC(ZSTD(1))
       , "http_route" String CODEC(ZSTD(1))
       , "http_url" String CODEC(ZSTD(1))
+      , "client_name" String
+      , "client_version" String
       , "graphql_operation_name" String CODEC(ZSTD(1))
       , "graphql_operation_type" LowCardinality(String) CODEC(ZSTD(1))
       , "graphql_operation_document" String CODEC(ZSTD(1))
