@@ -1,11 +1,11 @@
 # @graphql-hive/envelop
 
-## 0.39.0
+## 0.40.0
 
 ### Minor Changes
 
-- [#7290](https://github.com/graphql-hive/console/pull/7290)
-  [`5229612`](https://github.com/graphql-hive/console/commit/5229612d4fd17ed2535ed8d66160758103d2c00f)
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
   Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for providing a logger object via
   `HivePluginOptions`.
 
@@ -42,8 +42,8 @@
 
   ***
 
-  **The `HivePluginOptions.debug` option is now deprecated.** Instead, please provide the option
-  `debug` instead for the logger.
+  **The `HivePluginOptions.debug` option is now deprecated.** Instead, please use the `logger`
+  option to control logging levels.
 
   ```diff
    import { createHive } from '@graphql-hive/core'
@@ -79,8 +79,10 @@
 ### Patch Changes
 
 - Updated dependencies
-  [[`5229612`](https://github.com/graphql-hive/console/commit/5229612d4fd17ed2535ed8d66160758103d2c00f)]:
-  - @graphql-hive/core@0.16.0
+  [[`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)]:
+  - @graphql-hive/core@0.18.0
 
 ## 0.38.1
 
