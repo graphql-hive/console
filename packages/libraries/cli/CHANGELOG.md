@@ -1,5 +1,30 @@
 # @graphql-hive/cli
 
+## 0.56.0
+
+### Minor Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+### Patch Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fixes an issue where schema changes containing
+  escaped single-quoted strings were not handled correctly.
+
+- Updated dependencies
+  [[`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)]:
+  - @graphql-hive/core@0.18.0
+
 ## 0.55.1
 
 ### Patch Changes
