@@ -156,7 +156,7 @@
   const supergraphManager = createSupergraphManager({
     endpoint: [
       'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
-      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688/supergraph'
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
     ],
     key: '',
     circuitBreaker: {
