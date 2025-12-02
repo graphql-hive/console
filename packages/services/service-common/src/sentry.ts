@@ -37,6 +37,15 @@ const plugin: FastifyPluginAsync = async server => {
         return;
       }
 
+      if (err.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
+        req.log.warn('Invalid media type');
+        void reply.status(415).send({
+          error: 415,
+          message: 'Invalid media type',
+        });
+        return;
+      }
+
       req.log.warn('Replying with 500 Internal Server Error');
       void reply.status(500).send({
         error: 500,
