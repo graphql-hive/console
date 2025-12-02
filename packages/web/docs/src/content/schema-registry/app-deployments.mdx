@@ -283,7 +283,10 @@ export const gatewayConfig = defineConfig({
   persistedDocuments: {
     type: 'hive',
     // The endpoint of Hive's CDN
-    endpoint: '<supergraph endpoint>',
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>'
+    ],
     // The CDN token provided by Hive Registry
     key: '<cdn access token>'
   }
@@ -318,7 +321,10 @@ const yoga = createYoga({
       experimental__persistedDocuments: {
         cdn: {
           // replace <target_id> and <cdn_access_token> with your values
-          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+          endpoint: [
+            'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+            'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>'
+          ],
           accessToken: '<cdn_access_token>'
         }
       }

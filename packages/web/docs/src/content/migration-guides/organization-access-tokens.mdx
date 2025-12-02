@@ -125,7 +125,7 @@ Replace the usage of the `--hive-registry-token` config flag with the `--hive-ta
 
 ```diff
   hive-gateway supergraph \
-    "<hive_cdn_endpoint>" \
+    "https://cdn.graphql-hive.com/artifacts/v1/<target_id>" \
     --hive-cdn-key "<hive_cdn_access_key>" \
 -    --hive-registry-token "<hive_registry_token>"
 +    --hive-target "my-org/my-project/my-target" \
