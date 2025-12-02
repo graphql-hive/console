@@ -10,7 +10,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { createSupergraphManager } from '@graphql-hive/apollo';
+import { createServicesFetcher, createSupergraphManager } from '@graphql-hive/apollo';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 import { initSeed } from '../../testkit/seed';
@@ -459,6 +459,103 @@ function runArtifactsCDNTests(
         await server.stop();
       }
     });
+
+    test.concurrent(
+      'createSupergraphManager with schemaVersionId pins to specific version',
+      async ({ expect }) => {
+        const endpointBaseUrl = await getBaseEndpoint();
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish V1 Schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v1',
+            sdl: `type Query { ping: String }`,
+            service: 'ping',
+            url: 'http://ping.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const cdnAccessResult = await createCdnAccess();
+
+        // Create manager without pinning to get initial version
+        const manager = createSupergraphManager({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+        });
+
+        const gateway = new ApolloGateway({ supergraphSdl: manager });
+        const server = new ApolloServer({ gateway });
+
+        try {
+          await startStandaloneServer(server);
+
+          // Capture the version ID
+          const v1VersionId = manager.getSchemaVersionId();
+          expect(v1VersionId).toBeDefined();
+
+          await server.stop();
+
+          // Publish V2 Schema with different content
+          await writeToken
+            .publishSchema({
+              author: 'Kamil',
+              commit: 'v2',
+              sdl: `type Query { ping: String, pong: String }`,
+              service: 'ping',
+              url: 'http://ping.com',
+            })
+            .then(r => r.expectNoGraphQLErrors());
+
+          // Create a new manager pinned to V1
+          const pinnedManager = createSupergraphManager({
+            endpoint: endpointBaseUrl + target.id,
+            key: cdnAccessResult.secretAccessToken,
+            schemaVersionId: v1VersionId!,
+          });
+
+          const pinnedGateway = new ApolloGateway({ supergraphSdl: pinnedManager });
+          const pinnedServer = new ApolloServer({ gateway: pinnedGateway });
+
+          try {
+            const { url } = await startStandaloneServer(pinnedServer);
+
+            // Query the schema - should only have 'ping', not 'pong'
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                accept: 'application/json',
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify({
+                query: `{ __schema { types { name fields { name } } } }`,
+              }),
+            });
+
+            expect(response.status).toBe(200);
+            const result = await response.json();
+            const queryType = result.data.__schema.types.find(
+              (t: { name: string }) => t.name === 'Query',
+            );
+            expect(queryType.fields).toContainEqual({ name: 'ping' });
+            expect(queryType.fields).not.toContainEqual({ name: 'pong' });
+
+            // Verify the pinned manager returns V1 version ID
+            expect(pinnedManager.getSchemaVersionId()).toBe(v1VersionId);
+          } finally {
+            await pinnedServer.stop();
+          }
+        } finally {
+          // Server already stopped in try block
+        }
+      },
+    );
 
     test.concurrent('access versioned SDL artifact with valid credentials', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
@@ -1228,6 +1325,78 @@ function runArtifactsCDNTests(
           'public, max-age=31536000, immutable',
         );
         expect(contractSupergraphResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+      },
+    );
+
+    test.concurrent(
+      'createServicesFetcher with schemaVersionId fetches pinned version',
+      async ({ expect }) => {
+        const endpointBaseUrl = await getBaseEndpoint();
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish V1 Schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v1',
+            sdl: `type Query { ping: String }`,
+            service: 'ping',
+            url: 'http://ping.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Get V1 version ID
+        const v1Version = await writeToken.fetchLatestValidSchema();
+        const v1VersionId = v1Version.latestValidVersion?.id;
+        expect(v1VersionId).toBeDefined();
+
+        const cdnAccessResult = await createCdnAccess();
+
+        // Fetch V1 and capture content
+        const v1Fetcher = createServicesFetcher({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+        });
+        const v1Result = await v1Fetcher();
+        expect(v1Result[0].schemaVersionId).toBe(v1VersionId);
+
+        // Publish V2 Schema with different content
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v2',
+            sdl: `type Query { ping: String, pong: String }`,
+            service: 'ping',
+            url: 'http://ping.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Create a pinned fetcher for V1
+        const pinnedFetcher = createServicesFetcher({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+          schemaVersionId: v1VersionId!,
+        });
+
+        const pinnedResult = await pinnedFetcher();
+
+        // Should still return V1 content even after V2 was published
+        expect(pinnedResult[0].sdl).toBe(v1Result[0].sdl);
+        expect(pinnedResult[0].sdl).not.toContain('pong');
+
+        // Latest fetcher should return V2
+        const latestFetcher = createServicesFetcher({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+        });
+        const latestResult = await latestFetcher();
+        expect(latestResult[0].sdl).toContain('pong');
+        expect(latestResult[0].schemaVersionId).not.toBe(v1VersionId);
       },
     );
   });
