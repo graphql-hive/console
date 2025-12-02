@@ -62,8 +62,8 @@ import { createSupergraphManager } from '@graphql-hive/apollo'
 
 const supergraphManager = createSupergraphManager({
   endpoint: [
-    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>/supergraph',
-    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>/supergraph'
+    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>'
   ],
   key: '<cdn_access_key>',
   pollIntervalInMs: 15_000
@@ -97,8 +97,8 @@ import { createSupergraphManager, useHive } from '@graphql-hive/apollo'
 
 const supergraphManager = createSupergraphManager({
   endpoint: [
-    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>/supergraph',
-    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>/supergraph'
+    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>'
   ],
   key: '<cdn_access_key>',
   pollIntervalInMs: 15_000
