@@ -181,6 +181,8 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
 
     if (result.type === 'response') {
       const etag = result.headers.get('etag');
+      // S3/R2 returns custom metadata with x-amz-meta- prefix
+      const schemaVersionId = result.headers.get('x-amz-meta-x-hive-schema-version-id');
       const text = result.body;
 
       if (params.artifactType === 'metadata') {
@@ -208,6 +210,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
               headers: {
                 'Content-Type': 'application/json',
                 ...(etag ? { etag } : {}),
+                ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
               },
             },
             params.targetId,
@@ -227,12 +230,15 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
                 ? 'application/json'
                 : 'text/plain',
             ...(etag ? { etag } : {}),
+            ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
           },
         },
         params.targetId,
         request,
       );
     }
+
+    result satisfies never;
   }
 
   async function handlerV1Versioned(request: itty.IRequest & Request) {
@@ -299,6 +305,8 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
 
     if (result.type === 'response') {
       const etag = result.headers.get('etag');
+      // S3/R2 returns custom metadata with x-amz-meta- prefix
+      const schemaVersionId = result.headers.get('x-amz-meta-x-hive-schema-version-id');
       const text = result.body;
 
       if (params.artifactType === 'metadata') {
@@ -319,6 +327,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'public, max-age=31536000, immutable',
                 ...(etag ? { etag } : {}),
+                ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
               },
             },
             params.targetId,
@@ -340,6 +349,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
             // Versioned artifacts are immutable - aggressive caching
             'Cache-Control': 'public, max-age=31536000, immutable',
             ...(etag ? { etag } : {}),
+            ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
           },
         },
         params.targetId,
