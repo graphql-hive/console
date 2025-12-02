@@ -71,13 +71,15 @@ export class ArtifactStorageWriter {
 
       // Write versioned key first (if versionId provided)
       // This order ensures that if versioned write fails, "latest" still points to the previous version
-      if (versionedKey) {
+      if (versionedKey && args.versionId) {
         const versionedResult = await s3.client.fetch(
           [s3.endpoint, s3.bucket, versionedKey].join('/'),
           {
             method: 'PUT',
             headers: {
               'content-type': meta.contentType,
+              // Store version ID as S3 object metadata for CDN response headers
+              'x-amz-meta-x-hive-schema-version-id': args.versionId,
             },
             body,
             aws: {
@@ -87,6 +89,14 @@ export class ArtifactStorageWriter {
         );
 
         if (versionedResult.statusCode !== 200) {
+          this.logger.error(
+            'Failed to write versioned artifact (targetId=%s, artifactType=%s, versionId=%s, key=%s, statusCode=%s)',
+            args.targetId,
+            args.artifactType,
+            args.versionId,
+            versionedKey,
+            versionedResult.statusCode,
+          );
           throw new Error(
             `Unexpected status code ${versionedResult.statusCode} when writing versioned artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, versionId=${args.versionId}, key=${versionedKey})`,
           );
@@ -98,6 +108,8 @@ export class ArtifactStorageWriter {
         method: 'PUT',
         headers: {
           'content-type': meta.contentType,
+          // Store version ID as S3 object metadata for CDN response headers
+          ...(args.versionId ? { 'x-amz-meta-x-hive-schema-version-id': args.versionId } : {}),
         },
         body,
         aws: {
