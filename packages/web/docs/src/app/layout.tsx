@@ -123,11 +123,6 @@ export default async function HiveDocsLayout({ children }: { children: ReactNode
                 title: 'Terms of Use',
               },
               {
-                children: 'Bug Bounty Program',
-                href: '/bug-bounty-program',
-                title: 'Bug Bounty Program',
-              },
-              {
                 children: 'Partners',
                 href: '/partners',
                 title: 'Partners',
