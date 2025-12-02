@@ -60,13 +60,18 @@ import { ApolloServer } from '@apollo/server'
 import { startStandaloneServer } from '@apollo/server/standalone'
 import { createSupergraphManager } from '@graphql-hive/apollo'
 
+const supergraphManager = createSupergraphManager({
+  endpoint: [
+    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>/supergraph',
+    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>/supergraph'
+  ],
+  key: '<cdn_access_key>',
+  pollIntervalInMs: 15_000
+})
+
 const gateway = new ApolloGateway({
   // Apollo Gateway will fetch Supergraph from Hive CDN
-  supergraphSdl: createSupergraphManager({
-    endpoint: 'HIVE_CDN_ENDPOINT',
-    key: 'HIVE_CDN_KEY',
-    pollIntervalInMs: 15_000
-  })
+  supergraphSdl: supergraphManager
 })
 
 const server = new ApolloServer({ gateway })
@@ -90,13 +95,18 @@ import { ApolloServer } from '@apollo/server'
 import { startStandaloneServer } from '@apollo/server/standalone'
 import { createSupergraphManager, useHive } from '@graphql-hive/apollo'
 
+const supergraphManager = createSupergraphManager({
+  endpoint: [
+    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>/supergraph',
+    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>/supergraph'
+  ],
+  key: '<cdn_access_key>',
+  pollIntervalInMs: 15_000
+})
+
 const gateway = new ApolloGateway({
   // Apollo Gateway will fetch Supergraph from Hive CDN
-  supergraphSdl: createSupergraphManager({
-    endpoint: process.env.HIVE_CDN_ENDPOINT,
-    key: process.env.HIVE_CDN_KEY,
-    pollIntervalInMs: 15_000
-  })
+  supergraphSdl: supergraphManager
 })
 
 const server = new ApolloServer({

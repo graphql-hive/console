@@ -34,19 +34,20 @@ Once you have all services schemas pushed to Hive, and available in the CDN, you
 import { createServer } from 'node:http'
 import { buildSchema } from 'graphql'
 import { createYoga } from 'graphql-yoga'
-import { createServicesFetcher } from '@graphql-hive/core'
+import { createCDNArtifactFetcher } from '@graphql-hive/core'
 import { buildHTTPExecutor } from '@graphql-tools/executor-http'
 import { stitchSchemas } from '@graphql-tools/stitch'
 
-const fetchServices = createServicesFetcher({
-  // The CDN endpoint you are using here should not end with any artifact name.
-  // So drop the "/sdl" or "/services" from the URL get from Hive dashboard.
-  endpoint: process.env.HIVE_CDN_ENDPOINT,
-  key: process.env.HIVE_CDN_KEY
+const fetcher = createCDNArtifactFetcher({
+  endpoint: [
+    'https://cdn.graphql-hive.com/artifacts/v1/<target_id>/services',
+    'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>/services'
+  ],
+  accessKey: '<cdn_access_key>'
 })
 
 async function main() {
-  const services = await fetchServices()
+  const services = JSON.parse(await fetcher.fetch())
   const subschemas = services.map(service => {
     return {
       schema: buildSchema(service.sdl),
@@ -69,11 +70,6 @@ main().catch(err => {
 })
 ```
 
-<Callout>
-  The `HIVE_CDN_ENDPOINT` variable should not include any artifact suffix (for example,
-  `/services`), it should be in the following format:
-  `https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID`
-</Callout>
 
 ### Usage Reporting
 
