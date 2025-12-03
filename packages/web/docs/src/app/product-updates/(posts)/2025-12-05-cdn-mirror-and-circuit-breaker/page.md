@@ -17,8 +17,8 @@ mitigate potential outages of critical components for the Gateway.
 
 We now operate a second CDN mirror, `cdn-mirror.graphql-hive.com`, built on AWS CloudFront. This
 mirror serves as a complete replica of our primary Cloudflare-based CDN. In the event of an outage
-with our main CDN (on Cloudflare), you can seamlessly switch to the mirror, ensuring your schemas
-and artifacts remain available.
+with our main CDN, you can seamlessly switch to the mirror, ensuring your schemas and artifacts
+remain available.
 
 Our official SDKs have been updated to automatically handle this fallback when configured with both
 endpoints.
