@@ -2,7 +2,7 @@ import { Fragment, useMemo } from 'react';
 import { CompositionErrorsSection } from '@/components/target/history/errors-and-changes';
 import { ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
 import { ChangeBlock } from '@/components/target/proposals/change-detail';
-import { ServiceHeading } from '@/components/target/proposals/service-heading';
+import { ServiceHeading, ServiceHeadingType } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
 import { Change, CriticalityLevel } from '@graphql-inspector/core';
 import type { ServiceProposalDetails } from './target-proposal-types';
@@ -28,7 +28,15 @@ export function TargetProposalDetailsPage(props: {
 }) {
   const mappedServices = useMemo(() => {
     return props.services?.map(
-      ({ allChanges, ignoredChanges, conflictingChanges, serviceName, compositionErrors }) => {
+      ({
+        allChanges,
+        ignoredChanges,
+        conflictingChanges,
+        serviceName,
+        compositionErrors,
+        afterSchema,
+        beforeSchema,
+      }) => {
         const changes = allChanges.map(c => {
           const conflict = conflictingChanges.find(({ change }) => c === change);
           if (conflict) {
@@ -69,6 +77,12 @@ export function TargetProposalDetailsPage(props: {
           dangerous,
           ignored: ignoredChanges.map(c => ({ ...c, mergeStatus: MergeStatus.IGNORED })),
           serviceName,
+          type:
+            beforeSchema === null
+              ? ServiceHeadingType.NEW
+              : afterSchema === null
+                ? ServiceHeadingType.DELETED
+                : undefined,
         };
       },
     );
@@ -77,7 +91,16 @@ export function TargetProposalDetailsPage(props: {
   return (
     <div className="w-full">
       {mappedServices?.map(
-        ({ safe, dangerous, breaking, ignored, serviceName, hasChanges, compositionErrors }) => {
+        ({
+          safe,
+          dangerous,
+          breaking,
+          ignored,
+          serviceName,
+          hasChanges,
+          compositionErrors,
+          type,
+        }) => {
           if (compositionErrors !== undefined) {
             return (
               <CompositionErrorsSection key={serviceName} compositionErrors={compositionErrors} />
@@ -89,7 +112,7 @@ export function TargetProposalDetailsPage(props: {
           }
           return (
             <Fragment key={serviceName}>
-              <ServiceHeading serviceName={serviceName} />
+              <ServiceHeading serviceName={serviceName} type={type} />
               <div className="px-2 pb-8">
                 <ChangeBlock
                   changes={breaking}
