@@ -100,7 +100,7 @@ export function OrganizationLayout({
     variables: {
       organizationSlug: props.organizationSlug,
     },
-    requestPolicy: 'cache-and-network',
+    requestPolicy: 'cache-first',
   });
 
   const organizationExists = query.data?.organizationBySlug;
