@@ -7,7 +7,7 @@ import { useRouter } from '@tanstack/react-router';
 
 export const commonErrorStrings = {
   reported: 'This error was reported automatically to our technical support team.',
-  track: 'To share additional details with us, contact our support team ',
+  track: 'To share additional details with us, contact our support team',
   link: 'here',
 };
 
