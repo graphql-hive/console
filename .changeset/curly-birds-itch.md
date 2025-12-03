@@ -2,5 +2,4 @@
 'hive': patch
 ---
 
-Correctly check the environment flag in createFeatureFlagPermissionFilter and adjust frontend to fix
-pagination.
+Correctly check the global environment feature flag in for app deployments and fix app deployment pagination
