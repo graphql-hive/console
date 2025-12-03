@@ -171,6 +171,7 @@ impl UsageAgent {
             .connect_timeout(connect_timeout)
             .timeout(request_timeout)
             .user_agent(user_agent)
+            .default_headers(default_headers)
             .build()
             .map_err(AgentError::HTTPClientCreationError)?;
         let client = ClientBuilder::new(reqwest_agent)
