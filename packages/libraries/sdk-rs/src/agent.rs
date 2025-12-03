@@ -270,6 +270,9 @@ impl UsageAgent {
     }
 
     pub async fn send_report(&self, report: Report) -> Result<(), AgentError> {
+        if report.size == 0 {
+            return Ok(());
+        }
         let report_body =
             serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
         // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
