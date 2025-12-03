@@ -893,7 +893,7 @@ export class OrganizationAccessTokens {
   }
 
   private createFeatureFlagPermissionFilter(organization: Organization) {
-    const isAppDeplymentsEnabled =
+    const isAppDeploymentsEnabled =
       organization.featureFlags.appDeployments || this.appDeploymentsEnabled;
     const isOTELTracingEnabled = organization.featureFlags.otelTracing || this.otelTracingEnabled;
 
