@@ -3,13 +3,12 @@ import { useMutation, useQuery } from 'urql';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
-import { SaveIcon } from '@/components/ui/icon';
+import { CheckIcon, SaveIcon, XIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
 import { graphql } from '@/gql';
-import { cn } from '@/lib/utils';
-import { Change } from '@graphql-inspector/core';
+import { useTimed } from '@/lib/hooks/use-timed';
 
-type Confirmation = { name: string; type: 'removal'; reason: string };
+// type Confirmation = { name: string; type: 'removal'; reason: string };
 
 // @todo merge this into a parent query as a fragment to avoid issues w/cache
 const Proposals_EditProposalQuery = graphql(`
@@ -115,6 +114,8 @@ export function TargetProposalEditPage(props: {
 }) {
   // @todo show the error somewhere
   const [editorError, setEditorError] = useState('');
+  const [saved, startSavedTimer] = useTimed(1500);
+  const [errored, startErroredTimer] = useTimed(1500);
 
   const [query] = useQuery({
     query: Proposals_EditProposalQuery,
@@ -135,8 +136,10 @@ export function TargetProposalEditPage(props: {
   const existingServices = useMemo(() => {
     return query.data?.target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
   }, [query.data]);
-  // @todo
-  const [confirmations, setConfirmations] = useState<Array<Confirmation>>([]);
+
+  // @todo confirm deletions on save
+  // const [confirmations, setConfirmations] = useState<Array<Confirmation>>([]);
+
   const [changedServices, setChangedServices] = useState<Array<ServiceTab>>([]);
   useEffect(() => {
     setChangedServices(
@@ -188,20 +191,34 @@ export function TargetProposalEditPage(props: {
 
     if (errors.length) {
       setEditorError(errors.map(e => `${e.id}: ${e.mutation.error?.message}`).join('\n'));
+      startErroredTimer();
+    } else {
+      setEditorError('');
+      startSavedTimer();
     }
   };
 
   return (
-    <div className="min-h-[500px] w-full">
-      <Button
-        disabled={query.fetching || saveChangesResponse.fetching}
-        variant="outline"
-        className="top 10 absolute right-12 justify-center px-3 font-bold"
-        onClick={onSaveChanges}
-      >
-        <SaveIcon className="mr-1 size-4" />{' '}
-        {saveChangesResponse.fetching ? <Spinner /> : 'Save Changes'}
-      </Button>
+    <div className="relative min-h-[500px] w-full">
+      <div className="absolute right-1 top-1 flex items-center">
+        <Button
+          disabled={query.fetching || saveChangesResponse.fetching}
+          variant="outline"
+          className="w-[160px] justify-center px-3 font-bold"
+          onClick={onSaveChanges}
+        >
+          {saveChangesResponse.fetching ? (
+            <Spinner className="mr-1 size-4" />
+          ) : saved ? (
+            <CheckIcon size={16} className="mr-1" />
+          ) : errored ? (
+            <XIcon className="mr-1 size-5 text-red-500" />
+          ) : (
+            <SaveIcon className="mr-1 size-4" />
+          )}
+          Save Changes
+        </Button>
+      </div>
       {query.fetching ? (
         <Spinner />
       ) : (

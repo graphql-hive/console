@@ -1,13 +1,10 @@
-// import { SchemaCheckManager } from '../../schema/providers/schema-check-manager';
-import { Schema } from '@hive/api';
-import { HiveError } from '@hive/api/shared/errors';
+import type { Schema } from '../../../shared/entities';
 import { SchemaManager } from '../../schema/providers/schema-manager';
 import { toGraphQLSchemaCheckCurry } from '../../schema/to-graphql-schema-check';
 import { Storage } from '../../shared/providers/storage';
 import { SchemaProposalManager } from '../providers/schema-proposal-manager';
 import type { SchemaProposalResolvers } from './../../../__generated__/types';
 
-// @todo
 export const SchemaProposal: SchemaProposalResolvers = {
   async author(proposal, _, { injector }) {
     if (proposal.author) {
@@ -49,7 +46,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
             latest: true,
           });
         const schemas = await injector.get(SchemaManager).getMaybeSchemasOfVersion(latest);
-        return schemaChecks.edges.map(({ node, cursor }): Schema => {
+        return schemaChecks.edges.map(({ node, cursor: _ }): Schema => {
           const schema = schemas.find(
             s =>
               (node.serviceName === '' && s.kind === 'single') ||

@@ -103,6 +103,7 @@ function SupergraphDiff(props: {
     const changes: Change<any>[] = [];
     for (const change of props.changes ?? []) {
       // @todo calling inside a loop can cause errors... fix.
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       const c = useFragment(ProposalOverview_ChangeFragment, change);
       if (c) {
         changes.push({

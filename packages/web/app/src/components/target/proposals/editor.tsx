@@ -463,8 +463,8 @@ function ServiceSelect(props: {
         </SelectTrigger>
         <SelectContent>{selectableServices}</SelectContent>
       </Select>
-      <Button variant="orangeLink" className="ml-4 whitespace-nowrap" onClick={props.onSelectNew}>
-        + New Service
+      <Button variant="orangeLink" className="ml-0 whitespace-nowrap" onClick={props.onSelectNew}>
+        + New<span className="hidden sm:inline-block">&nbsp;Service</span>
       </Button>
     </div>
   ) : null;

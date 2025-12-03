@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { buildSchema } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';

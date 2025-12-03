@@ -228,6 +228,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               .filter(c => !!c)
               ?.map(({ node: change }): Change<any> => {
                 // @todo don't useFragment here...
+                // eslint-disable-next-line react-hooks/rules-of-hooks
                 const c = useFragment(ProposalOverview_ChangeFragment, change);
                 return {
                   criticality: {
