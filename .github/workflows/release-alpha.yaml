@@ -175,7 +175,7 @@ jobs:
           VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive-apollo-router-plugin")).version' published.json)`
           set-cargo-version ./packages/libraries/router/Cargo.toml $VERSION
 
-      - name: extract published Crate version
+      - name: extract published sdk version
         id: sdk-crate
         if:
           needs.npm.outputs.published && contains(needs.npm.outputs.publishedPackages,
@@ -189,7 +189,6 @@ jobs:
 
           echo "crate_publish=true" >> $GITHUB_OUTPUT
 
-          # Update the version in plugin Cargo
           # Find and replace the version of "hive-console-sdk" dependency in router Cargo.toml
           if [ -f ./packages/libraries/router/Cargo.toml ]; then
             SDK_VERSION_LINE=$(grep -n 'hive-console-sdk' ./packages/libraries/router/Cargo.toml | head -n 1 | cut -d: -f1)
