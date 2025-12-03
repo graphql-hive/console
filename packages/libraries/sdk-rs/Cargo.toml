@@ -32,7 +32,6 @@ serde_json = "1"
 moka = { version = "0.12.10", features = ["future", "sync"] }
 sha2 = { version = "0.10.8", features = ["std"] }
 tokio-util = "0.7.16"
-uuid = { version = "1.19.0", features = ["v4"] }
 
 [dev-dependencies]
 mockito = "1.7.0"
