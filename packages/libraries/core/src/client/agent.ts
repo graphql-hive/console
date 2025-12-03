@@ -1,34 +1,14 @@
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
+import {
+  CircuitBreakerConfiguration,
+  defaultCircuitBreakerConfiguration,
+} from './circuit-breaker.js';
 import { http } from './http-client.js';
 import type { LegacyLogger } from './types.js';
 import { chooseLogger } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
-
-export type AgentCircuitBreakerConfiguration = {
-  /**
-   * Percentage after what the circuit breaker should kick in.
-   * Default: 50
-   */
-  errorThresholdPercentage: number;
-  /**
-   * Count of requests before starting evaluating.
-   * Default: 5
-   */
-  volumeThreshold: number;
-  /**
-   * After what time the circuit breaker is attempting to retry sending requests in milliseconds
-   * Default: 30_000
-   */
-  resetTimeout: number;
-};
-
-const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
-  errorThresholdPercentage: 50,
-  volumeThreshold: 10,
-  resetTimeout: 30_000,
-};
 
 export interface AgentOptions {
   enabled?: boolean;
@@ -76,7 +56,7 @@ export interface AgentOptions {
    * false -> Disable
    * object -> use custom configuration see {AgentCircuitBreakerConfiguration}
    */
-  circuitBreaker?: boolean | AgentCircuitBreakerConfiguration;
+  circuitBreaker?: boolean | CircuitBreakerConfiguration;
   /**
    * WHATWG Compatible fetch implementation
    * used by the agent to send reports
@@ -103,7 +83,7 @@ export function createAgent<TEvent>(
   },
 ) {
   const options: Required<Omit<AgentOptions, 'fetch' | 'debug' | 'logger' | 'circuitBreaker'>> & {
-    circuitBreaker: AgentCircuitBreakerConfiguration | null;
+    circuitBreaker: CircuitBreakerConfiguration | null;
   } = {
     timeout: 30_000,
     enabled: true,

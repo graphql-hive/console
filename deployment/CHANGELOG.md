@@ -1,5 +1,24 @@
 # hive
 
+## 8.12.0
+
+### Minor Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+### Patch Changes
+
+- [#7328](https://github.com/graphql-hive/console/pull/7328)
+  [`c024ea7`](https://github.com/graphql-hive/console/commit/c024ea7666ee96517b34286d8da35ef20ed89044)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Expose `Project.createdAt` field via
+  the public GraphQL API.
+
 ## 8.11.0
 
 ### Minor Changes
