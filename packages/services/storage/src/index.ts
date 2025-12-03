@@ -3924,6 +3924,7 @@ export async function createStorage(
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
             , "service_name"
+            , "service_url"
             , "meta"
             , "target_id"
             , "schema_version_id"
@@ -3949,6 +3950,7 @@ export async function createStorage(
           VALUES (
               ${schemaSDLHash}
             , ${args.serviceName}
+            , ${args.serviceUrl}
             , ${jsonify(args.meta)}
             , ${args.targetId}
             , ${args.schemaVersionId}
@@ -5303,6 +5305,7 @@ const schemaCheckSQLFields = sql`
   , to_json(c."updated_at") as "updatedAt"
   , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
   , c."service_name" as "serviceName"
+  , c."service_url" as "serviceUrl"
   , c."meta"
   , c."target_id" as "targetId"
   , c."schema_version_id" as "schemaVersionId"

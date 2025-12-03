@@ -1442,6 +1442,7 @@ const NotManuallyApprovedSchemaCheckFields = {
 const SchemaCheckSharedOutputFields = {
   schemaSDL: z.string(),
   serviceName: z.string().nullable(),
+  serviceUrl: z.string().nullable(),
   targetId: z.string(),
   schemaVersionId: z.string().nullable(),
   meta: z

@@ -1,4 +1,6 @@
 // import { SchemaCheckManager } from '../../schema/providers/schema-check-manager';
+import { Schema } from '@hive/api';
+import { HiveError } from '@hive/api/shared/errors';
 import { SchemaManager } from '../../schema/providers/schema-manager';
 import { toGraphQLSchemaCheckCurry } from '../../schema/to-graphql-schema-check';
 import { Storage } from '../../shared/providers/storage';
@@ -47,10 +49,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
             latest: true,
           });
         const schemas = await injector.get(SchemaManager).getMaybeSchemasOfVersion(latest);
-        // @todo patch schema changes onto latest
-        // return {
-        // edges:
-        return schemaChecks.edges.map(({ node, cursor }) => {
+        return schemaChecks.edges.map(({ node, cursor }): Schema => {
           const schema = schemas.find(
             s =>
               (node.serviceName === '' && s.kind === 'single') ||
@@ -59,20 +58,21 @@ export const SchemaProposal: SchemaProposalResolvers = {
           return {
             kind: schema?.kind ?? 'composite',
             action: 'PUSH', // no idea why this is required for `__isTypeOf` in CompositeSchema.
-            sdl: node.schemaSDL ?? '', // @todo patch
+            sdl: node.schemaSDL ?? '', // @todo patch schema changes onto latest
             id: node.id,
-            service_name: node.serviceName,
-            service_url: schema?.kind === 'composite' ? 'todo' : null,
+            service_name: node.serviceName ?? '',
+            target: node.targetId ?? schema?.target,
+            service_url:
+              node.serviceUrl ?? (schema?.kind === 'composite' ? schema.service_url : null) ?? null,
             author: node.meta?.author ?? '',
-            date: new Date(node.createdAt),
+            date: new Date(node.createdAt).getTime(),
             commit: node.meta?.commit ?? node.id,
-            metadata: node.meta ? JSON.stringify(node.meta) : undefined,
+            metadata: node.meta ? JSON.stringify(node.meta) : null,
           };
         });
       }
     }
-    return null;
-    // @todo error if not found...
+    throw new Error('Something went wrong.');
   },
   async checks(proposal, args, { injector }) {
     const target = await injector.get(Storage).getTargetById((proposal as any).targetId);

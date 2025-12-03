@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
@@ -85,6 +85,28 @@ const Proposals_EditProposalQuery = graphql(`
   }
 `);
 
+const UpdateProposedChangesMutation = graphql(`
+  mutation Proposals_UpdateProposedChanges($input: SchemaCheckInput!) {
+    schemaCheck(input: $input) {
+      ... on SchemaCheckSuccess {
+        schemaCheck {
+          id
+        }
+      }
+      ... on SchemaCheckError {
+        errors {
+          edges {
+            node {
+              path
+              message
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
 export function TargetProposalEditPage(props: {
   organizationSlug: string;
   projectSlug: string;
@@ -109,6 +131,7 @@ export function TargetProposalEditPage(props: {
       },
     },
   });
+  const [saveChangesResponse, saveChanges] = useMutation(UpdateProposedChangesMutation);
   const existingServices = useMemo(() => {
     return query.data?.target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
   }, [query.data]);
@@ -129,22 +152,55 @@ export function TargetProposalEditPage(props: {
       }) ?? [],
     );
   }, [query.data?.schemaProposal?.rebasedSchemaSDL]);
-  // @todo consider calculating from the supergraph?
-  // const [serviceDiff, setServiceDiff] = useState<Array<{
-  //   title: string;
-  //   changes: Change[];
-  //   error?: string;
-  //   type: 'CompositeSchema' | 'SingleSchema';
-  // }> | null>(null);
+
+  const onSaveChanges = async () => {
+    const result = await Promise.all(
+      changedServices.map(service => {
+        return saveChanges({
+          input: {
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
+            sdl: service.source,
+            meta: query.data?.me.displayName
+              ? {
+                  author: query.data?.me.displayName,
+                  commit: '', // @todo decide how to handle this commit ID
+                }
+              : null,
+            schemaProposalId: props.proposalId,
+            service:
+              service.__typename === 'CompositeSchema' ? (service.service ?? service.id) : null,
+            url: service.__typename === 'CompositeSchema' ? service.url : null,
+          },
+        });
+      }),
+    );
+    const errors = changedServices
+      .map((service, index) => {
+        return { ...service, mutation: result[index] };
+      })
+      .filter(s => !!s.mutation.error);
+
+    if (errors.length) {
+      setEditorError(errors.map(e => `${e.id}: ${e.mutation.error?.message}`).join('\n'));
+    }
+  };
 
   return (
     <div className="min-h-[500px] w-full">
       <Button
-        disabled={query.fetching}
+        disabled={query.fetching || saveChangesResponse.fetching}
         variant="outline"
         className="top 10 absolute right-12 justify-center px-3 font-bold"
+        onClick={onSaveChanges}
       >
-        <SaveIcon className="mr-1 size-4" /> Save Changes
+        <SaveIcon className="mr-1 size-4" />{' '}
+        {saveChangesResponse.fetching ? <Spinner /> : 'Save Changes'}
       </Button>
       {query.fetching ? (
         <Spinner />

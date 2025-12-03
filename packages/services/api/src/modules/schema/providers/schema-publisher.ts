@@ -684,6 +684,7 @@ export class SchemaPublisher {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
         schemaVersionId: latestVersion?.versionId ?? null,
@@ -738,6 +739,7 @@ export class SchemaPublisher {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
         schemaVersionId: latestVersion?.versionId ?? null,
@@ -794,6 +796,7 @@ export class SchemaPublisher {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
         schemaVersionId: latestSchemaVersion.id ?? null,

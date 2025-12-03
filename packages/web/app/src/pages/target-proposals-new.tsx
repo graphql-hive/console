@@ -49,28 +49,6 @@ const ProposeChangesMutation = graphql(`
   }
 `);
 
-const UpdateProposedChangesMutation = graphql(`
-  mutation Proposals_UpdateProposedChanges($input: SchemaCheckInput!) {
-    schemaCheck(input: $input) {
-      ... on SchemaCheckSuccess {
-        schemaCheck {
-          id
-        }
-      }
-      ... on SchemaCheckError {
-        errors {
-          edges {
-            node {
-              path
-              message
-            }
-          }
-        }
-      }
-    }
-  }
-`);
-
 const ProposalsNewProposalQuery = graphql(`
   query ProposalsNewProposalQuery($targetReference: TargetReferenceInput!) {
     me {
