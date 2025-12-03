@@ -41,11 +41,18 @@ More information:
 - [Usage Reporting Configuration - Hive Gateway](/docs/gateway/usage-reporting)
 - [Usage Reporting Configuration - Hive JS SDK](/docs/api-reference/client)
 
-## Mitigating Outages: Gateway and SDK Configuration
+## Mitigating Outages of Gateway and services using SDKs
 
 The Hive Gateway and SDKs have several features to mitigate the impact of CDN or registry outages.
 
 ### Schema Polling from CDN
+
+| Client                    | Status    |
+| ------------------------- | --------- |
+| Hive JS SDK               | Supported |
+| Hive Gateway              | Supported |
+| Hive Router               | Pending   |
+| Apollo Router Hive Plugin | Pending   |
 
 Your gateway regularly polls the CDN for schema updates. To ensure your gateway can always fetch the
 latest schema, you should configure it to use both the primary and secondary CDN endpoints.
@@ -64,6 +71,13 @@ More information:
 
 ### Persisted Document Resolution
 
+| Client                    | Status    |
+| ------------------------- | --------- |
+| Hive JS SDK               | Supported |
+| Hive Gateway              | Supported |
+| Hive Router               | Pending   |
+| Apollo Router Hive Plugin | Pending   |
+
 If you are using persisted documents, the gateway will fetch them from the CDN. As with schema
 polling, configuring both CDN endpoints is crucial for resilience.
 
@@ -79,6 +93,13 @@ More information:
 - [Persisted Documents - Hive JS SDK](/docs/api-reference/client#persisted-documents)
 
 ### Usage Reporting
+
+| Client                    | Status    |
+| ------------------------- | --------- |
+| Hive JS SDK               | Supported |
+| Hive Gateway              | Supported |
+| Hive Router               | Pending   |
+| Apollo Router Hive Plugin | Pending   |
 
 In the event of a usage reporting service outage, the Hive clients implement a **circuit breaker**
 pattern. This feature detects when the service is unavailable and temporarily stops sending usage

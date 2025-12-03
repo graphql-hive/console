@@ -34,8 +34,8 @@ run stable even if an outage affects our usage reporting system.
 
 ### Conclusion
 
-These improvements are now available for the Hive JS SDK and JavaScript Hive Gateway.
-We will soon also ship these improvements for the Hive Rust SDK, Hive Router and the Apollo Router Hive Plugin.
+These improvements are now available for the Hive JS SDK and JavaScript Hive Gateway. We will soon
+also ship these improvements for the Hive Rust SDK, Hive Router and the Apollo Router Hive Plugin.
 
 These updates are part of our ongoing commitment to providing a highly available and reliable schema
 registry for your GraphQL APIs.
