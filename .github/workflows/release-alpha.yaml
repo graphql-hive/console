@@ -1,5 +1,14 @@
 on:
   workflow_call:
+    outputs:
+      published:
+        description: A boolean value to indicate whether a publishing is happened or not
+        value: ${{ jobs.npm.outputs.published }}
+      publishedPackages:
+        description:
+          'A JSON array to present the published packages. The format is [{"name": "@xx/xx",
+          "version": "1.2.0"}, {"name": "@xx/xy", "version": "0.8.9"}]'
+        value: ${{ jobs.npm.outputs.publishedPackages }}
 
 jobs:
   # Release alpha version on NPM for Hive libraries
