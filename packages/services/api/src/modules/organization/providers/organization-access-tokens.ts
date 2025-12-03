@@ -898,7 +898,7 @@ export class OrganizationAccessTokens {
     const isOTELTracingEnabled = organization.featureFlags.otelTracing || this.otelTracingEnabled;
 
     return (id: Permission) =>
-      (!isAppDeplymentsEnabled && id.startsWith('appDeployment:')) ||
+      (!isAppDeploymentsEnabled && id.startsWith('appDeployment:')) ||
       (!isOTELTracingEnabled && id.startsWith('traces:'))
         ? false
         : true;
