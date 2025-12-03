@@ -3,7 +3,7 @@ use graphql_parser::schema::Document;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, VecDeque},
     sync::{Arc, Mutex},
@@ -12,7 +12,7 @@ use std::{
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Report {
     size: usize,
     map: HashMap<String, OperationMapRecord>,
@@ -20,7 +20,7 @@ pub struct Report {
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct OperationMapRecord {
     operation: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -29,7 +29,7 @@ struct OperationMapRecord {
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Operation {
     operationMapKey: String,
     timestamp: u64,
@@ -41,20 +41,20 @@ struct Operation {
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Execution {
     ok: bool,
     duration: u128,
     errorsTotal: usize,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Metadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     client: Option<ClientInfo>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 struct ClientInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
@@ -114,7 +114,7 @@ pub struct UsageAgent {
 }
 
 fn non_empty_string(value: Option<String>) -> Option<String> {
-    value.filter(|str| str.is_empty())
+    value.filter(|str| !str.is_empty())
 }
 
 #[derive(Error, Debug)]
@@ -171,6 +171,7 @@ impl UsageAgent {
             .connect_timeout(connect_timeout)
             .timeout(request_timeout)
             .user_agent(user_agent)
+            .default_headers(default_headers)
             .build()
             .map_err(AgentError::HTTPClientCreationError)?;
         let client = ClientBuilder::new(reqwest_agent)
@@ -269,6 +270,9 @@ impl UsageAgent {
     }
 
     pub async fn send_report(&self, report: Report) -> Result<(), AgentError> {
+        if report.size == 0 {
+            return Ok(());
+        }
         let report_body =
             serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
         // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
@@ -355,5 +359,202 @@ impl UsageAgentExt for Arc<UsageAgent> {
         self.flush_if_full(size)?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{sync::Arc, time::Duration};
+
+    use graphql_parser::{parse_query, parse_schema};
+    use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
+
+    use crate::agent::{ExecutionReport, Report, UsageAgent, UsageAgentExt};
+
+    const CONTENT_TYPE_VALUE: &'static str = "application/json";
+    const GRAPHQL_CLIENT_NAME: &'static str = "Hive Client";
+    const GRAPHQL_CLIENT_VERSION: &'static str = "1.0.0";
+
+    #[tokio::test]
+    async fn should_send_data_to_hive() {
+        let token = "Token";
+
+        let mut server = mockito::Server::new_async().await;
+
+        let server_url = server.url();
+
+        let timestamp = 1625247600;
+        let duration = Duration::from_millis(20);
+        let user_agent = format!("hive-router-sdk-test");
+
+        let mock = server
+            .mock("POST", "/200")
+            .match_header(AUTHORIZATION, format!("Bearer {}", token).as_str())
+            .match_header(CONTENT_TYPE, CONTENT_TYPE_VALUE)
+            .match_header(USER_AGENT, user_agent.as_str())
+            .match_header("X-Usage-API-Version", "2")
+            .match_request(move |request| {
+                let request_body = request.body().expect("Failed to extract body");
+                let report: Report = serde_json::from_slice(request_body)
+                    .expect("Failed to parse request body as JSON");
+                assert_eq!(report.size, 1);
+                let record = report.map.values().next().expect("No operation record");
+                // operation
+                assert!(record.operation.contains("mutation deleteProject"));
+                assert_eq!(record.operationName.as_deref(), Some("deleteProject"));
+                // fields
+                let expected_fields = vec![
+                    "Mutation.deleteProject",
+                    "Mutation.deleteProject.selector",
+                    "Mutation.deleteProject.selector!",
+                    "DeleteProjectPayload.selector",
+                    "ProjectSelector.organization",
+                    "ProjectSelector.project",
+                    "DeleteProjectPayload.deletedProject",
+                    "Project.id",
+                    "Project.cleanId",
+                    "Project.name",
+                    "Project.type",
+                    "ProjectType.FEDERATION",
+                    "ProjectType.STITCHING",
+                    "ProjectType.SINGLE",
+                    "ProjectType.CUSTOM",
+                    "ProjectSelectorInput.organization",
+                    "ID",
+                    "ProjectSelectorInput.project",
+                ];
+                for field in &expected_fields {
+                    assert!(record.fields.contains(&field.to_string()));
+                }
+                assert_eq!(record.fields.len(), expected_fields.len());
+
+                // Operations
+                let operations = report.operations;
+                assert_eq!(operations.len(), 1); // one operation
+
+                let operation = &operations[0];
+                let key = report.map.keys().next().expect("No operation key");
+                assert_eq!(&operation.operationMapKey, key);
+                assert_eq!(operation.timestamp, timestamp);
+                assert_eq!(operation.execution.duration, duration.as_nanos());
+                assert_eq!(operation.execution.ok, true);
+                assert_eq!(operation.execution.errorsTotal, 0);
+                true
+            })
+            .expect(1)
+            .with_status(200)
+            .create_async()
+            .await;
+        let schema: graphql_tools::static_graphql::schema::Document = parse_schema(
+            r#"
+                type Query {
+                    project(selector: ProjectSelectorInput!): Project
+                    projectsByType(type: ProjectType!): [Project!]!
+                    projects(filter: FilterInput): [Project!]!
+                }
+
+                type Mutation {
+                    deleteProject(selector: ProjectSelectorInput!): DeleteProjectPayload!
+                }
+
+                input ProjectSelectorInput {
+                    organization: ID!
+                    project: ID!
+                }
+
+                input FilterInput {
+                    type: ProjectType
+                    pagination: PaginationInput
+                }
+
+                input PaginationInput {
+                    limit: Int
+                    offset: Int
+                }
+
+                type ProjectSelector {
+                    organization: ID!
+                    project: ID!
+                }
+
+                type DeleteProjectPayload {
+                    selector: ProjectSelector!
+                    deletedProject: Project!
+                }
+
+                type Project {
+                    id: ID!
+                    cleanId: ID!
+                    name: String!
+                    type: ProjectType!
+                    buildUrl: String
+                    validationUrl: String
+                }
+
+                enum ProjectType {
+                    FEDERATION
+                    STITCHING
+                    SINGLE
+                    CUSTOM
+                }
+        "#,
+        )
+        .expect("Failed to parse schema");
+
+        let op: graphql_tools::static_graphql::query::Document = parse_query(
+            r#"
+                mutation deleteProject($selector: ProjectSelectorInput!) {
+                    deleteProject(selector: $selector) {
+                    selector {
+                        organization
+                        project
+                    }
+                    deletedProject {
+                        ...ProjectFields
+                    }
+                    }
+                }
+
+                fragment ProjectFields on Project {
+                    id
+                    cleanId
+                    name
+                    type
+                }
+        "#,
+        )
+        .expect("Failed to parse query");
+
+        let usage_agent = UsageAgent::try_new(
+            token,
+            format!("{}/200", server_url),
+            None,
+            10,
+            Duration::from_millis(500),
+            Duration::from_millis(500),
+            false,
+            Duration::from_millis(10),
+            user_agent,
+        )
+        .expect("Failed to create UsageAgent");
+
+        usage_agent
+            .add_report(ExecutionReport {
+                schema: Arc::new(schema),
+                operation_body: op.to_string(),
+                operation_name: Some("deleteProject".to_string()),
+                client_name: Some(GRAPHQL_CLIENT_NAME.to_string()),
+                client_version: Some(GRAPHQL_CLIENT_VERSION.to_string()),
+                timestamp,
+                duration,
+                ok: true,
+                errors: 0,
+                persisted_document_hash: None,
+            })
+            .expect("Failed to add report");
+
+        usage_agent.flush().await;
+
+        mock.assert_async().await;
     }
 }
