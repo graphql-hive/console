@@ -81,7 +81,7 @@ export function TargetProposalSupergraphPage(props: {
 
   return (
     <div className="w-full">
-      {query.fetching || (query.fetching && <Spinner />)}
+      {query.fetching || (latestQuery.fetching && <Spinner />)}
       <SupergraphDiff
         baseSchemaSDL={latestQuery.data?.latestValidVersion?.supergraph ?? ''}
         changes={allChanges}

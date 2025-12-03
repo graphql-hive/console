@@ -1,77 +1,34 @@
 import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { buildSchema, parse, print } from 'graphql';
-import { editor } from 'monaco-editor';
+import { buildSchema } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
+import {
+  ProposalEditor,
+  Proposals_SelectFragmentType,
+  Proposals_TargetProjectTypeFragmentType,
+  Service,
+  ServiceTab,
+} from '@/components/target/proposals/editor';
+import { schemaTitle } from '@/components/target/proposals/util';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { CardDescription } from '@/components/ui/card';
-import { AlertTriangleIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox, Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
-import { FragmentType, graphql, useFragment } from '@/gql';
-import { ProjectType } from '@/gql/graphql';
+import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
-import {
-  DotFilledIcon,
-  ExclamationTriangleIcon,
-  GearIcon,
-  MagicWandIcon,
-} from '@radix-ui/react-icons';
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { SchemaEditor } from '@theguild/editor';
-
-type Service =
-  | {
-      __typename: 'CompositeSchema';
-      id: string;
-      source: string;
-      service?: string | null;
-      url?: string | null;
-    }
-  | {
-      __typename: 'SingleSchema';
-      id: string;
-      source: string;
-    };
-
-type ServiceTab =
-  | {
-      readonly __typename: 'CompositeSchema';
-      readonly id: string;
-      source: string;
-      service?: string | null;
-      url?: string | null;
-      // indicates that the schema is brand new and never been published.
-      // this sets some unique conditions like allowing editing the service name.
-      unpublished?: true;
-    }
-  | {
-      readonly __typename: 'SingleSchema';
-      readonly id: string;
-      source: string;
-    };
-
-function prettier(source: string) {
-  try {
-    return print(parse(source));
-  } catch (e) {
-    console.warn(e);
-    return source;
-  }
-}
 
 const ProposeChangesMutation = graphql(`
   mutation Proposals_ProposeChanges($input: CreateSchemaProposalInput!) {
@@ -86,6 +43,28 @@ const ProposeChangesMutation = graphql(`
         details {
           title
           description
+        }
+      }
+    }
+  }
+`);
+
+const UpdateProposedChangesMutation = graphql(`
+  mutation Proposals_UpdateProposedChanges($input: SchemaCheckInput!) {
+    schemaCheck(input: $input) {
+      ... on SchemaCheckSuccess {
+        schemaCheck {
+          id
+        }
+      }
+      ... on SchemaCheckError {
+        errors {
+          edges {
+            node {
+              path
+              message
+            }
+          }
         }
       }
     }
@@ -190,27 +169,6 @@ function ProposalsNewHeading(props: Parameters<typeof TargetProposalsNewPage>[0]
   );
 }
 
-function schemaTitle(
-  schema:
-    | {
-        __typename: 'CompositeSchema';
-        id: string;
-        source: string;
-        service?: string | null;
-        url?: string | null;
-      }
-    | {
-        __typename: 'SingleSchema';
-        id: string;
-        source: string;
-      },
-): string {
-  if (schema.__typename === 'CompositeSchema') {
-    return schema.service ?? schema.url ?? schema.id;
-  }
-  return '';
-}
-
 type Confirmation = { name: string; type: 'removal'; reason: string };
 
 const ProposalForm = z.strictObject({
@@ -218,18 +176,27 @@ const ProposalForm = z.strictObject({
   description: z.optional(z.string()).default(() => ''),
 });
 
-const ServiceDiff = z.strictObject({
-  title: z
-    .string()
-    .min(1)
-    .max(64)
-    .regex(
-      /^[a-zA-Z][\w_-]*$/g,
-      'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
-    ),
-  changes: z.array(z.any()),
-  error: z.optional(z.string()),
-});
+const ServiceDiff = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('SingleSchema'),
+    title: z.string().max(0).optional(),
+    changes: z.array(z.any()),
+    error: z.optional(z.string()),
+  }),
+  z.strictObject({
+    type: z.literal('CompositeSchema'),
+    title: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(
+        /^[a-zA-Z][\w_-]*$/g,
+        'Invalid service name. Service name must be 64 characters or less, must start with a letter, and can only contain alphanumeric characters, dash (-), or underscore (_).',
+      ),
+    changes: z.array(z.any()),
+    error: z.optional(z.string()),
+  }),
+]);
 
 function ConfirmationModal(props: {
   confirmations: Confirmation[];
@@ -319,6 +286,12 @@ function ProposalsNewContent(
     },
   });
   const [_, proposeChanges] = useMutation(ProposeChangesMutation);
+  // const [_, updateProposedChanges] = useMutation(UpdateProposedChangesMutation);
+  // updateProposedChanges({
+  //   input: {
+  //     schemaProposalId: '', // @todo
+  //   }
+  // })
   const [isSubmitting, setIsSubmitting] = useState(false);
   // overview error
   const [overviewError, setOverviewError] = useState('');
@@ -336,6 +309,7 @@ function ProposalsNewContent(
     title: string;
     changes: Change[];
     error?: string;
+    type: 'CompositeSchema' | 'SingleSchema';
   }> | null>(null);
   const onSubmitProposal = useCallback(() => {
     setIsSubmitting(true);
@@ -516,12 +490,17 @@ function ProposalsNewContent(
               });
 
               return diff(existingSchema, proposedSchema)
-                .then(result => ({ title: schemaTitle(changedService), changes: result }))
+                .then(result => ({
+                  title: schemaTitle(changedService),
+                  changes: result,
+                  type: changedService.__typename,
+                }))
                 .catch((e: unknown) => {
                   return {
                     title: schemaTitle(changedService),
                     changes: [],
                     error: e instanceof Error ? e.message : String(e),
+                    type: changedService.__typename,
                   };
                 });
             } catch (e) {
@@ -529,17 +508,19 @@ function ProposalsNewContent(
                 title: schemaTitle(changedService),
                 changes: [],
                 error: e instanceof Error ? e.message : String(e),
+                type: changedService.__typename,
               };
             }
           }
         }
 
+        const title = schemaTitle(changedService);
         try {
           if (changedService.source.length) {
             // check that schema is valid
             buildSchema(changedService.source);
             return {
-              title: schemaTitle(changedService),
+              title,
               changes: [
                 {
                   criticality: {
@@ -548,17 +529,19 @@ function ProposalsNewContent(
                   },
                   type: '',
                   meta: null,
-                  message: `Schema "${schemaTitle(changedService)}" added`,
+                  message: title.length > 0 ? `Schema "${title}" added` : 'New schema added',
                 },
               ],
+              type: changedService.__typename,
             };
           }
-          return { title: schemaTitle(changedService), changes: [] };
+          return { title, changes: [], type: changedService.__typename };
         } catch (e: unknown) {
           return {
-            title: schemaTitle(changedService),
+            title,
             changes: [],
             error: e instanceof Error ? e.message : String(e),
+            type: changedService.__typename,
           };
         }
       },
@@ -696,425 +679,18 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
   );
 }
 
-const Proposals_TargetProjectTypeFragment = graphql(`
-  fragment Proposals_TargetProjectTypeFragment on Target {
-    project {
-      id
-      type
-    }
-  }
-`);
-
-const Proposals_SelectFragment = graphql(`
-  fragment Proposals_SelectFragment on Target {
-    id
-    slug
-    latestValidSchemaVersion {
-      id
-      schemas {
-        edges {
-          cursor
-          node {
-            __typename
-            ... on CompositeSchema {
-              id
-              source
-              service
-              url
-            }
-            ... on SingleSchema {
-              id
-              source
-            }
-          }
-        }
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
-      }
-    }
-  }
-`);
-
-function ServiceSelect(props: {
-  targetFragment: FragmentType<typeof Proposals_SelectFragment> | undefined;
-  selected: string[];
-  onSelect: (schemaId: string) => void;
-  onSelectNew: () => void;
-}) {
-  const target = useFragment(Proposals_SelectFragment, props.targetFragment);
-  const schemaEdges = target?.latestValidSchemaVersion?.schemas.edges;
-  const selectableServices = useMemo(() => {
-    return (
-      schemaEdges
-        ?.filter(s => !props.selected.includes(s.node.id))
-        .map((edge, i) => (
-          <SelectItem
-            key={`${edge.cursor}-${i}`}
-            value={`${edge.node.id}`}
-            data-cy={`project-picker-option-${edge.node.id}`}
-          >
-            {schemaTitle(edge.node)}
-          </SelectItem>
-        )) ?? []
-    );
-  }, [props.selected, schemaEdges]);
-
-  if (props.targetFragment === undefined) {
-    return null;
-  }
-
-  return schemaEdges && schemaEdges.length > 1 ? (
-    <div className="flex grow flex-row">
-      <Select onValueChange={props.onSelect} value="">
-        <SelectTrigger
-          variant="default"
-          data-cy="project-picker-trigger"
-          className="min-w-[200px] max-w-[15vw] font-medium"
-          disabled={selectableServices.length === 0}
-        >
-          Select a service...
-        </SelectTrigger>
-        <SelectContent>{selectableServices}</SelectContent>
-      </Select>
-      <Button variant="orangeLink" className="ml-4 whitespace-nowrap" onClick={props.onSelectNew}>
-        + New Service
-      </Button>
-    </div>
-  ) : null;
-}
-
 function EditorTab(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  projectTypeFragment: FragmentType<typeof Proposals_TargetProjectTypeFragment> | undefined;
-  selectFragment: FragmentType<typeof Proposals_SelectFragment> | undefined;
+  projectTypeFragment: Proposals_TargetProjectTypeFragmentType | undefined;
+  selectFragment: Proposals_SelectFragmentType | undefined;
   changedServices: Array<ServiceTab>;
   setChangedServices: (s: Array<ServiceTab>) => void;
   existingServices: Array<Service>;
   error?: false | ReactElement;
 }) {
-  const { changedServices, setChangedServices } = props;
-  const [activeTab, setActiveTab] = useState<number>(0);
-  const tabsRef = useRef<HTMLDivElement | null>(null);
-  const setActiveTabAndScroll = (tab: number) => {
-    setActiveTab(tab);
-    // scroll to the activated tab
-    setTimeout(() => {
-      if (tabsRef?.current) {
-        const left = (tabsRef.current.childNodes.item(Math.max(tab - 1, 0)) as any)?.offsetLeft;
-        if (left) {
-          tabsRef.current.scrollTo({ left: left + 100 });
-        }
-      }
-    });
-  };
-  const [showSettings, setShowSettings] = useState(false);
-
-  useEffect(() => {
-    if (changedServices.length - 1 < activeTab) {
-      setActiveTab(changedServices.length - 1);
-    }
-  }, [changedServices, activeTab]);
-
-  const activeService = changedServices[activeTab] as ServiceTab | undefined;
-
-  const onAddNewService = useCallback(
-    (
-      schema:
-        | { type: ProjectType.Single }
-        | {
-            type: ProjectType.Federation | ProjectType.Stitching;
-            serviceName: string;
-            serviceUrl: string;
-          },
-    ) => {
-      if (schema.type === ProjectType.Single) {
-        if (changedServices.length === 0) {
-          setChangedServices([{ __typename: 'SingleSchema', id: '', source: '' }]);
-          setActiveTab(0);
-        }
-        return;
-      }
-      const hasConflictingName = props.existingServices.some(
-        s => s.__typename === 'CompositeSchema' && s.service === schema.serviceName,
-      );
-      if (hasConflictingName) {
-        // @todo show error and ask for rename
-        return;
-      }
-      const newService: ServiceTab = {
-        __typename: 'CompositeSchema',
-        id: '',
-        source: '',
-        service: schema.serviceName,
-        url: schema.serviceUrl,
-        unpublished: true,
-      };
-      setChangedServices([...changedServices, newService]);
-      setActiveTabAndScroll(changedServices.length);
-    },
-    [changedServices],
-  );
-
-  const onAddService = useCallback(
-    (serviceId: string) => {
-      // check the tab list to be extra safe
-      const existing = changedServices.findIndex(s => s.id === serviceId);
-      if (existing >= 0) {
-        setActiveTabAndScroll(existing);
-        return;
-      }
-
-      const addedService = props.existingServices.find(edge => edge.id === serviceId);
-      if (addedService) {
-        // clone the node so that we can modify the sdl and url without impacting the original
-        setChangedServices([
-          ...changedServices,
-          { ...addedService, source: prettier(addedService.source) },
-        ]);
-        // select the new last element in the changedServices list
-        setActiveTabAndScroll(changedServices.length);
-      }
-    },
-    [props.existingServices, changedServices],
-  );
-
-  const onRemoveTab = useCallback(
-    (index: number) => {
-      // @todo if changed, add confirmation, "Remove "___" from your proposal?"
-      const tabs = changedServices.toSpliced(index, 1);
-      setChangedServices(tabs);
-      setActiveTabAndScroll(Math.min(index, tabs.length - 1));
-    },
-    [changedServices],
-  );
-
-  const projectType = useFragment(Proposals_TargetProjectTypeFragment, props.projectTypeFragment);
-
-  useEffect(() => {
-    if (props.existingServices.length === 1 && changedServices.length === 0) {
-      const oneAndOnlySchema = props.existingServices[0];
-      onAddService(oneAndOnlySchema.id);
-    } else if (
-      projectType?.project.type &&
-      props.existingServices.length === 0 &&
-      changedServices.length === 0
-    ) {
-      onAddNewService({
-        serviceName: 'new service',
-        serviceUrl: '',
-        type: projectType.project.type,
-      });
-    }
-  }, [props.existingServices, onAddService, onAddNewService, projectType?.project.type]);
-
-  const serviceTabIds = useMemo(() => {
-    return changedServices.map(s => s.id);
-  }, [changedServices]);
-
-  const setActiveTabSource = useCallback(
-    (source: string | undefined) => {
-      changedServices[activeTab] = { ...changedServices[activeTab], source: source ?? '' };
-      setChangedServices([...changedServices]);
-    },
-    [activeTab, changedServices],
-  );
-  const setActiveTabUrl = useCallback(
-    (url: string | undefined) => {
-      if (changedServices[activeTab].__typename === 'CompositeSchema') {
-        changedServices[activeTab] = { ...changedServices[activeTab], url: url ?? '' };
-        setChangedServices([...changedServices]);
-      }
-    },
-    [activeTab, changedServices],
-  );
-  const onToggleTabSettings = () => {
-    setShowSettings(!showSettings);
-  };
-  /** A reference to the monaco editor so we can force set the value on prettify */
-  const [editor, setEditor] = useState<editor.IStandaloneCodeEditor | null>(null);
-
-  return (
-    <TabsContent value="editor">
-      {props.error}
-      <div className="flex grow border-b pb-4 pl-2">
-        <ServiceSelect
-          targetFragment={props.selectFragment ?? undefined}
-          onSelect={onAddService}
-          selected={serviceTabIds}
-          onSelectNew={() => {
-            const type = projectType?.project.type;
-            if (type === ProjectType.Single) {
-              onAddNewService({ type: ProjectType.Single });
-            } else if (type) {
-              onAddNewService({
-                type,
-                serviceName: 'new service',
-                serviceUrl: '',
-              });
-            }
-          }}
-        />
-      </div>
-      {(activeService || changedServices.length > 0) && (
-        <Tabs
-          value={`${activeTab}`}
-          onValueChange={idx => {
-            try {
-              setActiveTab(parseInt(idx, 10));
-            } catch (e) {
-              console.error('Cannot set active tab. Could not parse index.');
-            }
-          }}
-        >
-          <div className="mt-4 flex w-full flex-row pl-2">
-            <TabsList
-              ref={tabsRef}
-              className="no-scrollbar [&>*:not:(:first-child)]:mr-2 mr-auto max-w-full justify-normal overflow-x-auto whitespace-nowrap rounded-b-none p-2 pb-0 text-sm"
-            >
-              {changedServices.map((service, idx) => {
-                const isActiveTab = idx === activeTab;
-                if (service.__typename === 'SingleSchema') {
-                  return (
-                    <TabsTrigger
-                      variant="default"
-                      value={`${idx}`}
-                      asChild
-                      key={service.id.length ? `changed-${service.id}` : `tab-${idx}`}
-                    >
-                      <div className="p-2">
-                        <Link className="font-bold">single schema</Link>
-                      </div>
-                    </TabsTrigger>
-                  );
-                }
-                return (
-                  <TabsTrigger
-                    variant="default"
-                    value={`${idx}`}
-                    asChild
-                    key={service.unpublished ? `newtab-${idx}` : `tab-${service.id}`}
-                  >
-                    <div className="p-2">
-                      <Link className="flex items-center font-bold">
-                        {service.unpublished ? (
-                          <>
-                            <DotFilledIcon className="-ml-2 size-4 text-green-600" />
-                            <Input
-                              className="h-auto min-w-[150px] rounded-none border-none bg-transparent p-0 leading-none"
-                              value={schemaTitle(service)}
-                              onChange={e => {
-                                service.service = e.target.value;
-                                setChangedServices([...changedServices]);
-                              }}
-                            />
-                            {props.existingServices.some(
-                              s =>
-                                s.__typename === 'CompositeSchema' && s.service === service.service,
-                            ) && (
-                              <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <AlertTriangleIcon className="size-4 text-red-600" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    New service name cannot match an existing service name
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </>
-                        ) : (
-                          schemaTitle(service)
-                        )}
-                      </Link>
-                      <div
-                        className="ml-2"
-                        onClick={() => {
-                          onRemoveTab(idx);
-                        }}
-                      >
-                        <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
-                      </div>
-                    </div>
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-            <div className="flex flex-row items-center justify-end">
-              <Link
-                className="ml-2 cursor-pointer p-1 hover:text-orange-500"
-                title="Prettify schema"
-                onClick={() => {
-                  const prettierSource = prettier(activeService?.source ?? '');
-                  setActiveTabSource(prettierSource);
-                  editor?.setValue(prettierSource);
-                }}
-              >
-                <MagicWandIcon className="size-4" />
-              </Link>
-              <Link
-                className={cn(
-                  'ml-2 cursor-pointer p-1 hover:text-orange-500',
-                  showSettings && 'border-b-2 border-orange-500',
-                  projectType?.project.type === ProjectType.Single && 'hidden',
-                )}
-                title="Edit schema settings"
-                onClick={onToggleTabSettings}
-              >
-                <GearIcon />
-              </Link>
-            </div>
-          </div>
-          {changedServices.map((service, idx) => {
-            return (
-              <TabsContent
-                value={`${idx}`}
-                key={
-                  service.__typename === 'CompositeSchema' && service.unpublished
-                    ? `new-${idx}`
-                    : `tab-${service.id}`
-                }
-                className="relative mt-0 py-0"
-              >
-                <SchemaEditor
-                  theme="vs-dark"
-                  height={400}
-                  className="border"
-                  schema={service.source ?? ''}
-                  onMount={setEditor}
-                  onChange={setActiveTabSource}
-                />
-                {showSettings && service.__typename === 'CompositeSchema' && (
-                  <div className="absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border bg-black p-4 pt-6 text-sm">
-                    {!!service.service && (
-                      <SubPageLayoutHeader
-                        subPageTitle="Settings"
-                        description={
-                          <CardDescription className="pb-4">
-                            Additional service configuration
-                          </CardDescription>
-                        }
-                      />
-                    )}
-                    <div className="my-2 font-semibold">Service URL</div>
-                    <Input
-                      value={service.url ?? ''}
-                      onChange={ev => setActiveTabUrl(ev.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                )}
-              </TabsContent>
-            );
-          })}
-        </Tabs>
-      )}
-    </TabsContent>
-  );
+  return <ProposalEditor {...props} />;
 }
 
 function OverviewTab(props: {

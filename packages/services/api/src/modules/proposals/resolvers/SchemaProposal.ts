@@ -30,40 +30,45 @@ export const SchemaProposal: SchemaProposalResolvers = {
     if (!target) {
       throw new Error('uh oh');
     }
-    const schemaChecks = await injector
-      .get(SchemaManager)
-      .getPaginatedSchemaChecksForSchemaProposal({
-        transformNode: toGraphQLSchemaCheckCurry({
-          organizationId: target.orgId,
-          projectId: target.projectId,
-        }),
-        proposalId: proposal.id,
-        cursor: args.after ?? null,
-        first: args.first ?? null,
-        latest: true,
-      });
 
     if (target) {
       const latest = await injector.get(SchemaManager).getMaybeLatestValidVersion(target);
       if (latest) {
+        const schemaChecks = await injector
+          .get(SchemaManager)
+          .getPaginatedSchemaChecksForSchemaProposal({
+            transformNode: toGraphQLSchemaCheckCurry({
+              organizationId: target.orgId,
+              projectId: target.projectId,
+            }),
+            proposalId: proposal.id,
+            cursor: args.after ?? null,
+            first: args.first ?? null,
+            latest: true,
+          });
         const schemas = await injector.get(SchemaManager).getMaybeSchemasOfVersion(latest);
-        return {
-          edges: schemaChecks.edges.map(({ node, cursor }) => {
-            const schema = schemas.find(
-              s =>
-                (node.serviceName === '' && s.kind === 'single') ||
-                (s.kind === 'composite' && s.service_name === node.serviceName),
-            );
-            return {
-              node: {
-                schemaSDL: schema?.sdl ?? '', // @todo patch
-                serviceName: node.serviceName,
-              },
-              cursor,
-            };
-          }),
-          pageInfo: schemaChecks.pageInfo,
-        };
+        // @todo patch schema changes onto latest
+        // return {
+        // edges:
+        return schemaChecks.edges.map(({ node, cursor }) => {
+          const schema = schemas.find(
+            s =>
+              (node.serviceName === '' && s.kind === 'single') ||
+              (s.kind === 'composite' && s.service_name === node.serviceName),
+          );
+          return {
+            kind: schema?.kind ?? 'composite',
+            action: 'PUSH', // no idea why this is required for `__isTypeOf` in CompositeSchema.
+            sdl: node.schemaSDL ?? '', // @todo patch
+            id: node.id,
+            service_name: node.serviceName,
+            service_url: schema?.kind === 'composite' ? 'todo' : null,
+            author: node.meta?.author ?? '',
+            date: new Date(node.createdAt),
+            commit: node.meta?.commit ?? node.id,
+            metadata: node.meta ? JSON.stringify(node.meta) : undefined,
+          };
+        });
       }
     }
     return null;

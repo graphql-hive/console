@@ -4357,7 +4357,6 @@ export async function createStorage(
 
       let items = result.map(row => {
         const node = SchemaCheckModel.parse(row);
-
         return {
           get node() {
             // TODO: remove this any cast and fix the type issues...

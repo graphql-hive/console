@@ -245,7 +245,7 @@ export default gql`
       The number of service SDLs return
       """
       first: Int! = 20
-    ): SubgraphSchemaConnection
+    ): SchemaConnection
 
     """
     Applies changes to the supergraph for each of the service's latest check belonging to the SchemaProposal.
@@ -266,28 +266,6 @@ export default gql`
     Set to "true" to only return the latest checks for each service.
     """
     latestPerService: Boolean! = false
-  }
-
-  type SubgraphSchemaConnection {
-    edges: [SubgraphSchemaEdge]
-    pageInfo: PageInfo!
-  }
-
-  type SubgraphSchemaEdge {
-    cursor: String!
-    node: SubgraphSchema!
-  }
-
-  type SubgraphSchema {
-    """
-    The SDL of the schema that was checked.
-    """
-    schemaSDL: String!
-
-    """
-    The name of the service that owns the schema. Is null for non composite project types.
-    """
-    serviceName: String
   }
 
   type SchemaProposalReviewEdge {
