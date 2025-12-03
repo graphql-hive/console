@@ -101,6 +101,7 @@ test('collect fields', async () => {
   expect(info.fields).toMatchInlineSnapshot(`
     [
       Mutation.deleteProject,
+      Mutation.deleteProject.selector!,
       Mutation.deleteProject.selector,
       DeleteProjectPayload.selector,
       ProjectSelector.organization,
@@ -131,6 +132,7 @@ test('collect input object types', async () => {
   expect(info.fields).toMatchInlineSnapshot(`
     [
       Mutation.deleteProject,
+      Mutation.deleteProject.selector!,
       Mutation.deleteProject.selector,
       DeleteProjectPayload.selector,
       ProjectSelector.organization,

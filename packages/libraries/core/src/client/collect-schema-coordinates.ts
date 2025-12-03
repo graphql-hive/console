@@ -13,6 +13,7 @@ import {
   GraphQLUnionType,
   isEnumType,
   isInputObjectType,
+  isNullableType,
   isScalarType,
   Kind,
   NameNode,
@@ -234,7 +235,6 @@ export function collectSchemaCoordinates(args: {
           const variableName = node.variable.name.value;
           const variableValue = variables[variableName];
           const namedType = getNamedType(inputType);
-
           collectVariable(namedType, variableValue);
         } else {
           // Collect the entire type without processing the variables
@@ -283,7 +283,7 @@ export function collectSchemaCoordinates(args: {
         }
 
         // check whether the value for this type is actually provided
-        if (valueNodeHasValue(node.value)) {
+        if (!isNullableType(arg.type) || valueNodeHasValue(node.value)) {
           countInputValueProvided(makeId(parent.name, field.name, arg.name));
         }
 

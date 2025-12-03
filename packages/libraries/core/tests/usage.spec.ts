@@ -192,6 +192,7 @@ test('should send data to Hive', async () => {
   expect(record.fields).toMatchInlineSnapshot(`
     [
       Mutation.deleteProject,
+      Mutation.deleteProject.selector!,
       Mutation.deleteProject.selector,
       DeleteProjectPayload.selector,
       ProjectSelector.organization,
@@ -302,6 +303,7 @@ test('should send data to Hive (deprecated endpoint)', async () => {
   expect(record.fields).toMatchInlineSnapshot(`
     [
       Mutation.deleteProject,
+      Mutation.deleteProject.selector!,
       Mutation.deleteProject.selector,
       DeleteProjectPayload.selector,
       ProjectSelector.organization,
@@ -667,6 +669,7 @@ test('should not send excluded operation name data to Hive', async () => {
   expect(record.fields).toMatchInlineSnapshot(`
     [
       Mutation.deleteProject,
+      Mutation.deleteProject.selector!,
       Mutation.deleteProject.selector,
       DeleteProjectPayload.selector,
       ProjectSelector.organization,
