@@ -2,4 +2,4 @@
 'hive-console-sdk-rs': patch
 ---
 
-Send headers correctly for usage reporting
+Fix the bug where reports were not being sent correctly due to missing headers
