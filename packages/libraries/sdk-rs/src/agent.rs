@@ -392,6 +392,7 @@ mod tests {
             .match_header(AUTHORIZATION, format!("Bearer {}", token).as_str())
             .match_header(CONTENT_TYPE, CONTENT_TYPE_VALUE)
             .match_header(USER_AGENT, user_agent.as_str())
+            .match_header("X-Usage-API-Version", "2")
             .match_request(move |request| {
                 let request_body = request.body().expect("Failed to extract body");
                 let report: Report = serde_json::from_slice(request_body)
