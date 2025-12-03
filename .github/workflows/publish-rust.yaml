@@ -67,7 +67,7 @@ jobs:
         run: cargo test
 
   publish-rust:
-    needs: detect-changes
+    needs: [detect-changes, test-rust]
     if: needs.detect-changes.outputs.rust_changed == 'true'
     strategy:
       fail-fast: false
