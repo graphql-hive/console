@@ -11,7 +11,7 @@ We understand that the reliability of our High-Availability CDN is critical for 
 GraphQL Gateway. Even a brief outage can have a significant impact.
 
 To further enhance the resilience of our systems, we've introduced two major improvements to
-mitigate potential CDN outages.
+mitigate potential outages of critical components for the Gateway.
 
 ### CDN Mirror for High Availability
 
