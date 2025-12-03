@@ -169,9 +169,15 @@ jobs:
           needs.npm.outputs.published && contains(needs.npm.outputs.publishedPackages,
           '"hive-apollo-router-plugin"')
         run: |
+          cargo install set-cargo-version
           echo '${{needs.npm.outputs.publishedPackages}}' > published.json
+
           VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive-apollo-router-plugin")).version' published.json)`
-          echo "crate_version=$VERSION" >> $GITHUB_OUTPUT
+          set-cargo-version ./packages/libraries/router/Cargo.toml $VERSION
+
+          VERSION=`echo $(jq -r '.[] | select(.name | endswith("hive-console-sdk-rs")).version' published.json)`
+          set-cargo-version ./packages/libraries/sdk-rs/Cargo.toml $VERSION
+
           echo "crate_publish=true" >> $GITHUB_OUTPUT
 
       - name: release to Crates.io
