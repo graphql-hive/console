@@ -116,7 +116,6 @@ const TargetLayoutQuery = graphql(`
 
 export const TargetLayout = ({
   children,
-  connect,
   page,
   className,
   ...props
@@ -127,7 +126,6 @@ export const TargetLayout = ({
   targetSlug: string;
   className?: string;
   children: ReactNode;
-  connect?: ReactNode;
 }): ReactElement | null => {
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
@@ -314,29 +312,25 @@ export const TargetLayout = ({
                   <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
                 </div>
               )}
-              {currentTarget ? (
-                connect != null ? (
-                  connect
-                ) : isCDNEnabled ? (
-                  <>
-                    <Button
-                      onClick={toggleModalOpen}
-                      variant="link"
-                      className="whitespace-nowrap text-orange-500"
-                    >
-                      <LinkIcon size={16} className="mr-2" />
-                      Connect to CDN
-                    </Button>
-                    <ConnectSchemaModal
-                      organizationSlug={props.organizationSlug}
-                      projectSlug={props.projectSlug}
-                      targetSlug={props.targetSlug}
-                      isOpen={isModalOpen}
-                      toggleModalOpen={toggleModalOpen}
-                    />
-                  </>
-                ) : null
-              ) : null}
+              {currentTarget && isCDNEnabled && (
+                <>
+                  <Button
+                    onClick={toggleModalOpen}
+                    variant="link"
+                    className="whitespace-nowrap text-orange-500"
+                  >
+                    <LinkIcon size={16} className="mr-2" />
+                    Connect to CDN
+                  </Button>
+                  <ConnectSchemaModal
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={props.projectSlug}
+                    targetSlug={props.targetSlug}
+                    isOpen={isModalOpen}
+                    toggleModalOpen={toggleModalOpen}
+                  />
+                </>
+              )}
             </div>
           </div>
           <div className={cn('container min-h-[var(--content-height)] pb-7', className)}>

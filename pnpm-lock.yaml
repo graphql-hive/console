@@ -653,9 +653,6 @@ importers:
       graphql-yoga:
         specifier: 5.13.3
         version: 5.13.3(graphql@16.9.0)
-      nock:
-        specifier: 14.0.10
-        version: 14.0.10
       vitest:
         specifier: 4.0.9
         version: 4.0.9(@types/node@24.10.1)(jiti@2.3.3)(less@4.2.0)(lightningcss@1.28.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)

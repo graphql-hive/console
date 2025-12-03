@@ -1,5 +1,14 @@
 # hive-console-sdk-rs
 
+## 0.2.1
+
+### Patch Changes
+
+- [#7364](https://github.com/graphql-hive/console/pull/7364)
+  [`69e2f74`](https://github.com/graphql-hive/console/commit/69e2f74ab867ee5e97bbcfcf6a1b69bb23ccc7b2)
+  Thanks [@ardatan](https://github.com/ardatan)! - Fix the bug where reports were not being sent
+  correctly due to missing headers
+
 ## 0.2.0
 
 ### Minor Changes
