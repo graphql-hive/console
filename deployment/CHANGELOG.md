@@ -1,5 +1,19 @@
 # hive
 
+## 8.12.1
+
+### Patch Changes
+
+- [#7350](https://github.com/graphql-hive/console/pull/7350)
+  [`46ccf46`](https://github.com/graphql-hive/console/commit/46ccf4611eefd36ee20ec8598730d5f8b05c743a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix invalid materialized view definition causing
+  failing ClickHouse migrations
+
+- [#7349](https://github.com/graphql-hive/console/pull/7349)
+  [`cf91128`](https://github.com/graphql-hive/console/commit/cf91128bc47b1d3980f5fdc6a05603503274d8ee)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Stricter CORS assessment for requests sending a
+  Origin header.
+
 ## 8.12.0
 
 ### Minor Changes
