@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import type { Plugin, UserConfig } from 'vite';
+import monacoEditor from 'vite-plugin-monaco-editor';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react';
 
@@ -20,9 +21,40 @@ const reactScanPlugin: Plugin = {
   },
 };
 
+// Fix regex patterns that get malformed during HTML transformation
+// Specifically fixes: /^((http:)|(https:)|(file:)|(//))/ -> /^((http:)|(https:)|(file:)|(\/\/))/
+const fixRegexPatternsPlugin: Plugin = {
+  name: 'fix-regex-patterns',
+  transformIndexHtml(html) {
+    // Fix regex patterns where escaped forward slashes (\/\/) have been incorrectly unescaped to (//)
+    // This specifically targets patterns like: ((http:)|(https:)|(file:)|(//))
+    // We replace (//) with (\/\/) when it appears in this specific context
+    return html.replace(/\(\(http:\)\|\(https:\)\|\(file:\)\|\)\(\(\/\/\)\)/g, match =>
+      match.replace('(//)', '(\\/\\/)'),
+    );
+  },
+};
+
 export default {
   root: __dirname,
-  plugins: [tsconfigPaths(), react(), reactScanPlugin],
+  plugins: [
+    tsconfigPaths(),
+    react(),
+    // reactScanPlugin,
+    // @ts-expect-error temp
+    monacoEditor.default({
+      languageWorkers: ['json', 'typescript', 'editorWorkerService'],
+      customWorkers: [
+        {
+          label: 'graphql',
+          entry: 'monaco-graphql/dist/graphql.worker',
+        },
+      ],
+    }),
+    // Fix regex patterns that get malformed during HTML transformation
+    // This should run after other plugins that might modify the HTML
+    fixRegexPatternsPlugin,
+  ],
   build: {
     rollupOptions: {
       input: {

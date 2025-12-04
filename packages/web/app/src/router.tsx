@@ -72,7 +72,7 @@ import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
-import { TargetLaboratoryPage } from './pages/target-laboratory';
+import { TargetLaboratoryPage } from './pages/target-laboratory-new';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {

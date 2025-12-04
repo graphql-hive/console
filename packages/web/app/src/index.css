@@ -101,6 +101,12 @@
     --chart-1: 220 70% 50%;
     --chart-2: 340 75% 55%;
   }
+
+  .hive-labaratory {
+    --primary: 40 89% 60%;
+    --background: 223 70% 4%;
+    --card: 220 21.43% 5.49%;
+  }
 }
 
 @layer base {
