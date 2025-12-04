@@ -1,8 +1,8 @@
 ---
 title: 'Enhanced CDN and Gateway Reliability'
 description:
-  Major improvements to our CDN infrastructure to ensure higher
-  availability and resilience against outages.
+  Major improvements to our CDN infrastructure to ensure higher availability and resilience against
+  outages.
 date: 2025-12-05
 authors: [laurin]
 ---
