@@ -130,7 +130,7 @@ export function OrganizationLayout() {
         ]}
         items={[
           {
-            activeOptions: { exact: true },
+            activeOptions: { exact: true, includeSearch: false },
             title: 'Overview',
             to: '/$organizationSlug',
           },
