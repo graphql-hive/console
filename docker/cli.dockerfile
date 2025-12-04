@@ -1,6 +1,6 @@
 FROM node:22.13.0-slim
 
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates git
 
 ARG CLI_VERSION
 
