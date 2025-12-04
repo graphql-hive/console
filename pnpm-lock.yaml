@@ -266,7 +266,7 @@ importers:
     devDependencies:
       '@graphql-hive/gateway':
         specifier: ^2.1.19
-        version: 2.1.19(@types/ioredis-mock@8.2.5)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.4.2)(prom-client@15.1.3)
+        version: 2.1.19(@types/ioredis-mock@8.2.5)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.8.2)(prom-client@15.1.3)
       '@types/js-yaml':
         specifier: 4.0.9
         version: 4.0.9
@@ -367,8 +367,8 @@ importers:
         specifier: 4.1.1
         version: 4.1.1
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       slonik:
         specifier: 30.4.4
         version: 30.4.4(patch_hash=408d2a91c53799f60fa2e59860bc29067d20318cbf5844306888d0098b88d299)
@@ -735,7 +735,7 @@ importers:
         version: 3.723.0
       '@bentocache/plugin-prometheus':
         specifier: 0.2.0
-        version: 0.2.0(bentocache@1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.4.2))(prom-client@15.1.3)
+        version: 0.2.0(bentocache@1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.8.2))(prom-client@15.1.3)
       '@date-fns/utc':
         specifier: 2.1.1
         version: 2.1.1
@@ -837,7 +837,7 @@ importers:
         version: 2.4.3
       bentocache:
         specifier: 1.1.0
-        version: 1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.4.2)
+        version: 1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.8.2)
       csv-stringify:
         specifier: 6.5.2
         version: 6.5.2
@@ -869,11 +869,11 @@ importers:
         specifier: 5.13.3
         version: 5.13.3(graphql@16.9.0)
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       ioredis-mock:
         specifier: 8.9.0
-        version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.4.2)
+        version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.8.2)
       lodash:
         specifier: 4.17.21
         version: 4.17.21
@@ -1089,8 +1089,8 @@ importers:
         specifier: 16.4.7
         version: 16.4.7
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       mjml:
         specifier: 4.14.0
         version: 4.14.0(encoding@0.1.13)
@@ -1236,11 +1236,11 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       ioredis-mock:
         specifier: 8.9.0
-        version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.4.2)
+        version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.8.2)
       p-timeout:
         specifier: 6.1.4
         version: 6.1.4
@@ -1303,7 +1303,7 @@ importers:
         version: 3.15.4(graphql-yoga@5.13.3(graphql@16.9.0))(graphql@16.9.0)
       '@graphql-yoga/redis-event-target':
         specifier: 3.0.3
-        version: 3.0.3(ioredis@5.4.2)
+        version: 3.0.3(ioredis@5.8.2)
       '@hive/api':
         specifier: workspace:*
         version: link:../api
@@ -1359,8 +1359,8 @@ importers:
         specifier: 3.3.0
         version: 3.3.0
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       pino-pretty:
         specifier: 11.3.0
         version: 11.3.0
@@ -1534,8 +1534,8 @@ importers:
         specifier: 4.29.1
         version: 4.29.1
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       lru-cache:
         specifier: 11.0.2
         version: 11.0.2
@@ -1603,8 +1603,8 @@ importers:
         specifier: 16.9.0
         version: 16.9.0
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       kafkajs:
         specifier: 2.2.4
         version: 2.2.4
@@ -1699,8 +1699,8 @@ importers:
         specifier: 14.4.7
         version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
       ioredis:
-        specifier: 5.4.2
-        version: 5.4.2
+        specifier: 5.8.2
+        version: 5.8.2
       p-timeout:
         specifier: 6.1.4
         version: 6.1.4
@@ -5565,6 +5565,9 @@ packages:
 
   '@ioredis/commands@1.2.0':
     resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
+
+  '@ioredis/commands@1.4.0':
+    resolution: {integrity: sha512-aFT2yemJJo+TZCmieA7qnYGQooOS7QfNmYrzGtsYd3g9j5iDP8AimYYAesf79ohjbLG12XxC4nG5DyEnC88AsQ==}
 
   '@ioredis/commands@1.5.0':
     resolution: {integrity: sha512-eUgLqrMf8nJkZxT24JvVRrQya1vZkQh8BBeYNwGDqa5I0VUi8ACx7uFvAaLxintokpTenkK6DASvo/bvNbBGow==}
@@ -13762,8 +13765,8 @@ packages:
       '@types/ioredis-mock': ^8
       ioredis: ^5
 
-  ioredis@5.4.2:
-    resolution: {integrity: sha512-0SZXGNGZ+WzISQ67QDyZ2x0+wVxjjUndtD8oSeik/4ajifeiRufed8fCb8QW8VMyi4MXcS+UO1k/0NGhvq1PAg==}
+  ioredis@5.8.2:
+    resolution: {integrity: sha512-C6uC+kleiIMmjViJINWk80sOQw5lEzse1ZmvD+S/s8p8CWapftSaC+kocGTx6xrbrJ4WmYQGC08ffHLr6ToR6Q==}
     engines: {node: '>=12.22.0'}
 
   ipaddr.js@1.9.1:
@@ -21411,18 +21414,18 @@ snapshots:
 
   '@balena/dockerignore@1.0.2': {}
 
-  '@bentocache/plugin-prometheus@0.2.0(bentocache@1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.4.2))(prom-client@15.1.3)':
+  '@bentocache/plugin-prometheus@0.2.0(bentocache@1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.8.2))(prom-client@15.1.3)':
     dependencies:
-      bentocache: 1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.4.2)
+      bentocache: 1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.8.2)
       prom-client: 15.1.3
 
-  '@boringnode/bus@0.7.0(ioredis@5.4.2)':
+  '@boringnode/bus@0.7.0(ioredis@5.8.2)':
     dependencies:
       '@paralleldrive/cuid2': 2.2.2
       '@poppinss/utils': 6.9.2
       object-hash: 3.0.0
     optionalDependencies:
-      ioredis: 5.4.2
+      ioredis: 5.8.2
 
   '@braintree/sanitize-url@7.1.1': {}
 
@@ -22618,7 +22621,7 @@ snapshots:
       lodash.sortby: 4.7.0
       tiny-lru: 8.0.2
 
-  '@graphql-hive/gateway-runtime@2.3.5(graphql@16.11.0)(ioredis@5.4.2)(ws@8.18.0)':
+  '@graphql-hive/gateway-runtime@2.3.5(graphql@16.11.0)(ioredis@5.8.2)(ws@8.18.0)':
     dependencies:
       '@envelop/core': 5.4.0
       '@envelop/disable-introspection': 9.0.0(@envelop/core@5.4.0)(graphql@16.11.0)
@@ -22626,16 +22629,16 @@ snapshots:
       '@envelop/instrumentation': 1.0.0
       '@graphql-hive/core': 0.13.2(graphql@16.11.0)
       '@graphql-hive/logger': 1.0.9
-      '@graphql-hive/pubsub': 2.1.1(ioredis@5.4.2)
+      '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
       '@graphql-hive/signal': 2.0.0
       '@graphql-hive/yoga': 0.42.5(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/fusion-runtime': 1.5.1(@types/node@24.10.1)(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/hmac-upstream-signature': 2.0.8(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/plugin-response-cache': 0.104.18(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/fusion-runtime': 1.5.1(@types/node@24.10.1)(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/hmac-upstream-signature': 2.0.8(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/plugin-response-cache': 0.104.18(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/batch-delegate': 10.0.5(graphql@16.11.0)
       '@graphql-tools/delegate': 11.1.3(graphql@16.11.0)
       '@graphql-tools/executor-common': 1.0.5(graphql@16.11.0)
@@ -22668,36 +22671,36 @@ snapshots:
       - winston
       - ws
 
-  '@graphql-hive/gateway@2.1.19(@types/ioredis-mock@8.2.5)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.4.2)(prom-client@15.1.3)':
+  '@graphql-hive/gateway@2.1.19(@types/ioredis-mock@8.2.5)(@types/node@22.10.5)(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.8.2)(prom-client@15.1.3)':
     dependencies:
       '@commander-js/extra-typings': 14.0.0(commander@14.0.2)
       '@envelop/core': 5.4.0
       '@escape.tech/graphql-armor-block-field-suggestions': 3.0.1
       '@escape.tech/graphql-armor-max-depth': 2.4.2
       '@escape.tech/graphql-armor-max-tokens': 2.5.1
-      '@graphql-hive/gateway-runtime': 2.3.5(graphql@16.11.0)(ioredis@5.4.2)(ws@8.18.0)
+      '@graphql-hive/gateway-runtime': 2.3.5(graphql@16.11.0)(ioredis@5.8.2)(ws@8.18.0)
       '@graphql-hive/importer': 2.0.0
       '@graphql-hive/logger': 1.0.9
-      '@graphql-hive/plugin-aws-sigv4': 2.0.17(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-hive/plugin-opentelemetry': 1.2.1(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.4.2)(ws@8.18.0)
-      '@graphql-hive/pubsub': 2.1.1(ioredis@5.4.2)
-      '@graphql-mesh/cache-cfw-kv': 0.105.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/cache-localforage': 0.105.17(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-hive/plugin-aws-sigv4': 2.0.17(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-hive/plugin-opentelemetry': 1.2.1(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.8.2)(ws@8.18.0)
+      '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
+      '@graphql-mesh/cache-cfw-kv': 0.105.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/cache-localforage': 0.105.17(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-mesh/cache-redis': 0.105.2(@types/ioredis-mock@8.2.5)(graphql@16.11.0)
-      '@graphql-mesh/cache-upstash-redis': 0.1.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/cache-upstash-redis': 0.1.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/hmac-upstream-signature': 2.0.8(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/plugin-http-cache': 0.105.17(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/plugin-jit': 0.2.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/plugin-jwt-auth': 2.0.9(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/plugin-prometheus': 2.1.5(@envelop/core@5.4.0)(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.4.2)(prom-client@15.1.3)(ws@8.18.0)
-      '@graphql-mesh/plugin-rate-limit': 0.105.5(@envelop/core@5.4.0)(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/plugin-snapshot': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/transport-http': 1.0.12(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/transport-http-callback': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/transport-ws': 2.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/hmac-upstream-signature': 2.0.8(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/plugin-http-cache': 0.105.17(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/plugin-jit': 0.2.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/plugin-jwt-auth': 2.0.9(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/plugin-prometheus': 2.1.5(@envelop/core@5.4.0)(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.8.2)(prom-client@15.1.3)(ws@8.18.0)
+      '@graphql-mesh/plugin-rate-limit': 0.105.5(@envelop/core@5.4.0)(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/plugin-snapshot': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/transport-http': 1.0.12(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/transport-http-callback': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/transport-ws': 2.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/code-file-loader': 8.1.26(graphql@16.11.0)
       '@graphql-tools/graphql-file-loader': 8.1.7(graphql@16.11.0)
       '@graphql-tools/load': 8.1.6(graphql@16.11.0)
@@ -22745,10 +22748,10 @@ snapshots:
 
   '@graphql-hive/logger@1.0.9': {}
 
-  '@graphql-hive/plugin-aws-sigv4@2.0.17(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-hive/plugin-aws-sigv4@2.0.17(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@aws-sdk/client-sts': 3.939.0
-      '@graphql-mesh/fusion-runtime': 1.5.1(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/fusion-runtime': 1.5.1(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.8.2)
       '@whatwg-node/promise-helpers': 1.3.2
       aws4: 1.13.2
       graphql: 16.11.0
@@ -22762,15 +22765,15 @@ snapshots:
       - pino
       - winston
 
-  '@graphql-hive/plugin-opentelemetry@1.2.1(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.4.2)(ws@8.18.0)':
+  '@graphql-hive/plugin-opentelemetry@1.2.1(encoding@0.1.13)(graphql@16.11.0)(ioredis@5.8.2)(ws@8.18.0)':
     dependencies:
       '@graphql-hive/core': 0.13.2(graphql@16.11.0)
-      '@graphql-hive/gateway-runtime': 2.3.5(graphql@16.11.0)(ioredis@5.4.2)(ws@8.18.0)
+      '@graphql-hive/gateway-runtime': 2.3.5(graphql@16.11.0)(ioredis@5.8.2)(ws@8.18.0)
       '@graphql-hive/logger': 1.0.9
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/api-logs': 0.208.0
@@ -22801,13 +22804,13 @@ snapshots:
       - winston
       - ws
 
-  '@graphql-hive/pubsub@2.1.1(ioredis@5.4.2)':
+  '@graphql-hive/pubsub@2.1.1(ioredis@5.8.2)':
     dependencies:
       '@repeaterjs/repeater': 3.0.6
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/promise-helpers': 1.3.2
     optionalDependencies:
-      ioredis: 5.4.2
+      ioredis: 5.8.2
 
   '@graphql-hive/signal@1.0.0': {}
 
@@ -23048,10 +23051,10 @@ snapshots:
       - '@graphql-inspector/loaders'
       - yargs
 
-  '@graphql-mesh/cache-cfw-kv@0.105.16(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/cache-cfw-kv@0.105.16(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@whatwg-node/promise-helpers': 1.3.1
       graphql: 16.11.0
       tslib: 2.8.1
@@ -23059,10 +23062,10 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/cache-inmemory-lru@0.8.17(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/cache-inmemory-lru@0.8.17(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@whatwg-node/disposablestack': 0.0.6
       graphql: 16.11.0
       tslib: 2.8.1
@@ -23070,11 +23073,11 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/cache-localforage@0.105.17(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/cache-localforage@0.105.17(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
-      '@graphql-mesh/cache-inmemory-lru': 0.8.17(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/cache-inmemory-lru': 0.8.17(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       graphql: 16.11.0
       localforage: 1.10.0
       tslib: 2.8.1
@@ -23086,22 +23089,22 @@ snapshots:
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@opentelemetry/api': 1.9.0
       '@whatwg-node/disposablestack': 0.0.6
       graphql: 16.11.0
-      ioredis: 5.4.2
-      ioredis-mock: 8.13.1(@types/ioredis-mock@8.2.5)(ioredis@5.4.2)
+      ioredis: 5.8.2
+      ioredis-mock: 8.13.1(@types/ioredis-mock@8.2.5)(ioredis@5.8.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@nats-io/nats-core'
       - '@types/ioredis-mock'
       - supports-color
 
-  '@graphql-mesh/cache-upstash-redis@0.1.16(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/cache-upstash-redis@0.1.16(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@upstash/redis': 1.35.6
       '@whatwg-node/disposablestack': 0.0.6
       graphql: 16.11.0
@@ -23116,15 +23119,15 @@ snapshots:
       graphql: 16.11.0
       path-browserify: 1.0.1
 
-  '@graphql-mesh/fusion-runtime@1.5.1(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/fusion-runtime@1.5.1(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/core': 5.4.0
       '@envelop/instrumentation': 1.0.0
       '@graphql-hive/logger': 1.0.9
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/batch-execute': 10.0.4(graphql@16.11.0)
       '@graphql-tools/delegate': 11.1.3(graphql@16.11.0)
       '@graphql-tools/executor': 1.4.13(graphql@16.11.0)
@@ -23147,15 +23150,15 @@ snapshots:
       - pino
       - winston
 
-  '@graphql-mesh/fusion-runtime@1.5.1(@types/node@24.10.1)(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/fusion-runtime@1.5.1(@types/node@24.10.1)(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/core': 5.4.0
       '@envelop/instrumentation': 1.0.0
       '@graphql-hive/logger': 1.0.9
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/batch-execute': 10.0.4(graphql@16.11.0)
       '@graphql-tools/delegate': 11.1.3(graphql@16.11.0)
       '@graphql-tools/executor': 1.4.13(graphql@16.11.0)
@@ -23178,11 +23181,11 @@ snapshots:
       - pino
       - winston
 
-  '@graphql-mesh/hmac-upstream-signature@2.0.8(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/hmac-upstream-signature@2.0.8(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/executor-common': 1.0.5(graphql@16.11.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
       '@whatwg-node/promise-helpers': 1.3.2
@@ -23193,10 +23196,10 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/plugin-http-cache@0.105.17(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/plugin-http-cache@0.105.17(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@whatwg-node/fetch': 0.10.13
       '@whatwg-node/promise-helpers': 1.3.1
       graphql: 16.11.0
@@ -23206,10 +23209,10 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/plugin-jit@0.2.16(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/plugin-jit@0.2.16(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/core': 5.4.0
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
       graphql: 16.11.0
       graphql-jit: 0.8.7(graphql@16.11.0)
@@ -23218,10 +23221,10 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/plugin-jwt-auth@2.0.9(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/plugin-jwt-auth@2.0.9(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-yoga/plugin-jwt': 3.10.2(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)
       graphql: 16.11.0
       tslib: 2.8.1
@@ -23231,13 +23234,13 @@ snapshots:
       - ioredis
       - supports-color
 
-  '@graphql-mesh/plugin-prometheus@2.1.5(@envelop/core@5.4.0)(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.4.2)(prom-client@15.1.3)(ws@8.18.0)':
+  '@graphql-mesh/plugin-prometheus@2.1.5(@envelop/core@5.4.0)(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(ioredis@5.8.2)(prom-client@15.1.3)(ws@8.18.0)':
     dependencies:
-      '@graphql-hive/gateway-runtime': 2.3.5(graphql@16.11.0)(ioredis@5.4.2)(ws@8.18.0)
+      '@graphql-hive/gateway-runtime': 2.3.5(graphql@16.11.0)(ioredis@5.8.2)(ws@8.18.0)
       '@graphql-hive/logger': 1.0.9
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
       '@graphql-yoga/plugin-prometheus': 6.11.3(@envelop/core@5.4.0)(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)(prom-client@15.1.3)
       graphql: 16.11.0
@@ -23256,13 +23259,13 @@ snapshots:
       - winston
       - ws
 
-  '@graphql-mesh/plugin-rate-limit@0.105.5(@envelop/core@5.4.0)(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/plugin-rate-limit@0.105.5(@envelop/core@5.4.0)(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/rate-limiter': 9.0.0(@envelop/core@5.4.0)(graphql@16.11.0)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
       '@whatwg-node/promise-helpers': 1.3.1
       graphql: 16.11.0
@@ -23272,14 +23275,14 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/plugin-response-cache@0.104.18(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/plugin-response-cache@0.104.18(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/core': 5.4.0
       '@envelop/response-cache': 9.0.0(@envelop/core@5.4.0)(graphql@16.11.0)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
       '@graphql-yoga/plugin-response-cache': 3.15.4(graphql-yoga@5.16.2(graphql@16.11.0))(graphql@16.11.0)
       '@whatwg-node/promise-helpers': 1.3.2
@@ -23291,12 +23294,12 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/plugin-snapshot@0.104.16(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/plugin-snapshot@0.104.16(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@whatwg-node/fetch': 0.10.13
       graphql: 16.11.0
       minimatch: 10.1.1
@@ -23313,13 +23316,13 @@ snapshots:
       lodash.get: 4.4.2
       tslib: 2.8.1
 
-  '@graphql-mesh/transport-common@1.0.12(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/transport-common@1.0.12(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/core': 5.4.0
       '@graphql-hive/logger': 1.0.9
-      '@graphql-hive/pubsub': 2.1.1(ioredis@5.4.2)
+      '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
       '@graphql-hive/signal': 2.0.0
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/executor': 1.4.13(graphql@16.11.0)
       '@graphql-tools/executor-common': 1.0.5(graphql@16.11.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
@@ -23332,14 +23335,14 @@ snapshots:
       - pino
       - winston
 
-  '@graphql-mesh/transport-http-callback@1.0.12(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/transport-http-callback@1.0.12(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-hive/signal': 2.0.0
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/executor-common': 1.0.5(graphql@16.11.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
       '@repeaterjs/repeater': 3.0.6
@@ -23354,13 +23357,13 @@ snapshots:
       - pino
       - winston
 
-  '@graphql-mesh/transport-http@1.0.12(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/transport-http@1.0.12(@types/node@22.10.5)(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/executor-http': 3.0.7(@types/node@22.10.5)(graphql@16.11.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
       '@whatwg-node/promise-helpers': 1.3.2
@@ -23374,13 +23377,13 @@ snapshots:
       - pino
       - winston
 
-  '@graphql-mesh/transport-ws@2.0.12(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/transport-ws@2.0.12(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
-      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/transport-common': 1.0.12(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
+      '@graphql-mesh/utils': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/executor-graphql-ws': 3.1.3(graphql@16.11.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.11.0)
       graphql: 16.11.0
@@ -23399,9 +23402,9 @@ snapshots:
       - utf-8-validate
       - winston
 
-  '@graphql-mesh/types@0.104.16(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/types@0.104.16(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
-      '@graphql-hive/pubsub': 2.1.1(ioredis@5.4.2)
+      '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
       '@graphql-tools/batch-delegate': 10.0.5(graphql@16.11.0)
       '@graphql-tools/delegate': 11.1.3(graphql@16.11.0)
       '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
@@ -23414,12 +23417,12 @@ snapshots:
       - '@nats-io/nats-core'
       - ioredis
 
-  '@graphql-mesh/utils@0.104.16(graphql@16.11.0)(ioredis@5.4.2)':
+  '@graphql-mesh/utils@0.104.16(graphql@16.11.0)(ioredis@5.8.2)':
     dependencies:
       '@envelop/instrumentation': 1.0.0
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.11.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.11.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.4.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.11.0)(ioredis@5.8.2)
       '@graphql-tools/batch-delegate': 10.0.5(graphql@16.11.0)
       '@graphql-tools/delegate': 11.1.3(graphql@16.11.0)
       '@graphql-tools/utils': 10.9.1(graphql@16.11.0)
@@ -24590,11 +24593,11 @@ snapshots:
     transitivePeerDependencies:
       - '@envelop/core'
 
-  '@graphql-yoga/redis-event-target@3.0.3(ioredis@5.4.2)':
+  '@graphql-yoga/redis-event-target@3.0.3(ioredis@5.8.2)':
     dependencies:
       '@graphql-yoga/typed-event-target': 3.0.2
       '@whatwg-node/events': 0.1.1
-      ioredis: 5.4.2
+      ioredis: 5.8.2
 
   '@graphql-yoga/render-graphiql@5.16.2(graphql-yoga@5.16.2(graphql@16.11.0))':
     dependencies:
@@ -24969,6 +24972,8 @@ snapshots:
   '@ioredis/as-callback@3.0.0': {}
 
   '@ioredis/commands@1.2.0': {}
+
+  '@ioredis/commands@1.4.0': {}
 
   '@ioredis/commands@1.5.0': {}
 
@@ -31152,7 +31157,7 @@ snapshots:
   '@types/ioredis-mock@8.2.5':
     dependencies:
       '@types/node': 22.10.5
-      ioredis: 5.4.2
+      ioredis: 5.8.2
     transitivePeerDependencies:
       - supports-color
 
@@ -32119,9 +32124,9 @@ snapshots:
 
   before-after-hook@3.0.2: {}
 
-  bentocache@1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.4.2):
+  bentocache@1.1.0(patch_hash=98c0f93795fdd4f5eae32ee7915de8e9a346a24c3a917262b1f4551190f1a1af)(ioredis@5.8.2):
     dependencies:
-      '@boringnode/bus': 0.7.0(ioredis@5.4.2)
+      '@boringnode/bus': 0.7.0(ioredis@5.8.2)
       '@julr/utils': 1.7.0
       '@poppinss/utils': 6.9.2
       async-mutex: 0.5.0
@@ -32129,7 +32134,7 @@ snapshots:
       lru-cache: 11.0.2
       p-timeout: 6.1.4
     optionalDependencies:
-      ioredis: 5.4.2
+      ioredis: 5.8.2
 
   better-opn@3.0.2:
     dependencies:
@@ -32320,7 +32325,7 @@ snapshots:
   bullmq@5.34.8:
     dependencies:
       cron-parser: 4.9.0
-      ioredis: 5.4.2
+      ioredis: 5.8.2
       msgpackr: 1.11.2
       node-abort-controller: 3.1.1
       semver: 7.6.2
@@ -35662,31 +35667,31 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  ioredis-mock@8.13.1(@types/ioredis-mock@8.2.5)(ioredis@5.4.2):
+  ioredis-mock@8.13.1(@types/ioredis-mock@8.2.5)(ioredis@5.8.2):
     dependencies:
       '@ioredis/as-callback': 3.0.0
       '@ioredis/commands': 1.5.0
       '@types/ioredis-mock': 8.2.5
       fengari: 0.1.4
       fengari-interop: 0.1.3(fengari@0.1.4)
-      ioredis: 5.4.2
+      ioredis: 5.8.2
       semver: 7.7.2
 
-  ioredis-mock@8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.4.2):
+  ioredis-mock@8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.8.2):
     dependencies:
       '@ioredis/as-callback': 3.0.0
       '@ioredis/commands': 1.2.0
       '@types/ioredis-mock': 8.2.5
       fengari: 0.1.4
       fengari-interop: 0.1.3(fengari@0.1.4)
-      ioredis: 5.4.2
+      ioredis: 5.8.2
       semver: 7.6.2
 
-  ioredis@5.4.2:
+  ioredis@5.8.2:
     dependencies:
-      '@ioredis/commands': 1.2.0
+      '@ioredis/commands': 1.4.0
       cluster-key-slot: 1.1.1
-      debug: 4.4.0
+      debug: 4.4.3(supports-color@8.1.1)
       denque: 2.1.0
       lodash.defaults: 4.2.0
       lodash.isarguments: 3.1.0
