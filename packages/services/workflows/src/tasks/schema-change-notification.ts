@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { defineTask, implementTask } from '../postgraphile-kit.js';
+import { defineTask, implementTask } from '../kit.js';
 
 export const SchemaChangeNotificationTask = defineTask({
   name: 'schemaChangeNotification',

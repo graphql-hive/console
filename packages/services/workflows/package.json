@@ -10,9 +10,7 @@
   },
   "dependencies": {
     "@graphql-hive/logger": "1.0.9",
-    "@openworkflow/backend-postgres": "0.3.0",
     "graphile-worker": "0.16.6",
-    "openworkflow": "0.3.0",
     "zod": "3.25.76"
   }
 }

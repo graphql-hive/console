@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { defineTask, implementTask } from '../kit.js';
 import { renderOrganizationInvitation } from '../lib/emails/templates/organization-invitation.js';
-import { defineTask, implementTask } from '../postgraphile-kit.js';
 
 export const OrganizationInvitationTask = defineTask({
   name: 'organizationInvitation',

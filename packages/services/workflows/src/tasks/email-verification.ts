@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { defineTask, implementTask } from '../kit.js';
 import { renderEmailVerificationEmail } from '../lib/emails/templates/email-verification.js';
-import { defineTask, implementTask } from '../postgraphile-kit.js';
 
 export const EmailVerificationTask = defineTask({
   name: 'emailVerification',
