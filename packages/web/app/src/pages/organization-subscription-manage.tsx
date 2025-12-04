@@ -1,6 +1,5 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import {
   BillingPaymentMethodForm,
   ManagePaymentMethod,
@@ -441,37 +440,31 @@ function ManageSubscriptionPageContent(props: { organizationSlug: string }) {
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Subscription}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
-      <div className="grow">
-        <div className="flex flex-row items-center justify-between py-6">
-          <div>
-            <Title>Manage subscription</Title>
-            <Subtitle>Manage your current plan and invoices.</Subtitle>
-          </div>
-          {currentOrganization ? (
-            <div>
-              <Button asChild>
-                <Link
-                  to="/$organizationSlug/view/subscription"
-                  params={{ organizationSlug: currentOrganization.slug }}
-                >
-                  Subscription usage
-                </Link>
-              </Button>
-            </div>
-          ) : null}
-        </div>
+    <div className="grow">
+      <div className="flex flex-row items-center justify-between py-6">
         <div>
-          {currentOrganization && billingPlans ? (
-            <Inner organization={currentOrganization} billingPlans={billingPlans} />
-          ) : null}
+          <Title>Manage subscription</Title>
+          <Subtitle>Manage your current plan and invoices.</Subtitle>
         </div>
+        {currentOrganization ? (
+          <div>
+            <Button asChild>
+              <Link
+                to="/$organizationSlug/view/subscription"
+                params={{ organizationSlug: currentOrganization.slug }}
+              >
+                Subscription usage
+              </Link>
+            </Button>
+          </div>
+        ) : null}
       </div>
-    </OrganizationLayout>
+      <div>
+        {currentOrganization && billingPlans ? (
+          <Inner organization={currentOrganization} billingPlans={billingPlans} />
+        ) : null}
+      </div>
+    </div>
   );
 }
 

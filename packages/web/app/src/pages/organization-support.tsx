@@ -3,7 +3,6 @@ import { PencilIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Priority, priorityDescription, Status } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
 import {
@@ -402,17 +401,10 @@ function SupportPageContent(props: { organizationSlug: string }) {
 
   const currentOrganization = query.data?.organization;
 
-  return (
-    <OrganizationLayout
-      page={Page.Support}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
-      {currentOrganization ? (
-        <Support organization={currentOrganization} refetch={refetch} />
-      ) : null}
-    </OrganizationLayout>
-  );
+  if (currentOrganization) {
+    return <Support organization={currentOrganization} refetch={refetch} />;
+  }
+  return null;
 }
 
 export function OrganizationSupportPage(props: { organizationSlug: string }) {
