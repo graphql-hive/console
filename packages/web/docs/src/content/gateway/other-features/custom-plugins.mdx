@@ -1015,8 +1015,9 @@ This instrument must be synchronous, the wrapped function is always synchronous.
 
 Wraps the execute phase. This includes all the plugins `onExecute` hooks.
 
-This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to `await` or
-use `.then` on the result of the `wrapped` function to run code after the `execute` phase.
+This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to
+`await` or use `.then` on the result of the `wrapped` function to run code after the `execute`
+phase.
 
 Note that `wrapped` is not guaranteed to return a promise.
 
@@ -1025,8 +1026,9 @@ Note that `wrapped` is not guaranteed to return a promise.
 Wraps the subscribe phase. This includes all the plugins `onSubscribe` hooks. Note that it doesn't
 wrap the entire lifetime of the subscription, but only it's intialisation.
 
-This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to `await` or
-use `.then` on the result of the `wrapped` function to run code after the `subsribe` phase.
+This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to
+`await` or use `.then` on the result of the `wrapped` function to run code after the `subsribe`
+phase.
 
 Note that `wrapped` is not guaranteed to return a promise.
 
