@@ -23,19 +23,27 @@ remain available.
 Our official SDKs have been updated to automatically handle this fallback when configured with both
 endpoints.
 
-### Circuit Breaker for Usage Reporting
+### Circuit Breaker for Usage Reporting and CDN requests
 
 Failures are inevitable. To gracefully handle transient issues with our usage reporting service,
 we've implemented a Circuit Breaker pattern in our Hive SDKs and the Hive Gateway.
 
-If the client detects a series of failed requests, it will temporarily stop sending new usage
-reports. This prevents your services from being overwhelmed with failing requests and allows it to
-run stable even if an outage affects our usage reporting system.
+If the client detects a series of failed requests to any origin, it will temporarily stop sending
+new request to that origin. This prevents your gateway or service from being overwhelmed with
+failing requests and allows it to run stable even if an outage on the CDN or usage reporting occurs.
 
 ### Conclusion
 
 These improvements are now available for the Hive JS SDK and JavaScript Hive Gateway. We will soon
 also ship these improvements for the Hive Rust SDK, Hive Router and the Apollo Router Hive Plugin.
+
+Please upgrade to the following versions, and adjust your configuration to use the dual CDN.
+
+- Hive Gateway
+  [`v2.1.22`](https://github.com/graphql-hive/gateway/releases/tag/release-1764767579837)
+- [`@graphql-hive/yoga@0.46.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fyoga%400.46.0)
+- [`@graphql-hive/core@0.18.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fcore%400.18.0)
+- [`@graphql-hive/apollo@0.45.0`](https://github.com/graphql-hive/console/releases/tag/%40graphql-hive%2Fapollo%400.45.0)
 
 These updates are part of our ongoing commitment to providing a highly available and reliable schema
 registry for your GraphQL APIs.
@@ -45,5 +53,5 @@ registry for your GraphQL APIs.
 **Further reading:**
 
 - [Running with Hive Console in Production: A High-Availability Guide](/docs/schema-registry/high-availability-resilence)
-- [High-Availability CDN Documentation](/docs/schema-registry/high-availability-cdn)
+- [CDN Documentation](/docs/schema-registry/high-availability-cdn)
 - [Hive Client Configuration (including Circuit Breaker)](/docs/api-reference/client#circuitbreaker)
