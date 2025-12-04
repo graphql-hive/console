@@ -170,4 +170,159 @@ describe('supergraph SDL fetcher', async () => {
       },
     });
   });
+
+  test('extracts schemaVersionId from response header', async () => {
+    const supergraphSdl = 'type SuperQuery { sdl: String }';
+    const key = 'secret-key';
+    const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+    const fetcher = createSupergraphSDLFetcher({
+      endpoint: 'http://localhost',
+      key,
+      async fetchImplementation(): Promise<Response> {
+        return new Response(supergraphSdl, {
+          status: 200,
+          headers: {
+            ETag: 'first',
+            'x-hive-schema-version-id': versionId,
+          },
+        });
+      },
+    });
+
+    const result = await fetcher();
+
+    expect(result.schemaVersionId).toEqual(versionId);
+    expect(result.supergraphSdl).toEqual(supergraphSdl);
+  });
+
+  test('uses versioned endpoint when schemaVersionId is provided', async () => {
+    const supergraphSdl = 'type SuperQuery { sdl: String }';
+    const key = 'secret-key';
+    const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+    nock('http://localhost')
+      .get(`/version/${versionId}/supergraph`)
+      .once()
+      .matchHeader('X-Hive-CDN-Key', key)
+      .reply(200, supergraphSdl, {
+        ETag: 'immutable',
+        'x-hive-schema-version-id': versionId,
+      });
+
+    const fetcher = createSupergraphSDLFetcher({
+      endpoint: 'http://localhost',
+      key,
+      schemaVersionId: versionId,
+    });
+
+    const result = await fetcher();
+
+    expect(result.schemaVersionId).toEqual(versionId);
+    expect(result.supergraphSdl).toEqual(supergraphSdl);
+  });
+
+  test('versioned endpoint with trailing /supergraph in base endpoint', async () => {
+    const supergraphSdl = 'type SuperQuery { sdl: String }';
+    const key = 'secret-key';
+    const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+    nock('http://localhost')
+      .get(`/version/${versionId}/supergraph`)
+      .once()
+      .matchHeader('X-Hive-CDN-Key', key)
+      .reply(200, supergraphSdl, {
+        'x-hive-schema-version-id': versionId,
+      });
+
+    const fetcher = createSupergraphSDLFetcher({
+      endpoint: 'http://localhost/supergraph', // trailing /supergraph should be handled
+      key,
+      schemaVersionId: versionId,
+    });
+
+    const result = await fetcher();
+
+    expect(result.schemaVersionId).toEqual(versionId);
+  });
+
+  test('versioned endpoint caches with ETag', async () => {
+    const supergraphSdl = 'type SuperQuery { sdl: String }';
+    const key = 'secret-key';
+    const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+    nock('http://localhost')
+      .get(`/version/${versionId}/supergraph`)
+      .once()
+      .matchHeader('X-Hive-CDN-Key', key)
+      .reply(200, supergraphSdl, {
+        ETag: 'immutable-etag',
+        'x-hive-schema-version-id': versionId,
+      })
+      .get(`/version/${versionId}/supergraph`)
+      .once()
+      .matchHeader('X-Hive-CDN-Key', key)
+      .matchHeader('If-None-Match', 'immutable-etag')
+      .reply(304);
+
+    const fetcher = createSupergraphSDLFetcher({
+      endpoint: 'http://localhost',
+      key,
+      schemaVersionId: versionId,
+    });
+
+    const result = await fetcher();
+    expect(result.supergraphSdl).toEqual(supergraphSdl);
+    expect(result.schemaVersionId).toEqual(versionId);
+
+    // Second fetch should use cached version via 304
+    const cachedResult = await fetcher();
+    expect(cachedResult.supergraphSdl).toEqual(supergraphSdl);
+    expect(cachedResult.schemaVersionId).toEqual(versionId);
+  });
+
+  test('throws error for empty schemaVersionId', () => {
+    expect(() =>
+      createSupergraphSDLFetcher({
+        endpoint: 'http://localhost',
+        key: 'secret-key',
+        schemaVersionId: '',
+      }),
+    ).toThrowError(
+      'Invalid schemaVersionId: cannot be empty or whitespace. Provide a valid version ID or omit the option to fetch the latest version.',
+    );
+  });
+
+  test('throws error for whitespace-only schemaVersionId', () => {
+    expect(() =>
+      createSupergraphSDLFetcher({
+        endpoint: 'http://localhost',
+        key: 'secret-key',
+        schemaVersionId: '   ',
+      }),
+    ).toThrowError(
+      'Invalid schemaVersionId: cannot be empty or whitespace. Provide a valid version ID or omit the option to fetch the latest version.',
+    );
+  });
+
+  test('returns 404 error for non-existent schemaVersionId', async () => {
+    const key = 'secret-key';
+    const invalidVersionId = 'non-existent-version-id';
+
+    nock('http://localhost')
+      .get(`/version/${invalidVersionId}/supergraph`)
+      .times(11)
+      .matchHeader('X-Hive-CDN-Key', key)
+      .reply(404, 'Not Found');
+
+    const fetcher = createSupergraphSDLFetcher({
+      endpoint: 'http://localhost',
+      key,
+      schemaVersionId: invalidVersionId,
+    });
+
+    await expect(fetcher()).rejects.toThrowError(
+      /GET http:\/\/localhost\/version\/non-existent-version-id\/supergraph .* failed with status 404/,
+    );
+  });
 });
