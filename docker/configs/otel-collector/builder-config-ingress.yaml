@@ -18,8 +18,7 @@ processors:
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.140.0
-  - gomod:
-      github.com/open-telemetry/opentelemetry-collector-contrib/exporter/clickhouseexporter v0.140.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.140.0
 
 extensions:
   - gomod:

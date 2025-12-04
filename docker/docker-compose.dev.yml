@@ -93,7 +93,7 @@ services:
       - 'stack'
 
   broker:
-    image: redpandadata/redpanda:v23.3.21
+    image: redpandadata/redpanda:v25.2.11
     mem_limit: 300m
     mem_reservation: 100m
     hostname: broker
@@ -122,7 +122,6 @@ services:
       - --advertise-rpc-addr redpanda-1:33145
     volumes:
       - ./.hive-dev/broker/db:/var/lib/kafka/data
-
   supertokens:
     image: registry.supertokens.io/supertokens/supertokens-postgresql:9.3
     mem_limit: 300m
@@ -176,31 +175,52 @@ services:
     networks:
       - 'stack'
 
-  otel-collector:
+  broker_provision_otel_traces_topic:
+    image: redpandadata/redpanda:v25.2.11
+    depends_on:
+      - broker
+    restart: 'no'
+    networks:
+      - 'stack'
+    entrypoint: >
+      /bin/sh -c " sleep 5; rpk topic create otel-traces --brokers broker:29092 || true; exit 0"
+
+  otel-collector-ingress:
+    depends_on:
+      broker_provision_otel_traces_topic:
+        condition: service_completed_successfully
+    build:
+      context: ./configs/otel-collector
+      dockerfile: ./../../otel-collector-ingress.dockerfile
+    environment:
+      HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
+      KAFKA_BROKER: 'broker:29092'
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+      - '10254:10254'
+    networks:
+      - 'stack'
+
+  otel-collector-egress:
     depends_on:
       clickhouse:
         condition: service_healthy
+      broker_provision_otel_traces_topic:
+        condition: service_completed_successfully
     build:
       context: ./configs/otel-collector
-      dockerfile: ./../../otel-collector.dockerfile
-    mem_limit: 1000m
+      dockerfile: ./../../otel-collector-egress.dockerfile
+    mem_limit: 512m
     environment:
-      HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
+      KAFKA_BROKER: 'broker:29092'
       CLICKHOUSE_PROTOCOL: 'http'
       CLICKHOUSE_HOST: clickhouse
       CLICKHOUSE_PORT: 8123
       CLICKHOUSE_USERNAME: test
       CLICKHOUSE_PASSWORD: test
-    volumes:
-      - ./configs/otel-collector/builder-config.yaml:/builder-config.yaml
-      - ./configs/otel-collector/config.yaml:/etc/otel-config.yaml
     ports:
-      - '4317:4317'
-      - '4318:4318'
       - '10254:10254'
-      - '1777:1777'
-      - '8081:8081'
-      - '55679:55679'
     networks:
       - 'stack'
 
