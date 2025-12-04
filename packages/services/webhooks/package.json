@@ -17,7 +17,7 @@
     "copyfiles": "2.4.1",
     "dotenv": "16.4.7",
     "got": "14.4.7",
-    "ioredis": "5.4.2",
+    "ioredis": "5.8.2",
     "p-timeout": "6.1.4",
     "pino-pretty": "11.3.0",
     "tslib": "2.8.1",
