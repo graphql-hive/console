@@ -1,71 +1,55 @@
-import type { OpenWorkflow } from 'openworkflow';
-import type {
-  WorkflowDefinitionConfig as InternalWorkflowDefinitionConfig,
-  StepFunctionConfig,
-  WorkflowDefinition,
-  WorkflowRunHandle,
-} from 'openworkflow/dist/client';
-import { DurationString } from 'openworkflow/dist/duration.js';
-import type { ZodType } from 'zod';
-import type { Context } from './context.js';
+import { JobHelpers, Task } from 'graphile-worker';
+import { z } from 'zod';
+import { Logger } from '@graphql-hive/logger';
+import { Context } from './context';
 
-type WorkflowDefinitionConfig<$Schema = unknown> = InternalWorkflowDefinitionConfig & {
-  schema: ZodType<$Schema>;
+export type TaskDefinition<TName extends string, TModel> = {
+  name: TName;
+  schema: z.ZodTypeAny & { _output: TModel };
 };
 
-export function declareWorkflow<$Schema = unknown>(args: WorkflowDefinitionConfig<$Schema>) {
-  return args;
+export function defineTask<TName extends string, TModel>(
+  workflow: TaskDefinition<TName, TModel>,
+): TaskDefinition<TName, TModel> {
+  return workflow;
 }
 
-type StepFunction<Output> = () => Promise<Output | undefined> | Output | undefined;
+type TaskImplementationArgs<TPayload> = {
+  input: TPayload;
+  context: Context;
+  logger: Logger;
+  helpers: JobHelpers;
+};
 
-interface WorkflowFunctionParams<Input> {
-  input: Input;
-  step: StepApi;
-  version: string | null;
-}
+export type TaskImplementation<TPayload> = (
+  args: TaskImplementationArgs<TPayload>,
+) => Promise<void>;
 
-interface StepApi {
-  run<Output>(config: StepFunctionConfig, fn: StepFunction<Output>): Promise<Output>;
-  sleep(name: string, duration: DurationString): Promise<void>;
-}
-
-// Task Logging Todos: unique task ID
-// Inject logger instance with all necessary prefixes (step; etc.)
-
-/**
- * Implement a workflow.
- */
-export function workflow<$Schema = unknown>(
-  config: WorkflowDefinitionConfig<$Schema>,
-  implementation: (
-    args: WorkflowFunctionParams<$Schema> & { context: Context },
-  ) => Promise<unknown>,
-) {
-  return (ow: OpenWorkflow, context: Context) =>
-    ow.defineWorkflow<$Schema, unknown>(config, args => {
-      return implementation({ ...args, context });
-    });
-}
-
-async function noop() {}
-
-const scheduleWorkflowCache = new Map<string, WorkflowDefinition<unknown, unknown>['run']>();
-
-/**
- * Schedule a workflow run from application code.
- */
-export function scheduleWorkflow<$Schema>(
-  ow: OpenWorkflow,
-  config: WorkflowDefinitionConfig<$Schema>,
-  input: $Schema,
-): Promise<WorkflowRunHandle<unknown>> {
-  let run = scheduleWorkflowCache.get(config.name);
-  if (!run) {
-    const definition = ow.defineWorkflow(config, noop);
-    run = input => definition.run(config.schema.parse(input));
-    scheduleWorkflowCache.set(config.name, run);
-  }
-
-  return run(input);
+export function implementTask<TPayload>(
+  taskDefinition: TaskDefinition<string, TPayload>,
+  implementation: TaskImplementation<TPayload>,
+): (context: Context) => [string, Task] {
+  return function (context) {
+    return [
+      taskDefinition.name,
+      function (unsafePayload, helpers) {
+        const input = taskDefinition.schema.parse(unsafePayload);
+        return implementation({
+          input,
+          context,
+          helpers,
+          logger: context.logger.child({
+            attrs: {
+              'job.id': helpers.job.id,
+              'job.queueId': helpers.job.job_queue_id,
+              'job.attempts': helpers.job.attempts,
+              'job.maxAttempts': helpers.job.max_attempts,
+              'job.priority': helpers.job.priority,
+              'job.taskId': helpers.job.task_id,
+            },
+          }),
+        });
+      },
+    ];
+  };
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { defineTask, implementTask } from '../kit.js';
 import { renderAuditLogsReportEmail } from '../lib/emails/templates/audit-logs-report.js';
-import { defineTask, implementTask } from '../postgraphile-kit.js';
 
 export const AuditLogExportTask = defineTask({
   name: 'audit-log-export',

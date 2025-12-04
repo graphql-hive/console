@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { defineTask, implementTask } from '../kit.js';
 import { renderOrganizationOwnershipTransferEmail } from '../lib/emails/templates/organization-ownership-transfer.js';
-import { defineTask, implementTask } from '../postgraphile-kit.js';
 
 export const OrganizationOwnershipTransferTask = defineTask({
   name: 'organizationOwnershipTransfer',
