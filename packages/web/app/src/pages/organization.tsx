@@ -1,19 +1,14 @@
-import { ChangeEvent, ReactElement, useCallback, useMemo, useRef } from 'react';
-import { endOfDay, formatISO, startOfDay } from 'date-fns';
+import { ChangeEvent, ReactElement, useCallback, useMemo } from 'react';
 import * as echarts from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { Globe, History, MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { useQuery } from 'urql';
-import { z } from 'zod';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
-import { QueryError } from '@/components/ui/query-error';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -22,16 +17,8 @@ import { ProjectType } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';
-import { UTCDate } from '@date-fns/utc';
+import { organizationIndexRoute } from '@/router';
 import { Link, useRouter } from '@tanstack/react-router';
-
-export const OrganizationIndexRouteSearch = z.object({
-  search: z.string().optional(),
-  sortBy: z.enum(['requests', 'versions', 'name']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional(),
-});
-
-type RouteSearchProps = z.infer<typeof OrganizationIndexRouteSearch>;
 
 const ProjectCard_ProjectFragment = graphql(`
   fragment ProjectCard_ProjectFragment on Project {
@@ -223,12 +210,14 @@ const ProjectCard = (props: {
   );
 };
 
-const OrganizationProjectsPageQuery = graphql(`
-  query OrganizationProjectsPageQuery(
+export const OrganizationPageWithLayoutQuery = graphql(`
+  query OrganizationPageWithLayoutQuery(
     $organizationSlug: String!
     $chartResolution: Int!
     $period: DateRangeInput!
   ) {
+    ...OrganizationLayoutDataFragment
+
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
@@ -251,50 +240,28 @@ const OrganizationProjectsPageQuery = graphql(`
   }
 `);
 
-function OrganizationPageContent(
-  props: {
-    organizationSlug: string;
-  } & RouteSearchProps,
-) {
+function OrganizationPageContent() {
+  const data = organizationIndexRoute.useLoaderData();
+
+  const { search, sortBy, sortOrder: searchSortOrder } = organizationIndexRoute.useSearch();
+
   const days = 14;
-  const period = useRef<{
-    from: string;
-    to: string;
-  }>();
 
   // Sort by requests by default
-  const sortKey = props.sortBy ?? 'requests';
+  const sortKey = sortBy ?? 'requests';
 
   const sortOrder =
-    props.sortOrder === 'asc'
+    searchSortOrder === 'asc'
       ? -1
       : // if the sort order is not set, sort by name in ascending order by default
-        !props.sortOrder && props.sortBy === 'name'
+        !searchSortOrder && sortBy === 'name'
         ? -1
         : // if the sort order is not set, sort in descending order by default
           1;
 
-  if (!period.current) {
-    const now = new UTCDate();
-    const from = formatISO(startOfDay(subDays(now, days)));
-    const to = formatISO(endOfDay(now));
-
-    period.current = { from, to };
-  }
-
   const router = useRouter();
 
-  const [query] = useQuery({
-    query: OrganizationProjectsPageQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-      chartResolution: days, // 14 days = 14 data points
-      period: period.current,
-    },
-    requestPolicy: 'cache-and-network',
-  });
-
-  const currentOrganization = query.data?.organization;
+  const currentOrganization = data.organization;
   const projectsConnection = currentOrganization?.projects;
 
   const highestNumberOfRequests = useMemo(() => {
@@ -318,7 +285,7 @@ function OrganizationPageContent(
       return [];
     }
 
-    const searchPhrase = props.search;
+    const searchPhrase = search;
     const newProjects = searchPhrase
       ? projectsConnection.edges.filter(edge =>
           edge.node.slug.toLowerCase().includes(searchPhrase.toLowerCase()),
@@ -346,7 +313,7 @@ function OrganizationPageContent(
         // falls back to sort by name in ascending order
         return a.slug.localeCompare(b.slug);
       });
-  }, [projectsConnection, props.search, sortKey, sortOrder]);
+  }, [projectsConnection, search, sortKey, sortOrder]);
 
   const onSearchChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -382,136 +349,117 @@ function OrganizationPageContent(
       search(params) {
         return {
           ...params,
-          sortOrder: props.sortOrder === 'asc' ? 'desc' : 'asc',
+          sortOrder: searchSortOrder === 'asc' ? 'desc' : 'asc',
         };
       },
     });
-  }, [router, props.sortOrder]);
-
-  if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
-  }
+  }, [router, searchSortOrder]);
 
   return (
-    <OrganizationLayout
-      page={Page.Overview}
-      organizationSlug={props.organizationSlug}
-      className="flex justify-between gap-12"
-    >
-      <>
-        <div className="grow">
-          <div className="flex flex-row items-center justify-between py-6">
-            <div>
-              <Title>Projects</Title>
-              <Subtitle>A list of available project in your organization.</Subtitle>
-            </div>
-            <div>
-              <div className="flex flex-row items-center gap-x-2">
-                <div className="relative">
-                  <SearchIcon className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
-                  <Input
-                    type="search"
-                    placeholder="Search..."
-                    defaultValue={props.search}
-                    onChange={onSearchChange}
-                    className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
-                  />
-                </div>
-                <Separator orientation="vertical" className="mx-4 h-8" />
-                <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
-                  <SelectTrigger className="hover:bg-accent bg-transparent">
-                    {props.sortBy === 'versions'
-                      ? 'Schema Versions'
-                      : props.sortBy === 'name'
-                        ? 'Name'
-                        : 'Requests'}
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="requests">
-                      <div className="font-bold">Requests</div>
-                      <div className="text-muted-foreground text-xs">
-                        GraphQL requests made in the last {days} days.
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="versions">
-                      <div className="font-bold">Schema Versions</div>
-                      <div className="text-muted-foreground text-xs">
-                        Schemas published in last {days} days.
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="name">
-                      <div className="font-bold">Name</div>
-                      <div className="text-muted-foreground text-xs">Sort by project name.</div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button className="shrink-0" variant="outline" size="icon" onClick={onSortClick}>
-                  {props.sortOrder === 'asc' ? (
-                    <MoveUpIcon className="size-4" />
-                  ) : (
-                    <MoveDownIcon className="size-4" />
-                  )}
-                </Button>
+    <>
+      <div className="grow">
+        <div className="flex flex-row items-center justify-between py-6">
+          <div>
+            <Title>Projects</Title>
+            <Subtitle>A list of available project in your organization.</Subtitle>
+          </div>
+          <div>
+            <div className="flex flex-row items-center gap-x-2">
+              <div className="relative">
+                <SearchIcon className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  defaultValue={search}
+                  onChange={onSearchChange}
+                  className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                />
               </div>
+              <Separator orientation="vertical" className="mx-4 h-8" />
+              <Select value={sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
+                <SelectTrigger className="hover:bg-accent bg-transparent">
+                  {sortBy === 'versions'
+                    ? 'Schema Versions'
+                    : sortBy === 'name'
+                      ? 'Name'
+                      : 'Requests'}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="requests">
+                    <div className="font-bold">Requests</div>
+                    <div className="text-muted-foreground text-xs">
+                      GraphQL requests made in the last {days} days.
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="versions">
+                    <div className="font-bold">Schema Versions</div>
+                    <div className="text-muted-foreground text-xs">
+                      Schemas published in last {days} days.
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="name">
+                    <div className="font-bold">Name</div>
+                    <div className="text-muted-foreground text-xs">Sort by project name.</div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button className="shrink-0" variant="outline" size="icon" onClick={onSortClick}>
+                {searchSortOrder === 'asc' ? (
+                  <MoveUpIcon className="size-4" />
+                ) : (
+                  <MoveDownIcon className="size-4" />
+                )}
+              </Button>
             </div>
           </div>
-          {currentOrganization && projectsConnection ? (
-            projectsConnection.edges.length === 0 ? (
-              <EmptyList
-                title="Hive is waiting for your first project"
-                description='You can create a project by clicking the "New Project" button'
-                docsUrl="/management/projects#create-a-new-project"
-              />
-            ) : (
-              <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
-                {projects.map(project => (
-                  <ProjectCard
-                    key={project.id}
-                    cleanOrganizationId={currentOrganization.slug}
-                    days={days}
-                    highestNumberOfRequests={highestNumberOfRequests}
-                    project={project}
-                    requestsOverTime={project.requestsOverTime}
-                    schemaVersionsCount={project.schemaVersionsCount}
-                  />
-                ))}
-              </div>
-            )
+        </div>
+        {currentOrganization && projectsConnection ? (
+          projectsConnection.edges.length === 0 ? (
+            <EmptyList
+              title="Hive is waiting for your first project"
+              description='You can create a project by clicking the "New Project" button'
+              docsUrl="/management/projects#create-a-new-project"
+            />
           ) : (
             <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
-              {Array.from({ length: 4 }).map((_, index) => (
+              {projects.map(project => (
                 <ProjectCard
-                  key={index}
+                  key={project.id}
+                  cleanOrganizationId={currentOrganization.slug}
                   days={days}
                   highestNumberOfRequests={highestNumberOfRequests}
-                  project={null}
-                  cleanOrganizationId={null}
-                  requestsOverTime={null}
-                  schemaVersionsCount={null}
+                  project={project}
+                  requestsOverTime={project.requestsOverTime}
+                  schemaVersionsCount={project.schemaVersionsCount}
                 />
               ))}
             </div>
-          )}
-        </div>
-      </>
-    </OrganizationLayout>
+          )
+        ) : (
+          <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <ProjectCard
+                key={index}
+                days={days}
+                highestNumberOfRequests={highestNumberOfRequests}
+                project={null}
+                cleanOrganizationId={null}
+                requestsOverTime={null}
+                schemaVersionsCount={null}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
-export function OrganizationPage(
-  props: {
-    organizationSlug: string;
-  } & RouteSearchProps,
-) {
+export function OrganizationPage() {
   return (
     <>
       <Meta title="Organization" />
-      <OrganizationPageContent
-        organizationSlug={props.organizationSlug}
-        search={props.search}
-        sortBy={props.sortBy}
-        sortOrder={props.sortOrder}
-      />
+      <OrganizationPageContent />
     </>
   );
 }

@@ -1,9 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useMutation, useQuery } from 'urql';
+import { useMutation } from 'urql';
 import { z } from 'zod';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
@@ -31,7 +30,6 @@ import {
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
-import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { useToast } from '@/components/ui/use-toast';
 import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
@@ -40,6 +38,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import { organizationSettingsRoute } from '@/router';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -613,9 +612,13 @@ function OrganizationPolicySettings(props: {
   );
 }
 
-const OrganizationSettingsPageQuery = graphql(`
-  query OrganizationSettingsPageQuery($organizationSlug: String!) {
+export const OrganizationSettingsPageWithLayoutQuery = graphql(`
+  query OrganizationSettingsPageWithLayout($organizationSlug: String!) {
+    ...OrganizationLayoutDataFragment
+
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      slug
       ...SettingsPageRenderer_OrganizationFragment
       ...OrganizationPolicySettings_OrganizationFragment
       viewerCanAccessSettings
@@ -633,19 +636,15 @@ export const OrganizationSettingsPageEnum = z.enum([
 ]);
 export type OrganizationSettingsSubPage = z.TypeOf<typeof OrganizationSettingsPageEnum>;
 
-function SettingsPageContent(props: {
-  organizationSlug: string;
-  page?: OrganizationSettingsSubPage;
-}) {
-  const router = useRouter();
-  const [query] = useQuery({
-    query: OrganizationSettingsPageQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-    },
-  });
+function SettingsPageContent() {
+  const data = organizationSettingsRoute.useLoaderData();
 
-  const currentOrganization = query.data?.organization;
+  const { organizationSlug } = organizationSettingsRoute.useParams();
+  const { page: currentPage } = organizationSettingsRoute.useSearch();
+
+  const router = useRouter();
+
+  const currentOrganization = data?.organization;
 
   const subPages = useMemo(() => {
     const pages: Array<{
@@ -682,7 +681,9 @@ function SettingsPageContent(props: {
     return pages;
   }, [currentOrganization]);
 
-  const resolvedPage = props.page ? subPages.find(page => page.key === props.page) : subPages.at(0);
+  const resolvedPage = currentPage
+    ? subPages.find(page => page.key === currentPage)
+    : subPages.at(0);
 
   useRedirect({
     canAccess: resolvedPage !== undefined,
@@ -690,86 +691,73 @@ function SettingsPageContent(props: {
       void router.navigate({
         to: '/$organizationSlug',
         params: {
-          organizationSlug: props.organizationSlug,
+          organizationSlug,
         },
       });
     },
     entity: currentOrganization,
   });
 
-  if (query.error) {
-    return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
-  }
-
   if (!resolvedPage || !currentOrganization) {
     return null;
   }
 
   return (
-    <OrganizationLayout
-      page={Page.Settings}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
-      <PageLayout>
-        <NavLayout>
-          {subPages.map(subPage => {
-            return (
-              <Button
-                key={subPage.key}
-                data-cy={`target-settings-${subPage.key}-link`}
-                variant="ghost"
-                onClick={() => {
-                  void router.navigate({
-                    search: {
-                      page: subPage.key,
-                    },
-                  });
-                }}
-                className={cn(
-                  resolvedPage.key === subPage.key
-                    ? 'bg-muted hover:bg-muted'
-                    : 'hover:bg-transparent hover:underline',
-                  'w-full justify-start text-left',
-                )}
-              >
-                {subPage.title}
-              </Button>
-            );
-          })}
-        </NavLayout>
-        <PageLayoutContent>
-          <div className="space-y-12">
-            {resolvedPage.key === 'general' ? (
-              <OrganizationSettingsContent
-                organizationSlug={props.organizationSlug}
-                organization={currentOrganization}
-              />
-            ) : null}
-            {resolvedPage.key === 'policy' ? (
-              <OrganizationPolicySettings organization={currentOrganization} />
-            ) : null}
-            {resolvedPage.key === 'access-tokens' ? (
-              <AccessTokensSubPage organizationSlug={props.organizationSlug} />
-            ) : null}
-            {resolvedPage.key === 'personal-access-tokens' ? (
-              <PersonalAccessTokensSubPage organizationSlug={props.organizationSlug} />
-            ) : null}
-          </div>
-        </PageLayoutContent>
-      </PageLayout>
-    </OrganizationLayout>
+    <PageLayout>
+      <NavLayout>
+        {subPages.map(subPage => {
+          return (
+            <Button
+              key={subPage.key}
+              data-cy={`target-settings-${subPage.key}-link`}
+              variant="ghost"
+              onClick={() => {
+                void router.navigate({
+                  search: {
+                    page: subPage.key,
+                  },
+                });
+              }}
+              className={cn(
+                resolvedPage.key === subPage.key
+                  ? 'bg-muted hover:bg-muted'
+                  : 'hover:bg-transparent hover:underline',
+                'w-full justify-start text-left',
+              )}
+            >
+              {subPage.title}
+            </Button>
+          );
+        })}
+      </NavLayout>
+      <PageLayoutContent>
+        <div className="space-y-12">
+          {resolvedPage.key === 'general' ? (
+            <OrganizationSettingsContent
+              organizationSlug={organizationSlug}
+              organization={currentOrganization}
+            />
+          ) : null}
+          {resolvedPage.key === 'policy' ? (
+            <OrganizationPolicySettings organization={currentOrganization} />
+          ) : null}
+          {resolvedPage.key === 'access-tokens' ? (
+            <AccessTokensSubPage organizationSlug={organizationSlug} />
+          ) : null}
+          {resolvedPage.key === 'personal-access-tokens' ? (
+            <PersonalAccessTokensSubPage organizationSlug={organizationSlug} />
+          ) : null}
+        </div>
+      </PageLayoutContent>
+    </PageLayout>
   );
 }
 
-export function OrganizationSettingsPage(props: {
-  organizationSlug: string;
-  page?: OrganizationSettingsSubPage;
-}) {
+export function OrganizationSettingsPage() {
   return (
     <>
       <Meta title="Organization settings" />
-      <SettingsPageContent organizationSlug={props.organizationSlug} page={props.page} />
+      <SettingsPageContent />
     </>
   );
 }

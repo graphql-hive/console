@@ -1,10 +1,10 @@
-import { lazy, useCallback, useEffect, useMemo } from 'react';
+import { lazy, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
 import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
-import { Provider as UrqlProvider } from 'urql';
+import { CombinedError, Provider as UrqlProvider, type TypedDocumentNode } from 'urql';
 import { z } from 'zod';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Toaster } from '@/components/ui/toaster';
@@ -21,11 +21,14 @@ import {
   Outlet,
   parseSearchWith,
   stringifySearchWith,
-  useNavigate,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { endOfDay, formatISO, startOfDay, subDays } from 'date-fns';
+import { OrganizationLayout } from '@/components/layouts/organization';
+import { QueryError } from '@/components/ui/query-error';
+import { UTCDate } from '@date-fns/utc';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
 import { AuthPage } from './pages/auth';
@@ -41,13 +44,17 @@ import { IndexPage } from './pages/index';
 import { LogoutPage } from './pages/logout';
 import { ManagePage } from './pages/manage';
 import { NativeCompositionDiff } from './pages/native-composition-diff';
-import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organization';
+import { OrganizationPage, OrganizationPageWithLayoutQuery } from './pages/organization';
 import { JoinOrganizationPage } from './pages/organization-join';
-import { OrganizationMembersPage } from './pages/organization-members';
+import {
+  OrganizationMembersPage,
+  OrganizationMembersPageWithLayoutQuery,
+} from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
+  OrganizationSettingsPageWithLayoutQuery,
 } from './pages/organization-settings';
 import { OrganizationSubscriptionPage } from './pages/organization-subscription';
 import { OrganizationSubscriptionManagePage } from './pages/organization-subscription-manage';
@@ -94,6 +101,20 @@ if (env.sentry) {
 }
 
 const queryClient = new QueryClient();
+
+async function loadGraphQLData<TData, TVariables extends Record<string, any>>(
+  query: TypedDocumentNode<TData, TVariables>,
+  variables: TVariables,
+): Promise<TData> {
+  const result = await urqlClient
+    .query(query, variables, {
+      requestPolicy: 'cache-first',
+    })
+    .toPromise();
+
+  if (result.error) throw result.error;
+  return result.data!;
+}
 
 const LazyTanStackRouterDevtools = lazy(() =>
   import('@tanstack/router-devtools').then(({ TanStackRouterDevtools }) => ({
@@ -343,28 +364,46 @@ const organizationRoute = createRoute({
   errorComponent: ErrorComponent,
 });
 
-const organizationIndexRoute = createRoute({
+export const organizationLayoutRoute = createRoute({
   getParentRoute: () => organizationRoute,
+  id: '_organizationLayout',
+  component: OrganizationLayout,
+});
+
+export const OrganizationIndexRouteSearch = z.object({
+  search: z.string().optional(),
+  sortBy: z.enum(['requests', 'versions', 'name']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+export const organizationIndexRoute = createRoute({
+  getParentRoute: () => organizationLayoutRoute,
   path: '/',
   validateSearch: OrganizationIndexRouteSearch.parse,
-  component: function OrganizationRoute() {
-    const { organizationSlug } = organizationRoute.useParams();
-    const { search, sortBy, sortOrder } = organizationIndexRoute.useSearch();
-    return (
-      <OrganizationPage
-        organizationSlug={organizationSlug}
-        search={search}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
-      />
-    );
+
+  loader: async ({ params }) => {
+    const now = new UTCDate();
+    const from = formatISO(startOfDay(subDays(now, 14)));
+    const to = formatISO(endOfDay(now));
+
+    return await loadGraphQLData(OrganizationPageWithLayoutQuery, {
+      organizationSlug: params.organizationSlug,
+      chartResolution: 14,
+      period: { from, to },
+    });
   },
+
+  component: OrganizationPage,
   notFoundComponent: NotFound,
-  errorComponent: ErrorComponent,
+  errorComponent: ({ error }) => {
+    const urqlError = error as CombinedError;
+    const { organizationSlug } = organizationSettingsRoute.useParams();
+    return <QueryError organizationSlug={organizationSlug} error={urqlError} />;
+  },
 });
 
 const organizationSupportRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+  getParentRoute: () => organizationLayoutRoute,
   path: 'view/support',
   component: function OrganizationSupportRoute() {
     const { organizationSlug } = organizationSupportRoute.useParams();
@@ -373,7 +412,7 @@ const organizationSupportRoute = createRoute({
 });
 
 const organizationSupportTicketRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+  getParentRoute: () => organizationLayoutRoute,
   path: 'view/support/ticket/$ticketId',
   component: function OrganizationSupportTicketRoute() {
     const { organizationSlug, ticketId } = organizationSupportTicketRoute.useParams();
@@ -384,7 +423,7 @@ const organizationSupportTicketRoute = createRoute({
 });
 
 const organizationSubscriptionRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+  getParentRoute: () => organizationLayoutRoute,
   path: 'view/subscription',
   component: function OrganizationSubscriptionRoute() {
     const { organizationSlug } = organizationSubscriptionRoute.useParams();
@@ -393,7 +432,7 @@ const organizationSubscriptionRoute = createRoute({
 });
 
 const organizationSubscriptionManageLegacyRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+  getParentRoute: () => organizationLayoutRoute,
   path: 'view/subscription/manage',
   component: function OrganizationSubscriptionManageLegacyRoute() {
     const { organizationSlug } = organizationSubscriptionManageLegacyRoute.useParams();
@@ -404,7 +443,7 @@ const organizationSubscriptionManageLegacyRoute = createRoute({
 });
 
 const organizationSubscriptionManageRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+  getParentRoute: () => organizationLayoutRoute,
   path: 'view/manage-subscription',
   component: function OrganizationSubscriptionManageRoute() {
     const { organizationSlug } = organizationSubscriptionManageRoute.useParams();
@@ -416,48 +455,58 @@ const OrganizationSettingRouteSearch = z.object({
   page: OrganizationSettingsPageEnum.default('general').optional(),
 });
 
-const organizationSettingsRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+export const organizationSettingsRoute = createRoute({
+  getParentRoute: () => organizationLayoutRoute,
   validateSearch(search) {
     return OrganizationSettingRouteSearch.parse(search);
   },
   path: 'view/settings',
-  component: function OrganizationSettingsRoute() {
+
+  loader: async ({ params }) => {
+    return await loadGraphQLData(OrganizationSettingsPageWithLayoutQuery, {
+      organizationSlug: params.organizationSlug,
+    });
+  },
+
+  component: OrganizationSettingsPage,
+
+  errorComponent: ({ error }) => {
+    const urqlError = error as CombinedError;
     const { organizationSlug } = organizationSettingsRoute.useParams();
-    const { page } = organizationSettingsRoute.useSearch();
-    return <OrganizationSettingsPage organizationSlug={organizationSlug} page={page} />;
+    return <QueryError organizationSlug={organizationSlug} error={urqlError} />;
   },
 });
 
-const OrganizationMembersRouteSearch = z.object({
+export const OrganizationMembersRouteSearch = z.object({
   page: z.enum(['list', 'roles', 'invitations']).catch('list').default('list'),
   search: z.string().optional(),
+  after: z.string().optional(),
 });
 
 export const organizationMembersRoute = createRoute({
-  getParentRoute: () => organizationRoute,
+  getParentRoute: () => organizationLayoutRoute,
   path: 'view/members',
   validateSearch(search) {
     return OrganizationMembersRouteSearch.parse(search);
   },
-  component: function OrganizationMembersRoute() {
-    const { organizationSlug } = organizationMembersRoute.useParams();
-    const { page } = organizationMembersRoute.useSearch();
-    const navigate = useNavigate({ from: organizationMembersRoute.fullPath });
-    const onPageChange = useCallback(
-      (newPage: z.infer<typeof OrganizationMembersRouteSearch>['page']) => {
-        void navigate({ search: { page: newPage, search: undefined } });
-      },
-      [navigate],
-    );
 
-    return (
-      <OrganizationMembersPage
-        organizationSlug={organizationSlug}
-        page={page}
-        onPageChange={onPageChange}
-      />
-    );
+  loaderDeps: ({ search: { after, page, search } }) => ({ after, page, search }),
+
+  loader: async ({ params, deps }) => {
+    return await loadGraphQLData(OrganizationMembersPageWithLayoutQuery, {
+      organizationSlug: params.organizationSlug,
+      searchTerm: deps.search,
+      first: 20,
+      after: deps.after,
+    });
+  },
+
+  component: OrganizationMembersPage,
+
+  errorComponent: ({ error }) => {
+    const urqlError = error as CombinedError;
+    const { organizationSlug } = organizationSettingsRoute.useParams();
+    return <QueryError organizationSlug={organizationSlug} error={urqlError} />;
   },
 });
 
@@ -918,16 +967,18 @@ const routeTree = root.addChildren([
     manageRoute,
     logoutRoute,
     organizationRoute.addChildren([
-      organizationIndexRoute,
-      joinOrganizationRoute,
-      transferOrganizationRoute,
-      organizationSupportRoute,
-      organizationSupportTicketRoute,
-      organizationSubscriptionRoute,
-      organizationSubscriptionManageRoute,
-      organizationSubscriptionManageLegacyRoute,
-      organizationMembersRoute,
-      organizationSettingsRoute,
+      organizationLayoutRoute.addChildren([
+        organizationIndexRoute,
+        joinOrganizationRoute,
+        transferOrganizationRoute,
+        organizationSupportRoute,
+        organizationSupportTicketRoute,
+        organizationSubscriptionRoute,
+        organizationSubscriptionManageRoute,
+        organizationSubscriptionManageLegacyRoute,
+        organizationMembersRoute,
+        organizationSettingsRoute,
+      ]),
     ]),
     projectRoute.addChildren([projectIndexRoute, projectSettingsRoute, projectAlertsRoute]),
     targetRoute.addChildren([
