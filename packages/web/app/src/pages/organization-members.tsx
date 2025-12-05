@@ -134,11 +134,6 @@ function OrganizationMembersPageContent() {
   const { organizationSlug } = organizationMembersRoute.useParams();
   const { after, search: searchTerm } = organizationMembersRoute.useSearch();
 
-  // Reset cursor when search changes
-  // useEffect(() => {
-  //   setAfter(null);
-  // }, [searchTerm]);
-
   const [_query, refetch] = useQuery({
     query: OrganizationMembersPageWithLayoutQuery,
     variables: {
