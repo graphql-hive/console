@@ -68,7 +68,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
     <table
       aria-label="change-document"
       className={cn(
-        'min-w-full cursor-default whitespace-pre font-mono text-white',
+        'max-w-screen flex cursor-default overflow-x-auto whitespace-pre font-mono text-white',
         props.className,
       )}
       style={{ counterReset: 'olddoc newdoc' }}
