@@ -2672,3 +2672,71 @@ test('activeAppDeployments filters by name combined with lastUsedBefore', async 
   expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
   expect(result.target?.activeAppDeployments.edges[0]?.node.name).toBe('frontend-app');
 });
+
+test('activeAppDeployments check pagination clamp', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  // Create 25 active app deployments
+  for (let i = 0; i < 25; i++) {
+    const appName = `app-${i.toString().padStart(2, '0')}`;
+    await execute({
+      document: CreateAppDeployment,
+      variables: { input: { appName, appVersion: '1.0.0' } },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: AddDocumentsToAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion: '1.0.0',
+          documents: [{ hash: `hash-${i}`, body: 'query { hello }' }],
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: ActivateAppDeployment,
+      variables: { input: { appName, appVersion: '1.0.0' } },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+  }
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Request 100 items, should only get 20 (max limit)
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+      first: 100,
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Should be clamped to 20
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
+  expect(result.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(true);
+});
