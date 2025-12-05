@@ -2517,3 +2517,29 @@ test('activeAppDeployments pagination with first and after', async () => {
   expect(allNames).toHaveLength(5);
   expect(new Set(allNames).size).toBe(5);
 });
+
+test('activeAppDeployments returns error for invalid date filter', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { target, project } = await createProject();
+
+  // DateTime scalar rejects invalid date strings at the GraphQL level
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        lastUsedBefore: 'not-a-valid-date',
+      },
+    },
+    authToken: ownerToken,
+  });
+
+  expect(result.rawBody.errors).toBeDefined();
+  expect(result.rawBody.errors?.[0]?.message).toMatch(/DateTime|Invalid|date/i);
+});
