@@ -70,11 +70,12 @@ export default gql`
   Filter options for querying active app deployments.
   The date filters (lastUsedBefore, neverUsedAndCreatedBefore) use OR semantics:
   a deployment is included if it matches either date condition.
+  If no date filters are provided, all active deployments are returned.
   """
   input ActiveAppDeploymentsFilter {
     """
     Filter by app deployment name. Case-insensitive partial match.
-    Combined with AND semantics (narrows down results from date filters).
+    Applied with AND semantics to narrow down results.
     """
     name: String
     """
@@ -104,6 +105,7 @@ export default gql`
     """
     Find active app deployments matching specific criteria.
     Date filter conditions (lastUsedBefore, neverUsedAndCreatedBefore) use OR semantics.
+    If no date filters are provided, all active deployments are returned.
     The name filter uses AND semantics to narrow results.
     Only active deployments are returned (not pending or retired).
     """

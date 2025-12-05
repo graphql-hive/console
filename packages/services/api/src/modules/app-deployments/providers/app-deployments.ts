@@ -900,8 +900,16 @@ export class AppDeployments {
       lastUsedMap.set(usage.appDeploymentId, usage.lastUsed);
     }
 
-    // Apply OR filter logic
+    // Apply OR filter logic for date filters
+    // If no date filters provided, return all active deployments (name filter already applied in SQL)
+    const hasDateFilter = args.filter.lastUsedBefore || args.filter.neverUsedAndCreatedBefore;
+
     const filteredDeployments = activeDeployments.filter(deployment => {
+      // If no date filters, include all deployments
+      if (!hasDateFilter) {
+        return true;
+      }
+
       const lastUsed = lastUsedMap.get(deployment.id);
       const hasBeenUsed = lastUsed !== undefined;
 
