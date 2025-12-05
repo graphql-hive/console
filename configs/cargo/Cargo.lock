@@ -2613,7 +2613,7 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "2.3.3"
+version = "2.3.4"
 dependencies = [
  "anyhow",
  "apollo-router",
@@ -2647,7 +2647,7 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2657,6 +2657,7 @@ dependencies = [
  "md5",
  "mockito",
  "moka",
+ "regex-automata",
  "reqwest",
  "reqwest-middleware",
  "reqwest-retry 0.8.0",
