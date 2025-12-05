@@ -1,5 +1,5 @@
 ---
-'hive-console-sdk-rs': minor
+'hive-console-sdk-rs': patch
 ---
 
 Circuit Breaker Implementation and Multiple Endpoints Support
