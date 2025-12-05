@@ -1,5 +1,21 @@
 # hive
 
+## 8.13.0
+
+### Minor Changes
+
+- [#7333](https://github.com/graphql-hive/console/pull/7333)
+  [`4aa5247`](https://github.com/graphql-hive/console/commit/4aa524779c257602864f582fc3eb02b02c86d29a)
+  Thanks [@alexdaima](https://github.com/alexdaima)! - Update Redis client to support connecting to
+  IPv6 networks.
+
+### Patch Changes
+
+- [#7352](https://github.com/graphql-hive/console/pull/7352)
+  [`727e525`](https://github.com/graphql-hive/console/commit/727e525abbd26dce638278ee26e0311f725571e1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly check the global environment feature flag
+  in for app deployments and fix app deployment pagination
+
 ## 8.12.1
 
 ### Patch Changes
