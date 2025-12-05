@@ -28,15 +28,15 @@ import { QueryError } from '@/components/ui/query-error';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
 import {
-  Labaratory,
-  LabaratoryCollection,
-  LabaratoryCollectionOperation,
-  LabaratoryHistory,
-  LabaratoryOperation,
-  LabaratoryPreflight,
-  LabaratoryTab,
-} from '@/labaratory';
-import { LabaratoryApi } from '@/labaratory/components/labaratory/context';
+  Laboratory,
+  LaboratoryCollection,
+  LaboratoryCollectionOperation,
+  LaboratoryHistory,
+  LaboratoryOperation,
+  LaboratoryPreflight,
+  LaboratoryTab,
+} from '@/laboratory';
+import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
 import { useRedirect } from '@/lib/access/common';
 import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
 import { useCollections } from '@/lib/hooks/laboratory/use-collections';
@@ -331,7 +331,7 @@ function useLaboratoryState(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-}): Partial<LabaratoryApi> & { fetching: boolean } {
+}): Partial<LaboratoryApi> & { fetching: boolean } {
   const [{ data, fetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
@@ -368,9 +368,9 @@ function useLaboratoryState(props: {
                       extensions: '{}',
                       description: '',
                       createdAt: new Date().toISOString(),
-                    }) satisfies LabaratoryCollectionOperation,
+                    }) satisfies LaboratoryCollectionOperation,
                 ),
-            }) satisfies LabaratoryCollection,
+            }) satisfies LaboratoryCollection,
         ),
     [data?.target?.documentCollections.edges],
   );
@@ -380,7 +380,7 @@ function useLaboratoryState(props: {
   const updateOperation = useMemo(
     () =>
       throttle(
-        (collection: LabaratoryCollection, operation: LabaratoryCollectionOperation) =>
+        (collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) =>
           mutateUpdate({
             selector: {
               targetSlug: props.targetSlug,
@@ -405,7 +405,7 @@ function useLaboratoryState(props: {
 
   const createOperation = useMemo(
     () =>
-      throttle((collection: LabaratoryCollection, operation: LabaratoryCollectionOperation) => {
+      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         mutateCreate({
           selector: {
             targetSlug: props.targetSlug,
@@ -428,7 +428,7 @@ function useLaboratoryState(props: {
 
   const deleteOperation = useMemo(
     () =>
-      throttle((collection: LabaratoryCollection, operation: LabaratoryCollectionOperation) => {
+      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
         mutateDelete({
           selector: {
             targetSlug: props.targetSlug,
@@ -444,7 +444,7 @@ function useLaboratoryState(props: {
   const [, mutateDeleteCollection] = useMutation(DeleteCollectionMutation);
   const deleteCollection = useMemo(
     () =>
-      throttle((collection: LabaratoryCollection) => {
+      throttle((collection: LaboratoryCollection) => {
         mutateDeleteCollection({
           selector: {
             targetSlug: props.targetSlug,
@@ -461,7 +461,7 @@ function useLaboratoryState(props: {
 
   const addCollection = useMemo(
     () =>
-      throttle((collection: LabaratoryCollection) => {
+      throttle((collection: LaboratoryCollection) => {
         mutateAddCollection({
           selector: {
             targetSlug: props.targetSlug,
@@ -481,7 +481,7 @@ function useLaboratoryState(props: {
 
   const updatePreflight = useMemo(
     () =>
-      throttle((preflight: LabaratoryPreflight) => {
+      throttle((preflight: LaboratoryPreflight) => {
         mutateUpdatePreflight({
           input: {
             selector: {
@@ -506,43 +506,43 @@ function useLaboratoryState(props: {
     defaultPreflight: preflight?.preflightScript?.sourceCode
       ? { script: preflight.preflightScript.sourceCode }
       : null,
-    onOperationsChange: (operations: LabaratoryOperation[]) => {
+    onOperationsChange: (operations: LaboratoryOperation[]) => {
       setLocalStorageState('operations', operations);
     },
-    onHistoryChange: (history: LabaratoryHistory[]) => {
+    onHistoryChange: (history: LaboratoryHistory[]) => {
       setLocalStorageState('history', history);
     },
-    onTabsChange: (tabs: LabaratoryTab[]) => {
+    onTabsChange: (tabs: LaboratoryTab[]) => {
       setLocalStorageState('tabs', tabs);
     },
     onActiveTabIdChange: (activeTabId: string | null) => {
       setLocalStorageState('activeTabId', activeTabId);
     },
     onCollectionOperationCreate: (
-      collection: LabaratoryCollection,
-      operation: LabaratoryCollectionOperation,
+      collection: LaboratoryCollection,
+      operation: LaboratoryCollectionOperation,
     ) => {
       createOperation(collection, operation);
     },
     onCollectionOperationUpdate: (
-      collection: LabaratoryCollection,
-      operation: LabaratoryCollectionOperation,
+      collection: LaboratoryCollection,
+      operation: LaboratoryCollectionOperation,
     ) => {
       updateOperation(collection, operation);
     },
     onCollectionOperationDelete: (
-      collection: LabaratoryCollection,
-      operation: LabaratoryCollectionOperation,
+      collection: LaboratoryCollection,
+      operation: LaboratoryCollectionOperation,
     ) => {
       deleteOperation(collection, operation);
     },
-    onCollectionDelete: (collection: LabaratoryCollection) => {
+    onCollectionDelete: (collection: LaboratoryCollection) => {
       deleteCollection(collection);
     },
-    onCollectionCreate: (collection: LabaratoryCollection) => {
+    onCollectionCreate: (collection: LaboratoryCollection) => {
       addCollection(collection);
     },
-    onPreflightChange: (preflight: LabaratoryPreflight | null) => {
+    onPreflightChange: (preflight: LaboratoryPreflight | null) => {
       updatePreflight(preflight ?? { script: '' });
     },
     permissions: {
@@ -704,7 +704,7 @@ function LaboratoryPageContent(props: {
           </div>
         </div>
         <div className="flex-1 overflow-hidden rounded-lg border">
-          <Labaratory key={url} defaultEndpoint={url} {...laboratoryState} />
+          <Laboratory key={url} defaultEndpoint={url} {...laboratoryState} />
         </div>
       </div>
     </>
