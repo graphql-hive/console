@@ -186,14 +186,6 @@ jobs:
 
             **Image Tag**: `${{ inputs.imageTag }}`
 
-            <details>
-              <summary>Docker Bake metadata</summary>
-
-              ```json
-              ${{ steps.docker-bake.outputs.metadata }}
-              ```
-            </details>
-
       - name: upload sourcemaps to Sentry
         if: ${{ inputs.publishSourceMaps }}
         env:
