@@ -32,7 +32,7 @@ pub static PERSISTED_DOCUMENT_HASH_KEY: &str = "hive::persisted_document_hash";
 pub struct Config {
     pub enabled: Option<bool>,
     /// GraphQL Hive persisted documents CDN endpoint URL.
-    pub endpoint: Option<String>,
+    pub endpoint: Option<EndpointConfig>,
     /// GraphQL Hive persisted documents CDN access token.
     pub key: Option<String>,
     /// Whether arbitrary documents should be allowed along-side persisted documents.
@@ -57,6 +57,25 @@ pub struct Config {
     pub cache_size: Option<u64>,
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum EndpointConfig {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
+impl From<&str> for EndpointConfig {
+    fn from(value: &str) -> Self {
+        EndpointConfig::Single(value.into())
+    }
+}
+
+impl From<&[&str]> for EndpointConfig {
+    fn from(value: &[&str]) -> Self {
+        EndpointConfig::Multiple(value.iter().map(|s| s.to_string()).collect())
+    }
+}
+
 pub struct PersistedDocumentsPlugin {
     persisted_documents_manager: Option<Arc<PersistedDocumentsManager>>,
     allow_arbitrary_documents: bool,
@@ -72,11 +91,14 @@ impl PersistedDocumentsPlugin {
                 allow_arbitrary_documents,
             });
         }
-        let endpoint = match &config.endpoint {
-            Some(ep) => ep.clone(),
+        let endpoints = match &config.endpoint {
+            Some(ep) => match ep {
+                EndpointConfig::Single(url) => vec![url.clone()],
+                EndpointConfig::Multiple(urls) => urls.clone(),
+            },
             None => {
                 if let Ok(ep) = env::var("HIVE_CDN_ENDPOINT") {
-                    ep
+                    vec![ep]
                 } else {
                     return Err(
                         "Endpoint for persisted documents CDN is not configured. Please set it via the plugin configuration or HIVE_CDN_ENDPOINT environment variable."
@@ -102,8 +124,11 @@ impl PersistedDocumentsPlugin {
 
         let mut persisted_documents_manager = PersistedDocumentsManager::builder()
             .key(key)
-            .endpoint(endpoint)
             .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION));
+
+        for endpoint in endpoints {
+            persisted_documents_manager = persisted_documents_manager.add_endpoint(endpoint);
+        }
 
         if let Some(connect_timeout) = config.connect_timeout {
             persisted_documents_manager =
@@ -365,8 +390,8 @@ mod hive_persisted_documents_tests {
             Self { server }
         }
 
-        fn endpoint(&self) -> String {
-            self.server.url("")
+        fn endpoint(&self) -> EndpointConfig {
+            EndpointConfig::Single(self.server.url(""))
         }
 
         /// Registers a valid artifact URL with an actual GraphQL document
