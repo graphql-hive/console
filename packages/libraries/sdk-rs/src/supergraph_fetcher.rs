@@ -9,10 +9,10 @@ use reqwest::header::InvalidHeaderValue;
 use reqwest::header::IF_NONE_MATCH;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
-use reqwest_retry::policies::ExponentialBackoff;
 use reqwest_retry::RetryDecision;
 use reqwest_retry::RetryPolicy;
 use reqwest_retry::RetryTransientMiddleware;
+use retry_policies::policies::ExponentialBackoff;
 
 #[derive(Debug)]
 pub struct SupergraphFetcher<AsyncOrSync> {
@@ -200,25 +200,25 @@ impl<AsyncOrSync> SupergraphFetcher<AsyncOrSync> {
 }
 
 pub struct SupergraphFetcherBuilder {
-    _endpoint: Option<String>,
-    _key: Option<String>,
-    _user_agent: Option<String>,
-    _connect_timeout: Duration,
-    _request_timeout: Duration,
-    _accept_invalid_certs: bool,
-    _retry_policy: ExponentialBackoff,
+    endpoint: Option<String>,
+    key: Option<String>,
+    user_agent: Option<String>,
+    connect_timeout: Duration,
+    request_timeout: Duration,
+    accept_invalid_certs: bool,
+    retry_policy: ExponentialBackoff,
 }
 
 impl Default for SupergraphFetcherBuilder {
     fn default() -> Self {
         Self {
-            _endpoint: None,
-            _key: None,
-            _user_agent: None,
-            _connect_timeout: Duration::from_secs(5),
-            _request_timeout: Duration::from_secs(60),
-            _accept_invalid_certs: false,
-            _retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
+            endpoint: None,
+            key: None,
+            user_agent: None,
+            connect_timeout: Duration::from_secs(5),
+            request_timeout: Duration::from_secs(60),
+            accept_invalid_certs: false,
+            retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
         }
     }
 }
@@ -230,37 +230,37 @@ impl SupergraphFetcherBuilder {
 
     /// The CDN endpoint from Hive Console target.
     pub fn endpoint(mut self, endpoint: String) -> Self {
-        self._endpoint = Some(endpoint);
+        self.endpoint = Some(endpoint);
         self
     }
 
     /// The CDN Access Token with from the Hive Console target.
     pub fn key(mut self, key: String) -> Self {
-        self._key = Some(key);
+        self.key = Some(key);
         self
     }
 
     pub fn user_agent(mut self, user_agent: String) -> Self {
-        self._user_agent = Some(user_agent);
+        self.user_agent = Some(user_agent);
         self
     }
 
     /// Connection timeout for the Hive Console CDN requests.
     /// Default: 5 seconds
     pub fn connect_timeout(mut self, timeout: Duration) -> Self {
-        self._connect_timeout = timeout;
+        self.connect_timeout = timeout;
         self
     }
 
     /// Request timeout for the Hive Console CDN requests.
     /// Default: 60 seconds
     pub fn request_timeout(mut self, timeout: Duration) -> Self {
-        self._request_timeout = timeout;
+        self.request_timeout = timeout;
         self
     }
 
     pub fn accept_invalid_certs(mut self, accept: bool) -> Self {
-        self._accept_invalid_certs = accept;
+        self.accept_invalid_certs = accept;
         self
     }
 
@@ -268,7 +268,7 @@ impl SupergraphFetcherBuilder {
     ///
     /// By default, an exponential backoff retry policy is used, with 10 attempts.
     pub fn retry_policy(mut self, retry_policy: ExponentialBackoff) -> Self {
-        self._retry_policy = retry_policy;
+        self.retry_policy = retry_policy;
         self
     }
 
@@ -276,7 +276,7 @@ impl SupergraphFetcherBuilder {
     ///
     /// By default, an exponential backoff retry policy is used, with 10 attempts.
     pub fn max_retries(mut self, max_retries: u32) -> Self {
-        self._retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
+        self.retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
         self
     }
 
@@ -284,7 +284,7 @@ impl SupergraphFetcherBuilder {
     pub fn build_sync(
         self,
     ) -> Result<SupergraphFetcher<SupergraphFetcherSyncState>, SupergraphFetcherError> {
-        let endpoint = match self._endpoint {
+        let endpoint = match self.endpoint {
             Some(endpoint) => endpoint,
             None => {
                 return Err(SupergraphFetcherError::MissingConfigurationOption(
@@ -292,7 +292,7 @@ impl SupergraphFetcherBuilder {
                 ))
             }
         };
-        let key = match self._key {
+        let key = match self.key {
             Some(key) => key,
             None => {
                 return Err(SupergraphFetcherError::MissingConfigurationOption(
@@ -303,12 +303,12 @@ impl SupergraphFetcherBuilder {
         let (endpoint, headers) = prepare_client_config(endpoint, &key)?;
 
         let mut reqwest_client = reqwest::blocking::Client::builder()
-            .danger_accept_invalid_certs(self._accept_invalid_certs)
-            .connect_timeout(self._connect_timeout)
-            .timeout(self._request_timeout)
+            .danger_accept_invalid_certs(self.accept_invalid_certs)
+            .connect_timeout(self.connect_timeout)
+            .timeout(self.request_timeout)
             .default_headers(headers);
 
-        if let Some(user_agent) = &self._user_agent {
+        if let Some(user_agent) = &self.user_agent {
             reqwest_client = reqwest_client.user_agent(user_agent);
         }
 
@@ -318,7 +318,7 @@ impl SupergraphFetcherBuilder {
         let fetcher: SupergraphFetcher<SupergraphFetcherSyncState> = SupergraphFetcher {
             client: SupergraphFetcherAsyncOrSyncClient::Sync {
                 reqwest_client,
-                retry_policy: self._retry_policy,
+                retry_policy: self.retry_policy,
             },
             endpoint,
             etag: RwLock::new(None),
@@ -331,7 +331,7 @@ impl SupergraphFetcherBuilder {
     pub fn build_async(
         self,
     ) -> Result<SupergraphFetcher<SupergraphFetcherAsyncState>, SupergraphFetcherError> {
-        let endpoint = match self._endpoint {
+        let endpoint = match self.endpoint {
             Some(endpoint) => endpoint,
             None => {
                 return Err(SupergraphFetcherError::MissingConfigurationOption(
@@ -339,7 +339,7 @@ impl SupergraphFetcherBuilder {
                 ))
             }
         };
-        let key = match self._key {
+        let key = match self.key {
             Some(key) => key,
             None => {
                 return Err(SupergraphFetcherError::MissingConfigurationOption(
@@ -351,12 +351,12 @@ impl SupergraphFetcherBuilder {
         let (endpoint, headers) = prepare_client_config(endpoint, &key)?;
 
         let mut reqwest_agent = reqwest::Client::builder()
-            .danger_accept_invalid_certs(self._accept_invalid_certs)
-            .connect_timeout(self._connect_timeout)
-            .timeout(self._request_timeout)
+            .danger_accept_invalid_certs(self.accept_invalid_certs)
+            .connect_timeout(self.connect_timeout)
+            .timeout(self.request_timeout)
             .default_headers(headers);
 
-        if let Some(user_agent) = self._user_agent {
+        if let Some(user_agent) = self.user_agent {
             reqwest_agent = reqwest_agent.user_agent(user_agent);
         }
 
@@ -364,9 +364,7 @@ impl SupergraphFetcherBuilder {
             .build()
             .map_err(SupergraphFetcherError::FetcherCreationError)?;
         let reqwest_client = ClientBuilder::new(reqwest_agent)
-            .with(RetryTransientMiddleware::new_with_policy(
-                self._retry_policy,
-            ))
+            .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
             .build();
 
         Ok(SupergraphFetcher {
