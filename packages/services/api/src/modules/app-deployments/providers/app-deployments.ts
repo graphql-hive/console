@@ -954,6 +954,11 @@ export class AppDeployments {
       if (args.filter.lastUsedBefore && hasBeenUsed) {
         const lastUsedDate = new Date(lastUsed);
         const thresholdDate = new Date(args.filter.lastUsedBefore);
+        if (Number.isNaN(thresholdDate.getTime())) {
+          throw new Error(
+            `Invalid lastUsedBefore filter: "${args.filter.lastUsedBefore}" is not a valid date`,
+          );
+        }
         if (lastUsedDate < thresholdDate) {
           return true;
         }
@@ -963,6 +968,11 @@ export class AppDeployments {
       if (args.filter.neverUsedAndCreatedBefore && !hasBeenUsed) {
         const createdAtDate = new Date(deployment.createdAt);
         const thresholdDate = new Date(args.filter.neverUsedAndCreatedBefore);
+        if (Number.isNaN(thresholdDate.getTime())) {
+          throw new Error(
+            `Invalid neverUsedAndCreatedBefore filter: "${args.filter.neverUsedAndCreatedBefore}" is not a valid date`,
+          );
+        }
         if (createdAtDate < thresholdDate) {
           return true;
         }
