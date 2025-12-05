@@ -2543,3 +2543,132 @@ test('activeAppDeployments returns error for invalid date filter', async () => {
   expect(result.rawBody.errors).toBeDefined();
   expect(result.rawBody.errors?.[0]?.message).toMatch(/DateTime|Invalid|date/i);
 });
+
+test('activeAppDeployments filters by name combined with lastUsedBefore', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  // Create frontend-app
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'frontend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'frontend-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'hash1', body: 'query { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'frontend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create backend-app
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'backend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'backend-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'hash2', body: 'query { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'backend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Report usage for frontend-app only
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
+
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'frontend-app',
+      'x-graphql-client-version': '1.0.0',
+    },
+  });
+
+  await client.collectUsage()(
+    {
+      document: parse(`query { hello }`),
+      schema: buildASTSchema(parse(sdl)),
+      contextValue: { request },
+    },
+    {},
+    'frontend-app~1.0.0~hash1',
+  );
+
+  await waitForOperationsCollected(1);
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Filter by name "frontend" AND lastUsedBefore tomorrow should get frontend-app
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        name: 'frontend',
+        lastUsedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result.target?.activeAppDeployments.edges[0]?.node.name).toBe('frontend-app');
+});
