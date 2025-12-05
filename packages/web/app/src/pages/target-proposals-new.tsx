@@ -385,6 +385,7 @@ function ProposalsNewContent(
                       commit: '',
                     }
                   : null,
+                url: s.__typename === 'CompositeSchema' ? s.url : undefined,
                 // @todo url, meta, etc...
                 // and set author in backend?...
               })),
