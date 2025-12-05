@@ -61,6 +61,11 @@ jobs:
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
 
+  # Changeset Validation
+  # Validates that changesets reference valid packages that exist in the monorepo
+  changeset-validation:
+    uses: ./.github/workflows/changeset-validation.yaml
+
   # ESLint and Prettier
   code-style:
     uses: ./.github/workflows/lint.yaml
