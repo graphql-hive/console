@@ -21,20 +21,6 @@ const reactScanPlugin: Plugin = {
   },
 };
 
-// Fix regex patterns that get malformed during HTML transformation
-// Specifically fixes: /^((http:)|(https:)|(file:)|(//))/ -> /^((http:)|(https:)|(file:)|(\/\/))/
-const fixRegexPatternsPlugin: Plugin = {
-  name: 'fix-regex-patterns',
-  transformIndexHtml(html) {
-    // Fix regex patterns where escaped forward slashes (\/\/) have been incorrectly unescaped to (//)
-    // This specifically targets patterns like: ((http:)|(https:)|(file:)|(//))
-    // We replace (//) with (\/\/) when it appears in this specific context
-    return html.replace(/\(\(http:\)\|\(https:\)\|\(file:\)\|\)\(\(\/\/\)\)/g, match =>
-      match.replace('(//)', '(\\/\\/)'),
-    );
-  },
-};
-
 export default {
   root: __dirname,
   plugins: [
@@ -51,9 +37,6 @@ export default {
         },
       ],
     }),
-    // Fix regex patterns that get malformed during HTML transformation
-    // This should run after other plugins that might modify the HTML
-    fixRegexPatternsPlugin,
   ],
   build: {
     rollupOptions: {
