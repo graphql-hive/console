@@ -35,6 +35,10 @@ pub enum PersistedDocumentsError {
     PersistedDocumentRequired,
     #[error("Missing required configuration option: {0}")]
     MissingConfigurationOption(String),
+    #[error("Invalid CDN key {0}")]
+    InvalidCDNKey(String),
+    #[error("Failed to create HTTP client: {0}")]
+    HTTPClientCreationError(reqwest::Error),
 }
 
 impl PersistedDocumentsError {
@@ -57,6 +61,10 @@ impl PersistedDocumentsError {
             }
             PersistedDocumentsError::MissingConfigurationOption(_) => {
                 "MISSING_CONFIGURATION_OPTION".into()
+            }
+            PersistedDocumentsError::InvalidCDNKey(_) => "INVALID_CDN_KEY".into(),
+            PersistedDocumentsError::HTTPClientCreationError(_) => {
+                "HTTP_CLIENT_CREATION_ERROR".into()
             }
         }
     }
@@ -229,7 +237,11 @@ impl PersistedDocumentsManagerBuilder {
                 ));
             }
         };
-        default_headers.insert("X-Hive-CDN-Key", HeaderValue::from_str(&key).unwrap());
+        default_headers.insert(
+            "X-Hive-CDN-Key",
+            HeaderValue::from_str(&key)
+                .map_err(|e| PersistedDocumentsError::InvalidCDNKey(e.to_string()))?,
+        );
         let mut reqwest_agent = reqwest::Client::builder()
             .danger_accept_invalid_certs(self.accept_invalid_certs)
             .connect_timeout(self.connect_timeout)
@@ -242,7 +254,7 @@ impl PersistedDocumentsManagerBuilder {
 
         let reqwest_agent = reqwest_agent
             .build()
-            .expect("Failed to create reqwest client");
+            .map_err(PersistedDocumentsError::HTTPClientCreationError)?;
         let client = ClientBuilder::new(reqwest_agent)
             .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
             .build();
