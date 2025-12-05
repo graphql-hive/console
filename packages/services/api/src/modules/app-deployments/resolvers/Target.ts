@@ -14,7 +14,7 @@ import type { TargetResolvers } from './../../../__generated__/types';
  */
 export const Target: Pick<
   TargetResolvers,
-  'appDeployment' | 'appDeployments' | 'viewerCanViewAppDeployments'
+  'activeAppDeployments' | 'appDeployment' | 'appDeployments' | 'viewerCanViewAppDeployments'
 > = {
   /* Implement Target resolver logic here */
   appDeployment: async (target, args, { injector }) => {
@@ -41,5 +41,16 @@ export const Target: Pick<
       return false;
     }
     return true;
+  },
+  activeAppDeployments: async (target, args, { injector }) => {
+    return injector.get(AppDeploymentsManager).getActiveAppDeploymentsForTarget(target, {
+      cursor: args.after ?? null,
+      first: args.first ?? null,
+      filter: {
+        name: args.filter.name ?? null,
+        lastUsedBefore: args.filter.lastUsedBefore?.toISOString() ?? null,
+        neverUsedAndCreatedBefore: args.filter.neverUsedAndCreatedBefore?.toISOString() ?? null,
+      },
+    });
   },
 };
