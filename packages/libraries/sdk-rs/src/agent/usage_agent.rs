@@ -1,4 +1,5 @@
 use graphql_parser::schema::Document;
+use recloser::AsyncRecloser;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -118,6 +119,7 @@ pub struct UsageAgent {
     pub(crate) processor: OperationProcessor,
     pub(crate) client: ClientWithMiddleware,
     pub(crate) flush_interval: Duration,
+    pub(crate) circuit_breaker: AsyncRecloser,
 }
 
 pub fn non_empty_string(value: Option<String>) -> Option<String> {
@@ -146,6 +148,10 @@ pub enum AgentError {
     InvalidTargetId(String),
     #[error("unable to instantiate the http client for reports sending: {0}")]
     HTTPClientCreationError(reqwest::Error),
+    #[error("unable to create circuit breaker: {0}")]
+    CircuitBreakerCreationError(#[from] crate::circuit_breaker::CircuitBreakerError),
+    #[error("rejected by the circuit breaker")]
+    CircuitBreakerRejected,
     #[error("unable to send report: {0}")]
     Unknown(String),
 }
@@ -234,14 +240,21 @@ impl UsageAgent {
         let report_body =
             serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
         // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
-        let resp = self
+        let resp_fut = self
             .client
             .post(&self.endpoint)
             .header(reqwest::header::CONTENT_LENGTH, report_body.len())
             .body(report_body)
-            .send()
+            .send();
+
+        let resp = self
+            .circuit_breaker
+            .call(resp_fut)
             .await
-            .map_err(|e| AgentError::Unknown(e.to_string()))?;
+            .map_err(|e| match e {
+                recloser::Error::Inner(e) => AgentError::Unknown(e.to_string()),
+                recloser::Error::Rejected => AgentError::CircuitBreakerRejected,
+            })?;
 
         match resp.status() {
             reqwest::StatusCode::OK => Ok(()),

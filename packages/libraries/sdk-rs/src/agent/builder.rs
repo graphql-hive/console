@@ -1,12 +1,14 @@
 use std::{sync::Arc, time::Duration};
 
 use once_cell::sync::Lazy;
+use recloser::AsyncRecloser;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
 use crate::agent::usage_agent::{non_empty_string, AgentError, Buffer, UsageAgent};
 use crate::agent::utils::OperationProcessor;
+use crate::circuit_breaker;
 use retry_policies::policies::ExponentialBackoff;
 
 pub struct UsageAgentBuilder {
@@ -20,6 +22,7 @@ pub struct UsageAgentBuilder {
     flush_interval: Duration,
     retry_policy: ExponentialBackoff,
     user_agent: Option<String>,
+    circuit_breaker: Option<AsyncRecloser>,
 }
 
 pub static DEFAULT_HIVE_USAGE_ENDPOINT: &str = "https://app.graphql-hive.com/usage";
@@ -37,6 +40,7 @@ impl Default for UsageAgentBuilder {
             flush_interval: Duration::from_secs(5),
             retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
             user_agent: None,
+            circuit_breaker: None,
         }
     }
 }
@@ -159,12 +163,21 @@ impl UsageAgentBuilder {
                 _ => {}
             }
 
+            let circuit_breaker = if let Some(cb) = self.circuit_breaker {
+                cb
+            } else {
+                circuit_breaker::CircuitBreakerBuilder::default()
+                    .build_async()
+                    .map_err(AgentError::CircuitBreakerCreationError)?
+            };
+
             Ok(Arc::new(UsageAgent {
                 endpoint,
                 buffer: Buffer::new(self.buffer_size),
                 processor: OperationProcessor::new(),
                 client,
                 flush_interval: self.flush_interval,
+                circuit_breaker,
             }))
         } else {
             Err(AgentError::MissingToken)
