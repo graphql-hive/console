@@ -240,6 +240,7 @@ impl SupergraphFetcherBuilder {
         self
     }
 
+    /// User-Agent header to be sent with each request
     pub fn user_agent(mut self, user_agent: String) -> Self {
         self.user_agent = Some(user_agent);
         self
