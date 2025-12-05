@@ -374,7 +374,6 @@ const schemaProposalFields = sql`
   , sp."stage"
   , sp."target_id" as "targetId"
   , sp."user_id" as "userId"
-  , sp."comments_count" as "commentsCount"
 `;
 
 const schemaProposalReviewFields = sql`
@@ -413,7 +412,6 @@ const SchemaProposalModel = z.object({
   stage: StageModel,
   targetId: z.string(),
   author: z.string().nullable().default('none'),
-  commentsCount: z.number(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;

@@ -137,7 +137,6 @@ const ProposalsQuery = graphql(`
           stage
           updatedAt
           author
-          commentsCount
         }
         cursor
       }
@@ -287,14 +286,14 @@ const ProposalsListPage = (props: {
                     {proposal.author ? <div className="truncate">by {proposal.author}</div> : null}
                   </div>
                 </div>
-                <div
+                {/* <div
                   className={cn(
                     'hidden items-center justify-end gap-1 text-right text-gray-500 sm:flex',
                   )}
                 >
                   <span>{proposal.commentsCount}</span>
                   <ChatBubbleIcon />
-                </div>
+                </div> */}
               </div>
             </Link>
           </div>

@@ -117,7 +117,6 @@ export class SchemaProposalManager {
         targetId: proposal.targetId,
         reviews: null,
         author: args.user?.displayName ?? '',
-        commentsCount: 0,
         // checks: {
         //   edges: checkEdges,
         //   pageInfo: {

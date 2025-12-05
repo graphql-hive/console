@@ -65,16 +65,18 @@ export function AnnotatedProvider(props: { children: ReactNode }) {
 
 export function ChangeDocument(props: { children: ReactNode; className?: string }) {
   return (
-    <table
-      aria-label="change-document"
-      className={cn(
-        'max-w-screen flex cursor-default overflow-x-auto whitespace-pre font-mono text-white',
-        props.className,
-      )}
-      style={{ counterReset: 'olddoc newdoc' }}
-    >
-      <tbody>{props.children}</tbody>
-    </table>
+    <div className="w-full overflow-x-auto">
+      <table
+        aria-label="change-document"
+        className={cn(
+          'min-w-full cursor-default whitespace-pre font-mono text-white',
+          props.className,
+        )}
+        style={{ counterReset: 'olddoc newdoc' }}
+      >
+        <tbody>{props.children}</tbody>
+      </table>
+    </div>
   );
 }
 
@@ -139,7 +141,7 @@ export function ChangeRow(props: {
         />
         <td
           className={cn(
-            'bg-gray-900 pl-2',
+            'bg-gray-900 px-2',
             props.className,
             props.type === 'removal' && 'bg-[#561c1d]',
             props.type === 'addition' && 'bg-[#11362b]',

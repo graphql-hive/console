@@ -257,8 +257,6 @@ export default gql`
       """
       fromCursor: String
     ): String
-
-    commentsCount: Int!
   }
 
   input SchemaProposalChecksInput {

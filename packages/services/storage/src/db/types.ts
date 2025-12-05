@@ -346,7 +346,6 @@ export interface schema_proposal_reviews {
 }
 
 export interface schema_proposals {
-  comments_count: number;
   created_at: Date;
   description: string;
   id: string;
