@@ -851,7 +851,7 @@ export class AppDeployments {
 
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
 
-    let cursor;
+    let cursor = null;
     if (args.cursor) {
       try {
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
@@ -868,7 +868,8 @@ export class AppDeployments {
       }
     }
 
-    // Get all active deployments from db
+    // Get active deployments from db
+    const maxDeployments = 1000; // note: hard limit
     let activeDeployments;
     try {
       const activeDeploymentsResult = await this.pool.query<unknown>(sql`
@@ -882,6 +883,7 @@ export class AppDeployments {
           AND "retired_at" IS NULL
           ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
         ORDER BY "created_at" DESC, "id"
+        LIMIT ${maxDeployments}
       `);
 
       activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
