@@ -8,8 +8,7 @@ use core::ops::Drop;
 use futures::StreamExt;
 use graphql_parser::parse_schema;
 use graphql_parser::schema::Document;
-use hive_console_sdk::agent::UsageAgentExt;
-use hive_console_sdk::agent::{ExecutionReport, UsageAgent};
+use hive_console_sdk::agent::usage_agent::{ExecutionReport, UsageAgent, UsageAgentExt};
 use http::HeaderValue;
 use rand::Rng;
 use schemars::JsonSchema;
@@ -244,20 +243,27 @@ impl Plugin for UsagePlugin {
             .expect("Failed to parse schema")
             .into_static();
 
+        let token = token.expect("token is set");
+
         let agent = if enabled {
             let flush_interval = Duration::from_secs(flush_interval);
-            let agent = UsageAgent::try_new(
-                &token.expect("token is set"),
-                endpoint,
-                target_id,
-                buffer_size,
-                Duration::from_secs(connect_timeout),
-                Duration::from_secs(request_timeout),
-                accept_invalid_certs,
-                flush_interval,
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-            )
-            .map_err(Box::new)?;
+
+            let mut agent = UsageAgent::builder()
+                .token(token)
+                .endpoint(endpoint)
+                .buffer_size(buffer_size)
+                .connect_timeout(Duration::from_secs(connect_timeout))
+                .request_timeout(Duration::from_secs(request_timeout))
+                .accept_invalid_certs(accept_invalid_certs)
+                .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION))
+                .flush_interval(flush_interval);
+
+            if let Some(target_id) = target_id {
+                agent = agent.target_id(target_id);
+            }
+
+            let agent = agent.build().map_err(Box::new)?;
+
             start_flush_interval(agent.clone());
             Some(agent)
         } else {

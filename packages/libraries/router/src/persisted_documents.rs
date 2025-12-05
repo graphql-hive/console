@@ -100,17 +100,38 @@ impl PersistedDocumentsPlugin {
             }
         };
 
+        let mut persisted_documents_manager = PersistedDocumentsManager::builder()
+            .key(key)
+            .endpoint(endpoint)
+            .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION));
+
+        if let Some(connect_timeout) = config.connect_timeout {
+            persisted_documents_manager =
+                persisted_documents_manager.connect_timeout(Duration::from_secs(connect_timeout));
+        }
+
+        if let Some(request_timeout) = config.request_timeout {
+            persisted_documents_manager =
+                persisted_documents_manager.request_timeout(Duration::from_secs(request_timeout));
+        }
+
+        if let Some(retry_count) = config.retry_count {
+            persisted_documents_manager = persisted_documents_manager.max_retries(retry_count);
+        }
+
+        if let Some(accept_invalid_certs) = config.accept_invalid_certs {
+            persisted_documents_manager =
+                persisted_documents_manager.accept_invalid_certs(accept_invalid_certs);
+        }
+
+        if let Some(cache_size) = config.cache_size {
+            persisted_documents_manager = persisted_documents_manager.cache_size(cache_size);
+        }
+
+        let persisted_documents_manager = persisted_documents_manager.build()?;
+
         Ok(PersistedDocumentsPlugin {
-            persisted_documents_manager: Some(Arc::new(PersistedDocumentsManager::new(
-                key,
-                endpoint,
-                config.accept_invalid_certs.unwrap_or(false),
-                Duration::from_secs(config.connect_timeout.unwrap_or(5)),
-                Duration::from_secs(config.request_timeout.unwrap_or(15)),
-                config.retry_count.unwrap_or(3),
-                config.cache_size.unwrap_or(1000),
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-            ))),
+            persisted_documents_manager: Some(Arc::new(persisted_documents_manager)),
             allow_arbitrary_documents,
         })
     }

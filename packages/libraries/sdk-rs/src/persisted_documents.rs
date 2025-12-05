@@ -1,16 +1,18 @@
 use std::time::Duration;
 
+use crate::agent::usage_agent::non_empty_string;
 use moka::future::Cache;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_retry::RetryTransientMiddleware;
+use retry_policies::policies::ExponentialBackoff;
 use tracing::{debug, info, warn};
 
 #[derive(Debug)]
 pub struct PersistedDocumentsManager {
-    agent: ClientWithMiddleware,
+    client: ClientWithMiddleware,
     cache: Cache<String, String>,
     endpoint: String,
 }
@@ -31,6 +33,12 @@ pub enum PersistedDocumentsError {
     FailedToReadCDNResponse(reqwest::Error),
     #[error("No persisted document provided, or document id cannot be resolved.")]
     PersistedDocumentRequired,
+    #[error("Missing required configuration option: {0}")]
+    MissingConfigurationOption(String),
+    #[error("Invalid CDN key {0}")]
+    InvalidCDNKey(String),
+    #[error("Failed to create HTTP client: {0}")]
+    HTTPClientCreationError(reqwest::Error),
 }
 
 impl PersistedDocumentsError {
@@ -51,47 +59,21 @@ impl PersistedDocumentsError {
             PersistedDocumentsError::PersistedDocumentRequired => {
                 "PERSISTED_DOCUMENT_REQUIRED".into()
             }
+            PersistedDocumentsError::MissingConfigurationOption(_) => {
+                "MISSING_CONFIGURATION_OPTION".into()
+            }
+            PersistedDocumentsError::InvalidCDNKey(_) => "INVALID_CDN_KEY".into(),
+            PersistedDocumentsError::HTTPClientCreationError(_) => {
+                "HTTP_CLIENT_CREATION_ERROR".into()
+            }
         }
     }
 }
 
 impl PersistedDocumentsManager {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        key: String,
-        endpoint: String,
-        accept_invalid_certs: bool,
-        connect_timeout: Duration,
-        request_timeout: Duration,
-        retry_count: u32,
-        cache_size: u64,
-        user_agent: String,
-    ) -> Self {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(retry_count);
-
-        let mut default_headers = HeaderMap::new();
-        default_headers.insert("X-Hive-CDN-Key", HeaderValue::from_str(&key).unwrap());
-        let reqwest_agent = reqwest::Client::builder()
-            .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(connect_timeout)
-            .timeout(request_timeout)
-            .user_agent(user_agent)
-            .default_headers(default_headers)
-            .build()
-            .expect("Failed to create reqwest client");
-        let agent = ClientBuilder::new(reqwest_agent)
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build();
-
-        let cache = Cache::<String, String>::new(cache_size);
-
-        Self {
-            agent,
-            cache,
-            endpoint,
-        }
+    pub fn builder() -> PersistedDocumentsManagerBuilder {
+        PersistedDocumentsManagerBuilder::default()
     }
-
     /// Resolves the document from the cache, or from the CDN
     pub async fn resolve_document(
         &self,
@@ -116,7 +98,7 @@ impl PersistedDocumentsManager {
                     "Fetching document {} from CDN: {}",
                     document_id, cdn_artifact_url
                 );
-                let cdn_response = self.agent.get(cdn_artifact_url).send().await;
+                let cdn_response = self.client.get(cdn_artifact_url).send().await;
 
                 match cdn_response {
                     Ok(response) => {
@@ -155,5 +137,143 @@ impl PersistedDocumentsManager {
                 }
             }
         }
+    }
+}
+
+pub struct PersistedDocumentsManagerBuilder {
+    key: Option<String>,
+    endpoint: Option<String>,
+    accept_invalid_certs: bool,
+    connect_timeout: Duration,
+    request_timeout: Duration,
+    retry_policy: ExponentialBackoff,
+    cache_size: u64,
+    user_agent: Option<String>,
+}
+
+impl Default for PersistedDocumentsManagerBuilder {
+    fn default() -> Self {
+        Self {
+            key: None,
+            endpoint: None,
+            accept_invalid_certs: false,
+            connect_timeout: Duration::from_secs(5),
+            request_timeout: Duration::from_secs(15),
+            retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
+            cache_size: 10_000,
+            user_agent: None,
+        }
+    }
+}
+
+impl PersistedDocumentsManagerBuilder {
+    /// The CDN Access Token with from the Hive Console target.
+    pub fn key(mut self, key: String) -> Self {
+        self.key = non_empty_string(Some(key));
+        self
+    }
+
+    /// The CDN endpoint from Hive Console target.
+    pub fn endpoint(mut self, endpoint: String) -> Self {
+        self.endpoint = non_empty_string(Some(endpoint));
+        self
+    }
+
+    /// Accept invalid SSL certificates
+    /// default: false
+    pub fn accept_invalid_certs(mut self, accept_invalid_certs: bool) -> Self {
+        self.accept_invalid_certs = accept_invalid_certs;
+        self
+    }
+
+    /// Connection timeout for the Hive Console CDN requests.
+    /// Default: 5 seconds
+    pub fn connect_timeout(mut self, connect_timeout: Duration) -> Self {
+        self.connect_timeout = connect_timeout;
+        self
+    }
+
+    /// Request timeout for the Hive Console CDN requests.
+    /// Default: 15 seconds
+    pub fn request_timeout(mut self, request_timeout: Duration) -> Self {
+        self.request_timeout = request_timeout;
+        self
+    }
+
+    /// Retry policy for fetching persisted documents
+    /// Default: ExponentialBackoff with max 3 retries
+    pub fn retry_policy(mut self, retry_policy: ExponentialBackoff) -> Self {
+        self.retry_policy = retry_policy;
+        self
+    }
+
+    /// Maximum number of retries for fetching persisted documents
+    /// Default: ExponentialBackoff with max 3 retries
+    pub fn max_retries(mut self, max_retries: u32) -> Self {
+        self.retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
+        self
+    }
+
+    /// Size of the in-memory cache for persisted documents
+    /// Default: 10,000 entries
+    pub fn cache_size(mut self, cache_size: u64) -> Self {
+        self.cache_size = cache_size;
+        self
+    }
+
+    /// User-Agent header to be sent with each request
+    pub fn user_agent(mut self, user_agent: String) -> Self {
+        self.user_agent = non_empty_string(Some(user_agent));
+        self
+    }
+
+    pub fn build(self) -> Result<PersistedDocumentsManager, PersistedDocumentsError> {
+        let mut default_headers = HeaderMap::new();
+        let key = match self.key {
+            Some(key) => key,
+            None => {
+                return Err(PersistedDocumentsError::MissingConfigurationOption(
+                    "key".to_string(),
+                ));
+            }
+        };
+        default_headers.insert(
+            "X-Hive-CDN-Key",
+            HeaderValue::from_str(&key)
+                .map_err(|e| PersistedDocumentsError::InvalidCDNKey(e.to_string()))?,
+        );
+        let mut reqwest_agent = reqwest::Client::builder()
+            .danger_accept_invalid_certs(self.accept_invalid_certs)
+            .connect_timeout(self.connect_timeout)
+            .timeout(self.request_timeout)
+            .default_headers(default_headers);
+
+        if let Some(user_agent) = self.user_agent {
+            reqwest_agent = reqwest_agent.user_agent(user_agent);
+        }
+
+        let reqwest_agent = reqwest_agent
+            .build()
+            .map_err(PersistedDocumentsError::HTTPClientCreationError)?;
+        let client = ClientBuilder::new(reqwest_agent)
+            .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
+            .build();
+
+        let cache = Cache::<String, String>::new(self.cache_size);
+
+        let endpoint = match self.endpoint {
+            Some(endpoint) => endpoint,
+            None => {
+                return Err(PersistedDocumentsError::MissingConfigurationOption(
+                    "endpoint".to_string(),
+                ));
+            }
+        };
+
+        Ok(PersistedDocumentsManager {
+            client,
+            cache,
+            endpoint,
+        })
     }
 }
