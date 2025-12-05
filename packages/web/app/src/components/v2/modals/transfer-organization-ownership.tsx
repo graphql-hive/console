@@ -97,6 +97,8 @@ export const TransferOrganizationOwnershipModal = ({
         organizationSlug: organization.slug,
       },
     },
+    // don't fire this query until the modal opens
+    pause: !isOpen,
   });
 
   const [searchPhrase, setSearchPhrase] = useState('');
