@@ -1,10 +1,11 @@
 use std::fmt::Display;
-use std::sync::RwLock;
 use std::time::Duration;
 use std::time::SystemTime;
+use tokio::sync::RwLock;
 
 use crate::agent::usage_agent::non_empty_string;
 use crate::circuit_breaker::CircuitBreakerError;
+use futures_util::TryFutureExt;
 use recloser::AsyncRecloser;
 use recloser::Recloser;
 use reqwest::header::HeaderMap;
@@ -82,51 +83,6 @@ impl Display for SupergraphFetcherError {
 }
 
 impl SupergraphFetcher<SupergraphFetcherSyncState> {
-    fn fetch_from_endpoint(
-        &self,
-        reqwest_client: &reqwest::blocking::Client,
-        endpoint: &str,
-        circuit_breaker: &Recloser,
-        retry_policy: &ExponentialBackoff,
-    ) -> Result<reqwest::blocking::Response, SupergraphFetcherError> {
-        circuit_breaker
-            .call(|| {
-                let request_start_time = SystemTime::now();
-                // Implementing retry logic for sync client
-                let mut n_past_retries = 0;
-                loop {
-                    let mut req = reqwest_client.get(endpoint);
-                    let etag = self.get_latest_etag()?;
-                    if let Some(etag) = etag {
-                        req = req.header(IF_NONE_MATCH, etag);
-                    }
-                    let response = req.send();
-
-                    match response {
-                        Ok(resp) => break Ok(resp),
-                        Err(e) => {
-                            match retry_policy.should_retry(request_start_time, n_past_retries) {
-                                RetryDecision::DoNotRetry => {
-                                    return Err(SupergraphFetcherError::NetworkError(
-                                        reqwest_middleware::Error::Reqwest(e),
-                                    ));
-                                }
-                                RetryDecision::Retry { execute_after } => {
-                                    n_past_retries += 1;
-                                    if let Ok(duration) = execute_after.elapsed() {
-                                        std::thread::sleep(duration);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-            .map_err(|e| match e {
-                recloser::Error::Inner(e) => e,
-                recloser::Error::Rejected => SupergraphFetcherError::RejectedByCircuitBreaker,
-            })
-    }
     pub fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
         let (endpoints_with_circuit_breakers, reqwest_client, retry_policy) = match &self.client {
             SupergraphFetcherAsyncOrSyncClient::Sync {
@@ -138,13 +94,71 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
                 reqwest_client,
                 retry_policy,
             ),
-            _ => unreachable!(),
+            _ => unreachable!("Called sync fetcher on async client"),
         };
         let mut last_error: Option<SupergraphFetcherError> = None;
         let mut last_resp = None;
         for (endpoint, circuit_breaker) in endpoints_with_circuit_breakers {
-            let resp =
-                self.fetch_from_endpoint(reqwest_client, endpoint, circuit_breaker, retry_policy);
+            let resp = {
+                circuit_breaker
+                    .call(|| {
+                        let request_start_time = SystemTime::now();
+                        // Implementing retry logic for sync client
+                        let mut n_past_retries = 0;
+                        loop {
+                            let mut req = reqwest_client.get(endpoint);
+                            let etag = self.get_latest_etag()?;
+                            if let Some(etag) = etag {
+                                req = req.header(IF_NONE_MATCH, etag);
+                            }
+                            let mut response = req.send().map_err(|err| {
+                                SupergraphFetcherError::NetworkError(
+                                    reqwest_middleware::Error::Reqwest(err),
+                                )
+                            });
+
+                            // Server errors (5xx) are considered retryable
+                            if let Ok(ok_res) = response {
+                                response = if ok_res.status().is_server_error() {
+                                    Err(SupergraphFetcherError::NetworkError(
+                                        reqwest_middleware::Error::Middleware(anyhow::anyhow!(
+                                            "Server error: {}",
+                                            ok_res.status()
+                                        )),
+                                    ))
+                                } else {
+                                    Ok(ok_res)
+                                }
+                            }
+
+                            match response {
+                                Ok(resp) => break Ok(resp),
+                                Err(e) => {
+                                    match retry_policy
+                                        .should_retry(request_start_time, n_past_retries)
+                                    {
+                                        RetryDecision::DoNotRetry => {
+                                            return Err(e);
+                                        }
+                                        RetryDecision::Retry { execute_after } => {
+                                            n_past_retries += 1;
+                                            if let Ok(duration) = execute_after.elapsed() {
+                                                std::thread::sleep(duration);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    // Map recloser errors to SupergraphFetcherError
+                    .map_err(|e| match e {
+                        recloser::Error::Inner(e) => e,
+                        recloser::Error::Rejected => {
+                            SupergraphFetcherError::RejectedByCircuitBreaker
+                        }
+                    })
+            };
             match resp {
                 Err(e) => {
                     last_error = Some(e);
@@ -172,6 +186,26 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
             Ok(None)
         }
     }
+    pub fn get_latest_etag(&self) -> Result<Option<HeaderValue>, SupergraphFetcherError> {
+        let guard = self.etag.try_read().map_err(|e| {
+            SupergraphFetcherError::Lock(format!("Failed to read the etag record: {:?}", e))
+        })?;
+
+        Ok(guard.clone())
+    }
+    fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> Result<(), SupergraphFetcherError> {
+        let mut guard = self.etag.try_write().map_err(|e| {
+            SupergraphFetcherError::Lock(format!("Failed to update the etag record: {:?}", e))
+        })?;
+
+        if let Some(etag_value) = etag {
+            *guard = Some(etag_value.clone());
+        } else {
+            *guard = None;
+        }
+
+        Ok(())
+    }
 }
 
 impl SupergraphFetcher<SupergraphFetcherAsyncState> {
@@ -181,24 +215,47 @@ impl SupergraphFetcher<SupergraphFetcherAsyncState> {
                 endpoints_with_circuit_breakers,
                 reqwest_client,
             } => (endpoints_with_circuit_breakers, reqwest_client),
-            _ => unreachable!(),
+            _ => unreachable!("Called async fetcher on sync client"),
         };
         let mut last_error: Option<SupergraphFetcherError> = None;
         let mut last_resp = None;
         for (endpoint, circuit_breaker) in endpoints_with_circuit_breakers {
             let mut req = reqwest_client.get(endpoint);
-            let etag = self.get_latest_etag()?;
+            let etag = self.get_latest_etag().await;
             if let Some(etag) = etag {
                 req = req.header(IF_NONE_MATCH, etag);
             }
-            let resp = circuit_breaker.call(req.send()).await;
-            match resp {
-                Err(recloser::Error::Inner(e)) => {
-                    last_error = Some(SupergraphFetcherError::NetworkError(e));
-                    continue;
+            let resp_fut = async {
+                let mut resp = req
+                    .send()
+                    .await
+                    .map_err(SupergraphFetcherError::NetworkError);
+                // Server errors (5xx) are considered errors
+                if let Ok(ok_res) = resp {
+                    resp = if ok_res.status().is_server_error() {
+                        return Err(SupergraphFetcherError::NetworkError(
+                            reqwest_middleware::Error::Middleware(anyhow::anyhow!(
+                                "Server error: {}",
+                                ok_res.status()
+                            )),
+                        ));
+                    } else {
+                        Ok(ok_res)
+                    }
                 }
-                Err(recloser::Error::Rejected) => {
-                    last_error = Some(SupergraphFetcherError::RejectedByCircuitBreaker);
+                resp
+            };
+            let resp = circuit_breaker
+                .call(resp_fut)
+                // Map recloser errors to SupergraphFetcherError
+                .map_err(|e| match e {
+                    recloser::Error::Inner(e) => e,
+                    recloser::Error::Rejected => SupergraphFetcherError::RejectedByCircuitBreaker,
+                })
+                .await;
+            match resp {
+                Err(err) => {
+                    last_error = Some(err);
                     continue;
                 }
                 Ok(resp) => {
@@ -210,7 +267,7 @@ impl SupergraphFetcher<SupergraphFetcherAsyncState> {
 
         if let Some(last_resp) = last_resp {
             let etag = last_resp.headers().get("etag");
-            self.update_latest_etag(etag)?;
+            self.update_latest_etag(etag).await;
             let text = last_resp
                 .text()
                 .await
@@ -222,33 +279,23 @@ impl SupergraphFetcher<SupergraphFetcherAsyncState> {
             Ok(None)
         }
     }
-}
+    pub async fn get_latest_etag(&self) -> Option<HeaderValue> {
+        let guard = self.etag.read().await;
 
-impl<AsyncOrSync> SupergraphFetcher<AsyncOrSync> {
-    fn get_latest_etag(&self) -> Result<Option<HeaderValue>, SupergraphFetcherError> {
-        let guard: std::sync::RwLockReadGuard<'_, Option<HeaderValue>> =
-            self.etag.try_read().map_err(|e| {
-                SupergraphFetcherError::Lock(format!("Failed to read the etag record: {:?}", e))
-            })?;
-
-        Ok(guard.clone())
+        guard.clone()
     }
-
-    fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> Result<(), SupergraphFetcherError> {
-        let mut guard: std::sync::RwLockWriteGuard<'_, Option<HeaderValue>> =
-            self.etag.try_write().map_err(|e| {
-                SupergraphFetcherError::Lock(format!("Failed to update the etag record: {:?}", e))
-            })?;
+    async fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> () {
+        let mut guard = self.etag.write().await;
 
         if let Some(etag_value) = etag {
             *guard = Some(etag_value.clone());
         } else {
             *guard = None;
         }
-
-        Ok(())
     }
 }
+
+impl<AsyncOrSync> SupergraphFetcher<AsyncOrSync> {}
 
 pub struct SupergraphFetcherBuilder {
     endpoints: Vec<String>,
