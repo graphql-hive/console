@@ -850,25 +850,49 @@ export class AppDeployments {
     }
 
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
-    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
+
+    let cursor;
+    if (args.cursor) {
+      try {
+        cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
+      } catch (error) {
+        this.logger.error(
+          'Failed to decode cursor for activeAppDeployments (targetId=%s, cursor=%s): %s',
+          args.targetId,
+          args.cursor,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw new Error(
+          `Invalid cursor format for activeAppDeployments. Expected a valid pagination cursor.`,
+        );
+      }
+    }
 
     // Get all active deployments from db
-    const activeDeploymentsResult = await this.pool.query<unknown>(sql`
-      SELECT
-        ${appDeploymentFields}
-      FROM
-        "app_deployments"
-      WHERE
-        "target_id" = ${args.targetId}
-        AND "activated_at" IS NOT NULL
-        AND "retired_at" IS NULL
-        ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
-      ORDER BY "created_at" DESC, "id"
-    `);
+    let activeDeployments;
+    try {
+      const activeDeploymentsResult = await this.pool.query<unknown>(sql`
+        SELECT
+          ${appDeploymentFields}
+        FROM
+          "app_deployments"
+        WHERE
+          "target_id" = ${args.targetId}
+          AND "activated_at" IS NOT NULL
+          AND "retired_at" IS NULL
+          ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
+        ORDER BY "created_at" DESC, "id"
+      `);
 
-    const activeDeployments = activeDeploymentsResult.rows.map(row =>
-      AppDeploymentModel.parse(row),
-    );
+      activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
+    } catch (error) {
+      this.logger.error(
+        'Failed to query active deployments from PostgreSQL (targetId=%s): %s',
+        args.targetId,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
 
     this.logger.debug(
       'found %d active deployments for target (targetId=%s)',
@@ -890,9 +914,20 @@ export class AppDeployments {
 
     // Get lastUsed data from clickhouse for all active deployment IDs
     const deploymentIds = activeDeployments.map(d => d.id);
-    const usageData = await this.getLastUsedForAppDeployments({
-      appDeploymentIds: deploymentIds,
-    });
+    let usageData;
+    try {
+      usageData = await this.getLastUsedForAppDeployments({
+        appDeploymentIds: deploymentIds,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query lastUsed data from ClickHouse (targetId=%s, deploymentCount=%d): %s',
+        args.targetId,
+        deploymentIds.length,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
 
     // Create a map of deployment ID -> lastUsed date
     const lastUsedMap = new Map<string, string>();
