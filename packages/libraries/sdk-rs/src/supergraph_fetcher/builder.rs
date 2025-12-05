@@ -16,7 +16,7 @@ pub struct SupergraphFetcherBuilder {
     pub(crate) request_timeout: Duration,
     pub(crate) accept_invalid_certs: bool,
     pub(crate) retry_policy: ExponentialBackoff,
-    pub(crate) circuit_breaker: CircuitBreakerBuilder,
+    pub(crate) circuit_breaker: Option<CircuitBreakerBuilder>,
 }
 
 impl Default for SupergraphFetcherBuilder {
@@ -29,7 +29,7 @@ impl Default for SupergraphFetcherBuilder {
             request_timeout: Duration::from_secs(60),
             accept_invalid_certs: false,
             retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
-            circuit_breaker: CircuitBreakerBuilder::default(),
+            circuit_breaker: None,
         }
     }
 }
@@ -98,6 +98,11 @@ impl SupergraphFetcherBuilder {
     /// By default, an exponential backoff retry policy is used, with 10 attempts.
     pub fn max_retries(mut self, max_retries: u32) -> Self {
         self.retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
+        self
+    }
+
+    pub fn circuit_breaker(&mut self, builder: CircuitBreakerBuilder) -> &mut Self {
+        self.circuit_breaker = Some(builder);
         self
     }
 
