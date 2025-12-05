@@ -806,6 +806,162 @@ export class AppDeployments {
 
     return model.parse(result.data);
   }
+
+  async getActiveAppDeployments(args: {
+    targetId: string;
+    cursor: string | null;
+    first: number | null;
+    filter: {
+      name?: string | null;
+      lastUsedBefore?: string | null;
+      neverUsedAndCreatedBefore?: string | null;
+    };
+  }) {
+    this.logger.debug(
+      'get active app deployments (targetId=%s, cursor=%s, first=%s, filter=%o)',
+      args.targetId,
+      args.cursor ? '[provided]' : '[none]',
+      args.first,
+      args.filter,
+    );
+
+    if (args.filter.lastUsedBefore && Number.isNaN(Date.parse(args.filter.lastUsedBefore))) {
+      this.logger.debug(
+        'invalid lastUsedBefore filter (targetId=%s, value=%s)',
+        args.targetId,
+        args.filter.lastUsedBefore,
+      );
+      throw new Error(
+        `Invalid lastUsedBefore filter: "${args.filter.lastUsedBefore}" is not a valid date string`,
+      );
+    }
+    if (
+      args.filter.neverUsedAndCreatedBefore &&
+      Number.isNaN(Date.parse(args.filter.neverUsedAndCreatedBefore))
+    ) {
+      this.logger.debug(
+        'invalid neverUsedAndCreatedBefore filter (targetId=%s, value=%s)',
+        args.targetId,
+        args.filter.neverUsedAndCreatedBefore,
+      );
+      throw new Error(
+        `Invalid neverUsedAndCreatedBefore filter: "${args.filter.neverUsedAndCreatedBefore}" is not a valid date string`,
+      );
+    }
+
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
+
+    // Get all active deployments from db
+    const activeDeploymentsResult = await this.pool.query<unknown>(sql`
+      SELECT
+        ${appDeploymentFields}
+      FROM
+        "app_deployments"
+      WHERE
+        "target_id" = ${args.targetId}
+        AND "activated_at" IS NOT NULL
+        AND "retired_at" IS NULL
+        ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
+      ORDER BY "created_at" DESC, "id"
+    `);
+
+    const activeDeployments = activeDeploymentsResult.rows.map(row =>
+      AppDeploymentModel.parse(row),
+    );
+
+    this.logger.debug(
+      'found %d active deployments for target (targetId=%s)',
+      activeDeployments.length,
+      args.targetId,
+    );
+
+    if (activeDeployments.length === 0) {
+      return {
+        edges: [],
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: cursor !== null,
+          endCursor: '',
+          startCursor: '',
+        },
+      };
+    }
+
+    // Get lastUsed data from clickhouse for all active deployment IDs
+    const deploymentIds = activeDeployments.map(d => d.id);
+    const usageData = await this.getLastUsedForAppDeployments({
+      appDeploymentIds: deploymentIds,
+    });
+
+    // Create a map of deployment ID -> lastUsed date
+    const lastUsedMap = new Map<string, string>();
+    for (const usage of usageData) {
+      lastUsedMap.set(usage.appDeploymentId, usage.lastUsed);
+    }
+
+    // Apply OR filter logic
+    const filteredDeployments = activeDeployments.filter(deployment => {
+      const lastUsed = lastUsedMap.get(deployment.id);
+      const hasBeenUsed = lastUsed !== undefined;
+
+      // Check lastUsedBefore filter, deployment HAS been used AND was last used before the threshold
+      if (args.filter.lastUsedBefore && hasBeenUsed) {
+        const lastUsedDate = new Date(lastUsed);
+        const thresholdDate = new Date(args.filter.lastUsedBefore);
+        if (lastUsedDate < thresholdDate) {
+          return true;
+        }
+      }
+
+      // Check neverUsedAndCreatedBefore filter, deployment has NEVER been used AND was created before threshold
+      if (args.filter.neverUsedAndCreatedBefore && !hasBeenUsed) {
+        const createdAtDate = new Date(deployment.createdAt);
+        const thresholdDate = new Date(args.filter.neverUsedAndCreatedBefore);
+        if (createdAtDate < thresholdDate) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    this.logger.debug(
+      'after filter: %d deployments match criteria (targetId=%s)',
+      filteredDeployments.length,
+      args.targetId,
+    );
+
+    // apply cursor-based pagination
+    let paginatedDeployments = filteredDeployments;
+    if (cursor) {
+      const cursorCreatedAt = new Date(cursor.createdAt).getTime();
+      paginatedDeployments = filteredDeployments.filter(deployment => {
+        const deploymentCreatedAt = new Date(deployment.createdAt).getTime();
+        return (
+          deploymentCreatedAt < cursorCreatedAt ||
+          (deploymentCreatedAt === cursorCreatedAt && deployment.id < cursor.id)
+        );
+      });
+    }
+
+    // Apply limit
+    const hasNextPage = paginatedDeployments.length > limit;
+    const items = paginatedDeployments.slice(0, limit).map(node => ({
+      cursor: encodeCreatedAtAndUUIDIdBasedCursor(node),
+      node,
+    }));
+
+    return {
+      edges: items,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        endCursor: items[items.length - 1]?.cursor ?? '',
+        startCursor: items[0]?.cursor ?? '',
+      },
+    };
+  }
 }
 
 const appDeploymentFields = sql`
