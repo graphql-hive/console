@@ -137,15 +137,9 @@ pub struct PersistedDocumentsManagerBuilder {
     endpoint: Option<String>,
     accept_invalid_certs: bool,
     connect_timeout: Duration,
-    /// Request timeout for the Hive Console CDN requests.
     request_timeout: Duration,
-    /// Interval at which the Hive Console should be retried upon failure.
-    ///
-    /// By default, an exponential backoff retry policy is used, with 3 attempts.
     retry_policy: ExponentialBackoff,
-    /// Configuration for the size of the in-memory caching of persisted documents.
     cache_size: u64,
-    /// User-Agent header to be sent with each request
     user_agent: Option<String>,
 }
 
