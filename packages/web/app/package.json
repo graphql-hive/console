@@ -161,7 +161,7 @@
     "urql": "4.1.0",
     "use-debounce": "10.0.4",
     "valtio": "1.13.2",
-    "vite": "npm:rolldown-vite@7.1.14",
+    "vite": "",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vite-tsconfig-paths": "5.1.4",
     "wonka": "6.3.4",
@@ -172,10 +172,5 @@
     "external": [
       "vite"
     ]
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "npm:rolldown-vite@7.1.14"
-    }
   }
 }
