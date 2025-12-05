@@ -240,6 +240,16 @@ This allows you to add features such as [usage reporting](/docs/gateway/usage-re
 [persisted documents](/docs/gateway/persisted-documents) without modifying your existing GraphQL
 API.
 
+<Callout>
+
+When using the Gateway in `proxy` mode with introspection of the source schema, schema directives
+are not supported because they are not part of the introspection response.
+
+This means proxy mode with introspection is not compatible with directive driven cache, auth, demand
+and control, or any other feature relying on directives.
+
+</Callout>
+
 <Tabs items={['CLI', 'Configuration File']}>
 
 {/* CLI */}
