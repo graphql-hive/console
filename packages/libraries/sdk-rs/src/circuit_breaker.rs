@@ -38,7 +38,7 @@ impl CircuitBreakerBuilder {
         self.volume_threshold = threshold;
         self
     }
-    // After what time the circuit breaker is attempting to retry sending requests in milliseconds.
+    /// After what time the circuit breaker is attempting to retry sending requests in milliseconds.
     /// Default: 30s
     pub fn reset_timeout(mut self, timeout: Duration) -> Self {
         self.reset_timeout = timeout;
@@ -46,18 +46,7 @@ impl CircuitBreakerBuilder {
     }
 
     pub fn build_async(self) -> Result<AsyncRecloser, CircuitBreakerError> {
-        let error_threshold = if self.error_threshold < 0.0 || self.error_threshold > 1.0 {
-            return Err(CircuitBreakerError::InvalidErrorThreshold(
-                self.error_threshold,
-            ));
-        } else {
-            self.error_threshold
-        };
-        let recloser = Recloser::custom()
-            .error_rate(error_threshold)
-            .closed_len(self.volume_threshold)
-            .open_wait(self.reset_timeout)
-            .build();
+        let recloser = self.build_sync()?;
         Ok(AsyncRecloser::from(recloser))
     }
     pub fn build_sync(self) -> Result<Recloser, CircuitBreakerError> {

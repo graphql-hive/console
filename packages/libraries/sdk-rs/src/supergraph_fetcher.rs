@@ -4,6 +4,7 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use crate::agent::usage_agent::non_empty_string;
+use crate::circuit_breaker::CircuitBreakerError;
 use recloser::AsyncRecloser;
 use recloser::Recloser;
 use reqwest::header::HeaderMap;
@@ -52,6 +53,7 @@ pub enum SupergraphFetcherError {
     InvalidKey(InvalidHeaderValue),
     MissingConfigurationOption(String),
     RejectedByCircuitBreaker,
+    CircuitBreakerCreationError(CircuitBreakerError),
 }
 
 impl Display for SupergraphFetcherError {
@@ -71,6 +73,9 @@ impl Display for SupergraphFetcherError {
             }
             SupergraphFetcherError::RejectedByCircuitBreaker => {
                 write!(f, "Request rejected by circuit breaker")
+            }
+            SupergraphFetcherError::CircuitBreakerCreationError(e) => {
+                write!(f, "Creating circuit breaker failed: {}", e)
             }
         }
     }
@@ -393,10 +398,14 @@ impl SupergraphFetcherBuilder {
                     .endpoints
                     .into_iter()
                     .map(|endpoint| {
-                        let circuit_breaker = self.circuit_breaker.clone().build_sync().unwrap();
-                        (endpoint, circuit_breaker)
+                        let circuit_breaker = self
+                            .circuit_breaker
+                            .clone()
+                            .build_sync()
+                            .map_err(SupergraphFetcherError::CircuitBreakerCreationError);
+                        circuit_breaker.map(|cb| (endpoint, cb))
                     })
-                    .collect(),
+                    .collect::<Result<Vec<_>, _>>()?,
             },
             etag: RwLock::new(None),
             state: std::marker::PhantomData,
@@ -436,10 +445,14 @@ impl SupergraphFetcherBuilder {
                     .endpoints
                     .into_iter()
                     .map(|endpoint| {
-                        let circuit_breaker = self.circuit_breaker.clone().build_async().unwrap();
-                        (endpoint, circuit_breaker)
+                        let circuit_breaker = self
+                            .circuit_breaker
+                            .clone()
+                            .build_async()
+                            .map_err(SupergraphFetcherError::CircuitBreakerCreationError);
+                        circuit_breaker.map(|cb| (endpoint, cb))
                     })
-                    .collect(),
+                    .collect::<Result<Vec<_>, _>>()?,
             },
             etag: RwLock::new(None),
             state: std::marker::PhantomData,
