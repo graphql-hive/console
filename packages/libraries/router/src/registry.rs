@@ -1,9 +1,9 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
+use hive_console_sdk::supergraph_fetcher::builder::SupergraphFetcherBuilder;
+use hive_console_sdk::supergraph_fetcher::sync::SupergraphFetcherSyncState;
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
-use hive_console_sdk::supergraph_fetcher::SupergraphFetcherBuilder;
-use hive_console_sdk::supergraph_fetcher::SupergraphFetcherSyncState;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
