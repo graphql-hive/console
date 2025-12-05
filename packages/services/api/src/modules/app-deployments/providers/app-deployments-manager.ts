@@ -220,6 +220,26 @@ export class AppDeploymentsManager {
     });
   }
 
+  async getActiveAppDeploymentsForTarget(
+    target: Target,
+    args: {
+      cursor: string | null;
+      first: number | null;
+      filter: {
+        name?: string | null;
+        lastUsedBefore?: string | null;
+        neverUsedAndCreatedBefore?: string | null;
+      };
+    },
+  ) {
+    return await this.appDeployments.getActiveAppDeployments({
+      targetId: target.id,
+      cursor: args.cursor,
+      first: args.first,
+      filter: args.filter,
+    });
+  }
+
   getDocumentCountForAppDeployment = batch<AppDeploymentRecord, number>(async args => {
     const appDeploymentIds = args.map(appDeployment => appDeployment.id);
     const counts = await this.appDeployments.getDocumentCountForAppDeployments({
