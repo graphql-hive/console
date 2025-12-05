@@ -146,8 +146,6 @@ pub enum AgentError {
     InvalidTargetId(String),
     #[error("unable to instantiate the http client for reports sending: {0}")]
     HTTPClientCreationError(reqwest::Error),
-    #[error("unable to build regex for target id validation: {0}")]
-    TargetIdRegexError(String),
     #[error("unable to send report: {0}")]
     Unknown(String),
 }

@@ -6,7 +6,8 @@ use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
 use reqwest_middleware::ClientBuilder;
 use reqwest_middleware::ClientWithMiddleware;
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_retry::RetryTransientMiddleware;
+use retry_policies::policies::ExponentialBackoff;
 use tracing::{debug, info, warn};
 
 #[derive(Debug)]
@@ -132,33 +133,33 @@ impl PersistedDocumentsManager {
 }
 
 pub struct PersistedDocumentsManagerBuilder {
-    _key: Option<String>,
-    _endpoint: Option<String>,
-    _accept_invalid_certs: bool,
-    _connect_timeout: Duration,
+    key: Option<String>,
+    endpoint: Option<String>,
+    accept_invalid_certs: bool,
+    connect_timeout: Duration,
     /// Request timeout for the Hive Console CDN requests.
-    _request_timeout: Duration,
+    request_timeout: Duration,
     /// Interval at which the Hive Console should be retried upon failure.
     ///
     /// By default, an exponential backoff retry policy is used, with 3 attempts.
-    _retry_policy: ExponentialBackoff,
+    retry_policy: ExponentialBackoff,
     /// Configuration for the size of the in-memory caching of persisted documents.
-    _cache_size: u64,
+    cache_size: u64,
     /// User-Agent header to be sent with each request
-    _user_agent: Option<String>,
+    user_agent: Option<String>,
 }
 
 impl Default for PersistedDocumentsManagerBuilder {
     fn default() -> Self {
         Self {
-            _key: None,
-            _endpoint: None,
-            _accept_invalid_certs: false,
-            _connect_timeout: Duration::from_secs(5),
-            _request_timeout: Duration::from_secs(15),
-            _retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
-            _cache_size: 10_000,
-            _user_agent: None,
+            key: None,
+            endpoint: None,
+            accept_invalid_certs: false,
+            connect_timeout: Duration::from_secs(5),
+            request_timeout: Duration::from_secs(15),
+            retry_policy: ExponentialBackoff::builder().build_with_max_retries(3),
+            cache_size: 10_000,
+            user_agent: None,
         }
     }
 }
@@ -166,67 +167,67 @@ impl Default for PersistedDocumentsManagerBuilder {
 impl PersistedDocumentsManagerBuilder {
     /// The CDN Access Token with from the Hive Console target.
     pub fn key(mut self, key: String) -> Self {
-        self._key = non_empty_string(Some(key));
+        self.key = non_empty_string(Some(key));
         self
     }
 
     /// The CDN endpoint from Hive Console target.
     pub fn endpoint(mut self, endpoint: String) -> Self {
-        self._endpoint = non_empty_string(Some(endpoint));
+        self.endpoint = non_empty_string(Some(endpoint));
         self
     }
 
     /// Accept invalid SSL certificates
     /// default: false
     pub fn accept_invalid_certs(mut self, accept_invalid_certs: bool) -> Self {
-        self._accept_invalid_certs = accept_invalid_certs;
+        self.accept_invalid_certs = accept_invalid_certs;
         self
     }
 
     /// Connection timeout for the Hive Console CDN requests.
     /// Default: 5 seconds
     pub fn connect_timeout(mut self, connect_timeout: Duration) -> Self {
-        self._connect_timeout = connect_timeout;
+        self.connect_timeout = connect_timeout;
         self
     }
 
     /// Request timeout for the Hive Console CDN requests.
     /// Default: 15 seconds
     pub fn request_timeout(mut self, request_timeout: Duration) -> Self {
-        self._request_timeout = request_timeout;
+        self.request_timeout = request_timeout;
         self
     }
 
     /// Retry policy for fetching persisted documents
     /// Default: ExponentialBackoff with max 3 retries
     pub fn retry_policy(mut self, retry_policy: ExponentialBackoff) -> Self {
-        self._retry_policy = retry_policy;
+        self.retry_policy = retry_policy;
         self
     }
 
     /// Maximum number of retries for fetching persisted documents
     /// Default: ExponentialBackoff with max 3 retries
     pub fn max_retries(mut self, max_retries: u32) -> Self {
-        self._retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
+        self.retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
         self
     }
 
     /// Size of the in-memory cache for persisted documents
     /// Default: 10,000 entries
     pub fn cache_size(mut self, cache_size: u64) -> Self {
-        self._cache_size = cache_size;
+        self.cache_size = cache_size;
         self
     }
 
     /// User-Agent header to be sent with each request
     pub fn user_agent(mut self, user_agent: String) -> Self {
-        self._user_agent = non_empty_string(Some(user_agent));
+        self.user_agent = non_empty_string(Some(user_agent));
         self
     }
 
     pub fn build(self) -> Result<PersistedDocumentsManager, PersistedDocumentsError> {
         let mut default_headers = HeaderMap::new();
-        let key = match self._key {
+        let key = match self.key {
             Some(key) => key,
             None => {
                 return Err(PersistedDocumentsError::MissingConfigurationOption(
@@ -236,12 +237,12 @@ impl PersistedDocumentsManagerBuilder {
         };
         default_headers.insert("X-Hive-CDN-Key", HeaderValue::from_str(&key).unwrap());
         let mut reqwest_agent = reqwest::Client::builder()
-            .danger_accept_invalid_certs(self._accept_invalid_certs)
-            .connect_timeout(self._connect_timeout)
-            .timeout(self._request_timeout)
+            .danger_accept_invalid_certs(self.accept_invalid_certs)
+            .connect_timeout(self.connect_timeout)
+            .timeout(self.request_timeout)
             .default_headers(default_headers);
 
-        if let Some(user_agent) = self._user_agent {
+        if let Some(user_agent) = self.user_agent {
             reqwest_agent = reqwest_agent.user_agent(user_agent);
         }
 
@@ -249,14 +250,12 @@ impl PersistedDocumentsManagerBuilder {
             .build()
             .expect("Failed to create reqwest client");
         let client = ClientBuilder::new(reqwest_agent)
-            .with(RetryTransientMiddleware::new_with_policy(
-                self._retry_policy,
-            ))
+            .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
             .build();
 
-        let cache = Cache::<String, String>::new(self._cache_size);
+        let cache = Cache::<String, String>::new(self.cache_size);
 
-        let endpoint = match self._endpoint {
+        let endpoint = match self.endpoint {
             Some(endpoint) => endpoint,
             None => {
                 return Err(PersistedDocumentsError::MissingConfigurationOption(
