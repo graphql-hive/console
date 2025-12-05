@@ -397,7 +397,7 @@ export const organizationIndexRoute = createRoute({
   notFoundComponent: NotFound,
   errorComponent: ({ error }) => {
     const urqlError = error as CombinedError;
-    const { organizationSlug } = organizationSettingsRoute.useParams();
+    const { organizationSlug } = organizationIndexRoute.useParams();
     return <QueryError organizationSlug={organizationSlug} error={urqlError} />;
   },
 });
@@ -505,7 +505,7 @@ export const organizationMembersRoute = createRoute({
 
   errorComponent: ({ error }) => {
     const urqlError = error as CombinedError;
-    const { organizationSlug } = organizationSettingsRoute.useParams();
+    const { organizationSlug } = organizationMembersRoute.useParams();
     return <QueryError organizationSlug={organizationSlug} error={urqlError} />;
   },
 });
