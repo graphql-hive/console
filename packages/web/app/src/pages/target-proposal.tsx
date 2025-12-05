@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { buildSchema } from 'graphql';
-import { useMutation, useQuery } from 'urql';
+import { useMutation, useQuery, UseQueryExecute } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -9,7 +9,10 @@ import {
   toUpperSnakeCase,
 } from '@/components/target/proposals';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import { VersionSelect } from '@/components/target/proposals/version-select';
+import {
+  ProposalQuery_VersionsListFragment,
+  VersionSelect,
+} from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
 import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -31,7 +34,11 @@ import {
   TargetProposalChecksPage,
 } from './target-proposal-checks';
 import { TargetProposalDetailsPage } from './target-proposal-details';
-import { TargetProposalEditPage } from './target-proposal-edit';
+import {
+  Proposals_EditProposalProposalFragment,
+  Proposals_EditProposalTargetFragment,
+  TargetProposalEditPage,
+} from './target-proposal-edit';
 import { TargetProposalSchemaPage } from './target-proposal-schema';
 import { TargetProposalSupergraphPage } from './target-proposal-supergraph';
 import { ServiceProposalDetails } from './target-proposal-types';
@@ -46,30 +53,41 @@ enum Tab {
 
 const ProposalQuery = graphql(/* GraphQL  */ `
   query ProposalQuery(
-    $proposalId: ID!
+    $id: ID!
     $projectRef: ProjectReferenceInput!
-    $latestValidVersionReference: TargetReferenceInput
+    $targetRef: TargetReferenceInput!
+    $version: String
   ) {
+    me {
+      id
+      displayName
+    }
     project(reference: $projectRef) {
       id
       type
     }
-    schemaProposal(input: { id: $proposalId }) {
+    target(reference: $targetRef) {
+      ...Proposals_EditProposalTargetFragment
+    }
+    schemaProposal(input: { id: $id }) {
       id
       createdAt
       stage
       title
       description
-      checks(after: null, input: {}) {
+      versions: checks(after: null, input: {}) {
         ...ProposalQuery_VersionsListFragment
+      }
+      checks(after: $version, input: {}) {
         ...ProposalOverview_ChecksFragment
       }
       reviews {
         ...ProposalOverview_ReviewsFragment
       }
       author
+      ...Proposals_EditProposalProposalFragment
     }
-    latestValidVersion(target: $latestValidVersionReference) {
+    latestValidVersion(target: $targetRef) {
       id
       # sdl
       schemas {
@@ -92,10 +110,10 @@ const ProposalQuery = graphql(/* GraphQL  */ `
 `);
 
 const ProposalChangesQuery = graphql(/* GraphQL */ `
-  query ProposalChanges($id: ID!) {
+  query ProposalChanges($id: ID!, $v: String) {
     schemaProposal(input: { id: $id }) {
       id
-      checks(after: null, input: { latestPerService: true }) {
+      checks(after: $v, input: { latestPerService: true }) {
         edges {
           node {
             id
@@ -139,6 +157,7 @@ export function TargetProposalsSinglePage(props: {
   targetSlug: string;
   proposalId: string;
   tab?: string;
+  version?: string;
 }) {
   return (
     <>
@@ -167,24 +186,25 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           projectSlug: props.projectSlug,
         },
       },
-      latestValidVersionReference: {
+      targetRef: {
         bySelector: {
           organizationSlug: props.organizationSlug,
           projectSlug: props.projectSlug,
           targetSlug: props.targetSlug,
         },
       },
-      proposalId: props.proposalId,
+      id: props.proposalId,
+      version: props.version,
     },
     requestPolicy: 'cache-and-network',
   });
 
   // fetch all proposed changes for the selected version
-  const [changesQuery] = useQuery({
+  const [changesQuery, refreshChanges] = useQuery({
     query: ProposalChangesQuery,
     variables: {
       id: props.proposalId,
-      // @todo versionId
+      v: props.version,
       // @todo deal with pagination
     },
     // don't cache this because caching can make it behave strangely --
@@ -304,19 +324,35 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         </>
       );
     }
+    if (!proposal || !query.data?.target) {
+      return (
+        <>
+          <Title className="text-center">Error loading data</Title>
+          <Subtitle className="text-center">Proposal details could not be loaded.</Subtitle>
+        </>
+      );
+    }
     return (
       <TabbedContent
         {...props}
         page={props.tab}
         services={services ?? []}
-        reviews={proposal?.reviews ?? {}}
-        checks={proposal?.checks ?? null}
+        reviews={proposal.reviews ?? {}}
+        checks={proposal.checks ?? null}
+        versions={proposal.versions ?? null}
         isDistributedGraph={isDistributedGraph}
+        proposal={proposal}
+        target={query.data.target}
+        refreshData={(...args) => {
+          refreshProposal(args);
+          refreshChanges(args);
+        }}
       />
     );
   }, [
     services,
     props.tab,
+    props.version,
     proposal?.reviews,
     proposal?.checks,
     changesQuery.error,
@@ -365,7 +401,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           proposal && (
             <>
               <div className="grid grid-cols-2">
-                <VersionSelect proposalId={props.proposalId} versions={proposal.checks ?? {}} />
+                <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
                 <div className="flex justify-end">
                   <StageTransitionSelect
                     stage={proposal.stage}
@@ -405,11 +441,16 @@ function TabbedContent(props: {
   projectSlug: string;
   targetSlug: string;
   proposalId: string;
+  version?: string;
   page?: string;
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
+  versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
+  proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
+  target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   isDistributedGraph: boolean;
+  refreshData: UseQueryExecute;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
@@ -423,7 +464,7 @@ function TabbedContent(props: {
               targetSlug: props.targetSlug,
               proposalId: props.proposalId,
             }}
-            search={{ page: 'details' }}
+            search={{ page: 'details', ...(props.version ? { version: props.version } : {}) }}
             className="flex items-center"
           >
             <ListBulletIcon className="mr-2 h-5 w-auto flex-none" />
@@ -439,7 +480,7 @@ function TabbedContent(props: {
               targetSlug: props.targetSlug,
               proposalId: props.proposalId,
             }}
-            search={{ page: 'schema' }}
+            search={{ page: 'schema', ...(props.version ? { version: props.version } : {}) }}
             className="flex items-center"
           >
             <DiffIcon className="mr-2 h-5 w-auto flex-none" />
@@ -456,7 +497,7 @@ function TabbedContent(props: {
                 targetSlug: props.targetSlug,
                 proposalId: props.proposalId,
               }}
-              search={{ page: 'supergraph' }}
+              search={{ page: 'supergraph', ...(props.version ? { version: props.version } : {}) }}
               className="flex items-center"
             >
               <GraphQLIcon className="mr-2 h-4 w-auto flex-none" />
@@ -473,7 +514,7 @@ function TabbedContent(props: {
               targetSlug: props.targetSlug,
               proposalId: props.proposalId,
             }}
-            search={{ page: 'checks' }}
+            search={{ page: 'checks', ...(props.version ? { version: props.version } : {}) }}
             className="flex items-center"
           >
             <PieChartIcon className="mr-2 h-4 w-auto flex-none" />
@@ -489,7 +530,7 @@ function TabbedContent(props: {
               targetSlug: props.targetSlug,
               proposalId: props.proposalId,
             }}
-            search={{ page: 'edit' }}
+            search={{ page: 'edit' }} // don't set version here. Always refer to latest on edit.
             className="flex items-center"
           >
             <EditIcon className="mr-2 h-3 w-auto flex-none" />
@@ -514,7 +555,7 @@ function TabbedContent(props: {
       </TabsContent>
       <TabsContent value={Tab.CHECKS} variant="content" className="w-full">
         <div className="flex grow flex-row">
-          <TargetProposalChecksPage {...props} checks={props.checks} />
+          <TargetProposalChecksPage {...props} />
         </div>
       </TabsContent>
       <TabsContent value={Tab.EDIT} variant="content" className="w-full">

@@ -668,7 +668,11 @@ function EditorTab(props: {
   existingServices: Array<Service>;
   error?: false | ReactElement;
 }) {
-  return <ProposalEditor {...props} />;
+  return (
+    <TabsContent value="editor">
+      <ProposalEditor {...props} />
+    </TabsContent>
+  );
 }
 
 function OverviewTab(props: {

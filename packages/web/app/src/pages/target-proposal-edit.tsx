@@ -1,68 +1,61 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from 'urql';
+import { useMutation, UseQueryExecute } from 'urql';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
 import { CheckIcon, SaveIcon, XIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
-import { graphql } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import { useTimed } from '@/lib/hooks/use-timed';
 
 // type Confirmation = { name: string; type: 'removal'; reason: string };
 
-// @todo merge this into a parent query as a fragment to avoid issues w/cache
-const Proposals_EditProposalQuery = graphql(`
-  query Proposals_EditProposalQuery(
-    $targetReference: TargetReferenceInput!
-    $proposalInput: SchemaProposalInput!
-  ) {
-    me {
-      id
-      displayName
-    }
-    target(reference: $targetReference) {
-      ...Proposals_SelectFragment
-      ...Proposals_TargetProjectTypeFragment
-      id
-      slug
-      project {
-        id
-        type
-      }
-      latestValidSchemaVersion {
-        id
-        schemas {
-          edges {
-            cursor
-            node {
-              __typename
-              ... on CompositeSchema {
-                id
-                source
-                service
-                url
-              }
-              ... on SingleSchema {
-                id
-                source
-              }
-            }
+export const Proposals_EditProposalProposalFragment = graphql(`
+  fragment Proposals_EditProposalProposalFragment on SchemaProposal {
+    id
+    title
+    author
+    description
+    rebasedSchemaSDL {
+      edges {
+        node {
+          ... on CompositeSchema {
+            id
+            source
+            service
+            url
           }
-          pageInfo {
-            hasNextPage
-            endCursor
+          ... on SingleSchema {
+            id
+            source
           }
         }
       }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
     }
-    schemaProposal(input: $proposalInput) {
+  }
+`);
+
+export const Proposals_EditProposalTargetFragment = graphql(`
+  fragment Proposals_EditProposalTargetFragment on Target {
+    ...Proposals_SelectFragment
+    ...Proposals_TargetProjectTypeFragment
+    id
+    slug
+    project {
       id
-      title
-      author
-      description
-      rebasedSchemaSDL {
+      type
+    }
+    latestValidSchemaVersion {
+      id
+      schemas {
         edges {
+          cursor
           node {
+            __typename
             ... on CompositeSchema {
               id
               source
@@ -76,8 +69,8 @@ const Proposals_EditProposalQuery = graphql(`
           }
         }
         pageInfo {
-          endCursor
           hasNextPage
+          endCursor
         }
       }
     }
@@ -111,31 +104,19 @@ export function TargetProposalEditPage(props: {
   projectSlug: string;
   targetSlug: string;
   proposalId: string;
+  proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
+  target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
+  refreshData: UseQueryExecute;
 }) {
-  // @todo show the error somewhere
+  const schemaProposal = useFragment(Proposals_EditProposalProposalFragment, props.proposal);
+  const target = useFragment(Proposals_EditProposalTargetFragment, props.target);
   const [editorError, setEditorError] = useState('');
   const [saved, startSavedTimer] = useTimed(1500);
   const [errored, startErroredTimer] = useTimed(1500);
-
-  const [query] = useQuery({
-    query: Proposals_EditProposalQuery,
-    variables: {
-      targetReference: {
-        bySelector: {
-          organizationSlug: props.organizationSlug,
-          projectSlug: props.projectSlug,
-          targetSlug: props.targetSlug,
-        },
-      },
-      proposalInput: {
-        id: props.proposalId,
-      },
-    },
-  });
   const [saveChangesResponse, saveChanges] = useMutation(UpdateProposedChangesMutation);
   const existingServices = useMemo(() => {
-    return query.data?.target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
-  }, [query.data]);
+    return target?.latestValidSchemaVersion?.schemas.edges.map(e => e.node);
+  }, [target]);
 
   // @todo confirm deletions on save
   // const [confirmations, setConfirmations] = useState<Array<Confirmation>>([]);
@@ -143,7 +124,7 @@ export function TargetProposalEditPage(props: {
   const [changedServices, setChangedServices] = useState<Array<ServiceTab>>([]);
   useEffect(() => {
     setChangedServices(
-      query.data?.schemaProposal?.rebasedSchemaSDL?.edges.map(({ node }) => {
+      schemaProposal?.rebasedSchemaSDL?.edges.map(({ node }) => {
         if (node.__typename === 'SingleSchema') {
           return node;
         }
@@ -154,7 +135,7 @@ export function TargetProposalEditPage(props: {
         };
       }) ?? [],
     );
-  }, [query.data?.schemaProposal?.rebasedSchemaSDL]);
+  }, [schemaProposal?.rebasedSchemaSDL]);
 
   const onSaveChanges = async () => {
     const result = await Promise.all(
@@ -169,12 +150,13 @@ export function TargetProposalEditPage(props: {
               },
             },
             sdl: service.source,
-            meta: query.data?.me.displayName
-              ? {
-                  author: query.data?.me.displayName,
-                  commit: '', // @todo decide how to handle this commit ID
-                }
-              : null,
+            meta: null,
+            // query.data?.me.displayName
+            //   ? {
+            //       author: query.data?.me.displayName,
+            //       commit: '', // @todo decide how to handle this commit ID
+            //     }
+            //   : null,
             schemaProposalId: props.proposalId,
             service:
               service.__typename === 'CompositeSchema' ? (service.service ?? service.id) : null,
@@ -196,13 +178,14 @@ export function TargetProposalEditPage(props: {
       setEditorError('');
       startSavedTimer();
     }
+    props.refreshData();
   };
 
   return (
     <div className="relative min-h-[500px] w-full">
       <div className="absolute right-1 top-1 flex items-center">
         <Button
-          disabled={query.fetching || saveChangesResponse.fetching}
+          disabled={saveChangesResponse.fetching}
           variant="outline"
           className="w-[160px] justify-center px-3 font-bold"
           onClick={onSaveChanges}
@@ -219,25 +202,21 @@ export function TargetProposalEditPage(props: {
           Save Changes
         </Button>
       </div>
-      {query.fetching ? (
-        <Spinner />
-      ) : (
-        <ProposalEditor
-          {...props}
-          changedServices={changedServices}
-          setChangedServices={setChangedServices}
-          existingServices={existingServices ?? []}
-          projectTypeFragment={query.data?.target ?? undefined}
-          selectFragment={query.data?.target ?? undefined}
-          error={
-            editorError.length > 0 && (
-              <Callout type="error" className="mb-6 w-full text-sm">
-                {editorError}
-              </Callout>
-            )
-          }
-        />
-      )}
+      <ProposalEditor
+        {...props}
+        changedServices={changedServices}
+        setChangedServices={setChangedServices}
+        existingServices={existingServices ?? []}
+        projectTypeFragment={target ?? undefined}
+        selectFragment={target ?? undefined}
+        error={
+          editorError.length > 0 && (
+            <Callout type="error" className="mb-6 w-full text-sm">
+              {editorError}
+            </Callout>
+          )
+        }
+      />
     </div>
   );
 }

@@ -41,7 +41,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         argumentName
         fieldName
         newDescription
-        oldDescription
         typeName
       }
       ... on FieldArgumentTypeChanged {
@@ -49,7 +48,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         fieldName
         isSafeArgumentTypeChange
         newArgumentType
-        oldArgumentType
         typeName
       }
       ... on DirectiveRemoved {
@@ -64,7 +62,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on DirectiveDescriptionChanged {
         directiveName
         newDirectiveDescription
-        oldDirectiveDescription
       }
       ... on DirectiveLocationAdded {
         addedDirectiveLocation
@@ -91,19 +88,16 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         directiveArgumentName
         directiveName
         newDirectiveArgumentDescription
-        oldDirectiveArgumentDescription
       }
       ... on DirectiveArgumentDefaultValueChanged {
         directiveArgumentName
         directiveName
         newDirectiveArgumentDefaultValue
-        oldDirectiveArgumentDefaultValue
       }
       ... on DirectiveArgumentTypeChanged {
         directiveArgumentName
         directiveName
         newDirectiveArgumentType
-        oldDirectiveArgumentType
       }
       ... on EnumValueRemoved {
         enumName
@@ -118,13 +112,11 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         enumName
         enumValueName
         newEnumValueDescription
-        oldEnumValueDescription
       }
       ... on EnumValueDeprecationReasonChanged {
         enumName
         enumValueName
         newEnumValueDeprecationReason
-        oldEnumValueDeprecationReason
       }
       ... on EnumValueDeprecationReasonAdded {
         addedValueDeprecationReason
@@ -150,7 +142,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on FieldDescriptionChanged {
         fieldName
         newDescription
-        oldDescription
         typeName
       }
       ... on FieldDescriptionAdded {
@@ -174,7 +165,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on FieldDeprecationReasonChanged {
         fieldName
         newDeprecationReason
-        oldDeprecationReason
         typeName
       }
       ... on FieldDeprecationReasonAdded {
@@ -189,7 +179,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on FieldTypeChanged {
         fieldName
         newFieldType
-        oldFieldType
         typeName
       }
       ... on DirectiveUsageUnionMemberAdded {
@@ -240,19 +229,16 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
         inputFieldName
         inputName
         newInputFieldDescription
-        # oldInputFieldDescription
       }
       ... on InputFieldDefaultValueChanged {
         inputFieldName
         inputName
         newDefaultValue
-        # oldDefaultValue
       }
       ... on InputFieldTypeChanged {
         inputFieldName
         inputName
         newInputFieldType
-        # oldInputFieldType
       }
       ... on ObjectTypeInterfaceAdded {
         addedInterfaceName
@@ -264,15 +250,12 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on SchemaQueryTypeChanged {
         newQueryTypeName
-        # oldQueryTypeName
       }
       ... on SchemaMutationTypeChanged {
         newMutationTypeName
-        # oldMutationTypeName
       }
       ... on SchemaSubscriptionTypeChanged {
         newSubscriptionTypeName
-        # oldSubscriptionTypeName
       }
       ... on TypeRemoved {
         removedTypeName
@@ -288,7 +271,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on TypeDescriptionChanged {
         newTypeDescription
-        # oldTypeDescription
         typeName
       }
       ... on TypeDescriptionAdded {

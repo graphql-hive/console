@@ -4320,8 +4320,22 @@ export async function createStorage(
           args.latest
             ? sql`
             INNER JOIN (
-              SELECT "service_name", "schema_proposal_id",  max("created_at") as maxdate
+              SELECT "service_name", "schema_proposal_id", max("created_at") as "maxdate"
               FROM schema_checks
+              ${
+                cursor
+                  ? sql`
+                    WHERE "schema_proposal_id" = ${args.proposalId}
+                    AND (
+                      (
+                        "created_at" = ${cursor.createdAt}
+                        AND "id" < ${cursor.id}
+                      )
+                      OR "created_at" < ${cursor.createdAt}
+                    )
+                  `
+                  : sql``
+              }
               GROUP BY "service_name", "schema_proposal_id"
             ) as cc
             ON c."schema_proposal_id" = cc."schema_proposal_id"

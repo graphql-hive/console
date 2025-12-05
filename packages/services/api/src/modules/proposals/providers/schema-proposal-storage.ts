@@ -124,8 +124,6 @@ export class SchemaProposalStorage {
       return SchemaProposalReviewModel.parse(row);
     });
 
-    console.log(JSON.stringify(review));
-
     return {
       type: 'ok' as const,
       review,

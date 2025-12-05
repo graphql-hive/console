@@ -49,7 +49,7 @@ export const SchemaProposal: SchemaProposalResolvers = {
         return schemaChecks.edges.map(({ node, cursor: _ }): Schema => {
           const schema = schemas.find(
             s =>
-              (node.serviceName === '' && s.kind === 'single') ||
+              (!node.serviceName && s.kind === 'single') ||
               (s.kind === 'composite' && s.service_name === node.serviceName),
           );
           return {

@@ -974,11 +974,12 @@ const targetProposalsSingleRoute = createRoute({
       .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
       .optional()
       .catch(() => void 0),
+    version: z.string().optional(),
   }),
   component: function TargetProposalRoute() {
     const { organizationSlug, projectSlug, targetSlug, proposalId } =
       targetProposalsSingleRoute.useParams();
-    const { page } = targetProposalsSingleRoute.useSearch();
+    const { page, version } = targetProposalsSingleRoute.useSearch();
     return (
       <TargetProposalsSinglePage
         organizationSlug={organizationSlug}
@@ -986,6 +987,7 @@ const targetProposalsSingleRoute = createRoute({
         targetSlug={targetSlug}
         proposalId={proposalId}
         tab={page ?? (ProposalTab.DETAILS as string)}
+        version={version}
       />
     );
   },

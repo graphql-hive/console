@@ -9,9 +9,10 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearch } from '@tanstack/react-router';
 
-const ProposalQuery_VersionsListFragment = graphql(/* GraphQL */ `
+export const ProposalQuery_VersionsListFragment = graphql(/* GraphQL */ `
   fragment ProposalQuery_VersionsListFragment on SchemaCheckConnection {
     edges {
+      cursor
       node {
         id
         createdAt
@@ -31,16 +32,14 @@ export function VersionSelect(props: {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const search = useSearch({ strict: false });
-  // @todo typing
-  const selectedVersionId = (search as any).version as string;
+  const selectedVersionCursor = (search as any).version as string | undefined;
 
   // @todo handle pagination
-  const versions =
-    useFragment(ProposalQuery_VersionsListFragment, props.versions)?.edges?.map(e => e.node) ??
-    null;
-  const selectedVersion = selectedVersionId
-    ? versions?.find(node => node.id === selectedVersionId)
-    : versions?.[0];
+  const versions = useFragment(ProposalQuery_VersionsListFragment, props.versions) ?? null;
+
+  const selectedIndex =
+    versions.edges.findIndex(({ cursor }) => cursor === selectedVersionCursor) + 1;
+  const selectedVersion = versions.edges[selectedIndex];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -53,7 +52,7 @@ export function VersionSelect(props: {
         >
           <span className="truncate">
             {selectedVersion
-              ? selectedVersion.meta?.commit || selectedVersion.id
+              ? selectedVersion.node.meta?.commit || selectedVersion.node.id
               : 'Invalid version'}
           </span>
           <ChevronsUpDown className="ml-2 flex size-4 shrink-0 opacity-50" />
@@ -62,38 +61,44 @@ export function VersionSelect(props: {
       <PopoverContent align="start" className="min-w-fit max-w-[100vw] truncate p-0">
         <Command>
           <CommandGroup>
-            <ScrollArea className="relative max-h-screen">
-              {versions?.map(version => (
-                <CommandItem
-                  key={version.id}
-                  value={version.id}
-                  onSelect={selectedVersion => {
-                    // @todo make more generic by taking in version via arg
-                    void router.navigate({
-                      search: { ...search, version: selectedVersion },
-                    });
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer truncate"
-                >
-                  <div
-                    className={cn(
-                      'flex flex-row gap-x-6 p-1 text-gray-400 hover:text-white',
-                      version.id === selectedVersionId && 'underline',
-                    )}
+            <ScrollArea className="relative h-[calc(100vh-300px)] min-h-24">
+              {versions?.edges.map(({ node: version }, index) => {
+                // must reference the last cursor because of how pagination works...
+                // it gets everything _after_ the cursor.
+                const lastVersionCursor = versions.edges[index - 1]?.cursor;
+                return (
+                  <CommandItem
+                    key={version.id}
+                    value={lastVersionCursor}
+                    // selected version is being forced to lowercase
+                    onSelect={_selectedVersion => {
+                      // @todo make more generic by taking in version via arg
+                      void router.navigate({
+                        search: { ...search, version: lastVersionCursor },
+                      });
+                      setOpen(false);
+                    }}
+                    className="cursor-pointer truncate"
                   >
-                    <div className="max-w-[300px] grow flex-col truncate">
-                      {version.meta?.commit || version.id}
+                    <div
+                      className={cn(
+                        'flex flex-row gap-x-6 p-1 text-gray-400 hover:text-white',
+                        lastVersionCursor === selectedVersionCursor && 'underline',
+                      )}
+                    >
+                      <div className="max-w-[300px] grow flex-col truncate">
+                        {version.meta?.commit || version.id}
+                      </div>
+                      <div className="grow flex-col">
+                        (<TimeAgo date={version.createdAt} />)
+                      </div>
+                      <div className="max-w-[200px] grow flex-col truncate">
+                        by {version.meta?.author ?? 'undefined'}
+                      </div>
                     </div>
-                    <div className="grow flex-col">
-                      (<TimeAgo date={version.createdAt} />)
-                    </div>
-                    <div className="max-w-[200px] grow flex-col truncate">
-                      by {version.meta?.author ?? 'undefined'}
-                    </div>
-                  </div>
-                </CommandItem>
-              ))}
+                  </CommandItem>
+                );
+              })}
             </ScrollArea>
           </CommandGroup>
         </Command>
