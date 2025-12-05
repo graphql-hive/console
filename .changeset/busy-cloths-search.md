@@ -6,6 +6,8 @@ Breaking Changes to avoid future breaking changes;
 
 Switch to [Builder](https://rust-unofficial.github.io/patterns/patterns/creational/builder.html) pattern for `SupergraphFetcher`, `PersistedDocumentsManager` and `UsageAgent` structs. 
 
+No more `try_new` or `try_new_async` or `try_new_sync` functions, instead use `SupergraphFetcherBuilder`, `PersistedDocumentsManagerBuilder` and `UsageAgentBuilder` structs to create instances.
+
 Benefits;
 
 - No need to provide all parameters at once when creating an instance even for default values.
