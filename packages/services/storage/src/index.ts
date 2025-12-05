@@ -2509,7 +2509,7 @@ export async function createStorage(
           });
         }
 
-        await args.actionFn();
+        await args.actionFn(newVersion.id);
 
         return {
           kind: 'composite',
@@ -2616,7 +2616,7 @@ export async function createStorage(
           });
         }
 
-        await input.actionFn();
+        await input.actionFn(version.id);
 
         return {
           version,
