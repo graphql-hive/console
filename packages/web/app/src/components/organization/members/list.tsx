@@ -312,10 +312,6 @@ const OrganizationMembers_OrganizationFragment = graphql(`
 export function OrganizationMembers(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   refetchMembers: UseQueryExecute;
-  /**
-   * The setter for the reactive "after" variable required by urql
-   */
-  setAfter: (after: string | null) => void;
 }) {
   // Pagination state
   const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
@@ -327,19 +323,20 @@ export function OrganizationMembers(props: {
   const members = organization.members?.edges?.map(edge => edge.node);
   const pageInfo = organization.members?.pageInfo;
 
+  const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
+  const [_afterValue, setAfterValue] = useSearchParamsFilter<string>('after', '');
+
   // Reset pagination when search changes
   useEffect(() => {
     setCursorHistory([null]);
     setCurrentPage(0);
-    props.setAfter(null);
+    setAfterValue('');
   }, [search.search]);
 
   useEffect(() => {
     // Update the cursor in parent, which will trigger query refetch
-    props.setAfter(cursorHistory[currentPage]);
+    setAfterValue(cursorHistory[currentPage] || '');
   }, [currentPage]);
-
-  const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
 
   const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(e.target.value);

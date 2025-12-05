@@ -23,8 +23,6 @@ export const SecondaryNavigationItem = ({
   title,
   to,
 }: SecondaryNavigationItemProps) => {
-  console.log('SecondaryNavigationItem render');
-
   if (displayCondition !== undefined && !displayCondition) {
     return null;
   }

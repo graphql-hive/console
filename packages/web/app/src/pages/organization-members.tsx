@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery, UseQueryExecute } from 'urql';
 import z from 'zod';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
@@ -42,7 +42,6 @@ const subPages = [
 function PageContent(props: {
   organization: FragmentType<typeof OrganizationMembersPage_OrganizationFragment>;
   refetchQuery: UseQueryExecute;
-  setAfter: (after: string | null) => void;
 }) {
   const organization = useFragment(
     OrganizationMembersPage_OrganizationFragment,
@@ -97,11 +96,7 @@ function PageContent(props: {
       </NavLayout>
       <PageLayoutContent>
         {page === 'list' ? (
-          <OrganizationMembers
-            refetchMembers={props.refetchQuery}
-            organization={organization}
-            setAfter={props.setAfter}
-          />
+          <OrganizationMembers refetchMembers={props.refetchQuery} organization={organization} />
         ) : null}
         {page === 'roles' && organization.viewerCanManageRoles ? (
           <OrganizationMemberRoles organization={organization} />
@@ -137,19 +132,18 @@ function OrganizationMembersPageContent() {
   const data = organizationMembersRoute.useLoaderData();
 
   const { organizationSlug } = organizationMembersRoute.useParams();
-  const search = organizationMembersRoute.useSearch();
-  const [after, setAfter] = useState<string | null>(null);
+  const { after, search: searchTerm } = organizationMembersRoute.useSearch();
 
   // Reset cursor when search changes
-  useEffect(() => {
-    setAfter(null);
-  }, [search.search]);
+  // useEffect(() => {
+  //   setAfter(null);
+  // }, [searchTerm]);
 
   const [_query, refetch] = useQuery({
     query: OrganizationMembersPageWithLayoutQuery,
     variables: {
       organizationSlug,
-      searchTerm: search.search || undefined,
+      searchTerm,
       first: 20,
       after,
     },
@@ -180,11 +174,7 @@ function OrganizationMembersPageContent() {
   return (
     <>
       {data?.organization ? (
-        <PageContent
-          organization={data.organization}
-          refetchQuery={refetchQuery}
-          setAfter={setAfter}
-        />
+        <PageContent organization={data.organization} refetchQuery={refetchQuery} />
       ) : null}
     </>
   );
