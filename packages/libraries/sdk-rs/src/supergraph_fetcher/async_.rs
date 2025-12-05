@@ -135,6 +135,7 @@ impl SupergraphFetcherBuilder {
                         let circuit_breaker = self
                             .circuit_breaker
                             .clone()
+                            .unwrap_or_default()
                             .build_async()
                             .map_err(SupergraphFetcherError::CircuitBreakerCreationError);
                         circuit_breaker.map(|cb| (endpoint, cb))

@@ -2,6 +2,7 @@ use std::fmt::Display;
 use tokio::sync::RwLock;
 
 use crate::circuit_breaker::CircuitBreakerError;
+use crate::supergraph_fetcher::async_::SupergraphFetcherAsyncState;
 use recloser::AsyncRecloser;
 use recloser::Recloser;
 use reqwest::header::HeaderValue;
@@ -31,6 +32,13 @@ enum SupergraphFetcherAsyncOrSyncClient {
         reqwest_client: reqwest::blocking::Client,
         retry_policy: ExponentialBackoff,
     },
+}
+
+// Doesn't matter which one we implement this for, both have the same builder
+impl SupergraphFetcher<SupergraphFetcherAsyncState> {
+    pub fn builder() -> builder::SupergraphFetcherBuilder {
+        builder::SupergraphFetcherBuilder::default()
+    }
 }
 
 pub enum SupergraphFetcherError {

@@ -1,7 +1,6 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
-use hive_console_sdk::supergraph_fetcher::builder::SupergraphFetcherBuilder;
 use hive_console_sdk::supergraph_fetcher::sync::SupergraphFetcherSyncState;
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
 use sha2::Digest;
@@ -125,7 +124,7 @@ impl HiveRegistry {
             env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
         }
 
-        let mut fetcher = SupergraphFetcherBuilder::new()
+        let mut fetcher = SupergraphFetcher::builder()
             .key(key)
             .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION))
             .accept_invalid_certs(accept_invalid_certs);
