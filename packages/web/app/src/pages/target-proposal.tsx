@@ -73,6 +73,7 @@ const ProposalQuery = graphql(/* GraphQL  */ `
     }
     schemaProposal(input: { id: $id }) {
       id
+      author
       createdAt
       stage
       title
@@ -86,7 +87,6 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       reviews {
         ...ProposalOverview_ReviewsFragment
       }
-      author
       ...Proposals_EditProposalProposalFragment
     }
     latestValidVersion(target: $targetRef) {
@@ -115,7 +115,6 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
   query ProposalChanges($id: ID!, $v: String) {
     schemaProposal(input: { id: $id }) {
       id
-      author
       checks(after: $v, input: { latestPerService: true }) {
         edges {
           node {

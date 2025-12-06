@@ -16,7 +16,6 @@ import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { cn } from '@/lib/utils';
-import { ChatBubbleIcon } from '@radix-ui/react-icons';
 import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
 
 const TargetProposalsQuery = graphql(`

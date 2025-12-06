@@ -6,9 +6,5 @@ export const schemaProposal: NonNullable<QueryResolvers['schemaProposal']> = asy
   { input: { id } },
   { injector },
 ) => {
-  const proposal = await injector.get(SchemaProposalManager).getProposal({ id });
-  return {
-    ...proposal,
-    author: '', // populated in its own resolver
-  };
+  return injector.get(SchemaProposalManager).getProposal({ id });
 };

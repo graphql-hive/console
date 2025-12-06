@@ -6,18 +6,9 @@ import { SchemaProposalManager } from '../providers/schema-proposal-manager';
 import type { SchemaProposalResolvers } from './../../../__generated__/types';
 
 export const SchemaProposal: SchemaProposalResolvers = {
-  async author(proposal, _, { injector }) {
+  async author(proposal) {
     if (proposal.author) {
       return proposal.author;
-    }
-
-    // @todo this feels hacky...
-    const userId = (proposal as any)?.userId;
-    if (userId) {
-      const user = await injector.get(Storage).getUserById(userId);
-      if (user?.displayName) {
-        return user.displayName;
-      }
     }
     return proposal.checks?.edges[0]?.node.meta?.author ?? '';
   },

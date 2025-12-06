@@ -387,7 +387,7 @@ const SchemaProposalModel = z.object({
   description: z.string(),
   stage: StageModel,
   targetId: z.string(),
-  author: z.string().nullable().default('none'),
+  author: z.string(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;
