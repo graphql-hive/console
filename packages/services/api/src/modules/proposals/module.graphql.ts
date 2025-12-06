@@ -88,6 +88,11 @@ export default gql`
     title: String!
 
     """
+    Display name of the person who initially created this proposal
+    """
+    author: String!
+
+    """
     If no description was provided then this will be an empty string.
     """
     description: String! = ""
@@ -149,7 +154,6 @@ export default gql`
 
   input SchemaProposalsInput {
     target: TargetReferenceInput!
-    userIds: [ID!]
     stages: [SchemaProposalStage!]
   }
 

@@ -35,6 +35,7 @@ import {
 } from './target-proposal-checks';
 import { TargetProposalDetailsPage } from './target-proposal-details';
 import {
+  Proposals_EditProposalMeFragment,
   Proposals_EditProposalProposalFragment,
   Proposals_EditProposalTargetFragment,
   TargetProposalEditPage,
@@ -61,6 +62,7 @@ const ProposalQuery = graphql(/* GraphQL  */ `
     me {
       id
       displayName
+      ...Proposals_EditProposalMeFragment
     }
     project(reference: $projectRef) {
       id
@@ -113,6 +115,7 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
   query ProposalChanges($id: ID!, $v: String) {
     schemaProposal(input: { id: $id }) {
       id
+      author
       checks(after: $v, input: { latestPerService: true }) {
         edges {
           node {
@@ -343,6 +346,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         isDistributedGraph={isDistributedGraph}
         proposal={proposal}
         target={query.data.target}
+        me={query.data.me}
         refreshData={(...args) => {
           refreshProposal(args);
           refreshChanges(args);
@@ -449,6 +453,7 @@ function TabbedContent(props: {
   versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
+  me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
   refreshData: UseQueryExecute;
 }) {

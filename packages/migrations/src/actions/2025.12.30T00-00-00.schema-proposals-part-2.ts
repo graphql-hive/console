@@ -15,7 +15,7 @@ export default {
           , created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
           -- reviews can also be tied to a stage transition event. If the review only contains comments, then this is null
           , stage_transition schema_proposal_stage NOT NULL
-          , user_id UUID REFERENCES users (id) ON DELETE SET NULL
+          , author text NOT NULLL
           , schema_proposal_id UUID NOT NULL REFERENCES schema_proposals (id) ON DELETE CASCADE
           -- store the original text of the line that is being reviewed. If the base schema version changes, then this is
           -- used to determine which line this review falls on. If no line matches in the current version, then
@@ -27,23 +27,12 @@ export default {
           -- longer be found in the latest proposal version. That way a preview of the reviewed
           -- line can be provided.
           , schema_coordinate text
-          , resolved_by_user_id UUID REFERENCES users (id) ON DELETE SET NULL
           , service_name TEXT NOT NULL
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposal_reviews_schema_proposal_id ON schema_proposal_reviews(
           schema_proposal_id
           , created_at ASC
-        )
-        ;
-        -- For performance on user delete
-        CREATE INDEX IF NOT EXISTS schema_proposal_reviews_user_id ON schema_proposal_reviews(
-          user_id
-        )
-        ;
-        -- For performance on user delete
-        CREATE INDEX IF NOT EXISTS schema_proposal_reviews_resolved_by_user_id ON schema_proposal_reviews(
-          resolved_by_user_id
         )
         ;
         /**
@@ -54,7 +43,7 @@ export default {
         CREATE TABLE IF NOT EXISTS "schema_proposal_comments"
         (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4 ()
-          , user_id UUID REFERENCES users (id) ON DELETE SET NULL
+          , author text NOT NULL
           , body TEXT NOT NULL
           , created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
           , updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -64,11 +53,6 @@ export default {
         CREATE INDEX IF NOT EXISTS schema_proposal_comments_list ON schema_proposal_comments(
           schema_proposal_review_id
           , created_at ASC
-        )
-        ;
-        -- For performance on user delete
-        CREATE INDEX IF NOT EXISTS schema_proposal_comments_user_id ON schema_proposal_comments(
-          user_id
         )
         ;
         ALTER TABLE schema_proposals

@@ -267,6 +267,7 @@ export function ProposalEditor(props: {
           }}
         />
       </div>
+      {props.error}
       {(activeService || changedServices.length > 0) && (
         <Tabs
           value={`${activeTab}`}

@@ -21,8 +21,7 @@ export default {
           , description text NOT NULL
           , stage schema_proposal_stage NOT NULL
           , target_id UUID NOT NULL REFERENCES targets (id) ON DELETE CASCADE
-          -- ID for the user that opened the proposal @todo
-          , user_id UUID REFERENCES users (id) ON DELETE SET NULL
+          , author text NOT NULL
         )
         ;
         CREATE INDEX IF NOT EXISTS schema_proposals_list ON schema_proposals (
@@ -30,28 +29,10 @@ export default {
           , created_at DESC
         )
         ;
-        CREATE INDEX IF NOT EXISTS schema_proposals_list_by_user_id ON schema_proposals (
-          target_id
-          , user_id
-          , created_at DESC
-        )
-        ;
         CREATE INDEX IF NOT EXISTS schema_proposals_list_by_stage ON schema_proposals (
           target_id
           , stage
           , created_at DESC
-        )
-        ;
-        CREATE INDEX IF NOT EXISTS schema_proposals_list_by_user_id_stage ON schema_proposals (
-          target_id
-          , user_id
-          , stage
-          , created_at DESC
-        )
-        ;
-        -- For performance during user delete
-        CREATE INDEX IF NOT EXISTS schema_proposals_diff_user_id on schema_proposals (
-          user_id
         )
         ;
       `,

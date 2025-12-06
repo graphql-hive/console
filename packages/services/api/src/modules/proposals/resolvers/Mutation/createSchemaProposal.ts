@@ -4,39 +4,16 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaProposal']> = async (
   _,
   { input },
-  { injector, session },
+  { injector },
 ) => {
-  const { target, title, description, isDraft, initialChecks } = input;
-  let user: {
-    id: string;
-    displayName: string;
-  } | null = null;
-  try {
-    const actor = await session.getActor();
-    if (actor.type === 'user') {
-      user = {
-        id: actor.user.id,
-        displayName: actor.user.displayName,
-      };
-    }
-  } catch (e) {
-    // ignore
-  }
+  const { target, title, description, isDraft, initialChecks, author } = input;
 
   const result = await injector.get(SchemaProposalManager).proposeSchema({
     target,
     title,
     description: description ?? '',
     isDraft: isDraft ?? false,
-    user: user
-      ? {
-          id: user.id,
-          displayName: user.displayName,
-        }
-      : {
-          id: null,
-          displayName: initialChecks.find(c => c.meta?.author)?.meta?.author ?? null,
-        },
+    author,
     initialChecks,
   });
 

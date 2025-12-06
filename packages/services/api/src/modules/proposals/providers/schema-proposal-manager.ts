@@ -35,10 +35,7 @@ export class SchemaProposalManager {
     title: string;
     description: string;
     isDraft: boolean;
-    user: {
-      id: string | null;
-      displayName: string | null;
-    } | null;
+    author: string;
     initialChecks: ReadonlyArray<SchemaProposalCheckInput>;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
@@ -48,7 +45,7 @@ export class SchemaProposalManager {
 
     const createProposalResult = await this.proposalStorage.createProposal({
       organizationId: selector.organizationId,
-      userId: args.user?.id ?? null,
+      author: args.author ?? null,
       description: args.description,
       stage: args.isDraft ? 'DRAFT' : 'OPEN',
       targetId: selector.targetId,
@@ -116,7 +113,7 @@ export class SchemaProposalManager {
         stage: proposal.stage,
         targetId: proposal.targetId,
         reviews: null,
-        author: args.user?.displayName ?? '',
+        author: args.author,
         // checks: {
         //   edges: checkEdges,
         //   pageInfo: {
@@ -173,7 +170,6 @@ export class SchemaProposalManager {
       after: args.after,
       first: args.first,
       stages: args.stages,
-      users: args.users,
     });
   }
 
@@ -200,7 +196,7 @@ export class SchemaProposalManager {
         targetId: proposal.targetId,
         id: args.proposalId,
         stage: args.stage,
-        userId: user.id,
+        author: user.displayName,
         serviceName: args.serviceName,
       });
 

@@ -74,14 +74,14 @@ export class SchemaProposalStorage {
     targetId: string;
     id: string;
     stage: SchemaProposalStage;
-    userId: string;
+    author: string;
     serviceName: string;
   }) {
     this.logger.debug(
-      'manually transition schema (proposal=%s, stage=%s, userId=%s)',
+      'manually transition schema (proposal=%s, stage=%s, author=%s)',
       args.id,
       args.stage,
-      args.userId,
+      args.author,
     );
 
     await this.assertSchemaProposalsEnabled({
@@ -112,11 +112,11 @@ export class SchemaProposalStorage {
       );
       const row = await conn.maybeOne(sql`
           INSERT INTO schema_proposal_reviews
-            ("schema_proposal_id", "stage_transition", "user_id", "service_name")
+            ("schema_proposal_id", "stage_transition", "author", "service_name")
           VALUES (
             ${args.id}
             , ${args.stage}
-            , ${args.userId}
+            , ${args.author}
             , ${args.serviceName}
           )
           RETURNING ${schemaProposalReviewFields}
@@ -136,7 +136,7 @@ export class SchemaProposalStorage {
     title: string;
     description: string;
     stage: SchemaProposalStage;
-    userId: string | null;
+    author: string;
   }) {
     this.logger.debug(
       'propose schema (targetId=%s, title=%s, stage=%s)',
@@ -169,14 +169,14 @@ export class SchemaProposalStorage {
       .maybeOne<unknown>(
         sql`
           INSERT INTO "schema_proposals" as "sp"
-            ("target_id", "title", "description", "stage", "user_id")
+            ("target_id", "title", "description", "stage", "author")
           VALUES
             (
               ${args.targetId}
               , ${args.title}
               , ${args.description}
               , ${args.stage}
-              , ${args.userId}
+              , ${args.author}
             )
           RETURNING ${schemaProposalFields}
         `,
@@ -196,14 +196,10 @@ export class SchemaProposalStorage {
         sql`
           SELECT
             ${schemaProposalFields}
-            , u."display_name" as "author"
           FROM
             "schema_proposals" AS "sp"
-          LEFT JOIN "users" AS "u"
-            ON "u"."id" = "sp"."user_id"
           WHERE
             "sp"."id" = ${args.id}
-          LIMIT 1
         `,
       )
       .then(row => SchemaProposalModel.parse(row));
@@ -216,7 +212,6 @@ export class SchemaProposalStorage {
     first: number;
     after: string;
     stages: ReadonlyArray<SchemaProposalStage>;
-    users: ReadonlyArray<string>;
   }) {
     this.logger.debug(
       'Get paginated proposals (target=%s, after=%s, stages=%s)',
@@ -236,11 +231,8 @@ export class SchemaProposalStorage {
     const result = await this.pool.query<unknown>(sql`
       SELECT
         ${schemaProposalFields}
-        , u."display_name" as "author"
       FROM
         "schema_proposals" as "sp"
-      LEFT JOIN "users" as "u"
-        ON u."id" = sp."user_id"
       WHERE
         sp."target_id" = ${args.targetId}
         ${
@@ -261,15 +253,6 @@ export class SchemaProposalStorage {
             ? sql`
               AND (
                 sp."stage" = ANY(${sql.array(args.stages, 'schema_proposal_stage')})
-              )
-              `
-            : sql``
-        }
-        ${
-          args.users.length > 0
-            ? sql`
-              AND (
-                sp."user_id" = ANY(${sql.array(args.users, 'uuid')})
               )
               `
             : sql``
@@ -301,12 +284,7 @@ export class SchemaProposalStorage {
     };
   }
 
-  async getPaginatedReviews(args: {
-    proposalId: string;
-    first: number;
-    after: string;
-    authors: string[];
-  }) {
+  async getPaginatedReviews(args: { proposalId: string; first: number; after: string }) {
     this.logger.debug('Get paginated reviews (proposal=%s, after=%s)', args.proposalId, args.after);
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const cursor = args.after ? decodeCreatedAtAndUUIDIdBasedCursor(args.after) : null;
@@ -373,7 +351,7 @@ const schemaProposalFields = sql`
   , sp."description"
   , sp."stage"
   , sp."target_id" as "targetId"
-  , sp."user_id" as "userId"
+  , sp."author"
 `;
 
 const schemaProposalReviewFields = sql`
@@ -381,10 +359,9 @@ const schemaProposalReviewFields = sql`
   , "schema_proposal_id"
   , to_json("created_at") as "createdAt"
   , "stage_transition" as "stageTransition"
-  , "user_id" as "userId"
+  , "author"
   , "line_text" as "lineText"
   , "schema_coordinate" as "schemaCoordinate"
-  , "resolved_by_user_id" as "resolvedByUserId"
   , "service_name" as "serviceName"
 `;
 
@@ -394,10 +371,9 @@ const SchemaProposalReviewModel = z.object({
   id: z.string(),
   createdAt: z.string(),
   stageTransition: ManualTransitionStageModel,
-  userId: z.string().nullable().optional().default(null), // if deleted
+  author: z.string(),
   lineText: z.string().nullable().optional().default(null),
   schemaCoordinate: z.string().nullable().optional().default(null),
-  resolvedByUserId: z.string().nullable().optional().default(null),
   serviceName: z.string(),
 });
 

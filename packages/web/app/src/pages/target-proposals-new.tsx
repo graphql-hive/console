@@ -315,7 +315,7 @@ function ProposalsNewContent(
         }
       } catch (error) {
         if (error instanceof z.ZodError) {
-          setEditorError(error.issues[0]?.message);
+          setEditorError(error.issues[0]?.message ?? error.message);
           // go to overview page because that's where the issue is
           setPage('editor');
           return setIsSubmitting(false);
@@ -364,6 +364,9 @@ function ProposalsNewContent(
       // if nothing to confirm, then publish
       if (confs.length === 0) {
         try {
+          if (!query.data) {
+            throw new Error('Cannot determine author because data is missing.');
+          }
           const { data, error } = await proposeChanges({
             input: {
               target: {
@@ -376,15 +379,14 @@ function ProposalsNewContent(
               title: payload?.title ?? '',
               description: payload?.description,
               isDraft: true,
+              author: query.data.me.displayName,
               initialChecks: changedServices.map(s => ({
                 sdl: s.source,
                 service: s.__typename === 'CompositeSchema' ? s.service : '',
-                meta: query.data?.me.displayName
-                  ? {
-                      author: query.data?.me.displayName,
-                      commit: '',
-                    }
-                  : null,
+                meta: {
+                  author: query.data!.me.displayName,
+                  commit: '',
+                },
                 url: s.__typename === 'CompositeSchema' ? s.url : undefined,
                 // @todo url, meta, etc...
                 // and set author in backend?...

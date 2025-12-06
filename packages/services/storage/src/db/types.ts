@@ -337,12 +337,11 @@ export interface schema_proposal_reviews {
   created_at: Date;
   id: string;
   line_text: string | null;
-  resolved_by_user_id: string | null;
   schema_coordinate: string | null;
   schema_proposal_id: string;
   service_name: string;
   stage_transition: schema_proposal_stage;
-  user_id: string | null;
+  author: string;
 }
 
 export interface schema_proposals {

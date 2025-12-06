@@ -39,6 +39,13 @@ export const Proposals_EditProposalProposalFragment = graphql(`
   }
 `);
 
+export const Proposals_EditProposalMeFragment = graphql(`
+  fragment Proposals_EditProposalMeFragment on User {
+    id
+    displayName
+  }
+`);
+
 export const Proposals_EditProposalTargetFragment = graphql(`
   fragment Proposals_EditProposalTargetFragment on Target {
     ...Proposals_SelectFragment
@@ -106,8 +113,10 @@ export function TargetProposalEditPage(props: {
   proposalId: string;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
+  me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   refreshData: UseQueryExecute;
 }) {
+  const me = useFragment(Proposals_EditProposalMeFragment, props.me);
   const schemaProposal = useFragment(Proposals_EditProposalProposalFragment, props.proposal);
   const target = useFragment(Proposals_EditProposalTargetFragment, props.target);
   const [editorError, setEditorError] = useState('');
@@ -150,13 +159,12 @@ export function TargetProposalEditPage(props: {
               },
             },
             sdl: service.source,
-            meta: null,
-            // query.data?.me.displayName
-            //   ? {
-            //       author: query.data?.me.displayName,
-            //       commit: '', // @todo decide how to handle this commit ID
-            //     }
-            //   : null,
+            meta: me?.displayName
+              ? {
+                  author: me.displayName,
+                  commit: '', // @todo decide how to handle this commit ID
+                }
+              : null,
             schemaProposalId: props.proposalId,
             service:
               service.__typename === 'CompositeSchema' ? (service.service ?? service.id) : null,
