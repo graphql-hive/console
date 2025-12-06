@@ -5,6 +5,7 @@ import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
   APIError,
+  AuthorRequiredError,
   CommitRequiredError,
   GithubRepositoryRequiredError,
   InvalidTargetError,
@@ -169,6 +170,10 @@ export default class ProposalCreate extends Command<typeof ProposalCreate> {
       const commit = flags.commit || git?.commit;
       const author = flags.author || git?.author;
 
+      if (!author) {
+        throw new AuthorRequiredError();
+      }
+
       if (typeof sdl !== 'string' || sdl.length === 0) {
         throw new SchemaFileEmptyError(file);
       }
@@ -208,6 +213,7 @@ export default class ProposalCreate extends Command<typeof ProposalCreate> {
             title: flags.title,
             description: flags.description,
             isDraft: flags.draft,
+            author,
             initialChecks: [
               {
                 service,
