@@ -61,8 +61,13 @@ export function VersionSelect(props: {
       <PopoverContent align="start" className="min-w-fit max-w-[100vw] truncate p-0">
         <Command>
           <CommandGroup>
-            <ScrollArea className="relative h-[calc(100vh-300px)] min-h-24">
-              {versions?.edges.map(({ node: version }, index) => {
+            <ScrollArea
+              className={cn(
+                'relative max-h-[calc(100vh-300px)] overflow-y-auto',
+                versions.edges.length > 2 && 'min-h-24',
+              )}
+            >
+              {versions.edges.map(({ node: version }, index) => {
                 // must reference the last cursor because of how pagination works...
                 // it gets everything _after_ the cursor.
                 const lastVersionCursor = versions.edges[index - 1]?.cursor;
