@@ -1,3 +1,5 @@
+import type { MouseEventHandler } from 'react';
+import { cn } from '@/lib/utils';
 import { CubeIcon } from '@radix-ui/react-icons';
 
 export enum ServiceHeadingType {
@@ -5,12 +7,22 @@ export enum ServiceHeadingType {
   DELETED,
 }
 
-export function ServiceHeading(props: { serviceName: string; type?: ServiceHeadingType }) {
+export function ServiceHeading(props: {
+  serviceName: string;
+  type?: ServiceHeadingType;
+  onClick?: MouseEventHandler<HTMLDivElement>;
+}) {
   if (props.serviceName.length === 0) {
     return null;
   }
   return (
-    <div className="flex flex-row items-center border-b-2 px-4 py-2 text-base font-semibold">
+    <div
+      className={cn(
+        'flex flex-row items-center border-b-2 px-4 py-2 text-base font-semibold',
+        props.onClick !== undefined && 'cursor-pointer',
+      )}
+      onClick={props.onClick}
+    >
       <CubeIcon className="mr-2" />
       <span>{props.serviceName}</span>
       {props.type === ServiceHeadingType.NEW ? (

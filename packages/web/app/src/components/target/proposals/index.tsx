@@ -430,6 +430,7 @@ export function Proposal(props: {
   afterSchema: GraphQLSchema | null;
   reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
   serviceName: string;
+  className?: string;
 }) {
   /**
    * Reviews can change position because the coordinate changes... placing them out of order from their original line numbers.
@@ -486,7 +487,12 @@ export function Proposal(props: {
     // THIS IS IMPORTANT!! <SchemaDiff/> must be rendered first so that it sets up the state in the
     // AnnotatedContext for <DetachedAnnotations/>. Otherwise, the DetachedAnnotations will be empty.
     const diff = (
-      <SchemaDiff before={props.beforeSchema} after={props.afterSchema} annotations={annotations} />
+      <SchemaDiff
+        className={props.className}
+        before={props.beforeSchema}
+        after={props.afterSchema}
+        annotations={annotations}
+      />
     );
 
     // @todo AnnotatedProvider doesnt work 100% of the time... A different solution must be found
@@ -508,10 +514,10 @@ export function Proposal(props: {
     );
   } catch (e: unknown) {
     return (
-      <>
+      <div className={props.className}>
         <div className="text-lg">Invalid SDL</div>
         <div>{e instanceof Error ? e.message : String(e)}</div>
-      </>
+      </div>
     );
   }
 }

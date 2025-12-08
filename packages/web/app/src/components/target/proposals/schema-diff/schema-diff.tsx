@@ -10,6 +10,7 @@ export function SchemaDiff({
   after,
   annotations = () => null,
   // annotatedCoordinates = [],
+  className,
 }: {
   before: GraphQLSchema | null;
   after: GraphQLSchema | null;
@@ -21,6 +22,7 @@ export function SchemaDiff({
    * has been removed.
    */
   // annotatedCoordinates?: string[];
+  className?: string;
 }): JSX.Element {
   const {
     added: addedTypes,
@@ -49,7 +51,7 @@ export function SchemaDiff({
   }, [before, after]);
 
   return (
-    <ChangeDocument>
+    <ChangeDocument className={className}>
       {removedDirectives.map(d => (
         <DiffDirective
           key={d.name}
