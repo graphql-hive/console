@@ -18,7 +18,7 @@ enables you to add new capabilities or modify existing ones to better suit your 
 
 ### Development Setup
 
-## Create a new Rust project
+#### Create a new Rust project
 
 First, ensure you have the necessary development environment set up for
 [Rust 1.91.1 or later](https://rust-lang.org/tools/install/). Then, you need to create a new Rust
@@ -53,7 +53,7 @@ supergraph:
 Or you can use other ways to provide the supergraph, see
 [Supergraph Sources](https://the-guild.dev/graphql/hive/docs/router/supergraph).
 
-## Create an entrypoint for your custom router
+#### Create an entrypoint for your custom router
 
 Next, you need to create an entrypoint for your custom router. This is where you'll initialize the
 router and register your plugins. Create a new file `src/main.rs` and add the following code:
@@ -77,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Run your custom router
+#### Run your custom router
 
 Finally, you can build and run your custom router using Cargo:
 
@@ -85,7 +85,7 @@ Finally, you can build and run your custom router using Cargo:
 cargo run
 ```
 
-## Configure your plugins in `router.config.yaml`
+#### Configure your plugins in `router.config.yaml`
 
 `plugins` section in your `router.config.yaml` allows you to configure your custom plugins. Here is
 an example configuration:
@@ -97,7 +97,7 @@ plugins:
     option2: value2
 ```
 
-### Designing the Plugin
+### Implementation of Plugins
 
 During this phase of development, you need to learn more about the Hive Router plugin system and how
 the hooks are structured.
@@ -353,7 +353,12 @@ You can check the following example implementations;
   the subgraph HTTP request, and replaces the default JSON-based HTTP transport with
   `multipart/form-data` when needed.
 
-#### Short Circuit Responses
+#### Use Cases for Plugin Implementation
+
+Those hooks provide a lot of flexibility to implement various kinds of plugins. Here are some
+example use cases and how you can implement them using the hooks mentioned above.
+
+##### Short Circuit Responses
 
 In many of the hooks mentioned above, you have the ability to short-circuit the request processing
 by providing a custom response.
@@ -412,7 +417,7 @@ impl RouterPlugin for ForbidAnonymousOperationsPlugin {
 Here we use `end_response` method on the `OnGraphQLParamsEndHookPayload` to provide a custom HTTP
 response. Then the router will skip all further processing and return this response to the client.
 
-#### Overriding Default Behavior
+##### Overriding Default Behavior
 
 Instead of short-circuiting the entire HTTP request, and returning an early HTTP response, you might
 want to override default behavior in certain stages.
@@ -523,7 +528,7 @@ impl RouterPlugin for APQPlugin {
 }
 ```
 
-#### Context Data Sharing
+##### Context Data Sharing
 
 Sometimes, you might want to share data between different hooks or stages of the request processing.
 Hive Router provides a way to store and retrieve custom data in the request context, allowing you to
@@ -602,7 +607,7 @@ retrieve data of type `T` in the request context.
 - `get_mut<T>(&mut self) -> Option<&mut T>` - Retrieves a mutable reference to the data of type `T`
   from the context.
 
-#### Configuration of Plugins
+##### Configuration of Plugins
 
 Plugins can be configured via the `router.config.yaml` file. Each plugin can have its own entry
 under `plugins` section, where you can specify various options and settings specific to that plugin.
@@ -760,7 +765,7 @@ plugins:
     header: 'x-client-id'
 ```
 
-#### Registration of Plugins
+##### Registration of Plugins
 
 Finally, to use your custom plugin, you need to register it with the `PluginRegistry` in your
 `main.rs` file.
