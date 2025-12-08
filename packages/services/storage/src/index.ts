@@ -609,8 +609,20 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        let internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
-
+        const users = await t.any<unknown>(sql`/* ensureUserExists */
+          SELECT
+            ${userFields(sql`"users".`, sql`"stu".`)}
+          FROM
+            "users"
+          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+            ON ("stu"."user_id" = "users"."supertoken_user_id")
+          WHERE
+            "users"."email" = ${email};
+        `);
+        let internalUser = users.length > 0 ? UserModel.parse(users[0]) : null;
+        if (!internalUser) {
+          internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
+        }
         if (!internalUser) {
           internalUser = await shared.createUser(
             buildUserData({
@@ -636,7 +648,10 @@ export async function createStorage(
           );
         }
 
-        return action;
+        return {
+          user: internalUser,
+          action,
+        };
       });
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
