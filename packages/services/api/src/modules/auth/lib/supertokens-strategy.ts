@@ -63,7 +63,12 @@ export class SuperTokensCookieBasedSession extends Session {
       user.id,
       organizationId,
     );
-    const organization = await this.storage.getOrganization({ organizationId });
+    const [organization, oidcIntegration] = await Promise.all([
+      this.storage.getOrganization({ organizationId }),
+      this.storage.getOIDCIntegrationForOrganization({
+        organizationId,
+      }),
+    ]);
     const organizationMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
       userId: user.id,
@@ -106,6 +111,10 @@ export class SuperTokensCookieBasedSession extends Session {
           resource: `hrn:${organizationId}:organization/${organizationId}`,
         },
       ];
+    }
+
+    if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
+      return [];
     }
 
     this.logger.debug(
