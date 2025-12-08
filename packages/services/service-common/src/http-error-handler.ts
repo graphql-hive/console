@@ -11,7 +11,11 @@ const plugin: FastifyPluginAsync<{ isSentryEnabled: boolean }> = async (server, 
   server.setErrorHandler((err, req, reply) => {
     if (err.statusCode && err.statusCode < 500) {
       req.log.warn(err.message);
-      void reply.status(err.statusCode).send(err.message);
+      void reply.status(err.statusCode).send({
+        error: err.statusCode,
+        message: err.message,
+        requestId: req.id,
+      });
       return;
     }
 
@@ -20,6 +24,7 @@ const plugin: FastifyPluginAsync<{ isSentryEnabled: boolean }> = async (server, 
       void reply.status(500).send({
         error: 500,
         message: 'Internal Server Error',
+        requestId: req.id,
       });
     }
 
