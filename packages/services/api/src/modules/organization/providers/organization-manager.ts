@@ -299,19 +299,10 @@ export class OrganizationManager {
     user: {
       id: string;
       superTokensUserId: string | null;
-      oidcIntegrationId: string | null;
     };
   }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
-
-    if (user.oidcIntegrationId) {
-      this.logger.debug(
-        'Failed to create organization as oidc user is not allowed to do so (input=%o)',
-        input,
-      );
-      throw new HiveError('Cannot create organization with OIDC user.');
-    }
 
     const result = await this.storage.createOrganization({
       slug,
@@ -656,13 +647,9 @@ export class OrganizationManager {
   async joinOrganization({ code }: { code: string }): Promise<Organization | { message: string }> {
     this.logger.info('Joining an organization (code=%s)', code);
 
-    const user = await this.session.getViewer();
-    const isOIDCUser = user.oidcIntegrationId !== null;
-
-    if (isOIDCUser) {
-      return {
-        message: `You cannot join an organization with an OIDC account.`,
-      };
+    const actor = await this.session.getActor();
+    if (actor.type !== 'user') {
+      throw new Error('Only users can join organizations');
     }
 
     const organization = await this.getOrganizationByInviteCode({
@@ -678,9 +665,10 @@ export class OrganizationManager {
         organizationId: organization.id,
       });
 
-      if (oidcIntegration?.oidcUserAccessOnly && !isOIDCUser) {
+      if (oidcIntegration?.oidcUserAccessOnly && actor.oidcIntegrationId !== oidcIntegration.id) {
         return {
-          message: 'Non-OIDC users are not allowed to join this organization.',
+          message:
+            'The user is not authorized through the OIDC integration required for the organization',
         };
       }
     }
@@ -689,7 +677,7 @@ export class OrganizationManager {
 
     await this.storage.addOrganizationMemberViaInvitationCode({
       code,
-      userId: user.id,
+      userId: actor.user.id,
       organizationId: organization.id,
     });
 
@@ -705,7 +693,7 @@ export class OrganizationManager {
         eventType: 'USER_JOINED',
         organizationId: organization.id,
         metadata: {
-          inviteeEmail: user.email,
+          inviteeEmail: actor.user.email,
         },
       }),
     ]);
