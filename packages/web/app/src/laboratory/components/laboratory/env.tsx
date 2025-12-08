@@ -12,8 +12,16 @@ export const Env = () => {
           .join('\n')}
         onChange={value => {
           setEnv({
-            variables:
-              Object.fromEntries(value?.split('\n').map(line => line.split('=')) ?? []) ?? {},
+            variables: Object.fromEntries(
+              value
+                ?.split('\n')
+                .filter(line => line.trim() && !line.trim().startsWith('#'))
+                .map(line => {
+                  const parts = line.split(/=(.*)/s);
+
+                  return [parts[0].trim(), (parts[1] ?? '').trim()];
+                }) ?? [],
+            ),
           });
         }}
         language="dotenv"

@@ -376,7 +376,7 @@ export const BuilderObjectField = (props: {
                   >
                     <ChevronDownIcon
                       className={cn('text-muted-foreground size-4 transition-all', {
-                        // "-rotate-90": !isOpen,
+                        '-rotate-90': !isOpen,
                       })}
                     />
                     <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
@@ -424,7 +424,7 @@ export const BuilderField = (props: {
 }) => {
   const { schema } = useLaboratory();
 
-  const type = schema?.getType(props.field.type.toString().replaceAll(/\[|\]|!/g, ''));
+  const type = schema?.getType(props.field.type.toString().replace(/\[|\]|!/g, ''));
 
   if (
     !type ||
