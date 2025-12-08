@@ -1,5 +1,4 @@
 import { Session } from '../../../auth/lib/authz';
-import { OIDCIntegrationsProvider } from '../../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OrganizationManager } from '../../providers/organization-manager';
 import type { QueryResolvers } from './../../../../__generated__/types';
@@ -11,27 +10,6 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
 ) => {
   const user = await injector.get(Session).getViewer();
   const organizationManager = injector.get(OrganizationManager);
-
-  // For an OIDC Integration User we want to return the linked organization
-  if (user?.oidcIntegrationId) {
-    const oidcIntegration = await injector.get(OIDCIntegrationsProvider).getOIDCIntegrationById({
-      oidcIntegrationId: user.oidcIntegrationId,
-    });
-    if (oidcIntegration.type === 'ok') {
-      const org = await organizationManager.getOrganization({
-        organizationId: oidcIntegration.organizationId,
-      });
-
-      return {
-        selector: {
-          organizationSlug: org.slug,
-        },
-        organization: org,
-      };
-    }
-
-    return null;
-  }
 
   // This is the organization that got stored as an cookie
   // We make sure it actually exists before directing to it.

@@ -167,17 +167,27 @@ export const backendConfig = (requirements: {
                 );
               }
 
-              input.accessTokenPayload = {
+              let payload = {
                 version: '1',
                 superTokensUserId: input.userId,
                 email: user.emails[0],
+                userId: undefined as string | undefined,
+                oidcIntegrationId: undefined as string | null | undefined,
               };
+              try {
+                const internalUser = await internalApi.ensureUser({
+                  superTokensUserId: user.id,
+                  email: user.emails[0],
+                  oidcIntegrationId: input.userContext['oidcId'] ?? null,
+                  firstName: null,
+                  lastName: null,
+                });
+                payload.userId = internalUser.user.id;
+                payload.oidcIntegrationId = input.userContext['oidcId'] ?? null;
+              } catch {}
 
-              input.sessionDataInDatabase = {
-                version: '1',
-                superTokensUserId: input.userId,
-                email: user.emails[0],
-              };
+              input.accessTokenPayload = structuredClone(payload);
+              input.sessionDataInDatabase = structuredClone(payload);
 
               return originalImplementation.createNewSession(input);
             },

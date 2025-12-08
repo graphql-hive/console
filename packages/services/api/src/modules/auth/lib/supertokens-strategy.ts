@@ -12,15 +12,24 @@ import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from 
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
+  public userId: string | undefined;
+  public oidcIntegrationId: string | null | undefined;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
 
   constructor(
-    args: { superTokensUserId: string; email: string },
+    args: {
+      superTokensUserId: string;
+      userId: string | undefined;
+      oidcIntegrationId: string | null | undefined;
+      email: string;
+    },
     deps: { organizationMembers: OrganizationMembers; storage: Storage; logger: Logger },
   ) {
     super({ logger: deps.logger });
     this.superTokensUserId = args.superTokensUserId;
+    this.userId = args.userId;
+    this.oidcIntegrationId = args.oidcIntegrationId;
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
   }
@@ -110,9 +119,9 @@ export class SuperTokensCookieBasedSession extends Session {
   }
 
   public async getActor(): Promise<UserActor> {
-    const user = await this.storage.getUserBySuperTokenId({
-      superTokensUserId: this.superTokensUserId,
-    });
+    const user = this.userId
+      ? await this.storage.getUserById({ id: this.userId })
+      : await this.storage.getUserBySuperTokenId({ superTokensUserId: this.superTokensUserId });
 
     if (!user) {
       throw new AccessError('User not found');
@@ -121,6 +130,7 @@ export class SuperTokensCookieBasedSession extends Session {
     return {
       type: 'user',
       user,
+      oidcIntegrationId: this.oidcIntegrationId ?? null,
     };
   }
 
@@ -245,6 +255,8 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     return new SuperTokensCookieBasedSession(
       {
         superTokensUserId: session.superTokensUserId,
+        userId: session.userId,
+        oidcIntegrationId: session.oidcIntegrationId,
         email: session.email,
       },
       {
@@ -259,5 +271,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
 const SuperTokenAccessTokenModel = zod.object({
   version: zod.literal('1'),
   superTokensUserId: zod.string(),
+  userId: zod.string().optional(),
+  oidcIntegrationId: zod.string().nullable().optional(),
   email: zod.string(),
 });
