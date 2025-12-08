@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
+import { sendWebhook } from '../lib/webhooks/schema-change-notification.js';
 
 export const SchemaChangeNotificationTask = defineTask({
   name: 'schemaChangeNotification',
@@ -35,4 +36,6 @@ export const SchemaChangeNotificationTask = defineTask({
   }),
 });
 
-export const task = implementTask(SchemaChangeNotificationTask, async args => {});
+export const task = implementTask(SchemaChangeNotificationTask, async args => {
+  await sendWebhook({});
+});
