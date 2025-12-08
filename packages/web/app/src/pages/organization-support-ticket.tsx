@@ -3,7 +3,6 @@ import { ChevronRightIcon, UserIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { priorityDescription, statusDescription } from '@/components/organization/support';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
@@ -303,11 +302,7 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
   const ticket = currentOrganization?.supportTicket;
 
   return (
-    <OrganizationLayout
-      page={Page.Support}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
+    <>
       {currentOrganization ? (
         ticket ? (
           <SupportTicket organization={currentOrganization} ticket={ticket} refetch={refetch} />
@@ -320,7 +315,7 @@ function SupportTicketPageContent(props: { ticketId: string; organizationSlug: s
           </div>
         )
       ) : null}
-    </OrganizationLayout>
+    </>
   );
 }
 
