@@ -340,6 +340,49 @@ hive app:retire \
   production deployment to avoid accidentally retiring active versions.
 </Callout>
 
+## Schema Checks and Affected App Deployments
+
+When you run a schema check that detects breaking changes, Hive automatically identifies which active
+app deployments would be affected by those changes. This helps you understand the real-world impact
+of schema changes before deploying them.
+
+### How It Works
+
+During a schema check, Hive analyzes the breaking changes and matches them against the persisted
+documents in your active app deployments. Hive identifies all app deployments that have operations
+using any of the affected schema coordinates (e.g., fields like `Query.hello` that are being removed).
+
+For each affected app deployment, you'll see:
+
+- **The deployment** name and version
+- **Which specific operations** within that deployment use the affected schema coordinates
+
+This information is displayed alongside the breaking changes in the schema check results, helping
+you understand the collective impact across all your active app deployments.
+
+### Example
+
+If you have a breaking change that removes the `Query.users` field, and you have an active app
+deployment `mobile-app@2.1.0` with operations that query `Query.users`, the schema check will show:
+
+- The breaking change: "Field 'users' was removed from object type 'Query'"
+- Affected app deployment: `mobile-app` version `2.1.0`
+- Affected operations: The specific operation names and hashes that use this field
+
+### Benefits
+
+- **Impact assessment**: Understand which client applications would break before deploying schema
+  changes
+- **Coordination**: Know which teams need to update their apps before a breaking change can be
+  safely deployed
+- **Risk mitigation**: Make informed decisions about whether to proceed with breaking changes or
+  find alternative approaches
+
+<Callout type="info">
+  Only **active** app deployments (published and not retired) are checked for affected operations.
+  Pending and retired deployments are not included in this analysis.
+</Callout>
+
 ## Persisted Documents on GraphQL Server and Gateway
 
 Persisted documents can be used on your GraphQL server or Gateway to reduce the payload size of your
