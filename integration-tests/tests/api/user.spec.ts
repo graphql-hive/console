@@ -19,7 +19,7 @@ const UpdateMeMutation = graphql(`
   }
 `);
 
-test('can full name and display name', async () => {
+test('can update full name and display name', async () => {
   const { ownerToken } = await initSeed().createOwner();
 
   const result = await execute({
