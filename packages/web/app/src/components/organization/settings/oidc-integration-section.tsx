@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { useFormik } from 'formik';
 import { useForm } from 'react-hook-form';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { useClient, useMutation } from 'urql';
+import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { z } from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -76,6 +76,14 @@ function FormError({ children }: { children: React.ReactNode }) {
   return <div className="text-sm text-red-500">{children}</div>;
 }
 
+const OrganizationSettingsOIDCIntegrationSectionQuery = graphql(`
+  query OrganizationSettingsOIDCIntegrationSectionQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...OIDCIntegrationSection_OrganizationFragment
+    }
+  }
+`);
+
 const OIDCIntegrationSection_OrganizationFragment = graphql(`
   fragment OIDCIntegrationSection_OrganizationFragment on Organization {
     id
@@ -112,12 +120,14 @@ function extractDomain(rawUrl: string) {
   return url.host;
 }
 
-export function OIDCIntegrationSection(props: {
-  organization: FragmentType<typeof OIDCIntegrationSection_OrganizationFragment>;
-}): ReactElement {
+export function OIDCIntegrationSection(props: { organizationSlug: string }): ReactElement {
   const router = useRouter();
-  const organization = useFragment(OIDCIntegrationSection_OrganizationFragment, props.organization);
-  const isAdmin = organization.me.role.name === 'Admin';
+  const [query] = useQuery({
+    query: OrganizationSettingsOIDCIntegrationSectionQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+    },
+  });
 
   const hash = router.latestLocation.hash;
   const openCreateModalHash = 'create-oidc-integration';
@@ -134,6 +144,14 @@ export function OIDCIntegrationSection(props: {
       hash: undefined,
     });
   };
+
+  const organization = useFragment(
+    OIDCIntegrationSection_OrganizationFragment,
+    query.data?.organization,
+  );
+  if (!organization) return <Spinner />;
+
+  const isAdmin = organization.me.role.name === 'Admin';
 
   return (
     <>

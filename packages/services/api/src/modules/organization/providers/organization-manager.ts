@@ -103,17 +103,13 @@ export class OrganizationManager {
       return null;
     }
 
-    const canAccess = await this.session.canPerformAction({
+    await this.session.assertPerformAction({
       action: 'organization:describe',
       organizationId: organization.id,
       params: {
         organizationId: organization.id,
       },
     });
-
-    if (canAccess === false) {
-      return null;
-    }
 
     return organization;
   }

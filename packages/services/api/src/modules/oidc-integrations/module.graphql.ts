@@ -19,6 +19,7 @@ export default gql`
     authorizationEndpoint: String!
     additionalScopes: [String!]!
     oidcUserAccessOnly: Boolean!
+    activeWithCurrentSession: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
   }
