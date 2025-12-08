@@ -3179,3 +3179,288 @@ test('breaking changes show only deployments affected by their specific coordina
     'app-b-world-hash',
   );
 });
+
+test('retired app deployments are excluded from affected deployments', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Publish schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForRetiredTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'retired-app-hash',
+            body: 'query GetHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Retire the app deployment
+  await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Schema check that removes hello field - retired deployment should NOT appear
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForRetiredTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      return true;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Retired deployment should NOT appear in affected deployments
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.affectedAppDeployments).toBeNull();
+});
+
+test('pending (non-activated) app deployments are excluded from affected deployments', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Publish schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForPendingTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create app deployment but DO NOT activate it
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'pending-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'pending-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'pending-app-hash',
+            body: 'query GetHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Note: NOT activating the deployment
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Schema check that removes hello field - pending deployment should NOT appear
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForPendingTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      return true;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Pending (non-activated) deployment should NOT appear in affected deployments
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.affectedAppDeployments).toBeNull();
+});
