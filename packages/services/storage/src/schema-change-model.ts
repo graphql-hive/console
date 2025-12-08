@@ -1299,6 +1299,24 @@ export const HiveSchemaChangeModel = z
         .nullable()
         .optional()
         .transform(value => value ?? null),
+      /** App deployments affected by this breaking change */
+      affectedAppDeployments: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            version: z.string(),
+            affectedOperations: z.array(
+              z.object({
+                hash: z.string(),
+                name: z.string().nullable(),
+              }),
+            ),
+          }),
+        )
+        .nullable()
+        .optional()
+        .transform(value => value ?? null),
     }),
   )
   // We inflate the schema check when reading it from the database
@@ -1323,6 +1341,12 @@ export const HiveSchemaChangeModel = z
         topAffectedOperations: { hash: string; name: string; count: number }[];
         topAffectedClients: { name: string; count: number }[];
       } | null;
+      affectedAppDeployments: {
+        id: string;
+        name: string;
+        version: string;
+        affectedOperations: { hash: string; name: string | null }[];
+      }[] | null;
       readonly breakingChangeSchemaCoordinate: string | null;
     } => {
       const change = schemaChangeFromSerializableChange(rawChange as any);
@@ -1358,6 +1382,7 @@ export const HiveSchemaChangeModel = z
           false,
         reason: change.criticality.reason ?? null,
         usageStatistics: rawChange.usageStatistics ?? null,
+        affectedAppDeployments: rawChange.affectedAppDeployments ?? null,
         breakingChangeSchemaCoordinate,
       };
     },

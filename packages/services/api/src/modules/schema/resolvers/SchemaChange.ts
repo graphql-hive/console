@@ -33,4 +33,18 @@ export const SchemaChange: SchemaChangeResolvers = {
     injector.get(BreakingSchemaChangeUsageHelper).getUsageDataForBreakingSchemaChange(change),
   severityLevel: change => severityMap[change.criticality],
   severityReason: change => change.reason,
+  affectedAppDeployments: change => {
+    if (!change.affectedAppDeployments?.length) {
+      return null;
+    }
+    return change.affectedAppDeployments.map(d => ({
+      id: d.id,
+      name: d.name,
+      version: d.version,
+      affectedOperations: d.affectedOperations.map(op => ({
+        hash: op.hash,
+        name: op.name,
+      })),
+    }));
+  },
 };
