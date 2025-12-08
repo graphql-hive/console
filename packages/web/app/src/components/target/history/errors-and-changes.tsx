@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-import { CheckIcon } from 'lucide-react';
+import { BoxIcon, CheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import {
@@ -93,6 +93,15 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
         name
         countFormatted
         percentageFormatted
+      }
+    }
+    affectedAppDeployments {
+      id
+      name
+      version
+      affectedOperations {
+        hash
+        name
       }
     }
   }
@@ -238,6 +247,18 @@ function ChangeItem(
                     </span>
                   </span>
                 )}
+                {'affectedAppDeployments' in change && change.affectedAppDeployments?.length ? (
+                  <span className="flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 font-bold">
+                    <BoxIcon className="h-4 stroke-[1px]" />
+                    <span className="text-xs">
+                      {change.affectedAppDeployments.length}{' '}
+                      {change.affectedAppDeployments.length === 1
+                        ? 'app deployment'
+                        : 'app deployments'}{' '}
+                      affected
+                    </span>
+                  </span>
+                ) : null}
                 {change.approval ? (
                   <div className="self-end">
                     <ApprovedByBadge approval={change.approval} />
@@ -376,6 +397,133 @@ function ChangeItem(
                   </span>
                 )}
               </div>
+              {'affectedAppDeployments' in change && change.affectedAppDeployments?.length ? (
+                <div className="mt-6">
+                  <h4 className="mb-2 text-sm font-medium text-white">Affected App Deployments</h4>
+                  <Table>
+                    <TableCaption>
+                      Active app deployments that have operations using this schema coordinate.
+                    </TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">App Name</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead className="text-right">Affected Operations</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {change.affectedAppDeployments.map(deployment => (
+                        <TableRow key={deployment.id}>
+                          <TableCell className="font-medium">
+                            <Link
+                              to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                appName: deployment.name,
+                                appVersion: deployment.version,
+                              }}
+                              className="text-orange-500 hover:text-orange-500 hover:underline"
+                            >
+                              {deployment.name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>{deployment.version}</TableCell>
+                          <TableCell className="text-right">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="link" className="h-auto p-0 text-orange-500">
+                                  {deployment.affectedOperations.length}{' '}
+                                  {deployment.affectedOperations.length === 1
+                                    ? 'operation'
+                                    : 'operations'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent side="left" className="w-80">
+                                <div className="space-y-2">
+                                  <h5 className="font-medium text-white">Affected Operations</h5>
+                                  <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+                                    {deployment.affectedOperations.map(op => (
+                                      <li key={op.hash} className="text-gray-300">
+                                        {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <PopoverArrow />
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : null}
+            </div>
+          ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.length ? (
+            <div>
+              <h4 className="mb-2 text-sm font-medium text-white">Affected App Deployments</h4>
+              <Table>
+                <TableCaption>
+                  Active app deployments that have operations using this schema coordinate.
+                </TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">App Name</TableHead>
+                    <TableHead>Version</TableHead>
+                    <TableHead className="text-right">Affected Operations</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {change.affectedAppDeployments.map(deployment => (
+                    <TableRow key={deployment.id}>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                            appName: deployment.name,
+                            appVersion: deployment.version,
+                          }}
+                          className="text-orange-500 hover:text-orange-500 hover:underline"
+                        >
+                          {deployment.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{deployment.version}</TableCell>
+                      <TableCell className="text-right">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="link" className="h-auto p-0 text-orange-500">
+                              {deployment.affectedOperations.length}{' '}
+                              {deployment.affectedOperations.length === 1
+                                ? 'operation'
+                                : 'operations'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent side="left" className="w-80">
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-white">Affected Operations</h5>
+                              <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+                                {deployment.affectedOperations.map(op => (
+                                  <li key={op.hash} className="text-gray-300">
+                                    {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <PopoverArrow />
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : change.severityLevel === SeverityLevelType.Breaking ? (
             <>{change.severityReason ?? 'No details available for this breaking change.'}</>
