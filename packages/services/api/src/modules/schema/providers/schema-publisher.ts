@@ -307,49 +307,53 @@ export class SchemaPublisher {
       schemaCoordinates.size,
     );
 
-    // Query for affected app deployments
-    const affectedDeployments =
-      await this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
-        targetId: args.targetId,
-        schemaCoordinates: Array.from(schemaCoordinates),
-      });
+    try {
+      // Query for affected app deployments
+      const affectedDeployments =
+        await this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+          targetId: args.targetId,
+          schemaCoordinates: Array.from(schemaCoordinates),
+        });
 
-    if (affectedDeployments.length === 0) {
-      this.logger.debug('No app deployments affected by breaking changes');
-      return;
-    }
-
-    this.logger.debug(
-      '%d app deployments affected by breaking changes',
-      affectedDeployments.length,
-    );
-
-    // Create a map from schema coordinate to affected deployments
-    // Note: Each deployment may have operations using multiple coordinates
-    // We need to check each operation's coordinates to match with breaking changes
-    // For simplicity, we'll query all coordinates and map them
-
-    // Group affected deployments by which schema coordinates they use
-    // For now, we'll attach all affected deployments to all breaking changes
-    // since the operation-level filtering is already done in the query
-    const affectedAppDeploymentsData = affectedDeployments.map(d => ({
-      id: d.appDeployment.id,
-      name: d.appDeployment.name,
-      version: d.appDeployment.version,
-      affectedOperations: d.affectedOperations,
-    }));
-
-    // Attach affected app deployments to each breaking change
-    for (const change of args.breakingChanges) {
-      const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
-      if (coordinate) {
-        // Filter to only include deployments that have operations using this specific coordinate
-        // For efficiency, we already queried with all coordinates, so all returned deployments
-        // are affected by at least one of the breaking changes
-        (
-          change as { affectedAppDeployments: typeof affectedAppDeploymentsData }
-        ).affectedAppDeployments = affectedAppDeploymentsData;
+      if (affectedDeployments.length === 0) {
+        this.logger.debug('No app deployments affected by breaking changes');
+        return;
       }
+
+      this.logger.debug(
+        '%d app deployments affected by breaking changes',
+        affectedDeployments.length,
+      );
+
+      // Attach affected app deployments to each breaking change
+      // Only include deployments that have operations using that specific coordinate
+      for (const change of args.breakingChanges) {
+        const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+        if (coordinate) {
+          // Filter to only include deployments that have operations for this specific coordinate
+          const deploymentsForCoordinate = affectedDeployments
+            .filter(d => d.affectedOperationsByCoordinate[coordinate]?.length > 0)
+            .map(d => ({
+              id: d.appDeployment.id,
+              name: d.appDeployment.name,
+              version: d.appDeployment.version,
+              affectedOperations: d.affectedOperationsByCoordinate[coordinate],
+            }));
+
+          if (deploymentsForCoordinate.length > 0) {
+            (
+              change as { affectedAppDeployments: typeof deploymentsForCoordinate }
+            ).affectedAppDeployments = deploymentsForCoordinate;
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        'Failed to fetch affected app deployments for breaking changes (targetId=%s, coordinateCount=%d): %s',
+        args.targetId,
+        schemaCoordinates.size,
+        error instanceof Error ? error.message : String(error),
+      );
     }
   }
 

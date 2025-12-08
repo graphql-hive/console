@@ -2957,3 +2957,225 @@ test('schema check shows affected app deployments for breaking changes', async (
   expect(affectedDeployment?.affectedOperations[0].hash).toBe('hello-query-hash');
   expect(affectedDeployment?.affectedOperations[0].name).toBe('GetHello');
 });
+
+test('breaking changes show only deployments affected by their specific coordinate', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const publishResult = await execute({
+    document: graphql(`
+      mutation PublishSchemaForCoordinateTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+          ... on SchemaPublishSuccess {
+            valid
+          }
+          ... on SchemaPublishError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+            world: String
+            foo: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-a',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-a',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'app-a-hello-hash',
+            body: 'query AppAHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-a',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-b',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-b',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'app-b-world-hash',
+            body: 'query AppBWorld { world }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-b',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForCoordinateTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                foo: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+      // Check if both breaking changes have affectedAppDeployments
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      const worldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('world'),
+      );
+      return !!(
+        (helloRemoval?.node.affectedAppDeployments?.length ?? 0) &&
+        (worldRemoval?.node.affectedAppDeployments?.length ?? 0)
+      );
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBe(2);
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+  const worldRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('world'),
+  );
+
+  // Verify hello removal only shows App A (not App B)
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.[0].name).toBe('app-a');
+  expect(helloRemoval?.node.affectedAppDeployments?.[0].affectedOperations.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.[0].affectedOperations[0].hash).toBe(
+    'app-a-hello-hash',
+  );
+
+  // Verify world removal only shows App B (not App A)
+  expect(worldRemoval).toBeDefined();
+  expect(worldRemoval?.node.affectedAppDeployments?.length).toBe(1);
+  expect(worldRemoval?.node.affectedAppDeployments?.[0].name).toBe('app-b');
+  expect(worldRemoval?.node.affectedAppDeployments?.[0].affectedOperations.length).toBe(1);
+  expect(worldRemoval?.node.affectedAppDeployments?.[0].affectedOperations[0].hash).toBe(
+    'app-b-world-hash',
+  );
+});
