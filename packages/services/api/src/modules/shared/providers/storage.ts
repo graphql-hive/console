@@ -430,7 +430,7 @@ export interface Storage {
       }>;
     }>
   >;
-  getVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | never>;
+  getMaybeVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | null>;
   deleteSchema(
     _: {
       serviceName: string;

@@ -1,0 +1,5 @@
+type: statsviz
+status:
+  class: extension
+  stability:
+    development: [extension]

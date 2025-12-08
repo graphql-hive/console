@@ -8,6 +8,7 @@ import {
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, Project } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
+import { APP_DEPLOYMENTS_ENABLED } from '../../app-deployments/providers/app-deployments-enabled-token';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import {
   getPermissionGroup,
@@ -22,6 +23,7 @@ import {
   resourceLevelToHumanReadableName,
   resourceLevelToResourceLevelType,
 } from '../../auth/resolvers/Permission';
+import { OTEL_TRACING_ENABLED } from '../../operations/providers/traces';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -152,6 +154,8 @@ export class OrganizationAccessTokens {
     private storage: Storage,
     private members: OrganizationMembers,
     logger: Logger,
+    @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
+    @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
   ) {
     this.logger = logger.child({
       source: 'OrganizationAccessTokens',
@@ -889,11 +893,12 @@ export class OrganizationAccessTokens {
   }
 
   private createFeatureFlagPermissionFilter(organization: Organization) {
-    const isAppDeplymentsEnabled = organization.featureFlags.appDeployments;
-    const isOTELTracingEnabled = organization.featureFlags.otelTracing;
+    const isAppDeploymentsEnabled =
+      organization.featureFlags.appDeployments || this.appDeploymentsEnabled;
+    const isOTELTracingEnabled = organization.featureFlags.otelTracing || this.otelTracingEnabled;
 
     return (id: Permission) =>
-      (!isAppDeplymentsEnabled && id.startsWith('appDeployment:')) ||
+      (!isAppDeploymentsEnabled && id.startsWith('appDeployment:')) ||
       (!isOTELTracingEnabled && id.startsWith('traces:'))
         ? false
         : true;

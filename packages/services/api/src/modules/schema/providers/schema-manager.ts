@@ -322,9 +322,21 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersion(selector: TargetSelector & { versionId: string }) {
+  async getSchemaVersion(
+    selector: TargetSelector & { versionId: string },
+  ): Promise<SchemaVersion | null> {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
-    const result = await this.storage.getVersion(selector);
+
+    if (isUUID(selector.versionId) === false) {
+      this.logger.debug('Invalid UUID provided. (versionId=%s)', selector.versionId);
+      return null;
+    }
+
+    const result = await this.storage.getMaybeVersion(selector);
+
+    if (!result) {
+      return null;
+    }
 
     return {
       projectId: selector.projectId,

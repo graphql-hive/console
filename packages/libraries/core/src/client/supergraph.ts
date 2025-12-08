@@ -1,17 +1,24 @@
+import { Logger } from '@graphql-hive/logger';
 import { version } from '../version.js';
 import { http } from './http-client.js';
-import type { Logger } from './types.js';
+import type { LegacyLogger } from './types.js';
 import { createHash, joinUrl } from './utils.js';
 
+/**
+ * @deprecated Please use {createCDNArtifactFetcher} instead of createSupergraphSDLFetcher.
+ */
 export interface SupergraphSDLFetcherOptions {
   endpoint: string;
   key: string;
-  logger?: Logger;
+  logger?: LegacyLogger | Logger;
   fetchImplementation?: typeof fetch;
   name?: string;
   version?: string;
 }
 
+/**
+ * @deprecated Please use {createCDNArtifactFetcher} instead.
+ */
 export function createSupergraphSDLFetcher(options: SupergraphSDLFetcherOptions) {
   let cacheETag: string | null = null;
   let cached: {

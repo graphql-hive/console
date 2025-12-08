@@ -1,34 +1,14 @@
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
+import {
+  CircuitBreakerConfiguration,
+  defaultCircuitBreakerConfiguration,
+} from './circuit-breaker.js';
 import { http } from './http-client.js';
-import type { Logger } from './types.js';
-import { createHiveLogger } from './utils.js';
+import type { LegacyLogger } from './types.js';
+import { chooseLogger } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
-
-export type AgentCircuitBreakerConfiguration = {
-  /**
-   * Percentage after what the circuit breaker should kick in.
-   * Default: 50
-   */
-  errorThresholdPercentage: number;
-  /**
-   * Count of requests before starting evaluating.
-   * Default: 5
-   */
-  volumeThreshold: number;
-  /**
-   * After what time the circuit breaker is attempting to retry sending requests in milliseconds
-   * Default: 30_000
-   */
-  resetTimeout: number;
-};
-
-const defaultCircuitBreakerConfiguration: AgentCircuitBreakerConfiguration = {
-  errorThresholdPercentage: 50,
-  volumeThreshold: 10,
-  resetTimeout: 30_000,
-};
 
 export interface AgentOptions {
   enabled?: boolean;
@@ -55,10 +35,6 @@ export interface AgentOptions {
    */
   maxRetries?: number;
   /**
-   * 200 by default
-   */
-  minTimeout?: number;
-  /**
    * Send reports in interval (defaults to 10_000ms)
    */
   sendInterval?: number;
@@ -67,21 +43,27 @@ export interface AgentOptions {
    */
   maxSize?: number;
   /**
-   * Custom logger (defaults to console)
+   * Custom logger.
+   *
+   * Default: console based logger
+   *
+   * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
-  logger?: Logger;
+  logger?: LegacyLogger;
   /**
    * Circuit Breaker Configuration.
    * true -> Use default configuration
    * false -> Disable
    * object -> use custom configuration see {AgentCircuitBreakerConfiguration}
    */
-  circuitBreaker?: boolean | AgentCircuitBreakerConfiguration;
+  circuitBreaker?: boolean | CircuitBreakerConfiguration;
   /**
    * WHATWG Compatible fetch implementation
    * used by the agent to send reports
    */
   fetch?: typeof fetch;
+  /** @deprecated This is no longer used. */
+  minTimeout?: number;
 }
 
 export function createAgent<TEvent>(
@@ -101,7 +83,7 @@ export function createAgent<TEvent>(
   },
 ) {
   const options: Required<Omit<AgentOptions, 'fetch' | 'debug' | 'logger' | 'circuitBreaker'>> & {
-    circuitBreaker: AgentCircuitBreakerConfiguration | null;
+    circuitBreaker: CircuitBreakerConfiguration | null;
   } = {
     timeout: 30_000,
     enabled: true,
@@ -119,13 +101,12 @@ export function createAgent<TEvent>(
           ? null
           : pluginOptions.circuitBreaker,
   };
-  const logger = createHiveLogger(pluginOptions.logger ?? console, '[agent]', pluginOptions.debug);
+  const logger = chooseLogger(pluginOptions.logger).child({ module: 'hive-agent' });
 
   let circuitBreaker: CircuitBreakerInterface<
     Parameters<typeof sendHTTPCall>,
     ReturnType<typeof sendHTTPCall>
   >;
-  const breakerLogger = createHiveLogger(logger, '[circuit breaker]');
 
   const enabled = options.enabled !== false;
   let timeoutID: ReturnType<typeof setTimeout> | null = null;
@@ -253,30 +234,32 @@ export function createAgent<TEvent>(
       skipSchedule: true,
       throwOnError: false,
     });
+
+    circuitBreaker.shutdown();
   }
 
   if (options.circuitBreaker) {
-    circuitBreaker = new CircuitBreaker(sendHTTPCall, {
+    const circuitBreakerInstance = new CircuitBreaker(sendHTTPCall, {
       ...options.circuitBreaker,
       timeout: false,
       autoRenewAbortController: true,
     });
+    circuitBreaker = circuitBreakerInstance;
 
-    (circuitBreaker as any).on('open', () =>
-      breakerLogger.error('circuit opened - backend seems unreachable.'),
+    circuitBreakerInstance.on('open', () =>
+      logger.error('circuit opened - backend seems unreachable.'),
     );
-    (circuitBreaker as any).on('halfOpen', () =>
-      breakerLogger.info('circuit half open - testing backend connectivity'),
+    circuitBreakerInstance.on('halfOpen', () =>
+      logger.info('circuit half open - testing backend connectivity'),
     );
-    (circuitBreaker as any).on('close', () =>
-      breakerLogger.info('circuit closed - backend recovered '),
-    );
+    circuitBreakerInstance.on('close', () => logger.info('circuit closed - backend recovered '));
   } else {
     circuitBreaker = {
       getSignal() {
         return undefined;
       },
       fire: sendHTTPCall,
+      shutdown() {},
     };
   }
 
@@ -285,7 +268,7 @@ export function createAgent<TEvent>(
       return await circuitBreaker.fire(...args);
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
-        breakerLogger.info('circuit open - sending report skipped');
+        logger.info('circuit open - sending report skipped');
         return null;
       }
 
@@ -303,4 +286,5 @@ export function createAgent<TEvent>(
 type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
   fire(...args: TI): TR;
   getSignal(): AbortSignal | undefined;
+  shutdown(): void;
 };

@@ -1,5 +1,100 @@
 # @graphql-hive/cli
 
+## 0.56.0
+
+### Minor Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+### Patch Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fixes an issue where schema changes containing
+  escaped single-quoted strings were not handled correctly.
+
+- Updated dependencies
+  [[`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)]:
+  - @graphql-hive/core@0.18.0
+
+## 0.55.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3),
+  [`a6f707b`](https://github.com/graphql-hive/console/commit/a6f707b50d0950198a3121019a6aff5ddf01c5f3)]:
+  - @graphql-hive/core@0.17.0
+
+## 0.55.0
+
+### Minor Changes
+
+- [#7267](https://github.com/graphql-hive/console/pull/7267)
+  [`114cd80`](https://github.com/graphql-hive/console/commit/114cd80a8e419d6ff631631fee28a9922a7b9e5a)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+### Patch Changes
+
+- [#7321](https://github.com/graphql-hive/console/pull/7321)
+  [`316859e`](https://github.com/graphql-hive/console/commit/316859ebcb29108efc30de515276a39a1161d124)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - handle escaped single-quoted strings
+  in schema changes
+
+- Updated dependencies
+  [[`5229612`](https://github.com/graphql-hive/console/commit/5229612d4fd17ed2535ed8d66160758103d2c00f)]:
+  - @graphql-hive/core@0.16.0
+
+## 0.54.0
+
+### Minor Changes
+
+- [#7306](https://github.com/graphql-hive/console/pull/7306)
+  [`29de664`](https://github.com/graphql-hive/console/commit/29de664960f3bcbadd3672645ed7fff5126aa012)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updated federation-composition to
+  v0.21.0
+
+  - **Enhanced auth directive validation**: The federation-composition now enforces correct
+    placement of auth directives (`@authenticated`, `@requiresScopes`, `@policy`) by rejecting
+    attempts to place them on interfaces, interface fields, or interface objects with the new
+    `AUTH_REQUIREMENTS_APPLIED_ON_INTERFACE` validation rule.
+  - **Transitive auth requirements checking**: Added a new validation rule that ensures fields using
+    `@requires` specify at least the auth requirements of the fields they select. If a field doesn't
+    carry forward required auth directives, composition fails with a
+    `MISSING_TRANSITIVE_AUTH_REQUIREMENTS` error.
+  - **Auth requirements inheritance**: Interface types and fields now properly inherit
+    `@authenticated`, `@requiresScopes`, and `@policy` directives from the object types that
+    implement them.
+  - **`@cost` directive restrictions**: The `@cost` directive can no longer be placed on interface
+    types, their fields, or field arguments. Invalid placements now result in composition errors
+    instead of being silently accepted.
+  - **Improved `@listSize` validation**: The directive now validates that `sizedFields` point to
+    actual list fields rather than integer counters. Additionally, `slicingArguments` validation has
+    been added to ensure only arguments that exist in all subgraphs are retained.
+  - **Fixed `EXTERNAL_MISSING_ON_BASE` rule**: Resolved false positives when handling
+    `@interfaceObject` corner-cases, particularly for `@external` fields on object types provided by
+    interface objects.
+
+## 0.53.5
+
+### Patch Changes
+
+- Updated dependencies
+  [[`64c8368`](https://github.com/graphql-hive/console/commit/64c8368c4b94b4ad2178d341442f0a0ffb4013f1)]:
+  - @graphql-hive/core@0.15.1
+
 ## 0.53.4
 
 ### Patch Changes

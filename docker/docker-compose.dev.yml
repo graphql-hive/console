@@ -183,6 +183,7 @@ services:
     build:
       context: ./configs/otel-collector
       dockerfile: ./../../otel-collector.dockerfile
+    mem_limit: 1000m
     environment:
       HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
       CLICKHOUSE_PROTOCOL: 'http'
@@ -196,6 +197,9 @@ services:
     ports:
       - '4317:4317'
       - '4318:4318'
+      - '10254:10254'
+      - '1777:1777'
+      - '55679:55679'
     networks:
       - 'stack'
 

@@ -244,6 +244,7 @@ export async function createStorage(
       orgId: project.org_id,
       name: project.name,
       type: project.type as ProjectType,
+      createdAt: new Date(project.created_at).toISOString(),
       buildUrl: project.build_url,
       validationUrl: project.validation_url,
       gitRepository: project.git_repository as `${string}/${string}` | null,
@@ -663,7 +664,7 @@ export async function createStorage(
       return userIds.map(async id => mappings.get(id) ?? null);
     }),
     async updateUser({ id, displayName, fullName }) {
-      await pool.one<users>(sql`/* updateUser */
+      await pool.query<users>(sql`/* updateUser */
         UPDATE "users"
         SET
           "display_name" = ${displayName}
@@ -2316,8 +2317,8 @@ export async function createStorage(
       return { serviceName: after.service_name, after: after.sdl, before: before?.sdl ?? null };
     },
 
-    async getVersion({ projectId: project, targetId: target, versionId: version }) {
-      const result = await pool.one(sql`/* getVersion */
+    async getMaybeVersion({ projectId: project, targetId: target, versionId: version }) {
+      const result = await pool.maybeOne(sql`/* getMaybeVersion */
         SELECT
           ${schemaVersionSQLFields(sql`sv.`)}
         FROM schema_versions as sv
@@ -2329,6 +2330,10 @@ export async function createStorage(
           AND sv.id = ${version}
         LIMIT 1
       `);
+
+      if (!result) {
+        return null;
+      }
 
       return SchemaVersionModel.parse(result);
     },

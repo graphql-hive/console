@@ -20,6 +20,7 @@ const LOCAL_SERVICES = {
   schema: 6500,
   external_composition: 3012,
   mock_server: 3042,
+  'otel-collector': 4318,
 } as const;
 
 export type KnownServices = keyof typeof LOCAL_SERVICES;

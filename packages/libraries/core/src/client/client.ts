@@ -4,20 +4,31 @@ import {
   type GraphQLSchema,
   type subscribe as SubscribeImplementation,
 } from 'graphql';
+import { Logger } from '@graphql-hive/logger';
 import { version } from '../version.js';
 import { http } from './http-client.js';
 import { createPersistedDocuments } from './persisted-documents.js';
 import { createReporting } from './reporting.js';
 import type { HiveClient, HiveInternalPluginOptions, HivePluginOptions } from './types.js';
 import { createUsage } from './usage.js';
-import { createHiveLogger, isLegacyAccessToken } from './utils.js';
+import { chooseLogger, isLegacyAccessToken } from './utils.js';
+
+function resolveLoggerFromConfigOptions(options: HivePluginOptions): Logger {
+  if (typeof options.logger == 'string') {
+    return new Logger({
+      level: options.logger,
+    });
+  }
+
+  if (options.logger instanceof Logger) {
+    return options.logger;
+  }
+
+  return chooseLogger(options.logger ?? options.agent?.logger, options.debug);
+}
 
 export function createHive(options: HivePluginOptions): HiveClient {
-  const logger = createHiveLogger(
-    options?.agent?.logger ?? console,
-    '[hive]',
-    options.debug ?? false,
-  );
+  const logger = resolveLoggerFromConfigOptions(options).child({ module: 'hive' });
   let enabled = options.enabled ?? true;
 
   if (enabled === false && !options.experimental__persistedDocuments) {
@@ -37,6 +48,13 @@ export function createHive(options: HivePluginOptions): HiveClient {
 
   const usage = createUsage(mergedOptions);
   const schemaReporter = createReporting(mergedOptions);
+  const persistedDocuments = options.experimental__persistedDocuments
+    ? createPersistedDocuments({
+        ...options.experimental__persistedDocuments,
+        logger,
+        fetch: options.experimental__persistedDocuments.fetch,
+      })
+    : null;
 
   function reportSchema({ schema }: { schema: GraphQLSchema }) {
     schemaReporter.report({ schema });
@@ -51,7 +69,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
   }
 
   async function dispose() {
-    await Promise.all([schemaReporter.dispose(), usage.dispose()]);
+    await Promise.all([schemaReporter.dispose(), usage.dispose(), persistedDocuments?.dispose()]);
   }
 
   const isOrganizationAccessToken = !isLegacyAccessToken(options.token ?? '');
@@ -63,8 +81,6 @@ export function createHive(options: HivePluginOptions): HiveClient {
     isOrganizationAccessToken === false
       ? options.printTokenInfo === true || (!!options.debug && options.printTokenInfo !== false)
       : false;
-
-  const infoLogger = createHiveLogger(logger, '[info]');
 
   const info = printTokenInfo
     ? async () => {
@@ -109,7 +125,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
             }
           `;
 
-          infoLogger.info('Fetching token details...');
+          logger.info('Fetching token details...');
 
           const clientVersionForDetails = options.agent?.version || version;
           const response = await http.post(
@@ -128,7 +144,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
               },
               timeout: 30_000,
               fetchImplementation: options?.agent?.fetch,
-              logger: infoLogger,
+              logger,
             },
           );
 
@@ -160,7 +176,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
               const projectUrl = `${organizationUrl}/${project.slug}`;
               const targetUrl = `${projectUrl}/${target.slug}`;
 
-              infoLogger.info(
+              logger.info(
                 [
                   'Token details',
                   '',
@@ -176,21 +192,17 @@ export function createHive(options: HivePluginOptions): HiveClient {
                 ].join('\n'),
               );
             } else if (result.data?.tokenInfo.message) {
-              infoLogger.error(`Token not found. Reason: ${result.data?.tokenInfo.message}`);
-              infoLogger.info(
-                `How to create a token? https://docs.graphql-hive.com/features/tokens`,
-              );
+              logger.error(`Token not found. Reason: ${result.data?.tokenInfo.message}`);
+              logger.info(`How to create a token? https://docs.graphql-hive.com/features/tokens`);
             } else {
-              infoLogger.error(`${result.errors![0].message}`);
-              infoLogger.info(
-                `How to create a token? https://docs.graphql-hive.com/features/tokens`,
-              );
+              logger.error(`${result.errors![0].message}`);
+              logger.info(`How to create a token? https://docs.graphql-hive.com/features/tokens`);
             }
           } else {
-            infoLogger.error(`Error ${response.status}: ${response.statusText}`);
+            logger.error(`Error ${response.status}: ${response.statusText}`);
           }
         } catch (error) {
-          infoLogger.error(`Error ${(error as Error)?.message ?? error}`);
+          logger.error(`Error ${(error as Error)?.message ?? error}`);
         }
       }
     : () => {};
@@ -231,13 +243,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
     collectSubscriptionUsage: usage.collectSubscription,
     createInstrumentedSubscribe,
     createInstrumentedExecute,
-    experimental__persistedDocuments: options.experimental__persistedDocuments
-      ? createPersistedDocuments({
-          ...options.experimental__persistedDocuments,
-          logger,
-          fetch: options.experimental__persistedDocuments.fetch,
-        })
-      : null,
+    experimental__persistedDocuments: persistedDocuments,
   };
 }
 

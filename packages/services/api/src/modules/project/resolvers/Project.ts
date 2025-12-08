@@ -6,6 +6,7 @@ export const Project: Pick<
   ProjectResolvers,
   | 'buildUrl'
   | 'cleanId'
+  | 'createdAt'
   | 'experimental_nativeCompositionPerTarget'
   | 'id'
   | 'name'

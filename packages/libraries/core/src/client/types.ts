@@ -1,9 +1,10 @@
 import type { ExecutionArgs } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
+import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
 import type { AgentOptions } from './agent.js';
+import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
 import type { SchemaReporter } from './reporting.js';
-import { HiveLogger } from './utils.js';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -68,7 +69,8 @@ export interface ClientInfo {
   version: string;
 }
 
-export interface Logger {
+/** @deprecated Instead provide a logger instance from `@graphql-hive/logger`. */
+export interface LegacyLogger {
   info(msg: string): void;
   error(error: any, ...data: any[]): void;
   debug?(msg: string): void;
@@ -210,8 +212,16 @@ export type HivePluginOptions = OptionalWhenFalse<
      * Debugging mode
      *
      * Default: false
+     *
+     * @deprecated Use the {logger} property instead.
      */
     debug?: boolean;
+    /**
+     * Custom logger.
+     *
+     * Default: 'info'
+     */
+    logger?: Logger | HiveLoggerLevel;
     /**
      * Access Token for usage reporting
      */
@@ -261,7 +271,7 @@ export type HivePluginOptions = OptionalWhenFalse<
 >;
 
 export type HiveInternalPluginOptions = HivePluginOptions & {
-  logger: HiveLogger;
+  logger: Logger;
 };
 
 export type Maybe<T> = null | undefined | T;
@@ -292,10 +302,20 @@ export type PersistedDocumentsConfiguration = {
    **/
   cdn: {
     /**
-     * CDN endpoint
-     * @example https://cdn.graphql-hive.com/artifacts/v1/5d80a1c2-2532-419c-8bb5-75bb04ea1112
+     * CDN endpoint(s) for looking up persisted documents.
+     *
+     * It is possible to provide an endpoint list. The first endpoint will be treated as the primary source.
+     * The secondary endpoint will be used in case the first endpoint fails to respond.
+     *
+     * @example
+     * ```
+     * [
+     *          "https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688",
+     *   "https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688"
+     * ]
+     * ```
      */
-    endpoint: string;
+    endpoint: string | [string, string];
     /**
      * CDN access token
      * @example hv2ZjUxNGUzN2MtNjVhNS0=
@@ -318,6 +338,8 @@ export type PersistedDocumentsConfiguration = {
    * used for doing HTTP requests.
    */
   fetch?: typeof fetch;
+  /** Configuration for the circuit breaker. */
+  circuitBreaker?: CircuitBreakerConfiguration;
 };
 
 export type AllowArbitraryDocumentsFunction = (context: {

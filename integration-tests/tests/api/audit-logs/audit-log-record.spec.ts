@@ -1,6 +1,7 @@
 import * as sp from 'node:stream/promises';
 import * as csvp from 'csv-parse';
 import { endOfDay, startOfDay } from 'date-fns';
+import { pollFor } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -112,27 +113,6 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
   const { createProject, organization } = await createOrg();
   await createProject(GraphQLSchema.ProjectType.Single);
 
-  const exportAuditLogs = await execute({
-    document: ExportAllAuditLogs,
-    variables: {
-      input: {
-        selector: {
-          organizationSlug: organization.slug,
-        },
-        filter: {
-          startDate: lastYear.toISOString(),
-          endDate: today.toISOString(),
-        },
-      },
-    },
-    token: ownerToken,
-  });
-  expect(exportAuditLogs.rawBody.data?.exportOrganizationAuditLog.error).toBeNull();
-  const url = exportAuditLogs.rawBody.data?.exportOrganizationAuditLog.ok?.url;
-  const bodyStream = await fetchAuditLogFromS3Bucket(String(url));
-  const rows = bodyStream.split('\n');
-  expect(rows.length).toBeGreaterThan(1); // At least header and one row
-  const header = rows?.[0].split(',');
   const expectedHeader = [
     'id',
     'created_at',
@@ -142,11 +122,55 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
     'access_token_id',
     'metadata',
   ];
-  expect(header).toEqual(expectedHeader);
-  // Sometimes the order of the rows is not guaranteed, so we need to check if the expected rows are present
-  expect(rows?.find(row => row.includes('ORGANIZATION_CREATED'))).toBeDefined();
-  expect(rows?.find(row => row.includes('PROJECT_CREATED'))).toBeDefined();
-  expect(rows?.find(row => row.includes('TARGET_CREATED'))).toBeDefined();
+
+  // Poll until all expected audit log entries are visible in ClickHouse
+  // ClickHouse has eventual consistency, so data may not be immediately visible after INSERT
+  await pollFor(async () => {
+    const exportAuditLogs = await execute({
+      document: ExportAllAuditLogs,
+      variables: {
+        input: {
+          selector: {
+            organizationSlug: organization.slug,
+          },
+          filter: {
+            startDate: lastYear.toISOString(),
+            endDate: today.toISOString(),
+          },
+        },
+      },
+      token: ownerToken,
+    });
+
+    const apiError = exportAuditLogs.rawBody.data?.exportOrganizationAuditLog.error;
+    if (apiError) {
+      throw new Error(`Export audit logs API error: ${apiError.message}`);
+    }
+
+    const url = exportAuditLogs.rawBody.data?.exportOrganizationAuditLog.ok?.url;
+    if (!url) {
+      return false; // Data not ready yet, continue polling
+    }
+
+    const bodyStream = await fetchAuditLogFromS3Bucket(url);
+    const rows = bodyStream.split('\n');
+
+    if (rows.length <= 1) {
+      return false;
+    }
+
+    const header = rows[0].split(',');
+    if (JSON.stringify(header) !== JSON.stringify(expectedHeader)) {
+      return false;
+    }
+
+    // Check if all expected audit log entries are present
+    const hasOrgCreated = rows.some(row => row.includes('ORGANIZATION_CREATED'));
+    const hasProjectCreated = rows.some(row => row.includes('PROJECT_CREATED'));
+    const hasTargetCreated = rows.some(row => row.includes('TARGET_CREATED'));
+
+    return hasOrgCreated && hasProjectCreated && hasTargetCreated;
+  });
 });
 
 test.concurrent('export audit log for schema policy', async () => {

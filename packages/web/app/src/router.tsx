@@ -1,6 +1,6 @@
 import { lazy, useCallback, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
-import { Helmet, HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
@@ -10,7 +10,6 @@ import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
-import * as gtag from '@/lib/gtag';
 import { urqlClient } from '@/lib/urql';
 import { configureScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -126,24 +125,6 @@ function RootComponent() {
 
   return (
     <HelmetProvider>
-      {env.analytics.googleAnalyticsTrackingId && (
-        <Helmet>
-          <script id="gtag-init" key="gtag-init" type="text/javascript">{`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${env.analytics.googleAnalyticsTrackingId}', {
-              page_path: window.location.pathname,
-            });
-          `}</script>
-          <script
-            key="gtag-script"
-            async
-            src={`https://www.googletagmanager.com/gtag/js?id=${env.analytics.googleAnalyticsTrackingId}`}
-            type="text/javascript"
-          />
-        </Helmet>
-      )}
       <Toaster />
       <SuperTokensWrapper>
         <QueryClientProvider client={queryClient}>
@@ -455,9 +436,10 @@ const organizationSettingsRoute = createRoute({
 
 const OrganizationMembersRouteSearch = z.object({
   page: z.enum(['list', 'roles', 'invitations']).catch('list').default('list'),
+  search: z.string().optional(),
 });
 
-const organizationMembersRoute = createRoute({
+export const organizationMembersRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/members',
   validateSearch(search) {
@@ -469,7 +451,7 @@ const organizationMembersRoute = createRoute({
     const navigate = useNavigate({ from: organizationMembersRoute.fullPath });
     const onPageChange = useCallback(
       (newPage: z.infer<typeof OrganizationMembersRouteSearch>['page']) => {
-        void navigate({ search: { page: newPage } });
+        void navigate({ search: { page: newPage, search: undefined } });
       },
       [navigate],
     );
@@ -1064,8 +1046,4 @@ export const router = createRouter({
     }
     return JSON.stringify(search);
   }),
-});
-
-router.history.subscribe(() => {
-  gtag.pageview(router.history.location.href);
 });

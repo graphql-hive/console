@@ -11,11 +11,29 @@ GraphQL gateway, with [amazing uptime](https://www.cloudflare.com/business-sla/)
 Hive's status. This ensures that everything required for your GraphQL API and tooling around it is
 always available, and reduces the risk of depending on Hive as a single point of failure.
 
+## CDN Mirrors
+
+To provide an even higher level of availability, Hive offers two CDN endpoints:
+
+- `https://cdn.graphql-hive.com` (main): Built on top of Cloudflare, a fast and reliable global
+  network.
+- `https://cdn-mirror.graphql-hive.com` (mirror): An exact replica of the main CDN, built on top of
+  AWS (DNS, networking, and runtime). It serves as a fallback in the case of a Cloudflare outage.
+
+We recommend using the main CDN endpoint and configuring your systems to fall back to the mirror
+endpoint in case of any issues. Both endpoints are functionally identical, and share the same
+underlying storage and access tokens. Hive SDKs provide the option to configure a dual endpoint and
+have a built-in [circuit breaker](https://en.wikipedia.org/wiki/Circuit_breaker_design_pattern) that
+ensures a smooth experience in case the main CDN becomes unavailable.
+
+For more on configuring your Gateway and SDKs for high availability, see
+[Running with Hive Console in Production](/docs/schema-registry/high-availability-resilience).
+
 ```mermaid
 
 flowchart LR
-    A["GraphQL gateway"] -.-> C["Highly available GraphQL schema
-      on Cloudflare"]
+    A["GraphQL Gateway"] -.-> C["Highly available GraphQL schema
+      on Cloudflare or AWS"]
     B["Frontend tooling
         (e.g. GraphQL code generator)"] -.-> C
 
@@ -27,8 +45,8 @@ flowchart LR
   [Learn more](/docs/self-hosting/cdn-artifacts).
 </Callout>
 
-Currently you can access the single services, merged schema, supergraph and metadata (e.g. GraphQL
-Mesh artifacts) via the CDN.
+Currently you can access the single services, merged schema, supergraph, metadata (e.g. GraphQL Mesh
+artifacts) and persisted documents via the CDN.
 
 ## CDN Access Tokens
 
@@ -55,6 +73,11 @@ To use your CDN access token, go to your target's page on Hive's dashboard and c
 You can access the GraphQL schema (SDL), services information (for both Schema-Stitching and Apollo
 Federeation), Supergraph (for Apollo Federation) and Hive schema metadata via the CDN.
 
+<Callout>
+  All examples use `https://cdn.graphql-hive.com` but you can use
+  `https://cdn-mirror.graphql-hive.com` as a drop-in replacement.
+</Callout>
+
 ### GraphQL schema (SDL)
 
 ```bash
@@ -80,9 +103,9 @@ curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
 
 Further reading:
 
+- [Get started with Hive and Apollo Federation](/docs/get-started/apollo-federation)
 - [Integrating Hive CDN with Apollo Gateway](/docs/other-integrations/apollo-gateway)
 - [Integrating Hive CDN with Apollo Router](/docs/other-integrations/apollo-router)
-- [Get started with Hive and Apollo Fededation](/docs/get-started/apollo-federation)
 
 ### Hive Metadata
 
@@ -164,5 +187,5 @@ hosts for the CDN service, you can use the following list.
 
 ```txt
 cdn.graphql-hive.com
-6d5bc18cd8d13babe7ed321adba3d8ae.r2.cloudflarestorage.com
+cdn-mirror.graphql-hive.com
 ```

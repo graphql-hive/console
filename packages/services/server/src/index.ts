@@ -71,6 +71,12 @@ import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
+class CorsError extends Error {
+  constructor() {
+    super('CORS origin not allowed.');
+  }
+}
+
 export async function main() {
   let tracing: TracingInstance | undefined;
 
@@ -146,28 +152,41 @@ export async function main() {
     },
   );
 
-  server.setErrorHandler(supertokensErrorHandler());
+  server.setErrorHandler((err, req, res) => {
+    if (err instanceof CorsError) {
+      return res.status(403).send(err.message);
+    }
+
+    return supertokensErrorHandler()(err, req, res);
+  });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
-      if (req.headers.origin?.startsWith(env.hiveServices.webApp.url)) {
-        // We need to treat requests from the web app a bit differently than others.
-        // The web app requires to define the `Access-Control-Allow-Origin` header (not *).
-        callback(null, {
-          origin: env.hiveServices.webApp.url,
-          credentials: true,
-          methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-          allowedHeaders: [
-            'Content-Type',
-            'graphql-client-version',
-            'graphql-client-name',
-            'x-request-id',
-            ...supertokens.getAllCORSHeaders(),
-          ],
+      // For CLI user we do not have a origin
+      if (req.headers.origin == null) {
+        // this is the easiest way to omit all cors headers for our version of the cors plugin.
+        return callback(null, {
+          origin: [],
         });
-        return;
       }
 
-      callback(null, {});
+      if (req.headers.origin !== env.hiveServices.webApp.url) {
+        return callback(new CorsError());
+      }
+
+      // We need to treat requests from the web app a bit differently than others.
+      // The web app requires to define the `Access-Control-Allow-Origin` header (not *).
+      callback(null, {
+        origin: env.hiveServices.webApp.url,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: [
+          'Content-Type',
+          'graphql-client-version',
+          'graphql-client-name',
+          'x-request-id',
+          ...supertokens.getAllCORSHeaders(),
+        ],
+      });
     };
   });
 
@@ -404,6 +423,7 @@ export async function main() {
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
+      otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       prometheus: env.prometheus,
     });
 

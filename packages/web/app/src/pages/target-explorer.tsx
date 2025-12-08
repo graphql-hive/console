@@ -7,8 +7,8 @@ import {
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
 import {
-  ArgumentVisibilityFilter,
   DateRangeFilter,
+  DescriptionsVisibilityFilter,
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
@@ -60,39 +60,33 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={query}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {mutation ? (
         <GraphQLObjectTypeComponent
           type={mutation}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {subscription ? (
         <GraphQLObjectTypeComponent
           type={subscription}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
     </div>
@@ -214,7 +208,7 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ArgumentVisibilityFilter />
+              <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}

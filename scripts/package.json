@@ -5,6 +5,7 @@
   "devDependencies": {
     "@faker-js/faker": "9.9.0",
     "@graphql-hive/core": "workspace:*",
+    "@supercharge/promise-pool": "3.2.0",
     "immer": "10.1.1"
   }
 }

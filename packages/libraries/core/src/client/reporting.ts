@@ -12,7 +12,7 @@ import { version } from '../version.js';
 import type { SchemaPublishMutation } from './__generated__/types.js';
 import { http } from './http-client.js';
 import type { HiveInternalPluginOptions } from './types.js';
-import { createHiveLogger, logIf } from './utils.js';
+import { logIf } from './utils.js';
 
 export interface SchemaReporter {
   report(args: { schema: GraphQLSchema }): void;
@@ -30,7 +30,7 @@ export function createReporting(pluginOptions: HiveInternalPluginOptions): Schem
   const token = pluginOptions.token;
   const selfHostingOptions = pluginOptions.selfHosting;
   const reportingOptions = pluginOptions.reporting;
-  const logger = createHiveLogger(pluginOptions.logger, '[reporting]');
+  const logger = pluginOptions.logger.child({ module: 'hive-reporting' });
 
   logIf(
     typeof reportingOptions.author !== 'string' || reportingOptions.author.length === 0,

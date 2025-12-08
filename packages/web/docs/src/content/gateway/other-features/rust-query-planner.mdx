@@ -75,6 +75,32 @@ export const gateway = createGatewayRuntime({
 
 </Tabs>
 
+## Exposing the Query Plan
+
+To view the generated query plan when using the Rust Query Planner, you can use the `useQueryPlan`
+plugin from `@graphql-hive/router-runtime` as follows:
+
+```ts filename="gateway.config.ts"
+import { defineConfig } from '@graphql-hive/gateway'
+import { unifiedGraphHandler, useQueryPlan } from '@graphql-hive/router-runtime'
+
+export const gatewayConfig = defineConfig({
+  unifiedGraphHandler,
+  plugins: ({ log }) => [
+    useQueryPlan({
+      // Query plan available callback
+      onQueryPlan(queryPlan) {
+        log.debug({ queryPlan }, 'Generated Query Plan')
+      },
+      // Expose the query plan in the graphql result extensions
+      expose: true,
+      // or expose based on request.
+      expose: req => req.headers.get('hive-expose-query-plan') === 'true'
+    })
+  ]
+})
+```
+
 ## Compared to JavaScript Query Planner
 
 Hive Gateway uses the [JavaScript Query Planner](https://the-guild.dev/graphql/stitching) by

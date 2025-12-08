@@ -10,5 +10,6 @@ export default {
   'schema-policy': 'Schema Policies',
   'app-deployments': 'App Deployments (Persisted Documents)',
   'external-schema-composition': 'External Schema Composition',
+  'high-availability-resilence': 'High-Availability and Resilence',
   'self-hosting': 'Self-Hosting',
 };

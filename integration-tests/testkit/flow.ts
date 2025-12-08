@@ -396,6 +396,7 @@ export function createProject(input: CreateProjectInput, authToken: string) {
               id
               slug
               name
+              createdAt
             }
             createdTargets {
               id
@@ -672,6 +673,7 @@ export function readProjectInfo(
         project(reference: { bySelector: $selector }) {
           id
           slug
+          createdAt
         }
       }
     `),

@@ -302,6 +302,7 @@ export interface Project {
   orgId: string;
   name: string;
   type: ProjectType;
+  createdAt: string;
   buildUrl?: string | null;
   validationUrl?: string | null;
   /**
