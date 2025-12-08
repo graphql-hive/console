@@ -53,6 +53,29 @@ export class AppDeployments {
     this.logger = logger.child({ source: 'AppDeployments' });
   }
 
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
+    this.logger.debug('get app deployment by id (appDeploymentId=%s)', args.appDeploymentId);
+
+    const record = await this.pool.maybeOne<unknown>(
+      sql`
+        SELECT
+          ${appDeploymentFields}
+        FROM
+          "app_deployments"
+        WHERE
+          "id" = ${args.appDeploymentId}
+      `,
+    );
+
+    if (!record) {
+      return null;
+    }
+
+    return AppDeploymentModel.parse(record);
+  }
+
   async findAppDeployment(args: {
     targetId: string;
     name: string;
@@ -805,6 +828,113 @@ export class AppDeployments {
     );
 
     return model.parse(result.data);
+  }
+
+  async getAffectedAppDeploymentsBySchemaCoordinates(args: {
+    targetId: string;
+    schemaCoordinates: string[];
+  }) {
+    if (args.schemaCoordinates.length === 0) {
+      return [];
+    }
+
+    this.logger.debug(
+      'Finding affected app deployments by schema coordinates (targetId=%s, coordinateCount=%d)',
+      args.targetId,
+      args.schemaCoordinates.length,
+    );
+
+    const activeDeploymentsResult = await this.pool.query<unknown>(sql`
+      SELECT
+        ${appDeploymentFields}
+      FROM
+        "app_deployments"
+      WHERE
+        "target_id" = ${args.targetId}
+        AND "activated_at" IS NOT NULL
+        AND "retired_at" IS NULL
+    `);
+
+    const activeDeployments = activeDeploymentsResult.rows.map(row =>
+      AppDeploymentModel.parse(row),
+    );
+
+    if (activeDeployments.length === 0) {
+      this.logger.debug('No active app deployments found (targetId=%s)', args.targetId);
+      return [];
+    }
+
+    const deploymentIds = activeDeployments.map(d => d.id);
+
+    const affectedDocumentsResult = await this.clickhouse.query({
+      query: cSql`
+        SELECT
+          "app_deployment_id" AS "appDeploymentId"
+          , "document_hash" AS "hash"
+          , "operation_name" AS "operationName"
+        FROM
+          "app_deployment_documents"
+        WHERE
+          "app_deployment_id" IN (${cSql.array(deploymentIds, 'String')})
+          AND hasAny("schema_coordinates", ${cSql.array(args.schemaCoordinates, 'String')})
+        ORDER BY "app_deployment_id", "document_hash"
+        LIMIT 1 BY "app_deployment_id", "document_hash"
+      `,
+      queryId: 'get-affected-app-deployments-by-coordinates',
+      timeout: 30_000,
+    });
+
+    const AffectedDocumentModel = z.object({
+      appDeploymentId: z.string(),
+      hash: z.string(),
+      operationName: z.string().transform(value => (value === '' ? null : value)),
+    });
+
+    const affectedDocuments = z.array(AffectedDocumentModel).parse(affectedDocumentsResult.data);
+
+    if (affectedDocuments.length === 0) {
+      this.logger.debug(
+        'No affected operations found (targetId=%s, coordinateCount=%d)',
+        args.targetId,
+        args.schemaCoordinates.length,
+      );
+      return [];
+    }
+
+    const deploymentIdToDeployment = new Map(activeDeployments.map(d => [d.id, d]));
+    const deploymentIdToOperations = new Map<
+      string,
+      Array<{ hash: string; name: string | null }>
+    >();
+
+    for (const doc of affectedDocuments) {
+      const ops = deploymentIdToOperations.get(doc.appDeploymentId) ?? [];
+      ops.push({
+        hash: doc.hash,
+        name: doc.operationName,
+      });
+      deploymentIdToOperations.set(doc.appDeploymentId, ops);
+    }
+
+    const result = [];
+    for (const [deploymentId, operations] of deploymentIdToOperations) {
+      const deployment = deploymentIdToDeployment.get(deploymentId);
+      if (deployment) {
+        result.push({
+          appDeployment: deployment,
+          affectedOperations: operations,
+        });
+      }
+    }
+
+    this.logger.debug(
+      'Found %d affected app deployments with %d total operations (targetId=%s)',
+      result.length,
+      affectedDocuments.length,
+      args.targetId,
+    );
+
+    return result;
   }
 
   async getActiveAppDeployments(args: {

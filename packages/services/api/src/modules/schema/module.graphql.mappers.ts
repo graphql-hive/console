@@ -310,3 +310,13 @@ export type SchemaChangeUsageStatisticsAffectedOperationMapper = {
   percentage: number;
   targetIds: Array<string>;
 };
+
+export type SchemaChangeAffectedAppDeploymentMapper = {
+  id: string;
+  name: string;
+  version: string;
+  affectedOperations: Array<{
+    hash: string;
+    name: string | null;
+  }>;
+};

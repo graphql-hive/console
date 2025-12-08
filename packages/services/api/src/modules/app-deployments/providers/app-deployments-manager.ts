@@ -43,6 +43,10 @@ export class AppDeploymentsManager {
     return appDeployment;
   }
 
+  async getAppDeploymentById(args: { appDeploymentId: string }): Promise<AppDeploymentRecord | null> {
+    return await this.appDeployments.getAppDeploymentById(args);
+  }
+
   getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
     if (appDeployment.retiredAt) {
       return 'retired';

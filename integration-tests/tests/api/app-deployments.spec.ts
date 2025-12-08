@@ -1,5 +1,6 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
+import { pollFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
@@ -2739,4 +2740,220 @@ test('activeAppDeployments check pagination clamp', async () => {
   // Should be clamped to 20
   expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
   expect(result.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(true);
+});
+
+const SchemaCheckWithAffectedAppDeployments = graphql(`
+  query SchemaCheckWithAffectedAppDeployments(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $schemaCheckId: ID!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      schemaCheck(id: $schemaCheckId) {
+        id
+        breakingSchemaChanges {
+          edges {
+            node {
+              message
+              path
+              affectedAppDeployments {
+                id
+                name
+                version
+                affectedOperations {
+                  hash
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+test('schema check shows affected app deployments for breaking changes', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const publishResult = await execute({
+    document: graphql(`
+      mutation PublishSchemaForAffectedAppDeployments($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+          ... on SchemaPublishSuccess {
+            valid
+          }
+          ... on SchemaPublishError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+            world: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'test-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'test-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'hello-query-hash',
+            body: 'query GetHello { hello }',
+          },
+          {
+            hash: 'world-query-hash',
+            body: 'query GetWorld { world }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'test-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // ClickHouse eventual consistency
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForAffectedAppDeploymentsPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+      // Check if the hello field removal has affectedAppDeployments
+      const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      return !!(helloFieldRemoval?.node.affectedAppDeployments?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  // console.log('breakingChanges:', JSON.stringify(breakingChanges, null, 2));
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloFieldRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // console.log('helloFieldRemoval:', JSON.stringify(helloFieldRemoval, null, 2));
+
+  expect(helloFieldRemoval).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.length).toBe(1);
+
+  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.[0];
+  expect(affectedDeployment?.name).toBe('test-app');
+  expect(affectedDeployment?.version).toBe('1.0.0');
+  expect(affectedDeployment?.affectedOperations).toBeDefined();
+  expect(affectedDeployment?.affectedOperations.length).toBe(1);
+  expect(affectedDeployment?.affectedOperations[0].hash).toBe('hello-query-hash');
+  expect(affectedDeployment?.affectedOperations[0].name).toBe('GetHello');
 });
