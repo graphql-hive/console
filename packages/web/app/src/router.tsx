@@ -432,9 +432,10 @@ const organizationSettingsRoute = createRoute({
 
 const OrganizationMembersRouteSearch = z.object({
   page: z.enum(['list', 'roles', 'invitations']).catch('list').default('list'),
+  search: z.string().optional(),
 });
 
-const organizationMembersRoute = createRoute({
+export const organizationMembersRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/members',
   validateSearch(search) {
@@ -446,7 +447,7 @@ const organizationMembersRoute = createRoute({
     const navigate = useNavigate({ from: organizationMembersRoute.fullPath });
     const onPageChange = useCallback(
       (newPage: z.infer<typeof OrganizationMembersRouteSearch>['page']) => {
-        void navigate({ search: { page: newPage } });
+        void navigate({ search: { page: newPage, search: undefined } });
       },
       [navigate],
     );

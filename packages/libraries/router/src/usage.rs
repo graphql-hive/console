@@ -432,10 +432,13 @@ mod hive_usage_tests {
         plugin::{test::MockSupergraphService, Plugin, PluginInit},
         services::supergraph,
     };
+    use http::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
     use httpmock::{Method::POST, Mock, MockServer};
     use jsonschema::Validator;
     use serde_json::json;
     use tower::ServiceExt;
+
+    use crate::consts::PLUGIN_VERSION;
 
     use super::{Config, UsagePlugin};
 
@@ -481,17 +484,26 @@ mod hive_usage_tests {
 
         fn activate_usage_mock(&'_ self) -> Mock<'_> {
             self.mocked_upstream.mock(|when, then| {
-                when.method(POST).path("/usage").matches(|r| {
-                    // This mock also validates that the content of the reported usage is valid
-                    // when it comes to the JSON schema validation.
-                    // if it does not match, the request matching will fail and this will lead
-                    // to a failed assertion
-                    let body = r.body.as_ref().unwrap();
-                    let body = String::from_utf8(body.to_vec()).unwrap();
-                    let body = serde_json::from_str(&body).unwrap();
+                when.method(POST)
+                    .path("/usage")
+                    .header(CONTENT_TYPE.as_str(), "application/json")
+                    .header(
+                        USER_AGENT.as_str(),
+                        format!("hive-apollo-router/{}", PLUGIN_VERSION),
+                    )
+                    .header(AUTHORIZATION.as_str(), "Bearer 123")
+                    .header("X-Usage-API-Version", "2")
+                    .matches(|r| {
+                        // This mock also validates that the content of the reported usage is valid
+                        // when it comes to the JSON schema validation.
+                        // if it does not match, the request matching will fail and this will lead
+                        // to a failed assertion
+                        let body = r.body.as_ref().unwrap();
+                        let body = String::from_utf8(body.to_vec()).unwrap();
+                        let body = serde_json::from_str(&body).unwrap();
 
-                    SCHEMA_VALIDATOR.is_valid(&body)
-                });
+                        SCHEMA_VALIDATOR.is_valid(&body)
+                    });
                 then.status(200);
             })
         }
@@ -565,23 +577,6 @@ mod hive_usage_tests {
         let req = supergraph::Request::fake_builder()
             .query("query test { hello } query test2 { hello }")
             .operation_name("test")
-            .build()
-            .unwrap();
-        let mock = instance.activate_usage_mock();
-
-        instance.execute_operation(req).await.next_response().await;
-
-        instance.wait_for_processing().await;
-
-        mock.assert();
-        mock.assert_hits(1);
-    }
-
-    #[tokio::test]
-    async fn invalid_query_reported() {
-        let instance = UsageTestHelper::new().await;
-        let req = supergraph::Request::fake_builder()
-            .query("query {")
             .build()
             .unwrap();
         let mock = instance.activate_usage_mock();

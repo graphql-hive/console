@@ -237,7 +237,10 @@ export const gatewayConfig = defineConfig({
   supergraph: {
     type: 'hive',
     // The endpoint of Hive's CDN
-    endpoint: '<supergraph endpoint>',
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>'
+    ],
     // The CDN token provided by Hive Registry
     key: '<cdn access token>'
   }

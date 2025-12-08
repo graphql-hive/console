@@ -33,7 +33,7 @@ sequenceDiagram;
   participant CDN Storage (R2)
 
   critical Validate Access Token
-    Client->>+CDN (CF Worker): Request GET /v1/artifact/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl
+    Client->>+CDN (CF Worker): Request GET /artifacts/v1/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl
     CDN (CF Worker)-->>-Client: Responds with 302 presigned URL
   end
   Client->>CDN Storage (R2): GET: presigned URL
@@ -76,7 +76,7 @@ sequenceDiagram;
   participant CDN Storage (R2)
 
   critical Validate Access Token
-    Client->>+CDN (CF Worker): Request GET /v1/artifact/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl
+    Client->>+CDN (CF Worker): Request GET /artifacts/v1/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl
     CDN (CF Worker)-->>-Client: Responds with 302 presigned URL
   end
   Client->>CDN Storage (R2): GET: presigned URL
@@ -202,7 +202,7 @@ the token validation method.
 Instead of verifying the CDN access token using an encryption secret environment variable, we would
 now instead load the R2 key based on the artifact target id being accessed.
 
-E.g. for the URL `/v1/artifact/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl`, we would load the R2 key
+E.g. for the URL `/artifacts/v1/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl`, we would load the R2 key
 `<bucket-name>/cdn-legacy-keys/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/` and then check the hash stored
 in that key, against the provided access key (the `X-Hive-CDN-Key` header value).
 
@@ -346,7 +346,7 @@ The `privateAccessKeyId` is never stored anywhere on our side, only the hash.
 The `"hv2"` prefix is a convenience for us for quickly identifying whether an access key sent to us
 is a legacy or new access token.
 
-E.g. for the URL `/v1/artifact/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl`, we would load the R2 key
+E.g. for the URL `/artifacts/v1/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/sdl`, we would load the R2 key
 `<bucket-name>/cdn-keys/c7ce447c-f5e6-4f13-87b8-d3051ba3fc45/<access-key-id>`.
 
 We can read the `accessKeyId` from the `X-Hive-CDN-Key` header value.

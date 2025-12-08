@@ -3,10 +3,35 @@ import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
 import { cleanRequestId, maskToken } from './helpers';
 
-const plugin: FastifyPluginAsync = async server => {
-  server.decorateReply('sentry', null);
+const plugin: FastifyPluginAsync<{ isSentryEnabled: boolean }> = async (server, opts) => {
+  if (opts.isSentryEnabled) {
+    server.decorateReply('sentry', null);
+  }
 
   server.setErrorHandler((err, req, reply) => {
+    if (err.statusCode && err.statusCode < 500) {
+      req.log.warn(err.message);
+      void reply.status(err.statusCode).send({
+        error: err.statusCode,
+        message: err.message,
+        requestId: req.id,
+      });
+      return;
+    }
+
+    function sendInternalError() {
+      req.log.warn('Replying with 500 Internal Server Error');
+      void reply.status(500).send({
+        error: 500,
+        message: 'Internal Server Error',
+        requestId: req.id,
+      });
+    }
+
+    if (!opts.isSentryEnabled) {
+      return sendInternalError();
+    }
+
     Sentry.withScope(scope => {
       scope.setUser({ ip_address: req.ip });
       const requestId = cleanRequestId(req.headers['x-request-id']);
@@ -28,28 +53,17 @@ const plugin: FastifyPluginAsync = async server => {
       req.log.error(err);
       Sentry.captureException(err);
 
-      if (err.code === 'FST_ERR_CRT_BODY_TOO_LARGE') {
-        req.log.warn('Payload too large');
-        void reply.status(413).send({
-          error: 413,
-          message: 'Payload Too Large',
-        });
-        return;
-      }
-
-      req.log.warn('Replying with 500 Internal Server Error');
-      void reply.status(500).send({
-        error: 500,
-        message: 'Internal Server Error',
-      });
+      return sendInternalError();
     });
   });
 };
 
-const sentryPlugin = fp(plugin, {
-  name: 'fastify-sentry',
+const httpErrorHandler = fp(plugin, {
+  name: 'fastify-http-error-handler',
 });
 
-export async function useSentryErrorHandler(server: FastifyInstance) {
-  await server.register(sentryPlugin);
+export async function useHTTPErrorHandler(server: FastifyInstance, isSentryEnabled: boolean) {
+  await server.register(httpErrorHandler, {
+    isSentryEnabled,
+  });
 }

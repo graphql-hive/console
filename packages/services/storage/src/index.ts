@@ -664,7 +664,7 @@ export async function createStorage(
       return userIds.map(async id => mappings.get(id) ?? null);
     }),
     async updateUser({ id, displayName, fullName }) {
-      await pool.one<users>(sql`/* updateUser */
+      await pool.query<users>(sql`/* updateUser */
         UPDATE "users"
         SET
           "display_name" = ${displayName}

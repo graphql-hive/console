@@ -2,6 +2,7 @@ import { ReactElement } from 'react';
 import cookies from 'js-cookie';
 import { LogOutIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
+import { commonErrorStrings } from '@/components/error';
 import { Button } from '@/components/ui/button';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -54,18 +55,18 @@ export function QueryError({
               <div className="text-sm">{error.graphQLErrors?.[0].message}</div>
             ) : (
               <div className="text-sm">
-                <p>Don't worry, our technical support got this error reported automatically.</p>
+                <p>{commonErrorStrings.reported}</p>
                 <p>
-                  If you wish to track it later or share more details with us,{' '}
+                  {commonErrorStrings.track}{' '}
                   {organizationSlug ? (
                     <Button variant="link" className="h-auto p-0 text-orange-500" asChild>
                       <Link to="/$organizationSlug/view/support" params={{ organizationSlug }}>
-                        you can use the support
+                        {commonErrorStrings.link}
                       </Link>
                     </Button>
                   ) : (
                     <Button variant="link" className="h-auto p-0 text-orange-500" asChild>
-                      <a href="mailto:support@graphql-hive.com">you can use the support</a>
+                      <a href="mailto:support@graphql-hive.com">{commonErrorStrings.link}</a>
                     </Button>
                   )}
                   .

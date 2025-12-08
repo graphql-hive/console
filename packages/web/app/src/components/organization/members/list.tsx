@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from 'react';
-import { MoreHorizontalIcon, MoveDownIcon, MoveUpIcon } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
 import type { IconType } from 'react-icons';
 import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
-import { useMutation } from 'urql';
+import { useMutation, type UseQueryExecute } from 'urql';
+import { useDebouncedCallback } from 'use-debounce';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,13 +21,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link } from '@/components/ui/link';
+import { Input } from '@/components/ui/input';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import * as Sheet from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
+import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
+import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
@@ -83,7 +86,6 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     }
     role {
       id
-      name
     }
     isOwner
     viewerCanRemove
@@ -91,10 +93,9 @@ const OrganizationMemberRow_MemberFragment = graphql(`
   }
 `);
 
-function OrganizationMemberRow(props: {
+const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   member: FragmentType<typeof OrganizationMemberRow_MemberFragment>;
-  refetchMembers(): void;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const member = useFragment(OrganizationMemberRow_MemberFragment, props.member);
@@ -212,7 +213,7 @@ function OrganizationMemberRow(props: {
       </tr>
     </>
   );
-}
+});
 
 const MemberRole_OrganizationFragment = graphql(`
   fragment MemberRole_OrganizationFragment on Organization {
@@ -234,7 +235,6 @@ const MemberRole_MemberFragment = graphql(`
       projects {
         project {
           id
-          slug
         }
       }
     }
@@ -264,7 +264,9 @@ function MemberRole(props: {
       {organization.viewerCanAssignUserRoles && (
         <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
           <Sheet.SheetTrigger asChild>
-            <Link>change</Link>
+            <button className="font-medium text-orange-500 transition-colors hover:underline">
+              change
+            </button>
           </Sheet.SheetTrigger>
           {isOpen && (
             <MemberRolePicker
@@ -286,19 +288,19 @@ const OrganizationMembers_OrganizationFragment = graphql(`
     owner {
       id
     }
-    members {
+    members(first: $first, after: $after, filters: { searchTerm: $searchTerm }) {
       edges {
         node {
           id
-          user {
-            displayName
-          }
           role {
             id
-            name
           }
           ...OrganizationMemberRow_MemberFragment
         }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
     viewerCanManageInvitations
@@ -309,50 +311,50 @@ const OrganizationMembers_OrganizationFragment = graphql(`
 
 export function OrganizationMembers(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
-  refetchMembers(): void;
+  refetchMembers: UseQueryExecute;
+  /**
+   * The setter for the reactive "after" variable required by urql
+   */
+  setAfter: (after: string | null) => void;
 }) {
+  // Pagination state
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([null]);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const search = organizationMembersRoute.useSearch();
+
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const members = organization.members?.edges?.map(edge => edge.node);
-  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc' | null>(null);
-  const [sortByKey, setSortByKey] = useState<'name' | 'role'>('name');
+  const pageInfo = organization.members?.pageInfo;
 
-  const sortedMembers = useMemo(() => {
-    if (!members) {
-      return [];
+  // Reset pagination when search changes
+  useEffect(() => {
+    setCursorHistory([null]);
+    setCurrentPage(0);
+    props.setAfter(null);
+  }, [search.search]);
+
+  useEffect(() => {
+    // Update the cursor in parent, which will trigger query refetch
+    props.setAfter(cursorHistory[currentPage]);
+  }, [currentPage]);
+
+  const [searchValue, setSearchValue] = useSearchParamsFilter<string>('search', '');
+
+  const handleSearchChange = useDebouncedCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+  }, 300);
+
+  const handleNextPage = (endCursor: string) => {
+    setCursorHistory(prev => [...prev, endCursor]);
+    setCurrentPage(prev => prev + 1);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
     }
-
-    if (!orderDirection) {
-      return members ?? [];
-    }
-
-    const sorted = [...members].sort((a, b) => {
-      if (sortByKey === 'name') {
-        return a.user.displayName.localeCompare(b.user.displayName);
-      }
-
-      if (sortByKey === 'role') {
-        return (a.role?.name ?? 'Select role').localeCompare(b.role?.name ?? 'Select role') ?? 0;
-      }
-
-      return 0;
-    });
-
-    return orderDirection === 'asc' ? sorted : sorted.reverse();
-  }, [members, orderDirection, sortByKey]);
-
-  const updateSorting = useCallback(
-    (newSortBy: 'name' | 'role') => {
-      if (newSortBy === sortByKey) {
-        setOrderDirection(
-          orderDirection === 'asc' ? 'desc' : orderDirection === 'desc' ? null : 'asc',
-        );
-      } else {
-        setSortByKey(newSortBy);
-        setOrderDirection('asc');
-      }
-    },
-    [sortByKey, orderDirection],
-  );
+  };
 
   return (
     <SubPageLayout>
@@ -360,61 +362,96 @@ export function OrganizationMembers(props: {
         subPageTitle="List of organization members"
         description="Manage the members of your organization and their permissions."
       >
-        {organization.viewerCanManageInvitations && (
-          <MemberInvitationButton
-            refetchInvitations={props.refetchMembers}
-            organization={organization}
+        <div className="flex flex-row gap-4">
+          <Input
+            className="w-[220px] grow cursor-text"
+            placeholder="Search by username or email"
+            onChange={handleSearchChange}
+            defaultValue={searchValue}
           />
-        )}
+          {organization.viewerCanManageInvitations && (
+            <MemberInvitationButton
+              refetchInvitations={props.refetchMembers}
+              organization={organization}
+            />
+          )}
+        </div>
       </SubPageLayoutHeader>
       <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
         <thead>
           <tr>
-            <th
-              colSpan={2}
-              className="relative cursor-pointer select-none py-3 text-left text-sm font-semibold"
-              onClick={() => updateSorting('name')}
-            >
+            <th colSpan={2} className="relative select-none py-3 text-left text-sm font-semibold">
               Member
-              <span className="inline-block">
-                {sortByKey === 'name' ? (
-                  orderDirection === 'asc' ? (
-                    <MoveUpIcon className="relative top-[3px] size-4" />
-                  ) : orderDirection === 'desc' ? (
-                    <MoveDownIcon className="relative top-[3px] size-4" />
-                  ) : null
-                ) : null}
-              </span>
             </th>
-            <th
-              className="relative w-[300px] cursor-pointer select-none py-3 text-center align-middle text-sm font-semibold"
-              onClick={() => updateSorting('role')}
-            >
+            <th className="relative w-[300px] select-none py-3 text-center align-middle text-sm font-semibold">
               Assigned Role
-              <span className="inline-block">
-                {sortByKey === 'role' ? (
-                  orderDirection === 'asc' ? (
-                    <MoveUpIcon className="relative top-[3px] size-4" />
-                  ) : orderDirection === 'desc' ? (
-                    <MoveDownIcon className="relative top-[3px] size-4" />
-                  ) : null
-                ) : null}
-              </span>
             </th>
             <th className="w-12 py-3 text-right text-sm font-semibold" />
           </tr>
         </thead>
         <tbody className="divide-y-[1px] divide-gray-500/20">
-          {sortedMembers.map(node => (
-            <OrganizationMemberRow
-              key={node.id}
-              refetchMembers={props.refetchMembers}
-              organization={props.organization}
-              member={node}
-            />
-          ))}
+          {members.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="py-16">
+                <div className="flex flex-col items-center justify-center px-4">
+                  <h3 className="mb-2 text-lg font-semibold text-gray-100">No members found</h3>
+
+                  <p className="max-w-sm text-center text-sm text-gray-200">
+                    {`No results for "${searchValue}". Try adjusting your search term.`}
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            members.map(node => (
+              <OrganizationMemberRow
+                key={node.id}
+                organization={props.organization}
+                member={node}
+              />
+            ))
+          )}
         </tbody>
       </table>
+      {/* Pagination Controls */}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-sm text-gray-500">
+          Page {currentPage + 1}
+          {searchValue && members.length > 0 && ` - showing results for "${searchValue}"`}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              handlePreviousPage();
+              setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }, 0);
+            }}
+            disabled={currentPage === 0}
+          >
+            <ChevronLeftIcon className="mr-1 size-4" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (pageInfo?.endCursor) {
+                handleNextPage(pageInfo.endCursor);
+              }
+              setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }, 0);
+            }}
+            disabled={!pageInfo?.hasNextPage}
+          >
+            Next
+            <ChevronRightIcon className="ml-1 size-4" />
+          </Button>
+        </div>
+      </div>
     </SubPageLayout>
   );
 }
