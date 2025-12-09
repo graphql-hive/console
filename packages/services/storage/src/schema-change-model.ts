@@ -1316,7 +1316,7 @@ export const HiveSchemaChangeModel = z
       readonly criticality: CriticalityLevel;
       readonly reason: string | null;
       readonly message: string;
-      readonly path: string;
+      readonly path: string | null;
       readonly approvalMetadata: SchemaCheckApprovalMetadata | null;
       isSafeBasedOnUsage: boolean;
       usageStatistics: {
@@ -1350,7 +1350,7 @@ export const HiveSchemaChangeModel = z
         criticality: change.criticality.level,
         message: change.message,
         meta: change.meta,
-        path: change.path ?? '',
+        path: change.path ?? null,
         isSafeBasedOnUsage:
           // only breaking changes can be safe based on usage
           (change.criticality.level === CriticalityLevel.Breaking &&
