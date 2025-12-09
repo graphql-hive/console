@@ -10,6 +10,24 @@ const __dirname = path.dirname(__filename);
 const args = process.argv.slice(2);
 const targetSlug = args[0];
 
+async function resolveTargetId(slug: string, authUrl: string, token: string): Promise<string> {
+  const response = await got.get(`${authUrl}/otel-auth`, {
+    headers: {
+      'X-Hive-Target-Ref': slug,
+      Authorization: `Bearer ${token}`,
+    },
+    throwHttpErrors: false,
+  });
+
+  if (response.statusCode !== 200) {
+    const body = JSON.parse(response.body);
+    throw new Error(`Failed to resolve target: ${body.message || response.body}`);
+  }
+
+  const body = JSON.parse(response.body) as { targetId: string };
+  return body.targetId;
+}
+
 if (!targetSlug || targetSlug.startsWith('--')) {
   console.error('Error: TARGET_SLUG is required as the first argument');
   console.error('');
@@ -19,6 +37,8 @@ if (!targetSlug || targetSlug.startsWith('--')) {
   console.error('  target_slug        Target slug in format: org/project/target (required)');
   console.error('');
   console.error('Options:');
+  console.error('  --token=TOKEN      Authorization token for the auth endpoint (required)');
+  console.error('  --auth=URL         Auth endpoint URL (default: http://localhost:3001)');
   console.error('  --count=N          Total number of traces to generate (default: 6)');
   console.error('                     Supports: 1000, 10k, 500k, 1m');
   console.error('  --days=N           Number of days to scatter traces across (default: 1)');
@@ -30,16 +50,16 @@ if (!targetSlug || targetSlug.startsWith('--')) {
   console.error('');
   console.error('Examples:');
   console.error(
-    '  pnpm seed:traces the-guild/my-project/production                          # 6 traces, last 24h',
+    '  pnpm seed:traces the-guild/my-project/production --token=abc123',
   );
   console.error(
-    '  pnpm seed:traces the-guild/my-project/production --count=1k               # 1,000 traces, last 24h',
+    '  pnpm seed:traces the-guild/my-project/production --token=abc123 --count=1k',
   );
   console.error(
-    '  pnpm seed:traces the-guild/my-project/production --count=10k --days=7     # 10,000 traces over 7 days',
+    '  pnpm seed:traces the-guild/my-project/production --token=abc123 --count=10k --days=7',
   );
   console.error(
-    '  pnpm seed:traces the-guild/my-project/production --count=1m --clickhouse=http://user:pass@remote:8123',
+    '  pnpm seed:traces the-guild/my-project/production --token=abc123 --auth=http://remote:8082',
   );
   process.exit(1);
 }
@@ -70,6 +90,16 @@ const timeRangeDays = ((val: number) => (!Number.isNaN(val) ? val : 1))(
   parseNumber(getArgValue('days', '1')),
 );
 const clickhouseUrl = getArgValue('clickhouse', 'http://test:test@localhost:8123');
+const authUrl = getArgValue('auth', 'http://localhost:3001');
+const authToken = getArgValue('token', '');
+
+if (!authToken) {
+  console.error('Error: --token is required');
+  console.error('');
+  console.error('Usage: pnpm seed:traces <target_slug> --token=YOUR_TOKEN [options]');
+  process.exit(1);
+}
+
 const numSamples = 6; // We have 6 sample traces
 const duplicateFactor = Math.ceil(totalTraceCount / numSamples);
 
@@ -391,6 +421,8 @@ async function executeClickHouseQuery(query: string) {
     searchParams: {
       default_format: 'JSON',
       wait_end_of_query: '1',
+      // Enable external sorting to avoid memory limits when using window functions
+      max_bytes_before_external_sort: '500000000', // 500MB before spilling to disk
     },
     headers: {
       Accept: 'application/json',
@@ -401,6 +433,10 @@ async function executeClickHouseQuery(query: string) {
 }
 
 async function seedTraces() {
+  console.log('Resolving target ID...');
+  const targetId = await resolveTargetId(targetSlug, authUrl, authToken);
+  console.log(`Resolved target ID: ${targetId}`);
+
   console.log('Loading trace samples...');
   const traceSamples = await loadTraceSamples();
   console.log(`Loaded ${traceSamples.length} trace samples`);
@@ -415,7 +451,7 @@ async function seedTraces() {
   for (let i = 0; i < traceSamples.length; i++) {
     const sample = traceSamples[i];
     const timestamp = generateTimestamp(i, totalTraces);
-    const spans = convertOTELToClickHouse(sample, timestamp, targetSlug);
+    const spans = convertOTELToClickHouse(sample, timestamp, targetId);
     uniqueSpans.push(...spans);
 
     // Capture the trace ID (first span's trace ID)
@@ -459,7 +495,7 @@ async function seedTraces() {
 
     // Process in chunks to avoid ClickHouse memory limits
     // Each chunk duplicates all 6 traces by a batch of duplicate indices
-    const chunkSize = 5000; // Duplicate 5k times per chunk (creates ~30k traces per chunk)
+    const chunkSize = 1000; // Duplicate 5k times per chunk (creates ~30k traces per chunk)
     const numChunks = Math.ceil(actualDuplicates / chunkSize);
 
     for (let chunkIndex = 0; chunkIndex < numChunks; chunkIndex++) {
