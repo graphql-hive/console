@@ -3,7 +3,7 @@ import { defineTask, implementTask } from '../kit.js';
 import { renderAuditLogsReportEmail } from '../lib/emails/templates/audit-logs-report.js';
 
 export const AuditLogExportTask = defineTask({
-  name: 'audit-log-export',
+  name: 'auditLogExport',
   schema: z.object({
     organizationId: z.string(),
     organizationName: z.string(),

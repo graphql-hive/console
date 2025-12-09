@@ -1,6 +1,7 @@
 import zod from 'zod';
 import { OpenTelemetryConfigurationModel } from '@hive/service-common';
 import { createConnectionString } from '@hive/storage';
+import { RequestBroker } from './lib/webhooks/schema-change-notification';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -81,6 +82,17 @@ const EmailProviderModel = zod.union([
   SendmailEmailModel,
 ]);
 
+const RequestBrokerModel = zod.union([
+  zod.object({
+    REQUEST_BROKER: emptyString(zod.literal('0').optional()),
+  }),
+  zod.object({
+    REQUEST_BROKER: zod.literal('1'),
+    REQUEST_BROKER_ENDPOINT: zod.string().min(1),
+    REQUEST_BROKER_SIGNATURE: zod.string().min(1),
+  }),
+]);
+
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
   PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
@@ -112,6 +124,7 @@ const configs = {
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
+  requestBroker: RequestBrokerModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -142,6 +155,7 @@ const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
+const requestBroker = extractConfig(configs.requestBroker);
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -211,4 +225,11 @@ export const env = {
       user: postgres.POSTGRES_USER,
     }),
   },
+  requestBroker:
+    requestBroker.REQUEST_BROKER === '1'
+      ? ({
+          endpoint: requestBroker.REQUEST_BROKER_ENDPOINT,
+          signature: requestBroker.REQUEST_BROKER_SIGNATURE,
+        } satisfies RequestBroker)
+      : null,
 } as const;
