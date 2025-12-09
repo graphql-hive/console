@@ -10,7 +10,7 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
-import { createSupergraphManager } from '@graphql-hive/apollo';
+import { createServicesFetcher, createSupergraphManager } from '@graphql-hive/apollo';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 import { initSeed } from '../../testkit/seed';
@@ -68,6 +68,40 @@ function buildEndpointUrl(
 ) {
   return `${baseUrl}${targetId}/${resourceType}`;
 }
+
+function buildVersionedEndpointUrl(
+  baseUrl: string,
+  targetId: string,
+  versionId: string,
+  resourceType: 'sdl' | 'supergraph' | 'services' | 'metadata',
+) {
+  return `${baseUrl}${targetId}/version/${versionId}/${resourceType}`;
+}
+
+function buildVersionedContractEndpointUrl(
+  baseUrl: string,
+  targetId: string,
+  versionId: string,
+  contractName: string,
+  resourceType: 'sdl' | 'supergraph',
+) {
+  return `${baseUrl}${targetId}/version/${versionId}/contracts/${contractName}/${resourceType}`;
+}
+
+const CreateContractMutation = graphql(`
+  mutation CreateContractMutationCDN($input: CreateContractInput!) {
+    createContract(input: $input) {
+      ok {
+        createdContract {
+          id
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
 
 function generateLegacyToken(targetId: string) {
   const encoder = new TextEncoder();
@@ -425,6 +459,946 @@ function runArtifactsCDNTests(
         await server.stop();
       }
     });
+
+    test.concurrent(
+      'createSupergraphManager with schemaVersionId pins to specific version',
+      async ({ expect }) => {
+        const endpointBaseUrl = await getBaseEndpoint();
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish V1 Schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v1',
+            sdl: `type Query { ping: String }`,
+            service: 'ping',
+            url: 'http://ping.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const cdnAccessResult = await createCdnAccess();
+
+        // Create manager without pinning to get initial version
+        const manager = createSupergraphManager({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+        });
+
+        const gateway = new ApolloGateway({ supergraphSdl: manager });
+        const server = new ApolloServer({ gateway });
+
+        try {
+          await startStandaloneServer(server);
+
+          // Capture the version ID
+          const v1VersionId = manager.getSchemaVersionId();
+          expect(v1VersionId).toBeDefined();
+
+          await server.stop();
+
+          // Publish V2 Schema with different content
+          await writeToken
+            .publishSchema({
+              author: 'Kamil',
+              commit: 'v2',
+              sdl: `type Query { ping: String, pong: String }`,
+              service: 'ping',
+              url: 'http://ping.com',
+            })
+            .then(r => r.expectNoGraphQLErrors());
+
+          // Create a new manager pinned to V1
+          const pinnedManager = createSupergraphManager({
+            endpoint: endpointBaseUrl + target.id,
+            key: cdnAccessResult.secretAccessToken,
+            schemaVersionId: v1VersionId!,
+          });
+
+          const pinnedGateway = new ApolloGateway({ supergraphSdl: pinnedManager });
+          const pinnedServer = new ApolloServer({ gateway: pinnedGateway });
+
+          try {
+            const { url } = await startStandaloneServer(pinnedServer);
+
+            // Query the schema - should only have 'ping', not 'pong'
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: {
+                accept: 'application/json',
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify({
+                query: `{ __schema { types { name fields { name } } } }`,
+              }),
+            });
+
+            expect(response.status).toBe(200);
+            const result = await response.json();
+            const queryType = result.data.__schema.types.find(
+              (t: { name: string }) => t.name === 'Query',
+            );
+            expect(queryType.fields).toContainEqual({ name: 'ping' });
+            expect(queryType.fields).not.toContainEqual({ name: 'pong' });
+
+            // Verify the pinned manager returns V1 version ID
+            expect(pinnedManager.getSchemaVersionId()).toBe(v1VersionId);
+          } finally {
+            await pinnedServer.stop();
+          }
+        } finally {
+          // Server already stopped in try block
+        }
+      },
+    );
+
+    test.concurrent('access versioned SDL artifact with valid credentials', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Single,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Schema
+      const publishSchemaResult = await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+      // Fetch the latest valid version to get the version ID
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // Test latest endpoint
+      const latestUrl = buildEndpointUrl(endpointBaseUrl, target.id, 'sdl');
+      const latestResponse = await fetch(latestUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+      expect(latestResponse.status).toBe(200);
+      const latestBody = await latestResponse.text();
+
+      // Test versioned endpoint
+      const versionedUrl = buildVersionedEndpointUrl(endpointBaseUrl, target.id, versionId!, 'sdl');
+      const versionedResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+
+      expect(versionedResponse.status).toBe(200);
+      const versionedBody = await versionedResponse.text();
+
+      // Both should return the same content
+      expect(versionedBody).toBe(latestBody);
+      expect(versionedBody).toMatchInlineSnapshot(`
+          type Query {
+            ping: String
+          }
+        `);
+
+      // Verify the versioned S3 key exists
+      const versionedArtifact = await fetchS3ObjectArtifact(
+        'artifacts',
+        `artifact/${target.id}/version/${versionId}/sdl`,
+      );
+      expect(versionedArtifact.body).toBe(latestBody);
+
+      expect(versionedResponse.headers.get('cache-control')).toBe(
+        'public, max-age=31536000, immutable',
+      );
+    });
+
+    test.concurrent(
+      'versioned artifact returns 404 for non-existent version',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Single,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish Schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'abc123',
+            sdl: `type Query { ping: String }`,
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+
+        // Use a non-existent but valid UUID
+        const nonExistentVersionId = '00000000-0000-0000-0000-000000000000';
+        const versionedUrl = buildVersionedEndpointUrl(
+          endpointBaseUrl,
+          target.id,
+          nonExistentVersionId,
+          'sdl',
+        );
+
+        const response = await fetch(versionedUrl, {
+          method: 'GET',
+          headers: {
+            'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+          },
+        });
+
+        expect(response.status).toBe(404);
+      },
+    );
+
+    test.concurrent(
+      'versioned artifact returns 404 for invalid UUID format',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Single,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish Schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'abc123',
+            sdl: `type Query { ping: String }`,
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+
+        // Use an invalid UUID format
+        const invalidVersionId = 'not-a-valid-uuid';
+        const versionedUrl = buildVersionedEndpointUrl(
+          endpointBaseUrl,
+          target.id,
+          invalidVersionId,
+          'sdl',
+        );
+
+        const response = await fetch(versionedUrl, {
+          method: 'GET',
+          headers: {
+            'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+          },
+        });
+
+        expect(response.status).toBe(404);
+      },
+    );
+
+    test.concurrent('access versioned federation supergraph artifact', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Federation,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Schema
+      const publishSchemaResult = await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+          service: 'ping',
+          url: 'http://ping.com',
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+      // Fetch the latest valid version to get the version ID
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // Test versioned supergraph endpoint
+      const versionedUrl = buildVersionedEndpointUrl(
+        endpointBaseUrl,
+        target.id,
+        versionId!,
+        'supergraph',
+      );
+      const versionedResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+
+      expect(versionedResponse.status).toBe(200);
+      const supergraphBody = await versionedResponse.text();
+      expect(supergraphBody).toContain('schema');
+
+      // Verify the versioned S3 key exists
+      const versionedArtifact = await fetchS3ObjectArtifact(
+        'artifacts',
+        `artifact/${target.id}/version/${versionId}/supergraph`,
+      );
+      expect(versionedArtifact.body).toBe(supergraphBody);
+
+      expect(versionedResponse.headers.get('cache-control')).toBe(
+        'public, max-age=31536000, immutable',
+      );
+    });
+
+    test.concurrent('access versioned federation services artifact', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Federation,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Schema
+      const publishSchemaResult = await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+          service: 'ping',
+          url: 'http://ping.com',
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+      // Fetch the latest valid version to get the version ID
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // Test versioned services endpoint
+      const versionedUrl = buildVersionedEndpointUrl(
+        endpointBaseUrl,
+        target.id,
+        versionId!,
+        'services',
+      );
+      const versionedResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+
+      expect(versionedResponse.status).toBe(200);
+      expect(versionedResponse.headers.get('content-type')).toContain('application/json');
+      const servicesBody = await versionedResponse.text();
+      expect(servicesBody).toMatchInlineSnapshot(
+        '[{"name":"ping","sdl":"type Query { ping: String }","url":"http://ping.com"}]',
+      );
+
+      // Verify the versioned S3 key exists
+      const versionedArtifact = await fetchS3ObjectArtifact(
+        'artifacts',
+        `artifact/${target.id}/version/${versionId}/services`,
+      );
+      expect(versionedArtifact.body).toBe(servicesBody);
+
+      expect(versionedResponse.headers.get('cache-control')).toBe(
+        'public, max-age=31536000, immutable',
+      );
+    });
+
+    test.concurrent('access versioned federation metadata artifact', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Federation,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Schema with metadata
+      const publishSchemaResult = await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+          service: 'ping',
+          url: 'http://ping.com',
+          metadata: JSON.stringify({ version: '1.0' }),
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+      // Fetch the latest valid version to get the version ID
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // Test versioned metadata endpoint
+      const versionedUrl = buildVersionedEndpointUrl(
+        endpointBaseUrl,
+        target.id,
+        versionId!,
+        'metadata',
+      );
+      const versionedResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+
+      expect(versionedResponse.status).toBe(200);
+      expect(versionedResponse.headers.get('content-type')).toContain('application/json');
+      const metadataBody = await versionedResponse.text();
+      // Federation metadata contains the metadata we published
+      expect(metadataBody).toContain('version');
+
+      // Verify the versioned S3 key exists
+      const versionedArtifact = await fetchS3ObjectArtifact(
+        'artifacts',
+        `artifact/${target.id}/version/${versionId}/metadata`,
+      );
+      expect(versionedArtifact.body).toBe(metadataBody);
+
+      expect(versionedResponse.headers.get('cache-control')).toBe(
+        'public, max-age=31536000, immutable',
+      );
+      expect(versionedResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+    });
+
+    test.concurrent('versioned artifact access without credentials', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+      const writeToken = await createTargetAccessToken({});
+
+      await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const endpointBaseUrl = await getBaseEndpoint();
+      const versionedUrl = buildVersionedEndpointUrl(endpointBaseUrl, target.id, versionId!, 'sdl');
+
+      // Request without credentials
+      const response = await fetch(versionedUrl, { method: 'GET' });
+      expect(response.status).toBe(400);
+      expect(response.headers.get('content-type')).toContain('application/json');
+      expect(await response.json()).toEqual({
+        code: 'MISSING_AUTH_KEY',
+        error: 'Hive CDN authentication key is missing',
+        description:
+          'Please refer to the documentation for more details: https://docs.graphql-hive.com/features/registry-usage ',
+      });
+    });
+
+    test.concurrent('versioned artifact access with invalid credentials', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+      const writeToken = await createTargetAccessToken({});
+
+      await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const endpointBaseUrl = await getBaseEndpoint();
+      const versionedUrl = buildVersionedEndpointUrl(endpointBaseUrl, target.id, versionId!, 'sdl');
+
+      // Request with invalid credentials
+      const response = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': 'invalid-key',
+        },
+      });
+      expect(response.status).toBe(403);
+      expect(response.headers.get('content-type')).toContain('application/json');
+      expect(await response.json()).toEqual({
+        code: 'INVALID_AUTH_KEY',
+        error:
+          'Hive CDN authentication key is invalid, or it does not match the requested target ID.',
+        description:
+          'Please refer to the documentation for more details: https://docs.graphql-hive.com/features/registry-usage ',
+      });
+    });
+
+    test.concurrent('CDN response includes x-hive-schema-version-id header', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Single,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Schema
+      await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      // Fetch the latest valid version to get the version ID
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // Test latest endpoint returns x-hive-schema-version-id header
+      const latestUrl = buildEndpointUrl(endpointBaseUrl, target.id, 'sdl');
+      const latestResponse = await fetch(latestUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+      expect(latestResponse.status).toBe(200);
+      expect(latestResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+
+      // Test versioned endpoint also returns x-hive-schema-version-id header
+      const versionedUrl = buildVersionedEndpointUrl(endpointBaseUrl, target.id, versionId!, 'sdl');
+      const versionedResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+      expect(versionedResponse.status).toBe(200);
+      expect(versionedResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+    });
+
+    test.concurrent('versioned artifact with if-none-match returns 304', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Single,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Schema
+      await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      // Fetch the latest valid version to get the version ID
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // First request to get ETag
+      const versionedUrl = buildVersionedEndpointUrl(endpointBaseUrl, target.id, versionId!, 'sdl');
+      const firstResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+        },
+      });
+
+      expect(firstResponse.status).toBe(200);
+      const etag = firstResponse.headers.get('etag');
+      expect(etag).toBeDefined();
+
+      // Second request with If-None-Match should return 304
+      const secondResponse = await fetch(versionedUrl, {
+        method: 'GET',
+        headers: {
+          'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+          'if-none-match': etag!,
+        },
+      });
+
+      expect(secondResponse.status).toBe(304);
+    });
+
+    test.concurrent(
+      'versioned artifact remains immutable after new schema publish',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Single,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish V1 schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v1',
+            sdl: `type Query { ping: String }`,
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const v1Version = await writeToken.fetchLatestValidSchema();
+        const v1VersionId = v1Version.latestValidVersion?.id;
+        expect(v1VersionId).toBeDefined();
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+
+        // Fetch V1 content
+        const v1Url = buildVersionedEndpointUrl(endpointBaseUrl, target.id, v1VersionId!, 'sdl');
+        const v1Response = await fetch(v1Url, {
+          method: 'GET',
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        });
+        expect(v1Response.status).toBe(200);
+        const v1Content = await v1Response.text();
+        expect(v1Content).toContain('ping');
+
+        // Publish V2 schema with different content
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v2',
+            sdl: `type Query { ping: String, pong: String }`,
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const v2Version = await writeToken.fetchLatestValidSchema();
+        const v2VersionId = v2Version.latestValidVersion?.id;
+        expect(v2VersionId).toBeDefined();
+        expect(v2VersionId).not.toBe(v1VersionId);
+
+        // Verify V1 versioned endpoint still returns original content
+        const v1ResponseAfterV2 = await fetch(v1Url, {
+          method: 'GET',
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        });
+        expect(v1ResponseAfterV2.status).toBe(200);
+        const v1ContentAfterV2 = await v1ResponseAfterV2.text();
+        expect(v1ContentAfterV2).toBe(v1Content);
+        expect(v1ContentAfterV2).not.toContain('pong');
+
+        // Verify latest endpoint returns V2 content
+        const latestUrl = buildEndpointUrl(endpointBaseUrl, target.id, 'sdl');
+        const latestResponse = await fetch(latestUrl, {
+          method: 'GET',
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        });
+        expect(latestResponse.status).toBe(200);
+        const latestContent = await latestResponse.text();
+        expect(latestContent).toContain('pong');
+
+        // Verify headers point to correct versions
+        expect(v1ResponseAfterV2.headers.get('x-hive-schema-version-id')).toBe(v1VersionId);
+        expect(latestResponse.headers.get('x-hive-schema-version-id')).toBe(v2VersionId);
+      },
+    );
+
+    test.concurrent('x-hive-schema-version-id header on all artifact types', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Federation,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      // Publish Federation schema with metadata (required for metadata artifact)
+      await writeToken
+        .publishSchema({
+          author: 'Kamil',
+          commit: 'abc123',
+          sdl: `type Query { ping: String }`,
+          service: 'ping',
+          url: 'http://ping.com',
+          metadata: JSON.stringify({ version: '1.0' }),
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const latestVersion = await writeToken.fetchLatestValidSchema();
+      const versionId = latestVersion.latestValidVersion?.id;
+      expect(versionId).toBeDefined();
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+
+      // Test SDL artifact
+      const sdlResponse = await fetch(buildEndpointUrl(endpointBaseUrl, target.id, 'sdl'), {
+        method: 'GET',
+        headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+      });
+      expect(sdlResponse.status).toBe(200);
+      expect(sdlResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+
+      // Test services artifact
+      const servicesResponse = await fetch(
+        buildEndpointUrl(endpointBaseUrl, target.id, 'services'),
+        {
+          method: 'GET',
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        },
+      );
+      expect(servicesResponse.status).toBe(200);
+      expect(servicesResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+
+      // Test supergraph artifact
+      const supergraphResponse = await fetch(
+        buildEndpointUrl(endpointBaseUrl, target.id, 'supergraph'),
+        {
+          method: 'GET',
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        },
+      );
+      expect(supergraphResponse.status).toBe(200);
+      expect(supergraphResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+
+      // Test metadata artifact
+      const metadataResponse = await fetch(
+        buildEndpointUrl(endpointBaseUrl, target.id, 'metadata'),
+        {
+          method: 'GET',
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        },
+      );
+      expect(metadataResponse.status).toBe(200);
+      expect(metadataResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+    });
+
+    test.concurrent(
+      'access versioned contract artifact with valid credentials',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject, setFeatureFlag } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target, setNativeFederation } =
+          await createProject(ProjectType.Federation);
+        await setFeatureFlag('compareToPreviousComposableVersion', true);
+        await setNativeFederation(true);
+
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish initial schema with @tag directive
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String
+                helloHidden: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Create a contract
+        const createContractResult = await execute({
+          document: CreateContractMutation,
+          variables: {
+            input: {
+              target: { byId: target.id },
+              contractName: 'my-contract',
+              removeUnreachableTypesFromPublicApiSchema: true,
+              includeTags: ['internal'],
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+
+        expect(createContractResult.createContract.error).toBeNull();
+
+        // Publish schema again to generate contract artifacts
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String
+                helloHidden: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Fetch the latest valid version to get the version ID
+        const latestVersion = await writeToken.fetchLatestValidSchema();
+        const versionId = latestVersion.latestValidVersion?.id;
+        expect(versionId).toBeDefined();
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+
+        // Test versioned contract SDL endpoint
+        const versionedContractSdlUrl = buildVersionedContractEndpointUrl(
+          endpointBaseUrl,
+          target.id,
+          versionId!,
+          'my-contract',
+          'sdl',
+        );
+        const contractSdlResponse = await fetch(versionedContractSdlUrl, {
+          method: 'GET',
+          headers: {
+            'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+          },
+        });
+
+        expect(contractSdlResponse.status).toBe(200);
+        const contractSdlBody = await contractSdlResponse.text();
+        expect(contractSdlBody).toContain('helloHidden');
+        expect(contractSdlResponse.headers.get('cache-control')).toBe(
+          'public, max-age=31536000, immutable',
+        );
+        expect(contractSdlResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+
+        // Test versioned contract supergraph endpoint
+        const versionedContractSupergraphUrl = buildVersionedContractEndpointUrl(
+          endpointBaseUrl,
+          target.id,
+          versionId!,
+          'my-contract',
+          'supergraph',
+        );
+        const contractSupergraphResponse = await fetch(versionedContractSupergraphUrl, {
+          method: 'GET',
+          headers: {
+            'x-hive-cdn-key': cdnAccessResult.secretAccessToken,
+          },
+        });
+
+        expect(contractSupergraphResponse.status).toBe(200);
+        expect(contractSupergraphResponse.headers.get('cache-control')).toBe(
+          'public, max-age=31536000, immutable',
+        );
+        expect(contractSupergraphResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+      },
+    );
+
+    test.concurrent(
+      'createServicesFetcher with schemaVersionId fetches pinned version',
+      async ({ expect }) => {
+        const endpointBaseUrl = await getBaseEndpoint();
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        // Publish V1 Schema
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v1',
+            sdl: `type Query { ping: String }`,
+            service: 'ping',
+            url: 'http://ping.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Get V1 version ID
+        const v1Version = await writeToken.fetchLatestValidSchema();
+        const v1VersionId = v1Version.latestValidVersion?.id;
+        expect(v1VersionId).toBeDefined();
+
+        const cdnAccessResult = await createCdnAccess();
+
+        // Fetch V1 and capture content
+        const v1Fetcher = createServicesFetcher({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+        });
+        const v1Result = await v1Fetcher();
+        expect(v1Result[0].schemaVersionId).toBe(v1VersionId);
+
+        // Publish V2 Schema with different content
+        await writeToken
+          .publishSchema({
+            author: 'Kamil',
+            commit: 'v2',
+            sdl: `type Query { ping: String, pong: String }`,
+            service: 'ping',
+            url: 'http://ping.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Create a pinned fetcher for V1
+        const pinnedFetcher = createServicesFetcher({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+          schemaVersionId: v1VersionId!,
+        });
+
+        const pinnedResult = await pinnedFetcher();
+
+        // Should still return V1 content even after V2 was published
+        expect(pinnedResult[0].sdl).toBe(v1Result[0].sdl);
+        expect(pinnedResult[0].sdl).not.toContain('pong');
+
+        // Latest fetcher should return V2
+        const latestFetcher = createServicesFetcher({
+          endpoint: endpointBaseUrl + target.id,
+          key: cdnAccessResult.secretAccessToken,
+        });
+        const latestResult = await latestFetcher();
+        expect(latestResult[0].sdl).toContain('pong');
+        expect(latestResult[0].schemaVersionId).not.toBe(v1VersionId);
+      },
+    );
   });
 }
 

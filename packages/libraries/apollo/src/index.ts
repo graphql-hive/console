@@ -55,6 +55,11 @@ export type CreateSupergraphManagerArgs = {
    * Default: currents package version
    */
   version?: string;
+  /**
+   * Pin to a specific schema version.
+   * When provided, fetches from the versioned endpoint
+   */
+  schemaVersionId?: string;
 };
 
 export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
@@ -62,9 +67,18 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
   const pollIntervalInMs = args.pollIntervalInMs ?? 30_000;
   let endpoints = Array.isArray(args.endpoint) ? args.endpoint : [args.endpoint];
 
-  const endpoint = endpoints.map(endpoint =>
-    endpoint.endsWith('/supergraph') ? endpoint : joinUrl(endpoint, 'supergraph'),
-  );
+  // Build endpoints - use versioned path if schemaVersionId is provided
+  const endpoint = endpoints.map(ep => {
+    // Remove trailing /supergraph if present to get the base
+    const base = ep.endsWith('/supergraph') ? ep.slice(0, -'/supergraph'.length) : ep;
+
+    if (args.schemaVersionId) {
+      // Versioned endpoint: /artifacts/v1/{targetId}/version/{versionId}/supergraph
+      return joinUrl(joinUrl(joinUrl(base, 'version'), args.schemaVersionId), 'supergraph');
+    }
+
+    return joinUrl(base, 'supergraph');
+  });
 
   const artifactsFetcher = createCDNArtifactFetcher({
     endpoint: endpoint as [string, string],
@@ -79,19 +93,23 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
   });
 
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let currentSchemaVersionId: string | undefined = args.schemaVersionId;
 
   return {
     async initialize(hooks: { update(supergraphSdl: string): void }): Promise<{
       supergraphSdl: string;
+      schemaVersionId?: string;
       cleanup?: () => Promise<void>;
     }> {
       const initialResult = await artifactsFetcher.fetch();
+      currentSchemaVersionId = initialResult.schemaVersionId ?? args.schemaVersionId;
 
       function poll() {
         timer = setTimeout(async () => {
           try {
             const result = await artifactsFetcher.fetch();
             if (result.contents) {
+              currentSchemaVersionId = result.schemaVersionId ?? undefined;
               hooks.update?.(result.contents);
             }
           } catch (error) {
@@ -105,6 +123,7 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
 
       return {
         supergraphSdl: initialResult.contents,
+        schemaVersionId: currentSchemaVersionId,
         cleanup: async () => {
           if (timer) {
             clearTimeout(timer);
@@ -112,6 +131,9 @@ export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
           artifactsFetcher.dispose();
         },
       };
+    },
+    getSchemaVersionId(): string | undefined {
+      return currentSchemaVersionId;
     },
   };
 }

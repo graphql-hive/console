@@ -295,3 +295,187 @@ test('fail in case of unexpected CDN status code (nRetryCount=11)', async () => 
     );
   }
 });
+
+test('createSchemaFetcher extracts schemaVersionId from response header', async () => {
+  const schema = {
+    sdl: 'type Query { ping: String }',
+    url: 'service-url',
+    name: 'service-name',
+  };
+  const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const key = 'secret-key';
+
+  nock('http://localhost')
+    .get('/services')
+    .once()
+    .matchHeader('X-Hive-CDN-Key', key)
+    .reply(200, schema, {
+      ETag: 'first',
+      'x-hive-schema-version-id': versionId,
+    });
+
+  const fetcher = createSchemaFetcher({
+    endpoint: 'http://localhost',
+    key,
+  });
+
+  const result = await fetcher();
+
+  expect(result.schemaVersionId).toEqual(versionId);
+  expect(result.sdl).toEqual(schema.sdl);
+});
+
+test('createSchemaFetcher uses versioned endpoint when schemaVersionId option is provided', async () => {
+  const schema = {
+    sdl: 'type Query { ping: String }',
+    url: 'service-url',
+    name: 'service-name',
+  };
+  const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const key = 'secret-key';
+
+  nock('http://localhost')
+    .get(`/version/${versionId}/services`)
+    .once()
+    .matchHeader('X-Hive-CDN-Key', key)
+    .reply(200, schema, {
+      'x-hive-schema-version-id': versionId,
+    });
+
+  const fetcher = createSchemaFetcher({
+    endpoint: 'http://localhost',
+    key,
+    schemaVersionId: versionId,
+  });
+
+  const result = await fetcher();
+
+  expect(result.schemaVersionId).toEqual(versionId);
+  expect(result.sdl).toEqual(schema.sdl);
+});
+
+test('createServicesFetcher extracts schemaVersionId into each item', async () => {
+  const services = [
+    { sdl: 'type Query { ping: String }', url: 'http://ping.com', name: 'ping' },
+    { sdl: 'type Query { pong: String }', url: 'http://pong.com', name: 'pong' },
+  ];
+  const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const key = 'secret-key';
+
+  nock('http://localhost')
+    .get('/services')
+    .once()
+    .matchHeader('X-Hive-CDN-Key', key)
+    .reply(200, services, {
+      ETag: 'first',
+      'x-hive-schema-version-id': versionId,
+    });
+
+  const fetcher = createServicesFetcher({
+    endpoint: 'http://localhost',
+    key,
+  });
+
+  const result = await fetcher();
+
+  expect(result).toHaveLength(2);
+  expect(result[0].schemaVersionId).toEqual(versionId);
+  expect(result[1].schemaVersionId).toEqual(versionId);
+  expect(result[0].name).toEqual('ping');
+  expect(result[1].name).toEqual('pong');
+});
+
+test('createServicesFetcher uses versioned endpoint when schemaVersionId option is provided', async () => {
+  const services = [{ sdl: 'type Query { ping: String }', url: 'http://ping.com', name: 'ping' }];
+  const versionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const key = 'secret-key';
+
+  nock('http://localhost')
+    .get(`/version/${versionId}/services`)
+    .once()
+    .matchHeader('X-Hive-CDN-Key', key)
+    .reply(200, services, {
+      'x-hive-schema-version-id': versionId,
+    });
+
+  const fetcher = createServicesFetcher({
+    endpoint: 'http://localhost',
+    key,
+    schemaVersionId: versionId,
+  });
+
+  const result = await fetcher();
+
+  expect(result).toHaveLength(1);
+  expect(result[0].schemaVersionId).toEqual(versionId);
+});
+
+test('createSchemaFetcher omits schemaVersionId when header is absent', async () => {
+  const schema = {
+    sdl: 'type Query { ping: String }',
+    url: 'service-url',
+    name: 'service-name',
+  };
+  const key = 'secret-key';
+
+  nock('http://localhost')
+    .get('/services')
+    .once()
+    .matchHeader('X-Hive-CDN-Key', key)
+    .reply(200, schema);
+
+  const fetcher = createSchemaFetcher({
+    endpoint: 'http://localhost',
+    key,
+  });
+
+  const result = await fetcher();
+
+  expect(result.schemaVersionId).toBeUndefined();
+  expect(result.sdl).toEqual(schema.sdl);
+});
+
+test('createSchemaFetcher throws error for empty schemaVersionId', () => {
+  expect(() =>
+    createSchemaFetcher({
+      endpoint: 'http://localhost',
+      key: 'secret-key',
+      schemaVersionId: '',
+    }),
+  ).toThrowError(
+    'Invalid schemaVersionId: cannot be empty or whitespace. Provide a valid version ID or omit the option to fetch the latest version.',
+  );
+});
+
+test('createSchemaFetcher throws error for whitespace-only schemaVersionId', () => {
+  expect(() =>
+    createSchemaFetcher({
+      endpoint: 'http://localhost',
+      key: 'secret-key',
+      schemaVersionId: '   ',
+    }),
+  ).toThrowError(
+    'Invalid schemaVersionId: cannot be empty or whitespace. Provide a valid version ID or omit the option to fetch the latest version.',
+  );
+});
+
+test('createSchemaFetcher returns 404 error for non-existent schemaVersionId', async () => {
+  const key = 'secret-key';
+  const invalidVersionId = 'non-existent-version-id';
+
+  nock('http://localhost')
+    .get(`/version/${invalidVersionId}/services`)
+    .times(11)
+    .matchHeader('X-Hive-CDN-Key', key)
+    .reply(404, 'Not Found');
+
+  const fetcher = createSchemaFetcher({
+    endpoint: 'http://localhost',
+    key,
+    schemaVersionId: invalidVersionId,
+  });
+
+  await expect(fetcher()).rejects.toThrowError(
+    /GET http:\/\/localhost\/version\/non-existent-version-id\/services .* failed with status 404/,
+  );
+});

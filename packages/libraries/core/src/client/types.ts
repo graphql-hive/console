@@ -289,11 +289,13 @@ export interface SchemaFetcherOptions {
   logger?: Logger;
   name?: string;
   version?: string;
+  schemaVersionId?: string;
 }
 
 export interface ServicesFetcherOptions {
   endpoint: string;
   key: string;
+  schemaVersionId?: string;
 }
 
 export type PersistedDocumentsConfiguration = {

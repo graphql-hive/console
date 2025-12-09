@@ -41,6 +41,7 @@ export class ArtifactStorageWriter {
       'hive.target.id': args.targetId,
       'hive.artifact.type': args.artifactType,
       'hive.contract.name': args.contractName || '',
+      'hive.version.id': args.versionId || '',
     }),
   })
   async writeArtifact(args: {
@@ -48,25 +49,87 @@ export class ArtifactStorageWriter {
     artifactType: keyof typeof artifactMeta;
     artifact: unknown;
     contractName: null | string;
+    versionId?: string | null;
   }) {
-    const key = buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName);
+    const latestKey = buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName);
+    const versionedKey = args.versionId
+      ? buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName, args.versionId)
+      : null;
     const meta = artifactMeta[args.artifactType];
+    const body = meta.preprocessor(args.artifact);
 
     for (const s3 of this.s3Mirrors) {
-      const result = await s3.client.fetch([s3.endpoint, s3.bucket, key].join('/'), {
+      this.logger.debug(
+        'Writing artifact to S3 (targetId=%s, artifactType=%s, contractName=%s, versionId=%s, latestKey=%s, versionedKey=%s)',
+        args.targetId,
+        args.artifactType,
+        args.contractName,
+        args.versionId,
+        latestKey,
+        versionedKey,
+      );
+
+      // Write versioned key first (if versionId provided)
+      // This order ensures that if versioned write fails, "latest" still points to the previous version
+      if (versionedKey && args.versionId) {
+        const versionedResult = await s3.client.fetch(
+          [s3.endpoint, s3.bucket, versionedKey].join('/'),
+          {
+            method: 'PUT',
+            headers: {
+              'content-type': meta.contentType,
+              // Store version ID as S3 object metadata for CDN response headers
+              'x-amz-meta-x-hive-schema-version-id': args.versionId,
+            },
+            body,
+            aws: {
+              signQuery: true,
+            },
+          },
+        );
+
+        if (versionedResult.statusCode !== 200) {
+          this.logger.error(
+            'Failed to write versioned artifact (targetId=%s, artifactType=%s, versionId=%s, key=%s, statusCode=%s)',
+            args.targetId,
+            args.artifactType,
+            args.versionId,
+            versionedKey,
+            versionedResult.statusCode,
+          );
+          throw new Error(
+            `Unexpected status code ${versionedResult.statusCode} when writing versioned artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, versionId=${args.versionId}, key=${versionedKey})`,
+          );
+        }
+      }
+
+      // Write to latest key (always) - only after versioned succeeds
+      const latestResult = await s3.client.fetch([s3.endpoint, s3.bucket, latestKey].join('/'), {
         method: 'PUT',
         headers: {
           'content-type': meta.contentType,
+          // Store version ID as S3 object metadata for CDN response headers
+          ...(args.versionId ? { 'x-amz-meta-x-hive-schema-version-id': args.versionId } : {}),
         },
-        body: meta.preprocessor(args.artifact),
+        body,
         aws: {
           // This boolean makes Google Cloud Storage & AWS happy.
           signQuery: true,
         },
       });
 
-      if (result.statusCode !== 200) {
-        throw new Error(`Unexpected status code ${result.statusCode} when writing artifact.`);
+      if (latestResult.statusCode !== 200) {
+        this.logger.error(
+          'Failed to write latest artifact after versioned succeeded (targetId=%s, artifactType=%s, versionId=%s, versionedKey=%s written, latestKey=%s failed)',
+          args.targetId,
+          args.artifactType,
+          args.versionId,
+          versionedKey,
+          latestKey,
+        );
+        throw new Error(
+          `Unexpected status code ${latestResult.statusCode} when writing latest artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, key=${latestKey}). Note: versioned artifact was already written.`,
+        );
       }
     }
   }
