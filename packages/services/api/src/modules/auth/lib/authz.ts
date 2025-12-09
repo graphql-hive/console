@@ -358,12 +358,12 @@ function defaultAppDeploymentIdentity(
 }
 
 function defaultSchemaProposalIdentity(
-  args: { schemaProposalId: string | null } & Parameters<typeof defaultTargetIdentity>[0],
+  args: { serviceName: string | null } & Parameters<typeof defaultTargetIdentity>[0],
 ) {
   const ids = defaultTargetIdentity(args);
 
-  if (args.schemaProposalId !== null) {
-    ids.push(`target/${args.targetId}/schemaProposal/${args.schemaProposalId}`);
+  if (args.serviceName !== null) {
+    ids.push(`target/${args.targetId}/service/${args.serviceName}`);
   }
 
   return ids;
@@ -433,13 +433,14 @@ const permissionsByLevel = {
     z.literal('schemaCheck:approve'),
     z.literal('schemaVersion:publish'),
     z.literal('schemaVersion:deleteService'),
+    z.literal('schemaProposal:describe'),
+    z.literal('schemaProposal:modify'),
   ],
   appDeployment: [
     z.literal('appDeployment:create'),
     z.literal('appDeployment:publish'),
     z.literal('appDeployment:retire'),
   ],
-  schemaProposal: [z.literal('schemaProposal:describe'), z.literal('schemaProposal:modify')],
 } as const;
 
 export const allPermissions = [
@@ -531,9 +532,6 @@ export const actionDefinitions = {
   ),
   ...objectFromEntries(
     permissionsByLevel['appDeployment'].map(t => [t.value, defaultAppDeploymentIdentity]),
-  ),
-  ...objectFromEntries(
-    permissionsByLevel['schemaProposal'].map(t => [t.value, defaultSchemaProposalIdentity]),
   ),
 } satisfies ActionDefinitionMap;
 

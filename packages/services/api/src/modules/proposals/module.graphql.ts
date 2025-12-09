@@ -5,7 +5,7 @@ export default gql`
     createSchemaProposal(input: CreateSchemaProposalInput!): CreateSchemaProposalResult!
     reviewSchemaProposal(input: ReviewSchemaProposalInput!): ReviewSchemaProposalResult!
     replyToSchemaProposalReview(
-      input: CommentOnSchemaProposalReviewInput!
+      input: ReplyToSchemaProposalReviewInput!
     ): ReplyToSchemaProposalReviewResult!
   }
 
@@ -138,7 +138,7 @@ export default gql`
     serviceName: String!
   }
 
-  input CommentOnSchemaProposalReviewInput {
+  input ReplyToSchemaProposalReviewInput {
     schemaProposalReviewId: ID!
     body: String!
   }

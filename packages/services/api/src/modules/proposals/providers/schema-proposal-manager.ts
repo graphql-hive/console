@@ -150,7 +150,6 @@ export class SchemaProposalManager {
     first: number;
     after: string;
     stages: ReadonlyArray<SchemaProposalStage>;
-    users: ReadonlyArray<string>;
   }) {
     this.logger.debug(
       'Get paginated proposals (target=%s, after=%s, stages=%s)',

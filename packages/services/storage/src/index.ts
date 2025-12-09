@@ -4911,6 +4911,7 @@ const FeatureFlagsModel = zod
     appDeployments: zod.boolean().default(false),
     /** whether otel tracing is enabled for the given organization */
     otelTracing: zod.boolean().default(false),
+    schemaProposals: zod.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4922,6 +4923,7 @@ const FeatureFlagsModel = zod
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
         otelTracing: false,
+        schemaProposals: false,
       },
   );
 

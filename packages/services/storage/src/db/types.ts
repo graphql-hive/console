@@ -286,6 +286,7 @@ export interface schema_checks {
   schema_sdl_store_id: string | null;
   schema_version_id: string | null;
   service_name: string | null;
+  service_url: string | null;
   supergraph_sdl: string | null;
   supergraph_sdl_store_id: string | null;
   target_id: string;
@@ -325,15 +326,16 @@ export interface schema_policy_config {
 }
 
 export interface schema_proposal_comments {
+  author: string;
   body: string;
   created_at: Date;
   id: string;
   schema_proposal_review_id: string | null;
   updated_at: Date;
-  user_id: string | null;
 }
 
 export interface schema_proposal_reviews {
+  author: string;
   created_at: Date;
   id: string;
   line_text: string | null;
@@ -341,10 +343,11 @@ export interface schema_proposal_reviews {
   schema_proposal_id: string;
   service_name: string;
   stage_transition: schema_proposal_stage;
-  author: string;
 }
 
 export interface schema_proposals {
+  author: string;
+  comments_count: number;
   created_at: Date;
   description: string;
   id: string;
@@ -352,7 +355,6 @@ export interface schema_proposals {
   target_id: string;
   title: string;
   updated_at: Date;
-  user_id: string | null;
 }
 
 export interface schema_version_changes {

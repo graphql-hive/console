@@ -12,6 +12,5 @@ export const schemaProposals: NonNullable<QueryResolvers['schemaProposals']> = a
     first: args.first,
     after: args.after ?? '',
     stages: (args.input?.stages as any[]) ?? [],
-    users: args.input.userIds ?? [],
   });
 };
