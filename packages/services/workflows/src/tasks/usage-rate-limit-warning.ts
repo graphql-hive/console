@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
-import { renderRateLimitWarningEmail } from '../lib/emails/templates/rate-limit-warning';
+import { renderRateLimitWarningEmail } from '../lib/emails/templates/rate-limit-warning.js';
 
 export const UsageRateLimitWarningTask = defineTask({
   name: 'usageRateLimitWarning',

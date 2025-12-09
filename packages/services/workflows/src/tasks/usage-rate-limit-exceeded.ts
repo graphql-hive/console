@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
-import { renderRateLimitExceededEmail } from '../lib/emails/templates/rate-limit-exceeded';
+import { renderRateLimitExceededEmail } from '../lib/emails/templates/rate-limit-exceeded.js';
 
 export const UsageRateLimitExceededTask = defineTask({
   name: 'usageRateLimitExceeded',

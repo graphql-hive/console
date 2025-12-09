@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
-import { renderPasswordResetEmail } from '../lib/emails/templates/password-reset';
+import { renderPasswordResetEmail } from '../lib/emails/templates/password-reset.js';
 
 export const PasswordResetTask = defineTask({
   name: 'passwordReset',

@@ -1,15 +1,15 @@
 import { DatabasePool, sql } from 'slonik';
 import { z } from 'zod';
 
-export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expiresAt: Date }) {
-  const SchemaCheckModel = z.object({
-    schemaCheckIds: z.array(z.string()),
-    sdlStoreIds: z.array(z.string()),
-    contextIds: z.array(z.string()),
-    targetIds: z.array(z.string()),
-    contractIds: z.array(z.string()),
-  });
+const SchemaCheckModel = z.object({
+  schemaCheckIds: z.array(z.string()),
+  sdlStoreIds: z.array(z.string()),
+  contextIds: z.array(z.string()),
+  targetIds: z.array(z.string()),
+  contractIds: z.array(z.string()),
+});
 
+export async function purgeExpiredSchemaChecks(args: { pool: DatabasePool; expiresAt: Date }) {
   return await args.pool.transaction(async pool => {
     const date = args.expiresAt.toISOString();
     const rawData = await pool.maybeOne<unknown>(sql`/* findSchemaChecksToPurge */

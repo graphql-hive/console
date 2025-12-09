@@ -51,7 +51,7 @@ function logLevel(level: GraphileLogLevel) {
   return 'info';
 }
 
-let runner: Runner = await run({
+const runner: Runner = await run({
   logger: new GraphileLogger(_scope => (level, message, _meta) => {
     logger[logLevel(level)](message);
   }),
@@ -63,9 +63,16 @@ let runner: Runner = await run({
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
 });
 
-process.on('SIGINT', () => {
-  logger.info('Received shutdown signal. Stopping runner.');
-  runner.stop().then(() => {
+async function shutdown() {
+  try {
+    logger.info('Received shutdown signal. Stopping runner.');
+    await runner.stop();
     logger.info('Runner shutdown successful.');
-  });
-});
+    logger.info('Shutdown database connection.');
+    await pg.end();
+    logger.info('Shutdown database connection successful.');
+  } catch (error: unknown) {
+    logger.error({ error }, 'Unepected error occured');
+    process.exit(1);
+  }
+}

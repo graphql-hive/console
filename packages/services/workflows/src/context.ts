@@ -1,7 +1,7 @@
 import type { DatabasePool } from 'slonik';
 import type { Logger } from '@graphql-hive/logger';
-import type { EmailProvider } from './lib/emails/providers';
-import { RequestBroker } from './lib/webhooks/schema-change-notification';
+import type { EmailProvider } from './lib/emails/providers.js';
+import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 export type Context = {
   logger: Logger;

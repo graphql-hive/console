@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
-import { purgeExpiredSchemaChecks } from '../lib/expired-schema-checks';
+import { purgeExpiredSchemaChecks } from '../lib/expired-schema-checks.js';
 
 export const PurgeExpiredSchemaChecks = defineTask({
   name: 'purgeExpiredSchemaChecks',
