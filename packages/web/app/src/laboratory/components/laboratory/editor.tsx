@@ -4,6 +4,10 @@ import { initializeMode } from 'monaco-graphql/initializeMode';
 import { useLaboratory } from '@/laboratory/components/laboratory/context';
 import MonacoEditor, { loader } from '@monaco-editor/react';
 
+if (typeof window !== 'undefined') {
+  (window as any).monaco = monaco;
+}
+
 loader.config({ monaco });
 
 monaco.languages.register({ id: 'dotenv' });
