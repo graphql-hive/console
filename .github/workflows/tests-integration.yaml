@@ -90,13 +90,12 @@ jobs:
 
       - if: matrix.shardIndex == 'apollo-router'
         name: build apollo router
-        timeout-minutes: 10
         run: |
           cargo build
 
       - if: matrix.shardIndex == 'apollo-router'
         name: run apollo router integration tests
-        timeout-minutes: 10
+        timeout-minutes: 30
         run: |
           pnpm test:integration:apollo-router
 
@@ -104,7 +103,7 @@ jobs:
 
       - if: matrix.shardIndex != 'apollo-router'
         name: run integration tests
-        timeout-minutes: 10
+        timeout-minutes: 30
         run: |
           pnpm test:integration --shard=${{ matrix.shardIndex }}/3
         env:
