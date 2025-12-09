@@ -58,11 +58,17 @@ describe('Apollo Router Integration', () => {
       },
     });
     await new Promise((resolve, reject) => {
-      if (!routerProc.all) {
+      routerProc.catch(err => {
+        if (!err.isCanceled) {
+          reject(err);
+        }
+      });
+      const routerProcOut = routerProc.all;
+      if (!routerProcOut) {
         return reject(new Error('No stdout from Apollo Router process'));
       }
       let log = '';
-      routerProc.all.on('data', data => {
+      routerProcOut.on('data', data => {
         log += data.toString();
         if (log.includes('GraphQL endpoint exposed at')) {
           resolve(true);
