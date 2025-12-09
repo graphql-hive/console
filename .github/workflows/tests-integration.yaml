@@ -69,6 +69,13 @@ jobs:
           docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env ps
 
       ##  ---- START ---- Apollo Router specific steps
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - if: matrix.shardIndex == 'apollo-router'
         name: Install Rust
         uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
