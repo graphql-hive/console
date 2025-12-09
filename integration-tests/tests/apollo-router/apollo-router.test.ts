@@ -98,7 +98,7 @@ plugins:
     });
 
     try {
-      const url = 'http://localhost:4000/';
+      const url = `http://localhost:${routerPort}/`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
