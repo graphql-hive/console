@@ -1,4 +1,5 @@
-import type { JobHelpers, Task } from 'graphile-worker';
+import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphile-worker';
+import type { Pool } from 'pg';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
 import type { Context } from './context';
@@ -65,6 +66,32 @@ export function implementTask<TPayload>(
 }
 
 /**
- * Schedule a task.
+ * Schedule a tasks.
  */
-export function scheduleTask<TPayload>(taskDefinition: TaskDefinition<string, TPayload>) {}
+export class TaskScheduler {
+  tools: Promise<WorkerUtils>;
+  constructor(pgPool: Pool) {
+    this.tools = makeWorkerUtils({
+      pgPool,
+    });
+  }
+
+  async scheduleTask<TPayload>(
+    taskDefinition: TaskDefinition<string, TPayload>,
+    payload: TPayload,
+    opts?: {
+      requestId?: string;
+    },
+  ) {
+    await (
+      await this.tools
+    ).addJob(taskDefinition.name, {
+      requestId: opts?.requestId,
+      input: taskDefinition.schema.parse(payload),
+    });
+  }
+
+  async dispose() {
+    await (await this.tools).release();
+  }
+}

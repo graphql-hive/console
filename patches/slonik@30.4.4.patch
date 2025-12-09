@@ -1,3 +1,15 @@
+diff --git a/dist/src/binders/bindPool.js b/dist/src/binders/bindPool.js
+index ad509058bf5d26c82d4b2aea35e945df2f83f38e..1ca27403f70362f9a60abef7df6c2fdaaba1805b 100644
+--- a/dist/src/binders/bindPool.js
++++ b/dist/src/binders/bindPool.js
+@@ -7,6 +7,7 @@ const factories_1 = require("../factories");
+ const state_1 = require("../state");
+ const bindPool = (parentLog, pool, clientConfiguration) => {
+     return {
++        pool,
+         any: (query) => {
+             return (0, factories_1.createConnection)(parentLog, pool, clientConfiguration, 'IMPLICIT_QUERY', (connectionLog, connection, boundConnection) => {
+                 return boundConnection.any(query);
 diff --git a/dist/src/factories/createPool.js b/dist/src/factories/createPool.js
 index b91a9fe433dc340f5cdf096ca4c568297c343ab3..401df1272d1c7f344bb956b38cc7dbde29231742 100644
 --- a/dist/src/factories/createPool.js
@@ -19,3 +31,39 @@ index b91a9fe433dc340f5cdf096ca4c568297c343ab3..401df1272d1c7f344bb956b38cc7dbde
      state_1.poolStateMap.set(pool, {
          ended: false,
          mock: false,
+diff --git a/dist/src/types.d.ts b/dist/src/types.d.ts
+index d091b301b1df0f8d9ad9298d587081fe6d33c0be..57ea5a46fbf0878546e34debed2401efcb66d7fb 100644
+--- a/dist/src/types.d.ts
++++ b/dist/src/types.d.ts
+@@ -138,6 +138,7 @@ export declare type DatabasePool = CommonQueryMethods & {
+     readonly end: () => Promise<void>;
+     readonly getPoolState: () => PoolState;
+     readonly stream: StreamFunction;
++    readonly pool: PgPool;
+ };
+ export declare type DatabaseConnection = DatabasePool | DatabasePoolConnection;
+ export declare type QueryResultRowColumn = PrimitiveValueExpression;
+diff --git a/src/binders/bindPool.ts b/src/binders/bindPool.ts
+index d10bb50117b613f262ee715fc40745e8270a60b3..fde977dd042ec2561163f252c7f76f92cb043eb0 100644
+--- a/src/binders/bindPool.ts
++++ b/src/binders/bindPool.ts
+@@ -26,6 +26,7 @@ export const bindPool = (
+   clientConfiguration: ClientConfiguration,
+ ): DatabasePool => {
+   return {
++    pool,
+     any: (query: TaggedTemplateLiteralInvocation) => {
+       return createConnection(
+         parentLog,
+diff --git a/src/types.ts b/src/types.ts
+index da293a0a4ce2583c43711cbe90d4829ec9c46fa8..962acdd5c2652e6e61147adc03204bca065cd28c 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -191,6 +191,7 @@ export type DatabasePool = CommonQueryMethods & {
+   readonly end: () => Promise<void>,
+   readonly getPoolState: () => PoolState,
+   readonly stream: StreamFunction,
++  readonly pool: PgPool,
+ };
+ 
+ export type DatabaseConnection = DatabasePool | DatabasePoolConnection;

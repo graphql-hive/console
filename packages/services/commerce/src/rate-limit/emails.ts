@@ -1,19 +1,9 @@
-import type { EmailsApi } from '@hive/emails';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import type { TaskScheduler } from '@hive/workflows/kit';
+import { UsageRateLimitExceededTask } from '@hive/workflows/tasks/usage-rate-limit-exceeded';
+import { UsageRateLimitWarningTask } from '@hive/workflows/tasks/usage-rate-limit-warning';
 import { env } from '../environment';
 
-export function createEmailScheduler(config?: { endpoint: string }) {
-  const api = config?.endpoint
-    ? createTRPCProxyClient<EmailsApi>({
-        links: [
-          httpLink({
-            url: `${config.endpoint}/trpc`,
-            fetch,
-          }),
-        ],
-      })
-    : null;
-
+export function createEmailScheduler(taskScheduler: TaskScheduler) {
   let scheduledEmails: Promise<unknown>[] = [];
 
   return {
@@ -38,12 +28,8 @@ export function createEmailScheduler(config?: { endpoint: string }) {
         current: number;
       };
     }) {
-      if (!api) {
-        return scheduledEmails.push(Promise.resolve());
-      }
-
       return scheduledEmails.push(
-        api.sendRateLimitExceededEmail.mutate({
+        taskScheduler.scheduleTask(UsageRateLimitExceededTask, {
           email: input.organization.email,
           organizationId: input.organization.id,
           organizationName: input.organization.name,
@@ -74,12 +60,8 @@ export function createEmailScheduler(config?: { endpoint: string }) {
         current: number;
       };
     }) {
-      if (!api) {
-        return scheduledEmails.push(Promise.resolve());
-      }
-
       return scheduledEmails.push(
-        api.sendRateLimitWarningEmail.mutate({
+        taskScheduler.scheduleTask(UsageRateLimitWarningTask, {
           email: input.organization.email,
           organizationId: input.organization.id,
           organizationName: input.organization.name,

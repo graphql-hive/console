@@ -41,6 +41,7 @@ import {
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { TaskScheduler } from '@hive/workflows/kit';
 import {
   contextLinesIntegration,
   dedupeIntegration,
@@ -193,6 +194,7 @@ export async function main() {
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
+  const taskScheduler = new TaskScheduler(storage.pool.pool);
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
@@ -375,6 +377,7 @@ export async function main() {
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       prometheus: env.prometheus,
+      taskScheduler,
     });
 
     const organizationAccessTokenStrategy = (logger: Logger) =>
@@ -469,6 +472,7 @@ export async function main() {
       crypto,
       logger: server.log,
       redis,
+      taskScheduler,
       broadcastLog(id, message) {
         pubSub.publish('oidcIntegrationLogs', id, {
           timestamp: new Date().toISOString(),
