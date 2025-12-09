@@ -1,5 +1,6 @@
 import { CONTEXT, createApplication, Provider, Scope } from 'graphql-modules';
 import { Redis } from 'ioredis';
+import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
 import { WEBHOOKS_CONFIG, WebhooksConfig } from './modules/alerts/providers/tokens';
@@ -47,7 +48,6 @@ import {
 import { sharedModule } from './modules/shared';
 import { CryptoProvider, encryptionSecretProvider } from './modules/shared/providers/crypto';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
-import { Emails, EMAILS_ENDPOINT } from './modules/shared/providers/emails';
 import { HttpClient } from './modules/shared/providers/http-client';
 import { IdTranslator } from './modules/shared/providers/id-translator';
 import {
@@ -116,6 +116,7 @@ export function createRegistry({
   appDeploymentsEnabled,
   otelTracingEnabled,
   prometheus,
+  taskScheduler,
 }: {
   logger: Logger;
   storage: Storage;
@@ -161,6 +162,7 @@ export function createRegistry({
   appDeploymentsEnabled: boolean;
   otelTracingEnabled: boolean;
   prometheus: null | Record<string, unknown>;
+  taskScheduler: TaskScheduler;
 }) {
   const s3Config: S3Config = [
     {
@@ -210,7 +212,6 @@ export function createRegistry({
     Mutex,
     DistributedCache,
     CryptoProvider,
-    Emails,
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
     {
@@ -320,16 +321,12 @@ export function createRegistry({
         return new PrometheusConfig(!!prometheus);
       },
     },
-  ];
-
-  if (emailsEndpoint) {
-    providers.push({
-      provide: EMAILS_ENDPOINT,
-      useValue: emailsEndpoint,
+    {
+      provide: TaskScheduler,
+      useValue: taskScheduler,
       scope: Scope.Singleton,
-    });
-    modules.push(supportModule);
-  }
+    },
+  ];
 
   if (supportConfig) {
     providers.push(provideSupportConfig(supportConfig));

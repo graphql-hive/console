@@ -11,8 +11,9 @@ import type { TypeInput as ThirdPartEmailPasswordTypeInput } from 'supertokens-n
 import type { TypeInput } from 'supertokens-node/types';
 import zod from 'zod';
 import { type Storage } from '@hive/api';
-import type { EmailsApi } from '@hive/emails';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
+import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { createInternalApiCaller } from './api';
 import { env } from './environment';
 import {
@@ -37,11 +38,10 @@ export const backendConfig = (requirements: {
   logger: FastifyBaseLogger;
   broadcastLog: BroadcastOIDCIntegrationLog;
   redis: Redis;
+  taskScheduler: TaskScheduler;
 }): TypeInput => {
   const { logger } = requirements;
-  const emailsService = createTRPCProxyClient<EmailsApi>({
-    links: [httpLink({ url: `${env.hiveServices.emails?.endpoint}/trpc` })],
-  });
+
   const internalApi = createInternalApiCaller({
     storage: requirements.storage,
     crypto: requirements.crypto,
@@ -134,13 +134,14 @@ export const backendConfig = (requirements: {
             ...originalImplementation,
             async sendEmail(input) {
               if (input.type === 'PASSWORD_RESET') {
-                await emailsService.sendPasswordResetEmail.mutate({
+                await requirements.taskScheduler.scheduleTask(PasswordResetTask, {
                   user: {
                     id: input.user.id,
                     email: input.user.email,
                   },
                   passwordResetLink: input.passwordResetLink,
                 });
+
                 return Promise.resolve();
               }
 
@@ -160,14 +161,13 @@ export const backendConfig = (requirements: {
             ...originalImplementation,
             async sendEmail(input) {
               if (input.type === 'EMAIL_VERIFICATION') {
-                await emailsService.sendEmailVerificationEmail.mutate({
+                await requirements.taskScheduler.scheduleTask(EmailVerificationTask, {
                   user: {
                     id: input.user.id,
                     email: input.user.email,
                   },
                   emailVerifyLink: input.emailVerifyLink,
                 });
-
                 return Promise.resolve();
               }
             },
@@ -414,6 +414,7 @@ export function initSupertokens(requirements: {
   logger: FastifyBaseLogger;
   broadcastLog: BroadcastOIDCIntegrationLog;
   redis: Redis;
+  taskScheduler: TaskScheduler;
 }) {
   supertokens.init(backendConfig(requirements));
 }

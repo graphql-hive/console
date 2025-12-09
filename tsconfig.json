@@ -66,6 +66,8 @@
       "@hive/usage-ingestor/src/normalize-operation": [
         "./packages/services/usage-ingestor/src/normalize-operation.ts"
       ],
+      "@hive/workflows/kit": ["./packages/services/workflows/src/kit.ts"],
+      "@hive/workflows/tasks/*": ["./packages/services/workflows/src/tasks/*"],
       "@/*": ["./packages/web/app/src/*"],
       "testkit/*": ["./integration-tests/testkit/*"]
     }
