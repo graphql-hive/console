@@ -3,7 +3,7 @@ FROM scratch AS router_pkg
 FROM scratch AS sdk_rs_pkg
 FROM scratch AS config
 
-FROM rust:1.90-slim-bookworm AS build
+FROM rust:1.91.1-slim-bookworm AS build
 
 # Required by Apollo Router
 RUN apt-get update
