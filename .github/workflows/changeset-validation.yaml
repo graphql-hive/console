@@ -1,0 +1,18 @@
+on:
+  workflow_call:
+
+jobs:
+  validate-changesets:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: setup environment
+        uses: ./.github/actions/setup
+        with:
+          actor: changeset-validation
+
+      - name: validate changeset packages
+        run: pnpm tsx scripts/validate-changesets.ts
