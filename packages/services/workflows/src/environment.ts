@@ -1,7 +1,7 @@
 import zod from 'zod';
 import { OpenTelemetryConfigurationModel } from '@hive/service-common';
 import { createConnectionString } from '@hive/storage';
-import { RequestBroker } from './lib/webhooks/schema-change-notification';
+import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
