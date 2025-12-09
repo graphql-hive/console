@@ -1,0 +1,108 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { ProjectType } from 'testkit/gql/graphql';
+import { initSeed } from 'testkit/seed';
+import { getServiceHost } from 'testkit/utils';
+import { execa } from '@esm2cjs/execa';
+
+describe('Apollo Router Integration', () => {
+  const getBaseEndpoint = () =>
+    getServiceHost('server', 8082).then(v => `http://${v}/artifacts/v1/`);
+  it('fetches the supergraph and sends usage reports', async () => {
+    const endpointBaseUrl = await getBaseEndpoint();
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, createCdnAccess, target, waitForOperationsCollected } =
+      await createProject(ProjectType.Federation);
+    const writeToken = await createTargetAccessToken({});
+
+    // Publish Schema
+    const publishSchemaResult = await writeToken
+      .publishSchema({
+        author: 'Arda',
+        commit: 'abc123',
+        sdl: /* GraphQL */ `
+          type Query {
+            me: User
+          }
+          type User {
+            id: ID!
+            name: String!
+          }
+        `,
+        service: 'users',
+        url: 'https://federation-demo.theguild.workers.dev/users',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+    const cdnAccessResult = await createCdnAccess();
+
+    const usageAddress = await getServiceHost('usage', 8081);
+
+    const routerBinPath = join(__dirname, '../../../target/debug/router');
+    if (!existsSync(routerBinPath)) {
+      throw new Error(
+        `Apollo Router binary not found at path: ${routerBinPath}, make sure to build it first with 'cargo build'`,
+      );
+    }
+    const routerConfigPath = join(__dirname, 'apollo-router.test.yml');
+    const routerProc = execa(routerBinPath, ['--dev', '--config', routerConfigPath], {
+      all: true,
+      env: {
+        HIVE_CDN_ENDPOINT: endpointBaseUrl + target.id,
+        HIVE_CDN_KEY: cdnAccessResult.secretAccessToken,
+        HIVE_ENDPOINT: `http://${usageAddress}`,
+        HIVE_TOKEN: writeToken.secret,
+        HIVE_TARGET_ID: target.id,
+      },
+    });
+    await new Promise((resolve, reject) => {
+      if (!routerProc.all) {
+        return reject(new Error('No stdout from Apollo Router process'));
+      }
+      let log = '';
+      routerProc.all.on('data', data => {
+        log += data.toString();
+        if (log.includes('GraphQL endpoint exposed at')) {
+          resolve(true);
+        }
+      });
+    });
+
+    try {
+      const url = 'http://localhost:4000/';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+                  query TestQuery {
+                    me {
+                        id
+                        name
+                    }
+                  }
+                `,
+        }),
+      });
+
+      expect(response.status).toBe(200);
+      const result = await response.json();
+      expect(result).toEqual({
+        data: {
+          me: {
+            id: '1',
+            name: 'Ada Lovelace',
+          },
+        },
+      });
+      await waitForOperationsCollected(1);
+    } finally {
+      routerProc.cancel();
+    }
+  });
+});

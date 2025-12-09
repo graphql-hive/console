@@ -29,5 +29,6 @@ export default defineConfig({
     },
     setupFiles,
     testTimeout: 90_000,
+    exclude: process.env.TEST_APOLLO_ROUTER ? [] : ['tests/apollo-router/**'],
   },
 });
