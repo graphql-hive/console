@@ -374,7 +374,7 @@ function SortableItem(props: SortableItemProps) {
     isDragging,
   } = useSortable({ id: value, disabled });
 
-  const composedRef = useComposedRefs(ref, node => {
+  const composedRef = useComposedRefs(ref as React.Ref<HTMLDivElement>, node => {
     if (disabled) return;
     setNodeRef(node);
     if (asHandle) setActivatorNodeRef(node);
@@ -443,7 +443,7 @@ function SortableItemHandle(props: SortableItemHandleProps) {
 
   const isDisabled = disabled ?? itemContext.disabled;
 
-  const composedRef = useComposedRefs(ref, node => {
+  const composedRef = useComposedRefs(ref as React.Ref<HTMLButtonElement>, node => {
     if (!isDisabled) return;
     itemContext.setActivatorNodeRef(node);
   });
