@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defaultExclude, defineConfig } from 'vitest/config';
 
 const setupFiles = ['../scripts/serializer.ts', './expect.ts'];
 
@@ -29,6 +29,8 @@ export default defineConfig({
     },
     setupFiles,
     testTimeout: 90_000,
-    exclude: process.env.TEST_APOLLO_ROUTER ? [] : ['tests/apollo-router/**'],
+    exclude: process.env.TEST_APOLLO_ROUTER
+      ? defaultExclude
+      : [...defaultExclude, 'tests/apollo-router/**'],
   },
 });
