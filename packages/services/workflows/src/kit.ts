@@ -1,18 +1,12 @@
-import { JobHelpers, Task } from 'graphile-worker';
+import type { JobHelpers, Task } from 'graphile-worker';
 import { z } from 'zod';
-import { Logger } from '@graphql-hive/logger';
-import { Context } from './context';
+import type { Logger } from '@graphql-hive/logger';
+import type { Context } from './context';
 
 export type TaskDefinition<TName extends string, TModel> = {
   name: TName;
   schema: z.ZodTypeAny & { _output: TModel };
 };
-
-export function defineTask<TName extends string, TModel>(
-  workflow: TaskDefinition<TName, TModel>,
-): TaskDefinition<TName, TModel> {
-  return workflow;
-}
 
 type TaskImplementationArgs<TPayload> = {
   input: TPayload;
@@ -25,31 +19,52 @@ export type TaskImplementation<TPayload> = (
   args: TaskImplementationArgs<TPayload>,
 ) => Promise<void>;
 
+/**
+ * Define a task
+ */
+export function defineTask<TName extends string, TModel>(
+  workflow: TaskDefinition<TName, TModel>,
+): TaskDefinition<TName, TModel> {
+  return workflow;
+}
+
+/**
+ * Implement a task.
+ */
 export function implementTask<TPayload>(
   taskDefinition: TaskDefinition<string, TPayload>,
   implementation: TaskImplementation<TPayload>,
 ): (context: Context) => [string, Task] {
+  const schema = z.object({
+    requestId: z.string().optional(),
+    input: taskDefinition.schema,
+  });
+
   return function (context) {
     return [
       taskDefinition.name,
       function (unsafePayload, helpers) {
-        const input = taskDefinition.schema.parse(unsafePayload);
+        const payload = schema.parse(unsafePayload);
         return implementation({
-          input,
+          input: payload.input,
           context,
           helpers,
           logger: context.logger.child({
-            attrs: {
-              'job.id': helpers.job.id,
-              'job.queueId': helpers.job.job_queue_id,
-              'job.attempts': helpers.job.attempts,
-              'job.maxAttempts': helpers.job.max_attempts,
-              'job.priority': helpers.job.priority,
-              'job.taskId': helpers.job.task_id,
-            },
+            'request.id': payload.requestId,
+            'job.id': helpers.job.id,
+            'job.queueId': helpers.job.job_queue_id,
+            'job.attempts': helpers.job.attempts,
+            'job.maxAttempts': helpers.job.max_attempts,
+            'job.priority': helpers.job.priority,
+            'job.taskId': helpers.job.task_id,
           }),
         });
       },
     ];
   };
 }
+
+/**
+ * Schedule a task.
+ */
+export function scheduleTask<TPayload>(taskDefinition: TaskDefinition<string, TPayload>) {}

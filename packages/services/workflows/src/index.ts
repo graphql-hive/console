@@ -15,9 +15,10 @@ const pg = await createPool(env.postgres.connectionString);
 const modules = await Promise.all([
   import('./tasks/audit-log-export.js'),
   import('./tasks/email-verification.js'),
-  import('./tasks/organization-invite.js'),
+  import('./tasks/organization-invitation.js'),
   import('./tasks/organization-ownership-transfer.js'),
   import('./tasks/password-reset.js'),
+  import('./tasks/purge-expired-schema-checks.js'),
   import('./tasks/schema-change-notification.js'),
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
@@ -29,6 +30,7 @@ const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
+  requestBroker: env.requestBroker,
 };
 
 function logLevel(level: GraphileLogLevel) {
@@ -52,8 +54,10 @@ let runner: Runner = await run({
   logger: new GraphileLogger(_scope => (level, message, _meta) => {
     logger[logLevel(level)](message);
   }),
-  // TODO: define cron jobs!
-  crontab: ' ',
+  crontab: `
+    # Purge expired schema checks every Saturday at 10:00AM
+    0 10 * * 0 purgeExpiredSchemaChecks
+  `,
   connectionString: env.postgres.connectionString,
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
 });

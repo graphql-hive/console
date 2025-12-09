@@ -16,7 +16,6 @@ import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import {
   createRegistry,
-  createTaskRunner,
   CryptoProvider,
   LogFn,
   Logger,
@@ -39,7 +38,6 @@ import {
   registerTRPC,
   reportReadiness,
   startMetrics,
-  traceInline,
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
@@ -209,50 +207,6 @@ export async function main() {
     }),
   }) as HivePubSub;
 
-  let dbPurgeTaskRunner: null | ReturnType<typeof createTaskRunner> = null;
-
-  if (!env.hiveServices.commerce) {
-    server.log.debug('Commerce service is disabled. Skip scheduling purge tasks.');
-  } else {
-    server.log.debug(
-      `Commerce service is enabled. Start scheduling purge tasks every ${env.hiveServices.commerce.dateRetentionPurgeIntervalMinutes} minutes.`,
-    );
-    dbPurgeTaskRunner = createTaskRunner({
-      run: traceInline(
-        'Purge Task',
-        {
-          resultAttributes: result => ({
-            'purge.schema.check.count': result.deletedSchemaCheckCount,
-            'purge.sdl.store.count': result.deletedSdlStoreCount,
-            'purge.change.approval.count': result.deletedSchemaChangeApprovalCount,
-            'purge.contract.approval.count': result.deletedContractSchemaChangeApprovalCount,
-          }),
-        },
-        async () => {
-          try {
-            const result = await storage.purgeExpiredSchemaChecks({
-              expiresAt: new Date(),
-            });
-            server.log.debug(
-              'Finished running schema check purge task. (deletedSchemaCheckCount=%s deletedSdlStoreCount=%s)',
-              result.deletedSchemaCheckCount,
-              result.deletedSdlStoreCount,
-            );
-
-            return result;
-          } catch (error) {
-            captureException(error);
-            throw error;
-          }
-        },
-      ),
-      interval: env.hiveServices.commerce.dateRetentionPurgeIntervalMinutes * 60 * 1000,
-      logger: server.log,
-    });
-
-    dbPurgeTaskRunner.start();
-  }
-
   registerShutdown({
     logger: server.log,
     async onShutdown() {
@@ -262,10 +216,6 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
-      if (dbPurgeTaskRunner) {
-        server.log.info('Stopping expired schema check purge task...');
-        await dbPurgeTaskRunner.stop();
-      }
       server.log.info('Shutdown complete.');
     },
   });
