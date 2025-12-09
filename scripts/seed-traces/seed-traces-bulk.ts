@@ -382,17 +382,27 @@ async function loadTraceSamples(): Promise<OTELTrace[]> {
 }
 
 function generateTimestamp(index: number, total: number): Date {
-  // Scatter timestamps evenly across the configured time range
+  // Scatter timestamps with a wavy pattern across the configured time range
   const now = Date.now();
   const startTime = now - timeRangeDays * 24 * 60 * 60 * 1000;
   const timeRange = now - startTime;
 
-  // Distribute evenly across the range with some randomness
+  // Use inverse CDF of a wave-modulated distribution for wavy density
+  // More traces during "peaks", fewer during "valleys"
   const position = index / Math.max(1, total - 1);
-  const baseTime = startTime + timeRange * position;
 
-  // Add some jitter (~30 minutes) to avoid all traces being at exact intervals
-  const jitter = (Math.random() - 0.5) * 2 * 30 * 60 * 1000; // ~30 minutes
+  // Create wavy pattern using sine waves
+  // Multiple overlapping waves for a more natural look
+  const waves = 3; // Number of wave cycles
+  const wavePhase = position * Math.PI * 2 * waves;
+  const waveModulation = Math.sin(wavePhase) * 0.15; // 15% amplitude
+
+  // Apply modulation while keeping within [0, 1] bounds
+  const modulatedPosition = Math.max(0, Math.min(1, position + waveModulation));
+  const baseTime = startTime + timeRange * modulatedPosition;
+
+  // Add some jitter (~15 minutes) to avoid all traces being at exact intervals
+  const jitter = (Math.random() - 0.5) * 2 * 15 * 60 * 1000; // ~15 minutes
 
   return new Date(baseTime + jitter);
 }
@@ -433,9 +443,7 @@ async function executeClickHouseQuery(query: string) {
 }
 
 async function seedTraces() {
-  console.log('Resolving target ID...');
   const targetId = await resolveTargetId(targetSlug, authUrl, authToken);
-  console.log(`Resolved target ID: ${targetId}`);
 
   console.log('Loading trace samples...');
   const traceSamples = await loadTraceSamples();
@@ -511,15 +519,22 @@ async function seedTraces() {
         `Processing chunk ${chunkIndex + 1}/${numChunks}: duplicating ${duplicatesInChunk.toLocaleString()} times...`,
       );
 
+      // Wave parameters for wavy distribution
+      const waveCount = 3; // Number of wave cycles across the time range
+      const waveAmplitude = 0.15; // 15% amplitude
+
       const duplicateQuery = `
         INSERT INTO otel_traces
         SELECT
-          -- Adjust timestamp: distribute evenly across configured time range
+          -- Adjust timestamp: distribute with wavy pattern across configured time range
           toDateTime64(
-            ${startTime / 1000} +
-            ((((dense_rank() OVER (ORDER BY original_traces.TraceId, dup_index) - 1) + ${globalTraceOffset}) * ${timeRange / 1000 / totalTraces}) +
+            ${startTime / 1000} + (
+              -- Base position with wave modulation for wavy density pattern
+              (((dense_rank() OVER (ORDER BY original_traces.TraceId, dup_index) - 1) + ${globalTraceOffset}) / ${totalTraces}) +
+              (sin((((dense_rank() OVER (ORDER BY original_traces.TraceId, dup_index) - 1) + ${globalTraceOffset}) / ${totalTraces}) * ${Math.PI * 2 * waveCount}) * ${waveAmplitude})
+            ) * ${timeRange / 1000} +
             ((toUnixTimestamp64Milli(original_traces.Timestamp) - toUnixTimestamp64Milli(min(original_traces.Timestamp) OVER (PARTITION BY original_traces.TraceId))) / 1000) +
-            ((sipHash64(original_traces.TraceId, dup_index) % 3600) - 1800)), -- Add ~30 min jitter (deterministic per trace)
+            ((sipHash64(original_traces.TraceId, dup_index) % 1800) - 900), -- Add ~15 min jitter (deterministic per trace)
             9, 'UTC'
           ) AS Timestamp,
 
