@@ -103,9 +103,9 @@ jobs:
 
       - if: matrix.shardIndex != 'apollo-router'
         name: run integration tests
-        timeout-minutes: 30
+        timeout-minutes: 10
         run: |
-          pnpm test:integration --shard=${{ matrix.shardIndex }}/3
+          pnpm --filter integration-tests test:integration --shard=${{ matrix.shardIndex }}/3
         env:
           VITEST_MAX_THREADS: ${{ steps.cpu-cores.outputs.count }}
 
