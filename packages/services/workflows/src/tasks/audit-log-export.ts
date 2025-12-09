@@ -15,7 +15,6 @@ export const AuditLogExportTask = defineTask({
 });
 
 export const task = implementTask(AuditLogExportTask, async args => {
-  // TODO: export audit log and store it
   await args.context.email.send({
     to: args.input.email,
     subject: 'Hive - Audit Log Report',
