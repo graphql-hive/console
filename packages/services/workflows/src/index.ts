@@ -47,7 +47,8 @@ function logLevel(level: GraphileLogLevel) {
       return 'error' as const;
     }
   }
-  throw new Error('nooop');
+
+  return 'info';
 }
 
 let runner: Runner = await run({
