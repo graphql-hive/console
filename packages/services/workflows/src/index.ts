@@ -59,7 +59,7 @@ let runner: Runner = await run({
     # Purge expired schema checks every Saturday at 10:00AM
     0 10 * * 0 purgeExpiredSchemaChecks
   `,
-  connectionString: env.postgres.connectionString,
+  pgPool: pg.pool,
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
 });
 
