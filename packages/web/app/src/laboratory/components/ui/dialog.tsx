@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { XIcon } from 'lucide-react';
 import { cn } from '@/laboratory/lib/utils';
 import * as DialogPrimitive from '@radix-ui/react-dialog';

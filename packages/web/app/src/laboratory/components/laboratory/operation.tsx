@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookmarkIcon, CircleCheckIcon, CircleXIcon, ClockIcon, FileTextIcon, HistoryIcon, MoreHorizontalIcon, PlayIcon, SquarePenIcon } from 'lucide-react';
+import {
+  BookmarkIcon,
+  CircleCheckIcon,
+  CircleXIcon,
+  ClockIcon,
+  FileTextIcon,
+  HistoryIcon,
+  MoreHorizontalIcon,
+  PlayIcon,
+  SquarePenIcon,
+} from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { toast } from 'sonner';
@@ -10,21 +20,52 @@ import { Editor } from '@/laboratory/components/laboratory/editor';
 import { Tabs } from '@/laboratory/components/tabs';
 import { Badge } from '@/laboratory/components/ui/badge';
 import { Button } from '@/laboratory/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/laboratory/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem } from '@/laboratory/components/ui/dropdown-menu';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/laboratory/components/ui/empty';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/laboratory/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/laboratory/components/ui/dropdown-menu';
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/laboratory/components/ui/empty';
 import { Field, FieldGroup, FieldLabel } from '@/laboratory/components/ui/field';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/laboratory/components/ui/resizable';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/laboratory/components/ui/resizable';
 import { ScrollArea, ScrollBar } from '@/laboratory/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/laboratory/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/laboratory/components/ui/select';
 import { Spinner } from '@/laboratory/components/ui/spinner';
 import { Toggle } from '@/laboratory/components/ui/toggle';
-import type { LaboratoryHistory, LaboratoryHistoryRequest, LaboratoryHistorySubscription } from '@/laboratory/lib/history';
+import type {
+  LaboratoryHistory,
+  LaboratoryHistoryRequest,
+  LaboratoryHistorySubscription,
+} from '@/laboratory/lib/history';
 import type { LaboratoryOperation } from '@/laboratory/lib/operations';
 import { cn } from '@/laboratory/lib/utils';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
-
 
 const Variables = (props: { operation?: LaboratoryOperation | null; isReadOnly?: boolean }) => {
   const { activeOperation, updateActiveOperation } = useLaboratory();
@@ -130,8 +171,8 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-1.5 p-3">
-        {historyItem?.preflightLogs?.map(log => (
-          <div className="gap-2 font-mono">
+        {historyItem?.preflightLogs?.map((log, i) => (
+          <div className="gap-2 font-mono" key={i}>
             <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
             <span
               className={cn('text-xs font-medium', {
@@ -179,7 +220,7 @@ export const ResponseSubscription = ({
           <div className="flex flex-col">
             {historyItem?.responses
               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-              .map(response => {
+              .map((response, i) => {
                 const value = [
                   `// ${response.createdAt}`,
                   '',
@@ -189,7 +230,7 @@ export const ResponseSubscription = ({
                 const height = 20.5 * value.split('\n').length;
 
                 return (
-                  <div className="border-border border-b" style={{ height: `${height}px` }}>
+                  <div className="border-border border-b" style={{ height: `${height}px` }} key={i}>
                     <Editor
                       key={response.createdAt}
                       value={value}
@@ -440,7 +481,9 @@ export const Query = (props: {
         }),
       );
 
-      void navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?share=${value}`);
+      void navigator.clipboard.writeText(
+        `${window.location.origin}${window.location.pathname}?share=${value}`,
+      );
 
       toast.success('Operation copied to clipboard');
     },

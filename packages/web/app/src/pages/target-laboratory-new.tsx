@@ -1,30 +1,13 @@
-import { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { cx } from 'class-variance-authority';
+import { useCallback, useMemo } from 'react';
 import clsx from 'clsx';
-import { GraphiQL } from 'graphiql';
-import { buildSchema } from 'graphql';
 import { throttle } from 'lodash';
-import { ChevronDownIcon, EraserIcon } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
-import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DocsLink } from '@/components/ui/docs-note';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SaveIcon, ShareIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
-import { PromptManager, PromptProvider } from '@/components/ui/prompt';
-import { QueryError } from '@/components/ui/query-error';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
 import {
@@ -38,37 +21,11 @@ import {
 } from '@/laboratory';
 import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
 import { useRedirect } from '@/lib/access/common';
-import { useClipboard, useNotifications, useToggle } from '@/lib/hooks';
-import { useCollections } from '@/lib/hooks/laboratory/use-collections';
-import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
-import {
-  operationCollectionsPlugin,
-  TargetLaboratoryPageQuery,
-} from '@/lib/hooks/laboratory/use-operation-collections-plugin';
-import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
-import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
+import { useToggle } from '@/lib/hooks';
+import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import { Kit } from '@/lib/kit';
-import {
-  LogLine,
-  LogRecord,
-  preflightPlugin,
-  PreflightProvider,
-  PreflightResultData,
-  usePreflight,
-} from '@/lib/preflight/graphiql-plugin';
 import { cn } from '@/lib/utils';
-import { explorerPlugin } from '@graphiql/plugin-explorer';
-import {
-  UnStyledButton as GraphiQLButton,
-  GraphiQLProviderProps,
-  Tooltip as GraphiQLTooltip,
-  useEditorContext,
-} from '@graphiql/react';
-import { createGraphiQLFetcher, Fetcher, isAsyncIterable } from '@graphiql/toolkit';
-import { EnterFullScreenIcon, ExitFullScreenIcon } from '@radix-ui/react-icons';
-import { Repeater } from '@repeaterjs/repeater';
-import { Link as RouterLink, useRouter } from '@tanstack/react-router';
+import { Link as RouterLink } from '@tanstack/react-router';
 
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
   const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
@@ -379,25 +336,23 @@ function useLaboratoryState(props: {
 
   const updateOperation = useMemo(
     () =>
-      throttle(
-        (collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) =>
-          mutateUpdate({
-            selector: {
-              targetSlug: props.targetSlug,
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-            },
-            input: {
-              operationId: operation.id,
-              collectionId: collection.id,
-              name: operation.name,
-              query: operation.query,
-              variables: operation.variables,
-              headers: operation.headers,
-            },
-          }),
-        1000,
-      ),
+      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
+        void mutateUpdate({
+          selector: {
+            targetSlug: props.targetSlug,
+            organizationSlug: props.organizationSlug,
+            projectSlug: props.projectSlug,
+          },
+          input: {
+            operationId: operation.id,
+            collectionId: collection.id,
+            name: operation.name,
+            query: operation.query,
+            variables: operation.variables,
+            headers: operation.headers,
+          },
+        });
+      }, 1000),
     [mutateUpdate, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
@@ -406,7 +361,7 @@ function useLaboratoryState(props: {
   const createOperation = useMemo(
     () =>
       throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
-        mutateCreate({
+        void mutateCreate({
           selector: {
             targetSlug: props.targetSlug,
             organizationSlug: props.organizationSlug,
@@ -429,7 +384,7 @@ function useLaboratoryState(props: {
   const deleteOperation = useMemo(
     () =>
       throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
-        mutateDelete({
+        void mutateDelete({
           selector: {
             targetSlug: props.targetSlug,
             organizationSlug: props.organizationSlug,
@@ -445,7 +400,7 @@ function useLaboratoryState(props: {
   const deleteCollection = useMemo(
     () =>
       throttle((collection: LaboratoryCollection) => {
-        mutateDeleteCollection({
+        void mutateDeleteCollection({
           selector: {
             targetSlug: props.targetSlug,
             organizationSlug: props.organizationSlug,
@@ -462,7 +417,7 @@ function useLaboratoryState(props: {
   const addCollection = useMemo(
     () =>
       throttle((collection: LaboratoryCollection) => {
-        mutateAddCollection({
+        void mutateAddCollection({
           selector: {
             targetSlug: props.targetSlug,
             organizationSlug: props.organizationSlug,
@@ -482,7 +437,7 @@ function useLaboratoryState(props: {
   const updatePreflight = useMemo(
     () =>
       throttle((preflight: LaboratoryPreflight) => {
-        mutateUpdatePreflight({
+        void mutateUpdatePreflight({
           input: {
             selector: {
               targetSlug: props.targetSlug,

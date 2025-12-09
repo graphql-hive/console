@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
 import * as z from 'zod';
 import { Collections } from '@/laboratory/components/laboratory/collections';

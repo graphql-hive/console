@@ -1,4 +1,4 @@
-import type { LucideProps } from "lucide-react";
+import type { LucideProps } from 'lucide-react';
 
 export const GraphQLIcon = (props: LucideProps) => {
   return (

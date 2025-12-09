@@ -26,7 +26,7 @@ export default {
   plugins: [
     tsconfigPaths(),
     react(),
-    // reactScanPlugin,
+    reactScanPlugin,
     // @ts-expect-error temp
     monacoEditor.default({
       languageWorkers: ['json', 'typescript', 'editorWorkerService'],

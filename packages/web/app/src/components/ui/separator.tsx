@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-restricted-imports */
-import * as React from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import * as SeparatorPrimitive from '@radix-ui/react-separator';
 

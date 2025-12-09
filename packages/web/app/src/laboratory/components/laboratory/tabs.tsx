@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { capitalize } from 'lodash';
 import {
   CirclePlus,
-  ExpandIcon,
   FileIcon,
   FlaskConicalIcon,
   GlobeIcon,
@@ -26,12 +25,7 @@ import {
 import { ScrollArea, ScrollBar } from '@/laboratory/components/ui/scroll-area';
 import * as Sortable from '@/laboratory/components/ui/sortable';
 import { Spinner } from '@/laboratory/components/ui/spinner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/laboratory/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/laboratory/components/ui/tooltip';
 import { getOperationName, getOperationType } from '@/laboratory/lib/operations.utils';
 import type {
   LaboratoryTab,

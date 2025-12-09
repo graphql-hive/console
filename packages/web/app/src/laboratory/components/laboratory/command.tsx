@@ -19,7 +19,6 @@ export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) 
     addOperation,
     runActiveOperation,
     fetchSchema,
-    openUpdateEndpointDialog,
     addTab,
     setActiveTab,
     tabs,

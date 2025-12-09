@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { cn } from '@/laboratory/lib/utils';
 
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
@@ -19,7 +18,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="card-header"
       className={cn(
-        '@container/card-header has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6',
+        'has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6',
         className,
       )}
       {...props}

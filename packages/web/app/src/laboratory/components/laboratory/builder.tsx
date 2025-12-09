@@ -19,7 +19,6 @@ import {
 } from '@/laboratory/components/ui/collapsible';
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -460,7 +459,7 @@ export const Builder = (props: {
   operation?: LaboratoryOperation | null;
   isReadOnly?: boolean;
 }) => {
-  const { schema, activeOperation, openUpdateEndpointDialog } = useLaboratory();
+  const { schema, activeOperation } = useLaboratory();
   const [openPaths, setOpenPaths] = useState<string[]>([]);
 
   const operation = useMemo(() => {
@@ -604,11 +603,6 @@ export const Builder = (props: {
                 You haven't selected any endpoint yet. Get started by selecting an endpoint.
               </EmptyDescription>
             </EmptyHeader>
-            {/* <EmptyContent>
-              <Button variant="secondary" size="sm" onClick={openUpdateEndpointDialog}>
-                Update endpoint
-              </Button>
-            </EmptyContent> */}
           </Empty>
         )}
       </div>

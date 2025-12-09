@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useCallback } from 'react';
 
 type PossibleRef<T> = React.Ref<T> | undefined;
 
@@ -12,7 +12,7 @@ function setRef<T>(ref: PossibleRef<T>, value: T) {
   }
 
   if (ref !== null && ref !== undefined) {
-    ref.current = value;
+    (ref as React.MutableRefObject<T>).current = value;
   }
 }
 
@@ -40,7 +40,7 @@ function composeRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
         for (let i = 0; i < cleanups.length; i++) {
           const cleanup = cleanups[i];
           if (typeof cleanup === 'function') {
-            cleanup();
+            (cleanup as () => void)();
           } else {
             setRef(refs[i], null);
           }
@@ -56,7 +56,7 @@ function composeRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
  */
 function useComposedRefs<T>(...refs: PossibleRef<T>[]): React.RefCallback<T> {
   // biome-ignore lint/correctness/useExhaustiveDependencies: we want to memoize by all values
-  return React.useCallback(composeRefs(...refs), refs);
+  return useCallback(composeRefs(...refs), refs);
 }
 
 export { composeRefs, useComposedRefs };
