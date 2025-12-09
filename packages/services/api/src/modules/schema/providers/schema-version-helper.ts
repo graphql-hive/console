@@ -1,7 +1,7 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
 import { isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
-import { CriticalityLevel, DiffRule } from '@graphql-inspector/core';
+import { CriticalityLevel } from '@graphql-inspector/core';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';

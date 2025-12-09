@@ -10,14 +10,7 @@ import {
   type GraphQLSchema,
 } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
-import {
-  Change,
-  ChangeType,
-  diff,
-  DiffRule,
-  Rule,
-  TypeOfChangeType,
-} from '@graphql-inspector/core';
+import { Change, ChangeType, diff, Rule, TypeOfChangeType } from '@graphql-inspector/core';
 import { traceFn } from '@hive/service-common';
 import { HiveSchemaChangeModel } from '@hive/storage';
 import { Logger } from '../../shared/providers/logger';
