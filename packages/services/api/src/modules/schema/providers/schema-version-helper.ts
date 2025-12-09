@@ -1,7 +1,7 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
 import { isTypeSystemExtensionNode, print } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
-import { CriticalityLevel } from '@graphql-inspector/core';
+import { CriticalityLevel, DiffRule } from '@graphql-inspector/core';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
@@ -156,7 +156,7 @@ export class SchemaVersionHelper {
   }
 
   @traceFn('SchemaVersionHelper._getSchemaChanges', {
-    initAttributes: input => ({
+    initAttributes: ({ version: input }) => ({
       'hive.target.id': input.targetId,
       'hive.organization.id': input.organizationId,
       'hive.project.id': input.projectId,
@@ -167,16 +167,26 @@ export class SchemaVersionHelper {
       'hive.safe-changes.count': changes?.safe?.length,
     }),
   })
-  @cache<SchemaVersion>(version => version.id)
-  private async _getSchemaChanges(schemaVersion: SchemaVersion) {
+  @cache<{ version: SchemaVersion; simplified: boolean }>(
+    ({ version, simplified = true }) => `${version.id}${simplified ? '/simple' : ''}`,
+  )
+  private async _getSchemaChanges({
+    version: schemaVersion,
+    simplified,
+  }: {
+    version: SchemaVersion;
+    simplified: boolean;
+  }) {
     if (!schemaVersion.isComposable) {
       return null;
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
-      const changes = await this.storage.getSchemaChangesForVersion({
-        versionId: schemaVersion.id,
-      });
+      const changes: null | Array<SchemaChangeType> = await this.storage.getSchemaChangesForVersion(
+        {
+          versionId: schemaVersion.id,
+        },
+      );
 
       const safeChanges: Array<SchemaChangeType> = [];
       const breakingChanges: Array<SchemaChangeType> = [];
@@ -241,6 +251,7 @@ export class SchemaVersionHelper {
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
+      filterNestedChanges: simplified,
     });
 
     if (diffCheck.status === 'skipped') {
@@ -274,23 +285,35 @@ export class SchemaVersionHelper {
     });
   }
 
-  async getBreakingSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this._getSchemaChanges(schemaVersion);
+  async getBreakingSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+    const changes = await this._getSchemaChanges({
+      version: schemaVersion,
+      simplified: simplifyChanges,
+    });
     return changes?.breaking ?? null;
   }
 
-  async getSafeSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this._getSchemaChanges(schemaVersion);
+  async getSafeSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+    const changes = await this._getSchemaChanges({
+      version: schemaVersion,
+      simplified: simplifyChanges,
+    });
     return changes?.safe ?? null;
   }
 
-  async getAllSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this._getSchemaChanges(schemaVersion);
+  async getAllSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+    const changes = await this._getSchemaChanges({
+      version: schemaVersion,
+      simplified: simplifyChanges,
+    });
     return changes?.all ?? null;
   }
 
-  async getHasSchemaChanges(schemaVersion: SchemaVersion) {
-    const changes = await this._getSchemaChanges(schemaVersion);
+  async getHasSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+    const changes = await this._getSchemaChanges({
+      version: schemaVersion,
+      simplified: simplifyChanges,
+    });
     return !!changes?.breaking?.length || !!changes?.safe?.length;
   }
 
