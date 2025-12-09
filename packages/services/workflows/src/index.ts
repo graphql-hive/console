@@ -26,6 +26,8 @@ const modules = await Promise.all([
 
 const logger = new Logger({ level: env.log.level });
 
+logger.info({ pid: process.pid }, 'starting workflow service');
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
