@@ -38,11 +38,11 @@ query FindStaleDeployments($target: TargetReferenceInput!) {
 
 ## Filter Options
 
-| Filter                      | Description                                                      |
-| --------------------------- | ---------------------------------------------------------------- |
-| `name`                      | Filter by deployment name (case-insensitive partial match)       |
-| `lastUsedBefore`            | Deployments last used before this timestamp                      |
-| `neverUsedAndCreatedBefore` | Deployments never used and created before this timestamp         |
+| Filter                      | Description                                                |
+| --------------------------- | ---------------------------------------------------------- |
+| `name`                      | Filter by deployment name (case-insensitive partial match) |
+| `lastUsedBefore`            | Deployments last used before this timestamp                |
+| `neverUsedAndCreatedBefore` | Deployments never used and created before this timestamp   |
 
 The date filters use OR semantics—deployments matching either condition are returned.
 
