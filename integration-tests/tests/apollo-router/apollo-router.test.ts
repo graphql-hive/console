@@ -1,4 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
@@ -8,7 +10,19 @@ import { execa } from '@esm2cjs/execa';
 describe('Apollo Router Integration', () => {
   const getBaseEndpoint = () =>
     getServiceHost('server', 8082).then(v => `http://${v}/artifacts/v1/`);
+  const getAvailablePort = () =>
+    new Promise<number>(resolve => {
+      const server = createServer();
+      server.listen(0, () => {
+        const address = server.address();
+        if (address && typeof address === 'object') {
+          const port = address.port;
+          server.close(() => resolve(port));
+        }
+      });
+    });
   it('fetches the supergraph and sends usage reports', async () => {
+    const routerConfigPath = join(tmpdir(), `apollo-router-config-${Date.now()}.yaml`);
     const endpointBaseUrl = await getBaseEndpoint();
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -46,7 +60,14 @@ describe('Apollo Router Integration', () => {
         `Apollo Router binary not found at path: ${routerBinPath}, make sure to build it first with 'cargo build'`,
       );
     }
-    const routerConfigPath = join(__dirname, 'apollo-router.test.yml');
+    const routerPort = await getAvailablePort();
+    const routerConfigContent = `
+supergraph:
+  listen: 0.0.0.0:${routerPort}
+plugins:
+  hive.usage: {}
+`.trim();
+    writeFileSync(routerConfigPath, routerConfigContent, 'utf-8');
     const routerProc = execa(routerBinPath, ['--dev', '--config', routerConfigPath], {
       all: true,
       env: {
@@ -109,6 +130,7 @@ describe('Apollo Router Integration', () => {
       await waitForOperationsCollected(1);
     } finally {
       routerProc.cancel();
+      rmSync(routerConfigPath);
     }
   });
 });
