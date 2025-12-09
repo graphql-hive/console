@@ -1,0 +1,46 @@
+---
+title: Versioned CDN Artifacts
+description: Retrieve CDN artifacts for specific schema versions using new versioned endpoints.
+date: 2025-12-09
+authors: [adam]
+---
+
+You can now fetch CDN artifacts for a specific schema version, enabling historical schema retrieval
+and more predictable deployments.
+
+## Versioned Artifact Endpoints
+
+New CDN endpoints allow fetching schema artifacts for a specific version:
+
+```bash
+# Fetch artifact for a specific version
+curl -L -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
+  "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/version/VERSION_ID/sdl"
+
+# Fetch contract artifact for a specific version
+curl -L -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
+  "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/version/VERSION_ID/contracts/CONTRACT_NAME/supergraph"
+```
+
+All artifact types are supported: `sdl`, `services`, `supergraph`, and `metadata`.
+
+## Schema Version ID Header
+
+CDN artifact responses now include the `x-hive-schema-version-id` header, providing the version ID
+of the schema being served. This header is included in responses from both the latest and versioned
+endpoints.
+
+```bash copy=false filename="Example response headers"
+x-hive-schema-version-id: abc123-def456-789
+etag: "a1b2c3d4"
+```
+
+This enables you to:
+
+- Track which schema version your gateways are running
+- Correlate schema versions with deployments
+- Fetch the exact same schema version later using the versioned endpoint
+
+---
+
+- [Learn more about the High-Availability CDN](/docs/high-availability-cdn)
