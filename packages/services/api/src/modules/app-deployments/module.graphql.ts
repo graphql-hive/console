@@ -110,10 +110,10 @@ export default gql`
     Only active deployments are returned (not pending or retired).
     """
     activeAppDeployments(
-      first: Int
-      after: String
-      filter: ActiveAppDeploymentsFilter!
-    ): AppDeploymentConnection!
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      filter: ActiveAppDeploymentsFilter! @tag(name: "public")
+    ): AppDeploymentConnection! @tag(name: "public")
   }
 
   extend type Mutation {
