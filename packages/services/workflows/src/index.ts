@@ -1,12 +1,24 @@
+import { hostname } from 'node:os';
 import { run } from 'graphile-worker';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
 import { registerShutdown, startMetrics } from '@hive/service-common';
+import * as Sentry from '@sentry/node';
 import { Context } from './context.js';
 import { env } from './environment.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
 import { createTaskEventEmitter } from './task-events.js';
+
+if (env.sentry) {
+  Sentry.init({
+    serverName: hostname(),
+    dist: 'workflows',
+    environment: env.environment,
+    dsn: env.sentry.dsn,
+    release: env.release,
+  });
+}
 
 /**
  * Registered Task Definitions.
