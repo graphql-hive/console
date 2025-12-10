@@ -1726,13 +1726,28 @@ importers:
         version: 3.25.76
 
   packages/services/workflows:
-    dependencies:
+    devDependencies:
       '@graphql-hive/logger':
         specifier: 1.0.9
         version: 1.0.9
+      '@hive/service-common':
+        specifier: workspace:*
+        version: link:../service-common
+      '@hive/storage':
+        specifier: workspace:*
+        version: link:../storage
       graphile-worker:
         specifier: 0.16.6
         version: 0.16.6(typescript@5.7.3)
+      nodemailer:
+        specifier: 7.0.11
+        version: 7.0.11
+      sendmail:
+        specifier: 1.6.1
+        version: 1.6.1
+      slonik:
+        specifier: 30.4.4
+        version: 30.4.4(patch_hash=195b140c0181c27a85a6026c0058087a419e38f6c5d89f5f2c608e39f5bf23e9)
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -16319,13 +16334,8 @@ packages:
   pg-copy-streams@6.0.4:
     resolution: {integrity: sha512-FH6q2nFo0n2cFacLyIKorjDz8AOYtxrAANx1XMvYbKWNM2geY731gZstuP4mXMlqO6urRl9oIscFxf3GMIg3Ng==}
 
-  pg-cursor@2.12.1:
-    resolution: {integrity: sha512-V13tEaA9Oq1w+V6Q3UBIB/blxJrwbbr35/dY54r/86soBJ7xkP236bXaORUTVXUPt9B6Ql2BQu+uwQiuMfRVgg==}
-    peerDependencies:
-      pg: ^8
-
-  pg-cursor@2.15.1:
-    resolution: {integrity: sha512-H3pT6fqIO1/u55mDGen2v6gvoaIBwVxhoJWEdF0qhQfsF7hXGW1BbJ8CwMtyoZRWZH7fASVoT3p2/4BGUoSxTg==}
+  pg-cursor@2.15.3:
+    resolution: {integrity: sha512-eHw63TsiGtFEfAd7tOTZ+TLy+i/2ePKS20H84qCQ+aQ60pve05Okon9tKMC+YN3j6XyeFoHnaim7Lt9WVafQsA==}
     peerDependencies:
       pg: ^8
 
@@ -17442,10 +17452,6 @@ packages:
 
   safe-regex@2.1.1:
     resolution: {integrity: sha512-rx+x8AMzKb5Q5lQ95Zoi6ZbJqwCLkqi3XuJXp5P3rT8OEc6sZCJG5AE5dU3lsgRr/F4Bs31jSlVN+j5KrsGu9A==}
-
-  safe-stable-stringify@2.4.2:
-    resolution: {integrity: sha512-gMxvPJYhP0O9n2pvcfYfIuYgbledAOJFcqRThtPRmjscaipiwcwPPKLytpVzMkG2HAN87Qmo2d4PtGiri1dSLA==}
-    engines: {node: '>=10'}
 
   safe-stable-stringify@2.5.0:
     resolution: {integrity: sha512-b3rppTKm9T+PsVCBEOUR46GWI7fdOs00VKZ1+9c1EWDaDMvjQc6tUwuFyIprgGgTcWoVHSKrU8H31ZHA2e0RHA==}
@@ -19729,8 +19735,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -19882,11 +19888,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -19925,6 +19931,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -20144,11 +20151,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -20187,7 +20194,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -20419,7 +20425,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -20666,7 +20672,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -21055,7 +21061,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -39039,11 +39045,7 @@ snapshots:
     dependencies:
       obuf: 1.1.2
 
-  pg-cursor@2.12.1(pg@8.13.1):
-    dependencies:
-      pg: 8.13.1
-
-  pg-cursor@2.15.1(pg@8.13.1):
+  pg-cursor@2.15.3(pg@8.13.1):
     dependencies:
       pg: 8.13.1
 
@@ -39072,7 +39074,7 @@ snapshots:
   pg-query-stream@4.7.0(pg@8.13.1):
     dependencies:
       pg: 8.13.1
-      pg-cursor: 2.15.1(pg@8.13.1)
+      pg-cursor: 2.15.3(pg@8.13.1)
 
   pg-types@2.2.0:
     dependencies:
@@ -40167,7 +40169,7 @@ snapshots:
       fast-json-stringify: 2.7.13
       fast-printf: 1.6.9
       globalthis: 1.0.3
-      safe-stable-stringify: 2.4.2
+      safe-stable-stringify: 2.5.0
       semver-compare: 1.0.0
 
   robust-predicates@3.0.2: {}
@@ -40293,8 +40295,6 @@ snapshots:
   safe-regex@2.1.1:
     dependencies:
       regexp-tree: 0.1.27
-
-  safe-stable-stringify@2.4.2: {}
 
   safe-stable-stringify@2.5.0: {}
 
@@ -40601,7 +40601,7 @@ snapshots:
       pg: 8.13.1
       pg-copy-streams: 6.0.4
       pg-copy-streams-binary: 2.2.0
-      pg-cursor: 2.12.1(pg@8.13.1)
+      pg-cursor: 2.15.3(pg@8.13.1)
       pg-protocol: 1.7.0
       pg-types: 4.0.1
       postgres-array: 3.0.1

@@ -8,9 +8,14 @@
     "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
+  "devDependencies": {
     "@graphql-hive/logger": "1.0.9",
+    "@hive/service-common": "workspace:*",
+    "@hive/storage": "workspace:*",
     "graphile-worker": "0.16.6",
+    "nodemailer": "7.0.11",
+    "sendmail": "1.6.1",
+    "slonik": "30.4.4",
     "zod": "3.25.76"
   }
 }
