@@ -7,7 +7,7 @@ export type Analytics = ReturnType<typeof createAnalytics>;
 type Event =
   | {
       type: 'artifact';
-      version: 'v0' | 'v1' | 'v1-versioned';
+      version: 'v0' | 'v1';
       value:
         | 'schema'
         | 'supergraph'

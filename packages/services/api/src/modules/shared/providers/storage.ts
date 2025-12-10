@@ -410,7 +410,7 @@ export interface Storage {
     _: {
       serviceName: string;
       composable: boolean;
-      actionFn(versionId: string): Promise<void>;
+      actionFn(): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
@@ -451,7 +451,7 @@ export interface Storage {
       commit: string;
       logIds: string[];
       base_schema: string | null;
-      actionFn(versionId: string): Promise<void>;
+      actionFn(): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       diffSchemaVersionId: null | string;

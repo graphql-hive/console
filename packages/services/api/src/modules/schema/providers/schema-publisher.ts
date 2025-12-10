@@ -1430,7 +1430,7 @@ export class SchemaPublisher {
                     schemaMetadata: null,
                     metadataAttributes: null,
                   }),
-              actionFn: async (versionId: string) => {
+              actionFn: async () => {
                 if (deleteResult.state.composable) {
                   const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
                   for (const contract of deleteResult.state.contracts ?? []) {
@@ -1451,7 +1451,6 @@ export class SchemaPublisher {
                     // pass all schemas except the one we are deleting
                     schemas: deleteResult.state.schemas,
                     contracts,
-                    versionId,
                   });
                 }
               },
@@ -1946,7 +1945,7 @@ export class SchemaPublisher {
       metadata: input.metadata ?? null,
       projectType: project.type,
       github,
-      actionFn: async (versionId: string) => {
+      actionFn: async () => {
         if (composable && fullSchemaSdl) {
           const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
           for (const contract of publishState.contracts ?? []) {
@@ -1966,7 +1965,6 @@ export class SchemaPublisher {
             fullSchemaSdl,
             schemas,
             contracts,
-            versionId,
           });
         }
       },
@@ -2246,7 +2244,6 @@ export class SchemaPublisher {
     fullSchemaSdl,
     schemas,
     contracts,
-    versionId,
   }: {
     target: Target;
     project: Project;
@@ -2254,7 +2251,6 @@ export class SchemaPublisher {
     fullSchemaSdl: string;
     schemas: readonly Schema[];
     contracts: null | Array<{ name: string; supergraph: string; sdl: string }>;
-    versionId: string;
   }) {
     const publishMetadata = async () => {
       const metadata: Array<Record<string, any>> = [];
@@ -2272,7 +2268,6 @@ export class SchemaPublisher {
           artifact: project.type === ProjectType.SINGLE ? metadata[0] : metadata,
           artifactType: 'metadata',
           contractName: null,
-          versionId,
         });
       }
     };
@@ -2290,14 +2285,12 @@ export class SchemaPublisher {
             url: s.service_url,
           })),
           contractName: null,
-          versionId,
         }),
         this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'sdl',
           artifact: fullSchemaSdl,
           contractName: null,
-          versionId,
         }),
       ]);
     };
@@ -2308,7 +2301,6 @@ export class SchemaPublisher {
         artifactType: 'sdl',
         artifact: fullSchemaSdl,
         contractName: null,
-        versionId,
       });
     };
 
@@ -2327,7 +2319,6 @@ export class SchemaPublisher {
             artifactType: 'supergraph',
             artifact: supergraph,
             contractName: null,
-            versionId,
           }),
         );
       }
@@ -2342,14 +2333,12 @@ export class SchemaPublisher {
               artifactType: 'sdl',
               artifact: contract.sdl,
               contractName: contract.name,
-              versionId,
             }),
             this.artifactStorageWriter.writeArtifact({
               targetId: target.id,
               artifactType: 'supergraph',
               artifact: contract.supergraph,
               contractName: contract.name,
-              versionId,
             }),
           );
         }

@@ -7,12 +7,8 @@ export function buildArtifactStorageKey(
   targetId: string,
   artifactType: string,
   contractName: null | string,
-  versionId?: string | null,
 ) {
   const parts = ['artifact', targetId];
-  if (versionId) {
-    parts.push('version', versionId);
-  }
   if (contractName) {
     parts.push('contracts', contractName);
   }
@@ -236,17 +232,16 @@ export class ArtifactStorageReader {
     contractName: string | null,
     artifactType: ArtifactsType,
     etagValue: string | null,
-    versionId?: string | null,
   ) {
     if (artifactType.startsWith('sdl')) {
       artifactType = 'sdl';
     }
 
     this.breadcrumb(
-      `Reading artifact (targetId=${targetId}, artifactType=${artifactType}, contractName=${contractName}${versionId ? `, versionId=${versionId}` : ''})`,
+      `Reading artifact (targetId=${targetId}, artifactType=${artifactType}, contractName=${contractName})`,
     );
 
-    const key = buildArtifactStorageKey(targetId, artifactType, contractName, versionId);
+    const key = buildArtifactStorageKey(targetId, artifactType, contractName);
 
     this.breadcrumb(`Reading artifact from S3 key: ${key}`);
 
