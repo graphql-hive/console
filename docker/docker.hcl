@@ -327,7 +327,7 @@ target "workflows" {
     IMAGE_TITLE = "graphql-hive/workflows"
     IMAGE_DESCRIPTION = "The workflow service of the GraphQL Hive project."
     PORT = "3005"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
+    HEALTHCHECK_CMD = "test $(($(date +%s) - $(cat /tmp/hive_worker_heartbeat))) -lt 60 || exit 1"
   }
   tags = [
     local_image_tag("workflows"),

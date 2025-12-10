@@ -6,6 +6,7 @@ import { registerShutdown, startHeartbeats, startMetrics } from '@hive/service-c
 import * as Sentry from '@sentry/node';
 import { Context } from './context.js';
 import { env } from './environment.js';
+import { startHeartbeat } from './heartbeat.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
 import { createTaskEventEmitter } from './task-events.js';
@@ -45,15 +46,17 @@ const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service');
 
-const stopHeartbeats = env.heartbeat
+const stopHttpHeartbeat = env.httpHeartbeat
   ? startHeartbeats({
       enabled: true,
-      endpoint: env.heartbeat.endpoint,
+      endpoint: env.httpHeartbeat.endpoint,
       intervalInMS: 20_000,
       onError: error => logger.error({ error }, 'Heartbeat failed.'),
       isReady: () => true,
     })
   : null;
+
+startHeartbeat(logger);
 
 const context: Context = {
   logger,
@@ -90,10 +93,10 @@ registerShutdown({
         await shutdownMetrics();
         logger.info('Stopping prometheus endpoint successful.');
       }
-      if (stopHeartbeats) {
-        logger.info('Stop heartbeat');
-        stopHeartbeats();
-        logger.info('Heartbeat stopped');
+      if (stopHttpHeartbeat) {
+        logger.info('Stop HTTP heartbeat');
+        stopHttpHeartbeat();
+        logger.info('HTTP heartbeat stopped');
       }
     } catch (error: unknown) {
       logger.error({ error }, 'Unepected error occured');
