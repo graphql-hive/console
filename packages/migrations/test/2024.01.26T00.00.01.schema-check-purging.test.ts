@@ -82,6 +82,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(
@@ -164,6 +165,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       await storage.createSchemaCheck({
@@ -189,6 +191,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(
@@ -271,6 +274,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       await storage.createSchemaCheck({
@@ -296,6 +300,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(
@@ -388,6 +393,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       await storage.createSchemaCheck({
@@ -413,6 +419,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(
@@ -563,6 +570,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       await storage.createSchemaCheck({
@@ -588,6 +596,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(
@@ -735,6 +744,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let sdlStoreCount = await db.oneFirst<number>(sql`SELECT count(*) as total FROM sdl_store`);
@@ -845,6 +855,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(
@@ -1004,6 +1015,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       await storage.createSchemaCheck({
@@ -1048,6 +1060,7 @@ describe('schema check purging', async () => {
         manualApprovalUserId: null,
         schemaPolicyWarnings: null,
         conditionalBreakingChangeMetadata: null,
+        serviceUrl: null,
       });
 
       let schemaCheckCount = await db.oneFirst<number>(

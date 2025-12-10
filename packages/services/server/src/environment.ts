@@ -42,6 +42,9 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
   FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
@@ -532,6 +535,8 @@ export const env = {
   featureFlags: {
     /** Whether app deployments should be enabled by default for everyone. */
     appDeploymentsEnabled: base.FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED === '1',
+    /** Whether schema proposals should be enabled for all organizations. */
+    schemaProposalsEnabled: base.FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED === '1',
     /** Whether OTEL tracing should be enabled for all organizations. */
     otelTracingEnabled: base.FEATURE_FLAGS_OTEL_TRACING_ENABLED === '1',
   },
