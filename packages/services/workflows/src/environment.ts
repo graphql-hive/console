@@ -234,4 +234,5 @@ export const env = {
           signature: requestBroker.REQUEST_BROKER_SIGNATURE,
         } satisfies RequestBroker)
       : null,
+  heartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
 } as const;
