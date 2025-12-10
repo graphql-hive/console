@@ -30,6 +30,7 @@ import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
 import { deployWebhooks } from './services/webhooks';
+import { deployWorkflows } from './services/workflows';
 import { configureZendesk } from './services/zendesk';
 import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
@@ -148,6 +149,16 @@ const emails = deployEmails({
   redis,
   sentry,
   observability,
+});
+
+deployWorkflows({
+  image: docker.factory.getImageId('workflows', imagesTag),
+  docker,
+  environment,
+  postgres,
+  observability,
+  sentry,
+  heartbeat: heartbeatsConfig.get('workflows'),
 });
 
 const commerce = deployCommerce({
