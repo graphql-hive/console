@@ -1,5 +1,5 @@
 import zod from 'zod';
-import type { OpenTelemetryConfigurationModel } from '@hive/service-common';
+import { OpenTelemetryConfigurationModel } from '@hive/service-common';
 import { createConnectionString } from '@hive/storage';
 import { RequestBroker } from './lib/webhooks/send-webhook.js';
 
