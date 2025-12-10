@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import path from 'path';
+import path from 'node:path';
 import { Logger } from '@graphql-hive/logger';
 
 /** Write latest date to filesystem for docker health check */
