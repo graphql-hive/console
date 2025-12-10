@@ -104,4 +104,25 @@ describe('policy checks', () => {
       ]
     `);
   });
+
+  test('errors can be ignored using eslint-disable-next-line', async () => {
+    const result = await schemaPolicyApiRouter
+      .createCaller({ req: { log: console } as any })
+      .checkPolicy({
+        source: `
+        """
+        The root query type
+        """
+        # eslint-disable-next-line
+        type Query { foo: String! }
+        `,
+        schema: 'type Query { foo: String! }',
+        target: '1',
+        policy: {
+          'require-nullable-result-in-root': ['error'],
+        },
+      });
+
+    expect(result.length).toBe(0);
+  });
 });
