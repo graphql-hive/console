@@ -333,7 +333,7 @@ export const TargetLayout = ({
                   <Button
                     onClick={toggleModalOpen}
                     variant="link"
-                    className="whitespace-nowrap text-orange-500"
+                    className="hidden whitespace-nowrap text-orange-500 md:flex"
                   >
                     <LinkIcon size={16} className="mr-2" />
                     Connect to CDN

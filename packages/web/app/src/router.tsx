@@ -75,6 +75,7 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
+import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-laboratory-new';
 import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
 import { TargetProposalsPage } from './pages/target-proposals';
 import { TargetProposalsNewPage } from './pages/target-proposals-new';
@@ -590,6 +591,24 @@ const targetLaboratoryRoute = createRoute({
   },
 });
 
+const targetLaboratoryNewRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'laboratory-new',
+  validateSearch: () => ({}) as { operation?: string; operationString?: string },
+  component: function TargetLaboratoryNewRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetLaboratoryNewRoute.useParams();
+    const { operation } = targetLaboratoryNewRoute.useSearch();
+    return (
+      <TargetLaboratoryPageNew
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        selectedOperationId={operation}
+      />
+    );
+  },
+});
+
 const targetAppsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps',
@@ -1013,6 +1032,7 @@ const routeTree = root.addChildren([
       targetIndexRoute,
       targetSettingsRoute,
       targetLaboratoryRoute,
+      targetLaboratoryNewRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
       targetTraceRoute,

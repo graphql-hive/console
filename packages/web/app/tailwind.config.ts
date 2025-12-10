@@ -79,6 +79,12 @@ const config: Config = {
       cyan: '#0acccc',
       blue: colors.sky,
       gray: colors.stone,
+      rose: colors.rose,
+      pink: colors.pink,
+      teal: colors.teal,
+      indigo: colors.indigo,
+      amber: colors.amber,
+      lime: colors.lime,
       magenta: '#f11197',
       orange: {
         50: '#fefbf5',
