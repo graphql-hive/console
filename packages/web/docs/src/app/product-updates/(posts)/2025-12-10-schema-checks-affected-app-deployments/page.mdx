@@ -1,0 +1,40 @@
+---
+title: Schema Checks Show Affected App Deployments
+description: See which app deployments would be impacted by breaking schema changes before deploying.
+date: 2025-12-10
+authors: [adam]
+---
+
+Schema checks now show which active app deployments would be affected by breaking changes, helping
+you understand the real-world impact before deploying schema updates.
+
+## How It Works
+
+When a schema check detects breaking changes, Hive automatically identifies which active app
+deployments have operations that use the affected schema coordinates. For each affected deployment,
+you'll see:
+
+- The app deployment name and version
+- Which specific operations within that deployment use the affected fields
+
+## Example
+
+If you're removing `Query.users`, and your `mobile-app@2.1.0` deployment has operations that query
+this field, the schema check will show:
+
+- **Breaking change**: Field `users` was removed from object type `Query`
+- **Affected deployment**: `mobile-app` version `2.1.0`
+- **Affected operations**: The specific operation names and hashes that use this field
+
+## Benefits
+
+- **Impact assessment**: Understand which client applications would break before deploying
+- **Team coordination**: Know which teams need to update their apps before proceeding
+- **Risk mitigation**: Make informed decisions about breaking changes
+
+Only **active** app deployments (published and not retired) are analyzed. Pending and retired
+deployments are not included.
+
+---
+
+- [Learn more about App Deployments](/docs/schema-registry/app-deployments#schema-checks-and-affected-app-deployments)
