@@ -12,6 +12,7 @@
     "@graphql-hive/logger": "1.0.9",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
+    "@sentry/node": "7.120.2",
     "graphile-worker": "0.16.6",
     "nodemailer": "7.0.11",
     "sendmail": "1.6.1",
