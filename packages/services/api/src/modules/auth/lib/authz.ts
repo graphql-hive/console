@@ -357,18 +357,6 @@ function defaultAppDeploymentIdentity(
   return ids;
 }
 
-function defaultSchemaProposalIdentity(
-  args: { serviceName: string | null } & Parameters<typeof defaultTargetIdentity>[0],
-) {
-  const ids = defaultTargetIdentity(args);
-
-  if (args.serviceName !== null) {
-    ids.push(`target/${args.targetId}/service/${args.serviceName}`);
-  }
-
-  return ids;
-}
-
 function schemaCheckOrPublishIdentity(
   args: { serviceName: string | null } & Parameters<typeof defaultTargetIdentity>[0],
 ) {
@@ -427,14 +415,14 @@ const permissionsByLevel = {
     z.literal('schema:compose'),
     z.literal('usage:report'),
     z.literal('traces:report'),
+    z.literal('schemaProposal:describe'),
+    z.literal('schemaProposal:modify'),
   ],
   service: [
     z.literal('schemaCheck:create'),
     z.literal('schemaCheck:approve'),
     z.literal('schemaVersion:publish'),
     z.literal('schemaVersion:deleteService'),
-    z.literal('schemaProposal:describe'),
-    z.literal('schemaProposal:modify'),
   ],
   appDeployment: [
     z.literal('appDeployment:create'),
