@@ -3613,9 +3613,7 @@ test('multiple deployments affected by same breaking change all appear', async (
 
   // Both deployments should appear
   expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(2);
-  const appNames = helloRemoval?.node.affectedAppDeployments?.map(
-    (d: { name: string }) => d.name,
-  );
+  const appNames = helloRemoval?.node.affectedAppDeployments?.map((d: { name: string }) => d.name);
   expect(appNames).toContain('multi-app-1');
   expect(appNames).toContain('multi-app-2');
 });
@@ -3860,9 +3858,7 @@ test('multiple operations in same deployment affected by same change', async () 
         edge.node.message.includes('hello'),
       );
       // Wait until all 3 operations appear
-      return (
-        (helloRemoval?.node.affectedAppDeployments?.[0]?.affectedOperations?.length ?? 0) >= 3
-      );
+      return (helloRemoval?.node.affectedAppDeployments?.[0]?.affectedOperations?.length ?? 0) >= 3;
     },
     { maxWait: 15_000 },
   );
