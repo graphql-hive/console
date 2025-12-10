@@ -365,6 +365,7 @@ services:
       SENTRY: '${SENTRY:-0}'
       SENTRY_DSN: '${SENTRY_DSN:-}'
       PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
+      LOG_JSON: '1'
 
   usage:
     image: '${DOCKER_REGISTRY}usage${DOCKER_TAG}'
