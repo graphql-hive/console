@@ -156,6 +156,17 @@ export function getOrganization(organizationSlug: string, authToken: string) {
             reportingOperations
             enablingUsageBasedBreakingChanges
           }
+          me {
+            id
+            user {
+              id
+            }
+            role {
+              id
+              name
+              permissions
+            }
+          }
         }
       }
     `),
