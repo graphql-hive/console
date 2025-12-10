@@ -43,7 +43,9 @@ export class AppDeploymentsManager {
     return appDeployment;
   }
 
-  async getAppDeploymentById(args: { appDeploymentId: string }): Promise<AppDeploymentRecord | null> {
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
     return await this.appDeployments.getAppDeploymentById(args);
   }
 

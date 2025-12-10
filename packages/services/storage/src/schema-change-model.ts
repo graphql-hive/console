@@ -1341,12 +1341,14 @@ export const HiveSchemaChangeModel = z
         topAffectedOperations: { hash: string; name: string; count: number }[];
         topAffectedClients: { name: string; count: number }[];
       } | null;
-      affectedAppDeployments: {
-        id: string;
-        name: string;
-        version: string;
-        affectedOperations: { hash: string; name: string | null }[];
-      }[] | null;
+      affectedAppDeployments:
+        | {
+            id: string;
+            name: string;
+            version: string;
+            affectedOperations: { hash: string; name: string | null }[];
+          }[]
+        | null;
       readonly breakingChangeSchemaCoordinate: string | null;
     } => {
       const change = schemaChangeFromSerializableChange(rawChange as any);
