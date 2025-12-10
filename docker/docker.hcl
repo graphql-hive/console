@@ -316,6 +316,27 @@ target "webhooks" {
   ]
 }
 
+target "workflows" {
+  inherits = ["service-base", get_target()]
+  contexts = {
+    dist = "${PWD}/packages/services/workflows/dist"
+    shared = "${PWD}/docker/shared"
+  }
+  args = {
+    SERVICE_DIR_NAME = "@hive/workflows"
+    IMAGE_TITLE = "graphql-hive/workflows"
+    IMAGE_DESCRIPTION = "The workflow service of the GraphQL Hive project."
+    PORT = "3005"
+    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
+  }
+  tags = [
+    local_image_tag("workflows"),
+    stable_image_tag("workflows"),
+    image_tag("workflows", COMMIT_SHA),
+    image_tag("workflows", BRANCH_NAME)
+  ]
+}
+
 target "composition-federation-2" {
   inherits = ["service-base", get_target()]
   contexts = {
@@ -425,6 +446,7 @@ group "build" {
     "commerce",
     "composition-federation-2",
     "app",
+    "workflows",
     "otel-collector"
   ]
 }
@@ -442,6 +464,7 @@ group "integration-tests" {
     "webhooks",
     "server",
     "composition-federation-2",
+    "workflows",
     "otel-collector"
   ]
 }

@@ -94,9 +94,11 @@ const RequestBrokerModel = zod.union([
 ]);
 
 const PrometheusModel = zod.object({
-  PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
-  PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()),
-  PROMETHEUS_METRICS_PORT: emptyString(NumberFromString.optional()),
+  PROMETHEUS_METRICS: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ).default('0'),
+  PROMETHEUS_METRICS_LABEL_INSTANCE: emptyString(zod.string().optional()).default('workflows'),
+  PROMETHEUS_METRICS_PORT: emptyString(NumberFromString.optional()).default(10254),
 });
 
 const LogModel = zod.object({
