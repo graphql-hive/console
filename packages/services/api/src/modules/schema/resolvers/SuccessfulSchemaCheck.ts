@@ -8,11 +8,11 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
   schemaVersion: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getSchemaVersion(schemaCheck);
   },
-  safeSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck);
+  safeSchemaChanges: (schemaCheck, { simplifyChanges }, { injector }) => {
+    return injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck, simplifyChanges);
   },
-  breakingSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck);
+  breakingSchemaChanges: (schemaCheck, { simplifyChanges }, { injector }) => {
+    return injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck, simplifyChanges);
   },
   hasSchemaCompositionErrors: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getHasSchemaCompositionErrors(schemaCheck);
@@ -70,7 +70,7 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
   conditionalBreakingChangeMetadata: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getConditionalBreakingChangeMetadata(schemaCheck);
   },
-  schemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck);
+  schemaChanges: (schemaCheck, { simplifyChanges }, { injector }) => {
+    return injector.get(SchemaCheckManager).getAllSchemaChanges(schemaCheck, simplifyChanges);
   },
 };

@@ -3,6 +3,7 @@ import type {
   SuccessfulSchemaCheckMapper,
 } from '../module.graphql.mappers';
 import { Injectable, Scope } from 'graphql-modules';
+import { DiffRule } from '@graphql-inspector/core';
 import { Storage } from '../../shared/providers/storage';
 import { formatNumber } from '../lib/number-formatting';
 import { SchemaManager } from './schema-manager';
@@ -35,25 +36,68 @@ export class SchemaCheckManager {
     return !!(schemaCheck.breakingSchemaChanges?.length || schemaCheck.safeSchemaChanges?.length);
   }
 
-  getSafeSchemaChanges(schemaCheck: SchemaCheck) {
+  getSafeSchemaChanges(schemaCheck: SchemaCheck, simplifyChanges: boolean = true) {
     if (!schemaCheck.safeSchemaChanges?.length) {
       return null;
+    }
+
+    if (simplifyChanges) {
+      /**
+       * @todo modify the simplifyChanges rule to loosen the argument requirements. This rule
+       * doesn't need more information than the change type and path fields.
+       */
+      return DiffRule.simplifyChanges({
+        changes: schemaCheck.safeSchemaChanges as any,
+        oldSchema: undefined as any,
+        newSchema: undefined as any,
+        config: undefined,
+      }) as unknown as typeof schemaCheck.safeSchemaChanges;
     }
 
     return schemaCheck.safeSchemaChanges;
   }
 
-  getAllSchemaChanges(schemaCheck: SchemaCheck) {
+  getAllSchemaChanges(schemaCheck: SchemaCheck, simplifyChanges: boolean = true) {
     if (!schemaCheck.safeSchemaChanges?.length && !schemaCheck.breakingSchemaChanges?.length) {
       return null;
     }
 
-    return [...(schemaCheck.breakingSchemaChanges ?? []), ...(schemaCheck.safeSchemaChanges ?? [])];
+    const changes = [
+      ...(schemaCheck.breakingSchemaChanges ?? []),
+      ...(schemaCheck.safeSchemaChanges ?? []),
+    ];
+    if (simplifyChanges) {
+      /**
+       * @todo modify the simplifyChanges rule to loosen the argument requirements. This rule
+       * doesn't need more information than the change type and path fields.
+       */
+      return DiffRule.simplifyChanges({
+        changes: changes as any,
+        oldSchema: undefined as any,
+        newSchema: undefined as any,
+        config: undefined,
+      }) as unknown as typeof changes;
+    }
+
+    return changes;
   }
 
-  getBreakingSchemaChanges(schemaCheck: SchemaCheck) {
+  getBreakingSchemaChanges(schemaCheck: SchemaCheck, simplifyChanges: boolean = true) {
     if (!schemaCheck.breakingSchemaChanges?.length) {
       return null;
+    }
+
+    if (simplifyChanges) {
+      /**
+       * @todo modify the simplifyChanges rule to loosen the argument requirements. This rule
+       * doesn't need more information than the change type and path fields.
+       */
+      return DiffRule.simplifyChanges({
+        changes: schemaCheck.breakingSchemaChanges as any,
+        oldSchema: undefined as any,
+        newSchema: undefined as any,
+        config: undefined,
+      });
     }
 
     return schemaCheck.breakingSchemaChanges;

@@ -879,10 +879,25 @@ export default gql`
     """
     Schema changes that were introduced in this schema version (compared to the previous version).
     """
-    schemaChanges: SchemaChangeConnection @tag(name: "public")
+    schemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection @tag(name: "public")
 
-    breakingSchemaChanges: SchemaChangeConnection
-    safeSchemaChanges: SchemaChangeConnection
+    breakingSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
+    safeSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
 
     """
     GitHub metadata associated with the schema version.
@@ -1261,9 +1276,24 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
-    schemaChanges: SchemaChangeConnection @tag(name: "public")
-    breakingSchemaChanges: SchemaChangeConnection
-    safeSchemaChanges: SchemaChangeConnection
+    schemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection @tag(name: "public")
+    breakingSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
+    safeSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
     schemaPolicyWarnings: SchemaPolicyWarningConnection
     schemaPolicyErrors: SchemaPolicyWarningConnection
     """
@@ -1299,10 +1329,25 @@ export default gql`
 
     schemaCompositionErrors: SchemaErrorConnection @tag(name: "public")
 
-    schemaChanges: SchemaChangeConnection @tag(name: "public")
+    schemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection @tag(name: "public")
 
-    breakingSchemaChanges: SchemaChangeConnection
-    safeSchemaChanges: SchemaChangeConnection
+    breakingSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
+    safeSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
 
     compositeSchemaSDL: String @tag(name: "public")
     supergraphSDL: String @tag(name: "public")
@@ -1345,13 +1390,28 @@ export default gql`
     """
     Breaking schema changes for this contract version.
     """
-    breakingSchemaChanges: SchemaChangeConnection
+    breakingSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
     """
     Safe schema changes for this contract version.
     """
-    safeSchemaChanges: SchemaChangeConnection
+    safeSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
 
-    schemaChanges: SchemaChangeConnection @tag(name: "public")
+    schemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection @tag(name: "public")
 
     previousContractVersion: ContractVersion @tag(name: "public")
     previousDiffableContractVersion: ContractVersion @tag(name: "public")
@@ -1412,12 +1472,27 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
-    schemaChanges: SchemaChangeConnection @tag(name: "public")
+    schemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection @tag(name: "public")
     """
     Breaking changes can exist in an successful schema check if the check was manually approved.
     """
-    breakingSchemaChanges: SchemaChangeConnection
-    safeSchemaChanges: SchemaChangeConnection
+    breakingSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
+    safeSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
     schemaPolicyWarnings: SchemaPolicyWarningConnection
     """
     Schema policy errors can exist in an successful schema check if the check was manually approved.
@@ -1509,9 +1584,24 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
-    schemaChanges: SchemaChangeConnection @tag(name: "public")
-    breakingSchemaChanges: SchemaChangeConnection
-    safeSchemaChanges: SchemaChangeConnection
+    schemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection @tag(name: "public")
+    breakingSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
+    safeSchemaChanges(
+      """
+      This filters out nested changes. E.g. if a type was add, the simplified changes wouldn't include information about the fields added to that new type.
+      """
+      simplifyChanges: Boolean = true
+    ): SchemaChangeConnection
     schemaPolicyWarnings: SchemaPolicyWarningConnection
     schemaPolicyErrors: SchemaPolicyWarningConnection
 
