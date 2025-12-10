@@ -2,7 +2,7 @@ import { hostname } from 'node:os';
 import { run } from 'graphile-worker';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
-import { registerShutdown, startMetrics } from '@hive/service-common';
+import { registerShutdown, startHeartbeats, startMetrics } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { Context } from './context.js';
 import { env } from './environment.js';
@@ -45,6 +45,16 @@ const logger = new Logger({ level: env.log.level });
 
 logger.info({ pid: process.pid }, 'starting workflow service');
 
+const stopHeartbeats = env.heartbeat
+  ? startHeartbeats({
+      enabled: true,
+      endpoint: env.heartbeat.endpoint,
+      intervalInMS: 20_000,
+      onError: error => logger.error({ error }, 'Heartbeat failed.'),
+      isReady: () => true,
+    })
+  : null;
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
@@ -79,6 +89,11 @@ registerShutdown({
         logger.info('Stopping prometheus endpoint');
         await shutdownMetrics();
         logger.info('Stopping prometheus endpoint successful.');
+      }
+      if (stopHeartbeats) {
+        logger.info('Stop heartbeat');
+        stopHeartbeats();
+        logger.info('Heartbeat stopped');
       }
     } catch (error: unknown) {
       logger.error({ error }, 'Unepected error occured');
