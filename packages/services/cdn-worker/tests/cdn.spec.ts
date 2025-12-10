@@ -1312,3 +1312,61 @@ describe('CDN Worker', () => {
     });
   });
 });
+
+describe('AwsV4Signer', () => {
+  test('x-amz-meta-* headers are included in signature when using signQuery', async () => {
+    const client = new AwsClient({
+      accessKeyId: 'test-access-key',
+      secretAccessKey: 'test-secret-key',
+      service: 's3',
+      region: 'auto',
+    });
+
+    const [signedUrl] = await client.sign('https://example.com/bucket/key', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'text/plain',
+        'x-amz-meta-x-hive-schema-version-id': 'test-version-id',
+      },
+      body: 'test body',
+      aws: {
+        signQuery: true,
+      },
+    });
+
+    // The X-Amz-SignedHeaders query param should include the x-amz-meta header
+    const url = new URL(signedUrl);
+    const signedHeaders = url.searchParams.get('X-Amz-SignedHeaders');
+
+    expect(signedHeaders).toBeDefined();
+    expect(signedHeaders).toContain('host');
+    expect(signedHeaders).toContain('x-amz-meta-x-hive-schema-version-id');
+  });
+
+  test('signature works without x-amz-meta-* headers', async () => {
+    const client = new AwsClient({
+      accessKeyId: 'test-access-key',
+      secretAccessKey: 'test-secret-key',
+      service: 's3',
+      region: 'auto',
+    });
+
+    const [signedUrl] = await client.sign('https://example.com/bucket/key', {
+      method: 'PUT',
+      headers: {
+        'content-type': 'text/plain',
+      },
+      body: 'test body',
+      aws: {
+        signQuery: true,
+      },
+    });
+
+    const url = new URL(signedUrl);
+    const signedHeaders = url.searchParams.get('X-Amz-SignedHeaders');
+
+    expect(signedHeaders).toBeDefined();
+    expect(signedHeaders).toContain('host');
+    expect(signedHeaders).not.toContain('x-amz-meta');
+  });
+});
