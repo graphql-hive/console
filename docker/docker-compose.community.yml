@@ -218,10 +218,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: '${REDIS_PASSWORD}'
       TOKENS_ENDPOINT: http://tokens:3003
-      WEBHOOKS_ENDPOINT: http://webhooks:3005
       SCHEMA_ENDPOINT: http://schema:3002
       SCHEMA_POLICY_ENDPOINT: http://policy:3012
-      EMAILS_ENDPOINT: http://emails:3011
       ENCRYPTION_SECRET: '${HIVE_ENCRYPTION_SECRET}'
       WEB_APP_URL: '${HIVE_APP_BASE_URL}'
       PORT: 3001

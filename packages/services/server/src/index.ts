@@ -298,10 +298,6 @@ export async function main() {
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
       },
-      emailsEndpoint: env.hiveServices.emails ? env.hiveServices.emails.endpoint : undefined,
-      webhooks: {
-        endpoint: env.hiveServices.webhooks.endpoint,
-      },
       schemaService: {
         endpoint: env.hiveServices.schema.endpoint,
       },

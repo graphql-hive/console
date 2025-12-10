@@ -23,5 +23,5 @@ export async function startHeartbeat(logger: Logger) {
     setTimeout(writeHeartbeat, intervalMs).unref();
   };
 
-  writeHeartbeat();
+  await writeHeartbeat();
 }

@@ -3,7 +3,6 @@ import { Redis } from 'ioredis';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { adminModule } from './modules/admin';
 import { alertsModule } from './modules/alerts';
-import { WEBHOOKS_CONFIG, WebhooksConfig } from './modules/alerts/providers/tokens';
 import { appDeploymentsModule } from './modules/app-deployments';
 import { APP_DEPLOYMENTS_ENABLED } from './modules/app-deployments/providers/app-deployments-enabled-token';
 import { auditLogsModule } from './modules/audit-logs';
@@ -89,13 +88,13 @@ const modules = [
   collectionModule,
   appDeploymentsModule,
   auditLogsModule,
+  supportModule,
 ];
 
 export function createRegistry({
   app,
   commerce,
   tokens,
-  webhooks,
   schemaService,
   schemaPolicyService,
   logger,
@@ -110,7 +109,6 @@ export function createRegistry({
   encryptionSecret,
   schemaConfig,
   supportConfig,
-  emailsEndpoint,
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
@@ -124,7 +122,6 @@ export function createRegistry({
   redis: Redis;
   commerce: CommerceConfig;
   tokens: TokensConfig;
-  webhooks: WebhooksConfig;
   schemaService: SchemaServiceConfig;
   schemaPolicyService: SchemaPolicyServiceConfig;
   githubApp: GitHubApplicationConfig | null;
@@ -156,7 +153,6 @@ export function createRegistry({
   } | null;
   schemaConfig: SchemaModuleConfig;
   supportConfig: SupportConfig | null;
-  emailsEndpoint?: string;
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
@@ -240,12 +236,6 @@ export function createRegistry({
     {
       provide: TOKENS_CONFIG,
       useValue: tokens,
-      scope: Scope.Singleton,
-    },
-
-    {
-      provide: WEBHOOKS_CONFIG,
-      useValue: webhooks,
       scope: Scope.Singleton,
     },
     {

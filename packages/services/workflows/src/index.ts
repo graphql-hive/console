@@ -56,7 +56,7 @@ const stopHttpHeartbeat = env.httpHeartbeat
     })
   : null;
 
-startHeartbeat(logger);
+await startHeartbeat(logger);
 
 const context: Context = {
   logger,

@@ -26,6 +26,7 @@
     "@hive/tokens": "workspace:*",
     "@hive/usage-common": "workspace:*",
     "@hive/usage-ingestor": "workspace:*",
+    "@hive/workflows": "workspace:*",
     "@nodesecure/i18n": "^4.0.1",
     "@nodesecure/js-x-ray": "8.0.0",
     "@octokit/app": "15.1.4",
