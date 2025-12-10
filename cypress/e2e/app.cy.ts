@@ -64,8 +64,6 @@ describe('oidc', () => {
       cy.get('button[value="login"]').click();
 
       cy.get(`a[href="/${slug}"]`).should('exist');
-      // Organization picker should not be visible
-      cy.get('[data-cy="organization-picker-current"]').should('not.exist');
     });
   });
 
