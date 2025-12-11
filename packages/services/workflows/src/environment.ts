@@ -21,7 +21,7 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 };
 
 const EnvironmentModel = zod.object({
-  PORT: emptyString(NumberFromString.optional()).default(3013),
+  PORT: emptyString(NumberFromString.optional()).default(3014),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),

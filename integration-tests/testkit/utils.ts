@@ -21,7 +21,7 @@ const LOCAL_SERVICES = {
   external_composition: 3012,
   mock_server: 3042,
   'otel-collector': 4318,
-  workflows: 3013,
+  workflows: 3014,
 } as const;
 
 export type KnownServices = keyof typeof LOCAL_SERVICES;
