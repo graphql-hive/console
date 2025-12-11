@@ -25,7 +25,7 @@ pub struct ExecutionReport {
     pub persisted_document_hash: Option<String>,
 }
 
-typify::import_types!(schema = "../../services/usage/usage-report-v2.schema.json");
+typify::import_types!(schema = "./usage-report-v2.schema.json");
 
 #[derive(Debug, Default)]
 pub struct Buffer(Mutex<VecDeque<ExecutionReport>>);
