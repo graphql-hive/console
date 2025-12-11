@@ -35,8 +35,6 @@ RUN cargo build --release
 
 # Copy in the actual source code
 COPY --from=sdk_rs_pkg src ./src
-# Copy the usage report schema again
-COPY --from=usage_service usage-report-v2.schema.json ./
 RUN touch ./src/main.rs
 RUN touch ./src/lib.rs
 
