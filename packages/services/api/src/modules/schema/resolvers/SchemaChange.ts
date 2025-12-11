@@ -34,7 +34,7 @@ export const SchemaChange: SchemaChangeResolvers = {
   severityLevel: change => severityMap[change.criticality],
   severityReason: change => change.reason,
   affectedAppDeployments: change => {
-    if (!change.affectedAppDeployments?.length) {
+    if (!change.affectedAppDeployments) {
       return null;
     }
     return change.affectedAppDeployments.map(d => ({

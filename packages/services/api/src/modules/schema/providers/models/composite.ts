@@ -1,7 +1,12 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from '../registry-checks';
+import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
+import {
+  GetAffectedAppDeployments,
+  RegistryChecks,
+  type ConditionalBreakingChangeDiffConfig,
+} from '../registry-checks';
 import { swapServices } from '../schema-helper';
 import { shouldUseLatestComposableVersion } from '../schema-manager';
 import type { PublishInput } from '../schema-publisher';
@@ -39,6 +44,7 @@ export class CompositeModel {
   constructor(
     private checks: RegistryChecks,
     private logger: Logger,
+    private appDeployments: AppDeployments,
   ) {}
 
   private async getContractChecks(args: {
@@ -50,6 +56,7 @@ export class CompositeModel {
     compositionCheck: Awaited<ReturnType<RegistryChecks['composition']>>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
       ?.contracts;
@@ -78,6 +85,7 @@ export class CompositeModel {
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
             failDiffOnDangerousChange: args.failDiffOnDangerousChange,
+            getAffectedAppDeployments: args.getAffectedAppDeployments,
           }),
         };
       }),
@@ -210,11 +218,18 @@ export class CompositeModel {
       targetId: selector.targetId,
     });
 
+    const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: selector.targetId,
+        schemaCoordinates,
+      });
+
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments,
     });
     this.logger.info('Contract checks: %o', contractChecks);
 
@@ -228,6 +243,7 @@ export class CompositeModel {
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange,
+        getAffectedAppDeployments,
       }),
       this.checks.policyCheck({
         selector,
@@ -476,6 +492,12 @@ export class CompositeModel {
       targetId: target.id,
     });
 
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = schemaCoordinates =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: target.id,
+        schemaCoordinates,
+      });
+
     const diffCheck = await this.checks.diff({
       conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
       includeUrlChanges: {
@@ -487,6 +509,7 @@ export class CompositeModel {
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
     });
 
     const contractChecks = await this.getContractChecks({
@@ -494,6 +517,7 @@ export class CompositeModel {
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
     });
 
     const messages: string[] = [];
@@ -641,6 +665,12 @@ export class CompositeModel {
       targetId: selector.target,
     });
 
+    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = schemaCoordinates =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: selector.target,
+        schemaCoordinates,
+      });
+
     const diffCheck = await this.checks.diff({
       conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
       includeUrlChanges: {
@@ -652,6 +682,7 @@ export class CompositeModel {
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
     });
 
     const contractChecks = await this.getContractChecks({
@@ -659,6 +690,7 @@ export class CompositeModel {
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
     });
 
     if (
