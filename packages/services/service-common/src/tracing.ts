@@ -111,7 +111,7 @@ export class TracingInstance {
   }
 
   async shutdown() {
-    const tracerProvider = trace.getTracerProvider;
+    const tracerProvider = trace.getTracerProvider();
     if ('shutdown' in tracerProvider && typeof tracerProvider.shutdown === 'function') {
       await tracerProvider.shutdown();
     }
