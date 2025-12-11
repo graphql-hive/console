@@ -3972,9 +3972,8 @@ test('schema check fails if breaking change affects app deployment even when usa
     valid: true,
   });
 
-  const baselineSchemaCheckId = (
-    baselineCheck.schemaCheck as { schemaCheck: { id: string } }
-  ).schemaCheck.id;
+  const baselineSchemaCheckId = (baselineCheck.schemaCheck as { schemaCheck: { id: string } })
+    .schemaCheck.id;
   const baselineDetails = await execute({
     document: SchemaCheckWithAffectedAppDeployments,
     variables: {

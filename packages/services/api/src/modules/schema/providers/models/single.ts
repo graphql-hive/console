@@ -2,7 +2,11 @@ import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
 import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
-import { ConditionalBreakingChangeDiffConfig, GetAffectedAppDeployments, RegistryChecks } from '../registry-checks';
+import {
+  ConditionalBreakingChangeDiffConfig,
+  GetAffectedAppDeployments,
+  RegistryChecks,
+} from '../registry-checks';
 import type { PublishInput } from '../schema-publisher';
 import type { Organization, Project, SingleSchema, Target } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';

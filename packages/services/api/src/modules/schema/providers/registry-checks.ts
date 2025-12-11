@@ -2,7 +2,6 @@ import { URL } from 'node:url';
 import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import * as Sentry from '@sentry/node';
 import { ChangeType, CriticalityLevel, TypeOfChangeType } from '@graphql-inspector/core';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
@@ -12,6 +11,7 @@ import {
   type RegistryServiceUrlChangeSerializableChange,
   type SchemaChangeType,
 } from '@hive/storage';
+import * as Sentry from '@sentry/node';
 import { ProjectType } from '../../../shared/entities';
 import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
 import { OperationsReader } from '../../operations/providers/operations-reader';
