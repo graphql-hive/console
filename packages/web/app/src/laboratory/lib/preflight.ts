@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/laboratory/lib/env';
 
 export interface LaboratoryPreflightLog {
@@ -79,9 +80,8 @@ export async function runIsolatedLabScript(
   return new Promise((resolve, reject) => {
     const blob = new Blob(
       [
+        cryptoJsSource.replace('}(this, function () {', '}(self, function () {'),
         /* javascript */ `
-        import CryptoJS from 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/+esm';
-        
         const env = ${JSON.stringify(env)};
 
         let promptResolve = null;
@@ -131,7 +131,7 @@ export async function runIsolatedLabScript(
                     self.postMessage({ type: 'prompt', placeholder, defaultValue });
                   });
                 },
-                CryptoJS: CryptoJS
+                // CryptoJS: CryptoJS
               });
   
               // Make CryptoJS available globally in the script context
