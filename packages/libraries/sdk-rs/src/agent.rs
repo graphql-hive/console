@@ -190,10 +190,21 @@ impl UsageAgent {
                             };
                         report.operations.push(RequestOperation {
                             operation_map_key: hash.clone(),
-                            timestamp: op.timestamp.try_into().unwrap(),
+                            timestamp: op.timestamp,
                             execution: Execution {
                                 ok: op.ok,
-                                duration: op.duration.as_nanos().try_into().unwrap(),
+                                /*
+                                    The conversion from u128 (from op.duration.as_nanos()) to u64 using try_into().unwrap() can panic if the duration is longer than u64::MAX nanoseconds (over 584 years).
+                                    While highly unlikely, it's safer to handle this potential overflow gracefully in library code to prevent panics.
+                                    A safe alternative is to convert the Result to an Option and provide a fallback value on failure,
+                                    effectively saturating at u64::MAX.
+                                */
+                                duration: op
+                                    .duration
+                                    .as_nanos()
+                                    .try_into()
+                                    .ok()
+                                    .unwrap_or(u64::MAX),
                                 errors_total: op.errors.try_into().unwrap(),
                             },
                             persisted_document_hash: op

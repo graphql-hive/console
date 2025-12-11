@@ -42,7 +42,8 @@
         "type": "object",
         "properties": {
           "timestamp": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0
           },
           "operationMapKey": {
             "type": "string"
