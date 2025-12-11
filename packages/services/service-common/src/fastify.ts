@@ -10,27 +10,27 @@ export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 function bridgeFastifyLogger(logger: Logger): FastifyBaseLogger {
   return {
     debug(...args: Array<any>) {
-      // @ts-expect-error
+      // @ts-expect-error logger.debug.apply raised an exception :(
       logger.debug(...args);
     },
     error(...args: Array<any>) {
-      // @ts-expect-error
+      // @ts-expect-error logger.debug.apply raised an exception :(
       logger.error(...args);
     },
     fatal(...args: Array<any>) {
-      // @ts-expect-error
+      // @ts-expect-error logger.debug.apply raised an exception :(
       logger.error(...args);
     },
     trace(...args: Array<any>) {
-      // @ts-expect-error
+      // @ts-expect-error logger.debug.apply raised an exception :(
       logger.trace(...args);
     },
     info(...args: Array<any>) {
-      // @ts-expect-error
+      // @ts-expect-error logger.debug.apply raised an exception :(
       logger.info(...args);
     },
     warn(...args: Array<any>) {
-      // @ts-expect-error
+      // @ts-expect-error logger.debug.apply raised an exception :(
       logger.warn(...args);
     },
     child() {
