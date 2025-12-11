@@ -245,6 +245,13 @@ services:
     ports:
       - '3011:3011'
 
+  workflows:
+    environment:
+      EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
+      LOG_LEVEL: debug
+    ports:
+      - '3014:3014'
+
   schema:
     environment:
       LOG_LEVEL: debug
