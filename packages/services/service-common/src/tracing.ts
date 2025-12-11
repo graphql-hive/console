@@ -9,7 +9,7 @@ import {
   HiveTracingSpanProcessor,
   HiveTracingSpanProcessorOptions,
   openTelemetrySetup,
-} from '@graphql-hive/plugin-opentelemetry/dist/setup';
+} from '@graphql-hive/plugin-opentelemetry/setup';
 import {
   Attributes,
   AttributeValue,
