@@ -363,7 +363,7 @@ target "apollo-router" {
   contexts = {
     router_pkg = "${PWD}/packages/libraries/router"
     sdk_rs_pkg = "${PWD}/packages/libraries/sdk-rs"
-    usage_service = "${PWD}/servicesusage"
+    usage_service = "${PWD}/services/usage"
     config = "${PWD}/configs/cargo"
   }
   args = {
