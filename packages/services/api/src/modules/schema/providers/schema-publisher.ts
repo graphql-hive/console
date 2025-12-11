@@ -20,7 +20,6 @@ import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
-import { AppDeployments } from '../../app-deployments/providers/app-deployments';
 import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import {
@@ -152,7 +151,6 @@ export class SchemaPublisher {
     private schemaVersionHelper: SchemaVersionHelper,
     private operationsReader: OperationsReader,
     private idTranslator: IdTranslator,
-    private appDeployments: AppDeployments,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -280,81 +278,6 @@ export class SchemaPublisher {
         totalRequestCount: args.conditionalBreakingChangeConfiguration.totalRequestCount,
       },
     };
-  }
-
-  private async enrichBreakingChangesWithAffectedAppDeployments(args: {
-    targetId: string;
-    breakingChanges: SchemaChangeType[] | null;
-  }): Promise<void> {
-    if (!args.breakingChanges?.length) {
-      return;
-    }
-
-    const schemaCoordinates = new Set<string>();
-    for (const change of args.breakingChanges) {
-      const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
-      if (coordinate) {
-        schemaCoordinates.add(coordinate);
-      }
-    }
-
-    if (schemaCoordinates.size === 0) {
-      return;
-    }
-
-    this.logger.debug(
-      'Checking affected app deployments for %d schema coordinates',
-      schemaCoordinates.size,
-    );
-
-    try {
-      // Query for affected app deployments
-      const affectedDeployments =
-        await this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
-          targetId: args.targetId,
-          schemaCoordinates: Array.from(schemaCoordinates),
-        });
-
-      if (affectedDeployments.length === 0) {
-        this.logger.debug('No app deployments affected by breaking changes');
-        return;
-      }
-
-      this.logger.debug(
-        '%d app deployments affected by breaking changes',
-        affectedDeployments.length,
-      );
-
-      // Attach affected app deployments to each breaking change
-      // Only include deployments that have operations using that specific coordinate
-      for (const change of args.breakingChanges) {
-        const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
-        if (coordinate) {
-          // Filter to only include deployments that have operations for this specific coordinate
-          const deploymentsForCoordinate = affectedDeployments
-            .filter(d => d.affectedOperationsByCoordinate[coordinate]?.length > 0)
-            .map(d => ({
-              id: d.appDeployment.id,
-              name: d.appDeployment.name,
-              version: d.appDeployment.version,
-              affectedOperations: d.affectedOperationsByCoordinate[coordinate],
-            }));
-
-          if (deploymentsForCoordinate.length > 0) {
-            (
-              change as { affectedAppDeployments: typeof deploymentsForCoordinate }
-            ).affectedAppDeployments = deploymentsForCoordinate;
-          }
-        }
-      }
-    } catch (error) {
-      this.logger.error(
-        'Failed to fetch affected app deployments for breaking changes (targetId=%s, coordinateCount=%d): %s',
-        args.targetId,
-        schemaCoordinates.size,
-        error instanceof Error ? error.message : String(error),
-      );
-    }
   }
 
   @traceFn('SchemaPublisher.internalCheck', {
@@ -731,18 +654,6 @@ export class SchemaPublisher {
 
     const retention = await this.rateLimit.getRetention({ targetId: target.id });
     const expiresAt = retention ? new Date(Date.now() + retention * millisecondsPerDay) : null;
-
-    // enrich breaking changes with affected app deployments
-    if (
-      checkResult.conclusion === SchemaCheckConclusion.Failure ||
-      checkResult.conclusion === SchemaCheckConclusion.Success
-    ) {
-      const breakingChanges = checkResult.state?.schemaChanges?.breaking ?? null;
-      await this.enrichBreakingChangesWithAffectedAppDeployments({
-        targetId: target.id,
-        breakingChanges,
-      });
-    }
 
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
