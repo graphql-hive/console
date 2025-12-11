@@ -1,5 +1,14 @@
 # hive-console-sdk-rs
 
+## 0.2.2
+
+### Patch Changes
+
+- [#7405](https://github.com/graphql-hive/console/pull/7405)
+  [`24c0998`](https://github.com/graphql-hive/console/commit/24c099818e4dfec43feea7775e8189d0f305a10c)
+  Thanks [@ardatan](https://github.com/ardatan)! - Use the JSON Schema specification of the usage
+  reports directly to generate Rust structs as a source of truth instead of manually written types
+
 ## 0.2.1
 
 ### Patch Changes
