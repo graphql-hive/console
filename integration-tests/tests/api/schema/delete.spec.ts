@@ -197,6 +197,7 @@ test.concurrent(
 
       expect(changes[0]).toMatchInlineSnapshot(`
         {
+          affectedAppDeployments: null,
           approvalMetadata: null,
           breakingChangeSchemaCoordinate: Query.bruv,
           criticality: BREAKING,
