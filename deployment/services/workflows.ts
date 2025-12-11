@@ -53,10 +53,9 @@ export function deployWorkflows({
               : '',
           LOG_JSON: '1',
         },
-        // TODO: do I really need to add HTTP for these? :ok:
-        // readinessProbe: '/_readiness',
-        // livenessProbe: '/_health',
-        // startupProbe: '/_health',
+        readinessProbe: '/_readiness',
+        livenessProbe: '/_health',
+        startupProbe: '/_health',
         exposesMetrics: true,
         image,
         replicas: environment.podsConfig.general.replicas,

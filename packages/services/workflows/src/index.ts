@@ -2,11 +2,16 @@ import { hostname } from 'node:os';
 import { run } from 'graphile-worker';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
-import { registerShutdown, startHeartbeats, startMetrics } from '@hive/service-common';
+import {
+  createServer,
+  registerShutdown,
+  reportReadiness,
+  startHeartbeats,
+  startMetrics,
+} from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { Context } from './context.js';
 import { env } from './environment.js';
-import { startHeartbeat } from './heartbeat.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
 import { createTaskEventEmitter } from './task-events.js';
@@ -56,14 +61,50 @@ const stopHttpHeartbeat = env.httpHeartbeat
     })
   : null;
 
-await startHeartbeat(logger);
-
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
   requestBroker: env.requestBroker,
 };
+
+const server = await createServer({
+  sentryErrorHandler: !!env.sentry,
+  name: 'workflows',
+  log: logger,
+});
+
+server.route({
+  method: ['GET', 'HEAD'],
+  url: '/_health',
+  handler(_req, res) {
+    void res.status(200).send();
+  },
+});
+
+server.route({
+  method: ['GET', 'HEAD'],
+  url: '/_readiness',
+  handler(_, res) {
+    reportReadiness(true);
+    void res.status(200).send();
+  },
+});
+
+if (context.email.id === 'mock') {
+  server.route({
+    method: ['GET'],
+    url: '/_history',
+    handler(_, res) {
+      void res.status(200).send(context.email.history);
+    },
+  });
+}
+
+await server.listen({
+  port: env.http.port,
+  host: '::',
+});
 
 const shutdownMetrics = env.prometheus
   ? await startMetrics(env.prometheus.labels.instance, env.prometheus.port)
@@ -98,6 +139,9 @@ registerShutdown({
         stopHttpHeartbeat();
         logger.info('HTTP heartbeat stopped');
       }
+      logger.info('Stopping HTTP server');
+      await server.close();
+      logger.info('HTTP server stopped');
     } catch (error: unknown) {
       logger.error({ error }, 'Unepected error occured');
       process.exit(1);

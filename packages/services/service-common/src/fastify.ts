@@ -1,5 +1,6 @@
-import { fastify } from 'fastify';
+import { fastify, type FastifyBaseLogger } from 'fastify';
 import cors from '@fastify/cors';
+import { Logger } from '@graphql-hive/logger';
 import * as Sentry from '@sentry/node';
 import { useHTTPErrorHandler } from './http-error-handler';
 import { useRequestLogging } from './request-logs';
@@ -9,20 +10,25 @@ export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 export async function createServer(options: {
   sentryErrorHandler: boolean;
   name: string;
-  log: {
-    requests: boolean;
-    level: string;
-  };
+  log:
+    | {
+        requests: boolean;
+        level: string;
+      }
+    | Logger;
   cors?: boolean;
   bodyLimit?: number;
 }) {
   const server = fastify({
     disableRequestLogging: true,
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
-    logger: {
-      level: options.log.level,
-      redact: ['request.options', 'options', 'request.headers.authorization'],
-    },
+    logger:
+      options.log instanceof Logger
+        ? (options.log as unknown as FastifyBaseLogger)
+        : {
+            level: options.log.level,
+            redact: ['request.options', 'options', 'request.headers.authorization'],
+          },
     maxParamLength: 5000,
     requestIdHeader: 'x-request-id',
     trustProxy: true,
@@ -44,7 +50,7 @@ export async function createServer(options: {
 
   await useHTTPErrorHandler(server, options.sentryErrorHandler);
 
-  if (options.log.requests) {
+  if (options.log instanceof Logger === false && options.log.requests) {
     await useRequestLogging(server);
   }
 
