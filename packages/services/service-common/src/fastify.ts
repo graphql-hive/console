@@ -7,6 +7,40 @@ import { useRequestLogging } from './request-logs';
 
 export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 
+function bridgeFastifyLogger(logger: Logger): FastifyBaseLogger {
+  return {
+    debug(...args: Array<any>) {
+      // @ts-expect-error
+      logger.debug(...args);
+    },
+    error(...args: Array<any>) {
+      // @ts-expect-error
+      logger.error(...args);
+    },
+    fatal(...args: Array<any>) {
+      // @ts-expect-error
+      logger.error(...args);
+    },
+    trace(...args: Array<any>) {
+      // @ts-expect-error
+      logger.trace(...args);
+    },
+    info(...args: Array<any>) {
+      // @ts-expect-error
+      logger.info(...args);
+    },
+    warn(...args: Array<any>) {
+      // @ts-expect-error
+      logger.warn(...args);
+    },
+    child() {
+      return this;
+    },
+    level: logger.level === false ? 'silent' : logger.level,
+    silent() {},
+  };
+}
+
 export async function createServer(options: {
   sentryErrorHandler: boolean;
   name: string;
@@ -24,7 +58,7 @@ export async function createServer(options: {
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
     logger:
       options.log instanceof Logger
-        ? (options.log as unknown as FastifyBaseLogger)
+        ? bridgeFastifyLogger(options.log)
         : {
             level: options.log.level,
             redact: ['request.options', 'options', 'request.headers.authorization'],
