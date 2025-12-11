@@ -444,32 +444,53 @@ export async function createStorage(
 
       return UserModel.parse(record);
     },
+    getUserById: batchBy(
+      (item: { id: string; connection: Connection }) => item.connection,
+      async input => {
+        const userIds = input.map(i => i.id);
+        const records = await input[0].connection.any<unknown>(sql`/* getUserById */
+          SELECT
+            ${userFields(sql`"users".`, sql`"stu".`)}
+          FROM
+            "users"
+          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+            ON ("stu"."user_id" = "users"."supertoken_user_id")
+          WHERE
+            "users"."id" = ANY(${sql.array(userIds, 'uuid')})
+        `);
+
+        const mappings = new Map<string, UserType>();
+        for (const record of records) {
+          const user = UserModel.parse(record);
+          mappings.set(user.id, user);
+        }
+
+        return userIds.map(async id => mappings.get(id) ?? null);
+      },
+    ),
     async createUser(
       {
-        superTokensUserId,
         email,
         fullName,
         displayName,
-        oidcIntegrationId,
       }: {
-        superTokensUserId: string;
         email: string;
         fullName: string;
         displayName: string;
-        oidcIntegrationId: string | null;
       },
       connection: Connection,
     ) {
-      await connection.query<unknown>(
+      const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "supertoken_user_id", "full_name", "display_name", "oidc_integration_id")
+            ("email", "full_name", "display_name")
           VALUES
-            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${oidcIntegrationId})
+            (${email}, ${fullName}, ${displayName})
+          RETURNING id
         `,
       );
 
-      const user = await this.getUserBySuperTokenId({ superTokensUserId }, connection);
+      const user = await shared.getUserById({ id, connection });
       if (!user) {
         throw new Error('Something went wrong.');
       }
@@ -559,9 +580,7 @@ export async function createStorage(
   };
 
   function buildUserData(input: {
-    superTokensUserId: string;
     email: string;
-    oidcIntegrationId: string | null;
     firstName: string | null;
     lastName: string | null;
   }) {
@@ -572,11 +591,9 @@ export async function createStorage(
         : input.email.split('@')[0].slice(0, 25).padEnd(2, '1');
 
     return {
-      superTokensUserId: input.superTokensUserId,
       email: input.email,
       displayName: name,
       fullName: name,
-      oidcIntegrationId: input.oidcIntegrationId,
     };
   }
 
@@ -609,20 +626,40 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        let internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
-
+        const users = await t.any<unknown>(sql`/* ensureUserExists */
+          SELECT
+            ${userFields(sql`"users".`, sql`"stu".`)}
+          FROM
+            "users"
+          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+            ON ("stu"."user_id" = "users"."supertoken_user_id")
+          WHERE
+            "users"."email" = ${email};
+        `);
+        let internalUser = users.length > 0 ? UserModel.parse(users[0]) : null;
+        if (!internalUser) {
+          internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
+        }
         if (!internalUser) {
           internalUser = await shared.createUser(
             buildUserData({
-              superTokensUserId,
               email,
-              oidcIntegrationId: oidcIntegration?.id ?? null,
               firstName,
               lastName,
             }),
             t,
           );
           action = 'created';
+        }
+
+        if (users.length === 1 && internalUser.superTokensUserId != null) {
+          await t.query(sql`/* ensureUserExists */
+            UPDATE "users"
+            SET
+              "supertoken_user_id" = NULL,
+              "oidc_integration_id" = NULL
+            WHERE "id" = ${internalUser.id};
+          `);
         }
 
         if (oidcIntegration !== null) {
@@ -636,33 +673,18 @@ export async function createStorage(
           );
         }
 
-        return action;
+        return {
+          user: internalUser,
+          action,
+        };
       });
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
       return shared.getUserBySuperTokenId({ superTokensUserId }, pool);
     },
-    getUserById: batch(async input => {
-      const userIds = input.map(i => i.id);
-      const records = await pool.any<unknown>(sql`/* getUserById */
-        SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
-        FROM
-          "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
-        WHERE
-          "users"."id" = ANY(${sql.array(userIds, 'uuid')})
-      `);
-
-      const mappings = new Map<string, UserType>();
-      for (const record of records) {
-        const user = UserModel.parse(record);
-        mappings.set(user.id, user);
-      }
-
-      return userIds.map(async id => mappings.get(id) ?? null);
-    }),
+    async getUserById({ id }) {
+      return shared.getUserById({ id, connection: pool });
+    },
     async updateUser({ id, displayName, fullName }) {
       await pool.query<users>(sql`/* updateUser */
         UPDATE "users"
@@ -5395,7 +5417,7 @@ export const UserModel = zod.object({
   createdAt: zod.string(),
   displayName: zod.string(),
   fullName: zod.string(),
-  superTokensUserId: zod.string(),
+  superTokensUserId: zod.string().nullable(),
   isAdmin: zod
     .boolean()
     .nullable()
