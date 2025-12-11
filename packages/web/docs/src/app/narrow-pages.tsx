@@ -9,7 +9,7 @@ import { HiveLayoutConfig } from '@theguild/components';
  */
 export function NarrowPages({ pages }: { pages: string[] }) {
   const pathname = usePathname();
-  const isLightOnlyPage = pages.includes(pathname);
+  const isLightOnlyPage = (pages as Array<string | null>).includes(pathname);
 
   return isLightOnlyPage ? (
     <div className="absolute size-0">

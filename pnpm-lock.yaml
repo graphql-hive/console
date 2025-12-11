@@ -2240,9 +2240,6 @@ importers:
       '@theguild/tailwind-config':
         specifier: 0.6.3
         version: 0.6.3(postcss-import@16.1.0(postcss@8.4.49))(postcss-lightningcss@1.0.1(postcss@8.4.49))(tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.10.1)(typescript@5.7.3)))
-      '@types/react':
-        specifier: 18.3.18
-        version: 18.3.18
       next-sitemap:
         specifier: 4.2.3
         version: 4.2.3(next@15.5.8(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(react-dom@19.2.2(react@19.2.2))(react@19.2.2))
