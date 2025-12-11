@@ -49,6 +49,14 @@ const RenderChanges_SchemaChanges = graphql(`
             displayName
           }
         }
+        affectedAppDeployments {
+          name
+          version
+          affectedOperations {
+            name
+            hash
+          }
+        }
       }
     }
   }
@@ -78,6 +86,17 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
       }
 
       t.indent(messageParts.join(' '));
+      if (change.affectedAppDeployments?.length) {
+        change.affectedAppDeployments.forEach(deployment => {
+          const ops = deployment.affectedOperations;
+          const opNames = ops
+            .map(op => op.name ?? `unnamed (${op.hash.slice(0, 7)})`)
+            .join(', ');
+          t.indent(
+            `  ${Texture.colors.yellow('-')} ${Texture.colors.bold(`${deployment.name}@${deployment.version}`)}: ${opNames}`,
+          );
+        });
+      }
     });
   };
 
