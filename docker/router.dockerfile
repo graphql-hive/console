@@ -25,7 +25,7 @@ COPY --from=config Cargo.lock /usr/src/router/
 # Copy usage report schema
 # `agent.rs` uses it
 # So we need to place it accordingly
-COPY --from=usage_service usage-report-v2.schema.json /usr/src/sdk-rs/src/
+COPY --from=usage_service usage-report-v2.schema.json /usr/src/sdk-rs/
 
 WORKDIR /usr/src/sdk-rs
 # Get the dependencies cached, so we can use dummy input files so Cargo wont fail
@@ -36,7 +36,7 @@ RUN cargo build --release
 # Copy in the actual source code
 COPY --from=sdk_rs_pkg src ./src
 # Copy the usage report schema again
-COPY --from=usage_service usage-report-v2.schema.json ./src/
+COPY --from=usage_service usage-report-v2.schema.json ./
 RUN touch ./src/main.rs
 RUN touch ./src/lib.rs
 
