@@ -20,8 +20,9 @@ import hyperid from 'hyperid';
 import { isGraphQLError } from '@envelop/core';
 import { useGraphQlJit } from '@envelop/graphql-jit';
 import { useGraphQLModules } from '@envelop/graphql-modules';
-import { useOpenTelemetry } from '@envelop/opentelemetry';
 import { useSentry } from '@envelop/sentry';
+import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry';
+import { hive, trace } from '@graphql-hive/plugin-opentelemetry/dist/api';
 import { useHive } from '@graphql-hive/yoga';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
@@ -162,23 +163,28 @@ export function useHiveSentry() {
   });
 }
 
-export function useHiveTracing(tracingProvider?: Parameters<typeof useOpenTelemetry>[1]) {
-  return useOpenTelemetry(
-    {
-      document: true,
-      resolvers: false,
-      result: false,
-      variables: variables => {
-        if (variables && typeof variables === 'object' && 'selector' in variables) {
-          return JSON.stringify(variables.selector);
-        }
-
-        return '';
-      },
-      excludedOperationNames: ['readiness'],
+export function useHiveTracing(): Plugin {
+  return {
+    onPluginInit({ addPlugin }) {
+      addPlugin(
+        useOpenTelemetry({
+          traces: {
+            spans: {
+              http: ({ request }) => request.headers.get('x-hive-tracing') !== 'ignore',
+            },
+          },
+        }) as Plugin,
+      );
     },
-    tracingProvider,
-  );
+    onParams({ params: { variables }, context }) {
+      const otelCtx = hive.getOperationContext(context);
+      const operationSpan = otelCtx && trace.getSpan(otelCtx);
+
+      if (operationSpan && variables && typeof variables === 'object' && 'selector' in variables) {
+        operationSpan?.setAttribute('hive.variables.selector', JSON.stringify(variables.selector));
+      }
+    },
+  };
 }
 
 export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMethod => {
@@ -266,7 +272,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
           },
         },
       ),
-      options.tracing ? useHiveTracing(options.tracing.traceProvider()) : {},
+      options.tracing ? useHiveTracing() : {},
       useExecutionCancellation(),
     ],
     graphiql: !options.isProduction,
