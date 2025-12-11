@@ -22,7 +22,7 @@ import { useGraphQlJit } from '@envelop/graphql-jit';
 import { useGraphQLModules } from '@envelop/graphql-modules';
 import { useSentry } from '@envelop/sentry';
 import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry';
-import { hive, trace } from '@graphql-hive/plugin-opentelemetry/dist/api';
+import { hive, trace } from '@graphql-hive/plugin-opentelemetry/api';
 import { useHive } from '@graphql-hive/yoga';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
