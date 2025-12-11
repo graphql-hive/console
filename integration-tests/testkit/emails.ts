@@ -7,7 +7,7 @@ export interface Email {
 }
 
 export async function history(): Promise<Email[]> {
-  const emailsAddress = await getServiceHost('emails', 3011);
+  const emailsAddress = await getServiceHost('workflows', 3013);
 
   const response = await fetch(`http://${emailsAddress}/_history`, {
     method: 'GET',
