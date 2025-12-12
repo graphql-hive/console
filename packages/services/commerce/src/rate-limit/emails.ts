@@ -1,19 +1,9 @@
-import type { EmailsApi } from '@hive/emails';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import type { TaskScheduler } from '@hive/workflows/kit';
+import { UsageRateLimitExceededTask } from '@hive/workflows/tasks/usage-rate-limit-exceeded';
+import { UsageRateLimitWarningTask } from '@hive/workflows/tasks/usage-rate-limit-warning';
 import { env } from '../environment';
 
-export function createEmailScheduler(config?: { endpoint: string }) {
-  const api = config?.endpoint
-    ? createTRPCProxyClient<EmailsApi>({
-        links: [
-          httpLink({
-            url: `${config.endpoint}/trpc`,
-            fetch,
-          }),
-        ],
-      })
-    : null;
-
+export function createEmailScheduler(taskScheduler: TaskScheduler) {
   let scheduledEmails: Promise<unknown>[] = [];
 
   return {
@@ -38,23 +28,28 @@ export function createEmailScheduler(config?: { endpoint: string }) {
         current: number;
       };
     }) {
-      if (!api) {
-        return scheduledEmails.push(Promise.resolve());
-      }
-
       return scheduledEmails.push(
-        api.sendRateLimitExceededEmail.mutate({
-          email: input.organization.email,
-          organizationId: input.organization.id,
-          organizationName: input.organization.name,
-          limit: input.usage.quota,
-          currentUsage: input.usage.current,
-          startDate: input.period.start,
-          endDate: input.period.end,
-          subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
-            input.organization.slug
-          }/view/subscription`,
-        }),
+        taskScheduler.scheduleTask(
+          UsageRateLimitExceededTask,
+          {
+            email: input.organization.email,
+            organizationId: input.organization.id,
+            organizationName: input.organization.name,
+            limit: input.usage.quota,
+            currentUsage: input.usage.current,
+            startDate: input.period.start,
+            endDate: input.period.end,
+            subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
+              input.organization.slug
+            }/view/subscription`,
+          },
+          {
+            dedupe: {
+              key: p => p.organizationId,
+              ttl: 1000 * 60 * 60 * 24 * 32,
+            },
+          },
+        ),
       );
     },
 
@@ -74,23 +69,28 @@ export function createEmailScheduler(config?: { endpoint: string }) {
         current: number;
       };
     }) {
-      if (!api) {
-        return scheduledEmails.push(Promise.resolve());
-      }
-
       return scheduledEmails.push(
-        api.sendRateLimitWarningEmail.mutate({
-          email: input.organization.email,
-          organizationId: input.organization.id,
-          organizationName: input.organization.name,
-          limit: input.usage.quota,
-          currentUsage: input.usage.current,
-          startDate: input.period.start,
-          endDate: input.period.end,
-          subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
-            input.organization.slug
-          }/view/subscription`,
-        }),
+        taskScheduler.scheduleTask(
+          UsageRateLimitWarningTask,
+          {
+            email: input.organization.email,
+            organizationId: input.organization.id,
+            organizationName: input.organization.name,
+            limit: input.usage.quota,
+            currentUsage: input.usage.current,
+            startDate: input.period.start,
+            endDate: input.period.end,
+            subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
+              input.organization.slug
+            }/view/subscription`,
+          },
+          {
+            dedupe: {
+              key: p => p.organizationId,
+              ttl: 1000 * 60 * 60 * 24 * 32,
+            },
+          },
+        ),
       );
     },
   };
