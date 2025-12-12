@@ -507,16 +507,16 @@ function lookupHeader(
 function createDefaultClientInfo(
   config?: CreateDefaultClientInfo,
 ): (context: unknown) => ClientInfo | null {
-  const clientNameHeaders = new Set(defaultClientNameHeaders);
-  const clientVersionHeaders = new Set(defaultClientVersionHeaders);
-
-  if (config?.http?.clientHeaderName) {
-    clientNameHeaders.add(config.http.clientHeaderName);
-  }
-
-  if (config?.http?.versionHeaderName) {
-    clientVersionHeaders.add(config.http.versionHeaderName);
-  }
+  const clientNameHeaders = new Set(
+    config?.http?.clientHeaderName
+      ? [config.http.clientHeaderName, ...defaultClientNameHeaders]
+      : defaultClientNameHeaders,
+  );
+  const clientVersionHeaders = new Set(
+    config?.http?.versionHeaderName
+      ? [config.http.versionHeaderName, ...defaultClientVersionHeaders]
+      : defaultClientVersionHeaders,
+  );
   const clientFieldName = config?.ws?.clientFieldName ?? 'client';
   return function defaultClientInfo(context: any) {
     // whatwg Request
