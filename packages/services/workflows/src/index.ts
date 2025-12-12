@@ -35,6 +35,7 @@ const modules = await Promise.all([
   import('./tasks/organization-invitation.js'),
   import('./tasks/organization-ownership-transfer.js'),
   import('./tasks/password-reset.js'),
+  import('./tasks/purge-expired-dedupe-keys.js'),
   import('./tasks/purge-expired-schema-checks.js'),
   import('./tasks/schema-change-notification.js'),
   import('./tasks/usage-rate-limit-exceeded.js'),
@@ -44,6 +45,8 @@ const modules = await Promise.all([
 const crontab = `
   # Purge expired schema checks every Sunday at 10:00AM
   0 10 * * 0 purgeExpiredSchemaChecks
+  # Every day at 3:00 AM
+  0 3 * * * purgeExpiredDedupeKeys
 `;
 
 const pg = await createPool(env.postgres.connectionString);
