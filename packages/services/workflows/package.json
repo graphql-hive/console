@@ -13,6 +13,7 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@sentry/node": "7.120.2",
+    "bentocache": "1.1.0",
     "dotenv": "16.4.7",
     "graphile-worker": "0.16.6",
     "nodemailer": "7.0.11",
