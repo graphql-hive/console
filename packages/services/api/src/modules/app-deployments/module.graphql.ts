@@ -13,6 +13,10 @@ export default gql`
     totalDocumentCount: Int!
     status: AppDeploymentStatus!
     """
+    The timestamp when the app deployment was created.
+    """
+    createdAt: DateTime!
+    """
     The last time a GraphQL request that used the app deployment was reported.
     """
     lastUsed: DateTime
@@ -62,6 +66,32 @@ export default gql`
     operationName: String
   }
 
+  """
+  Filter options for querying active app deployments.
+  The date filters (lastUsedBefore, neverUsedAndCreatedBefore) use OR semantics:
+  a deployment is included if it matches either date condition.
+  If no date filters are provided, all active deployments are returned.
+  """
+  input ActiveAppDeploymentsFilter {
+    """
+    Filter by app deployment name. Case-insensitive partial match.
+    Applied with AND semantics to narrow down results.
+    """
+    name: String
+    """
+    Returns deployments that were last used before the given timestamp.
+    Useful for identifying stale or inactive deployments that have been used
+    at least once but not recently.
+    """
+    lastUsedBefore: DateTime
+    """
+    Returns deployments that have never been used and were created before
+    the given timestamp. Useful for identifying old, unused deployments
+    that may be candidates for cleanup.
+    """
+    neverUsedAndCreatedBefore: DateTime
+  }
+
   extend type Target {
     """
     The app deployments for this target.
@@ -72,6 +102,18 @@ export default gql`
     Whether the viewer can access the app deployments within a target.
     """
     viewerCanViewAppDeployments: Boolean!
+    """
+    Find active app deployments matching specific criteria.
+    Date filter conditions (lastUsedBefore, neverUsedAndCreatedBefore) use OR semantics.
+    If no date filters are provided, all active deployments are returned.
+    The name filter uses AND semantics to narrow results.
+    Only active deployments are returned (not pending or retired).
+    """
+    activeAppDeployments(
+      first: Int @tag(name: "public")
+      after: String @tag(name: "public")
+      filter: ActiveAppDeploymentsFilter! @tag(name: "public")
+    ): AppDeploymentConnection! @tag(name: "public")
   }
 
   extend type Mutation {
