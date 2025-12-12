@@ -122,9 +122,9 @@ dependencies = [
 
 [[package]]
 name = "apollo-federation"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b26138e298ecff0fb0b972175a93174d7d87d74cdc646af6a7932dc435d86c8"
+checksum = "034b556462798d1f076d865791410c088fd549c920f2a5c0d83a0611141559b4"
 dependencies = [
  "apollo-compiler",
  "derive_more",
@@ -171,9 +171,9 @@ dependencies = [
 
 [[package]]
 name = "apollo-router"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d5b4da5efb2fb56a7076ded5912eb829005d1c3c2fec35359855f689db3fc57"
+checksum = "db37c08af3b5844565e98567e92e68ae69ecd6bb4d3e674bb2a2f27d865d3680"
 dependencies = [
  "addr2line",
  "ahash",
@@ -292,7 +292,6 @@ dependencies = [
  "similar",
  "static_assertions",
  "strum",
- "strum_macros",
  "sys-info",
  "sysinfo",
  "thiserror 2.0.17",
@@ -3546,9 +3545,9 @@ dependencies = [
 
 [[package]]
 name = "mockall"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39a6bfcc6c8c7eed5ee98b9c3e33adc726054389233e201c95dab2d41a3839d2"
+checksum = "f58d964098a5f9c6b63d0798e5372fd04708193510a7af313c22e9f29b7b620b"
 dependencies = [
  "cfg-if",
  "downcast",
@@ -3560,9 +3559,9 @@ dependencies = [
 
 [[package]]
 name = "mockall_derive"
-version = "0.13.1"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25ca3004c2efe9011bd4e461bd8256445052b9615405b4f7ea43fc8ca5c20898"
+checksum = "ca41ce716dda6a9be188b385aa78ee5260fc25cd3802cb2a8afdc6afbe6b6dbf"
 dependencies = [
  "cfg-if",
  "proc-macro2",
@@ -4445,7 +4444,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck 0.5.0",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "log",
  "multimap 0.10.1",
  "once_cell",
@@ -4465,7 +4464,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.108",
@@ -5623,6 +5622,9 @@ name = "strum"
 version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
+dependencies = [
+ "strum_macros",
+]
 
 [[package]]
 name = "strum_macros"
