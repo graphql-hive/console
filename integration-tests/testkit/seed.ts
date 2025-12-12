@@ -101,8 +101,8 @@ export function initSeed() {
     async createOwner() {
       const ownerEmail = userEmail(generateUnique());
       const auth = await authenticate(ownerEmail);
-      const ownerRefreshToken = auth.refresh_token;
-      const ownerToken = auth.access_token;
+      const ownerRefreshToken = auth.refreshToken;
+      const ownerToken = auth.accessToken;
 
       return {
         ownerEmail,
@@ -895,7 +895,7 @@ export function initSeed() {
               resources: GraphQLSchema.ResourceAssignmentInput | undefined = undefined,
             ) {
               const memberEmail = userEmail(generateUnique());
-              const memberToken = await authenticate(memberEmail).then(r => r.access_token);
+              const memberToken = await authenticate(memberEmail).then(r => r.accessToken);
 
               const invitationResult = await inviteToOrganization(
                 {
