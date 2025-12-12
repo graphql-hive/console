@@ -475,8 +475,8 @@ interface OperationMap {
   [key: string]: OperationMapRecord;
 }
 
-const defaultClientNameHeader = 'x-graphql-client-name';
-const defaultClientVersionHeader = 'x-graphql-client-version';
+const defaultClientNameHeaders = ['x-graphql-client-name', 'graphql-client-name'];
+const defaultClientVersionHeaders = ['x-graphql-client-version', 'graphql-client-version'];
 
 type CreateDefaultClientInfo = {
   /** HTTP configuration */
@@ -491,17 +491,39 @@ type CreateDefaultClientInfo = {
   };
 };
 
+function lookupHeader(
+  headerGetter: (name: string) => string | null | undefined,
+  possibleNames: Set<string>,
+): string | null {
+  for (const name of possibleNames) {
+    const value = headerGetter(name);
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+  return null;
+}
+
 function createDefaultClientInfo(
   config?: CreateDefaultClientInfo,
 ): (context: unknown) => ClientInfo | null {
-  const clientNameHeader = config?.http?.clientHeaderName ?? defaultClientNameHeader;
-  const clientVersionHeader = config?.http?.versionHeaderName ?? defaultClientVersionHeader;
+  const clientNameHeaders = new Set(defaultClientNameHeaders);
+  const clientVersionHeaders = new Set(defaultClientVersionHeaders);
+
+  if (config?.http?.clientHeaderName) {
+    clientNameHeaders.add(config.http.clientHeaderName);
+  }
+
+  if (config?.http?.versionHeaderName) {
+    clientVersionHeaders.add(config.http.versionHeaderName);
+  }
   const clientFieldName = config?.ws?.clientFieldName ?? 'client';
   return function defaultClientInfo(context: any) {
     // whatwg Request
     if (typeof context?.request?.headers?.get === 'function') {
-      const name = context.request.headers.get(clientNameHeader);
-      const version = context.request.headers.get(clientVersionHeader);
+      const headerGetter = (name: string) => context?.request?.headers?.get(name);
+      const name = lookupHeader(headerGetter, clientNameHeaders);
+      const version = lookupHeader(headerGetter, clientVersionHeaders);
       if (typeof name === 'string' && typeof version === 'string') {
         return {
           name,
@@ -514,8 +536,9 @@ function createDefaultClientInfo(
 
     // Node.js IncomingMessage
     if (context?.req?.headers && typeof context.req?.headers === 'object') {
-      const name = context.req.headers[clientNameHeader];
-      const version = context.req.headers[clientVersionHeader];
+      const headerGetter = (name: string) => context.req.headers[name];
+      const name = lookupHeader(headerGetter, clientNameHeaders);
+      const version = lookupHeader(headerGetter, clientVersionHeaders);
       if (typeof name === 'string' && typeof version === 'string') {
         return {
           name,
@@ -528,8 +551,9 @@ function createDefaultClientInfo(
 
     // Plain headers object
     if (context?.headers && typeof context.req?.headers === 'object') {
-      const name = context.req.headers[clientNameHeader];
-      const version = context.req.headers[clientVersionHeader];
+      const headerGetter = (name: string) => context.headers[name];
+      const name = lookupHeader(headerGetter, clientNameHeaders);
+      const version = lookupHeader(headerGetter, clientVersionHeaders);
       if (typeof name === 'string' && typeof version === 'string') {
         return {
           name,

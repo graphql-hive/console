@@ -293,12 +293,12 @@ export default gql`
     success: Boolean!
     """
     The client name.
-    Usually this is the 'x-graphql-client-name' header sent to the gateway.
+    Usually this is the 'x-graphql-client-name' or 'graphql-client-name' header sent to the gateway.
     """
     clientName: String
     """
     The client version.
-    Usually this is the 'x-graphql-client-version' header sent to the gateway.
+    Usually this is the 'x-graphql-client-version' or 'graphql-client-version' header sent to the gateway.
     """
     clientVersion: String
     httpStatusCode: String
