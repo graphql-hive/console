@@ -183,6 +183,7 @@ export function createRateLimiter(config: {
 
   function getOrganizationFromCache(targetId: string) {
     const orgId = targetIdToOrgLookup.get(targetId);
+
     return orgId ? cachedResult.get(orgId) : undefined;
   }
 

@@ -1,8 +1,9 @@
 import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphile-worker';
 import type { Pool } from 'pg';
 import { z } from 'zod';
-import type { Logger } from '@graphql-hive/logger';
+import { Logger } from '@graphql-hive/logger';
 import type { Context } from './context';
+import { bridgeGraphileLogger } from './logger';
 
 export type TaskDefinition<TName extends string, TModel> = {
   name: TName;
@@ -70,9 +71,13 @@ export function implementTask<TPayload>(
  */
 export class TaskScheduler {
   tools: Promise<WorkerUtils>;
-  constructor(pgPool: Pool) {
+  constructor(
+    pgPool: Pool,
+    private logger: Logger = new Logger(),
+  ) {
     this.tools = makeWorkerUtils({
       pgPool,
+      logger: bridgeGraphileLogger(logger),
     });
   }
 
@@ -81,14 +86,71 @@ export class TaskScheduler {
     payload: TPayload,
     opts?: {
       requestId?: string;
+      /** Ensures the task is scheduled only once. */
+      dedupe?: {
+        /** dedupe key for this task */
+        key: string | ((payload: TPayload) => string);
+        /** how long should the task be de-duped in milliseconds */
+        ttl: number;
+      };
     },
   ) {
-    await (
-      await this.tools
-    ).addJob(taskDefinition.name, {
+    this.logger.info(
+      {
+        'job.taskId': taskDefinition.name,
+      },
+      'attempt enqueue task',
+    );
+
+    const input = taskDefinition.schema.parse(payload);
+
+    const tools = await this.tools;
+
+    if (opts?.dedupe) {
+      const dedupeKey =
+        typeof opts.dedupe.key === 'string' ? opts.dedupe.key : opts.dedupe.key(payload);
+      const expiresAt = new Date(new Date().getTime() + opts.dedupe.ttl).toISOString();
+
+      const shouldSkip = await tools.withPgClient(async client => {
+        const result = await client.query(
+          `
+            INSERT INTO "graphile_worker_deduplication" ("task_name", "dedupe_key", "expires_at")
+            VALUES($1, $2, $3)
+            ON CONFLICT ("task_name", "dedupe_key")
+            DO
+              UPDATE SET "expires_at" = EXCLUDED.expires_at
+              WHERE "graphile_worker_deduplication"."expires_at" < NOW()
+            RETURNING xmax = 0 AS "inserted"
+          `,
+          [taskDefinition.name, dedupeKey, expiresAt],
+        );
+
+        return result.rows.length === 0;
+      });
+
+      if (shouldSkip) {
+        this.logger.info(
+          {
+            'job.taskId': taskDefinition.name,
+          },
+          'enqueue skipped due to dedupe',
+        );
+        return;
+      }
+    }
+
+    const job = await tools.addJob(taskDefinition.name, {
       requestId: opts?.requestId,
-      input: taskDefinition.schema.parse(payload),
+      input,
     });
+
+    this.logger.info(
+      {
+        'job.taskId': taskDefinition.name,
+        'job.id': job.id,
+      },
+      'task enqueued.',
+    );
   }
 
   async dispose() {

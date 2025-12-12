@@ -18,7 +18,7 @@ export const UsageRateLimitWarningTask = defineTask({
 
 export const task = implementTask(UsageRateLimitWarningTask, async args => {
   await args.context.email.send({
-    subject: `GraphQL-Hive operations quota for ${args.input.organizationName} exceeded`,
+    subject: `${args.input.organizationName} is approaching its rate limit`,
     to: args.input.email,
     body: renderRateLimitWarningEmail({
       organizationName: args.input.organizationName,
