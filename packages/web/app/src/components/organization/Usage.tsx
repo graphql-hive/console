@@ -17,6 +17,7 @@ const OrganizationUsageEstimationView_OrganizationFragment = graphql(`
 const Usage_UsageEstimationQuery = graphql(`
   query Usage_UsageEstimationQuery($orgId: ID!, $input: OrganizationUsageEstimationInput!) {
     organization(reference: { byId: $orgId }) {
+      id
       usageEstimation(input: $input) {
         operations
       }
