@@ -5198,6 +5198,15 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
+  affectedAppDeployments: null | Array<{
+    id: string;
+    name: string;
+    version: string;
+    affectedOperations: Array<{
+      hash: string;
+      name: string | null;
+    }>;
+  }>;
 } {
   return {
     id: change.id,
@@ -5206,6 +5215,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
     isSafeBasedOnUsage: change.isSafeBasedOnUsage,
     approvalMetadata: change.approvalMetadata,
     usageStatistics: change.usageStatistics,
+    affectedAppDeployments: change.affectedAppDeployments,
   };
 }
 

@@ -43,6 +43,12 @@ export class AppDeploymentsManager {
     return appDeployment;
   }
 
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
+    return await this.appDeployments.getAppDeploymentById(args);
+  }
+
   getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
     if (appDeployment.retiredAt) {
       return 'retired';
@@ -217,6 +223,26 @@ export class AppDeploymentsManager {
       targetId: target.id,
       cursor: args.cursor,
       first: args.first,
+    });
+  }
+
+  async getActiveAppDeploymentsForTarget(
+    target: Target,
+    args: {
+      cursor: string | null;
+      first: number | null;
+      filter: {
+        name?: string | null;
+        lastUsedBefore?: string | null;
+        neverUsedAndCreatedBefore?: string | null;
+      };
+    },
+  ) {
+    return await this.appDeployments.getActiveAppDeployments({
+      targetId: target.id,
+      cursor: args.cursor,
+      first: args.first,
+      filter: args.filter,
     });
   }
 
