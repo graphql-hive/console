@@ -71,11 +71,10 @@ plugins:
     const routerProc = execa(routerBinPath, ['--dev', '--config', routerConfigPath], {
       all: true,
       env: {
-        HIVE_CDN_ENDPOINT: endpointBaseUrl,
+        HIVE_CDN_ENDPOINT: endpointBaseUrl + target.id,
         HIVE_CDN_KEY: cdnAccessResult.secretAccessToken,
         HIVE_ENDPOINT: `http://${usageAddress}`,
         HIVE_TOKEN: writeToken.secret,
-        HIVE_TARGET_ID: target.id,
       },
     });
     await new Promise((resolve, reject) => {
