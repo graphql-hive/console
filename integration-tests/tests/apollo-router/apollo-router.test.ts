@@ -8,8 +8,6 @@ import { getServiceHost } from 'testkit/utils';
 import { execa } from '@esm2cjs/execa';
 
 describe('Apollo Router Integration', () => {
-  const getBaseEndpoint = () =>
-    getServiceHost('server', 8082).then(v => `http://${v}/artifacts/v1/`);
   const getAvailablePort = () =>
     new Promise<number>(resolve => {
       const server = createServer();
@@ -18,12 +16,13 @@ describe('Apollo Router Integration', () => {
         if (address && typeof address === 'object') {
           const port = address.port;
           server.close(() => resolve(port));
+        } else {
+          throw new Error('Could not get available port');
         }
       });
     });
   it('fetches the supergraph and sends usage reports', async () => {
     const routerConfigPath = join(tmpdir(), `apollo-router-config-${Date.now()}.yaml`);
-    const endpointBaseUrl = await getBaseEndpoint();
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken, createCdnAccess, target, waitForOperationsCollected } =
@@ -68,10 +67,13 @@ plugins:
   hive.usage: {}
 `.trim();
     writeFileSync(routerConfigPath, routerConfigContent, 'utf-8');
+    const cdnEndpoint = await getServiceHost('server', 8082).then(
+      v => `http://${v}/artifacts/v1/${target.id}`,
+    );
     const routerProc = execa(routerBinPath, ['--dev', '--config', routerConfigPath], {
       all: true,
       env: {
-        HIVE_CDN_ENDPOINT: endpointBaseUrl + target.id,
+        HIVE_CDN_ENDPOINT: cdnEndpoint,
         HIVE_CDN_KEY: cdnAccessResult.secretAccessToken,
         HIVE_ENDPOINT: `http://${usageAddress}`,
         HIVE_TOKEN: writeToken.secret,
@@ -105,7 +107,7 @@ plugins:
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          query: /* GraphQL */ `
+          query: `
             query TestQuery {
               me {
                 id
