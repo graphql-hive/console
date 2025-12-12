@@ -10,16 +10,16 @@ const OrganizationUsageEstimationView_OrganizationFragment = graphql(`
   fragment OrganizationUsageEstimationView_OrganizationFragment on Organization {
     id
     slug
-    rateLimit {
-      operations
-    }
+    monthlyOperationsLimit
   }
 `);
 
 const Usage_UsageEstimationQuery = graphql(`
-  query Usage_UsageEstimationQuery($input: UsageEstimationInput!) {
-    usageEstimation(input: $input) {
-      operations
+  query Usage_UsageEstimationQuery($orgId: ID!, $input: OrganizationUsageEstimationInput!) {
+    organization(reference: { byId: $orgId }) {
+      usageEstimation(input: $input) {
+        operations
+      }
     }
   }
 `);
@@ -35,8 +35,8 @@ export function OrganizationUsageEstimationView(props: {
   const [query] = useQuery({
     query: Usage_UsageEstimationQuery,
     variables: {
+      orgId: organization.id,
       input: {
-        organizationSlug: organization.slug,
         month: new Date().getMonth() + 1,
         year: new Date().getFullYear(),
       },
@@ -57,14 +57,18 @@ export function OrganizationUsageEstimationView(props: {
               <Tr>
                 <Td>Operations</Td>
                 <Td align="right">
-                  {NumericFormatter.format(result.data.usageEstimation.operations)}
+                  {result.data.organization?.usageEstimation?.operations
+                    ? NumericFormatter.format(result.data.organization?.usageEstimation?.operations)
+                    : '----'}
                 </Td>
-                <Td align="right">{NumericFormatter.format(organization.rateLimit.operations)}</Td>
+                <Td align="right">
+                  {NumericFormatter.format(organization.monthlyOperationsLimit)}
+                </Td>
                 <Td>
                   <Scale
-                    value={result.data.usageEstimation.operations}
+                    value={result.data.organization?.usageEstimation?.operations ?? 0}
                     size={10}
-                    max={organization.rateLimit.operations}
+                    max={organization.monthlyOperationsLimit}
                     className="justify-end"
                   />
                 </Td>

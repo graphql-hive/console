@@ -419,9 +419,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     }
     organization(reference: { bySelector: $organizationSelector }) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
   }
 `);
@@ -549,7 +547,7 @@ const BreakingChanges = (props: {
       }),
       period: Yup.number()
         .min(1)
-        .max(targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30)
+        .max(targetSettings.data?.organization?.usageRetentionInDays ?? 30)
         .test('double-precision', 'Invalid precision', num => {
           if (typeof num !== 'number') {
             return false;

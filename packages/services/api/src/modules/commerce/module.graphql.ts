@@ -31,7 +31,8 @@ export default gql`
     An approximation of the current monthly operation usage. This is based on how many operations have
     been successfully ingested by Hive, which is an asynchronous process.
     """
-    usageEstimation(input: OrganizationUsageEstimationInput!): UsageEstimation @tag(name: "public")
+    usageEstimation(input: OrganizationUsageEstimationInput! @tag(name: "public")): UsageEstimation
+      @tag(name: "public")
   }
 
   input OrganizationUsageEstimationInput {
@@ -167,6 +168,6 @@ export default gql`
     """
     The estimated number of operations used for the month.
     """
-    operations: SafeInt!
+    operations: SafeInt! @tag(name: "public")
   }
 `;

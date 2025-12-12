@@ -359,9 +359,7 @@ const ClientInsightsPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -419,7 +417,7 @@ function ClientInsightsPageContent(props: {
   return (
     <ClientView
       clientName={props.name}
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
