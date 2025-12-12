@@ -28,7 +28,7 @@ describe('Apollo Router Integration', () => {
     const { createProject } = await createOrg();
     const { createTargetAccessToken, createCdnAccess, target, waitForOperationsCollected } =
       await createProject(ProjectType.Federation);
-    const writeToken = await createTargetAccessToken({});
+    const writeToken = await createTargetAccessToken({ target });
 
     // Publish Schema
     const publishSchemaResult = await writeToken

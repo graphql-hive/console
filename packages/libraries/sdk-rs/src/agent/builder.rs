@@ -52,7 +52,9 @@ fn is_legacy_token(token: &str) -> bool {
 impl UsageAgentBuilder {
     /// Your [Registry Access Token](https://the-guild.dev/graphql/hive/docs/management/targets#registry-access-tokens) with write permission.
     pub fn token(mut self, token: String) -> Self {
-        self.token = non_empty_string(Some(token));
+        if let Some(token) = non_empty_string(Some(token)) {
+            self.token = Some(token);
+        }
         self
     }
     /// For self-hosting, you can override `/usage` endpoint (defaults to `https://app.graphql-hive.com/usage`).
@@ -64,7 +66,9 @@ impl UsageAgentBuilder {
     }
     /// A target ID, this can either be a slug following the format “$organizationSlug/$projectSlug/$targetSlug” (e.g “the-guild/graphql-hive/staging”) or an UUID (e.g. “a0f4c605-6541-4350-8cfe-b31f21a4bf80”). To be used when the token is configured with an organization access token.
     pub fn target_id(mut self, target_id: String) -> Self {
-        self.target_id = non_empty_string(Some(target_id));
+        if let Some(target_id) = non_empty_string(Some(target_id)) {
+            self.target_id = Some(target_id);
+        }
         self
     }
     /// A maximum number of operations to hold in a buffer before sending to Hive Console
@@ -99,7 +103,9 @@ impl UsageAgentBuilder {
     }
     /// User-Agent header to be sent with each request
     pub fn user_agent(mut self, user_agent: String) -> Self {
-        self.user_agent = non_empty_string(Some(user_agent));
+        if let Some(user_agent) = non_empty_string(Some(user_agent)) {
+            self.user_agent = Some(user_agent);
+        }
         self
     }
     /// Retry policy for sending reports
@@ -119,69 +125,68 @@ impl UsageAgentBuilder {
 
         default_headers.insert("X-Usage-API-Version", HeaderValue::from_static("2"));
 
-        if let Some(token) = self.token {
-            let mut authorization_header = HeaderValue::from_str(&format!("Bearer {}", token))
-                .map_err(|_| AgentError::InvalidToken)?;
+        let token = match self.token {
+            Some(token) => token,
+            None => return Err(AgentError::MissingToken),
+        };
 
-            authorization_header.set_sensitive(true);
+        let mut authorization_header = HeaderValue::from_str(&format!("Bearer {}", token))
+            .map_err(|_| AgentError::InvalidToken)?;
 
-            default_headers.insert(reqwest::header::AUTHORIZATION, authorization_header);
+        authorization_header.set_sensitive(true);
 
-            default_headers.insert(
-                reqwest::header::CONTENT_TYPE,
-                HeaderValue::from_static("application/json"),
-            );
+        default_headers.insert(reqwest::header::AUTHORIZATION, authorization_header);
 
-            let mut reqwest_agent = reqwest::Client::builder()
-                .danger_accept_invalid_certs(self.accept_invalid_certs)
-                .connect_timeout(self.connect_timeout)
-                .timeout(self.request_timeout)
-                .default_headers(default_headers);
+        default_headers.insert(
+            reqwest::header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
 
-            if let Some(user_agent) = &self.user_agent {
-                reqwest_agent = reqwest_agent.user_agent(user_agent);
-            }
+        let mut reqwest_agent = reqwest::Client::builder()
+            .danger_accept_invalid_certs(self.accept_invalid_certs)
+            .connect_timeout(self.connect_timeout)
+            .timeout(self.request_timeout)
+            .default_headers(default_headers);
 
-            let reqwest_agent = reqwest_agent
-                .build()
-                .map_err(AgentError::HTTPClientCreationError)?;
-            let client = ClientBuilder::new(reqwest_agent)
-                .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
-                .build();
-
-            let mut endpoint = self.endpoint;
-
-            match self.target_id {
-                Some(_) if is_legacy_token(&token) => {
-                    return Err(AgentError::TargetIdWithLegacyToken)
-                }
-                Some(target_id) if !is_legacy_token(&token) => {
-                    let target_id = validate_target_id(&target_id)?;
-                    endpoint.push_str(&format!("/{}", target_id));
-                }
-                None if !is_legacy_token(&token) => return Err(AgentError::MissingTargetId),
-                _ => {}
-            }
-
-            let circuit_breaker = if let Some(cb) = self.circuit_breaker {
-                cb
-            } else {
-                circuit_breaker::CircuitBreakerBuilder::default()
-                    .build_async()
-                    .map_err(AgentError::CircuitBreakerCreationError)?
-            };
-
-            Ok(Arc::new(UsageAgent {
-                endpoint,
-                buffer: Buffer::new(self.buffer_size),
-                processor: OperationProcessor::new(),
-                client,
-                flush_interval: self.flush_interval,
-                circuit_breaker,
-            }))
-        } else {
-            Err(AgentError::MissingToken)
+        if let Some(user_agent) = &self.user_agent {
+            reqwest_agent = reqwest_agent.user_agent(user_agent);
         }
+
+        let reqwest_agent = reqwest_agent
+            .build()
+            .map_err(AgentError::HTTPClientCreationError)?;
+        let client = ClientBuilder::new(reqwest_agent)
+            .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
+            .build();
+
+        let mut endpoint = self.endpoint;
+
+        match self.target_id {
+            Some(_) if is_legacy_token(&token) => return Err(AgentError::TargetIdWithLegacyToken),
+            Some(target_id) if !is_legacy_token(&token) => {
+                let target_id = validate_target_id(&target_id)?;
+                endpoint.push_str(&format!("/{}", target_id));
+            }
+            None if !is_legacy_token(&token) => return Err(AgentError::MissingTargetId),
+            _ => {}
+        }
+
+        let circuit_breaker = if let Some(cb) = self.circuit_breaker {
+            cb
+        } else {
+            circuit_breaker::CircuitBreakerBuilder::default()
+                .build_async()
+                .map_err(AgentError::CircuitBreakerCreationError)?
+        };
+
+        Ok(Arc::new(UsageAgent {
+            endpoint,
+            buffer: Buffer::new(self.buffer_size),
+            processor: OperationProcessor::new(),
+            client,
+            flush_interval: self.flush_interval,
+            circuit_breaker,
+        }))
     }
 }
 
