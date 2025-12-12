@@ -28,7 +28,7 @@ describe('Apollo Router Integration', () => {
     const { createProject } = await createOrg();
     const { createTargetAccessToken, createCdnAccess, target, waitForOperationsCollected } =
       await createProject(ProjectType.Federation);
-    const writeToken = await createTargetAccessToken({ target });
+    const writeToken = await createTargetAccessToken({});
 
     // Publish Schema
     const publishSchemaResult = await writeToken
@@ -71,7 +71,7 @@ plugins:
     const routerProc = execa(routerBinPath, ['--dev', '--config', routerConfigPath], {
       all: true,
       env: {
-        HIVE_CDN_ENDPOINT: endpointBaseUrl + target.id,
+        HIVE_CDN_ENDPOINT: endpointBaseUrl,
         HIVE_CDN_KEY: cdnAccessResult.secretAccessToken,
         HIVE_ENDPOINT: `http://${usageAddress}`,
         HIVE_TOKEN: writeToken.secret,
