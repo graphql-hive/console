@@ -512,7 +512,6 @@ const BreakingChanges = (props: {
   const isEnabled = configuration?.isEnabled || false;
   const possibleTargets = targetSettings.data?.targets.edges.map(edge => edge.node);
   const { toast } = useToast();
-  const retentionInDays = targetSettings.data?.organization?.usageRetentionInDays ?? 0;
 
   const {
     handleSubmit,
@@ -529,7 +528,7 @@ const BreakingChanges = (props: {
     initialValues: {
       percentage: configuration?.percentage || 0,
       requestCount: configuration?.requestCount || 1,
-      period: configuration?.period || Math.min(retentionInDays, 7),
+      period: configuration?.period || targetSettings.data?.organization?.usageRetentionInDays || 0,
       breakingChangeFormula:
         configuration?.breakingChangeFormula ?? BreakingChangeFormulaType.Percentage,
       targetIds: configuration?.targets.map(t => t.id) || [],
