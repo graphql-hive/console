@@ -419,9 +419,7 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
     }
     organization(reference: { bySelector: $organizationSelector }) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
   }
 `);
@@ -530,7 +528,7 @@ const BreakingChanges = (props: {
     initialValues: {
       percentage: configuration?.percentage || 0,
       requestCount: configuration?.requestCount || 1,
-      period: configuration?.period || 0,
+      period: configuration?.period || targetSettings.data?.organization?.usageRetentionInDays || 0,
       breakingChangeFormula:
         configuration?.breakingChangeFormula ?? BreakingChangeFormulaType.Percentage,
       targetIds: configuration?.targets.map(t => t.id) || [],
@@ -549,7 +547,7 @@ const BreakingChanges = (props: {
       }),
       period: Yup.number()
         .min(1)
-        .max(targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30)
+        .max(targetSettings.data?.organization?.usageRetentionInDays ?? 30)
         .test('double-precision', 'Invalid precision', num => {
           if (typeof num !== 'number') {
             return false;
@@ -796,7 +794,7 @@ const BreakingChanges = (props: {
                 disabled={isSubmitting}
                 type="number"
                 min="1"
-                max={targetSettings.data?.organization?.rateLimit.retentionInDays ?? 30}
+                max={targetSettings.data?.organization?.usageRetentionInDays ?? 30}
                 className="mx-2 !inline-flex w-16"
               />
               days.

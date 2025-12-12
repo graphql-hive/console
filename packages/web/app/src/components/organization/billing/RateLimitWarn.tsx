@@ -8,9 +8,7 @@ const RateLimitWarn_OrganizationFragment = graphql(`
     id
     slug
     plan
-    rateLimit {
-      limitedForOperations
-    }
+    isMonthlyOperationsLimitExceeded
   }
 `);
 
@@ -18,7 +16,7 @@ export function RateLimitWarn(props: {
   organization: FragmentType<typeof RateLimitWarn_OrganizationFragment>;
 }): ReactElement | null {
   const organization = useFragment(RateLimitWarn_OrganizationFragment, props.organization);
-  if (!organization.rateLimit.limitedForOperations) {
+  if (!organization.isMonthlyOperationsLimitExceeded) {
     return null;
   }
 

@@ -41,7 +41,6 @@ try {
   }
 
   // Automatically apply retention if any retention setting is configured
-  // eslint-disable-next-line no-process-env
   if (
     // eslint-disable-next-line no-process-env
     process.env.CLICKHOUSE_TTL_TABLES ||

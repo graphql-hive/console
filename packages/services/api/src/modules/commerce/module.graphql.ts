@@ -6,7 +6,45 @@ export default gql`
     billingConfiguration: BillingConfiguration!
     viewerCanDescribeBilling: Boolean!
     viewerCanModifyBilling: Boolean!
-    rateLimit: RateLimit!
+    rateLimit: RateLimit! @deprecated(reason: "All subfields moved to Organization")
+
+    """
+    Whether or not the monthly operations limit is currently exceeded.
+    For hobby and pro plans, once the limit is exceeded, operation usage data received from the organization will be ignored.
+    Enterprise plans will continue to have their usage data ingested.
+    """
+    isMonthlyOperationsLimitExceeded: Boolean! @tag(name: "public")
+
+    """
+    The monthly limit for number of operations ingested.
+    For hobby and pro plans, once this limit is exceeded, operation usage data received from the organization will be ignored.
+    Enterprise plans will continue to have their usage data ingested.
+    """
+    monthlyOperationsLimit: SafeInt! @tag(name: "public")
+
+    """
+    The configured retention for usage information, in days. Retention impacts how long data is stored.
+    """
+    usageRetentionInDays: Int! @tag(name: "public")
+
+    """
+    An approximation of the current monthly operation usage. This is based on how many operations have
+    been successfully ingested by Hive, which is an asynchronous process.
+    """
+    usageEstimation(input: OrganizationUsageEstimationInput! @tag(name: "public")): UsageEstimation
+      @tag(name: "public")
+  }
+
+  input OrganizationUsageEstimationInput {
+    """
+    The 4 digit year. E.g. 2025
+    """
+    year: Int! @tag(name: "public")
+
+    """
+    The calendar month, 1 to 12, where 1 is January and 12 is December.
+    """
+    month: Int! @tag(name: "public")
   }
 
   type BillingConfiguration {
@@ -111,8 +149,9 @@ export default gql`
 
   type RateLimit {
     limitedForOperations: Boolean!
-    operations: SafeInt!
-    retentionInDays: Int!
+      @deprecated(reason: "Use Organization.isMonthlyOperationsLimitExceeded")
+    operations: SafeInt! @deprecated(reason: "Use Organization.monthlyOperationsLimit")
+    retentionInDays: Int! @deprecated(reason: "Use Organization.usageRetentionInDays")
   }
 
   input RateLimitInput {
@@ -126,6 +165,9 @@ export default gql`
   }
 
   type UsageEstimation {
-    operations: SafeInt!
+    """
+    The estimated number of operations used for the month.
+    """
+    operations: SafeInt! @tag(name: "public")
   }
 `;
