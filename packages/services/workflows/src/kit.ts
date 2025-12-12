@@ -126,7 +126,9 @@ export class TaskScheduler {
         typeof opts.dedupe.key === 'string' ? opts.dedupe.key : opts.dedupe.key(payload);
       const expiresAt = new Date(new Date().getTime() + opts.dedupe.ttl).toISOString();
 
-      const shouldSkip = await this.cache.getOrSet({
+      let shouldSkip = false;
+
+      await this.cache.getOrSet({
         key: `${taskDefinition.name}:${dedupeKey}`,
         ttl: opts.dedupe.ttl,
         async factory() {
@@ -144,7 +146,8 @@ export class TaskScheduler {
               [taskDefinition.name, dedupeKey, expiresAt],
             );
 
-            return result.rows.length === 0;
+            shouldSkip = result.rows.length === 0;
+            return true;
           });
         },
       });

@@ -13,7 +13,7 @@ export const task = implementTask(PurgeExpiredDedupeKeysTask, async args => {
       WITH "deleted" AS (
         DELETE FROM "graphile_worker_deduplication"
         WHERE "expires_at" < NOW()
-          RETURNING 1
+        RETURNING 1
       )
       SELECT COUNT(*) FROM "deleted";
   `);
