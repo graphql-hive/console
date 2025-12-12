@@ -160,13 +160,25 @@ export const useOperations = (
           extensions: e,
         });
 
-        props.tabsApi?.addTab({
+        const tab = props.tabsApi?.addTab({
           type: 'operation',
           data: operation,
         });
+
+        if (tab) {
+          props.tabsApi?.setActiveTab(tab);
+        }
+
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.delete('share');
+        window.history.replaceState(
+          null,
+          '',
+          window.location.pathname + '?' + searchParams.toString(),
+        );
       }
     }
-  }, [addOperation, props.tabsApi]);
+  }, []);
 
   const updateActiveOperation = useCallback(
     (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => {
