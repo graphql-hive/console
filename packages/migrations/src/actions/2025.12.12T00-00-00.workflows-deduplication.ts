@@ -9,5 +9,9 @@ export default {
           "expires_at"  timestamptz NOT NULL,
           CONSTRAINT "dedupe_pk" PRIMARY KEY ("task_name", "dedupe_key")
       );
+
+      CREATE INDEX "graphile_worker_deduplication_expires_at_idx"
+        ON "graphile_worker_deduplication" ("expires_at")
+      ;
   `,
 } satisfies MigrationExecutor;
