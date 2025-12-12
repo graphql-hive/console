@@ -1,0 +1,32 @@
+import { useCallback, useState } from 'react';
+
+export type LaboratorySettings = object;
+
+export interface LaboratorySettingsState {
+  settings: LaboratorySettings;
+}
+
+export interface LaboratorySettingsActions {
+  setSettings: (settings: LaboratorySettings) => void;
+}
+
+export const useSettings = (props: {
+  defaultSettings?: LaboratorySettings | null;
+  onSettingsChange?: (settings: LaboratorySettings | null) => void;
+}): LaboratorySettingsState & LaboratorySettingsActions => {
+  // eslint-disable-next-line react/hook-use-state
+  const [settings, _setSettings] = useState<LaboratorySettings>(props.defaultSettings ?? {});
+
+  const setSettings = useCallback(
+    (settings: LaboratorySettings) => {
+      _setSettings(settings);
+      props.onSettingsChange?.(settings);
+    },
+    [props],
+  );
+
+  return {
+    settings,
+    setSettings,
+  };
+};
