@@ -35,8 +35,15 @@ export default gql`
   }
 
   input OrganizationUsageEstimationInput {
-    year: Int!
-    month: Int!
+    """
+    The 4 digit year. E.g. 2025
+    """
+    year: Int! @tag(name: "public")
+
+    """
+    The calendar month, 1 to 12, where 1 is January and 12 is December.
+    """
+    month: Int! @tag(name: "public")
   }
 
   type BillingConfiguration {
@@ -157,6 +164,9 @@ export default gql`
   }
 
   type UsageEstimation {
+    """
+    The estimated number of operations used for the month.
+    """
     operations: SafeInt!
   }
 `;
