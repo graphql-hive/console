@@ -22,7 +22,7 @@
     "declarationMap": false,
     "resolveJsonModule": false,
 
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "strict": true,
     "paths": {
       "@hive/api": ["./packages/services/api/src/index.ts"],
