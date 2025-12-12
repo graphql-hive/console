@@ -120,7 +120,7 @@ export const Editor = forwardRef<
 
   useEffect(() => {
     if (introspection) {
-      initializeMode({
+      const api = initializeMode({
         schemas: [
           {
             introspectionJSON: introspection,
@@ -139,8 +139,12 @@ export const Editor = forwardRef<
               }
             : undefined,
       });
+
+      api.setCompletionSettings({
+        __experimental__fillLeafsOnComplete: true,
+      });
     }
-  }, [introspection, props.uri, props.variablesUri]);
+  }, [introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
     if (props.extraLibs) {
@@ -182,6 +186,7 @@ export const Editor = forwardRef<
         onMount={editor => {
           editorRef.current = editor;
         }}
+        loading={null}
         options={{
           ...props.options,
           padding: {
@@ -194,6 +199,7 @@ export const Editor = forwardRef<
           },
           automaticLayout: true,
           tabSize: 2,
+          formatOnPaste: true,
         }}
         defaultPath={props.uri?.toString()}
       />
