@@ -77,6 +77,7 @@ plugins:
         HIVE_TOKEN: writeToken.secret,
       },
     });
+    let log = '';
     await new Promise((resolve, reject) => {
       routerProc.catch(err => {
         if (!err.isCanceled) {
@@ -87,7 +88,6 @@ plugins:
       if (!routerProcOut) {
         return reject(new Error('No stdout from Apollo Router process'));
       }
-      let log = '';
       routerProcOut.on('data', data => {
         log += data.toString();
         if (log.includes('GraphQL endpoint exposed at')) {
@@ -105,14 +105,14 @@ plugins:
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          query: `
-                  query TestQuery {
-                    me {
-                        id
-                        name
-                    }
-                  }
-                `,
+          query: /* GraphQL */ `
+            query TestQuery {
+              me {
+                id
+                name
+              }
+            }
+          `,
         }),
       });
 
@@ -127,6 +127,9 @@ plugins:
         },
       });
       await waitForOperationsCollected(1);
+    } catch (e) {
+      console.error('Router logs:\n', log);
+      throw e;
     } finally {
       routerProc.cancel();
       rmSync(routerConfigPath);
