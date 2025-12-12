@@ -1,8 +1,7 @@
 {
   "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "esnext",
+    "target": "esnext",
     "rootDir": "../..",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
