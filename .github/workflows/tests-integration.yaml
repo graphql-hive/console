@@ -23,6 +23,7 @@ jobs:
   integration:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         # Divide integration tests into 3 shards, to run them in parallel.
         shardIndex: [1, 2, 3, 'apollo-router']
