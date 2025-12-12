@@ -29,18 +29,27 @@ export function createEmailScheduler(taskScheduler: TaskScheduler) {
       };
     }) {
       return scheduledEmails.push(
-        taskScheduler.scheduleTask(UsageRateLimitExceededTask, {
-          email: input.organization.email,
-          organizationId: input.organization.id,
-          organizationName: input.organization.name,
-          limit: input.usage.quota,
-          currentUsage: input.usage.current,
-          startDate: input.period.start,
-          endDate: input.period.end,
-          subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
-            input.organization.slug
-          }/view/subscription`,
-        }),
+        taskScheduler.scheduleTask(
+          UsageRateLimitExceededTask,
+          {
+            email: input.organization.email,
+            organizationId: input.organization.id,
+            organizationName: input.organization.name,
+            limit: input.usage.quota,
+            currentUsage: input.usage.current,
+            startDate: input.period.start,
+            endDate: input.period.end,
+            subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
+              input.organization.slug
+            }/view/subscription`,
+          },
+          {
+            dedupe: {
+              key: p => p.organizationId,
+              ttl: 1000 * 60 * 60 * 24 * 32,
+            },
+          },
+        ),
       );
     },
 
@@ -61,18 +70,27 @@ export function createEmailScheduler(taskScheduler: TaskScheduler) {
       };
     }) {
       return scheduledEmails.push(
-        taskScheduler.scheduleTask(UsageRateLimitWarningTask, {
-          email: input.organization.email,
-          organizationId: input.organization.id,
-          organizationName: input.organization.name,
-          limit: input.usage.quota,
-          currentUsage: input.usage.current,
-          startDate: input.period.start,
-          endDate: input.period.end,
-          subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
-            input.organization.slug
-          }/view/subscription`,
-        }),
+        taskScheduler.scheduleTask(
+          UsageRateLimitWarningTask,
+          {
+            email: input.organization.email,
+            organizationId: input.organization.id,
+            organizationName: input.organization.name,
+            limit: input.usage.quota,
+            currentUsage: input.usage.current,
+            startDate: input.period.start,
+            endDate: input.period.end,
+            subscriptionManagementLink: `${env.hiveServices.webAppUrl}/${
+              input.organization.slug
+            }/view/subscription`,
+          },
+          {
+            dedupe: {
+              key: p => p.organizationId,
+              ttl: 1000 * 60 * 60 * 24 * 32,
+            },
+          },
+        ),
       );
     },
   };

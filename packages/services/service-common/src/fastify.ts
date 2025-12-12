@@ -7,7 +7,11 @@ import { useRequestLogging } from './request-logs';
 
 export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 
-function bridgeFastifyLogger(logger: Logger): FastifyBaseLogger {
+/* eslint-disable prefer-spread */
+
+// Using spread causes typescript errors
+// I prefer to disable eslint over having to use ts-ignore and ts not catching other errors.
+function bridgeHiveLoggerToFastifyLogger(logger: Logger): FastifyBaseLogger {
   return {
     debug(...args: Array<any>) {
       logger.debug.apply(logger, args as any);
@@ -35,6 +39,8 @@ function bridgeFastifyLogger(logger: Logger): FastifyBaseLogger {
   };
 }
 
+/* eslint-enable prefer-spread */
+
 export async function createServer(options: {
   sentryErrorHandler: boolean;
   name: string;
@@ -52,7 +58,7 @@ export async function createServer(options: {
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
     logger:
       options.log instanceof Logger
-        ? bridgeFastifyLogger(options.log)
+        ? bridgeHiveLoggerToFastifyLogger(options.log)
         : {
             level: options.log.level,
             redact: ['request.options', 'options', 'request.headers.authorization'],
