@@ -197,7 +197,6 @@ const ChecksPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      monthlyOperationsLimit
     }
     target(
       reference: {
