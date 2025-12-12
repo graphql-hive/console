@@ -549,16 +549,19 @@ export const Laboratory = (
 
   const goToFullScreen = useCallback(() => {
     setIsFullScreen(true);
-    void containerRef.current?.requestFullscreen();
   }, []);
 
   const exitFullScreen = useCallback(() => {
     setIsFullScreen(false);
-    void document.exitFullscreen();
   }, []);
 
   return (
-    <div className="hive-laboratory size-full" ref={containerRef}>
+    <div
+      className={cn('hive-laboratory bg-background size-full', {
+        'fixed inset-0 z-50': isFullScreen,
+      })}
+      ref={containerRef}
+    >
       <Toaster richColors closeButton position="top-right" />
       <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">

@@ -3,64 +3,13 @@ use graphql_parser::schema::Document;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{hash_map::Entry, HashMap, VecDeque},
     sync::{Arc, Mutex},
     time::Duration,
 };
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Report {
-    size: usize,
-    map: HashMap<String, OperationMapRecord>,
-    operations: Vec<Operation>,
-}
-
-#[allow(non_snake_case)]
-#[derive(Serialize, Deserialize, Debug)]
-struct OperationMapRecord {
-    operation: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    operationName: Option<String>,
-    fields: Vec<String>,
-}
-
-#[allow(non_snake_case)]
-#[derive(Serialize, Deserialize, Debug)]
-struct Operation {
-    operationMapKey: String,
-    timestamp: u64,
-    execution: Execution,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    metadata: Option<Metadata>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    persistedDocumentHash: Option<String>,
-}
-
-#[allow(non_snake_case)]
-#[derive(Serialize, Deserialize, Debug)]
-struct Execution {
-    ok: bool,
-    duration: u128,
-    errorsTotal: usize,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Metadata {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    client: Option<ClientInfo>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ClientInfo {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    version: Option<String>,
-}
 
 #[derive(Debug, Clone)]
 pub struct ExecutionReport {
@@ -75,6 +24,8 @@ pub struct ExecutionReport {
     pub operation_name: Option<String>,
     pub persisted_document_hash: Option<String>,
 }
+
+typify::import_types!(schema = "./usage-report-v2.schema.json");
 
 #[derive(Debug, Default)]
 pub struct Buffer(Mutex<VecDeque<ExecutionReport>>);
@@ -201,6 +152,7 @@ impl UsageAgent {
             size: 0,
             map: HashMap::new(),
             operations: Vec::new(),
+            subscription_operations: Vec::new(),
         };
 
         // iterate over reports and check if they are valid
@@ -228,30 +180,42 @@ impl UsageAgent {
                         let metadata: Option<Metadata> =
                             if client_name.is_some() || client_version.is_some() {
                                 Some(Metadata {
-                                    client: Some(ClientInfo {
-                                        name: client_name,
-                                        version: client_version,
+                                    client: Some(Client {
+                                        name: client_name.unwrap_or_default(),
+                                        version: client_version.unwrap_or_default(),
                                     }),
                                 })
                             } else {
                                 None
                             };
-                        report.operations.push(Operation {
-                            operationMapKey: hash.clone(),
+                        report.operations.push(RequestOperation {
+                            operation_map_key: hash.clone(),
                             timestamp: op.timestamp,
                             execution: Execution {
                                 ok: op.ok,
-                                duration: op.duration.as_nanos(),
-                                errorsTotal: op.errors,
+                                /*
+                                    The conversion from u128 (from op.duration.as_nanos()) to u64 using try_into().unwrap() can panic if the duration is longer than u64::MAX nanoseconds (over 584 years).
+                                    While highly unlikely, it's safer to handle this potential overflow gracefully in library code to prevent panics.
+                                    A safe alternative is to convert the Result to an Option and provide a fallback value on failure,
+                                    effectively saturating at u64::MAX.
+                                */
+                                duration: op
+                                    .duration
+                                    .as_nanos()
+                                    .try_into()
+                                    .ok()
+                                    .unwrap_or(u64::MAX),
+                                errors_total: op.errors.try_into().unwrap(),
                             },
-                            persistedDocumentHash: op.persisted_document_hash,
+                            persisted_document_hash: op
+                                .persisted_document_hash
+                                .map(PersistedDocumentHash),
                             metadata,
                         });
-                        if let std::collections::hash_map::Entry::Vacant(e) = report.map.entry(hash)
-                        {
+                        if let Entry::Vacant(e) = report.map.entry(ReportMapKey(hash)) {
                             e.insert(OperationMapRecord {
                                 operation: operation.operation,
-                                operationName: non_empty_string(op.operation_name),
+                                operation_name: non_empty_string(op.operation_name),
                                 fields: operation.coordinates,
                             });
                         }
@@ -401,7 +365,7 @@ mod tests {
                 let record = report.map.values().next().expect("No operation record");
                 // operation
                 assert!(record.operation.contains("mutation deleteProject"));
-                assert_eq!(record.operationName.as_deref(), Some("deleteProject"));
+                assert_eq!(record.operation_name.as_deref(), Some("deleteProject"));
                 // fields
                 let expected_fields = vec![
                     "Mutation.deleteProject",
@@ -434,11 +398,11 @@ mod tests {
 
                 let operation = &operations[0];
                 let key = report.map.keys().next().expect("No operation key");
-                assert_eq!(&operation.operationMapKey, key);
+                assert_eq!(operation.operation_map_key, key.0);
                 assert_eq!(operation.timestamp, timestamp);
-                assert_eq!(operation.execution.duration, duration.as_nanos());
+                assert_eq!(operation.execution.duration, duration.as_nanos() as u64);
                 assert_eq!(operation.execution.ok, true);
-                assert_eq!(operation.execution.errorsTotal, 0);
+                assert_eq!(operation.execution.errors_total, 0);
                 true
             })
             .expect(1)
@@ -545,7 +509,7 @@ mod tests {
                 operation_name: Some("deleteProject".to_string()),
                 client_name: Some(GRAPHQL_CLIENT_NAME.to_string()),
                 client_version: Some(GRAPHQL_CLIENT_VERSION.to_string()),
-                timestamp,
+                timestamp: timestamp.try_into().unwrap(),
                 duration,
                 ok: true,
                 errors: 0,
