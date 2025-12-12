@@ -550,7 +550,7 @@ function createDefaultClientInfo(
     }
 
     // Plain headers object
-    if (context?.headers && typeof context.req?.headers === 'object') {
+    if (context?.headers && typeof context.headers === 'object') {
       const headerGetter = (name: string) => context.headers[name];
       const name = lookupHeader(headerGetter, clientNameHeaders);
       const version = lookupHeader(headerGetter, clientVersionHeaders);
