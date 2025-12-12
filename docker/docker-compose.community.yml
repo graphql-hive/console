@@ -253,7 +253,7 @@ services:
       - 'stack'
     environment:
       NODE_ENV: production
-      PORT: 3013
+      PORT: 3012
       LOG_LEVEL: '${LOG_LEVEL:-debug}'
       OPENTELEMETRY_COLLECTOR_ENDPOINT: '${OPENTELEMETRY_COLLECTOR_ENDPOINT:-}'
       SENTRY: '${SENTRY:-0}'
