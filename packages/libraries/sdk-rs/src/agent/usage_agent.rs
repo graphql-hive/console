@@ -81,7 +81,7 @@ pub fn non_empty_string(value: Option<String>) -> Option<String> {
 pub enum AgentError {
     #[error("unable to acquire lock: {0}")]
     Lock(String),
-    #[error("unable to send report: token is missing")]
+    #[error("unable to send report: unauthorized")]
     Unauthorized,
     #[error("unable to send report: no access")]
     Forbidden,
@@ -273,25 +273,23 @@ impl UsageAgent {
 
 pub trait UsageAgentExt {
     fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError>;
-    fn flush_if_full(&self, size: usize) -> Result<(), AgentError>;
+    fn flush_if_full(&self, size: usize) -> ();
 }
 
 impl UsageAgentExt for Arc<UsageAgent> {
-    fn flush_if_full(&self, size: usize) -> Result<(), AgentError> {
+    fn flush_if_full(&self, size: usize) {
         if size >= self.buffer.size {
             let cloned_self = self.clone();
             tokio::task::spawn(async move {
                 cloned_self.flush().await;
             });
         }
-
-        Ok(())
     }
 
     fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
         let size = self.buffer.push(execution_report)?;
 
-        self.flush_if_full(size)?;
+        self.flush_if_full(size);
 
         Ok(())
     }
@@ -320,13 +318,13 @@ mod tests {
 
         let timestamp = 1625247600;
         let duration = Duration::from_millis(20);
-        let user_agent = format!("hive-router-sdk-test");
+        let user_agent = "hive-router-sdk-test";
 
         let mock = server
             .mock("POST", "/200")
             .match_header(AUTHORIZATION, format!("Bearer {}", token).as_str())
             .match_header(CONTENT_TYPE, CONTENT_TYPE_VALUE)
-            .match_header(USER_AGENT, user_agent.as_str())
+            .match_header(USER_AGENT, user_agent)
             .match_header("X-Usage-API-Version", "2")
             .match_request(move |request| {
                 let request_body = request.body().expect("Failed to extract body");
@@ -461,14 +459,9 @@ mod tests {
         .expect("Failed to parse query");
 
         let usage_agent = UsageAgent::builder()
-            .token(token.to_string())
+            .token(token.into())
             .endpoint(format!("{}/200", server_url))
-            .buffer_size(10)
-            .connect_timeout(Duration::from_millis(500))
-            .request_timeout(Duration::from_millis(500))
-            .accept_invalid_certs(false)
-            .flush_interval(Duration::from_millis(10))
-            .user_agent(user_agent.clone())
+            .user_agent(user_agent.into())
             .build()
             .expect("Failed to create UsageAgent");
 

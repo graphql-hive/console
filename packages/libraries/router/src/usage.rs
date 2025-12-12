@@ -177,7 +177,7 @@ impl Plugin for UsagePlugin {
 
             if let Some(endpoint) = user_config.registry_usage_endpoint {
                 agent = agent.endpoint(endpoint);
-            } else if let Ok(env_endpoint) = env::var("HIVE_USAGE_ENDPOINT") {
+            } else if let Ok(env_endpoint) = env::var("HIVE_ENDPOINT") {
                 agent = agent.endpoint(env_endpoint);
             }
 
@@ -189,7 +189,7 @@ impl Plugin for UsagePlugin {
 
             if let Some(target_id) = user_config.target {
                 agent = agent.target_id(target_id);
-            } else if let Ok(env_target) = env::var("HIVE_TARGET") {
+            } else if let Ok(env_target) = env::var("HIVE_TARGET_ID") {
                 agent = agent.target_id(env_target);
             }
 
