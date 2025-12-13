@@ -8,8 +8,6 @@ import { getServiceHost } from 'testkit/utils';
 import { execa } from '@esm2cjs/execa';
 
 describe('Apollo Router Integration', () => {
-  const getBaseEndpoint = () =>
-    getServiceHost('server', 8082).then(v => `http://${v}/artifacts/v1/`);
   const getAvailablePort = () =>
     new Promise<number>(resolve => {
       const server = createServer();
@@ -18,12 +16,12 @@ describe('Apollo Router Integration', () => {
         if (address && typeof address === 'object') {
           const port = address.port;
           server.close(() => resolve(port));
+        } else {
+          throw new Error('Could not get available port');
         }
       });
     });
   it('fetches the supergraph and sends usage reports', async () => {
-    const routerConfigPath = join(tmpdir(), `apollo-router-config-${Date.now()}.yaml`);
-    const endpointBaseUrl = await getBaseEndpoint();
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken, createCdnAccess, target, waitForOperationsCollected } =
@@ -50,6 +48,7 @@ describe('Apollo Router Integration', () => {
       .then(r => r.expectNoGraphQLErrors());
 
     expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
     const cdnAccessResult = await createCdnAccess();
 
     const usageAddress = await getServiceHost('usage', 8081);
@@ -60,6 +59,7 @@ describe('Apollo Router Integration', () => {
         `Apollo Router binary not found at path: ${routerBinPath}, make sure to build it first with 'cargo build'`,
       );
     }
+
     const routerPort = await getAvailablePort();
     const routerConfigContent = `
 supergraph:
@@ -67,17 +67,22 @@ supergraph:
 plugins:
   hive.usage: {}
 `.trim();
+    const routerConfigPath = join(tmpdir(), `apollo-router-config-${Date.now()}.yaml`);
     writeFileSync(routerConfigPath, routerConfigContent, 'utf-8');
+
+    const cdnEndpoint = await getServiceHost('server', 8082).then(
+      v => `http://${v}/artifacts/v1/${target.id}`,
+    );
     const routerProc = execa(routerBinPath, ['--dev', '--config', routerConfigPath], {
       all: true,
       env: {
-        HIVE_CDN_ENDPOINT: endpointBaseUrl + target.id,
+        HIVE_CDN_ENDPOINT: cdnEndpoint,
         HIVE_CDN_KEY: cdnAccessResult.secretAccessToken,
         HIVE_ENDPOINT: `http://${usageAddress}`,
         HIVE_TOKEN: writeToken.secret,
-        HIVE_TARGET_ID: target.id,
       },
     });
+    let log = '';
     await new Promise((resolve, reject) => {
       routerProc.catch(err => {
         if (!err.isCanceled) {
@@ -88,7 +93,6 @@ plugins:
       if (!routerProcOut) {
         return reject(new Error('No stdout from Apollo Router process'));
       }
-      let log = '';
       routerProcOut.on('data', data => {
         log += data.toString();
         if (log.includes('GraphQL endpoint exposed at')) {
@@ -107,13 +111,13 @@ plugins:
         },
         body: JSON.stringify({
           query: `
-                  query TestQuery {
-                    me {
-                        id
-                        name
-                    }
-                  }
-                `,
+            query TestQuery {
+              me {
+                id
+                name
+              }
+            }
+          `,
         }),
       });
 
@@ -128,6 +132,9 @@ plugins:
         },
       });
       await waitForOperationsCollected(1);
+    } catch (e) {
+      console.error('Router logs:\n', log);
+      throw e;
     } finally {
       routerProc.cancel();
       rmSync(routerConfigPath);
