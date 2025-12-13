@@ -22,7 +22,6 @@ describe('Apollo Router Integration', () => {
       });
     });
   it('fetches the supergraph and sends usage reports', async () => {
-    const routerConfigPath = join(tmpdir(), `apollo-router-config-${Date.now()}.yaml`);
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
     const { createTargetAccessToken, createCdnAccess, target, waitForOperationsCollected } =
@@ -30,21 +29,25 @@ describe('Apollo Router Integration', () => {
     const writeToken = await createTargetAccessToken({});
 
     // Publish Schema
-    await writeToken.publishSchema({
-      author: 'Arda',
-      commit: 'abc123',
-      sdl: /* GraphQL */ `
-        type Query {
-          me: User
-        }
-        type User {
-          id: ID!
-          name: String!
-        }
-      `,
-      service: 'users',
-      url: 'https://federation-demo.theguild.workers.dev/users',
-    });
+    const publishSchemaResult = await writeToken
+      .publishSchema({
+        author: 'Arda',
+        commit: 'abc123',
+        sdl: /* GraphQL */ `
+          type Query {
+            me: User
+          }
+          type User {
+            id: ID!
+            name: String!
+          }
+        `,
+        service: 'users',
+        url: 'https://federation-demo.theguild.workers.dev/users',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(publishSchemaResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
     const cdnAccessResult = await createCdnAccess();
 
@@ -56,6 +59,7 @@ describe('Apollo Router Integration', () => {
         `Apollo Router binary not found at path: ${routerBinPath}, make sure to build it first with 'cargo build'`,
       );
     }
+
     const routerPort = await getAvailablePort();
     const routerConfigContent = `
 supergraph:
@@ -63,7 +67,9 @@ supergraph:
 plugins:
   hive.usage: {}
 `.trim();
+    const routerConfigPath = join(tmpdir(), `apollo-router-config-${Date.now()}.yaml`);
     writeFileSync(routerConfigPath, routerConfigContent, 'utf-8');
+
     const cdnEndpoint = await getServiceHost('server', 8082).then(
       v => `http://${v}/artifacts/v1/${target.id}`,
     );
