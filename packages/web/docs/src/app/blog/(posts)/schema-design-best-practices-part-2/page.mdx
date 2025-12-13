@@ -58,9 +58,9 @@ It makes sense to use Inside-out design:
 
 ## Outside-In Design
 
-Again we start with user stories, but instead of building our database next, build the UI/UX that
-meets the requirements. Then, based on proximity and hierarchy, extract types and fields to build
-your entities.
+Start with user stories, but instead of building the database next, build the UI/UX that meets the
+requirements. Then, based on proximity and hierarchy, extract types and fields to build the
+entities.
 
 ### Example
 
@@ -93,17 +93,19 @@ When to use this would be:
 Domain driven design is a broad and complex topic. But at its heart it’s based on concepts we use
 every day without realizing. One of these concepts is that of a “bounded context”.
 
+### Bounded Context
+
 To me, the concept of bounded context is similar to the concept of abstraction, which is one of
 computer science’s fundamental principles. With abstraction, you define specific behavior as
 functions, and then can use those functions inside more functions to create a higher-level function
 that will do more things, while keeping the code relatively clean. This way at every level, you only
 need to understand what the next level is doing instead of having to look at everything at once.
 
-### Example
-
 With the bounded context "as a paper company salesman", a "territory" would be a geographical area
 for which you're responsible for supplying paper. But "territory" carries different meaning to the
 board game Risk. To define a territory's fields, you can then assume the context "as a territory".
+
+### Example
 
 ![Domain Driven Bounded Context](./ddd-bounded-context.jpg)
 
