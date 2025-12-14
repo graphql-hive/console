@@ -14,6 +14,63 @@ function isRequestOk(response: Response) {
   return response.status === 200 || response.status === 404;
 }
 
+/**
+ * Validates the format of a persisted document ID.
+ * Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")
+ * @param documentId The document ID to validate
+ * @returns Validation result with error message if invalid, null if valid
+ */
+function validateDocumentId(documentId: string): { error: string } | null {
+  if (!documentId || typeof documentId !== 'string') {
+    return {
+      error: 'Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")',
+    };
+  }
+
+  const parts = documentId.split('~');
+  if (parts.length !== 3) {
+    return {
+      error: 'Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")',
+    };
+  }
+
+  const [name, version, hash] = parts;
+
+  // Validate each part
+  if (!name || name.trim() === '') {
+    return {
+      error: 'Name cannot be empty. Expected format: "name~version~hash"',
+    };
+  }
+
+  if (!version || version.trim() === '') {
+    return {
+      error: 'Version cannot be empty. Expected format: "name~version~hash"',
+    };
+  }
+
+  if (!hash || hash.trim() === '') {
+    return {
+      error:
+        'Hash cannot be empty. Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")',
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Creates a validation error that will result in HTTP 400 status
+ * @param documentId The invalid document ID
+ * @param error The validation error
+ */
+function createValidationError(documentId: string, error: string): Error {
+  const validationError = new Error(`Invalid document ID "${documentId}": ${error}`);
+  (validationError as any).code = 'INVALID_DOCUMENT_ID';
+  (validationError as any).status = 400;
+  return validationError;
+}
+
 type PersistedDocuments = {
   resolve(documentId: string): PromiseOrValue<string | null>;
   allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
@@ -84,6 +141,12 @@ export function createPersistedDocuments(
 
   /** Batch load a persisted documents */
   function loadPersistedDocument(documentId: string) {
+    const validationError = validateDocumentId(documentId);
+    if (validationError) {
+      // Return a promise that will be rejected with a proper error
+      return Promise.reject(createValidationError(documentId, validationError.error));
+    }
+
     const document = persistedDocumentsCache.get(documentId);
     if (document) {
       return document;
