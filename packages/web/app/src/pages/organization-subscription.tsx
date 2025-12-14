@@ -3,7 +3,6 @@ import { endOfMonth, startOfDay, startOfMonth } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { BillingView } from '@/components/organization/billing/Billing';
 import { CurrencyFormatter } from '@/components/organization/billing/helpers';
 import { InvoicesList } from '@/components/organization/billing/InvoicesList';
@@ -111,146 +110,140 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
   const end = endOfMonth(today);
 
   return (
-    <OrganizationLayout
-      page={Page.Subscription}
-      organizationSlug={props.organizationSlug}
-      className="flex flex-col gap-y-10"
-    >
-      <div className="grow">
-        <div className="flex flex-row items-center justify-between py-6">
-          <div>
-            <Title>Your subscription</Title>
-            <Subtitle>Explore your current plan and usage.</Subtitle>
-          </div>
-          {organization.viewerCanModifyBilling && (
-            <div>
-              <Button asChild>
-                <Link
-                  to="/$organizationSlug/view/manage-subscription"
-                  params={{ organizationSlug: currentOrganization.slug }}
-                >
-                  Manage subscription
-                </Link>
-              </Button>
-            </div>
-          )}
-        </div>
+    <div className="grow">
+      <div className="flex flex-row items-center justify-between py-6">
         <div>
-          <Card>
-            <Heading className="mb-2">Your current plan</Heading>
-            <div>
-              <BillingView organization={organization} query={queryForBilling}>
-                {organization.billingConfiguration?.upcomingInvoice && (
-                  <Stat>
-                    <Stat.Label>Next Invoice</Stat.Label>
-                    <Stat.Number>
-                      {CurrencyFormatter.format(
-                        organization.billingConfiguration.upcomingInvoice.amount,
-                      )}
-                    </Stat.Number>
-                    <Stat.HelpText>
-                      {DateFormatter.format(
-                        new Date(organization.billingConfiguration.upcomingInvoice.date),
-                      )}
-                    </Stat.HelpText>
-                  </Stat>
-                )}
-              </BillingView>
-            </div>
-          </Card>
-          <Card className="mt-8">
-            <Heading>Current Usage</Heading>
-            <p className="text-sm text-gray-500">
-              {DateFormatter.format(start)} — {DateFormatter.format(end)}
-            </p>
-            <div className="mt-4">
-              <OrganizationUsageEstimationView organization={organization} />
-            </div>
-          </Card>
-          {monthlyUsagePoints.length ? (
-            <Card className="mt-8">
-              <Heading>Historical Usage</Heading>
-              <div className="mt-4">
-                <AutoSizer disableHeight>
-                  {size => (
-                    <ReactECharts
-                      style={{ width: size.width, height: 400 }}
-                      option={{
-                        ...styles,
-                        grid: {
-                          left: 20,
-                          top: 50,
-                          right: 20,
-                          bottom: 20,
-                          containLabel: true,
-                        },
-                        legend: {
-                          show: false,
-                        },
-                        tooltip: {
-                          trigger: 'axis',
-                          valueFormatter: (value: number) => formatNumber(value),
-                          formatter(params: any[]) {
-                            const param = params[0];
-                            const value = param.data[1];
-
-                            return `<strong>${numberFormatter.format(value)}</strong>`;
-                          },
-                        },
-                        xAxis: [
-                          {
-                            type: 'time',
-                            splitNumber: 12,
-                          },
-                        ],
-                        yAxis: [
-                          {
-                            type: 'value',
-                            boundaryGap: false,
-                            min: 0,
-                            axisLabel: {
-                              formatter: (value: number) => formatNumber(value),
-                            },
-                            splitLine: {
-                              lineStyle: {
-                                color: '#595959',
-                                type: 'dashed',
-                              },
-                            },
-                          },
-                        ],
-                        series: [
-                          {
-                            type: 'bar',
-                            name: 'Events',
-                            showSymbol: false,
-                            boundaryGap: false,
-                            color: '#595959',
-                            areaStyle: {},
-                            emphasis: {
-                              focus: 'series',
-                            },
-                            data: monthlyUsagePoints,
-                          },
-                        ],
-                      }}
-                    />
-                  )}
-                </AutoSizer>
-              </div>
-            </Card>
-          ) : null}
-          {organization.billingConfiguration?.invoices?.length ? (
-            <Card className="mt-8">
-              <Heading>Invoices</Heading>
-              <div className="mt-4">
-                <InvoicesList organization={organization} />
-              </div>
-            </Card>
-          ) : null}
+          <Title>Your subscription</Title>
+          <Subtitle>Explore your current plan and usage.</Subtitle>
         </div>
+        {organization.viewerCanModifyBilling && (
+          <div>
+            <Button asChild>
+              <Link
+                to="/$organizationSlug/view/manage-subscription"
+                params={{ organizationSlug: currentOrganization.slug }}
+              >
+                Manage subscription
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
-    </OrganizationLayout>
+      <div>
+        <Card>
+          <Heading className="mb-2">Your current plan</Heading>
+          <div>
+            <BillingView organization={organization} query={queryForBilling}>
+              {organization.billingConfiguration?.upcomingInvoice && (
+                <Stat>
+                  <Stat.Label>Next Invoice</Stat.Label>
+                  <Stat.Number>
+                    {CurrencyFormatter.format(
+                      organization.billingConfiguration.upcomingInvoice.amount,
+                    )}
+                  </Stat.Number>
+                  <Stat.HelpText>
+                    {DateFormatter.format(
+                      new Date(organization.billingConfiguration.upcomingInvoice.date),
+                    )}
+                  </Stat.HelpText>
+                </Stat>
+              )}
+            </BillingView>
+          </div>
+        </Card>
+        <Card className="mt-8">
+          <Heading>Current Usage</Heading>
+          <p className="text-sm text-gray-500">
+            {DateFormatter.format(start)} — {DateFormatter.format(end)}
+          </p>
+          <div className="mt-4">
+            <OrganizationUsageEstimationView organization={organization} />
+          </div>
+        </Card>
+        {monthlyUsagePoints.length ? (
+          <Card className="mt-8">
+            <Heading>Historical Usage</Heading>
+            <div className="mt-4">
+              <AutoSizer disableHeight>
+                {size => (
+                  <ReactECharts
+                    style={{ width: size.width, height: 400 }}
+                    option={{
+                      ...styles,
+                      grid: {
+                        left: 20,
+                        top: 50,
+                        right: 20,
+                        bottom: 20,
+                        containLabel: true,
+                      },
+                      legend: {
+                        show: false,
+                      },
+                      tooltip: {
+                        trigger: 'axis',
+                        valueFormatter: (value: number) => formatNumber(value),
+                        formatter(params: any[]) {
+                          const param = params[0];
+                          const value = param.data[1];
+
+                          return `<strong>${numberFormatter.format(value)}</strong>`;
+                        },
+                      },
+                      xAxis: [
+                        {
+                          type: 'time',
+                          splitNumber: 12,
+                        },
+                      ],
+                      yAxis: [
+                        {
+                          type: 'value',
+                          boundaryGap: false,
+                          min: 0,
+                          axisLabel: {
+                            formatter: (value: number) => formatNumber(value),
+                          },
+                          splitLine: {
+                            lineStyle: {
+                              color: '#595959',
+                              type: 'dashed',
+                            },
+                          },
+                        },
+                      ],
+                      series: [
+                        {
+                          type: 'bar',
+                          name: 'Events',
+                          showSymbol: false,
+                          boundaryGap: false,
+                          color: '#595959',
+                          areaStyle: {},
+                          emphasis: {
+                            focus: 'series',
+                          },
+                          data: monthlyUsagePoints,
+                        },
+                      ],
+                    }}
+                  />
+                )}
+              </AutoSizer>
+            </div>
+          </Card>
+        ) : null}
+        {organization.billingConfiguration?.invoices?.length ? (
+          <Card className="mt-8">
+            <Heading>Invoices</Heading>
+            <div className="mt-4">
+              <InvoicesList organization={organization} />
+            </div>
+          </Card>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
