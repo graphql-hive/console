@@ -60,15 +60,30 @@ function validateDocumentId(documentId: string): { error: string } | null {
 }
 
 /**
+ * Error class for validation errors that will result in HTTP 400 status
+ */
+class PersistedDocumentValidationError extends Error {
+  code: string;
+  status: number;
+
+  constructor(documentId: string, error: string) {
+    super(`Invalid document ID "${documentId}": ${error}`);
+    this.code = 'INVALID_DOCUMENT_ID';
+    this.status = 400;
+    this.name = 'PersistedDocumentValidationError';
+  }
+}
+
+/**
  * Creates a validation error that will result in HTTP 400 status
  * @param documentId The invalid document ID
  * @param error The validation error
  */
-function createValidationError(documentId: string, error: string): Error {
-  const validationError = new Error(`Invalid document ID "${documentId}": ${error}`);
-  (validationError as any).code = 'INVALID_DOCUMENT_ID';
-  (validationError as any).status = 400;
-  return validationError;
+function createValidationError(
+  documentId: string,
+  error: string,
+): PersistedDocumentValidationError {
+  return new PersistedDocumentValidationError(documentId, error);
 }
 
 type PersistedDocuments = {

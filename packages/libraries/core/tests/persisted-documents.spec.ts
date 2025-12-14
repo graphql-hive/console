@@ -157,7 +157,7 @@ test('validates document ID format - missing hash', async () => {
   await expect(
     persistedDocuments.resolve('client-name~client-version~'),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[Error: Invalid document ID "client-name~client-version~": Hash cannot be empty. Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")]`,
+    `[PersistedDocumentValidationError: Invalid document ID "client-name~client-version~": Hash cannot be empty. Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")]`,
   );
 });
 
@@ -180,7 +180,7 @@ test('validates document ID format - invalid parts count', async () => {
   await expect(
     persistedDocuments.resolve('client-name~client-version'),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[Error: Invalid document ID "client-name~client-version": Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")]`,
+    `[PersistedDocumentValidationError: Invalid document ID "client-name~client-version": Expected format: "name~version~hash" (e.g., "client-name~client-version~hash")]`,
   );
 });
 
@@ -203,7 +203,7 @@ test('validates document ID format - empty parts', async () => {
   await expect(
     persistedDocuments.resolve('~0.1.0~hash'),
   ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[Error: Invalid document ID "~0.1.0~hash": Name cannot be empty. Expected format: "name~version~hash"]`,
+    `[PersistedDocumentValidationError: Invalid document ID "~0.1.0~hash": Name cannot be empty. Expected format: "name~version~hash"]`,
   );
 });
 
