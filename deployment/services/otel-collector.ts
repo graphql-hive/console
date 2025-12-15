@@ -6,7 +6,7 @@ import { Docker } from './docker';
 import { Environment } from './environment';
 import { GraphQL } from './graphql';
 
-export type OTELCollector = ReturnType<typeof deployOTELCollector>;
+export type OTELCollector = ReturnType<ServiceDeployment['deploy']>;
 
 export function deployOTELCollector(args: {
   image: string;
