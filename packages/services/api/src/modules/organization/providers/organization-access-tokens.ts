@@ -198,7 +198,7 @@ export class OrganizationAccessTokens {
       return error;
     }
 
-    const viewer = await this.session.getViewer();
+    const actor = await this.session.getActor();
 
     const selector = await this.idTranslator.resolveProjectReference({
       reference: args.project,
@@ -241,7 +241,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
-      createdByUserId: viewer.id,
+      createdByUserId: actor.type === 'user' ? actor.user.id : null,
     });
   }
 
@@ -261,7 +261,7 @@ export class OrganizationAccessTokens {
       return error;
     }
 
-    const viewer = await this.session.getViewer();
+    const actor = await this.session.getActor();
 
     const { organizationId } = await this.idTranslator.resolveOrganizationReference({
       reference: args.organization,
@@ -304,7 +304,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
-      createdByUserId: viewer.id,
+      createdByUserId: actor.type === 'user' ? actor.user.id : null,
     });
   }
 
@@ -406,7 +406,7 @@ export class OrganizationAccessTokens {
       title: string;
       description: string | null;
       assignedResources: ResourceAssignmentGroup;
-      createdByUserId: string;
+      createdByUserId: string | null;
     } & (
       | {
           // Organization Scope
