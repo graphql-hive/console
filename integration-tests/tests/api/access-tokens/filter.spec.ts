@@ -545,7 +545,7 @@ test.concurrent('organization access token includes createdBy information', asyn
 
 test.concurrent('project access token includes createdBy information', async ({ expect }) => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
+  const { createProject, organization } = await createOrg();
   const { project } = await createProject();
 
   // Create a project access token
@@ -556,7 +556,7 @@ test.concurrent('project access token includes createdBy information', async ({ 
         project: { byId: project.id },
         title: 'project token',
         description: 'project description',
-        resources: { mode: GraphQLSchema.TargetsResourceAssignmentModeType.All },
+        resources: { mode: GraphQLSchema.ResourceAssignmentModeType.All },
         permissions: [],
       },
     },
@@ -567,7 +567,7 @@ test.concurrent('project access token includes createdBy information', async ({ 
   const result = await execute({
     document: AllAccessTokensQuery,
     variables: {
-      organizationSlug: project.organization.slug,
+      organizationSlug: organization.slug,
       scopes: [GraphQLSchema.AccessTokenScopeType.Project],
     },
     authToken: ownerToken,
