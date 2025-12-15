@@ -51,6 +51,26 @@ export class UsageEstimationProvider {
     return result.totalOperations;
   }
 
+  async estimateOperationsForOrganizationById(input: {
+    organizationId: string;
+    month: number;
+    year: number;
+  }): Promise<number | null> {
+    await this.session.assertPerformAction({
+      action: 'billing:describe',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+      },
+    });
+
+    return await this._estimateOperationsForOrganization({
+      organizationId: input.organizationId,
+      year: input.year,
+      month: input.month,
+    });
+  }
+
   async estimateOperationsForOrganization(input: {
     organizationSlug: string;
     month: number;
@@ -60,18 +80,6 @@ export class UsageEstimationProvider {
       organizationSlug: input.organizationSlug,
     });
 
-    await this.session.assertPerformAction({
-      action: 'billing:describe',
-      organizationId,
-      params: {
-        organizationId,
-      },
-    });
-
-    return await this._estimateOperationsForOrganization({
-      organizationId,
-      year: input.year,
-      month: input.month,
-    });
+    return this.estimateOperationsForOrganizationById({ ...input, organizationId });
   }
 }
