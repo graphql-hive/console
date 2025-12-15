@@ -2,6 +2,7 @@ import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
   name: '2025.11.25T00-00-00.members-search.ts',
+  noTransaction: true,
   run: ({ sql }) => sql`
     -- The order was wrong. This was sorting by org_id, user_id, then created_at...
     DROP INDEX IF EXISTS "organization_member_pagination_idx";
