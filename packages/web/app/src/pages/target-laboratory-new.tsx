@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { throttle } from 'lodash';
 import { useMutation, useQuery } from 'urql';
@@ -20,8 +20,18 @@ import {
   LaboratoryTab,
 } from '@/laboratory';
 import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/laboratory/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
-import { useToggle } from '@/lib/hooks';
+import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
@@ -522,6 +532,8 @@ function LaboratoryPageContent(props: {
   projectSlug: string;
   targetSlug: string;
   selectedOperationId?: string;
+  defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
+  onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
   const laboratoryState = useLaboratoryState({
     organizationSlug: props.organizationSlug,
@@ -581,7 +593,26 @@ function LaboratoryPageContent(props: {
       <div className="flex size-full flex-col gap-3 py-6">
         <div className="flex">
           <div className="flex-1">
-            <Title>Laboratory</Title>
+            <div className="flex items-center gap-2">
+              <Title>Laboratory</Title>
+              <div className="h-4 w-px bg-gray-800" />
+              <Tabs
+                defaultValue={props.defaultLaboratoryTab}
+                onValueChange={value =>
+                  props.onLaboratoryTabChange(value as 'graphiql' | 'hive-laboratory')
+                }
+              >
+                <TabsList className="h-auto p-1">
+                  <TabsTrigger value="graphiql" className="px-2 py-0">
+                    GraphiQL
+                  </TabsTrigger>
+                  <TabsTrigger value="hive-laboratory" className="px-2 py-0">
+                    Hive Laboratory
+                    <div className="size-2 rounded-full bg-orange-500" />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
             <Subtitle>
               Explore your GraphQL schema and run queries against your GraphQL API.
             </Subtitle>
@@ -671,10 +702,46 @@ export function TargetLaboratoryPage(props: {
   projectSlug: string;
   targetSlug: string;
   selectedOperationId: string | undefined;
+  defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
+  onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
+  const [isWelcomeDialogShown, setIsWelcomeDialogShown] = useLocalStorage(
+    'hive:laboratory:welcome-dialog-shown',
+    'false',
+  );
+
+  useEffect(() => {
+    if (isWelcomeDialogShown === 'false') {
+      setIsWelcomeDialogShown('true');
+    }
+  }, [isWelcomeDialogShown]);
+
   return (
     <>
       <Meta title="Schema laboratory" />
+      <Dialog defaultOpen={isWelcomeDialogShown === 'false'}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Welcome to new Hive Laboratory</DialogTitle>
+            <DialogDescription>
+              <p>
+                Hive Laboratory is a new way to explore your GraphQL schema and run queries against
+                your GraphQL API.
+              </p>
+              <br />
+              <p>
+                You always can switch to the old GraphiQL based Laboratory by using the tab switcher
+                in the top left cornder.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button>Get started</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <TargetLayout
         organizationSlug={props.organizationSlug}
         projectSlug={props.projectSlug}
