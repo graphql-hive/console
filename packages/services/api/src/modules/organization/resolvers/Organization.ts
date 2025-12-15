@@ -249,6 +249,12 @@ export const Organization: Pick<
     return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {
       first: args.first ?? null,
       after: args.after ?? null,
+      filter: args.filter
+        ? {
+            scopes: args.filter.scopes ? [...args.filter.scopes] : undefined,
+            userId: args.filter.userId ?? undefined,
+          }
+        : undefined,
     });
   },
   projectForResourceSelector: async (organization, args, { injector }) => {

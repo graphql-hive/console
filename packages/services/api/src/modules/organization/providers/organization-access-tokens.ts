@@ -63,6 +63,7 @@ const OrganizationAccessTokenModel = z
     organizationId: z.string().uuid(),
     projectId: z.string().uuid().nullable(),
     userId: z.string().uuid().nullable(),
+    createdByUserId: z.string().uuid().nullable(),
     createdAt: z.string(),
     title: z.string(),
     description: z.string(),
@@ -197,6 +198,8 @@ export class OrganizationAccessTokens {
       return error;
     }
 
+    const viewer = await this.session.getViewer();
+
     const selector = await this.idTranslator.resolveProjectReference({
       reference: args.project,
     });
@@ -238,6 +241,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
+      createdByUserId: viewer.id,
     });
   }
 
@@ -256,6 +260,8 @@ export class OrganizationAccessTokens {
     if (error) {
       return error;
     }
+
+    const viewer = await this.session.getViewer();
 
     const { organizationId } = await this.idTranslator.resolveOrganizationReference({
       reference: args.organization,
@@ -298,6 +304,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
+      createdByUserId: viewer.id,
     });
   }
 
@@ -390,6 +397,7 @@ export class OrganizationAccessTokens {
       description: args.description,
       assignedResources,
       permissions,
+      createdByUserId: viewer.id,
     });
   }
 
@@ -398,6 +406,7 @@ export class OrganizationAccessTokens {
       title: string;
       description: string | null;
       assignedResources: ResourceAssignmentGroup;
+      createdByUserId: string;
     } & (
       | {
           // Organization Scope
@@ -438,6 +447,7 @@ export class OrganizationAccessTokens {
         , "organization_id"
         , "project_id"
         , "user_id"
+        , "created_by_user_id"
         , "title"
         , "description"
         , "permissions"
@@ -450,6 +460,7 @@ export class OrganizationAccessTokens {
         , ${args.organizationId}
         , ${args.projectId ?? null}
         , ${args.userId ?? null}
+        , ${args.createdByUserId}
         , ${args.title}
         , ${args.description}
         , ${args.permissions !== null ? sql.array(args.permissions, 'text') : null}
@@ -566,8 +577,16 @@ export class OrganizationAccessTokens {
     args: {
       first: number | null;
       after: string | null;
-      /** Whether only access tokens on the organization scope should be included in the result. */
+      /**
+       * Whether only access tokens on the organization scope should be included in the result.
+       * @deprecated Use `filter: { scopes: ['ORGANIZATION'] }` instead.
+       */
       includeOnlyOrganizationScoped?: true;
+      /** Filter access tokens by scope and/or user. */
+      filter?: {
+        scopes?: Array<GraphQLSchema.AccessTokenScopeType>;
+        userId?: string | null;
+      };
     },
   ) {
     await this.session.assertPerformAction({
@@ -585,6 +604,36 @@ export class OrganizationAccessTokens {
 
     if (args.after) {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.after);
+    }
+
+    // Build scope filter conditions
+    const filterConditions: Array<ReturnType<typeof sql>> = [];
+
+    if (args.filter?.scopes && args.filter.scopes.length > 0) {
+      const scopeConditions: Array<ReturnType<typeof sql>> = [];
+
+      if (args.filter.scopes.includes('ORGANIZATION')) {
+        scopeConditions.push(sql`("project_id" IS NULL AND "user_id" IS NULL)`);
+      }
+      if (args.filter.scopes.includes('PROJECT')) {
+        scopeConditions.push(sql`("project_id" IS NOT NULL)`);
+      }
+      if (args.filter.scopes.includes('PERSONAL')) {
+        scopeConditions.push(sql`("user_id" IS NOT NULL)`);
+      }
+
+      if (scopeConditions.length > 0) {
+        filterConditions.push(sql`(${sql.join(scopeConditions, sql` OR `)})`);
+      }
+    }
+
+    if (args.filter?.userId) {
+      if (!isUUID(args.filter.userId)) {
+        // Invalid UUID format - return empty results (no user can match)
+        filterConditions.push(sql`FALSE`);
+      } else {
+        filterConditions.push(sql`"user_id" = ${args.filter.userId}`);
+      }
     }
 
     const result = await this.pool.any<unknown>(sql` /* OrganizationAccessTokens.getPaginated */
@@ -615,6 +664,7 @@ export class OrganizationAccessTokens {
               `
             : sql``
         }
+        ${filterConditions.length > 0 ? sql`AND ${sql.join(filterConditions, sql` AND `)}` : sql``}
       ORDER BY
         "organization_id" ASC
         , "created_at" DESC
@@ -1242,6 +1292,7 @@ const organizationAccessTokenFields = sql`
   , "organization_id" AS "organizationId"
   , "project_id" AS "projectId"
   , "user_id" AS "userId"
+  , "created_by_user_id" AS "createdByUserId"
   , to_json("created_at") AS "createdAt"
   , "title"
   , "description"

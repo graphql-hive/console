@@ -1,3 +1,4 @@
+import { Storage } from '../../shared/providers/storage';
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import type { PersonalAccessTokenResolvers } from './../../../__generated__/types';
 
@@ -17,5 +18,12 @@ export const PersonalAccessToken: PersonalAccessTokenResolvers = {
       .getGraphQLResolvedResourcePermissionGroupForAccessToken(accessToken)(
       args.includeAll ?? false,
     );
+  },
+  createdBy: async (accessToken, _arg, { injector }) => {
+    const userId = accessToken.createdByUserId ?? accessToken.userId;
+    if (!userId) {
+      return null;
+    }
+    return injector.get(Storage).getUserById({ id: userId });
   },
 };

@@ -510,6 +510,11 @@ export default gql`
       """
       includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
+
+    """
+    The user who created this access token.
+    """
+    createdBy: User
   }
 
   type ProjectAccessTokenEdge {
@@ -551,6 +556,11 @@ export default gql`
       """
       includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
+
+    """
+    The user who created this access token.
+    """
+    createdBy: User
   }
 
   type PersonalAccessToken implements AccessToken {
@@ -570,6 +580,11 @@ export default gql`
       """
       includeAll: Boolean! = false
     ): [ResolvedResourcePermissionGroup!]!
+
+    """
+    The user who created this personal access token.
+    """
+    createdBy: User
   }
 
   """
@@ -876,6 +891,38 @@ export default gql`
     searchTerm: String
   }
 
+  """
+  Scope type of an access token.
+  """
+  enum AccessTokenScopeType {
+    """
+    Access token scoped to the entire organization.
+    """
+    ORGANIZATION
+    """
+    Access token scoped to a specific project.
+    """
+    PROJECT
+    """
+    Personal access token scoped to a specific user.
+    """
+    PERSONAL
+  }
+
+  """
+  Filter input for querying access tokens.
+  """
+  input AccessTokensFilterInput {
+    """
+    Filter by scope type(s). If empty/null, all scopes are included.
+    """
+    scopes: [AccessTokenScopeType!]
+    """
+    Filter personal tokens by user ID.
+    """
+    userId: ID
+  }
+
   type Organization {
     """
     Unique UUID of the organization
@@ -1004,7 +1051,11 @@ export default gql`
     Retrieve a list of all access tokens within the organization.
     This includes organization, project and personal scoped access tokens.
     """
-    allAccessTokens(first: Int, after: String): AccessTokenConnection!
+    allAccessTokens(
+      first: Int
+      after: String
+      filter: AccessTokensFilterInput
+    ): AccessTokenConnection!
     """
     Retrieve an access token within the organization by its ID.
     """
