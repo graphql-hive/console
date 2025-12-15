@@ -13,3 +13,7 @@ src/tasks/*
 # General lib
 src/lib/*
 ```
+
+## References
+
+- [Graphile Worker Documentation](https://worker.graphile.org/)
