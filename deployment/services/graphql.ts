@@ -138,7 +138,7 @@ export function deployGraphQL({
           HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
           HIVE_TRACING: '1',
           HIVE_TRACING_ENDPOINT: environment.isProduction
-            ? 'https://api.graphql-hive.dev/otel/v1/traces'
+            ? 'https://api.graphql-hive.com/otel/v1/traces'
             : environment.isStaging
               ? 'https://api.hiveready.dev/otel/v1/traces'
               : 'https://api.buzzcheck.dev/otel/v1/traces',
