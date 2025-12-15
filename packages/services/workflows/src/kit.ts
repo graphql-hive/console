@@ -126,7 +126,7 @@ export class TaskScheduler {
         typeof opts.dedupe.key === 'string' ? opts.dedupe.key : opts.dedupe.key(payload);
       const expiresAt = new Date(new Date().getTime() + opts.dedupe.ttl).toISOString();
 
-      let shouldSkip = false;
+      let shouldSkip = true;
 
       await this.cache.getOrSet({
         key: `${taskDefinition.name}:${dedupeKey}`,
