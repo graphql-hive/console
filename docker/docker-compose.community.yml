@@ -106,7 +106,7 @@ services:
       API_KEYS: '${SUPERTOKENS_API_KEY}'
 
   s3:
-    image: quay.io/minio/minio:RELEASE.2022-11-29T23-40-49Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     ports:
       - '9000:9000'
@@ -125,7 +125,7 @@ services:
       - './.hive/minio/db:/data'
 
   s3_provision_buckets:
-    image: quay.io/minio/mc:RELEASE.2022-11-17T21-20-39Z
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
       s3:
         condition: service_healthy
