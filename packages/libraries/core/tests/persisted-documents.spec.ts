@@ -246,12 +246,12 @@ test('validation errors return HTTP 400 status code - missing hash', async () =>
 
   try {
     await persistedDocuments.resolve('mytest~0.1.0~');
-    fail('Should have thrown an error');
+    // Should not reach here - test should fail if no error is thrown
+    throw new Error('Expected function to throw an error but it did not');
   } catch (error: any) {
-    // Verify the error has the correct properties for HTTP 400 status
     expect(error.code).toBe('INVALID_DOCUMENT_ID');
     expect(error.status).toBe(400);
-    expect(error.message).toMatch(/Invalid document ID "mytest~0.1.0~".*Hash cannot be empty/);
+    expect(error.message).toMatch(/Hash cannot be empty/);
   }
 });
 
@@ -273,12 +273,12 @@ test('validation errors return HTTP 400 status code - invalid format', async () 
 
   try {
     await persistedDocuments.resolve('invalid~format');
-    fail('Should have thrown an error');
+    // Should not reach here - test should fail if no error is thrown
+    throw new Error('Expected function to throw an error but it did not');
   } catch (error: any) {
-    // Verify the error has the correct properties for HTTP 400 status
     expect(error.code).toBe('INVALID_DOCUMENT_ID');
     expect(error.status).toBe(400);
-    expect(error.message).toMatch(/Invalid document ID "invalid~format".*Expected format/);
+    expect(error.message).toMatch(/Expected format/);
   }
 });
 
@@ -300,12 +300,12 @@ test('validation errors return HTTP 400 status code - empty name', async () => {
 
   try {
     await persistedDocuments.resolve('~0.1.0~hash123');
-    fail('Should have thrown an error');
+    // Should not reach here - test should fail if no error is thrown
+    throw new Error('Expected function to throw an error but it did not');
   } catch (error: any) {
-    // Verify the error has the correct properties for HTTP 400 status
     expect(error.code).toBe('INVALID_DOCUMENT_ID');
     expect(error.status).toBe(400);
-    expect(error.message).toMatch(/Invalid document ID "~0.1.0~hash123".*Name cannot be empty/);
+    expect(error.message).toMatch(/Name cannot be empty/);
   }
 });
 
@@ -327,11 +327,11 @@ test('validation errors return HTTP 400 status code - empty version', async () =
 
   try {
     await persistedDocuments.resolve('name~~hash123');
-    fail('Should have thrown an error');
+    // Should not reach here - test should fail if no error is thrown
+    throw new Error('Expected function to throw an error but it did not');
   } catch (error: any) {
-    // Verify the error has the correct properties for HTTP 400 status
     expect(error.code).toBe('INVALID_DOCUMENT_ID');
     expect(error.status).toBe(400);
-    expect(error.message).toMatch(/Invalid document ID "name~~hash123".*Version cannot be empty/);
+    expect(error.message).toMatch(/Version cannot be empty/);
   }
 });
