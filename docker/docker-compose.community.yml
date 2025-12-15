@@ -106,7 +106,7 @@ services:
       API_KEYS: '${SUPERTOKENS_API_KEY}'
 
   s3:
-    image: quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     ports:
       - '9000:9000'

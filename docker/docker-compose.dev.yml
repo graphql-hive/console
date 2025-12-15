@@ -41,7 +41,7 @@ services:
       - './.hive-dev/redis/db:/bitnami/redis/data'
 
   s3:
-    image: quay.io/minio/minio:RELEASE.2025-10-15T17-29-55Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     mem_limit: 200m
     command: server /data --console-address ":9001"
     ports:
