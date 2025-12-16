@@ -335,11 +335,11 @@ importers:
         specifier: 0.21.1
         version: 0.21.1(graphql@16.9.0)
       '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: 10.45.3
+        version: 10.45.3(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/async-retry':
         specifier: 1.4.8
         version: 1.4.8
@@ -813,11 +813,11 @@ importers:
         specifier: 0.21.1
         version: 0.21.1(graphql@16.9.0)
       '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: 10.45.3
+        version: 10.45.3(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/bcryptjs':
         specifier: 2.4.6
         version: 2.4.6
@@ -1017,11 +1017,11 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: 10.45.3
+        version: 10.45.3(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       date-fns:
         specifier: 4.1.0
         version: 4.1.0
@@ -1072,8 +1072,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/mjml':
         specifier: 4.7.1
         version: 4.7.1
@@ -1159,8 +1159,8 @@ importers:
         specifier: 7.114.0
         version: 7.114.0
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/eslint':
         specifier: 8.56.12
         version: 8.56.12
@@ -1213,8 +1213,8 @@ importers:
         specifier: 0.21.1
         version: 0.21.1(graphql@16.9.0)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/async-retry':
         specifier: 1.4.8
         version: 1.4.8
@@ -1336,11 +1336,11 @@ importers:
         specifier: 0.21.1
         version: 0.21.1(graphql@16.9.0)
       '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: 10.45.3
+        version: 10.45.3(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@whatwg-node/server':
         specifier: 0.10.17
         version: 0.10.17
@@ -1390,8 +1390,8 @@ importers:
   packages/services/service-common:
     dependencies:
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
     devDependencies:
       '@fastify/cors':
         specifier: 9.0.1
@@ -1526,8 +1526,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/ms':
         specifier: 0.7.34
         version: 0.7.34
@@ -1589,11 +1589,11 @@ importers:
         specifier: 0.34.41
         version: 0.34.41
       '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: 10.45.3
+        version: 10.45.3(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       ajv:
         specifier: 8.17.1
         version: 8.17.1
@@ -1688,8 +1688,8 @@ importers:
         specifier: 7.120.2
         version: 7.120.2
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       bullmq:
         specifier: 5.34.8
         version: 5.34.8
@@ -1910,11 +1910,11 @@ importers:
         specifier: 1.2.5
         version: 1.2.5(patch_hash=a401455daa519af0fe686b4f970a02582f9e406c520aad19273a8eeef8f4adf7)(@monaco-editor/react@4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/node@24.10.1)(encoding@0.1.13)(graphql@16.9.0)(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/client':
-        specifier: 10.45.2
-        version: 10.45.2(@trpc/server@10.45.2)
+        specifier: 10.45.3
+        version: 10.45.3(@trpc/server@10.45.3)
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
       '@types/crypto-js':
         specifier: ^4.2.2
         version: 4.2.2
@@ -10114,13 +10114,13 @@ packages:
     resolution: {integrity: sha512-XCuKFP5PS55gnMVu3dty8KPatLqUoy/ZYzDzAGCQ8JNFCkLXzmI7vNHCR+XpbZaMWQK/vQubr7PkYq8g470J/A==}
     engines: {node: '>= 10'}
 
-  '@trpc/client@10.45.2':
-    resolution: {integrity: sha512-ykALM5kYWTLn1zYuUOZ2cPWlVfrXhc18HzBDyRhoPYN0jey4iQHEFSEowfnhg1RvYnrAVjNBgHNeSAXjrDbGwg==}
+  '@trpc/client@10.45.3':
+    resolution: {integrity: sha512-Fkr2pUckEyse4HeAj79FL9OIKGrITRzK4Z1KDB0qxlCwA7sgcAeafY23qzOOKHeJxAi+hTJmJx3k9p2iabY90g==}
     peerDependencies:
-      '@trpc/server': 10.45.2
+      '@trpc/server': 10.45.3
 
-  '@trpc/server@10.45.2':
-    resolution: {integrity: sha512-wOrSThNNE4HUnuhJG6PfDRp4L2009KDVxsd+2VYH8ro6o/7/jwYZ8Uu5j+VaW+mOmc8EHerHzGcdbGNQSAUPgg==}
+  '@trpc/server@10.45.3':
+    resolution: {integrity: sha512-CVZM42FdGwqYQxV7vSRwb//AF8REfV60S/fUnwx7xqCnnSDus0FW/UuAOW4eQJ30RQlOPy4MYU8B3dbTAx85Ew==}
 
   '@ts-morph/common@0.23.0':
     resolution: {integrity: sha512-m7Lllj9n/S6sOkCkRftpM7L24uvmfXQFedlW/4hENcuJH1HHm9u5EgxZb9uVjQSCGrbBWBkOGgcTxNg36r6ywA==}
@@ -19812,8 +19812,8 @@ snapshots:
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -19965,11 +19965,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sso-oidc@3.596.0':
+  '@aws-sdk/client-sso-oidc@3.596.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -20008,6 +20008,7 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
+      - '@aws-sdk/client-sts'
       - aws-crt
 
   '@aws-sdk/client-sso-oidc@3.723.0(@aws-sdk/client-sts@3.723.0)':
@@ -20227,11 +20228,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-sts@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)':
+  '@aws-sdk/client-sts@3.596.0':
     dependencies:
       '@aws-crypto/sha256-browser': 3.0.0
       '@aws-crypto/sha256-js': 3.0.0
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/core': 3.592.0
       '@aws-sdk/credential-provider-node': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/middleware-host-header': 3.577.0
@@ -20270,7 +20271,6 @@ snapshots:
       '@smithy/util-utf8': 3.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
-      - '@aws-sdk/client-sso-oidc'
       - aws-crt
 
   '@aws-sdk/client-sts@3.723.0':
@@ -20502,7 +20502,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-ini@3.596.0(@aws-sdk/client-sso-oidc@3.596.0)(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/credential-provider-env': 3.587.0
       '@aws-sdk/credential-provider-http': 3.596.0
       '@aws-sdk/credential-provider-process': 3.587.0
@@ -20749,7 +20749,7 @@ snapshots:
 
   '@aws-sdk/credential-provider-web-identity@3.587.0(@aws-sdk/client-sts@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sts': 3.596.0(@aws-sdk/client-sso-oidc@3.596.0)
+      '@aws-sdk/client-sts': 3.596.0
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/types': 3.7.2
@@ -21138,7 +21138,7 @@ snapshots:
 
   '@aws-sdk/token-providers@3.587.0(@aws-sdk/client-sso-oidc@3.596.0)':
     dependencies:
-      '@aws-sdk/client-sso-oidc': 3.596.0
+      '@aws-sdk/client-sso-oidc': 3.596.0(@aws-sdk/client-sts@3.596.0)
       '@aws-sdk/types': 3.577.0
       '@smithy/property-provider': 3.1.11
       '@smithy/shared-ini-file-loader': 3.1.12
@@ -31657,11 +31657,11 @@ snapshots:
 
   '@tootallnate/once@2.0.0': {}
 
-  '@trpc/client@10.45.2(@trpc/server@10.45.2)':
+  '@trpc/client@10.45.3(@trpc/server@10.45.3)':
     dependencies:
-      '@trpc/server': 10.45.2
+      '@trpc/server': 10.45.3
 
-  '@trpc/server@10.45.2': {}
+  '@trpc/server@10.45.3': {}
 
   '@ts-morph/common@0.23.0':
     dependencies:
