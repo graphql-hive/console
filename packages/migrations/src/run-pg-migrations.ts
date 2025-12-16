@@ -170,5 +170,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2025.10.16T00-00-00.schema-log-by-commit-ordered'),
       await import('./actions/2025.10.17T00-00-00.project-access-tokens'),
       await import('./actions/2025.11.12T00-00-00.granular-oidc-role-permissions'),
+      await import('./actions/2025.11.25T00-00-00.members-search'),
     ],
   });

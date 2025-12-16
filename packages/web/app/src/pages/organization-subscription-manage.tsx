@@ -33,9 +33,7 @@ const ManageSubscriptionInner_OrganizationFragment = graphql(`
       }
     }
     plan
-    rateLimit {
-      operations
-    }
+    monthlyOperationsLimit
     ...BillingPaymentMethod_OrganizationFragment
   }
 `);
@@ -155,7 +153,7 @@ function Inner(props: {
   );
   const [couponCode, setCouponCode] = useState('');
   const [operationsRateLimit, setOperationsRateLimit] = useState(
-    Math.floor((organization.rateLimit.operations || 1_000_000) / 1_000_000),
+    Math.floor((organization.monthlyOperationsLimit || 1_000_000) / 1_000_000),
   );
 
   const onOperationsRateLimitChange = useCallback(
@@ -178,7 +176,7 @@ function Inner(props: {
   useEffect(() => {
     if (query.data?.billingPlans?.length) {
       if (organization.plan === plan) {
-        setOperationsRateLimit(Math.floor((organization.rateLimit.operations || 0) / 1_000_000));
+        setOperationsRateLimit(Math.floor((organization.monthlyOperationsLimit || 0) / 1_000_000));
       } else {
         const actualPlan = query.data.billingPlans.find(v => v.planType === plan);
 
@@ -187,7 +185,7 @@ function Inner(props: {
         );
       }
     }
-  }, [organization.plan, organization.rateLimit.operations, plan, query.data?.billingPlans]);
+  }, [organization.plan, organization.monthlyOperationsLimit, plan, query.data?.billingPlans]);
 
   const upgrade = useCallback(async () => {
     if (isFetching) {
@@ -392,7 +390,7 @@ function Inner(props: {
                         onClick={updateLimits}
                         disabled={
                           isFetching ||
-                          organization.rateLimit.operations === operationsRateLimit * 1_000_000
+                          organization.monthlyOperationsLimit === operationsRateLimit * 1_000_000
                         }
                       >
                         Update Limits

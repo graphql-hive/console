@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef } from 'react';
 import * as monaco from 'monaco-editor';
 import { initializeMode } from 'monaco-graphql/initializeMode';
 import { useLaboratory } from '@/laboratory/components/laboratory/context';
@@ -114,12 +114,13 @@ export const Editor = forwardRef<
     extraLibs?: string[];
   }
 >((props, ref) => {
+  const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const { introspection } = useLaboratory();
 
   useEffect(() => {
     if (introspection) {
-      initializeMode({
+      const api = initializeMode({
         schemas: [
           {
             introspectionJSON: introspection,
@@ -138,8 +139,12 @@ export const Editor = forwardRef<
               }
             : undefined,
       });
+
+      api.setCompletionSettings({
+        __experimental__fillLeafsOnComplete: true,
+      });
     }
-  }, [introspection, props.uri, props.variablesUri]);
+  }, [introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
     if (props.extraLibs) {
@@ -154,11 +159,11 @@ export const Editor = forwardRef<
 
         monaco.languages.typescript.typescriptDefaults.addExtraLib(
           lib,
-          'file:///hive-lab-globals.d.ts',
+          `file:///hive-lab-globals-${id}.d.ts`,
         );
       }
     }
-  }, [props.extraLibs]);
+  }, []);
 
   useImperativeHandle(
     ref,
@@ -181,6 +186,7 @@ export const Editor = forwardRef<
         onMount={editor => {
           editorRef.current = editor;
         }}
+        loading={null}
         options={{
           ...props.options,
           padding: {
@@ -193,6 +199,7 @@ export const Editor = forwardRef<
           },
           automaticLayout: true,
           tabSize: 2,
+          formatOnPaste: true,
         }}
         defaultPath={props.uri?.toString()}
       />
