@@ -7,6 +7,11 @@ const OrganizationSelector_OrganizationConnectionFragment = graphql(`
     nodes {
       id
       slug
+      oidcIntegration {
+        id
+        oidcUserAccessOnly
+        activeWithCurrentSession
+      }
     }
   }
 `);
@@ -45,11 +50,11 @@ export function OrganizationSelector(props: {
   return (
     <Select
       value={props.currentOrganizationSlug}
-      onValueChange={id => {
+      onValueChange={slug => {
         void router.navigate({
           to: '/$organizationSlug',
           params: {
-            organizationSlug: id,
+            organizationSlug: slug,
           },
         });
       }}

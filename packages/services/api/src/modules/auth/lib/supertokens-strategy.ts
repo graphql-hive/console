@@ -2,7 +2,7 @@ import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
-import { AccessError, HiveError } from '../../../shared/errors';
+import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
@@ -114,7 +114,7 @@ export class SuperTokensCookieBasedSession extends Session {
     }
 
     if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
-      return [];
+      throw new OIDCRequiredError(oidcIntegration.id);
     }
 
     this.logger.debug(
