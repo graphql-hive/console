@@ -333,6 +333,11 @@ export interface Storage {
     _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
   ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
 
+  updateTargetAppDeploymentProtectionSettings(
+    _: Pick<TargetSelector, 'targetId' | 'projectId'> &
+      Partial<TargetSettings['appDeploymentProtection']>,
+  ): Promise<TargetSettings['appDeploymentProtection'] | never>;
+
   countSchemaVersionsOfProject(
     _: ProjectSelector & {
       period: {

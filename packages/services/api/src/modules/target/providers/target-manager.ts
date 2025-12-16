@@ -604,7 +604,93 @@ export class TargetManager {
 
     return target;
   }
+
+  async updateTargetAppDeploymentProtectionConfiguration(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    configuration: GraphQLSchema.AppDeploymentProtectionConfigurationInput;
+  }): Promise<
+    | {
+        ok: true;
+        target: Target;
+      }
+    | {
+        ok: false;
+        error: {
+          message: string;
+          inputErrors: {
+            minDaysInactive?: string;
+            maxTrafficPercentage?: string;
+          };
+        };
+      }
+  > {
+    this.logger.debug(
+      'Updating target app deployment protection settings (target=%o, configuration=%o)',
+      args.target,
+      args.configuration,
+    );
+
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
+    await this.session.assertPerformAction({
+      action: 'target:modifySettings',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      },
+    });
+
+    const validationResult = AppDeploymentProtectionConfigurationModel.safeParse(
+      args.configuration,
+    );
+
+    if (validationResult.success === false) {
+      return {
+        ok: false,
+        error: {
+          message: 'Please check your input.',
+          inputErrors: {
+            minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
+            maxTrafficPercentage:
+              validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
+          },
+        },
+      };
+    }
+
+    await this.storage.updateTargetAppDeploymentProtectionSettings({
+      projectId: selector.projectId,
+      targetId: selector.targetId,
+      isEnabled: args.configuration.isEnabled ?? undefined,
+      minDaysInactive: validationResult.data.minDaysInactive ?? undefined,
+      maxTrafficPercentage: validationResult.data.maxTrafficPercentage ?? undefined,
+    });
+
+    return {
+      ok: true,
+      target: await this.getTargetById({ targetId: selector.targetId }),
+    };
+  }
 }
+
+const AppDeploymentProtectionConfigurationModel = z.object({
+  minDaysInactive: z
+    .number()
+    .min(0, 'Minimum days inactive must be at least 0.')
+    .nullable()
+    .optional(),
+  maxTrafficPercentage: z
+    .number()
+    .min(0, 'Maximum traffic percentage must be at least 0.')
+    .max(100, 'Maximum traffic percentage must be at most 100.')
+    .nullable()
+    .optional(),
+});
 
 const TargetGraphQLEndpointUrlModel = zod
   .string()

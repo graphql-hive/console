@@ -501,12 +501,27 @@ export class AppDeployments {
 
   async retireAppDeployment(args: {
     organizationId: string;
+    projectId: string;
     targetId: string;
     appDeployment: {
       name: string;
       version: string;
     };
-  }) {
+    force?: boolean;
+  }): Promise<
+    | { type: 'success'; appDeployment: AppDeploymentRecord }
+    | {
+        type: 'error';
+        message: string;
+        protectionDetails?: {
+          lastUsed: Date | null;
+          daysSinceLastUsed: number | null;
+          requiredMinDaysInactive: number;
+          currentTrafficPercentage: number | null;
+          maxTrafficPercentage: number;
+        };
+      }
+  > {
     this.logger.debug('retire app deployment (targetId=%s, appName=%s, appVersion=%s)');
 
     if (this.appDeploymentsEnabled === false) {
@@ -567,6 +582,91 @@ export class AppDeployments {
         type: 'error' as const,
         message: 'App deployment is already retired',
       };
+    }
+
+    // Check protection settings if force flag is not set
+    if (args.force !== true) {
+      const targetSettings = await this.storage.getTargetSettings({
+        organizationId: args.organizationId,
+        targetId: args.targetId,
+        projectId: args.projectId,
+      });
+
+      if (targetSettings.appDeploymentProtection.isEnabled) {
+        const protectionConfig = targetSettings.appDeploymentProtection;
+
+        // Get last used timestamp
+        const lastUsedResults = await this.getLastUsedForAppDeployments({
+          appDeploymentIds: [appDeployment.id],
+        });
+        const lastUsedStr =
+          lastUsedResults.find(r => r.appDeploymentId === appDeployment.id)?.lastUsed ?? null;
+        const lastUsed = lastUsedStr ? new Date(lastUsedStr) : null;
+
+        // Calculate days since last used
+        let daysSinceLastUsed: number | null = null;
+        if (lastUsed) {
+          const now = new Date();
+          const diffMs = now.getTime() - lastUsed.getTime();
+          daysSinceLastUsed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        }
+
+        // Get traffic percentage (use 30 days as period)
+        const trafficData = await this.getAppDeploymentTrafficPercentage({
+          targetId: args.targetId,
+          appName: args.appDeployment.name,
+          appVersion: args.appDeployment.version,
+          periodDays: 30,
+        });
+        const trafficPercentage = trafficData?.trafficPercentage ?? null;
+
+        // Check protection rules
+        // If no usage data (lastUsed is null), we allow retirement per requirement
+        // If usage data exists, check both criteria:
+        // 1. Must be inactive for at least minDaysInactive
+        // 2. Traffic must be below maxTrafficPercentage
+
+        let isBlocked = false;
+        let blockReason = '';
+
+        if (lastUsed !== null) {
+          // Check inactivity threshold
+          if (daysSinceLastUsed !== null && daysSinceLastUsed < protectionConfig.minDaysInactive) {
+            isBlocked = true;
+            blockReason = `App deployment was used ${daysSinceLastUsed} days ago, but requires ${protectionConfig.minDaysInactive} days of inactivity`;
+          }
+
+          // Check traffic threshold
+          if (
+            trafficPercentage !== null &&
+            trafficPercentage > protectionConfig.maxTrafficPercentage
+          ) {
+            isBlocked = true;
+            blockReason = `App deployment has ${trafficPercentage.toFixed(2)}% of traffic, but maximum allowed is ${protectionConfig.maxTrafficPercentage}%`;
+          }
+        }
+
+        if (isBlocked) {
+          this.logger.debug(
+            'retire app deployment blocked by protection settings. (targetId=%s, appDeploymentId=%s, reason=%s)',
+            args.targetId,
+            appDeployment.id,
+            blockReason,
+          );
+
+          return {
+            type: 'error' as const,
+            message: `App deployment retirement blocked by protection settings. ${blockReason}. Use --force to override.`,
+            protectionDetails: {
+              lastUsed,
+              daysSinceLastUsed,
+              requiredMinDaysInactive: protectionConfig.minDaysInactive,
+              currentTrafficPercentage: trafficPercentage,
+              maxTrafficPercentage: protectionConfig.maxTrafficPercentage,
+            },
+          };
+        }
+      }
     }
 
     for (const s3 of this.s3) {
@@ -1375,6 +1475,69 @@ export class AppDeployments {
         endCursor: items[items.length - 1]?.cursor ?? '',
         startCursor: items[0]?.cursor ?? '',
       },
+    };
+  }
+
+  async getAppDeploymentTrafficPercentage(args: {
+    targetId: string;
+    appName: string;
+    appVersion: string;
+    periodDays: number;
+  }): Promise<{
+    trafficPercentage: number;
+    totalOperations: number;
+    appDeploymentOperations: number;
+  } | null> {
+    const periodFrom = new Date();
+    periodFrom.setDate(periodFrom.getDate() - args.periodDays);
+    periodFrom.setHours(0, 0, 0, 0);
+
+    const periodTo = new Date();
+
+    const formatClickHouseDate = (date: Date) => {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    };
+
+    const result = await this.clickhouse.query({
+      query: cSql`
+        SELECT
+          SUM(CASE WHEN "client_name" = ${args.appName} AND "client_version" = ${args.appVersion} THEN "total" ELSE 0 END) AS "appDeploymentOps"
+          , SUM("total") AS "totalOps"
+        FROM "operations_daily"
+        WHERE
+          "target" = ${args.targetId}
+          AND "timestamp" >= toDateTime(${formatClickHouseDate(periodFrom)}, 'UTC')
+          AND "timestamp" <= toDateTime(${formatClickHouseDate(periodTo)}, 'UTC')
+      `,
+      queryId: 'get-app-deployment-traffic-percentage',
+      timeout: 20_000,
+    });
+
+    const model = z.array(
+      z.object({
+        appDeploymentOps: z.string().transform(str => parseInt(str, 10)),
+        totalOps: z.string().transform(str => parseInt(str, 10)),
+      }),
+    );
+
+    const parsed = model.parse(result.data);
+
+    if (parsed.length === 0 || parsed[0].totalOps === 0) {
+      return null;
+    }
+
+    const { appDeploymentOps, totalOps } = parsed[0];
+
+    return {
+      trafficPercentage: (appDeploymentOps / totalOps) * 100,
+      totalOperations: totalOps,
+      appDeploymentOperations: appDeploymentOps,
     };
   }
 }

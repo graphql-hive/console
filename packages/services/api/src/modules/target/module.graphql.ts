@@ -41,6 +41,12 @@ export default gql`
       input: UpdateTargetDangerousChangeClassificationInput! @tag(name: "public")
     ): UpdateTargetDangerousChangeClassificationResult! @tag(name: "public")
     """
+    Update the app deployment protection configuration of a target.
+    """
+    updateTargetAppDeploymentProtectionConfiguration(
+      input: UpdateTargetAppDeploymentProtectionConfigurationInput! @tag(name: "public")
+    ): UpdateTargetAppDeploymentProtectionConfigurationResult! @tag(name: "public")
+    """
     Overwrites project's schema composition library.
     Works only for Federation projects with native composition enabled.
     This mutation is temporary and will be removed once no longer needed.
@@ -285,6 +291,10 @@ export default gql`
     """
     conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration!
       @tag(name: "public")
+    """
+    Configuration for app deployment retirement protection.
+    """
+    appDeploymentProtectionConfiguration: AppDeploymentProtectionConfiguration! @tag(name: "public")
     experimental_forcedLegacySchemaComposition: Boolean!
     viewerCanAccessSettings: Boolean!
     viewerCanModifySettings: Boolean!
@@ -331,6 +341,74 @@ export default gql`
     List of app deployment names that are excluded from the breaking change detection.
     """
     excludedAppDeployments: [String!]! @tag(name: "public")
+  }
+
+  """
+  Configuration for app deployment retirement protection.
+  """
+  type AppDeploymentProtectionConfiguration {
+    """
+    Whether app deployment protection is enabled.
+    """
+    isEnabled: Boolean! @tag(name: "public")
+    """
+    Minimum number of days an app deployment must be inactive before it can be retired.
+    """
+    minDaysInactive: Int! @tag(name: "public")
+    """
+    Maximum traffic percentage threshold. App deployments with traffic above this percentage cannot be retired.
+    """
+    maxTrafficPercentage: Float! @tag(name: "public")
+  }
+
+  """
+  Input for updating app deployment protection configuration.
+  Fields not provided (omitted) will retain the previous value.
+  """
+  input AppDeploymentProtectionConfigurationInput {
+    """
+    Enable or disable app deployment protection.
+    """
+    isEnabled: Boolean @tag(name: "public")
+    """
+    Minimum days of inactivity required before retirement (must be >= 0).
+    """
+    minDaysInactive: Int @tag(name: "public")
+    """
+    Maximum traffic percentage allowed for retirement (0-100).
+    """
+    maxTrafficPercentage: Float @tag(name: "public")
+  }
+
+  input UpdateTargetAppDeploymentProtectionConfigurationInput {
+    """
+    The target on which the settings are adjusted.
+    """
+    target: TargetReferenceInput! @tag(name: "public")
+    """
+    Updates to the app deployment protection configuration.
+    """
+    appDeploymentProtectionConfiguration: AppDeploymentProtectionConfigurationInput!
+      @tag(name: "public")
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationResult {
+    ok: UpdateTargetAppDeploymentProtectionConfigurationResultOk @tag(name: "public")
+    error: UpdateTargetAppDeploymentProtectionConfigurationResultError @tag(name: "public")
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationInputErrors {
+    minDaysInactive: String
+    maxTrafficPercentage: String
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationResultError {
+    message: String! @tag(name: "public")
+    inputErrors: UpdateTargetAppDeploymentProtectionConfigurationInputErrors!
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationResultOk {
+    target: Target! @tag(name: "public")
   }
 
   enum BreakingChangeFormulaType {

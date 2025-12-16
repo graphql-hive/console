@@ -135,6 +135,71 @@ const RetireAppDeployment = graphql(`
   }
 `);
 
+const RetireAppDeploymentWithProtectionDetails = graphql(`
+  mutation RetireAppDeploymentWithProtectionDetails($input: RetireAppDeploymentInput!) {
+    retireAppDeployment(input: $input) {
+      error {
+        message
+        protectionDetails {
+          lastUsed
+          daysSinceLastUsed
+          requiredMinDaysInactive
+          currentTrafficPercentage
+          maxTrafficPercentage
+        }
+      }
+
+      ok {
+        retiredAppDeployment {
+          id
+          name
+          version
+          status
+        }
+      }
+    }
+  }
+`);
+
+const UpdateTargetAppDeploymentProtectionConfiguration = graphql(`
+  mutation UpdateTargetAppDeploymentProtectionConfiguration(
+    $input: UpdateTargetAppDeploymentProtectionConfigurationInput!
+  ) {
+    updateTargetAppDeploymentProtectionConfiguration(input: $input) {
+      ok {
+        target {
+          id
+          appDeploymentProtectionConfiguration {
+            isEnabled
+            minDaysInactive
+            maxTrafficPercentage
+          }
+        }
+      }
+      error {
+        message
+        inputErrors {
+          minDaysInactive
+          maxTrafficPercentage
+        }
+      }
+    }
+  }
+`);
+
+const GetTargetAppDeploymentProtectionConfiguration = graphql(`
+  query GetTargetAppDeploymentProtectionConfiguration($selector: TargetSelectorInput!) {
+    target(reference: { bySelector: $selector }) {
+      id
+      appDeploymentProtectionConfiguration {
+        isEnabled
+        minDaysInactive
+        maxTrafficPercentage
+      }
+    }
+  }
+`);
+
 const GetPaginatedPersistedDocuments = graphql(`
   query GetPaginatedPersistedDocuments(
     $targetSelector: TargetSelectorInput!
@@ -4727,4 +4792,330 @@ test('excludedAppDeployments returns empty list when all affected apps are exclu
 
   // When all affected app deployments are excluded, the list should be empty (or no breaking change at all)
   expect(helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0).toBe(0);
+});
+
+test('update app deployment protection configuration', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target } = await createProject();
+
+  // Query initial state
+  let result = await execute({
+    document: GetTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
+    isEnabled: false,
+    minDaysInactive: 30,
+    maxTrafficPercentage: 1.0,
+  });
+
+  // Enable protection with custom settings
+  const updateResult = await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 7,
+          maxTrafficPercentage: 5.0,
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(updateResult.updateTargetAppDeploymentProtectionConfiguration).toEqual({
+    ok: {
+      target: {
+        id: expect.any(String),
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 7,
+          maxTrafficPercentage: 5.0,
+        },
+      },
+    },
+    error: null,
+  });
+
+  // Query updated state
+  result = await execute({
+    document: GetTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
+    isEnabled: true,
+    minDaysInactive: 7,
+    maxTrafficPercentage: 5.0,
+  });
+});
+
+test('retire app deployment succeeds when protection is enabled but no usage data exists', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Enable protection
+  await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 7,
+          maxTrafficPercentage: 1.0,
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Retire should succeed because no usage data = not in use
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(retireAppDeployment).toEqual({
+    error: null,
+    ok: {
+      retiredAppDeployment: {
+        id: expect.any(String),
+        name: 'my-app',
+        status: 'retired',
+        version: '1.0.0',
+      },
+    },
+  });
+});
+
+test('retire app deployment with --force bypasses protection', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  // Enable protection with strict settings
+  await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 365, // Very strict - 1 year
+          maxTrafficPercentage: 0, // No traffic allowed
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'force-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'force-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'hash',
+            body: 'query { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'force-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Report usage to trigger protection
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
+
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'force-app',
+      'x-graphql-client-version': '1.0.0',
+    },
+  });
+
+  await client.collectUsage()(
+    {
+      document: parse(`query { hello }`),
+      schema: buildASTSchema(parse(sdl)),
+      contextValue: { request },
+    },
+    {},
+    'force-app~1.0.0~hash',
+  );
+
+  await waitForOperationsCollected(1);
+
+  // Retire without force should be blocked
+  const blockedResult = await execute({
+    document: RetireAppDeploymentWithProtectionDetails,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'force-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(blockedResult.retireAppDeployment.error).not.toBeNull();
+  expect(blockedResult.retireAppDeployment.error?.message).toContain('blocked');
+  expect(blockedResult.retireAppDeployment.error?.protectionDetails).not.toBeNull();
+
+  // Retire with force should succeed
+  const retireResult = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'force-app',
+        appVersion: '1.0.0',
+        force: true,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(retireResult.retireAppDeployment).toEqual({
+    error: null,
+    ok: {
+      retiredAppDeployment: {
+        id: expect.any(String),
+        name: 'force-app',
+        status: 'retired',
+        version: '1.0.0',
+      },
+    },
+  });
 });
