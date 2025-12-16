@@ -1390,8 +1390,8 @@ importers:
   packages/services/service-common:
     dependencies:
       '@trpc/server':
-        specifier: 10.45.2
-        version: 10.45.2
+        specifier: 10.45.3
+        version: 10.45.3
     devDependencies:
       '@fastify/cors':
         specifier: 9.0.1
@@ -10118,9 +10118,6 @@ packages:
     resolution: {integrity: sha512-Fkr2pUckEyse4HeAj79FL9OIKGrITRzK4Z1KDB0qxlCwA7sgcAeafY23qzOOKHeJxAi+hTJmJx3k9p2iabY90g==}
     peerDependencies:
       '@trpc/server': 10.45.3
-
-  '@trpc/server@10.45.2':
-    resolution: {integrity: sha512-wOrSThNNE4HUnuhJG6PfDRp4L2009KDVxsd+2VYH8ro6o/7/jwYZ8Uu5j+VaW+mOmc8EHerHzGcdbGNQSAUPgg==}
 
   '@trpc/server@10.45.3':
     resolution: {integrity: sha512-CVZM42FdGwqYQxV7vSRwb//AF8REfV60S/fUnwx7xqCnnSDus0FW/UuAOW4eQJ30RQlOPy4MYU8B3dbTAx85Ew==}
@@ -31663,8 +31660,6 @@ snapshots:
   '@trpc/client@10.45.3(@trpc/server@10.45.3)':
     dependencies:
       '@trpc/server': 10.45.3
-
-  '@trpc/server@10.45.2': {}
 
   '@trpc/server@10.45.3': {}
 
