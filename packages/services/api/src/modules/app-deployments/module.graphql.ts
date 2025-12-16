@@ -2,24 +2,24 @@ import { gql } from 'graphql-modules';
 
 export default gql`
   type AppDeployment {
-    id: ID!
-    name: String!
-    version: String!
+    id: ID! @tag(name: "public")
+    name: String! @tag(name: "public")
+    version: String! @tag(name: "public")
     documents(
       first: Int
       after: String
       filter: AppDeploymentDocumentsFilterInput
     ): GraphQLDocumentConnection
     totalDocumentCount: Int!
-    status: AppDeploymentStatus!
+    status: AppDeploymentStatus! @tag(name: "public")
     """
     The timestamp when the app deployment was created.
     """
-    createdAt: DateTime!
+    createdAt: DateTime! @tag(name: "public")
     """
     The last time a GraphQL request that used the app deployment was reported.
     """
-    lastUsed: DateTime
+    lastUsed: DateTime @tag(name: "public")
   }
 
   extend type Organization {
@@ -27,9 +27,9 @@ export default gql`
   }
 
   enum AppDeploymentStatus {
-    pending
-    active
-    retired
+    pending @tag(name: "public")
+    active @tag(name: "public")
+    retired @tag(name: "public")
   }
 
   type GraphQLDocumentConnection {
@@ -53,13 +53,13 @@ export default gql`
   }
 
   type AppDeploymentConnection {
-    pageInfo: PageInfo!
-    edges: [AppDeploymentEdge!]!
+    pageInfo: PageInfo! @tag(name: "public")
+    edges: [AppDeploymentEdge!]! @tag(name: "public")
   }
 
   type AppDeploymentEdge {
-    cursor: String!
-    node: AppDeployment!
+    cursor: String! @tag(name: "public")
+    node: AppDeployment! @tag(name: "public")
   }
 
   input AppDeploymentDocumentsFilterInput {
@@ -77,19 +77,19 @@ export default gql`
     Filter by app deployment name. Case-insensitive partial match.
     Applied with AND semantics to narrow down results.
     """
-    name: String
+    name: String @tag(name: "public")
     """
     Returns deployments that were last used before the given timestamp.
     Useful for identifying stale or inactive deployments that have been used
     at least once but not recently.
     """
-    lastUsedBefore: DateTime
+    lastUsedBefore: DateTime @tag(name: "public")
     """
     Returns deployments that have never been used and were created before
     the given timestamp. Useful for identifying old, unused deployments
     that may be candidates for cleanup.
     """
-    neverUsedAndCreatedBefore: DateTime
+    neverUsedAndCreatedBefore: DateTime @tag(name: "public")
   }
 
   extend type Target {
