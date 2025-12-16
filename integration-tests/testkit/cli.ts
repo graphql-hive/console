@@ -45,6 +45,13 @@ export async function schemaPublish(args: string[]) {
   );
 }
 
+export async function appRetire(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+  return await exec(
+    ['app:retire', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 export async function schemaCheck(args: string[], env?: Record<string, string>) {
   const registryAddress = await getServiceHost('server', 8082);
 

@@ -34,6 +34,10 @@ export default class AppRetire extends Command<typeof AppRetire> {
         ' This can either be a slug following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g "the-guild/graphql-hive/staging")' +
         ' or an UUID (e.g. "a0f4c605-6541-4350-8cfe-b31f21a4bf80").',
     }),
+    force: Flags.boolean({
+      description: 'Force retirement even if protection rules would block it',
+      default: false,
+    }),
   };
 
   async run() {
@@ -79,12 +83,31 @@ export default class AppRetire extends Command<typeof AppRetire> {
           target,
           appName: flags['name'],
           appVersion: flags['version'],
+          force: flags['force'] || undefined,
         },
       },
     });
 
     if (result.retireAppDeployment.error) {
-      throw new APIError(result.retireAppDeployment.error.message);
+      const error = result.retireAppDeployment.error;
+      if (error.protectionDetails) {
+        const details = error.protectionDetails;
+        this.log('\nRetirement blocked by protection rules:');
+        this.log(`  Last used: ${details.lastUsed ?? 'Never'}`);
+        if (details.daysSinceLastUsed !== null && details.daysSinceLastUsed !== undefined) {
+          this.log(`  Days since last used: ${details.daysSinceLastUsed}`);
+        }
+        this.log(`  Required inactive days: ${details.requiredMinDaysInactive}`);
+        if (
+          details.currentTrafficPercentage !== null &&
+          details.currentTrafficPercentage !== undefined
+        ) {
+          this.log(`  Current traffic: ${details.currentTrafficPercentage.toFixed(2)}%`);
+        }
+        this.log(`  Max traffic threshold: ${details.maxTrafficPercentage}%`);
+        this.log('\nUse --force to bypass protection.\n');
+      }
+      throw new APIError(error.message);
     }
 
     if (result.retireAppDeployment.ok) {
@@ -108,6 +131,13 @@ const RetireAppDeploymentMutation = graphql(/* GraphQL */ `
       }
       error {
         message
+        protectionDetails {
+          lastUsed
+          daysSinceLastUsed
+          requiredMinDaysInactive
+          currentTrafficPercentage
+          maxTrafficPercentage
+        }
       }
     }
   }

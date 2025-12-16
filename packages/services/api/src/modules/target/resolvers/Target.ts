@@ -5,6 +5,7 @@ import type { TargetResolvers } from './../../../__generated__/types';
 
 export const Target: Pick<
   TargetResolvers,
+  | 'appDeploymentProtectionConfiguration'
   | 'cleanId'
   | 'conditionalBreakingChangeConfiguration'
   | 'experimental_forcedLegacySchemaComposition'
@@ -130,5 +131,14 @@ export const Target: Pick<
         ),
       ),
     };
+  },
+  appDeploymentProtectionConfiguration: async (target, _args, { injector }) => {
+    const targetSettings = await injector.get(TargetManager).getTargetSettings({
+      organizationId: target.orgId,
+      projectId: target.projectId,
+      targetId: target.id,
+    });
+
+    return targetSettings.appDeploymentProtection;
   },
 };
