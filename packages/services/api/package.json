@@ -38,7 +38,7 @@
     "@sentry/types": "7.120.2",
     "@slack/web-api": "7.10.0",
     "@theguild/federation-composition": "0.21.1",
-    "@trpc/client": "10.45.2",
+    "@trpc/client": "10.45.3",
     "@trpc/server": "10.45.3",
     "@types/bcryptjs": "2.4.6",
     "@types/ioredis-mock": "8.2.5",
