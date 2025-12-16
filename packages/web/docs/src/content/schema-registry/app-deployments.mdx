@@ -342,15 +342,16 @@ hive app:retire \
 
 ## Schema Checks and Affected App Deployments
 
-When you run a schema check that detects breaking changes, Hive automatically identifies which active
-app deployments would be affected by those changes. This helps you understand the real-world impact
-of schema changes before deploying them.
+When you run a schema check that detects breaking changes, Hive automatically identifies which
+active app deployments would be affected by those changes. This helps you understand the real-world
+impact of schema changes before deploying them.
 
 ### How It Works
 
 During a schema check, Hive analyzes the breaking changes and matches them against the persisted
 documents in your active app deployments. Hive identifies all app deployments that have operations
-using any of the affected schema coordinates (e.g., fields like `Query.hello` that are being removed).
+using any of the affected schema coordinates (e.g., fields like `Query.hello` that are being
+removed).
 
 For each affected app deployment, you'll see:
 
