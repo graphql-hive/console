@@ -28,7 +28,6 @@ struct SchemaCoordinatesContext {
     pub used_input_fields: HashSet<String>,
     pub input_values_provided: HashMap<String, usize>,
     pub used_variables: HashSet<String>,
-    pub non_null_variables: HashSet<String>,
     pub variables_with_defaults: HashSet<String>,
     error: Option<Error>,
 }
@@ -48,7 +47,6 @@ pub fn collect_schema_coordinates(
         used_input_fields: HashSet::new(),
         input_values_provided: HashMap::new(),
         used_variables: HashSet::new(),
-        non_null_variables: HashSet::new(),
         variables_with_defaults: HashSet::new(),
         error: None,
     };
@@ -129,10 +127,6 @@ fn collect_input_object_fields(
 
 fn is_builtin_scalar(type_name: &str) -> bool {
     matches!(type_name, "String" | "Int" | "Float" | "Boolean" | "ID")
-}
-
-fn is_non_null_type(t: &Type<String>) -> bool {
-    matches!(t, Type::NonNullType(_))
 }
 
 fn mark_as_used(ctx: &mut SchemaCoordinatesContext, id: &str) {
@@ -335,10 +329,6 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             return;
         }
 
-        if is_non_null_type(&var.var_type) {
-            ctx.non_null_variables.insert(var.name.clone());
-        }
-
         if var.default_value.is_some() {
             ctx.variables_with_defaults.insert(var.name.clone());
         }
@@ -388,10 +378,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
 
             let has_value = match arg_value {
                 Value::Null => false,
-                Value::Variable(var_name) => {
-                    ctx.variables_with_defaults.contains(var_name)
-                        || ctx.non_null_variables.contains(var_name)
-                }
+                Value::Variable(var_name) => ctx.variables_with_defaults.contains(var_name),
                 _ => true,
             };
 
@@ -501,27 +488,14 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                     let coordinate = format!("{}.{}", input_object_def.name, field.name);
 
                     let has_value = match value {
-                        Value::Variable(var_name) => {
-                            ctx.variables_with_defaults.contains(var_name)
-                                || ctx.non_null_variables.contains(var_name)
-                        }
+                        Value::Variable(var_name) => ctx.variables_with_defaults.contains(var_name),
                         _ => value_exists(value),
                     };
 
-                    let should_mark_non_null = has_value
-                        && (is_non_null_type(&field.value_type)
-                            || match value {
-                                Value::Variable(var_name) => {
-                                    ctx.non_null_variables.contains(var_name)
-                                }
-                                _ => true,
-                            });
-
-                    if should_mark_non_null {
+                    ctx.schema_coordinates.insert(coordinate.clone());
+                    if has_value {
                         ctx.schema_coordinates.insert(format!("{coordinate}!"));
                     }
-
-                    mark_as_used(ctx, &coordinate);
 
                     let field_type_name = field.value_type.inner_type();
 
@@ -1042,7 +1016,6 @@ mod tests {
         let expected = vec![
             "Mutation.deleteProject",
             "Mutation.deleteProject.selector",
-            "Mutation.deleteProject.selector!",
             "DeleteProjectPayload.selector",
             "ProjectSelector.organization",
             "ProjectSelector.project",
@@ -1268,9 +1241,7 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
-            "FilterInput.type!",
             "PaginationInput.limit",
-            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1348,7 +1319,6 @@ mod tests {
             "FilterInput.type",
             "FilterInput.type!",
             "PaginationInput.limit",
-            "PaginationInput.limit!",
             "ProjectType.FEDERATION",
         ]
         .into_iter()
@@ -1415,7 +1385,6 @@ mod tests {
         let expected = vec![
             "Query.projectsByTypes",
             "Query.projectsByTypes.types",
-            "Query.projectsByTypes.types!",
             "Project.id",
             "ProjectType.FEDERATION",
             "ProjectType.STITCHING",
@@ -1494,9 +1463,7 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
-            "FilterInput.type!",
             "PaginationInput.limit",
-            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1548,9 +1515,7 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
-            "FilterInput.type!",
             "PaginationInput.limit",
-            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1594,9 +1559,7 @@ mod tests {
             "FilterInput.pagination",
             "FilterInput.pagination!",
             "FilterInput.type",
-            "FilterInput.type!",
             "PaginationInput.limit",
-            "PaginationInput.limit!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1637,9 +1600,7 @@ mod tests {
             "ProjectType.STITCHING",
             "ProjectType.SINGLE",
             "FilterInput.pagination",
-            "FilterInput.pagination!",
             "FilterInput.type",
-            "FilterInput.type!",
         ]
         .into_iter()
         .map(|s| s.to_string())
@@ -1845,6 +1806,7 @@ mod tests {
             "Query.projects.filter",
             "Query.projects.filter!",
             "FilterInput.metadata",
+            "FilterInput.metadata!",
             "Project.name",
             "JSON",
         ]
@@ -2045,7 +2007,6 @@ mod tests {
             "Query.random.a",
             "Query.random.a!",
             "A.b",
-            "A.b!",
             "String",
         ]
         .into_iter()
@@ -2306,16 +2267,10 @@ mod tests {
         .unwrap();
 
         let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
-        let expected = vec![
-            "User.name",
-            "Query.user",
-            "ID",
-            "Query.user.id!",
-            "Query.user.id",
-        ]
-        .into_iter()
-        .map(|s| s.to_string())
-        .collect::<HashSet<String>>();
+        let expected = vec!["User.name", "Query.user", "ID", "Query.user.id"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect::<HashSet<String>>();
 
         let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
         let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
