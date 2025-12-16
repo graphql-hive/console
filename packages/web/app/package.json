@@ -76,7 +76,7 @@
     "@tanstack/zod-adapter": "1.120.5",
     "@theguild/editor": "1.2.5",
     "@trpc/client": "10.45.2",
-    "@trpc/server": "10.45.2",
+    "@trpc/server": "10.45.3",
     "@types/crypto-js": "^4.2.2",
     "@types/dompurify": "3.2.0",
     "@types/js-cookie": "3.0.6",
