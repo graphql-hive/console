@@ -99,8 +99,8 @@ export const Tab = (props: {
     }
 
     return (
-      ('status' in historyItem && historyItem.status < 200) ||
-      ('status' in historyItem && historyItem.status >= 300) ||
+      ('status' in historyItem && historyItem.status! < 200) ||
+      ('status' in historyItem && historyItem.status! >= 300) ||
       ('response' in historyItem && JSON.parse(historyItem.response).errors)
     );
   }, [historyItem]);

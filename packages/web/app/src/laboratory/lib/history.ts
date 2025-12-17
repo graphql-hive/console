@@ -5,9 +5,9 @@ import type { LaboratoryPreflightLog } from '@/laboratory/lib/preflight';
 
 export interface LaboratoryHistoryRequest {
   id: string;
-  status: number;
-  duration: number;
-  size: number;
+  status?: number;
+  duration?: number;
+  size?: number;
   response: string;
   headers: string;
   operation: LaboratoryOperation;

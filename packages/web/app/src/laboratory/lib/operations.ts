@@ -24,6 +24,7 @@ import type {
   LaboratoryPreflightActions,
   LaboratoryPreflightState,
 } from '@/laboratory/lib/preflight';
+import type { LaboratorySettingsActions, LaboratorySettingsState } from '@/laboratory/lib/settings';
 import type { LaboratoryTabsActions, LaboratoryTabsState } from '@/laboratory/lib/tabs';
 
 export interface LaboratoryOperation {
@@ -85,6 +86,7 @@ export const useOperations = (
     tabsApi?: LaboratoryTabsState & LaboratoryTabsActions;
     envApi?: LaboratoryEnvState & LaboratoryEnvActions;
     preflightApi?: LaboratoryPreflightState & LaboratoryPreflightActions;
+    settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
   } & LaboratoryOperationsCallbacks,
 ): LaboratoryOperationsState & LaboratoryOperationsActions => {
   // eslint-disable-next-line react/hook-use-state
@@ -413,6 +415,7 @@ export const useOperations = (
 
       const response = fetch(endpoint, {
         method: 'POST',
+        credentials: props.settingsApi?.settings.fetch.credentials,
         body: JSON.stringify({
           query: activeOperation.query,
           variables,

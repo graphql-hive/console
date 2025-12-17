@@ -73,7 +73,7 @@ export const Preflight = () => {
               value={preflight?.script ?? ''}
               onChange={value => {
                 setPreflight({
-                  ...(preflight ?? { script: '' }),
+                  ...(preflight ?? { script: '', enabled: true }),
                   script: value ?? '',
                 });
               }}

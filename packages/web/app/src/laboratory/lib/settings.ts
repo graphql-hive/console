@@ -1,6 +1,10 @@
 import { useCallback, useState } from 'react';
 
-export type LaboratorySettings = object;
+export type LaboratorySettings = {
+  fetch: {
+    credentials: 'include' | 'omit' | 'same-origin';
+  };
+};
 
 export interface LaboratorySettingsState {
   settings: LaboratorySettings;
@@ -15,7 +19,13 @@ export const useSettings = (props: {
   onSettingsChange?: (settings: LaboratorySettings | null) => void;
 }): LaboratorySettingsState & LaboratorySettingsActions => {
   // eslint-disable-next-line react/hook-use-state
-  const [settings, _setSettings] = useState<LaboratorySettings>(props.defaultSettings ?? {});
+  const [settings, _setSettings] = useState<LaboratorySettings>(
+    props.defaultSettings ?? {
+      fetch: {
+        credentials: 'same-origin',
+      },
+    },
+  );
 
   const setSettings = useCallback(
     (settings: LaboratorySettings) => {

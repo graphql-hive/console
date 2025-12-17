@@ -39,6 +39,10 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
   }, [activeTab, props.historyItem]);
 
   const isError = useMemo(() => {
+    if (!props.historyItem.status) {
+      return true;
+    }
+
     return (
       props.historyItem.status < 200 ||
       props.historyItem.status >= 300 ||
@@ -65,7 +69,9 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
     >
       <HistoryIcon
         className={cn('size-4 text-indigo-400', {
-          'text-green-500': props.historyItem.status >= 200 && props.historyItem.status < 300,
+          'text-green-500':
+            !props.historyItem.status ||
+            (props.historyItem.status >= 200 && props.historyItem.status < 300),
           'text-red-500': isError,
         })}
       />
