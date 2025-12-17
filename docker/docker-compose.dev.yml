@@ -144,7 +144,7 @@ services:
 
   oidc-server-mock:
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
-    mem_limit: 150m
+    mem_limit: 200m
     ports:
       - '7043:80'
     environment:
