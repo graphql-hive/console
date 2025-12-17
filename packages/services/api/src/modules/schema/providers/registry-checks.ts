@@ -11,6 +11,7 @@ import {
   type RegistryServiceUrlChangeSerializableChange,
   type SchemaChangeType,
 } from '@hive/storage';
+import * as Sentry from '@sentry/node';
 import { ProjectType } from '../../../shared/entities';
 import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
 import { OperationsReader } from '../../operations/providers/operations-reader';
@@ -35,6 +36,19 @@ export type ConditionalBreakingChangeDiffConfig = {
   targetIds: string[];
   excludedClientNames: string[] | null;
 };
+
+export type AffectedAppDeployment = {
+  appDeployment: {
+    id: string;
+    name: string;
+    version: string;
+  };
+  affectedOperationsByCoordinate: Record<string, Array<{ hash: string; name: string | null }>>;
+};
+
+export type GetAffectedAppDeployments = (
+  schemaCoordinates: string[],
+) => Promise<AffectedAppDeployment[]>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:
 // https://bit.ly/hive-check-result-data
@@ -426,6 +440,8 @@ export class RegistryChecks {
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    /** Function to fetch affected app deployments. Called with breaking change coordinates after diff is computed. */
+    getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }) {
     let existingSchema: GraphQLSchema | null = null;
     let incomingSchema: GraphQLSchema | null = null;
@@ -566,6 +582,102 @@ export class RegistryChecks {
       );
     } else {
       this.logger.debug('No conditional breaking change settings available');
+    }
+
+    // Check against active app deployments if function is provided
+    if (args.getAffectedAppDeployments) {
+      // Collect all coordinates from breaking changes and initialize affectedAppDeployments to []
+      const breakingCoordinates = new Set<string>();
+      for (const change of inspectorChanges) {
+        if (change.criticality === CriticalityLevel.Breaking) {
+          // Initialize affectedAppDeployments to empty array for all breaking changes
+          (
+            change as {
+              affectedAppDeployments: Array<{
+                id: string;
+                name: string;
+                version: string;
+                affectedOperations: Array<{ hash: string; name: string | null }>;
+              }>;
+            }
+          ).affectedAppDeployments = [];
+
+          const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+          if (coordinate) {
+            breakingCoordinates.add(coordinate);
+          }
+        }
+      }
+
+      if (breakingCoordinates.size > 0) {
+        this.logger.debug(
+          'Checking affected app deployments for %d breaking schema coordinates',
+          breakingCoordinates.size,
+        );
+
+        try {
+          const affectedAppDeployments = await args.getAffectedAppDeployments(
+            Array.from(breakingCoordinates),
+          );
+
+          if (affectedAppDeployments.length > 0) {
+            this.logger.debug(
+              '%d app deployments affected by breaking changes',
+              affectedAppDeployments.length,
+            );
+
+            // Mark changes as unsafe if they affect active app deployments
+            for (const change of inspectorChanges) {
+              if (change.criticality === CriticalityLevel.Breaking) {
+                const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+                if (coordinate) {
+                  // Check if any deployment is affected by this specific coordinate
+                  const deploymentsForCoordinate = affectedAppDeployments.filter(
+                    d => d.affectedOperationsByCoordinate[coordinate]?.length > 0,
+                  );
+
+                  if (deploymentsForCoordinate.length > 0) {
+                    // Override usage-based safety: change is NOT safe if app deployments are affected
+                    change.isSafeBasedOnUsage = false;
+
+                    // Update affected app deployments for this change
+                    (
+                      change as {
+                        affectedAppDeployments: Array<{
+                          id: string;
+                          name: string;
+                          version: string;
+                          affectedOperations: Array<{ hash: string; name: string | null }>;
+                        }>;
+                      }
+                    ).affectedAppDeployments = deploymentsForCoordinate.map(d => ({
+                      id: d.appDeployment.id,
+                      name: d.appDeployment.name,
+                      version: d.appDeployment.version,
+                      affectedOperations: d.affectedOperationsByCoordinate[coordinate],
+                    }));
+                  }
+                }
+              }
+            }
+          } else {
+            this.logger.debug('No app deployments affected by breaking changes');
+          }
+        } catch (error) {
+          this.logger.error(
+            'Failed to check affected app deployments (coordinateCount=%d): %s',
+            breakingCoordinates.size,
+            error instanceof Error ? error.stack : String(error),
+          );
+          Sentry.captureException(error, {
+            tags: { operation: 'app-deployment-check' },
+            extra: { coordinateCount: breakingCoordinates.size },
+          });
+          throw new Error(
+            `Unable to verify schema changes against app deployments. Please retry. If the issue persists, contact support.`,
+          );
+        }
+      }
     }
 
     if (args.includeUrlChanges) {

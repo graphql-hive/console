@@ -241,6 +241,7 @@ export class SchemaVersionHelper {
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: null,
     });
 
     if (diffCheck.status === 'skipped') {

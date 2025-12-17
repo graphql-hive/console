@@ -80,6 +80,22 @@ async function dev(args: string[]) {
   );
 }
 
+export async function appCreate(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:create', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
+export async function appPublish(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:publish', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 export function createCLI(tokens: { readwrite: string; readonly: string }) {
   let publishCount = 0;
 

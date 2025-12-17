@@ -1,7 +1,12 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { ConditionalBreakingChangeDiffConfig, RegistryChecks } from '../registry-checks';
+import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
+import {
+  ConditionalBreakingChangeDiffConfig,
+  GetAffectedAppDeployments,
+  RegistryChecks,
+} from '../registry-checks';
 import type { PublishInput } from '../schema-publisher';
 import type { Organization, Project, SingleSchema, Target } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
@@ -23,6 +28,7 @@ export class SingleModel {
   constructor(
     private checks: RegistryChecks,
     private logger: Logger,
+    private appDeployments: AppDeployments,
   ) {}
 
   @traceFn('Single modern: check', {
@@ -121,6 +127,12 @@ export class SingleModel {
       targetId: selector.targetId,
     });
 
+    const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: selector.targetId,
+        schemaCoordinates,
+      });
+
     const [diffCheck, policyCheck] = await Promise.all([
       this.checks.diff({
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
@@ -130,6 +142,7 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        getAffectedAppDeployments,
       }),
       this.checks.policyCheck({
         selector,
@@ -257,6 +270,12 @@ export class SingleModel {
       targetId: target.id,
     });
 
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = schemaCoordinates =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: target.id,
+        schemaCoordinates,
+      });
+
     const [metadataCheck, diffCheck] = await Promise.all([
       this.checks.metadata(incoming, latestVersion ? latestVersion.schemas[0] : null),
       this.checks.diff({
@@ -267,6 +286,7 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
       }),
     ]);
 
