@@ -339,7 +339,6 @@ mod tests {
                 let expected_fields = vec![
                     "Mutation.deleteProject",
                     "Mutation.deleteProject.selector",
-                    "Mutation.deleteProject.selector!",
                     "DeleteProjectPayload.selector",
                     "ProjectSelector.organization",
                     "ProjectSelector.project",

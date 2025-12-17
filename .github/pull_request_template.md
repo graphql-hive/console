@@ -14,7 +14,7 @@ Please share here a technical description of your changes. This should include w
 ### Checklist
 
 <!---
-We are following the OWASP Secure Coding Practices for develpoing Hive. You can find the complete guide here:
+We are following the OWASP Secure Coding Practices for developing Hive. You can find the complete guide here:
 https://owasp.org/www-pdf-archive/OWASP_SCP_Quick_Reference_Guide_v2.pdf
 
 Please use this checklist to ensure your PR quality before proceeding.

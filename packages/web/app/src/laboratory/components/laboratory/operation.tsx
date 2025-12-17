@@ -67,6 +67,8 @@ import { cn } from '@/laboratory/lib/utils';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 
+const variablesUri = monaco.Uri.file('variables.json');
+
 const Variables = (props: { operation?: LaboratoryOperation | null; isReadOnly?: boolean }) => {
   const { activeOperation, updateActiveOperation } = useLaboratory();
 
@@ -76,8 +78,9 @@ const Variables = (props: { operation?: LaboratoryOperation | null; isReadOnly?:
 
   return (
     <Editor
-      uri={monaco.Uri.file('variables.json')}
+      uri={variablesUri}
       value={operation?.variables ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           variables: value ?? '',
@@ -640,7 +643,7 @@ export const Query = (props: {
       <div className="size-full">
         <Editor
           uri={monaco.Uri.file('operation.graphql')}
-          variablesUri={monaco.Uri.file('variables.json')}
+          variablesUri={variablesUri}
           value={operation?.query ?? ''}
           onChange={value => {
             updateActiveOperation({
