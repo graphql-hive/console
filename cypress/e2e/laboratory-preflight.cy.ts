@@ -23,6 +23,8 @@ const data: { slug: string } = {
 
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
+    window.localStorage.setItem('hive:laboratory:type', 'graphiql');
+
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
       cy.setCookie('sRefreshToken', refreshToken);
       data.slug = slug;
