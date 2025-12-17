@@ -234,6 +234,8 @@ describe('Execution', () => {
     const baseHeaders = {
       accept: 'application/json, multipart/mixed',
     };
+    // Wait for GraphiQL editor to be ready before clicking execute
+    cy.get('.graphiql-query-editor .cm-s-graphiql').should('exist');
     cy.intercept('POST', '**/api/lab/**').as('integrityCheck');
     cy.get(selectors.graphiql.buttonExecute).click();
     cy.wait('@integrityCheck').its('request.headers.accept').should('include', baseHeaders.accept);
