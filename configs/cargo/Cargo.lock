@@ -2575,7 +2575,7 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "2.3.4"
+version = "2.3.5"
 dependencies = [
  "anyhow",
  "apollo-router",
@@ -2609,20 +2609,25 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "async-trait",
  "axum-core 0.5.5",
+ "futures-util",
  "graphql-parser",
  "graphql-tools",
  "md5",
  "mockito",
  "moka",
+ "once_cell",
+ "recloser",
+ "regex-automata",
  "regress",
  "reqwest",
  "reqwest-middleware",
  "reqwest-retry 0.8.0",
+ "retry-policies 0.5.1",
  "serde",
  "serde_json",
  "sha2",
@@ -4622,6 +4627,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
 dependencies = [
  "getrandom 0.3.4",
+]
+
+[[package]]
+name = "recloser"
+version = "1.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40ac0d06281c3556fea72cef9e5372d9ac172335be0d71c3b4f3db900483e0eb"
+dependencies = [
+ "crossbeam-epoch",
+ "pin-project",
 ]
 
 [[package]]
