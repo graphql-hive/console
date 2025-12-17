@@ -17,6 +17,7 @@ import {
   LaboratoryHistory,
   LaboratoryOperation,
   LaboratoryPreflight,
+  LaboratorySettings,
   LaboratoryTab,
 } from '@/laboratory';
 import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
@@ -468,8 +469,16 @@ function useLaboratoryState(props: {
     defaultHistory: getLocalStorageState('history', []),
     defaultTabs: getLocalStorageState('tabs', []),
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
+    defaultSettings: getLocalStorageState('settings', {
+      fetch: {
+        credentials: 'same-origin',
+      },
+    }),
     defaultPreflight: preflight?.preflightScript?.sourceCode
-      ? { script: preflight.preflightScript.sourceCode }
+      ? {
+          script: preflight.preflightScript.sourceCode,
+          enabled: getLocalStorageState('preflightEnabled', true),
+        }
       : null,
     onOperationsChange: (operations: LaboratoryOperation[]) => {
       setLocalStorageState('operations', operations);
@@ -507,8 +516,12 @@ function useLaboratoryState(props: {
     onCollectionCreate: (collection: LaboratoryCollection) => {
       addCollection(collection);
     },
+    onSettingsChange: (settings: LaboratorySettings | null) => {
+      setLocalStorageState('settings', settings);
+    },
     onPreflightChange: (preflight: LaboratoryPreflight | null) => {
-      updatePreflight(preflight ?? { script: '' });
+      updatePreflight(preflight ?? { script: '', enabled: true });
+      setLocalStorageState('preflightEnabled', preflight?.enabled ?? true);
     },
     permissions: {
       preflight: {
