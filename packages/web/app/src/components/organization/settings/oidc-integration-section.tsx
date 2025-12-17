@@ -587,7 +587,8 @@ function CreateOIDCIntegrationForm(props: {
               value={formik.values.scope}
             />
             <FormError>
-              {(formik.touched.scope && formik.errors.scope) || mutation.data?.createOIDCIntegration.error?.details.scope}
+              {(formik.touched.scope && formik.errors.scope) ||
+                mutation.data?.createOIDCIntegration.error?.details.scope}
             </FormError>
           </div>
 

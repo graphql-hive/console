@@ -252,7 +252,7 @@ type OIDCConfig = {
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
-	scope: string[];
+  scope: string[];
 };
 
 const OIDCProfileInfoSchema = zod.object({

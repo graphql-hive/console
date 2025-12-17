@@ -536,6 +536,8 @@ const OAuthAPIUrlModel = zod.string().url('Must be a valid OAuth API url.');
 
 const OIDCScopeModel = zod
   .array(zod.string())
-  .refine(scope => scope.includes('openid') && scope.includes('email'));
+  .refine(scope => scope.includes('openid') && scope.includes('email'), {
+    message: "The 'scope' array must include 'openid' and 'email'.",
+  });
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);
