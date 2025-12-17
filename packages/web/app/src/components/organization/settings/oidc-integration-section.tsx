@@ -225,6 +225,7 @@ const CreateOIDCIntegrationModal_CreateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          scope
         }
       }
     }
@@ -446,6 +447,16 @@ function CreateOIDCIntegrationForm(props: {
       authorizationEndpoint: '',
       clientId: '',
       clientSecret: '',
+      scope: '["openid", "email"]',
+    },
+    validate(values) {
+      try {
+        JSON.parse(values.scope);
+      } catch {
+        return {
+          scope: 'Invalid JSON',
+        };
+      }
     },
     async onSubmit(values) {
       const result = await mutate({
@@ -456,6 +467,7 @@ function CreateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret,
+          scope: JSON.parse(values.scope),
         },
       });
 
@@ -561,6 +573,21 @@ function CreateOIDCIntegrationForm(props: {
             />
             <FormError>
               {mutation.data?.createOIDCIntegration.error?.details.clientSecret}
+            </FormError>
+          </div>
+
+          <div>
+            <Label htmlFor="scope">Scope</Label>
+            <Input
+              placeholder="Scope"
+              id="scope"
+              name="scope"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.scope}
+            />
+            <FormError>
+              {(formik.touched.scope && formik.errors.scope) || mutation.data?.createOIDCIntegration.error?.details.scope}
             </FormError>
           </div>
 
@@ -833,6 +860,7 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     authorizationEndpoint
     clientId
     clientSecretPreview
+    scope
     oidcUserAccessOnly
     defaultMemberRole {
       id
@@ -857,6 +885,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           authorizationEndpoint
           clientId
           clientSecretPreview
+          scope
         }
       }
       error {
@@ -867,6 +896,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          scope
         }
       }
     }
@@ -914,6 +944,16 @@ function UpdateOIDCIntegrationForm(props: {
       authorizationEndpoint: props.oidcIntegration.authorizationEndpoint,
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
+      scope: JSON.stringify(props.oidcIntegration.scope).replaceAll(',', ', '),
+    },
+    validate(values) {
+      try {
+        JSON.parse(values.scope);
+      } catch {
+        return {
+          scope: 'Invalid JSON',
+        };
+      }
     },
     async onSubmit(values) {
       const result = await oidcUpdateMutate({
@@ -924,6 +964,7 @@ function UpdateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret === '' ? undefined : values.clientSecret,
+          scope: JSON.parse(values.scope),
         },
       });
 
@@ -1165,6 +1206,23 @@ function UpdateOIDCIntegrationForm(props: {
                     {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.clientSecret}
                   </FormError>
                 </div>
+
+                <div>
+                  <Label htmlFor="scope">Scope</Label>
+                  <Input
+                    placeholder="Scope"
+                    id="scope"
+                    name="scope"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.scope}
+                  />
+                  <FormError>
+                    {(formik.touched.scope && formik.errors.scope) ||
+                      oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.scope}
+                  </FormError>
+                </div>
+
                 <div className="space-x-2 pb-4 text-right">
                   <Button
                     variant="outline"

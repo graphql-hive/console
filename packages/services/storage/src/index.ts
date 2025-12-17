@@ -3067,6 +3067,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "scope"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3095,6 +3096,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "scope"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3140,7 +3142,8 @@ export async function createStorage(
             "client_secret",
             "token_endpoint",
             "userinfo_endpoint",
-            "authorization_endpoint"
+            "authorization_endpoint",
+            "scope"
           )
           VALUES (
             ${args.organizationId},
@@ -3148,7 +3151,8 @@ export async function createStorage(
             ${args.encryptedClientSecret},
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
-            ${args.authorizationEndpoint}
+            ${args.authorizationEndpoint},
+            ${sql.array(args.scope, 'text')}
           )
           RETURNING
             "id"
@@ -3159,6 +3163,7 @@ export async function createStorage(
             , "token_endpoint"
             , "userinfo_endpoint"
             , "authorization_endpoint"
+            , "scope"
             , "oidc_user_access_only"
             , "default_role_id"
             , "default_assigned_resources"
@@ -3203,6 +3208,7 @@ export async function createStorage(
             /** update existing columns to the old legacy values if not yet stored */
             sql`COALESCE("authorization_endpoint", CONCAT("oauth_api_url", "/authorize"))`
           }
+          , "scope" = ${args.scope ? sql.array(args.scope, 'text') : sql`"scope"`}
           , "oauth_api_url" = NULL
         WHERE
           "id" = ${args.oidcIntegrationId}
@@ -3215,6 +3221,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "scope"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3239,6 +3246,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "scope"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3265,6 +3273,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "oidc_user_access_only"
+          , "scope"
           , "default_role_id"
           , "default_assigned_resources"
         `);
@@ -3304,6 +3313,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "scope"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -4823,6 +4833,7 @@ const OktaIntegrationBaseModel = zod.object({
   linked_organization_id: zod.string(),
   client_id: zod.string(),
   client_secret: zod.string(),
+  scope: zod.array(zod.string()),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
@@ -4859,6 +4870,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       tokenEndpoint: `${rawRecord.oauth_api_url}/token`,
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
+      scope: rawRecord.scope,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
@@ -4873,6 +4885,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     tokenEndpoint: rawRecord.token_endpoint,
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
+    scope: rawRecord.scope,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,

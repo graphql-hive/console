@@ -68,7 +68,7 @@ export const createOIDCSuperTokensProvider = (args: {
           authorizationEndpoint: config.authorizationEndpoint,
           userInfoEndpoint: config.userinfoEndpoint,
           tokenEndpoint: config.tokenEndpoint,
-          scope: ['openid', 'email'],
+          scope: config.scope,
         };
       },
 
@@ -245,13 +245,14 @@ export const createOIDCSuperTokensProvider = (args: {
   },
 });
 
-type OIDCCOnfig = {
+type OIDCConfig = {
   id: string;
   clientId: string;
   clientSecret: string;
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
+	scope: string[];
 };
 
 const OIDCProfileInfoSchema = zod.object({
@@ -274,7 +275,7 @@ const getOIDCIdFromInput = (input: { userContext: any }, logger: FastifyBaseLogg
   return oidcId;
 };
 
-const configCache = new WeakMap<FastifyRequest, OIDCCOnfig | null>();
+const configCache = new WeakMap<FastifyRequest, OIDCConfig | null>();
 
 /**
  * Get cached OIDC config from the supertokens input.
@@ -306,14 +307,7 @@ const fetchOIDCConfig = async (
   internalApi: InternalApiCaller,
   logger: FastifyBaseLogger,
   oidcIntegrationId: string,
-): Promise<{
-  id: string;
-  clientId: string;
-  clientSecret: string;
-  tokenEndpoint: string;
-  userinfoEndpoint: string;
-  authorizationEndpoint: string;
-} | null> => {
+): Promise<OIDCConfig | null> => {
   const result = await internalApi.getOIDCIntegrationById({ oidcIntegrationId });
   if (result === null) {
     logger.error('OIDC integration not found. (oidcId=%s)', oidcIntegrationId);

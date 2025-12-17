@@ -224,6 +224,7 @@ export interface OIDCIntegration {
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
+	scope: string[];
   oidcUserAccessOnly: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
