@@ -497,6 +497,8 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                         ctx.schema_coordinates.insert(format!("{coordinate}!"));
                     }
 
+                    mark_as_used(ctx, &coordinate);
+
                     let field_type_name = field.value_type.inner_type();
 
                     match value {
