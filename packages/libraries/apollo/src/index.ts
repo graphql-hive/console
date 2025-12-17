@@ -245,22 +245,44 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             typeof context.request.http.body.documentId === 'string'
           ) {
             persistedDocumentHash = context.request.http.body.documentId;
-            const document = await hive.experimental__persistedDocuments.resolve(
-              context.request.http.body.documentId,
-            );
+            try {
+              const document = await hive.experimental__persistedDocuments.resolve(
+                context.request.http.body.documentId,
+              );
 
-            if (document) {
-              context.request.query = document;
-            } else {
-              context.request.query = '{__typename}';
-              persistedDocumentError = new GraphQLError('Persisted document not found.', {
-                extensions: {
-                  code: 'PERSISTED_DOCUMENT_NOT_FOUND',
-                  http: {
-                    status: 400,
+              if (document) {
+                context.request.query = document;
+              } else {
+                // Document not found - this is also a client error (400)
+                context.request.query = '{__typename}';
+                persistedDocumentError = new GraphQLError('Persisted document not found.', {
+                  extensions: {
+                    code: 'PERSISTED_DOCUMENT_NOT_FOUND',
+                    http: {
+                      status: 400,
+                    },
                   },
-                },
-              });
+                });
+              }
+            } catch (error: any) {
+              // Check if this is a client error (400-range status) - preserve the error
+              if (error?.status >= 400 && error?.status < 500) {
+                context.request.query = '{__typename}';
+                // Use the original error's extensions if available, otherwise create basic ones
+                const extensions = {
+                  ...error?.extensions,
+                  code: error?.code || 'CLIENT_ERROR',
+                  http: {
+                    status: error?.status || 400,
+                  },
+                };
+                persistedDocumentError = new GraphQLError(error.message || 'Client error.', {
+                  extensions,
+                });
+              } else {
+                // Re-throw server errors (500+ status) - these should remain as server errors
+                throw error;
+              }
             }
           } else if (
             false ===
