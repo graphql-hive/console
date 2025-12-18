@@ -2617,6 +2617,7 @@ dependencies = [
  "futures-util",
  "graphql-parser",
  "graphql-tools",
+ "lazy_static",
  "md5",
  "mockito",
  "moka",

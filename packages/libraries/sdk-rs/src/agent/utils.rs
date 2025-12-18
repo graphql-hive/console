@@ -58,6 +58,7 @@ pub fn collect_schema_coordinates(
     if let Some(error) = ctx.error {
         Err(error)
     } else {
+        let mut input_object_fields_collector = InputObjectFieldCollector::default();
         for type_name in ctx.used_input_fields {
             if is_builtin_scalar(&type_name) {
                 ctx.schema_coordinates.insert(type_name);
@@ -67,7 +68,7 @@ pub fn collect_schema_coordinates(
                         ctx.schema_coordinates.insert(scalar_def.name.clone());
                     }
                     TypeDefinition::InputObject(input_type) => {
-                        collect_input_object_fields(
+                        input_object_fields_collector.collect(
                             schema,
                             input_type,
                             &mut ctx.schema_coordinates,
@@ -92,35 +93,47 @@ pub fn collect_schema_coordinates(
     }
 }
 
-fn collect_input_object_fields(
-    schema: &SchemaDocument<'static, String>,
-    input_type: &InputObjectType<'static, String>,
-    coordinates: &mut HashSet<String>,
-) {
-    for field in &input_type.fields {
-        let field_coordinate = format!("{}.{}", input_type.name, field.name);
-        coordinates.insert(field_coordinate);
+#[derive(Default)]
+struct InputObjectFieldCollector<'a> {
+    collected: HashSet<&'a str>,
+}
 
-        let field_type_name = field.value_type.inner_type();
+impl<'a> InputObjectFieldCollector<'a> {
+    fn collect(
+        &mut self,
+        schema: &'a SchemaDocument<'static, String>,
+        input_type: &'a InputObjectType<'static, String>,
+        coordinates: &mut HashSet<String>,
+    ) {
+        if self.collected.contains(&input_type.name.as_str()) {
+            return;
+        }
+        self.collected.insert(input_type.name.as_str());
+        for field in &input_type.fields {
+            let field_coordinate = format!("{}.{}", input_type.name, field.name);
+            coordinates.insert(field_coordinate);
 
-        if let Some(field_type_def) = schema.type_by_name(field_type_name) {
-            match field_type_def {
-                TypeDefinition::Scalar(scalar_def) => {
-                    coordinates.insert(scalar_def.name.clone());
-                }
-                TypeDefinition::InputObject(nested_input_type) => {
-                    collect_input_object_fields(schema, nested_input_type, coordinates);
-                }
-                TypeDefinition::Enum(enum_type) => {
-                    for value in &enum_type.values {
-                        coordinates.insert(format!("{}.{}", enum_type.name, value.name));
+            let field_type_name = field.value_type.inner_type();
+
+            if let Some(field_type_def) = schema.type_by_name(field_type_name) {
+                match field_type_def {
+                    TypeDefinition::Scalar(scalar_def) => {
+                        coordinates.insert(scalar_def.name.clone());
                     }
+                    TypeDefinition::InputObject(nested_input_type) => {
+                        self.collect(schema, nested_input_type, coordinates);
+                    }
+                    TypeDefinition::Enum(enum_type) => {
+                        for value in &enum_type.values {
+                            coordinates.insert(format!("{}.{}", enum_type.name, value.name));
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
+            } else if is_builtin_scalar(field_type_name) {
+                // Handle built-in scalars
+                coordinates.insert(field_type_name.to_string());
             }
-        } else if is_builtin_scalar(field_type_name) {
-            // Handle built-in scalars
-            coordinates.insert(field_type_name.to_string());
         }
     }
 }
@@ -915,6 +928,8 @@ mod tests {
 
     use graphql_parser::parse_query;
     use graphql_parser::parse_schema;
+
+    use crate::agent::utils::OperationProcessor;
 
     use super::collect_schema_coordinates;
 
@@ -2313,6 +2328,117 @@ mod tests {
             "Query.user.id!",
             "Query.user.id",
             "Query.user.name",
+            "String",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn recursive_fragments() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            user(id: ID!): User
+        }
+        type User {
+            id: ID!
+            friends: [User!]!
+        }
+        ",
+        )
+        .unwrap();
+        let query = "
+        query UserQuery($id: ID!) {
+            user(id: $id) {
+                ...UserFragment
+            }
+        }
+        fragment UserFragment on User {
+            id
+            friends {
+                ...UserFragment
+            }
+        }
+        ";
+        let processor = OperationProcessor::new();
+        let result = processor
+            .process(query, &schema)
+            .expect("Failed to process operation")
+            .expect("Operation not found");
+
+        let expected = vec![
+            "Query.user",
+            "Query.user.id",
+            "User.id",
+            "User.friends",
+            "ID",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let schema_coordinates =
+            HashSet::from_iter(result.coordinates.iter().map(|s| s.to_string()));
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
+
+    #[test]
+    fn recursive_input_types() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            node(id: ID!): Node
+        }
+
+        type Mutation {
+            createNode(input: NodeInput!): Node
+        }
+        input NodeInput {
+            name: String!
+            parent: NodeInput
+        }
+        type Node {
+            id: ID!
+            name: String!
+            parent: Node
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        mutation CreateNode($input: NodeInput!) {
+          createNode(input: $input) {
+            id
+            name
+          }
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Mutation.createNode",
+            "Mutation.createNode.input",
+            "Node.id",
+            "Node.name",
+            "NodeInput.name",
+            "NodeInput.parent",
+            "ID",
             "String",
         ]
         .into_iter()
