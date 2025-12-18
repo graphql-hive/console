@@ -8,12 +8,12 @@ import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DiffEditor } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { DotFilledIcon, GearIcon, MagicWandIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
-import { SchemaEditor } from '@theguild/editor';
 import { prettier, schemaTitle } from './util';
 
 export type Service =
@@ -376,6 +376,13 @@ export function ProposalEditor(props: {
             </div>
           </div>
           {changedServices.map((service, idx) => {
+            const existing = props.existingServices.find(
+              s =>
+                (s.__typename === 'CompositeSchema' &&
+                  service.__typename === 'CompositeSchema' &&
+                  s.service === service.service) ||
+                (s.__typename === 'SingleSchema' && service.__typename === 'SingleSchema'),
+            );
             return (
               <TabsContent
                 value={`${idx}`}
@@ -386,11 +393,11 @@ export function ProposalEditor(props: {
                 }
                 className="relative mt-0 py-0"
               >
-                <SchemaEditor
-                  theme="vs-dark"
-                  height={400}
-                  className="border"
-                  schema={service.source ?? ''}
+                <DiffEditor
+                  before={existing?.source ?? ''}
+                  after={service.source ?? ''}
+                  editable
+                  lineNumbers
                   onMount={setEditor}
                   onChange={setActiveTabSource}
                 />
