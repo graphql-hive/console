@@ -201,6 +201,7 @@ jobs:
         if:
           steps.sdk-crate.outputs.crate_publish == 'true' ||
           steps.plugin-crate.outputs.crate_publish == 'true'
+        continue-on-error: true
         run: |
           cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
           cargo publish --allow-dirty --no-verify
