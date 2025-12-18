@@ -12,12 +12,22 @@ export const retireAppDeployment: NonNullable<MutationResolvers['retireAppDeploy
       name: input.appName,
       version: input.appVersion,
     },
+    force: input.force ?? undefined,
   });
 
   if (result.type === 'error') {
     return {
       error: {
         message: result.message,
+        protectionDetails: result.protectionDetails
+          ? {
+              lastUsed: result.protectionDetails.lastUsed?.toISOString() ?? null,
+              daysSinceLastUsed: result.protectionDetails.daysSinceLastUsed,
+              requiredMinDaysInactive: result.protectionDetails.requiredMinDaysInactive,
+              currentTrafficPercentage: result.protectionDetails.currentTrafficPercentage,
+              maxTrafficPercentage: result.protectionDetails.maxTrafficPercentage,
+            }
+          : null,
       },
       ok: null,
     };

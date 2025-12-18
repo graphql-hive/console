@@ -382,6 +382,11 @@ export interface TargetSettings {
     excludedClients: string[];
   };
   failDiffOnDangerousChange: boolean;
+  appDeploymentProtection: {
+    isEnabled: boolean;
+    minDaysInactive: number;
+    maxTrafficPercentage: number;
+  };
 }
 
 export interface ComposeAndValidateResult {
