@@ -127,7 +127,11 @@ export function EcosystemIllustration(props: { className?: string }) {
           >
             <div className="flex flex-col items-center gap-2">
               <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
-              <span className="font-medium text-green-100">Hive Gateway</span>
+              <span className="text-center font-medium text-green-100">
+                Hive Gateway
+                <br />
+                <span className="text-sm text-green-200">(JavaScript)</span>
+              </span>
             </div>
             <div className="w-px bg-green-700" />
             <div className="flex flex-col items-center gap-2">
@@ -135,7 +139,7 @@ export function EcosystemIllustration(props: { className?: string }) {
               <span className="text-center font-medium text-green-100">
                 Hive Router
                 <br />
-                (Rust)
+                <span className="text-sm text-green-200">(Rust)</span>
               </span>
             </div>
           </Node>
