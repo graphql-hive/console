@@ -2413,4 +2413,51 @@ mod tests {
         assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
         assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
     }
+
+    #[test]
+    fn recursive_null_input() {
+        let schema = parse_schema::<String>(
+            "
+        type Query {
+            someField(input: RecursiveInput!): SomeType
+        }
+        input RecursiveInput {
+            field: String
+            nested: RecursiveInput
+        }
+        type SomeType {
+            id: ID!
+        }
+        ",
+        )
+        .unwrap();
+        let document = parse_query::<String>(
+            "
+        query MyQuery {
+            someField(input: { nested: null }) { id }
+        }
+            ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
+        let expected = vec![
+            "Query.someField",
+            "Query.someField.input",
+            "SomeType.id",
+            "RecursiveInput.field",
+            "RecursiveInput.nested",
+            "String",
+            "ID",
+        ]
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect::<HashSet<String>>();
+
+        let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
+        let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
+
+        assert_eq!(extra.len(), 0, "Extra: {:?}", extra);
+        assert_eq!(missing.len(), 0, "Missing: {:?}", missing);
+    }
 }
