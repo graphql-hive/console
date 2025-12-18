@@ -1,0 +1,132 @@
+import { buildSchema } from 'graphql';
+import { useQuery } from 'urql';
+import { ProposalOverview_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
+import { SchemaDiff } from '@/components/target/proposals/schema-diff/schema-diff';
+import { Spinner } from '@/components/ui/spinner';
+import { FragmentType, graphql, useFragment } from '@/gql';
+import { Change } from '@graphql-inspector/core';
+import { errors, patchSchema } from '@graphql-inspector/patch';
+
+// @todo compose the changes subgraphs instead of modifying the supergraph...
+const ProposalSupergraphChangesQuery = graphql(/* GraphQL  */ `
+  query ProposalSupergraphChangesQuery($id: ID!) {
+    schemaProposal(input: { id: $id }) {
+      id
+      checks(after: null, input: { latestPerService: true }) {
+        edges {
+          __typename
+          node {
+            id
+            serviceName
+            hasSchemaChanges
+            schemaChanges {
+              edges {
+                node {
+                  __typename
+                  ...ProposalOverview_ChangeFragment
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const ProposalSupergraphLatestQuery = graphql(/* GraphQL */ `
+  query ProposalSupergraphLatestQuery($reference: TargetReferenceInput!) {
+    latestValidVersion(target: $reference) {
+      id
+      supergraph
+    }
+  }
+`);
+
+export function TargetProposalSupergraphPage(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  proposalId: string;
+}) {
+  const [query] = useQuery({
+    query: ProposalSupergraphChangesQuery,
+    variables: {
+      id: props.proposalId,
+    },
+    requestPolicy: 'cache-and-network',
+  });
+  const [latestQuery] = useQuery({
+    query: ProposalSupergraphLatestQuery,
+    variables: {
+      reference: {
+        bySelector: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+        },
+      },
+    },
+  });
+
+  // @todo use pagination to collect all
+  const allChanges: (FragmentType<typeof ProposalOverview_ChangeFragment> | null | undefined)[] =
+    [];
+  query?.data?.schemaProposal?.checks?.edges?.map(({ node: { schemaChanges } }) => {
+    if (schemaChanges) {
+      const changes = schemaChanges.edges.map(edge => edge.node);
+      allChanges.push(...changes);
+    }
+  });
+
+  return (
+    <div className="w-full">
+      {query.fetching || (latestQuery.fetching && <Spinner />)}
+      <SupergraphDiff
+        baseSchemaSDL={latestQuery.data?.latestValidVersion?.supergraph ?? ''}
+        changes={allChanges}
+      />
+    </div>
+  );
+}
+
+function SupergraphDiff(props: {
+  baseSchemaSDL: string;
+  changes: (FragmentType<typeof ProposalOverview_ChangeFragment> | null | undefined)[] | null;
+}) {
+  if (props.baseSchemaSDL.length === 0) {
+    return null;
+  }
+  try {
+    const before = buildSchema(props.baseSchemaSDL, { assumeValid: true, assumeValidSDL: true });
+
+    const changes: Change<any>[] = [];
+    for (const change of props.changes ?? []) {
+      // @todo calling inside a loop can cause errors... fix.
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const c = useFragment(ProposalOverview_ChangeFragment, change);
+      if (c) {
+        changes.push({
+          criticality: {
+            // isSafeBasedOnUsage: ,
+            // reason: ,
+            level: c.severityLevel as any,
+          },
+          message: c.message,
+          meta: c.meta,
+          type: (c.meta && toUpperSnakeCase(c.meta?.__typename)) ?? '', // convert to upper snake
+          path: c.path?.join('.'),
+        });
+      }
+    }
+    const after = patchSchema(before, changes, { onError: errors.looseErrorHandler });
+    return <SchemaDiff before={before} after={after} annotations={() => null} />;
+  } catch (e: unknown) {
+    return (
+      <>
+        <div className="text-lg">Invalid SDL</div>
+        <div>{e instanceof Error ? e.message : String(e)}</div>
+      </>
+    );
+  }
+}

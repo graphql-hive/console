@@ -174,9 +174,11 @@ export class SchemaVersionHelper {
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
-      const changes = await this.storage.getSchemaChangesForVersion({
-        versionId: schemaVersion.id,
-      });
+      const changes: null | Array<SchemaChangeType> = await this.storage.getSchemaChangesForVersion(
+        {
+          versionId: schemaVersion.id,
+        },
+      );
 
       const safeChanges: Array<SchemaChangeType> = [];
       const breakingChanges: Array<SchemaChangeType> = [];
@@ -241,6 +243,7 @@ export class SchemaVersionHelper {
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
+      filterNestedChanges: true,
     });
 
     if (diffCheck.status === 'skipped') {

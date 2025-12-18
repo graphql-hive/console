@@ -98,7 +98,7 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
   }
 `);
 
-const ChangesBlock_SchemaChangeFragment = graphql(`
+export const ChangesBlock_SchemaChangeFragment = graphql(`
   fragment ChangesBlock_SchemaChangeFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
@@ -440,7 +440,7 @@ function SchemaChangeApproval(props: {
   );
 }
 
-const CompositionErrorsSection_SchemaErrorConnection = graphql(`
+export const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
     edges {
       node {

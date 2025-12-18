@@ -78,6 +78,7 @@ export class CompositeModel {
             existingSdl: contract.latestValidVersion?.compositeSchemaSdl ?? null,
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
             failDiffOnDangerousChange: args.failDiffOnDangerousChange,
+            filterNestedChanges: true,
           }),
         };
       }),
@@ -103,6 +104,7 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
+    filterNestedChanges,
   }: {
     input: {
       sdl: string;
@@ -136,6 +138,7 @@ export class CompositeModel {
         approvedChanges: Map<string, SchemaChangeType> | null;
       }
     > | null;
+    filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
     const incoming: PushedCompositeSchema = {
       kind: 'composite',
@@ -228,6 +231,7 @@ export class CompositeModel {
           compositionCheck.result?.fullSchemaSdl ?? compositionCheck.reason?.fullSchemaSdl ?? null,
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange,
+        filterNestedChanges,
       }),
       this.checks.policyCheck({
         selector,
@@ -487,6 +491,7 @@ export class CompositeModel {
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
       failDiffOnDangerousChange,
+      filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
     });
 
     const contractChecks = await this.getContractChecks({
@@ -652,6 +657,7 @@ export class CompositeModel {
       existingSdl: previousVersionSdl,
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
       failDiffOnDangerousChange,
+      filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
     });
 
     const contractChecks = await this.getContractChecks({

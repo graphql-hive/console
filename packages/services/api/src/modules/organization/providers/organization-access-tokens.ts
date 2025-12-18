@@ -24,12 +24,14 @@ import {
   resourceLevelToResourceLevelType,
 } from '../../auth/resolvers/Permission';
 import { OTEL_TRACING_ENABLED } from '../../operations/providers/traces';
+import { SCHEMA_PROPOSALS_ENABLED } from '../../proposals/providers/schema-proposals-enabled-token';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import * as OrganizationAccessKey from '../lib/organization-access-key';
 import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
+import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
 import { PermissionGroup, PermissionRecord } from '../lib/permissions';
 import {
   intersectResourceAssignments,
@@ -156,6 +158,7 @@ export class OrganizationAccessTokens {
     logger: Logger,
     @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
+    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: boolean,
   ) {
     this.logger = logger.child({
       source: 'OrganizationAccessTokens',
@@ -896,10 +899,13 @@ export class OrganizationAccessTokens {
     const isAppDeploymentsEnabled =
       organization.featureFlags.appDeployments || this.appDeploymentsEnabled;
     const isOTELTracingEnabled = organization.featureFlags.otelTracing || this.otelTracingEnabled;
+    const isSchemaProposalsEnabled =
+      organization.featureFlags.schemaProposals || this.schemaProposalsEnabled;
 
     return (id: Permission) =>
       (!isAppDeploymentsEnabled && id.startsWith('appDeployment:')) ||
-      (!isOTELTracingEnabled && id.startsWith('traces:'))
+      (!isOTELTracingEnabled && id.startsWith('traces:')) ||
+      (!isSchemaProposalsEnabled && id.startsWith('schemaProposal:'))
         ? false
         : true;
   }
@@ -910,6 +916,24 @@ export class OrganizationAccessTokens {
     const filter = this.createFeatureFlagPermissionFilter(organization);
 
     return OrganizationAccessTokensPermissions.permissionGroups
+      .map(group => ({
+        ...group,
+        permissions: group.permissions
+          .filter(permission => filter(permission.id))
+          .map(permission => ({
+            ...permission,
+            isAssignableByViewer: true,
+          })),
+      }))
+      .filter(group => group.permissions.length !== 0);
+  }
+
+  async getAvailableMemberPermissionGroups(
+    organization: Organization,
+  ): Promise<Array<PermissionGroup>> {
+    const filter = this.createFeatureFlagPermissionFilter(organization);
+
+    return OrganizationMemberPermissions.permissionGroups
       .map(group => ({
         ...group,
         permissions: group.permissions
