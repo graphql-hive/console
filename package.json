@@ -52,6 +52,7 @@
     "test:e2e:local": "CYPRESS_BASE_URL=http://localhost:3000 RUN_AGAINST_LOCAL_SERVICES=1 cypress open --browser chrome",
     "test:e2e:open": "CYPRESS_BASE_URL=$HIVE_APP_BASE_URL cypress open",
     "test:integration": "cd integration-tests && pnpm test:integration",
+    "test:integration:apollo-router": "cd integration-tests && pnpm test:integration:apollo-router",
     "typecheck": "pnpm run -r --filter '!hive' typecheck",
     "upload-sourcemaps": "./scripts/upload-sourcemaps.sh",
     "workspace": "pnpm run --filter $1 $2"
@@ -80,7 +81,7 @@
     "@sentry/cli": "2.40.0",
     "@swc/core": "1.13.5",
     "@theguild/eslint-config": "0.12.1",
-    "@theguild/federation-composition": "0.21.0",
+    "@theguild/federation-composition": "0.21.1",
     "@theguild/prettier-config": "2.0.7",
     "@types/node": "22.10.5",
     "bob-the-bundler": "7.0.1",

@@ -335,7 +335,7 @@ const LaboratoryContent = () => {
                 >
                   Preflight Script
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
@@ -349,7 +349,7 @@ const LaboratoryContent = () => {
                   }}
                 >
                   Settings
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
             <TooltipContent side="right">Settings</TooltipContent>
@@ -436,6 +436,7 @@ export const Laboratory = (
     ...props,
     envApi,
   });
+
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
   const endpointApi = useEndpoint(props);
@@ -443,14 +444,17 @@ export const Laboratory = (
     ...props,
     tabsApi,
   });
+
   const operationsApi = useOperations({
     ...props,
     collectionsApi,
     tabsApi,
     envApi,
     preflightApi,
+    settingsApi,
     checkPermissions,
   });
+
   const historyApi = useHistory(props);
 
   const [isAddCollectionDialogOpen, setIsAddCollectionDialogOpen] = useState(false);
@@ -549,16 +553,19 @@ export const Laboratory = (
 
   const goToFullScreen = useCallback(() => {
     setIsFullScreen(true);
-    void containerRef.current?.requestFullscreen();
   }, []);
 
   const exitFullScreen = useCallback(() => {
     setIsFullScreen(false);
-    void document.exitFullscreen();
   }, []);
 
   return (
-    <div className="hive-laboratory size-full" ref={containerRef}>
+    <div
+      className={cn('hive-laboratory bg-background size-full', {
+        'fixed inset-0 z-50': isFullScreen,
+      })}
+      ref={containerRef}
+    >
       <Toaster richColors closeButton position="top-right" />
       <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">

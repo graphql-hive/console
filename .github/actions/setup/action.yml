@@ -34,7 +34,7 @@ runs:
         if [ ${{ inputs.installDependencies }} = true ]; then
           echo "cache=pnpm" >> $GITHUB_OUTPUT
         else
-          echo "cache=" >> "$GITHUB_ENV"
+          echo "cache=" >> $GITHUB_OUTPUT
         fi
 
     - name: install pnpm

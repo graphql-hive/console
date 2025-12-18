@@ -99,8 +99,8 @@ export const Tab = (props: {
     }
 
     return (
-      ('status' in historyItem && historyItem.status < 200) ||
-      ('status' in historyItem && historyItem.status >= 300) ||
+      ('status' in historyItem && historyItem.status! < 200) ||
+      ('status' in historyItem && historyItem.status! >= 300) ||
       ('response' in historyItem && JSON.parse(historyItem.response).errors)
     );
   }, [historyItem]);
@@ -235,7 +235,7 @@ export const Tab = (props: {
           >
             <div
               className={cn(
-                'text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 transition-all',
+                'text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
                 props.activeTab?.id === props.item.id && 'border-primary bg-card text-foreground',
               )}
               onClick={() => {

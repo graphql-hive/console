@@ -396,9 +396,7 @@ const TargetExplorerUnusedSchemaPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
       slug
     }
     hasCollectedOperations(
@@ -444,7 +442,7 @@ function ExplorerUnusedSchemaPageContent(props: {
 
   return (
     <UnusedSchemaExplorer
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       hasCollectedOperations={hasCollectedOperations}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}

@@ -8,6 +8,8 @@ import {
   HistoryIcon,
   MoreHorizontalIcon,
   PlayIcon,
+  PowerIcon,
+  PowerOffIcon,
   SquarePenIcon,
 } from 'lucide-react';
 import { compressToEncodedURIComponent } from 'lz-string';
@@ -17,7 +19,6 @@ import { z } from 'zod';
 import { Builder } from '@/laboratory/components/laboratory/builder';
 import { useLaboratory } from '@/laboratory/components/laboratory/context';
 import { Editor } from '@/laboratory/components/laboratory/editor';
-import { Tabs } from '@/laboratory/components/tabs';
 import { Badge } from '@/laboratory/components/ui/badge';
 import { Button } from '@/laboratory/components/ui/button';
 import {
@@ -56,6 +57,7 @@ import {
   SelectValue,
 } from '@/laboratory/components/ui/select';
 import { Spinner } from '@/laboratory/components/ui/spinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
 import { Toggle } from '@/laboratory/components/ui/toggle';
 import type {
   LaboratoryHistory,
@@ -67,6 +69,8 @@ import { cn } from '@/laboratory/lib/utils';
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
 import { useForm } from '@tanstack/react-form';
 
+const variablesUri = monaco.Uri.file('variables.json');
+
 const Variables = (props: { operation?: LaboratoryOperation | null; isReadOnly?: boolean }) => {
   const { activeOperation, updateActiveOperation } = useLaboratory();
 
@@ -76,8 +80,9 @@ const Variables = (props: { operation?: LaboratoryOperation | null; isReadOnly?:
 
   return (
     <Editor
-      uri={monaco.Uri.file('variables.json')}
+      uri={variablesUri}
       value={operation?.variables ?? ''}
+      language="json"
       onChange={value => {
         updateActiveOperation({
           variables: value ?? '',
@@ -263,6 +268,10 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
       return false;
     }
 
+    if (!historyItem.status) {
+      return true;
+    }
+
     return (
       historyItem.status < 200 ||
       historyItem.status >= 300 ||
@@ -271,51 +280,65 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
   }, [historyItem]);
 
   return (
-    <Tabs
-      suffix={
-        historyItem ? (
-          <div className="ml-auto flex items-center gap-2 pr-3">
-            <Badge
-              className={cn('bg-green-400/10 text-green-500', {
-                'bg-red-400/10 text-red-500': isError,
-              })}
-            >
-              {!isError ? (
-                <CircleCheckIcon className="size-3" />
-              ) : (
-                <CircleXIcon className="size-3" />
-              )}
-              <span>{(historyItem as LaboratoryHistoryRequest).status}</span>
-            </Badge>
-            <Badge variant="outline" className="bg-card">
-              <ClockIcon className="size-3" />
-              <span>
-                {Math.round((historyItem as LaboratoryHistoryRequest).duration)}
-                ms
-              </span>
-            </Badge>
-            <Badge variant="outline" className="bg-card">
-              <FileTextIcon className="size-3" />
-              <span>
-                {Math.round((historyItem as LaboratoryHistoryRequest).size / 1024)}
-                KB
-              </span>
-            </Badge>
+    <Tabs defaultValue="response" className="grid size-full grid-rows-[auto_1fr]">
+      <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
+        <TabsTrigger value="response" className="grow-0 rounded-sm">
+          Response
+        </TabsTrigger>
+        <TabsTrigger value="headers" className="grow-0 rounded-sm">
+          Headers
+        </TabsTrigger>
+        {historyItem?.preflightLogs && historyItem?.preflightLogs.length > 0 && (
+          <TabsTrigger value="preflight" className="grow-0 rounded-sm">
+            Preflight
+          </TabsTrigger>
+        )}
+        {historyItem ? (
+          <div className="ml-auto flex items-center gap-2">
+            {historyItem?.status && (
+              <Badge
+                className={cn('bg-green-400/10 text-green-500', {
+                  'bg-red-400/10 text-red-500': isError,
+                })}
+              >
+                {!isError ? (
+                  <CircleCheckIcon className="size-3" />
+                ) : (
+                  <CircleXIcon className="size-3" />
+                )}
+                <span>{(historyItem as LaboratoryHistoryRequest).status}</span>
+              </Badge>
+            )}
+            {historyItem?.duration && (
+              <Badge variant="outline" className="bg-card">
+                <ClockIcon className="size-3" />
+                <span>
+                  {Math.round((historyItem as LaboratoryHistoryRequest).duration!)}
+                  ms
+                </span>
+              </Badge>
+            )}
+            {historyItem?.size && (
+              <Badge variant="outline" className="bg-card">
+                <FileTextIcon className="size-3" />
+                <span>
+                  {Math.round((historyItem as LaboratoryHistoryRequest).size! / 1024)}
+                  KB
+                </span>
+              </Badge>
+            )}
           </div>
-        ) : null
-      }
-    >
-      <Tabs.Item label="Response">
+        ) : null}
+      </TabsList>
+      <TabsContent value="response">
         <ResponseBody historyItem={historyItem} />
-      </Tabs.Item>
-      <Tabs.Item label="Headers">
+      </TabsContent>
+      <TabsContent value="headers">
         <ResponseHeaders historyItem={historyItem} />
-      </Tabs.Item>
-      {historyItem?.preflightLogs && historyItem?.preflightLogs.length > 0 ? (
-        <Tabs.Item label="Preflight">
-          <ResponsePreflight historyItem={historyItem} />
-        </Tabs.Item>
-      ) : null}
+      </TabsContent>
+      <TabsContent value="preflight">
+        <ResponsePreflight historyItem={historyItem} />
+      </TabsContent>
     </Tabs>
   );
 };
@@ -346,6 +369,8 @@ export const Query = (props: {
     setActiveTab,
     addOperation,
     checkPermissions,
+    preflight,
+    setPreflight,
   } = useLaboratory();
 
   const operation = useMemo(() => {
@@ -358,6 +383,25 @@ export const Query = (props: {
     }
 
     const result = await runPreflight?.();
+
+    if (result?.status === 'error') {
+      const newItemHistory = addHistory({
+        headers: '{}',
+        operation,
+        preflightLogs: result?.logs ?? [],
+        response: `{
+          "errors": [
+            {
+              "message": "Preflight failed check logs for more details"
+            }
+          ]
+        }`,
+        createdAt: new Date().toISOString(),
+      } as Omit<LaboratoryHistoryRequest, 'id'>);
+
+      props.onAfterOperationRun?.(newItemHistory);
+      return;
+    }
 
     if (isActiveOperationSubscription) {
       const newItemHistory = addHistory({
@@ -587,6 +631,26 @@ export const Query = (props: {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Toggle
+            aria-label={preflight?.enabled ? 'Disable preflight' : 'Enable preflight'}
+            size="sm"
+            variant="default"
+            pressed={preflight?.enabled}
+            className="bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
+            onClick={() => {
+              setPreflight({
+                ...(preflight ?? { script: '', enabled: true }),
+                enabled: !preflight?.enabled,
+              });
+            }}
+          >
+            {preflight?.enabled ? (
+              <PowerIcon className="size-4 text-green-500" />
+            ) : (
+              <PowerOffIcon className="size-4 text-red-500" />
+            )}
+            Preflight
+          </Toggle>
           {!props.isReadOnly ? (
             <Button
               variant="default"
@@ -640,7 +704,7 @@ export const Query = (props: {
       <div className="size-full">
         <Editor
           uri={monaco.Uri.file('operation.graphql')}
-          variablesUri={monaco.Uri.file('variables.json')}
+          variablesUri={variablesUri}
           value={operation?.query ?? ''}
           onChange={value => {
             updateActiveOperation({
@@ -696,16 +760,27 @@ export const Operation = (props: {
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel minSize={10} defaultSize={30} className="!overflow-visible">
-              <Tabs>
-                <Tabs.Item label="Variables">
+              <Tabs className="grid size-full grid-rows-[auto_1fr]" defaultValue="variables">
+                <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
+                  <TabsTrigger value="variables" className="grow-0 rounded-sm">
+                    Variables
+                  </TabsTrigger>
+                  <TabsTrigger value="headers" className="grow-0 rounded-sm">
+                    Headers
+                  </TabsTrigger>
+                  <TabsTrigger value="extensions" className="grow-0 rounded-sm">
+                    Extensions
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="variables">
                   <Variables operation={operation} isReadOnly={isReadOnly} />
-                </Tabs.Item>
-                <Tabs.Item label="Headers">
+                </TabsContent>
+                <TabsContent value="headers">
                   <Headers operation={operation} isReadOnly={isReadOnly} />
-                </Tabs.Item>
-                <Tabs.Item label="Extensions">
+                </TabsContent>
+                <TabsContent value="extensions">
                   <Extensions operation={operation} isReadOnly={isReadOnly} />
-                </Tabs.Item>
+                </TabsContent>
               </Tabs>
             </ResizablePanel>
           </ResizablePanelGroup>

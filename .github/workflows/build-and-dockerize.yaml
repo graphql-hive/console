@@ -169,6 +169,7 @@ jobs:
           source: .
           set: |
             *.cache-from=type=gha,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
+            *.cache-from=type=gha,ignore-error=true,scope=refs_heads_main-${{ inputs.targets }}-${{ matrix.platform == 'linux/amd64' && 'linux_amd64' || 'linux_arm64' }}
             *.cache-to=type=gha,mode=max,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
 
       - name: docker details pr comment

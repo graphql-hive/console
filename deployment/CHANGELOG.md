@@ -1,5 +1,81 @@
 # hive
 
+## 8.13.0
+
+### Minor Changes
+
+- [#7303](https://github.com/graphql-hive/console/pull/7303)
+  [`840bc08`](https://github.com/graphql-hive/console/commit/840bc08236dfd635d720566360b176e1cc59ce70)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add configurable data retention TTL
+  for self-hosted Hive instances. Self-hosted users can now configure retention periods via
+  environment variables instead of hardcoded values.
+
+  New environment variables:
+
+  - `CLICKHOUSE_TTL_TABLES` - Retention for ClickHouse mergetree tables (Default: 1 YEAR)
+  - `CLICKHOUSE_TTL_DAILY_MV_TABLES` - Retention for daily materialized view tables (Default: 1
+    YEAR)
+  - `CLICKHOUSE_TTL_HOURLY_MV_TABLES` - Retention for hourly materialized view tables (Default: 30
+    DAYS)
+  - `CLICKHOUSE_TTL_MINUTELY_MV_TABLES` - Retention for minutely materialized view tables (Default:
+    24 HOURS)
+
+  Supports both numeric days (e.g., `365`) and ClickHouse interval syntax (e.g., `"1 YEAR"`,
+  `"30 DAY"`, `"24 HOUR"`).
+
+  The retention update runs automatically if any retention environment variable is set.
+
+- [#7333](https://github.com/graphql-hive/console/pull/7333)
+  [`4aa5247`](https://github.com/graphql-hive/console/commit/4aa524779c257602864f582fc3eb02b02c86d29a)
+  Thanks [@alexdaima](https://github.com/alexdaima)! - Update Redis client to support connecting to
+  IPv6 networks.
+
+- [#7400](https://github.com/graphql-hive/console/pull/7400)
+  [`c396566`](https://github.com/graphql-hive/console/commit/c396566b077e4b6ce26e0fab2004fa223e7dfc6f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for retrieving CDN artifacts by version
+  ID.
+
+  New CDN endpoints allow fetching schema artifacts for a specific version:
+
+  - `/artifacts/v1/:targetId/version/:versionId/:artifactType`
+  - `/artifacts/v1/:targetId/version/:versionId/contracts/:contractName/:artifactType`
+
+  Artifacts are now written to both the latest path and a versioned path during schema publish,
+  enabling retrieval of historical versions.
+
+  CDN artifact responses now include the `x-hive-schema-version-id` header, providing the version ID
+  of the schema being served.
+
+### Patch Changes
+
+- [#7381](https://github.com/graphql-hive/console/pull/7381)
+  [`415a9c1`](https://github.com/graphql-hive/console/commit/415a9c19d27e825c55bd9b492f8316624b4d6cf7)
+  Thanks [@jdolle](https://github.com/jdolle)! - Hide unnecessary elements from header when screen
+  is narrow
+
+- [#7352](https://github.com/graphql-hive/console/pull/7352)
+  [`727e525`](https://github.com/graphql-hive/console/commit/727e525abbd26dce638278ee26e0311f725571e1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Correctly check the global environment feature flag
+  in for app deployments and fix app deployment pagination
+
+- [#7402](https://github.com/graphql-hive/console/pull/7402)
+  [`4183e55`](https://github.com/graphql-hive/console/commit/4183e5519851167c29dcc73f738108fad05cdce7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve native federation schema composition.
+  Prevent subgraph-specific federation types and scalars being re-declared within the subgraph
+  leaking into the supergraph.
+
+- [#7391](https://github.com/graphql-hive/console/pull/7391)
+  [`d027f99`](https://github.com/graphql-hive/console/commit/d027f99321aa338209b42a89133a112926a22f7f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix exception raised by server when updating user
+  profile information.
+
+- [#7389](https://github.com/graphql-hive/console/pull/7389)
+  [`a9a3e5f`](https://github.com/graphql-hive/console/commit/a9a3e5f9f1e942302bd6ce884f9afa011f2a7a96)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Do not swallow 4XX HTTP errors as 500 internal
+  server errors when sentry error reporting is enabled.
+
+  Send the same predictable error responses with and without the sentry plugin enabled.
+
 ## 8.12.1
 
 ### Patch Changes

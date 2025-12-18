@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
+import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/laboratory/lib/env';
 
 export interface LaboratoryPreflightLog {
-  level: 'log' | 'warn' | 'error';
+  level: 'log' | 'warn' | 'error' | 'info';
   message: unknown[];
   createdAt: string;
 }
@@ -15,6 +16,7 @@ export interface LaboratoryPreflightResult {
 }
 
 export interface LaboratoryPreflight {
+  enabled: boolean;
   script: string;
   lastTestResult?: LaboratoryPreflightResult | null;
 }
@@ -48,7 +50,7 @@ export const usePreflight = (props: {
   );
 
   const runPreflight = useCallback(async () => {
-    if (!preflight) {
+    if (!preflight?.enabled) {
       return null;
     }
 
@@ -57,8 +59,11 @@ export const usePreflight = (props: {
 
   const setLastTestResult = useCallback(
     (result: LaboratoryPreflightResult | null) => {
-      _setPreflight({ ...(preflight ?? { script: '' }), lastTestResult: result });
-      props.onPreflightChange?.({ ...(preflight ?? { script: '' }), lastTestResult: result });
+      _setPreflight({ ...(preflight ?? { script: '', enabled: true }), lastTestResult: result });
+      props.onPreflightChange?.({
+        ...(preflight ?? { script: '', enabled: true }),
+        lastTestResult: result,
+      });
     },
     [preflight, props],
   );
@@ -76,12 +81,11 @@ export async function runIsolatedLabScript(
   env: LaboratoryEnv,
   prompt?: (placeholder: string, defaultValue: string) => Promise<string | null>,
 ): Promise<LaboratoryPreflightResult> {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const blob = new Blob(
       [
+        cryptoJsSource.replace('}(this, function () {', '}(self, function () {'),
         /* javascript */ `
-        import CryptoJS from 'https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/+esm';
-        
         const env = ${JSON.stringify(env)};
 
         let promptResolve = null;
@@ -102,6 +106,9 @@ export async function runIsolatedLabScript(
                 },
                 error: (...args) => {
                   self.postMessage({ type: 'log', level: 'error', message: args });
+                },
+                info: (...args) => {
+                  self.postMessage({ type: 'log', level: 'info', message: args });
                 },
               };
               
@@ -131,16 +138,17 @@ export async function runIsolatedLabScript(
                     self.postMessage({ type: 'prompt', placeholder, defaultValue });
                   });
                 },
-                CryptoJS: CryptoJS
+                // CryptoJS: CryptoJS
               });
   
               // Make CryptoJS available globally in the script context
               const AsyncFunction = async function () {}.constructor;
               await new AsyncFunction('lab', 'CryptoJS', 'with(lab){' + event.data.script + '}')(lab, CryptoJS);
               
-              self.postMessage({ type: 'result', status: 'success', env: env });
+              self.postMessage({ type: 'result', env: env });
             } catch (err) {
-              self.postMessage({ type: 'result', status: 'error', error: err.message || String(err) });
+              self.console.error(err);
+              self.postMessage({ type: 'result', error: err.message || String(err) });
             }
           }
         };
@@ -157,18 +165,18 @@ export async function runIsolatedLabScript(
       if (data.type === 'result') {
         worker.terminate();
 
-        if (data.status === 'success') {
+        if (data.error) {
+          resolve({
+            status: 'error',
+            error: data.error,
+            logs,
+            env,
+          });
+        } else {
           resolve({
             status: 'success',
             logs,
             env: data.env,
-          });
-        } else if (data.status === 'error') {
-          console.error(data.error);
-          reject({
-            status: 'error',
-            error: data.error,
-            logs,
           });
         }
       } else if (data.type === 'log') {
@@ -178,6 +186,8 @@ export async function runIsolatedLabScript(
           logs.push({ level: 'warn', message: data.message, createdAt: new Date().toISOString() });
         } else if (data.level === 'error') {
           logs.push({ level: 'error', message: data.message, createdAt: new Date().toISOString() });
+        } else if (data.level === 'info') {
+          logs.push({ level: 'info', message: data.message, createdAt: new Date().toISOString() });
         }
       } else if (data.type === 'prompt') {
         void prompt?.(data.placeholder, data.defaultValue).then(value => {
@@ -187,10 +197,11 @@ export async function runIsolatedLabScript(
     };
 
     worker.onerror = error => {
-      reject({
+      resolve({
         status: 'error',
         error: error.message,
         logs,
+        env,
       });
     };
 
