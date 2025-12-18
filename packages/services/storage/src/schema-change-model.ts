@@ -1414,6 +1414,7 @@ const SchemaCheckSharedOutputFields = {
   serviceUrl: z.string().nullable(),
   targetId: z.string(),
   schemaVersionId: z.string().nullable(),
+  schemaProposalId: z.string().nullable(),
   meta: z
     .object({
       author: z.string(),

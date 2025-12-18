@@ -43,6 +43,7 @@ export class SingleModel {
     approvedChanges,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    filterNestedChanges,
   }: {
     input: {
       sdl: string;
@@ -68,6 +69,7 @@ export class SingleModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: boolean;
+    filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
     const incoming: SingleSchema = {
       kind: 'single',
@@ -130,6 +132,7 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        filterNestedChanges,
       }),
       this.checks.policyCheck({
         selector,
@@ -267,6 +270,7 @@ export class SingleModel {
         existingSdl: previousVersionSdl,
         incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
         failDiffOnDangerousChange,
+        filterNestedChanges: true, // publish is never associated with schema proposals in this way. So always show the minimal changeset.
       }),
     ]);
 

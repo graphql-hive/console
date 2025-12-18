@@ -426,6 +426,10 @@ export class RegistryChecks {
     /** Settings for fetching conditional breaking changes. */
     conditionalBreakingChangeConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    /**
+     * Set to true to reduce the number of changes to only what's relevant to the user.
+     * Use false for schema proposals in order to capture every single change record for the patch function.
+     */
     filterNestedChanges: boolean;
   }) {
     let existingSchema: GraphQLSchema | null = null;

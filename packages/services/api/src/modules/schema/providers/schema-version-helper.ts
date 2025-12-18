@@ -167,15 +167,15 @@ export class SchemaVersionHelper {
       'hive.safe-changes.count': changes?.safe?.length,
     }),
   })
-  @cache<{ version: SchemaVersion; simplified: boolean }>(
-    ({ version, simplified = true }) => `${version.id}${simplified ? '/simple' : ''}`,
+  @cache<{ version: SchemaVersion; simplified?: boolean }>(
+    ({ version, simplified = true }) => `${version.id}${simplified ? '' : '/detailed'}`,
   )
   private async _getSchemaChanges({
     version: schemaVersion,
     simplified,
   }: {
     version: SchemaVersion;
-    simplified: boolean;
+    simplified?: boolean;
   }) {
     if (!schemaVersion.isComposable) {
       return null;
@@ -251,7 +251,7 @@ export class SchemaVersionHelper {
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
-      filterNestedChanges: simplified,
+      filterNestedChanges: simplified ?? true,
     });
 
     if (diffCheck.status === 'skipped') {
@@ -285,34 +285,30 @@ export class SchemaVersionHelper {
     });
   }
 
-  async getBreakingSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+  async getBreakingSchemaChanges(schemaVersion: SchemaVersion) {
     const changes = await this._getSchemaChanges({
       version: schemaVersion,
-      simplified: simplifyChanges,
     });
     return changes?.breaking ?? null;
   }
 
-  async getSafeSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+  async getSafeSchemaChanges(schemaVersion: SchemaVersion) {
     const changes = await this._getSchemaChanges({
       version: schemaVersion,
-      simplified: simplifyChanges,
     });
     return changes?.safe ?? null;
   }
 
-  async getAllSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+  async getAllSchemaChanges(schemaVersion: SchemaVersion) {
     const changes = await this._getSchemaChanges({
       version: schemaVersion,
-      simplified: simplifyChanges,
     });
     return changes?.all ?? null;
   }
 
-  async getHasSchemaChanges(schemaVersion: SchemaVersion, simplifyChanges: boolean) {
+  async getHasSchemaChanges(schemaVersion: SchemaVersion) {
     const changes = await this._getSchemaChanges({
       version: schemaVersion,
-      simplified: simplifyChanges,
     });
     return !!changes?.breaking?.length || !!changes?.safe?.length;
   }

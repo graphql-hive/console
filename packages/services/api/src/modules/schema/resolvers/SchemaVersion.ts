@@ -70,14 +70,14 @@ export const SchemaVersion: SchemaVersionResolvers = {
   schemaCompositionErrors: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSchemaCompositionErrors(version);
   },
-  breakingSchemaChanges: async (version, { simplifyChanges }, { injector }) => {
-    return injector.get(SchemaVersionHelper).getBreakingSchemaChanges(version, simplifyChanges);
+  breakingSchemaChanges: async (version, _, { injector }) => {
+    return injector.get(SchemaVersionHelper).getBreakingSchemaChanges(version);
   },
-  safeSchemaChanges: async (version, { simplifyChanges }, { injector }) => {
-    return injector.get(SchemaVersionHelper).getSafeSchemaChanges(version, simplifyChanges);
+  safeSchemaChanges: async (version, _, { injector }) => {
+    return injector.get(SchemaVersionHelper).getSafeSchemaChanges(version);
   },
-  schemaChanges: async (version, { simplifyChanges }, { injector }) => {
-    return injector.get(SchemaVersionHelper).getAllSchemaChanges(version, simplifyChanges);
+  schemaChanges: async (version, _, { injector }) => {
+    return injector.get(SchemaVersionHelper).getAllSchemaChanges(version);
   },
   supergraph: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSupergraphSdl(version);

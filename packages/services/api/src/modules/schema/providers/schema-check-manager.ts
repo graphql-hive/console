@@ -36,28 +36,15 @@ export class SchemaCheckManager {
     return !!(schemaCheck.breakingSchemaChanges?.length || schemaCheck.safeSchemaChanges?.length);
   }
 
-  getSafeSchemaChanges(schemaCheck: SchemaCheck, simplifyChanges: boolean = true) {
+  getSafeSchemaChanges(schemaCheck: SchemaCheck) {
     if (!schemaCheck.safeSchemaChanges?.length) {
       return null;
-    }
-
-    if (simplifyChanges) {
-      /**
-       * @todo modify the simplifyChanges rule to loosen the argument requirements. This rule
-       * doesn't need more information than the change type and path fields.
-       */
-      return DiffRule.simplifyChanges({
-        changes: schemaCheck.safeSchemaChanges as any,
-        oldSchema: undefined as any,
-        newSchema: undefined as any,
-        config: undefined,
-      }) as unknown as typeof schemaCheck.safeSchemaChanges;
     }
 
     return schemaCheck.safeSchemaChanges;
   }
 
-  getAllSchemaChanges(schemaCheck: SchemaCheck, simplifyChanges: boolean = true) {
+  getAllSchemaChanges(schemaCheck: SchemaCheck) {
     if (!schemaCheck.safeSchemaChanges?.length && !schemaCheck.breakingSchemaChanges?.length) {
       return null;
     }
@@ -66,38 +53,13 @@ export class SchemaCheckManager {
       ...(schemaCheck.breakingSchemaChanges ?? []),
       ...(schemaCheck.safeSchemaChanges ?? []),
     ];
-    if (simplifyChanges) {
-      /**
-       * @todo modify the simplifyChanges rule to loosen the argument requirements. This rule
-       * doesn't need more information than the change type and path fields.
-       */
-      return DiffRule.simplifyChanges({
-        changes: changes as any,
-        oldSchema: undefined as any,
-        newSchema: undefined as any,
-        config: undefined,
-      }) as unknown as typeof changes;
-    }
 
     return changes;
   }
 
-  getBreakingSchemaChanges(schemaCheck: SchemaCheck, simplifyChanges: boolean = true) {
+  getBreakingSchemaChanges(schemaCheck: SchemaCheck) {
     if (!schemaCheck.breakingSchemaChanges?.length) {
       return null;
-    }
-
-    if (simplifyChanges) {
-      /**
-       * @todo modify the simplifyChanges rule to loosen the argument requirements. This rule
-       * doesn't need more information than the change type and path fields.
-       */
-      return DiffRule.simplifyChanges({
-        changes: schemaCheck.breakingSchemaChanges as any,
-        oldSchema: undefined as any,
-        newSchema: undefined as any,
-        config: undefined,
-      });
     }
 
     return schemaCheck.breakingSchemaChanges;

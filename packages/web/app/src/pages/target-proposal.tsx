@@ -126,7 +126,7 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
             }
             schemaSDL
             serviceName
-            schemaChanges(simplifyChanges: false) {
+            schemaChanges {
               edges {
                 node {
                   ...ProposalOverview_ChangeFragment
