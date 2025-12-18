@@ -37,6 +37,8 @@ import {
   SchemaPolicyServiceConfig,
 } from './modules/policy/providers/tokens';
 import { projectModule } from './modules/project';
+import { proposalsModule } from './modules/proposals';
+import { SCHEMA_PROPOSALS_ENABLED } from './modules/proposals/providers/schema-proposals-enabled-token';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -89,6 +91,7 @@ const modules = [
   collectionModule,
   appDeploymentsModule,
   auditLogsModule,
+  proposalsModule,
 ];
 
 export function createRegistry({
@@ -114,6 +117,7 @@ export function createRegistry({
   organizationOIDC,
   pubSub,
   appDeploymentsEnabled,
+  schemaProposalsEnabled,
   otelTracingEnabled,
   prometheus,
 }: {
@@ -159,6 +163,7 @@ export function createRegistry({
   organizationOIDC: boolean;
   pubSub: HivePubSub;
   appDeploymentsEnabled: boolean;
+  schemaProposalsEnabled: boolean;
   otelTracingEnabled: boolean;
   prometheus: null | Record<string, unknown>;
 }) {
@@ -285,6 +290,11 @@ export function createRegistry({
     {
       provide: APP_DEPLOYMENTS_ENABLED,
       useValue: appDeploymentsEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: SCHEMA_PROPOSALS_ENABLED,
+      useValue: schemaProposalsEnabled,
       scope: Scope.Singleton,
     },
     {

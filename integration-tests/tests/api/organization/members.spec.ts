@@ -40,6 +40,8 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       laboratory:describe,
       laboratory:modify,
       laboratory:modifyPreflightScript,
+      schemaProposal:describe,
+      schemaProposal:modify,
       schema:compose,
       usage:report,
       traces:report,

@@ -3929,6 +3929,7 @@ export async function createStorage(
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
             , "service_name"
+            , "service_url"
             , "meta"
             , "target_id"
             , "schema_version_id"
@@ -3949,10 +3950,12 @@ export async function createStorage(
             , "context_id"
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
+            , "schema_proposal_id"
           )
           VALUES (
               ${schemaSDLHash}
             , ${args.serviceName}
+            , ${args.serviceUrl}
             , ${jsonify(args.meta)}
             , ${args.targetId}
             , ${args.schemaVersionId}
@@ -3977,6 +3980,7 @@ export async function createStorage(
               ) ?? false
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
+            , ${args.schemaProposalId ?? null}
           )
           RETURNING
             "id"
@@ -4286,6 +4290,111 @@ export async function createStorage(
 
       return {
         items,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return items[items.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return items[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
+    async getPaginatedSchemaChecksForSchemaProposal(args) {
+      let cursor: null | {
+        createdAt: string;
+        id: string;
+      } = null;
+
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+      if (args.cursor) {
+        cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
+      }
+
+      // gets the most recently created schema checks per service name
+      const result = await pool.any<unknown>(sql`/* getPaginatedSchemaChecksForSchemaProposal */
+        SELECT
+          ${schemaCheckSQLFields}
+        FROM
+          "schema_checks" as c
+        ${
+          args.latest
+            ? sql`
+            INNER JOIN (
+              SELECT "service_name", "schema_proposal_id", max("created_at") as "maxdate"
+              FROM schema_checks
+              ${
+                cursor
+                  ? sql`
+                    WHERE "schema_proposal_id" = ${args.proposalId}
+                    AND (
+                      (
+                        "created_at" = ${cursor.createdAt}
+                        AND "id" < ${cursor.id}
+                      )
+                      OR "created_at" < ${cursor.createdAt}
+                    )
+                  `
+                  : sql``
+              }
+              GROUP BY "service_name", "schema_proposal_id"
+            ) as cc
+            ON c."schema_proposal_id" = cc."schema_proposal_id"
+              AND c."service_name" = cc."service_name"
+              AND c."created_at" = cc."maxdate"
+          `
+            : sql``
+        }
+        LEFT JOIN "sdl_store" as s_schema
+          ON s_schema."id" = c."schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_composite_schema
+          ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_supergraph
+          ON s_supergraph."id" = c."supergraph_sdl_store_id"
+        WHERE
+          c."schema_proposal_id" = ${args.proposalId}
+          ${
+            cursor
+              ? sql`
+                AND (
+                  (
+                    c."created_at" = ${cursor.createdAt}
+                    AND c."id" < ${cursor.id}
+                  )
+                  OR c."created_at" < ${cursor.createdAt}
+                )
+              `
+              : sql``
+          }
+        ORDER BY
+          c."created_at" DESC
+          , c."id" DESC
+        LIMIT ${limit + 1}
+      `);
+
+      let items = result.map(row => {
+        const node = SchemaCheckModel.parse(row);
+        return {
+          get node() {
+            // TODO: remove this any cast and fix the type issues...
+            return (args.transformNode?.(node) ?? node) as any;
+          },
+          get cursor() {
+            return encodeCreatedAtAndUUIDIdBasedCursor(node);
+          },
+        };
+      });
+
+      const hasNextPage = items.length > limit;
+
+      items = items.slice(0, limit);
+
+      return {
+        edges: items,
         pageInfo: {
           hasNextPage,
           hasPreviousPage: cursor !== null,
@@ -4802,6 +4911,7 @@ const FeatureFlagsModel = zod
     appDeployments: zod.boolean().default(false),
     /** whether otel tracing is enabled for the given organization */
     otelTracing: zod.boolean().default(false),
+    schemaProposals: zod.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4813,6 +4923,7 @@ const FeatureFlagsModel = zod
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
         otelTracing: false,
+        schemaProposals: false,
       },
   );
 
@@ -5215,6 +5326,7 @@ const schemaCheckSQLFields = sql`
   , to_json(c."updated_at") as "updatedAt"
   , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
   , c."service_name" as "serviceName"
+  , c."service_url" as "serviceUrl"
   , c."meta"
   , c."target_id" as "targetId"
   , c."schema_version_id" as "schemaVersionId"
@@ -5234,6 +5346,7 @@ const schemaCheckSQLFields = sql`
   , c."manual_approval_comment" as "manualApprovalComment"
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
+  , c."schema_proposal_id" as "schemaProposalId"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`

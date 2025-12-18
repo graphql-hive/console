@@ -335,7 +335,7 @@ const LaboratoryContent = () => {
                 >
                   Preflight Script
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
@@ -349,7 +349,7 @@ const LaboratoryContent = () => {
                   }}
                 >
                   Settings
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
             <TooltipContent side="right">Settings</TooltipContent>
@@ -436,6 +436,7 @@ export const Laboratory = (
     ...props,
     envApi,
   });
+
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
   const endpointApi = useEndpoint(props);
@@ -443,14 +444,17 @@ export const Laboratory = (
     ...props,
     tabsApi,
   });
+
   const operationsApi = useOperations({
     ...props,
     collectionsApi,
     tabsApi,
     envApi,
     preflightApi,
+    settingsApi,
     checkPermissions,
   });
+
   const historyApi = useHistory(props);
 
   const [isAddCollectionDialogOpen, setIsAddCollectionDialogOpen] = useState(false);
