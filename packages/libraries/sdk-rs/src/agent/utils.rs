@@ -929,8 +929,6 @@ mod tests {
     use graphql_parser::parse_query;
     use graphql_parser::parse_schema;
 
-    use crate::agent::utils::OperationProcessor;
-
     use super::collect_schema_coordinates;
 
     const SCHEMA_SDL: &str = "
@@ -2355,7 +2353,8 @@ mod tests {
         ",
         )
         .unwrap();
-        let query = "
+        let document = parse_query::<String>(
+            "
         query UserQuery($id: ID!) {
             user(id: $id) {
                 ...UserFragment
@@ -2367,12 +2366,11 @@ mod tests {
                 ...UserFragment
             }
         }
-        ";
-        let processor = OperationProcessor::new();
-        let result = processor
-            .process(query, &schema)
-            .expect("Failed to process operation")
-            .expect("Operation not found");
+        ",
+        )
+        .unwrap();
+
+        let schema_coordinates = collect_schema_coordinates(&document, &schema).unwrap();
 
         let expected = vec![
             "Query.user",
@@ -2384,9 +2382,6 @@ mod tests {
         .into_iter()
         .map(|s| s.to_string())
         .collect::<HashSet<String>>();
-
-        let schema_coordinates =
-            HashSet::from_iter(result.coordinates.iter().map(|s| s.to_string()));
 
         let extra: Vec<&String> = schema_coordinates.difference(&expected).collect();
         let missing: Vec<&String> = expected.difference(&schema_coordinates).collect();
