@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use graphql_parser::minify_query;
+pub use graphql_parser::minify_query;
 use graphql_parser::parse_query;
 use graphql_parser::query::{
     Definition, Directive, Document, Field, FragmentDefinition, Number, OperationDefinition,
@@ -817,6 +817,19 @@ fn definition_kind_ordering<'a, T: Text<'a>>(definition: &Definition<'a, T>) -> 
     }
 }
 
+pub fn normaize_operation<'a>(operation_document: Document<'a, String>) -> Document<'a, String> {
+    let mut strip_literals_transformer = StripLiteralsTransformer {};
+    let normalized = strip_literals_transformer
+        .transform_document(&operation_document)
+        .replace_or_else(|| operation_document.clone());
+
+    let normalized = SortSelectionsTransform::new()
+        .transform_document(&normalized)
+        .replace_or_else(|| normalized.clone());
+
+    normalized
+}
+
 #[derive(Clone)]
 pub struct ProcessedOperation {
     pub operation: String,
@@ -864,7 +877,6 @@ impl OperationProcessor {
         operation: &str,
         schema: &SchemaDocument<'static, String>,
     ) -> Result<Option<ProcessedOperation>, String> {
-        let mut strip_literals_transformer = StripLiteralsTransformer {};
         let parsed = parse_query(operation)
             .map_err(|e| e.to_string())?
             .into_static();
@@ -890,13 +902,7 @@ impl OperationProcessor {
 
         let schema_coordinates: Vec<String> = Vec::from_iter(schema_coordinates_result);
 
-        let normalized = strip_literals_transformer
-            .transform_document(&parsed)
-            .replace_or_else(|| parsed.clone());
-
-        let normalized = SortSelectionsTransform::new()
-            .transform_document(&normalized)
-            .replace_or_else(|| normalized.clone());
+        let normalized = normaize_operation(parsed);
 
         let printed = minify_query(format!("{}", normalized.clone())).map_err(|e| e.to_string())?;
         let hash = format!("{:x}", md5::compute(printed.clone()));
