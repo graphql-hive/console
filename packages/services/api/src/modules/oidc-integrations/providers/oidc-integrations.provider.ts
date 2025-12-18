@@ -93,7 +93,7 @@ export class OIDCIntegrationsProvider {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
-		additionalScopes: readonly string[];
+    additionalScopes: readonly string[];
   }) {
     if (this.isEnabled() === false) {
       return {

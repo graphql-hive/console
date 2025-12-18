@@ -945,7 +945,10 @@ function UpdateOIDCIntegrationForm(props: {
       authorizationEndpoint: props.oidcIntegration.authorizationEndpoint,
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
-      additionalScopes: JSON.stringify(props.oidcIntegration.additionalScopes).replaceAll(',', ', '),
+      additionalScopes: JSON.stringify(props.oidcIntegration.additionalScopes).replaceAll(
+        ',',
+        ', ',
+      ),
     },
     validate(values) {
       try {
@@ -1220,7 +1223,8 @@ function UpdateOIDCIntegrationForm(props: {
                   />
                   <FormError>
                     {(formik.touched.additionalScopes && formik.errors.additionalScopes) ||
-                      oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.additionalScopes}
+                      oidcUpdateMutation.data?.updateOIDCIntegration.error?.details
+                        .additionalScopes}
                   </FormError>
                 </div>
 

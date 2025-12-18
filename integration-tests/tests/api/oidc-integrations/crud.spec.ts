@@ -386,7 +386,7 @@ describe('create', () => {
               tokenEndpoint: 'http://localhost:8888/oauth/token',
               userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
               authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-							oidcUserAccessOnly: true,
+              oidcUserAccessOnly: true,
               additionalScopes: [],
             },
           },
