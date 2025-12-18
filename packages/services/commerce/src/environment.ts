@@ -79,7 +79,6 @@ const PostgresModel = zod.object({
 });
 
 const HiveServicesModel = zod.object({
-  EMAILS_ENDPOINT: emptyString(zod.string().url().optional()),
   WEB_APP_URL: emptyString(zod.string().url().optional()),
 });
 
@@ -177,9 +176,6 @@ export const env = {
         }
       : null,
   hiveServices: {
-    emails: {
-      endpoint: hiveServices.EMAILS_ENDPOINT,
-    },
     webAppUrl: hiveServices.WEB_APP_URL,
   },
   rateLimit: {
