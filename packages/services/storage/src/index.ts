@@ -3143,7 +3143,7 @@ export async function createStorage(
             "token_endpoint",
             "userinfo_endpoint",
             "authorization_endpoint",
-            "scope"
+            "additional_scopes"
           )
           VALUES (
             ${args.organizationId},
