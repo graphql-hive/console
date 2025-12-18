@@ -54,6 +54,8 @@
     "zod": "3.25.76"
   },
   "buildOptions": {
-    "external": ["pg-native"]
+    "external": [
+      "pg-native"
+    ]
   }
 }
