@@ -37,7 +37,10 @@ export const DiffEditor = (props: {
     editor.addCommand(monaco.KeyMod.CtrlCmd + monaco.KeyCode.DownArrow, () => {
       editorRef.current?.goToDiff('next');
     });
-    editor.onDidUpdateDiff(() => {
+
+    // Must set the value on blur for efficiency and to avoid messing up
+    // the cursor position.
+    editor.getModifiedEditor().onDidBlurEditorText(() => {
       props.onChange?.(editor.getModifiedEditor().getValue());
     });
   }
