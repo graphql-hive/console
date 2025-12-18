@@ -206,8 +206,8 @@ export const Organization: Pick<
       },
     });
   },
-  availableMemberPermissionGroups: () => {
-    return OrganizationMemberPermissions.permissionGroups;
+  availableMemberPermissionGroups: (organization, _, { injector }) => {
+    return injector.get(OrganizationAccessTokens).getAvailableMemberPermissionGroups(organization);
   },
   availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
     return injector
