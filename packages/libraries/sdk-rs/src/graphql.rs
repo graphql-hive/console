@@ -817,7 +817,7 @@ fn definition_kind_ordering<'a, T: Text<'a>>(definition: &Definition<'a, T>) -> 
     }
 }
 
-pub fn normalize_operation<'a>(operation_document: Document<'a, String>) -> Document<'a, String> {
+pub fn normalize_operation<'a>(operation_document: &Document<'a, String>) -> Document<'a, String> {
     let mut strip_literals_transformer = StripLiteralsTransformer {};
     let normalized = strip_literals_transformer
         .transform_document(&operation_document)
@@ -900,7 +900,7 @@ impl OperationProcessor {
 
         let schema_coordinates: Vec<String> = Vec::from_iter(schema_coordinates_result);
 
-        let normalized = normalize_operation(parsed);
+        let normalized = normalize_operation(&parsed);
 
         let printed = minify_query(format!("{}", normalized.clone())).map_err(|e| e.to_string())?;
         let hash = format!("{:x}", md5::compute(printed.clone()));
