@@ -6,7 +6,8 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
-use crate::agent::usage_agent::{non_empty_string, AgentError, Buffer, UsageAgent};
+use crate::agent::buffer::Buffer;
+use crate::agent::usage_agent::{non_empty_string, AgentError, UsageAgent};
 use crate::agent::utils::OperationProcessor;
 use crate::circuit_breaker;
 use retry_policies::policies::ExponentialBackoff;
@@ -179,9 +180,11 @@ impl UsageAgentBuilder {
                 .map_err(AgentError::CircuitBreakerCreationError)?
         };
 
+        let buffer = Buffer::new(self.buffer_size);
+
         Ok(Arc::new(UsageAgent {
             endpoint,
-            buffer: Buffer::new(self.buffer_size),
+            buffer,
             processor: OperationProcessor::new(),
             client,
             flush_interval: self.flush_interval,

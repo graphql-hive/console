@@ -2,15 +2,15 @@ use graphql_parser::schema::Document;
 use recloser::AsyncRecloser;
 use reqwest_middleware::ClientWithMiddleware;
 use std::{
-    collections::{hash_map::Entry, HashMap, VecDeque},
-    sync::{Arc, Mutex},
+    collections::{hash_map::Entry, HashMap},
+    sync::Arc,
     time::Duration,
 };
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 
-use crate::agent::builder::UsageAgentBuilder;
 use crate::agent::utils::OperationProcessor;
+use crate::agent::{buffer::Buffer, builder::UsageAgentBuilder};
 
 #[derive(Debug, Clone)]
 pub struct ExecutionReport {
@@ -28,45 +28,9 @@ pub struct ExecutionReport {
 
 typify::import_types!(schema = "./usage-report-v2.schema.json");
 
-#[derive(Debug, Default)]
-pub struct Buffer {
-    queue: Mutex<VecDeque<ExecutionReport>>,
-    size: usize,
-}
-
-impl Buffer {
-    pub fn new(size: usize) -> Self {
-        Self {
-            queue: Mutex::new(VecDeque::new()),
-            size,
-        }
-    }
-
-    fn lock_buffer(
-        &self,
-    ) -> Result<std::sync::MutexGuard<'_, VecDeque<ExecutionReport>>, AgentError> {
-        let buffer: Result<std::sync::MutexGuard<'_, VecDeque<ExecutionReport>>, AgentError> = self
-            .queue
-            .lock()
-            .map_err(|e| AgentError::Lock(e.to_string()));
-        buffer
-    }
-
-    pub fn push(&self, report: ExecutionReport) -> Result<usize, AgentError> {
-        let mut buffer = self.lock_buffer()?;
-        buffer.push_back(report);
-        Ok(buffer.len())
-    }
-
-    pub fn drain(&self) -> Result<Vec<ExecutionReport>, AgentError> {
-        let mut buffer = self.lock_buffer()?;
-        let reports: Vec<ExecutionReport> = buffer.drain(..).collect();
-        Ok(reports)
-    }
-}
 pub struct UsageAgent {
     pub(crate) endpoint: String,
-    pub(crate) buffer: Buffer,
+    pub(crate) buffer: Buffer<ExecutionReport>,
     pub(crate) processor: OperationProcessor,
     pub(crate) client: ClientWithMiddleware,
     pub(crate) flush_interval: Duration,
@@ -233,63 +197,35 @@ impl UsageAgent {
         }
     }
 
-    pub async fn flush(&self) {
-        let execution_reports = match self.buffer.drain() {
-            Ok(res) => res,
-            Err(e) => {
-                tracing::error!("Unable to acquire lock for State in drain_reports: {}", e);
-                Vec::new()
-            }
-        };
+    pub async fn flush(&self) -> Result<(), AgentError> {
+        let execution_reports = self.buffer.drain().await;
         let size = execution_reports.len();
 
         if size > 0 {
-            match self.produce_report(execution_reports) {
-                Ok(report) => match self.send_report(report).await {
-                    Ok(_) => tracing::debug!("Reported {} operations", size),
-                    Err(e) => tracing::error!("{}", e),
-                },
-                Err(e) => tracing::error!("{}", e),
+            let report = self.produce_report(execution_reports)?;
+            self.send_report(report).await?;
+            tracing::debug!("Reported {} operations", size);
+        }
+
+        Ok(())
+    }
+    pub async fn start_flush_interval(&self, token: &CancellationToken) {
+        loop {
+            tokio::time::sleep(self.flush_interval).await;
+            if token.is_cancelled() {
+                println!("Shutting down.");
+                return;
             }
-        }
-    }
-    pub async fn start_flush_interval(&self, token: Option<CancellationToken>) {
-        let mut tokio_interval = tokio::time::interval(self.flush_interval);
-
-        match token {
-            Some(token) => loop {
-                tokio::select! {
-                    _ = tokio_interval.tick() => { self.flush().await; }
-                    _ = token.cancelled() => { println!("Shutting down."); return; }
-                }
-            },
-            None => loop {
-                tokio_interval.tick().await;
-                self.flush().await;
-            },
-        }
-    }
-}
-
-pub trait UsageAgentExt {
-    fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError>;
-    fn flush_if_full(&self, size: usize) -> ();
-}
-
-impl UsageAgentExt for Arc<UsageAgent> {
-    fn flush_if_full(&self, size: usize) {
-        if size >= self.buffer.size {
-            let cloned_self = self.clone();
-            tokio::task::spawn(async move {
-                cloned_self.flush().await;
-            });
+            self.flush()
+                .await
+                .unwrap_or_else(|e| tracing::error!("Failed to flush usage reports: {}", e));
         }
     }
 
-    fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
-        let size = self.buffer.push(execution_report)?;
-
-        self.flush_if_full(size);
+    pub async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
+        if self.buffer.add(execution_report).await {
+            self.flush().await?;
+        }
 
         Ok(())
     }
@@ -302,7 +238,7 @@ mod tests {
     use graphql_parser::{parse_query, parse_schema};
     use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 
-    use crate::agent::usage_agent::{ExecutionReport, Report, UsageAgent, UsageAgentExt};
+    use crate::agent::usage_agent::{ExecutionReport, Report, UsageAgent};
 
     const CONTENT_TYPE_VALUE: &'static str = "application/json";
     const GRAPHQL_CLIENT_NAME: &'static str = "Hive Client";
@@ -477,9 +413,10 @@ mod tests {
                 errors: 0,
                 persisted_document_hash: None,
             })
+            .await
             .expect("Failed to add report");
 
-        usage_agent.flush().await;
+        usage_agent.flush().await.expect("Failed to flush reports");
 
         mock.assert_async().await;
     }

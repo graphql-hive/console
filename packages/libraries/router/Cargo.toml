@@ -43,9 +43,9 @@ http = "1"
 http-body-util = "0.1"
 graphql-tools = "0.4.0"
 graphql-parser = "0.4.1"
-lru = "0.16.0"
 md5 = "0.7.0"
 rand = "0.9.0"
+tokio-util = "0.7.16"
 
 [dev-dependencies]
 httpmock = "0.7.0"

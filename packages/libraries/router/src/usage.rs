@@ -8,7 +8,7 @@ use core::ops::Drop;
 use futures::StreamExt;
 use graphql_parser::parse_schema;
 use graphql_parser::schema::Document;
-use hive_console_sdk::agent::usage_agent::{ExecutionReport, UsageAgent, UsageAgentExt};
+use hive_console_sdk::agent::usage_agent::{ExecutionReport, UsageAgent};
 use http::HeaderValue;
 use rand::Rng;
 use schemars::JsonSchema;
@@ -18,6 +18,7 @@ use std::env;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio_util::sync::CancellationToken;
 use tower::BoxError;
 use tower::ServiceBuilder;
 use tower::ServiceExt;
@@ -48,6 +49,7 @@ pub struct UsagePlugin {
     config: OperationConfig,
     agent: Option<Arc<UsageAgent>>,
     schema: Arc<Document<'static, String>>,
+    cancellation_token: Arc<CancellationToken>,
 }
 
 #[derive(Clone, Debug, Deserialize, JsonSchema, Default)]
@@ -171,6 +173,8 @@ impl Plugin for UsagePlugin {
             tracing::info!("Starting GraphQL Hive Usage plugin");
         }
 
+        let cancellation_token = Arc::new(CancellationToken::new());
+
         let agent = if enabled {
             let mut agent =
                 UsageAgent::builder().user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION));
@@ -215,7 +219,13 @@ impl Plugin for UsagePlugin {
 
             let agent = agent.build().map_err(Box::new)?;
 
-            start_flush_interval(agent.clone());
+            let cancellation_token_for_interval = cancellation_token.clone();
+            let agent_for_interval = agent.clone();
+            tokio::task::spawn(async move {
+                agent_for_interval
+                    .start_flush_interval(&cancellation_token_for_interval)
+                    .await;
+            });
             Some(agent)
         } else {
             None
@@ -238,6 +248,7 @@ impl Plugin for UsagePlugin {
                     .unwrap_or("graphql-client-version".to_string()),
             },
             agent,
+            cancellation_token,
         })
     }
 
@@ -299,58 +310,61 @@ impl Plugin for UsagePlugin {
 
                                 match result {
                                     Err(e) => {
-                                        agent
-                                            .add_report(ExecutionReport {
-                                                schema,
-                                                client_name,
-                                                client_version,
-                                                timestamp,
-                                                duration,
-                                                ok: false,
-                                                errors: 1,
-                                                operation_body,
-                                                operation_name,
-                                                persisted_document_hash,
-                                            })
-                                            .unwrap_or_else(|e| {
+                                        tokio::spawn(async move {
+                                            let res = agent
+                                                .add_report(ExecutionReport {
+                                                    schema,
+                                                    client_name,
+                                                    client_version,
+                                                    timestamp,
+                                                    duration,
+                                                    ok: false,
+                                                    errors: 1,
+                                                    operation_body,
+                                                    operation_name,
+                                                    persisted_document_hash,
+                                                })
+                                                .await;
+                                            if let Err(e) = res {
                                                 tracing::error!("Error adding report: {}", e);
-                                            });
+                                            }
+                                        });
                                         Err(e)
                                     }
                                     Ok(router_response) => {
                                         let is_failure =
                                             !router_response.response.status().is_success();
                                         Ok(router_response.map(move |response_stream| {
-                                            let client_name = client_name.clone();
-                                            let client_version = client_version.clone();
-                                            let operation_body = operation_body.clone();
-                                            let operation_name = operation_name.clone();
-
                                             let res = response_stream
                                                 .map(move |response| {
                                                     // make sure we send a single report, not for each chunk
                                                     let response_has_errors =
                                                         !response.errors.is_empty();
-                                                    agent
-                                                        .add_report(ExecutionReport {
-                                                            schema: schema.clone(),
-                                                            client_name: client_name.clone(),
-                                                            client_version: client_version.clone(),
-                                                            timestamp,
-                                                            duration,
-                                                            ok: !is_failure && !response_has_errors,
-                                                            errors: response.errors.len(),
-                                                            operation_body: operation_body.clone(),
-                                                            operation_name: operation_name.clone(),
-                                                            persisted_document_hash:
-                                                                persisted_document_hash.clone(),
-                                                        })
-                                                        .unwrap_or_else(|e| {
+                                                    let agent = agent.clone();
+                                                    let execution_report = ExecutionReport {
+                                                        schema: schema.clone(),
+                                                        client_name: client_name.clone(),
+                                                        client_version: client_version.clone(),
+                                                        timestamp,
+                                                        duration,
+                                                        ok: !is_failure && !response_has_errors,
+                                                        errors: response.errors.len(),
+                                                        operation_body: operation_body.clone(),
+                                                        operation_name: operation_name.clone(),
+                                                        persisted_document_hash:
+                                                            persisted_document_hash.clone(),
+                                                    };
+                                                    tokio::spawn(async move {
+                                                        let res = agent
+                                                            .add_report(execution_report)
+                                                            .await;
+                                                        if let Err(e) = res {
                                                             tracing::error!(
                                                                 "Error adding report: {}",
                                                                 e
                                                             );
-                                                        });
+                                                        }
+                                                    });
 
                                                     response
                                                 })
@@ -372,15 +386,9 @@ impl Plugin for UsagePlugin {
 
 impl Drop for UsagePlugin {
     fn drop(&mut self) {
-        tracing::debug!("UsagePlugin has been dropped!");
-        // TODO: flush the buffer
+        self.cancellation_token.cancel();
+        // Flush already done by UsageAgent's Drop impl
     }
-}
-
-pub fn start_flush_interval(agent_for_interval: Arc<UsageAgent>) {
-    tokio::task::spawn(async move {
-        agent_for_interval.start_flush_interval(None).await;
-    });
 }
 
 #[cfg(test)]
