@@ -7,23 +7,33 @@ pub struct Buffer<T> {
     queue: Mutex<VecDeque<T>>,
 }
 
+pub enum AddStatus<T> {
+    Full { drained: Vec<T> },
+    Ok,
+}
+
 impl<T> Buffer<T> {
     pub fn new(max_size: usize) -> Self {
         Self {
+            queue: Mutex::new(VecDeque::with_capacity(max_size)),
             max_size,
-            queue: Mutex::new(VecDeque::new()),
         }
     }
 
-    pub async fn add(&self, item: T) -> bool {
+    pub async fn add(&self, item: T) -> AddStatus<T> {
         let mut queue = self.queue.lock().await;
-        queue.push_back(item);
-        queue.len() >= self.max_size
+        if queue.len() >= self.max_size {
+            let mut drained: Vec<T> = queue.drain(..).collect();
+            drained.push(item);
+            AddStatus::Full { drained }
+        } else {
+            queue.push_back(item);
+            AddStatus::Ok
+        }
     }
 
     pub async fn drain(&self) -> Vec<T> {
         let mut queue = self.queue.lock().await;
-        let drained_items = queue.drain(..).collect();
-        drained_items
+        queue.drain(..).collect()
     }
 }

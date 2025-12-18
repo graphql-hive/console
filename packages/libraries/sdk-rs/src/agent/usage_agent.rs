@@ -9,7 +9,7 @@ use std::{
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
 
-use crate::agent::utils::OperationProcessor;
+use crate::agent::{buffer::AddStatus, utils::OperationProcessor};
 use crate::agent::{buffer::Buffer, builder::UsageAgentBuilder};
 
 #[derive(Debug, Clone)]
@@ -197,15 +197,18 @@ impl UsageAgent {
         }
     }
 
+    async fn handle_drained(&self, drained: Vec<ExecutionReport>) -> Result<(), AgentError> {
+        if drained.is_empty() {
+            return Ok(());
+        }
+        let report = self.produce_report(drained)?;
+        self.send_report(report).await
+    }
+
     pub async fn flush(&self) -> Result<(), AgentError> {
         let execution_reports = self.buffer.drain().await;
-        let size = execution_reports.len();
 
-        if size > 0 {
-            let report = self.produce_report(execution_reports)?;
-            self.send_report(report).await?;
-            tracing::debug!("Reported {} operations", size);
-        }
+        self.handle_drained(execution_reports).await?;
 
         Ok(())
     }
@@ -223,8 +226,8 @@ impl UsageAgent {
     }
 
     pub async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
-        if self.buffer.add(execution_report).await {
-            self.flush().await?;
+        if let AddStatus::Full { drained } = self.buffer.add(execution_report).await {
+            self.handle_drained(drained).await?;
         }
 
         Ok(())
