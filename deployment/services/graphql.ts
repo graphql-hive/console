@@ -134,8 +134,14 @@ export function deployGraphQL({
           GRAPHQL_PUBLIC_ORIGIN: `https://${environment.appDns}`,
           CDN_CF: '1',
           HIVE_USAGE: '1',
-          HIVE_USAGE_TARGET: hiveConfig.require('target'),
+          HIVE_TARGET: hiveConfig.require('target'),
           HIVE_USAGE_ENDPOINT: serviceLocalEndpoint(usage.service),
+          HIVE_TRACING: '1',
+          HIVE_TRACING_ENDPOINT: environment.isProduction
+            ? 'https://api.graphql-hive.com/otel/v1/traces'
+            : environment.isStaging
+              ? 'https://api.hiveready.dev/otel/v1/traces'
+              : 'https://api.buzzcheck.dev/otel/v1/traces',
           HIVE_PERSISTED_DOCUMENTS: '1',
           ZENDESK_SUPPORT: zendesk.enabled ? '1' : '0',
           INTEGRATION_GITHUB: '1',
@@ -210,7 +216,7 @@ export function deployGraphQL({
       .withSecret('AUTH_GOOGLE_CLIENT_ID', googleOAuthSecret, 'clientId')
       .withSecret('AUTH_GOOGLE_CLIENT_SECRET', googleOAuthSecret, 'clientSecret')
       // Hive Usage Reporting
-      .withSecret('HIVE_USAGE_ACCESS_TOKEN', hiveUsageSecret, 'usageAccessToken')
+      .withSecret('HIVE_ACCESS_TOKEN', hiveUsageSecret, 'usageAccessToken')
       // Persisted Documents
       .withSecret(
         'HIVE_PERSISTED_DOCUMENTS_CDN_ACCESS_KEY_ID',
