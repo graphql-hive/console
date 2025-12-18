@@ -120,6 +120,7 @@ const runner = await run({
   taskList: Object.fromEntries(modules.map(module => module.task(context))),
   noHandleSignals: true,
   events: createTaskEventEmitter(),
+  noPreparedStatements: true,
 });
 
 registerShutdown({
