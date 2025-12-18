@@ -3,7 +3,6 @@ import type {
   SuccessfulSchemaCheckMapper,
 } from '../module.graphql.mappers';
 import { Injectable, Scope } from 'graphql-modules';
-import { DiffRule } from '@graphql-inspector/core';
 import { Storage } from '../../shared/providers/storage';
 import { formatNumber } from '../lib/number-formatting';
 import { SchemaManager } from './schema-manager';
