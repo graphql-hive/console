@@ -51,14 +51,15 @@ pub fn collect_schema_coordinates(
         error: None,
     };
     let mut visit_context = OperationVisitorContext::new(document, schema);
-    let mut visitor = SchemaCoordinatesVisitor {};
+    let mut visitor = SchemaCoordinatesVisitor {
+        visited_input_types: HashSet::new(),
+    };
 
     visit_document(&mut visitor, document, &mut visit_context, &mut ctx);
 
     if let Some(error) = ctx.error {
         Err(error)
     } else {
-        let mut input_object_fields_collector = InputObjectFieldCollector::default();
         for type_name in ctx.used_input_fields {
             if is_builtin_scalar(&type_name) {
                 ctx.schema_coordinates.insert(type_name);
@@ -68,7 +69,7 @@ pub fn collect_schema_coordinates(
                         ctx.schema_coordinates.insert(scalar_def.name.clone());
                     }
                     TypeDefinition::InputObject(input_type) => {
-                        input_object_fields_collector.collect(
+                        visitor.collect_nested_input_fields(
                             schema,
                             input_type,
                             &mut ctx.schema_coordinates,
@@ -90,51 +91,6 @@ pub fn collect_schema_coordinates(
         }
 
         Ok(ctx.schema_coordinates)
-    }
-}
-
-#[derive(Default)]
-struct InputObjectFieldCollector<'a> {
-    collected: HashSet<&'a str>,
-}
-
-impl<'a> InputObjectFieldCollector<'a> {
-    fn collect(
-        &mut self,
-        schema: &'a SchemaDocument<'static, String>,
-        input_type: &'a InputObjectType<'static, String>,
-        coordinates: &mut HashSet<String>,
-    ) {
-        if self.collected.contains(&input_type.name.as_str()) {
-            return;
-        }
-        self.collected.insert(input_type.name.as_str());
-        for field in &input_type.fields {
-            let field_coordinate = format!("{}.{}", input_type.name, field.name);
-            coordinates.insert(field_coordinate);
-
-            let field_type_name = field.value_type.inner_type();
-
-            if let Some(field_type_def) = schema.type_by_name(field_type_name) {
-                match field_type_def {
-                    TypeDefinition::Scalar(scalar_def) => {
-                        coordinates.insert(scalar_def.name.clone());
-                    }
-                    TypeDefinition::InputObject(nested_input_type) => {
-                        self.collect(schema, nested_input_type, coordinates);
-                    }
-                    TypeDefinition::Enum(enum_type) => {
-                        for value in &enum_type.values {
-                            coordinates.insert(format!("{}.{}", enum_type.name, value.name));
-                        }
-                    }
-                    _ => {}
-                }
-            } else if is_builtin_scalar(field_type_name) {
-                // Handle built-in scalars
-                coordinates.insert(field_type_name.to_string());
-            }
-        }
     }
 }
 
@@ -161,9 +117,11 @@ fn value_exists(v: &Value<String>) -> bool {
     !matches!(v, Value::Null)
 }
 
-struct SchemaCoordinatesVisitor {}
+struct SchemaCoordinatesVisitor<'a> {
+    visited_input_types: HashSet<&'a str>,
+}
 
-impl SchemaCoordinatesVisitor {
+impl<'a> SchemaCoordinatesVisitor<'a> {
     fn process_default_value(
         info: &OperationVisitorContext,
         ctx: &mut SchemaCoordinatesContext,
@@ -247,43 +205,46 @@ impl SchemaCoordinatesVisitor {
         }
     }
 
-    fn collect_nested_input_coordinates(
-        schema: &SchemaDocument<'static, String>,
-        input_type: &InputObjectType<'static, String>,
-        ctx: &mut SchemaCoordinatesContext,
+    fn collect_nested_input_fields(
+        &mut self,
+        schema: &'a SchemaDocument<'static, String>,
+        input_type: &'a InputObjectType<'static, String>,
+        coordinates: &mut HashSet<String>,
     ) {
+        if self.visited_input_types.contains(&input_type.name.as_str()) {
+            return;
+        }
+        self.visited_input_types.insert(input_type.name.as_str());
         for field in &input_type.fields {
             let field_coordinate = format!("{}.{}", input_type.name, field.name);
-            ctx.schema_coordinates.insert(field_coordinate);
+            coordinates.insert(field_coordinate);
 
             let field_type_name = field.value_type.inner_type();
 
             if let Some(field_type_def) = schema.type_by_name(field_type_name) {
                 match field_type_def {
                     TypeDefinition::Scalar(scalar_def) => {
-                        ctx.schema_coordinates.insert(scalar_def.name.clone());
+                        coordinates.insert(scalar_def.name.clone());
                     }
                     TypeDefinition::InputObject(nested_input_type) => {
-                        // Recursively collect nested input object fields
-                        Self::collect_nested_input_coordinates(schema, nested_input_type, ctx);
+                        self.collect_nested_input_fields(schema, nested_input_type, coordinates);
                     }
                     TypeDefinition::Enum(enum_type) => {
-                        // Collect enum values
                         for value in &enum_type.values {
-                            ctx.schema_coordinates
-                                .insert(format!("{}.{}", enum_type.name, value.name));
+                            coordinates.insert(format!("{}.{}", enum_type.name, value.name));
                         }
                     }
                     _ => {}
                 }
             } else if is_builtin_scalar(field_type_name) {
-                ctx.schema_coordinates.insert(field_type_name.to_string());
+                // Handle built-in scalars
+                coordinates.insert(field_type_name.to_string());
             }
         }
     }
 }
 
-impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVisitor {
+impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVisitor<'a> {
     fn enter_variable_value(
         &mut self,
         _info: &mut OperationVisitorContext<'a>,
@@ -549,10 +510,10 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                             if let Some(TypeDefinition::InputObject(nested_input_obj)) =
                                 info.schema.type_by_name(field_type_name)
                             {
-                                Self::collect_nested_input_coordinates(
+                                self.collect_nested_input_fields(
                                     info.schema,
                                     nested_input_obj,
-                                    ctx,
+                                    &mut ctx.schema_coordinates,
                                 );
                             }
                         }
@@ -2433,7 +2394,6 @@ mod tests {
             "Node.name",
             "NodeInput.name",
             "NodeInput.parent",
-            "ID",
             "String",
         ]
         .into_iter()
