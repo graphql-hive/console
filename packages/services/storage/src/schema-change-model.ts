@@ -1012,16 +1012,16 @@ export const ObjectTypeInterfaceRemovedModel = implement<ObjectTypeInterfaceRemo
 export const SchemaQueryTypeChangedModel = implement<SchemaQueryTypeChangedChange>().with({
   type: SchemaQueryTypeChangedLiteral,
   meta: z.object({
-    oldQueryTypeName: z.string(),
-    newQueryTypeName: z.string(),
+    oldQueryTypeName: z.string().nullable(),
+    newQueryTypeName: z.string().nullable(),
   }),
 });
 
 export const SchemaMutationTypeChangedModel = implement<SchemaMutationTypeChangedChange>().with({
   type: SchemaMutationTypeChangedLiteral,
   meta: z.object({
-    oldMutationTypeName: z.string(),
-    newMutationTypeName: z.string(),
+    oldMutationTypeName: z.string().nullable(),
+    newMutationTypeName: z.string().nullable(),
   }),
 });
 
@@ -1029,8 +1029,8 @@ export const SchemaSubscriptionTypeChangedModel =
   implement<SchemaSubscriptionTypeChangedChange>().with({
     type: SchemaSubscriptionTypeChangedLiteral,
     meta: z.object({
-      oldSubscriptionTypeName: z.string(),
-      newSubscriptionTypeName: z.string(),
+      oldSubscriptionTypeName: z.string().nullable(),
+      newSubscriptionTypeName: z.string().nullable(),
     }),
   });
 
@@ -1414,6 +1414,7 @@ const SchemaCheckSharedOutputFields = {
   serviceUrl: z.string().nullable(),
   targetId: z.string(),
   schemaVersionId: z.string().nullable(),
+  schemaProposalId: z.string().nullable(),
   meta: z
     .object({
       author: z.string(),

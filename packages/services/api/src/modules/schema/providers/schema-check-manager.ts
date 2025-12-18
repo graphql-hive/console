@@ -48,7 +48,12 @@ export class SchemaCheckManager {
       return null;
     }
 
-    return [...(schemaCheck.breakingSchemaChanges ?? []), ...(schemaCheck.safeSchemaChanges ?? [])];
+    const changes = [
+      ...(schemaCheck.breakingSchemaChanges ?? []),
+      ...(schemaCheck.safeSchemaChanges ?? []),
+    ];
+
+    return changes;
   }
 
   getBreakingSchemaChanges(schemaCheck: SchemaCheck) {
