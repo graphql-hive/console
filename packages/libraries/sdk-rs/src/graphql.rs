@@ -2444,11 +2444,11 @@ mod tests {
         let expected = vec![
             "Query.someField",
             "Query.someField.input",
+            "Query.someField.input!",
             "SomeType.id",
             "RecursiveInput.field",
             "RecursiveInput.nested",
             "String",
-            "ID",
         ]
         .into_iter()
         .map(|s| s.to_string())
