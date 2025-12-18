@@ -225,7 +225,7 @@ const CreateOIDCIntegrationModal_CreateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
-          scope
+          additionalScopes
         }
       }
     }
@@ -447,14 +447,14 @@ function CreateOIDCIntegrationForm(props: {
       authorizationEndpoint: '',
       clientId: '',
       clientSecret: '',
-      scope: '["openid", "email"]',
+      additionalScopes: '[]',
     },
     validate(values) {
       try {
-        JSON.parse(values.scope);
+        JSON.parse(values.additionalScopes);
       } catch {
         return {
-          scope: 'Invalid JSON',
+          additionalScopes: 'Invalid JSON',
         };
       }
     },
@@ -467,7 +467,7 @@ function CreateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret,
-          scope: JSON.parse(values.scope),
+          additionalScopes: JSON.parse(values.additionalScopes),
         },
       });
 
@@ -577,18 +577,18 @@ function CreateOIDCIntegrationForm(props: {
           </div>
 
           <div>
-            <Label htmlFor="scope">Scope</Label>
+            <Label htmlFor="additionalScopes">Additional Scopes</Label>
             <Input
-              placeholder="Scope"
-              id="scope"
-              name="scope"
+              placeholder="Additional Scopes"
+              id="additionalScopes"
+              name="additionalScopes"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              value={formik.values.scope}
+              value={formik.values.additionalScopes}
             />
             <FormError>
-              {(formik.touched.scope && formik.errors.scope) ||
-                mutation.data?.createOIDCIntegration.error?.details.scope}
+              {(formik.touched.additionalScopes && formik.errors.additionalScopes) ||
+                mutation.data?.createOIDCIntegration.error?.details.additionalScopes}
             </FormError>
           </div>
 
@@ -861,7 +861,7 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     authorizationEndpoint
     clientId
     clientSecretPreview
-    scope
+    additionalScopes
     oidcUserAccessOnly
     defaultMemberRole {
       id
@@ -886,7 +886,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           authorizationEndpoint
           clientId
           clientSecretPreview
-          scope
+          additionalScopes
         }
       }
       error {
@@ -897,7 +897,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
-          scope
+          additionalScopes
         }
       }
     }
@@ -945,14 +945,14 @@ function UpdateOIDCIntegrationForm(props: {
       authorizationEndpoint: props.oidcIntegration.authorizationEndpoint,
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
-      scope: JSON.stringify(props.oidcIntegration.scope).replaceAll(',', ', '),
+      additionalScopes: JSON.stringify(props.oidcIntegration.additionalScopes).replaceAll(',', ', '),
     },
     validate(values) {
       try {
-        JSON.parse(values.scope);
+        JSON.parse(values.additionalScopes);
       } catch {
         return {
-          scope: 'Invalid JSON',
+          additionalScopes: 'Invalid JSON',
         };
       }
     },
@@ -965,7 +965,7 @@ function UpdateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret === '' ? undefined : values.clientSecret,
-          scope: JSON.parse(values.scope),
+          additionalScopes: JSON.parse(values.additionalScopes),
         },
       });
 
@@ -1209,18 +1209,18 @@ function UpdateOIDCIntegrationForm(props: {
                 </div>
 
                 <div>
-                  <Label htmlFor="scope">Scope</Label>
+                  <Label htmlFor="additionalScopes">Additional Scopes</Label>
                   <Input
-                    placeholder="Scope"
-                    id="scope"
-                    name="scope"
+                    placeholder="Additional Scopes"
+                    id="additionalScopes"
+                    name="additionalScopes"
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    value={formik.values.scope}
+                    value={formik.values.additionalScopes}
                   />
                   <FormError>
-                    {(formik.touched.scope && formik.errors.scope) ||
-                      oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.scope}
+                    {(formik.touched.additionalScopes && formik.errors.additionalScopes) ||
+                      oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.additionalScopes}
                   </FormError>
                 </div>
 

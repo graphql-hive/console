@@ -13,7 +13,7 @@ export const createOIDCIntegration: NonNullable<
     tokenEndpoint: input.tokenEndpoint,
     userinfoEndpoint: input.userinfoEndpoint,
     authorizationEndpoint: input.authorizationEndpoint,
-    scope: input.scope,
+    additionalScopes: input.additionalScopes,
   });
 
   if (result.type === 'ok') {
@@ -38,7 +38,7 @@ export const createOIDCIntegration: NonNullable<
         tokenEndpoint: result.fieldErrors?.tokenEndpoint,
         userinfoEndpoint: result.fieldErrors?.userinfoEndpoint,
         authorizationEndpoint: result.fieldErrors?.authorizationEndpoint,
-        scope: result.fieldErrors?.scope,
+        additionalScopes: result.fieldErrors?.additionalScopes,
       },
     },
   };

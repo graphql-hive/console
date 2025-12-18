@@ -68,7 +68,7 @@ export const createOIDCSuperTokensProvider = (args: {
           authorizationEndpoint: config.authorizationEndpoint,
           userInfoEndpoint: config.userinfoEndpoint,
           tokenEndpoint: config.tokenEndpoint,
-          scope: config.scope,
+          scope: ['openid', 'email', ...config.additionalScopes],
         };
       },
 
@@ -252,7 +252,7 @@ type OIDCConfig = {
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
-  scope: string[];
+  additionalScopes: string[];
 };
 
 const OIDCProfileInfoSchema = zod.object({

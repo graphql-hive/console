@@ -70,7 +70,7 @@ export const internalApiRouter = t.router({
         tokenEndpoint: result.tokenEndpoint,
         userinfoEndpoint: result.userinfoEndpoint,
         authorizationEndpoint: result.authorizationEndpoint,
-        scope: result.scope,
+        additionalScopes: result.additionalScopes,
       };
     }),
 });
