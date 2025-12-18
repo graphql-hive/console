@@ -7,7 +7,7 @@ import { Observability } from './observability';
 import { Postgres } from './postgres';
 import { Sentry } from './sentry';
 
-class PostmarkSecret extends ServiceSecret<{
+export class PostmarkSecret extends ServiceSecret<{
   token: pulumi.Output<string> | string;
   from: string;
   messageStream: string;
@@ -21,6 +21,7 @@ export function deployWorkflows({
   sentry,
   postgres,
   observability,
+  postmarkSecret,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -29,14 +30,8 @@ export function deployWorkflows({
   docker: Docker;
   heartbeat?: string;
   sentry: Sentry;
+  postmarkSecret: PostmarkSecret;
 }) {
-  const emailConfig = new pulumi.Config('email');
-  const postmarkSecret = new PostmarkSecret('postmark', {
-    token: emailConfig.requireSecret('token'),
-    from: emailConfig.require('from'),
-    messageStream: emailConfig.require('messageStream'),
-  });
-
   return (
     new ServiceDeployment(
       'workflow-service',

@@ -30,7 +30,7 @@ import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
 import { deployWebhooks } from './services/webhooks';
-import { deployWorkflows } from './services/workflows';
+import { deployWorkflows, PostmarkSecret } from './services/workflows';
 import { configureZendesk } from './services/zendesk';
 import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
@@ -68,6 +68,13 @@ optimizeAzureCluster();
 const docker = configureDocker();
 const envName = pulumi.getStack();
 const heartbeatsConfig = new pulumi.Config('heartbeats');
+
+const emailConfig = new pulumi.Config('email');
+const postmarkSecret = new PostmarkSecret('postmark', {
+  token: emailConfig.requireSecret('token'),
+  from: emailConfig.require('from'),
+  messageStream: emailConfig.require('messageStream'),
+});
 
 const sentry = configureSentry();
 const environment = prepareEnvironment({
@@ -147,6 +154,7 @@ const emails = deployEmails({
   docker,
   environment,
   redis,
+  postmarkSecret,
   sentry,
   observability,
 });
@@ -156,6 +164,7 @@ deployWorkflows({
   docker,
   environment,
   postgres,
+  postmarkSecret,
   observability,
   sentry,
   heartbeat: heartbeatsConfig.get('workflows'),
