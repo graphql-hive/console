@@ -23,16 +23,16 @@ use graphql_tools::ast::{
     TransformedValue,
 };
 
-struct SchemaCoordinatesContext {
+struct SchemaCoordinatesContext<'a> {
     pub schema_coordinates: HashSet<String>,
-    pub used_input_fields: HashSet<String>,
+    pub used_input_fields: HashSet<&'a str>,
     pub input_values_provided: HashMap<String, usize>,
-    pub used_variables: HashSet<String>,
-    pub variables_with_defaults: HashSet<String>,
+    pub used_variables: HashSet<&'a str>,
+    pub variables_with_defaults: HashSet<&'a str>,
     error: Option<Error>,
 }
 
-impl SchemaCoordinatesContext {
+impl SchemaCoordinatesContext<'_> {
     fn is_corrupted(&self) -> bool {
         self.error.is_some()
     }
@@ -61,9 +61,9 @@ pub fn collect_schema_coordinates(
         Err(error)
     } else {
         for type_name in ctx.used_input_fields {
-            if is_builtin_scalar(&type_name) {
-                ctx.schema_coordinates.insert(type_name);
-            } else if let Some(type_def) = schema.type_by_name(&type_name) {
+            if is_builtin_scalar(type_name) {
+                ctx.schema_coordinates.insert(type_name.to_string());
+            } else if let Some(type_def) = schema.type_by_name(type_name) {
                 match type_def {
                     TypeDefinition::Scalar(scalar_def) => {
                         ctx.schema_coordinates.insert(scalar_def.name.clone());
@@ -123,7 +123,7 @@ struct SchemaCoordinatesVisitor<'a> {
 
 impl<'a> SchemaCoordinatesVisitor<'a> {
     fn process_default_value(
-        info: &OperationVisitorContext,
+        info: &OperationVisitorContext<'a>,
         ctx: &mut SchemaCoordinatesContext,
         type_name: &str,
         value: &Value<String>,
@@ -144,9 +144,8 @@ impl<'a> SchemaCoordinatesVisitor<'a> {
                             ctx.schema_coordinates.insert(coordinate);
 
                             // Recursively process nested objects
-                            let field_type_name =
-                                Self::resolve_type_name(field_def.value_type.clone());
-                            Self::process_default_value(info, ctx, &field_type_name, field_value);
+                            let field_type_name = Self::resolve_type_name(&field_def.value_type);
+                            Self::process_default_value(info, ctx, field_type_name, field_value);
                         }
                     }
                 }
@@ -166,41 +165,41 @@ impl<'a> SchemaCoordinatesVisitor<'a> {
         }
     }
 
-    fn resolve_type_name(t: Type<String>) -> String {
+    fn resolve_type_name(t: &'a Type<String>) -> &'a str {
         match t {
-            Type::NamedType(value) => value,
-            Type::ListType(t) => Self::resolve_type_name(*t),
-            Type::NonNullType(t) => Self::resolve_type_name(*t),
+            Type::NamedType(value) => value.as_str(),
+            Type::ListType(t) => Self::resolve_type_name(t),
+            Type::NonNullType(t) => Self::resolve_type_name(t),
         }
     }
 
     fn resolve_references(
         &self,
-        schema: &SchemaDocument<'static, String>,
-        type_name: &str,
-    ) -> Option<Vec<String>> {
+        schema: &'a SchemaDocument<'static, String>,
+        type_name: &'a str,
+    ) -> Option<Vec<&'a str>> {
         let mut visited_types = Vec::new();
         Self::_resolve_references(schema, type_name, &mut visited_types);
         Some(visited_types)
     }
 
     fn _resolve_references(
-        schema: &SchemaDocument<'static, String>,
-        type_name: &str,
-        visited_types: &mut Vec<String>,
+        schema: &'a SchemaDocument<'static, String>,
+        type_name: &'a str,
+        visited_types: &mut Vec<&'a str>,
     ) {
-        if visited_types.contains(&type_name.to_string()) {
+        if visited_types.contains(&type_name) {
             return;
         }
 
-        visited_types.push(type_name.to_string());
+        visited_types.push(type_name);
 
         let named_type = schema.type_by_name(type_name);
 
         if let Some(TypeDefinition::InputObject(input_type)) = named_type {
             for field in &input_type.fields {
-                let field_type = Self::resolve_type_name(field.value_type.clone());
-                Self::_resolve_references(schema, &field_type, visited_types);
+                let field_type = Self::resolve_type_name(&field.value_type);
+                Self::_resolve_references(schema, field_type, visited_types);
             }
         }
     }
@@ -244,14 +243,14 @@ impl<'a> SchemaCoordinatesVisitor<'a> {
     }
 }
 
-impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVisitor<'a> {
+impl<'a> OperationVisitor<'a, SchemaCoordinatesContext<'a>> for SchemaCoordinatesVisitor<'a> {
     fn enter_variable_value(
         &mut self,
         _info: &mut OperationVisitorContext<'a>,
-        ctx: &mut SchemaCoordinatesContext,
-        name: &str,
+        ctx: &mut SchemaCoordinatesContext<'a>,
+        name: &'a str,
     ) {
-        ctx.used_variables.insert(name.to_string());
+        ctx.used_variables.insert(name);
     }
 
     fn enter_field(
@@ -296,36 +295,36 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
     fn enter_variable_definition(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
-        ctx: &mut SchemaCoordinatesContext,
-        var: &graphql_tools::static_graphql::query::VariableDefinition,
+        ctx: &mut SchemaCoordinatesContext<'a>,
+        var: &'a graphql_tools::static_graphql::query::VariableDefinition,
     ) {
         if ctx.is_corrupted() {
             return;
         }
 
         if var.default_value.is_some() {
-            ctx.variables_with_defaults.insert(var.name.clone());
+            ctx.variables_with_defaults.insert(var.name.as_str());
         }
 
-        let type_name = Self::resolve_type_name(var.var_type.clone());
+        let type_name = Self::resolve_type_name(&var.var_type);
 
-        if let Some(inner_types) = self.resolve_references(info.schema, &type_name) {
+        if let Some(inner_types) = self.resolve_references(info.schema, type_name) {
             for inner_type in inner_types {
                 ctx.used_input_fields.insert(inner_type);
             }
         }
 
-        ctx.used_input_fields.insert(type_name.clone());
+        ctx.used_input_fields.insert(type_name);
 
         if let Some(default_value) = &var.default_value {
-            Self::process_default_value(info, ctx, &type_name, default_value);
+            Self::process_default_value(info, ctx, type_name, default_value);
         }
     }
 
     fn enter_argument(
         &mut self,
         info: &mut OperationVisitorContext<'a>,
-        ctx: &mut SchemaCoordinatesContext,
+        ctx: &mut SchemaCoordinatesContext<'a>,
         arg: &(String, Value<'static, String>),
     ) {
         if ctx.is_corrupted() {
@@ -352,7 +351,9 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
 
             let has_value = match arg_value {
                 Value::Null => false,
-                Value::Variable(var_name) => ctx.variables_with_defaults.contains(var_name),
+                Value::Variable(var_name) => {
+                    ctx.variables_with_defaults.contains(var_name.as_str())
+                }
                 _ => true,
             };
 
@@ -362,7 +363,7 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
             mark_as_used(ctx, &coordinate);
             if let Some(field_def) = parent_type.field_by_name(&field_name) {
                 if let Some(arg_def) = field_def.arguments.iter().find(|a| &a.name == arg_name) {
-                    let arg_type_name = Self::resolve_type_name(arg_def.value_type.clone());
+                    let arg_type_name = Self::resolve_type_name(&arg_def.value_type);
 
                     match arg_value {
                         Value::Enum(value) => {
@@ -377,9 +378,9 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                             // Only collect scalar type if it's actually a custom scalar
                             // receiving an object value
                             if let Some(TypeDefinition::Scalar(_)) =
-                                info.schema.type_by_name(&arg_type_name)
+                                info.schema.type_by_name(arg_type_name)
                             {
-                                ctx.schema_coordinates.insert(arg_type_name.clone());
+                                ctx.schema_coordinates.insert(arg_type_name.to_string());
                             }
                             // Otherwise handled by enter_object_value
                         }
@@ -389,12 +390,12 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                         _ => {
                             // For literal scalar values, collect the scalar type
                             // But only for actual scalars, not enum/input types
-                            if is_builtin_scalar(&arg_type_name) {
-                                ctx.schema_coordinates.insert(arg_type_name.clone());
+                            if is_builtin_scalar(arg_type_name) {
+                                ctx.schema_coordinates.insert(arg_type_name.to_string());
                             } else if let Some(TypeDefinition::Scalar(_)) =
-                                info.schema.type_by_name(&arg_type_name)
+                                info.schema.type_by_name(arg_type_name)
                             {
-                                ctx.schema_coordinates.insert(arg_type_name.clone());
+                                ctx.schema_coordinates.insert(arg_type_name.to_string());
                             }
                         }
                     }
@@ -462,7 +463,9 @@ impl<'a> OperationVisitor<'a, SchemaCoordinatesContext> for SchemaCoordinatesVis
                     let coordinate = format!("{}.{}", input_object_def.name, field.name);
 
                     let has_value = match value {
-                        Value::Variable(var_name) => ctx.variables_with_defaults.contains(var_name),
+                        Value::Variable(var_name) => {
+                            ctx.variables_with_defaults.contains(var_name.as_str())
+                        }
                         _ => value_exists(value),
                     };
 
