@@ -447,16 +447,7 @@ function CreateOIDCIntegrationForm(props: {
       authorizationEndpoint: '',
       clientId: '',
       clientSecret: '',
-      additionalScopes: '[]',
-    },
-    validate(values) {
-      try {
-        JSON.parse(values.additionalScopes);
-      } catch {
-        return {
-          additionalScopes: 'Invalid JSON',
-        };
-      }
+      additionalScopes: '',
     },
     async onSubmit(values) {
       const result = await mutate({
@@ -467,7 +458,7 @@ function CreateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret,
-          additionalScopes: JSON.parse(values.additionalScopes),
+          additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
         },
       });
 
@@ -579,16 +570,14 @@ function CreateOIDCIntegrationForm(props: {
           <div>
             <Label htmlFor="additionalScopes">Additional Scopes</Label>
             <Input
-              placeholder="Additional Scopes"
+              placeholder="Separated by spaces"
               id="additionalScopes"
               name="additionalScopes"
               onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
               value={formik.values.additionalScopes}
             />
             <FormError>
-              {(formik.touched.additionalScopes && formik.errors.additionalScopes) ||
-                mutation.data?.createOIDCIntegration.error?.details.additionalScopes}
+              {mutation.data?.createOIDCIntegration.error?.details.additionalScopes}
             </FormError>
           </div>
 
@@ -945,19 +934,7 @@ function UpdateOIDCIntegrationForm(props: {
       authorizationEndpoint: props.oidcIntegration.authorizationEndpoint,
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
-      additionalScopes: JSON.stringify(props.oidcIntegration.additionalScopes).replaceAll(
-        ',',
-        ', ',
-      ),
-    },
-    validate(values) {
-      try {
-        JSON.parse(values.additionalScopes);
-      } catch {
-        return {
-          additionalScopes: 'Invalid JSON',
-        };
-      }
+      additionalScopes: props.oidcIntegration.additionalScopes.join(' '),
     },
     async onSubmit(values) {
       const result = await oidcUpdateMutate({
@@ -968,7 +945,7 @@ function UpdateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret === '' ? undefined : values.clientSecret,
-          additionalScopes: JSON.parse(values.additionalScopes),
+          additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
         },
       });
 
@@ -1214,17 +1191,14 @@ function UpdateOIDCIntegrationForm(props: {
                 <div>
                   <Label htmlFor="additionalScopes">Additional Scopes</Label>
                   <Input
-                    placeholder="Additional Scopes"
+                    placeholder="Separated by spaces"
                     id="additionalScopes"
                     name="additionalScopes"
                     onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
                     value={formik.values.additionalScopes}
                   />
                   <FormError>
-                    {(formik.touched.additionalScopes && formik.errors.additionalScopes) ||
-                      oidcUpdateMutation.data?.updateOIDCIntegration.error?.details
-                        .additionalScopes}
+                    {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.additionalScopes}
                   </FormError>
                 </div>
 
