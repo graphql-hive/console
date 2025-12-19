@@ -1,4 +1,5 @@
-import { ReactElement, useRef, useState } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
+import { parse, print } from 'graphql';
 import { editor } from 'monaco-editor';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ export const DiffEditor = (props: {
   before: string | null;
   after: string | null;
   downloadFileName?: string;
+  /** Allow editing the after schema. Editable schemas don't allow toggling between diff and no-diff */
   editable?: boolean;
   lineNumbers?: boolean;
   onMount?: (editor: editor.IStandaloneCodeEditor) => void;
@@ -21,13 +23,28 @@ export const DiffEditor = (props: {
 }): ReactElement => {
   const [showDiff, setShowDiff] = useState<boolean>(true);
   const sdlBefore = usePrettify(props.before);
-  const sdlAfter = usePrettify(props.after);
+  // runs once on mount then uses internal monaco state to manage
+  let sdlAfter = props.after ?? '';
+  useEffect(() => {
+    try {
+      sdlAfter = print(parse(sdlAfter));
+    } catch {
+      // ignore
+    }
+  }, []);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
 
   function handleEditorDidMount(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
     addKeyBindings(editor, monaco);
     editorRef.current = editor;
     props.onMount?.(editor.getModifiedEditor());
+
+    editor.getModifiedEditor().onDidChangeModelContent(() => {
+      if (props.editable) {
+        const modified = editor.getModifiedEditor();
+        props.onChange?.(modified.getValue());
+      }
+    });
   }
 
   function addKeyBindings(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
@@ -36,12 +53,6 @@ export const DiffEditor = (props: {
     });
     editor.addCommand(monaco.KeyMod.CtrlCmd + monaco.KeyCode.DownArrow, () => {
       editorRef.current?.goToDiff('next');
-    });
-
-    // Must set the value on blur for efficiency and to avoid messing up
-    // the cursor position.
-    editor.getModifiedEditor().onDidBlurEditorText(() => {
-      props.onChange?.(editor.getModifiedEditor().getValue());
     });
   }
 
@@ -84,16 +95,18 @@ export const DiffEditor = (props: {
               </TooltipProvider>
             </>
           )}
-          <div className="ml-2 flex items-center space-x-2">
-            <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
-              Toggle Diff
-            </Label>
-            <Switch
-              id="toggle-diff-mode"
-              checked={showDiff}
-              onCheckedChange={isChecked => setShowDiff(isChecked)}
-            />
-          </div>
+          {props.editable ? null : (
+            <div className="ml-2 flex items-center space-x-2">
+              <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
+                Toggle Diff
+              </Label>
+              <Switch
+                id="toggle-diff-mode"
+                checked={showDiff}
+                onCheckedChange={isChecked => setShowDiff(isChecked)}
+              />
+            </div>
+          )}
         </div>
       </div>
       {showDiff ? (
@@ -105,9 +118,6 @@ export const DiffEditor = (props: {
           loading={<Spinner />}
           original={sdlBefore ?? undefined}
           modified={sdlAfter ?? undefined}
-          // keep models b/c: https://github.com/suren-atoyan/monaco-react/issues/647
-          keepCurrentOriginalModel
-          keepCurrentModifiedModel
           options={{
             originalEditable: false,
             renderLineHighlightOnlyWhenFocus: true,
