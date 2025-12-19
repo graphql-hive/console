@@ -116,8 +116,38 @@ the originally assigned value for all other cases.
 ## Available functions
 
 The Hive Router exposes the full set of
-[VRL built‑in functions](https://vector.dev/docs/reference/vrl/functions/). The configuration guides
-use a few of them in examples:
+[VRL built‑in functions](https://vector.dev/docs/reference/vrl/functions/). Additionally, the router
+provides custom functions alongside the standard VRL functions:
+
+### `env()`
+
+Reads the value of an environment variable. This function allows you to dynamically configure
+routing rules, headers, and other behavior based on environment variables set on your router
+instance.
+
+**Parameters:**
+
+- `name` (required, string) - The name of the environment variable to read.
+- `default` (optional, string) - A fallback value if the environment variable is not set. If not
+  provided and the variable is unset, the function returns `null`.
+- `treat_empty_as_unset` (optional, boolean, default: `false`) - If `true`, an empty string value is
+  treated the same as an unset variable. This is useful when you want to distinguish between "not
+  set" and "set to empty string".
+
+```js
+// Read an environment variable directly
+env('OTEL_EXPORTER_OTLP_ENDPOINT')
+
+// Provide a fallback value
+env('CUSTOM_SUBGRAPH_URL', 'https://default.example.com/graphql')
+
+// Treat empty values as unset
+env('FEATURE_FLAG', 'disabled', true)
+```
+
+### Standard VRL functions
+
+The configuration guides use a few of the standard VRL functions in examples:
 
 - `replace(value, pattern, replacement)` - returns a new string with all matches of pattern
   replaced. In the header manipulation guide it's used to normalise an `Authorization` header by
