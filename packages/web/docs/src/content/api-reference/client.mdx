@@ -49,10 +49,11 @@ choice.
 
 #### Client Information
 
-By default, the client information is retrieved by looking up the `x-graphql-client-name` and
-`x-graphql-client-version` headers in the HTTP request. For operations executed via the
-`GraphQL over WebSocket` protocol, the client information is retrieved by looking for the `client`
-key within the `connectionParams`.
+By default, the client information is retrieved by looking up the client information headers in the
+HTTP request. Those are `x-graphql-client-name` or `graphql-client-name` for the client name and
+`x-graphql-client-version` or `graphql-client-version` for the client version.For operations
+executed via the `GraphQL over WebSocket` protocol, the client information is retrieved by looking
+for the `client` key within the `connectionParams`.
 
 You can fully customize how to retrieve the client information by passing a custom `clientInfo`
 implementation.
@@ -64,8 +65,11 @@ information.
 useHive({
   usage: {
     clientInfo(context /* Your GraphQL execution context */) {
-      const name = context?.headers?.['x-graphql-client-name']
-      const version = context?.headers?.['x-graphql-client-version']
+      const name =
+        context?.headers?.['x-graphql-client-name'] || context?.headers?.['graphql-client-name']
+      const version =
+        context?.headers?.['x-graphql-client-version'] ||
+        context?.headers?.['graphql-client-version']
 
       if (name && version && typeof name === 'string' && typeof version === 'string') {
         return { name, version }
@@ -184,7 +188,9 @@ const hive = createHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -222,7 +228,9 @@ useHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -260,7 +268,9 @@ useHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -298,7 +308,9 @@ useHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
