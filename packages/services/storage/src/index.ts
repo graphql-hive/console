@@ -626,20 +626,34 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        const users = await t.any<unknown>(sql`/* ensureUserExists */
-          SELECT
-            ${userFields(sql`"users".`, sql`"stu".`)}
-          FROM
-            "users"
-          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-            ON ("stu"."user_id" = "users"."supertoken_user_id")
-          WHERE
-            "users"."email" = ${email};
-        `);
-        let internalUser = users.length > 0 ? UserModel.parse(users[0]) : null;
+        const users = await t
+          .any<unknown>(
+            sql`/* ensureUserExists */
+              SELECT
+                ${userFields(sql`"users".`, sql`"stu".`)}
+              FROM
+                "users"
+              LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                ON ("stu"."user_id" = "users"."supertoken_user_id")
+              WHERE
+                "users"."email" = ${email};
+            `,
+          )
+          .then(users => users.map(user => UserModel.parse(user)));
+
+        // prioritize existing user with matching superTokensUserId
+        let internalUser = users.find(user => user.superTokensUserId === superTokensUserId) ?? null;
         if (!internalUser) {
-          internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
+          if (users.length === 0) {
+            // no user found with the given email, fallback to superTokensUserId
+            internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
+          } else if (users.length === 1) {
+            // only one user found with the given email, use it
+            internalUser = users[0];
+          }
         }
+
+        // either user is brand new or user is not linkable (multiple accounts with the same email exist)
         if (!internalUser) {
           internalUser = await shared.createUser(
             buildUserData({
@@ -652,6 +666,7 @@ export async function createStorage(
           action = 'created';
         }
 
+        // if matched by email, migrate existing SuperTokens-based 1-1 user to 1-n linkable user
         if (users.length === 1 && internalUser.superTokensUserId != null) {
           await t.query(sql`/* ensureUserExists */
             UPDATE "users"
