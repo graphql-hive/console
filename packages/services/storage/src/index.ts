@@ -4833,7 +4833,10 @@ const OktaIntegrationBaseModel = zod.object({
   linked_organization_id: zod.string(),
   client_id: zod.string(),
   client_secret: zod.string(),
-  additional_scopes: zod.array(zod.string()),
+  additional_scopes: zod
+    .array(zod.string())
+    .nullable()
+    .transform(value => (value === null ? [] : value)),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
