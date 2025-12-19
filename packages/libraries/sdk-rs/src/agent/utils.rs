@@ -60,93 +60,14 @@ pub fn collect_schema_coordinates(
     if let Some(error) = ctx.error {
         Err(error)
     } else {
-        let mut input_object_fields_collector = InputObjectFieldCollector::default();
         for type_name in ctx.used_input_fields {
-<<<<<<< HEAD:packages/libraries/sdk-rs/src/agent/utils.rs
-            if is_builtin_scalar(&type_name) {
-                ctx.schema_coordinates.insert(type_name);
-            } else if let Some(type_def) = schema.type_by_name(&type_name) {
-                match type_def {
-                    TypeDefinition::Scalar(scalar_def) => {
-                        ctx.schema_coordinates.insert(scalar_def.name.clone());
-                    }
-                    TypeDefinition::InputObject(input_type) => {
-                        input_object_fields_collector.collect(
-                            schema,
-                            input_type,
-                            &mut ctx.schema_coordinates,
-                        );
-                    }
-                    TypeDefinition::Enum(enum_type) => {
-                        // Collect all values of enums referenced in variable definitions
-                        for value in &enum_type.values {
-                            ctx.schema_coordinates.insert(format!(
-                                "{}.{}",
-                                enum_type.name.as_str(),
-                                value.name
-                            ));
-                        }
-                    }
-                    _ => {}
-                }
-            }
-=======
             visitor.collect_nested_input_type(schema, type_name, &mut ctx.schema_coordinates);
->>>>>>> stack-overflow-sdk:packages/libraries/sdk-rs/src/graphql.rs
         }
 
         Ok(ctx.schema_coordinates)
     }
 }
 
-<<<<<<< HEAD:packages/libraries/sdk-rs/src/agent/utils.rs
-#[derive(Default)]
-struct InputObjectFieldCollector<'a> {
-    collected: HashSet<&'a str>,
-}
-
-impl<'a> InputObjectFieldCollector<'a> {
-    fn collect(
-        &mut self,
-        schema: &'a SchemaDocument<'static, String>,
-        input_type: &'a InputObjectType<'static, String>,
-        coordinates: &mut HashSet<String>,
-    ) {
-        if self.collected.contains(&input_type.name.as_str()) {
-            return;
-        }
-        self.collected.insert(input_type.name.as_str());
-        for field in &input_type.fields {
-            let field_coordinate = format!("{}.{}", input_type.name, field.name);
-            coordinates.insert(field_coordinate);
-
-            let field_type_name = field.value_type.inner_type();
-
-            if let Some(field_type_def) = schema.type_by_name(field_type_name) {
-                match field_type_def {
-                    TypeDefinition::Scalar(scalar_def) => {
-                        coordinates.insert(scalar_def.name.clone());
-                    }
-                    TypeDefinition::InputObject(nested_input_type) => {
-                        self.collect(schema, nested_input_type, coordinates);
-                    }
-                    TypeDefinition::Enum(enum_type) => {
-                        for value in &enum_type.values {
-                            coordinates.insert(format!("{}.{}", enum_type.name, value.name));
-                        }
-                    }
-                    _ => {}
-                }
-            } else if is_builtin_scalar(field_type_name) {
-                // Handle built-in scalars
-                coordinates.insert(field_type_name.to_string());
-            }
-        }
-    }
-}
-
-=======
->>>>>>> stack-overflow-sdk:packages/libraries/sdk-rs/src/graphql.rs
 fn is_builtin_scalar(type_name: &str) -> bool {
     matches!(type_name, "String" | "Int" | "Float" | "Boolean" | "ID")
 }
@@ -2463,9 +2384,6 @@ mod tests {
             "Node.name",
             "NodeInput.name",
             "NodeInput.parent",
-<<<<<<< HEAD:packages/libraries/sdk-rs/src/agent/utils.rs
-            "ID",
-=======
             "String",
         ]
         .into_iter()
@@ -2513,7 +2431,6 @@ mod tests {
             "SomeType.id",
             "RecursiveInput.field",
             "RecursiveInput.nested",
->>>>>>> stack-overflow-sdk:packages/libraries/sdk-rs/src/graphql.rs
             "String",
         ]
         .into_iter()
