@@ -25,6 +25,14 @@ configurations that can be set in the router's configuration file (`router.confi
 > In cases where a configuration file (`router.config.yaml`) is used with environment variables at
 > the same time, environment variables will only override the specific configuration values.
 
+## Accessing Environment Variables in Expressions
+
+Beyond using environment variables to override configuration values at startup, you can also access
+environment variables dynamically within [expressions](./expressions) using the `env()` function.
+
+For detailed documentation on the `env()` function and its parameters, see the
+[expressions guide](./expressions#env).
+
 ## Additional Variables
 
 In addition, you may specify the following environment variables:
