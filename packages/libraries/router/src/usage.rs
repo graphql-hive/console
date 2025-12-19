@@ -444,7 +444,7 @@ mod hive_usage_tests {
         }
 
         fn wait_for_processing(&self) -> tokio::time::Sleep {
-            tokio::time::sleep(tokio::time::Duration::from_secs(1))
+            tokio::time::sleep(tokio::time::Duration::from_secs(2))
         }
 
         fn activate_usage_mock(&'_ self) -> Mock<'_> {
@@ -549,6 +549,7 @@ mod hive_usage_tests {
         instance.execute_operation(req).await.next_response().await;
 
         instance.wait_for_processing().await;
+        println!("Waiting done");
 
         mock.assert();
         mock.assert_hits(1);
