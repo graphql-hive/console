@@ -123,13 +123,15 @@ export class OIDCIntegrationsProvider {
     const tokenEndpointResult = OAuthAPIUrlModel.safeParse(args.tokenEndpoint);
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
+    const additionalScopesResult = OIDCAdditionalScopesModel.safeParse(args.additionalScopes);
 
     if (
       clientIdResult.success &&
       clientSecretResult.success &&
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
-      authorizationEndpointResult.success
+      authorizationEndpointResult.success &&
+      additionalScopesResult.success
     ) {
       const creationResult = await this.storage.createOIDCIntegrationForOrganization({
         organizationId: args.organizationId,
@@ -138,7 +140,7 @@ export class OIDCIntegrationsProvider {
         tokenEndpoint: tokenEndpointResult.data,
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
-        additionalScopes: args.additionalScopes,
+        additionalScopes: additionalScopesResult.data,
       });
 
       if (creationResult.type === 'ok') {
@@ -184,7 +186,9 @@ export class OIDCIntegrationsProvider {
         authorizationEndpoint: authorizationEndpointResult.success
           ? null
           : authorizationEndpointResult.error.issues[0].message,
-        additionalScopes: null,
+        additionalScopes: additionalScopesResult.success
+          ? null
+          : additionalScopesResult.error.issues[0].message,
       },
     } as const;
   }
@@ -236,13 +240,17 @@ export class OIDCIntegrationsProvider {
     const authorizationEndpointResult = maybe(OAuthAPIUrlModel).safeParse(
       args.authorizationEndpoint,
     );
+    const additionalScopesResult = maybe(OIDCAdditionalScopesModel).safeParse(
+      args.additionalScopes,
+    );
 
     if (
       clientIdResult.success &&
       clientSecretResult.success &&
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
-      authorizationEndpointResult.success
+      authorizationEndpointResult.success &&
+      additionalScopesResult.success
     ) {
       const oidcIntegration = await this.storage.updateOIDCIntegration({
         oidcIntegrationId: args.oidcIntegrationId,
@@ -253,7 +261,7 @@ export class OIDCIntegrationsProvider {
         tokenEndpoint: tokenEndpointResult.data,
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
-        additionalScopes: args.additionalScopes,
+        additionalScopes: additionalScopesResult.data,
       });
 
       const redactedClientSecret = maskToken(oidcIntegration.clientId);
@@ -298,7 +306,9 @@ export class OIDCIntegrationsProvider {
         authorizationEndpoint: authorizationEndpointResult.success
           ? null
           : authorizationEndpointResult.error.issues[0].message,
-        additionalScopes: null,
+        additionalScopes: additionalScopesResult.success
+          ? null
+          : additionalScopesResult.error.issues[0].message,
       },
     } as const;
   }
@@ -529,5 +539,16 @@ const OIDCClientSecretModel = zod
   .max(200, 'Can not be longer than 200 characters.');
 
 const OAuthAPIUrlModel = zod.string().url('Must be a valid OAuth API url.');
+
+const OIDCAdditionalScopesModel = zod
+  .array(
+    zod
+      .string()
+      .toLowerCase()
+      .nonempty('Must not be empty.')
+      .max(50, 'Can not be longer than 50 characters.')
+      .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.'),
+  )
+  .max(20, 'Can not be more than 20 items.');
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);
