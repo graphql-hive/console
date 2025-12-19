@@ -18,6 +18,7 @@ overrides:
   miniflare@3>undici: 5.29.0
   tailwindcss: 3.4.17
   estree-util-value-to-estree: ^3.3.3
+  nodemailer@^6.0.0: ^7.0.11
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -15439,10 +15440,6 @@ packages:
 
   nodemailer-shared@1.1.0:
     resolution: {integrity: sha512-68xW5LSyPWv8R0GLm6veAvm7E+XFXkVgvE3FW0FGxNMMZqMkPFeGDVALfR1DPdSfcoO36PnW7q5AAOgFImEZGg==}
-
-  nodemailer@6.9.16:
-    resolution: {integrity: sha512-psAuZdTIRN08HKVd/E8ObdV6NO7NTBY3KsC30F7M4H1OnmLCUNaS56FpYxyb26zWLSyYF9Ozch9KYHhHegsiOQ==}
-    engines: {node: '>=6.0.0'}
 
   nodemailer@7.0.11:
     resolution: {integrity: sha512-gnXhNRE0FNhD7wPSCGhdNh46Hs6nm+uTyg+Kq0cZukNQiYdnCsoQjodNP9BQVG9XrcK/v6/MgpAPBUFyzh9pvw==}
@@ -38583,8 +38580,6 @@ snapshots:
     dependencies:
       nodemailer-fetch: 1.6.0
 
-  nodemailer@6.9.16: {}
-
   nodemailer@7.0.11: {}
 
   noms@0.0.0:
@@ -41117,7 +41112,7 @@ snapshots:
       inflation: 2.1.0
       jose: 4.15.9
       libphonenumber-js: 1.12.17
-      nodemailer: 6.9.16
+      nodemailer: 7.0.11
       pkce-challenge: 3.1.0
       psl: 1.8.0
       supertokens-js-override: 0.0.4
