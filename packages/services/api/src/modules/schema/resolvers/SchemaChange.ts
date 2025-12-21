@@ -41,10 +41,7 @@ export const SchemaChange: SchemaChangeResolvers = {
       id: d.id,
       name: d.name,
       version: d.version,
-      affectedOperations: d.affectedOperations.map(op => ({
-        hash: op.hash,
-        name: op.name,
-      })),
+      operations: d.affectedOperations,
     }));
   },
 };

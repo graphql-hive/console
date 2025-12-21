@@ -489,7 +489,7 @@ export default gql`
     List of active app deployments that would be affected by this breaking change.
     Only populated for breaking changes when app deployments are enabled.
     """
-    affectedAppDeployments: [SchemaChangeAffectedAppDeployment!] @tag(name: "public")
+    affectedAppDeployments(first: Int, firstOperations: Int): [SchemaChangeAffectedAppDeployment!] @tag(name: "public")
   }
 
   type SchemaChangeUsageStatistics {

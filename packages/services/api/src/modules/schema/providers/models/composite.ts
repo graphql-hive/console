@@ -218,10 +218,12 @@ export class CompositeModel {
       targetId: selector.targetId,
     });
 
-    const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
+    const getAffectedAppDeployments: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.targetId,
         schemaCoordinates,
+        firstDeployments,
+        firstOperations,
       });
 
     const contractChecks = await this.getContractChecks({
@@ -492,10 +494,12 @@ export class CompositeModel {
       targetId: target.id,
     });
 
-    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = schemaCoordinates =>
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: target.id,
         schemaCoordinates,
+        firstDeployments,
+        firstOperations,
       });
 
     const diffCheck = await this.checks.diff({
@@ -665,10 +669,12 @@ export class CompositeModel {
       targetId: selector.target,
     });
 
-    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = schemaCoordinates =>
+    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.target,
         schemaCoordinates,
+        firstDeployments,
+        firstOperations,
       });
 
     const diffCheck = await this.checks.diff({

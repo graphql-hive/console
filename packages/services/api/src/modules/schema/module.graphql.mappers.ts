@@ -315,7 +315,7 @@ export type SchemaChangeAffectedAppDeploymentMapper = {
   id: string;
   name: string;
   version: string;
-  affectedOperations: Array<{
+  operations: Array<{
     hash: string;
     name: string | null;
   }>;

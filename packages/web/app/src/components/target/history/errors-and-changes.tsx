@@ -95,7 +95,7 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
         percentageFormatted
       }
     }
-    affectedAppDeployments {
+    affectedAppDeployments(first: 10, firstOperations: 10) {
       id
       name
       version

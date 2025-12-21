@@ -48,6 +48,8 @@ export type AffectedAppDeployment = {
 
 export type GetAffectedAppDeployments = (
   schemaCoordinates: string[],
+  firstDeployments?: number,
+  firstOperations?: number,
 ) => Promise<AffectedAppDeployment[]>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:

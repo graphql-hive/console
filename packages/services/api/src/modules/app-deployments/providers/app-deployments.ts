@@ -833,6 +833,8 @@ export class AppDeployments {
   async getAffectedAppDeploymentsBySchemaCoordinates(args: {
     targetId: string;
     schemaCoordinates: string[];
+    firstDeployments?: number;
+    firstOperations?: number;
   }) {
     if (args.schemaCoordinates.length === 0) {
       return [];
@@ -857,6 +859,7 @@ export class AppDeployments {
           WHERE target_id = ${args.targetId}
           GROUP BY app_deployment_id
           HAVING min(is_active) = True
+          ${args.firstDeployments ? cSql`LIMIT ${cSql.raw(String(args.firstDeployments))}` : cSql``}
         `,
         queryId: 'get-active-app-deployment-ids',
         timeout: 30_000,
@@ -900,6 +903,7 @@ export class AppDeployments {
             app_deployment_id IN (${cSql.array(deploymentIds, 'String')}) AND
             hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           GROUP BY app_deployment_id, document_hash
+          ${args.firstOperations ? cSql`LIMIT ${cSql.raw(String(args.firstOperations))} BY app_deployment_id` : cSql``}
         `,
         queryId: 'get-affected-app-deployments-by-coordinates',
         timeout: 30_000,
@@ -937,7 +941,7 @@ export class AppDeployments {
     const deploymentIdToInfo = new Map(
       activeDeployments.map(d => [d.appDeploymentId, { name: d.appName, version: d.appVersion }]),
     );
-    
+
     // deploymentId -> coordinate -> operations
     const deploymentCoordinateOperations = new Map<
       string,
@@ -953,8 +957,8 @@ export class AppDeployments {
 
       for (const coordinate of doc.matchingCoordinates) {
         const ops = coordinateMap.get(coordinate) ?? [];
-        ops.push({
-          hash: doc.hash,
+        ops.push({ 
+          hash: doc.hash, 
           name: doc.operationName,
         });
         coordinateMap.set(coordinate, ops);

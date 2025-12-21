@@ -127,10 +127,12 @@ export class SingleModel {
       targetId: selector.targetId,
     });
 
-    const getAffectedAppDeployments: GetAffectedAppDeployments = schemaCoordinates =>
+    const getAffectedAppDeployments: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.targetId,
         schemaCoordinates,
+        firstDeployments,
+        firstOperations,
       });
 
     const [diffCheck, policyCheck] = await Promise.all([
@@ -270,10 +272,12 @@ export class SingleModel {
       targetId: target.id,
     });
 
-    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = schemaCoordinates =>
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: target.id,
         schemaCoordinates,
+        firstDeployments,
+        firstOperations,
       });
 
     const [metadataCheck, diffCheck] = await Promise.all([
