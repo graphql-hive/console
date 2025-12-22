@@ -1,5 +1,15 @@
 # 16.10.2024
 
+## 2.3.6
+
+### Patch Changes
+
+- Updated dependencies
+  [[`0ac2e06`](https://github.com/graphql-hive/console/commit/0ac2e06fd6eb94c9d9817f78faf6337118f945eb),
+  [`4b796f9`](https://github.com/graphql-hive/console/commit/4b796f95bbc0fc37aac2c3a108a6165858b42b49),
+  [`a9905ec`](https://github.com/graphql-hive/console/commit/a9905ec7198cf1bec977a281c5021e0ef93c2c34)]:
+  - hive-console-sdk-rs@0.2.3
+
 ## 2.3.5
 
 ### Patch Changes
