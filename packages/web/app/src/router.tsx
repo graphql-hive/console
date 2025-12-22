@@ -35,6 +35,7 @@ import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
 import { AuthOIDCPage } from './pages/auth-oidc';
+import { AuthOIDCRequestPage } from './pages/auth-oidc-request';
 import { AuthResetPasswordPage } from './pages/auth-reset-password';
 import { AuthSignInPage } from './pages/auth-sign-in';
 import { AuthSignUpPage } from './pages/auth-sign-up';
@@ -233,6 +234,21 @@ const authSSORoute = createRoute({
   component: () => {
     const { redirectToPath } = authSSORoute.useSearch();
     return <AuthSSOPage redirectToPath={redirectToPath} />;
+  },
+});
+
+const AuthOIDCRequestRouteSearch = AuthSharedSearch.extend({
+  id: z.string({ required_error: 'OIDC ID is required' }),
+});
+const authOIDCRequestRoute = createRoute({
+  getParentRoute: () => authRoute,
+  path: 'oidc-request',
+  validateSearch(search) {
+    return AuthOIDCRequestRouteSearch.parse(search);
+  },
+  component: function AuthOIDCRequestRoute() {
+    const { id, redirectToPath } = authOIDCRequestRoute.useSearch();
+    return <AuthOIDCRequestPage oidcId={id} redirectToPath={redirectToPath} />;
   },
 });
 
@@ -1049,6 +1065,7 @@ const routeTree = root.addChildren([
       authSignInRoute,
       authSignUpRoute,
       authSSORoute,
+      authOIDCRequestRoute,
       authOIDCRoute,
       authCallbackRoute,
       authVerifyEmailRoute,

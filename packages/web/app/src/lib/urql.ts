@@ -220,7 +220,7 @@ export const urqlClient = createClient({
           } else if (action.type === 'VERIFY_EMAIL') {
             window.location.href = '/auth/verify-email';
           } else if (action.type === 'NEEDS_OIDC') {
-            window.location.href = `/auth/oidc?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
+            window.location.href = `/auth/oidc-request?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           } else {
             window.location.href = `/auth?redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           }
