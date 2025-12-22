@@ -1,4 +1,6 @@
-import { ReactElement, useRef, useState } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
+import { parse, print } from 'graphql';
+import { editor } from 'monaco-editor';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -13,15 +15,36 @@ export const DiffEditor = (props: {
   before: string | null;
   after: string | null;
   downloadFileName?: string;
+  /** Allow editing the after schema. Editable schemas don't allow toggling between diff and no-diff */
+  editable?: boolean;
+  lineNumbers?: boolean;
+  onMount?: (editor: editor.IStandaloneCodeEditor) => void;
+  onChange?: (source: string | undefined) => void;
 }): ReactElement => {
   const [showDiff, setShowDiff] = useState<boolean>(true);
   const sdlBefore = usePrettify(props.before);
-  const sdlAfter = usePrettify(props.after);
+  // runs once on mount then uses internal monaco state to manage
+  let sdlAfter = props.after ?? '';
+  useEffect(() => {
+    try {
+      sdlAfter = print(parse(sdlAfter));
+    } catch {
+      // ignore
+    }
+  }, []);
   const editorRef = useRef<OriginalMonacoDiffEditor | null>(null);
 
   function handleEditorDidMount(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
     addKeyBindings(editor, monaco);
     editorRef.current = editor;
+    props.onMount?.(editor.getModifiedEditor());
+
+    editor.getModifiedEditor().onDidChangeModelContent(() => {
+      if (props.editable) {
+        const modified = editor.getModifiedEditor();
+        props.onChange?.(modified.getValue());
+      }
+    });
   }
 
   function addKeyBindings(editor: OriginalMonacoDiffEditor, monaco: Monaco) {
@@ -72,16 +95,18 @@ export const DiffEditor = (props: {
               </TooltipProvider>
             </>
           )}
-          <div className="ml-2 flex items-center space-x-2">
-            <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
-              Toggle Diff
-            </Label>
-            <Switch
-              id="toggle-diff-mode"
-              checked={showDiff}
-              onCheckedChange={isChecked => setShowDiff(isChecked)}
-            />
-          </div>
+          {props.editable ? null : (
+            <div className="ml-2 flex items-center space-x-2">
+              <Label htmlFor="toggle-diff-mode" className="text-xs font-normal">
+                Toggle Diff
+              </Label>
+              <Switch
+                id="toggle-diff-mode"
+                checked={showDiff}
+                onCheckedChange={isChecked => setShowDiff(isChecked)}
+              />
+            </div>
+          )}
         </div>
       </div>
       {showDiff ? (
@@ -96,9 +121,9 @@ export const DiffEditor = (props: {
           options={{
             originalEditable: false,
             renderLineHighlightOnlyWhenFocus: true,
-            readOnly: true,
+            readOnly: !props.editable,
             diffAlgorithm: 'advanced',
-            lineNumbers: 'off',
+            lineNumbers: props.lineNumbers ? undefined : 'off',
           }}
           onMount={handleEditorDidMount}
         />
@@ -110,10 +135,12 @@ export const DiffEditor = (props: {
           theme="vs-dark"
           loading={<Spinner />}
           value={sdlAfter ?? undefined}
+          onMount={props.onMount}
+          onChange={props.onChange}
           options={{
             renderLineHighlightOnlyWhenFocus: true,
-            readOnly: true,
-            lineNumbers: 'off',
+            readOnly: !props.editable,
+            lineNumbers: props.lineNumbers ? undefined : 'off',
             minimap: {
               enabled: false,
             },
