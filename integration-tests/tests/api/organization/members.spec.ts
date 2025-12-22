@@ -156,18 +156,21 @@ test.concurrent('invite user with assigned resouces', async ({ expect }) => {
   const m = await org.inviteAndJoinMember();
   const role = await m.createMemberRole(['organization:describe', 'project:describe']);
 
-  const member = await org.inviteAndJoinMember(undefined, role.id, {
-    mode: ResourceAssignmentModeType.Granular,
-    projects: [
-      {
-        projectId: project1.id,
-        targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
-      },
-      {
-        projectId: project3.id,
-        targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
-      },
-    ],
+  const member = await org.inviteAndJoinMember({
+    memberRoleId: role.id,
+    resources: {
+      mode: ResourceAssignmentModeType.Granular,
+      projects: [
+        {
+          projectId: project1.id,
+          targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+        },
+        {
+          projectId: project3.id,
+          targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+        },
+      ],
+    },
   });
 
   const result = await org.projects(member.memberToken);
