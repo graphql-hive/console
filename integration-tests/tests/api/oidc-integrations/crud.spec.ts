@@ -34,6 +34,7 @@ const CreateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
           oidcUserAccessOnly
         }
       }
@@ -45,6 +46,7 @@ const CreateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
         }
       }
     }
@@ -83,6 +85,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -100,6 +103,7 @@ describe('create', () => {
               userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
               authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
               oidcUserAccessOnly: true,
+              additionalScopes: [],
             },
           },
         },
@@ -136,6 +140,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -164,6 +169,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -174,6 +180,7 @@ describe('create', () => {
           createOIDCIntegration: {
             error: {
               details: {
+                additionalScopes: null,
                 authorizationEndpoint: null,
                 clientId: Must be at least 3 characters long.,
                 clientSecret: null,
@@ -202,6 +209,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -212,6 +220,7 @@ describe('create', () => {
           createOIDCIntegration: {
             error: {
               details: {
+                additionalScopes: null,
                 authorizationEndpoint: null,
                 clientId: Can not be longer than 100 characters.,
                 clientSecret: null,
@@ -240,6 +249,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -250,6 +260,7 @@ describe('create', () => {
           createOIDCIntegration: {
             error: {
               details: {
+                additionalScopes: null,
                 authorizationEndpoint: null,
                 clientId: null,
                 clientSecret: Must be at least 3 characters long.,
@@ -278,6 +289,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -288,6 +300,7 @@ describe('create', () => {
           createOIDCIntegration: {
             error: {
               details: {
+                additionalScopes: null,
                 authorizationEndpoint: null,
                 clientId: null,
                 clientSecret: Can not be longer than 200 characters.,
@@ -316,6 +329,7 @@ describe('create', () => {
             tokenEndpoint: 'foo',
             userinfoEndpoint: 'foo',
             authorizationEndpoint: 'foo',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -326,6 +340,7 @@ describe('create', () => {
           createOIDCIntegration: {
             error: {
               details: {
+                additionalScopes: null,
                 authorizationEndpoint: Must be a valid OAuth API url.,
                 clientId: null,
                 clientSecret: null,
@@ -354,6 +369,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -371,6 +387,7 @@ describe('create', () => {
               userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
               authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
               oidcUserAccessOnly: true,
+              additionalScopes: [],
             },
           },
         },
@@ -386,6 +403,7 @@ describe('create', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -401,6 +419,7 @@ describe('create', () => {
               tokenEndpoint: null,
               userinfoEndpoint: null,
               authorizationEndpoint: null,
+              additionalScopes: null,
             },
           },
           ok: null,
@@ -439,6 +458,7 @@ describe('delete', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -513,6 +533,7 @@ describe('delete', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -558,6 +579,7 @@ describe('delete', () => {
               tokenEndpoint: 'http://localhost:8888/oauth/token',
               userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
               authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+              additionalScopes: [],
             },
           },
           authToken: ownerToken,
@@ -626,6 +648,7 @@ const UpdateOIDCIntegrationMutation = graphql(`
           authorizationEndpoint
           clientId
           clientSecretPreview
+          additionalScopes
         }
       }
       error {
@@ -636,6 +659,7 @@ const UpdateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
         }
       }
     }
@@ -658,6 +682,7 @@ describe('update', () => {
             tokenEndpoint: 'http://localhost:8888/aaaa/token',
             userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
             authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -675,6 +700,7 @@ describe('update', () => {
             tokenEndpoint: 'http://localhost:8888/bbbb/token',
             userinfoEndpoint: 'http://localhost:8888/bbbb/userinfo',
             authorizationEndpoint: 'http://localhost:8888/bbbb/authorize',
+            additionalScopes: ['profile'],
           },
         },
         authToken: ownerToken,
@@ -691,6 +717,7 @@ describe('update', () => {
               tokenEndpoint: 'http://localhost:8888/bbbb/token',
               userinfoEndpoint: 'http://localhost:8888/bbbb/userinfo',
               authorizationEndpoint: 'http://localhost:8888/bbbb/authorize',
+              additionalScopes: ['profile'],
             },
           },
         },
@@ -711,6 +738,7 @@ describe('update', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
         authToken: ownerToken,
@@ -752,6 +780,7 @@ describe('restrictions', () => {
           tokenEndpoint: 'http://localhost:8888/oauth/token',
           userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
           authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+          additionalScopes: [],
         },
       },
       authToken: args.ownerToken,
@@ -769,6 +798,7 @@ describe('restrictions', () => {
             tokenEndpoint: 'http://localhost:8888/oauth/token',
             userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
             authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+            additionalScopes: [],
           },
         },
       },
@@ -938,6 +968,7 @@ test.concurrent(
           tokenEndpoint: 'http://localhost:8888/aaaa/token',
           userinfoEndpoint: 'http://localhost:8888/aaaa/userinfo',
           authorizationEndpoint: 'http://localhost:8888/aaaa/authorize',
+          additionalScopes: [],
         },
       },
       authToken: ownerToken,

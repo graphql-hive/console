@@ -24,6 +24,8 @@ export default defineConfig({
   screenshotOnRunFailure: isCI,
   defaultCommandTimeout: 15_000, // sometimes the app takes longer to load, especially in the CI
   retries: 2,
+  viewportWidth: 1280,
+  viewportHeight: 720,
   e2e: {
     setupNodeEvents(on) {
       on('task', {
