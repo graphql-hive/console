@@ -3,7 +3,7 @@ import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/laboratory/lib/env';
 
 export interface LaboratoryPreflightLog {
-  level: 'log' | 'warn' | 'error' | 'info';
+  level: 'log' | 'warn' | 'error' | 'info' | 'system';
   message: unknown[];
   createdAt: string;
 }
@@ -13,6 +13,7 @@ export interface LaboratoryPreflightResult {
   error?: string;
   logs: LaboratoryPreflightLog[];
   env: LaboratoryEnv;
+  headers: Record<string, string>;
 }
 
 export interface LaboratoryPreflight {
@@ -113,16 +114,6 @@ export async function runIsolatedLabScript(
               };
               
               const lab = Object.freeze({
-                request: (endpoint, query, options) => {
-                  return fetch(endpoint, {
-                    method: 'POST',
-                    body: JSON.stringify({ query, variables: options?.variables, extensions: options?.extensions }),
-                    headers: {
-                      'Content-Type': 'application/json',
-                      ...options?.headers,
-                    },
-                  });
-                },
                 environment: {
                   get: (key) => env.variables[key],
                   set: (key, value) => {
@@ -131,6 +122,9 @@ export async function runIsolatedLabScript(
                   delete: (key) => {
                     delete env.variables[key];
                   }
+                },
+                request: {
+                  headers: new Headers()
                 },
                 prompt: (placeholder, defaultValue) => {
                   return new Promise((resolve) => {
@@ -145,7 +139,7 @@ export async function runIsolatedLabScript(
               const AsyncFunction = async function () {}.constructor;
               await new AsyncFunction('lab', 'CryptoJS', 'with(lab){' + event.data.script + '}')(lab, CryptoJS);
               
-              self.postMessage({ type: 'result', env: env });
+              self.postMessage({ type: 'result', env: env, headers: Object.fromEntries(lab.request.headers.entries()) });
             } catch (err) {
               self.console.error(err);
               self.postMessage({ type: 'result', error: err.message || String(err) });
@@ -171,12 +165,22 @@ export async function runIsolatedLabScript(
             error: data.error,
             logs,
             env,
+            headers: data.headers,
           });
         } else {
+          if (Object.keys(data.headers).length > 0) {
+            logs.push({
+              level: 'system',
+              message: [`Headers:\n${JSON.stringify(data.headers, null, 2)}`],
+              createdAt: new Date().toISOString(),
+            });
+          }
+
           resolve({
             status: 'success',
             logs,
             env: data.env,
+            headers: data.headers,
           });
         }
       } else if (data.type === 'log') {
@@ -202,6 +206,7 @@ export async function runIsolatedLabScript(
         error: error.message,
         logs,
         env,
+        headers: {},
       });
     };
 

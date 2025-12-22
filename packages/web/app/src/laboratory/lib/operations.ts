@@ -57,6 +57,7 @@ export interface LaboratoryOperationsActions {
     endpoint: string,
     options?: {
       env?: LaboratoryEnv;
+      headers?: Record<string, string>;
       onResponse?: (response: string) => void;
     },
   ) => Promise<Response | null>;
@@ -322,6 +323,7 @@ export const useOperations = (
       endpoint: string,
       options?: {
         env?: LaboratoryEnv;
+        headers?: Record<string, string>;
         onResponse?: (response: string) => void;
       },
     ) => {
@@ -329,12 +331,17 @@ export const useOperations = (
         return null;
       }
 
-      let env: LaboratoryEnv = options?.env ??
-        (await props.preflightApi
-          ?.runPreflight?.()
-          ?.then(result => result?.env ?? { variables: {} })) ?? {
-          variables: {},
-        };
+      let env: LaboratoryEnv;
+      let headers: Record<string, string>;
+
+      if (options?.env) {
+        env = options.env;
+        headers = options.headers ?? {};
+      } else {
+        const preflightResult = await props.preflightApi?.runPreflight?.();
+        env = preflightResult?.env ?? { variables: {} };
+        headers = preflightResult?.headers ?? {};
+      }
 
       if (env && Object.keys(env.variables).length > 0) {
         props.envApi?.setEnv(env);
@@ -342,9 +349,14 @@ export const useOperations = (
         env = props.envApi?.env ?? { variables: {} };
       }
 
-      const headers = activeOperation.headers
+      const parsedHeaders = activeOperation.headers
         ? JSON.parse(handleTemplate(activeOperation.headers, env))
         : {};
+
+      const mergedHeaders = {
+        ...headers,
+        ...parsedHeaders,
+      };
 
       const variables = activeOperation.variables
         ? JSON.parse(handleTemplate(activeOperation.variables, env))
@@ -357,7 +369,7 @@ export const useOperations = (
         const client = createClient({
           url: endpoint.replace('http', 'ws'),
           connectionParams: {
-            ...headers,
+            ...mergedHeaders,
           },
         });
 
@@ -422,7 +434,7 @@ export const useOperations = (
           extensions,
         }),
         headers: {
-          ...headers,
+          ...mergedHeaders,
           'Content-Type': 'application/json',
         },
         signal: abortController.signal,

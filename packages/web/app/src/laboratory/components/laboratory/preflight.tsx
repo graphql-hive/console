@@ -81,11 +81,13 @@ export const Preflight = () => {
               extraLibs={[
                 `
                   interface Lab {
-                    request: (endpoint: string, query: string, options?: { variables?: Record<string, unknown>; extensions?: Record<string, unknown>; headers?: Record<string, string> }) => Promise<Response>;
                     environment: {
                       set: (key: string, value: string) => void;
                       get: (key: string) => string;
                       delete: (key: string) => void;
+                    };
+                    request: {
+                      headers: Headers;
                     };
                     prompt: (placeholder: string, defaultValue: string) => Promise<string | null>;
                     CryptoJS: typeof CryptoJS;
@@ -245,15 +247,17 @@ export const Preflight = () => {
               <div className="ml-auto flex items-center gap-2" />
             </div>
             <ScrollArea className="h-full">
-              <div className="flex flex-col gap-1.5 p-3">
+              <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
                 {preflight?.lastTestResult?.logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
                     <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
                     <span
                       className={cn('text-xs font-medium', {
+                        'text-blue-400': log.level === 'info',
                         'text-green-400': log.level === 'log',
                         'text-yellow-400': log.level === 'warn',
                         'text-red-400': log.level === 'error',
+                        'text-gray-400': log.level === 'system',
                       })}
                     >
                       {log.level.toUpperCase()}
