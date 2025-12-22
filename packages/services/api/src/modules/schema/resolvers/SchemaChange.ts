@@ -72,19 +72,40 @@ export const SchemaChange: SchemaChangeResolvers = {
     if (!change.affectedAppDeployments) {
       return null;
     }
-    const nodes = change.affectedAppDeployments.map(d => ({
+
+    const allDeployments = change.affectedAppDeployments;
+    const totalCount = allDeployments.length;
+
+    // Apply cursor-based pagination
+    let startIndex = 0;
+    if (args.after) {
+      const afterIndex = allDeployments.findIndex(d => d.id === args.after);
+      if (afterIndex !== -1) {
+        startIndex = afterIndex + 1;
+      }
+    }
+
+    const limit = args.first;
+    const paginatedDeployments = limit
+      ? allDeployments.slice(startIndex, startIndex + limit)
+      : allDeployments.slice(startIndex);
+
+    const nodes = paginatedDeployments.map(d => ({
       id: d.id,
       name: d.name,
       version: d.version,
       operations: d.affectedOperations,
       totalOperations: d.affectedOperations.length,
     }));
+
+    const hasNextPage = limit ? startIndex + limit < totalCount : false;
+
     return {
       nodes,
-      totalCount: nodes.length,
+      totalCount,
       pageInfo: {
-        hasNextPage: false,
-        hasPreviousPage: false,
+        hasNextPage,
+        hasPreviousPage: startIndex > 0,
         startCursor: nodes[0]?.id ?? '',
         endCursor: nodes[nodes.length - 1]?.id ?? '',
       },
