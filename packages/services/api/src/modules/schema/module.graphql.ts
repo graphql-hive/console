@@ -489,7 +489,17 @@ export default gql`
     List of active app deployments that would be affected by this breaking change.
     Only populated for breaking changes when app deployments are enabled.
     """
-    affectedAppDeployments(first: Int, firstOperations: Int): [SchemaChangeAffectedAppDeployment!] @tag(name: "public")
+    affectedAppDeployments(
+      first: Int
+      after: String
+      firstOperations: Int
+    ): SchemaChangeAffectedAppDeploymentsConnection @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentsConnection {
+    nodes: [SchemaChangeAffectedAppDeployment!]! @tag(name: "public")
+    totalCount: Int! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   type SchemaChangeUsageStatistics {
@@ -572,7 +582,19 @@ export default gql`
     """
     The operations within this app deployment that use the affected schema coordinate.
     """
-    affectedOperations: [SchemaChangeAffectedAppDeploymentOperation!]! @tag(name: "public")
+    affectedOperations(
+      first: Int
+      after: String
+    ): SchemaChangeAffectedAppDeploymentOperationsConnection! @tag(name: "public")
+    """
+    Total count of operations within this app deployment that use the affected schema coordinate.
+    """
+    totalAffectedOperations: Int! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentOperationsConnection {
+    nodes: [SchemaChangeAffectedAppDeploymentOperation!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
   }
 
   """

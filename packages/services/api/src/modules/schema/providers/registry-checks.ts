@@ -44,13 +44,20 @@ export type AffectedAppDeployment = {
     version: string;
   };
   affectedOperationsByCoordinate: Record<string, Array<{ hash: string; name: string | null }>>;
+  countByCoordinate: Record<string, number>;
+  totalOperationsByCoordinate: number;
+};
+
+export type AffectedAppDeploymentsResult = {
+  deployments: AffectedAppDeployment[];
+  totalDeployments: number;
 };
 
 export type GetAffectedAppDeployments = (
   schemaCoordinates: string[],
   firstDeployments?: number,
   firstOperations?: number,
-) => Promise<AffectedAppDeployment[]>;
+) => Promise<AffectedAppDeploymentsResult>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:
 // https://bit.ly/hive-check-result-data
@@ -618,14 +625,14 @@ export class RegistryChecks {
         );
 
         try {
-          const affectedAppDeployments = await args.getAffectedAppDeployments(
-            Array.from(breakingCoordinates),
-          );
+          const result = await args.getAffectedAppDeployments(Array.from(breakingCoordinates));
+          const affectedAppDeployments = result.deployments;
 
           if (affectedAppDeployments.length > 0) {
             this.logger.debug(
-              '%d app deployments affected by breaking changes',
+              '%d app deployments affected by breaking changes (total: %d)',
               affectedAppDeployments.length,
+              result.totalDeployments,
             );
 
             // Mark changes as unsafe if they affect active app deployments

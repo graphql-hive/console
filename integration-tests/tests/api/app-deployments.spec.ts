@@ -2767,13 +2767,18 @@ const SchemaCheckWithAffectedAppDeployments = graphql(`
               path
               isSafeBasedOnUsage
               affectedAppDeployments {
-                id
-                name
-                version
-                affectedOperations {
-                  hash
+                nodes {
+                  id
                   name
+                  version
+                  affectedOperations {
+                    nodes {
+                      hash
+                      name
+                    }
+                  }
                 }
+                totalCount
               }
             }
           }
@@ -2927,7 +2932,7 @@ test('schema check shows affected app deployments for breaking changes', async (
       const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
         edge.node.message.includes('hello'),
       );
-      return !!(helloFieldRemoval?.node.affectedAppDeployments?.length ?? 0);
+      return !!(helloFieldRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0);
     },
     { maxWait: 15_000 },
   );
@@ -2947,16 +2952,16 @@ test('schema check shows affected app deployments for breaking changes', async (
   // console.log('helloFieldRemoval:', JSON.stringify(helloFieldRemoval, null, 2));
 
   expect(helloFieldRemoval).toBeDefined();
-  expect(helloFieldRemoval?.node.affectedAppDeployments).toBeDefined();
-  expect(helloFieldRemoval?.node.affectedAppDeployments?.length).toBe(1);
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.nodes).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
 
-  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.[0];
+  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.nodes?.[0];
   expect(affectedDeployment?.name).toBe('test-app');
   expect(affectedDeployment?.version).toBe('1.0.0');
-  expect(affectedDeployment?.affectedOperations).toBeDefined();
-  expect(affectedDeployment?.affectedOperations.length).toBe(1);
-  expect(affectedDeployment?.affectedOperations[0].hash).toBe('hello-query-hash');
-  expect(affectedDeployment?.affectedOperations[0].name).toBe('GetHello');
+  expect(affectedDeployment?.affectedOperations.nodes).toBeDefined();
+  expect(affectedDeployment?.affectedOperations.nodes.length).toBe(1);
+  expect(affectedDeployment?.affectedOperations.nodes[0].hash).toBe('hello-query-hash');
+  expect(affectedDeployment?.affectedOperations.nodes[0].name).toBe('GetHello');
 });
 
 test('breaking changes show only deployments affected by their specific coordinate', async () => {
@@ -3142,8 +3147,8 @@ test('breaking changes show only deployments affected by their specific coordina
         edge.node.message.includes('world'),
       );
       return !!(
-        (helloRemoval?.node.affectedAppDeployments?.length ?? 0) &&
-        (worldRemoval?.node.affectedAppDeployments?.length ?? 0)
+        (helloRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0) &&
+        (worldRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0)
       );
     },
     { maxWait: 15_000 },
@@ -3164,21 +3169,25 @@ test('breaking changes show only deployments affected by their specific coordina
 
   // Verify hello removal only shows App A (not App B)
   expect(helloRemoval).toBeDefined();
-  expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(1);
-  expect(helloRemoval?.node.affectedAppDeployments?.[0].name).toBe('app-a');
-  expect(helloRemoval?.node.affectedAppDeployments?.[0].affectedOperations.length).toBe(1);
-  expect(helloRemoval?.node.affectedAppDeployments?.[0].affectedOperations[0].hash).toBe(
-    'app-a-hello-hash',
-  );
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.[0].name).toBe('app-a');
+  expect(
+    helloRemoval?.node.affectedAppDeployments?.nodes?.[0].affectedOperations.nodes.length,
+  ).toBe(1);
+  expect(
+    helloRemoval?.node.affectedAppDeployments?.nodes?.[0].affectedOperations.nodes[0].hash,
+  ).toBe('app-a-hello-hash');
 
   // Verify world removal only shows App B (not App A)
   expect(worldRemoval).toBeDefined();
-  expect(worldRemoval?.node.affectedAppDeployments?.length).toBe(1);
-  expect(worldRemoval?.node.affectedAppDeployments?.[0].name).toBe('app-b');
-  expect(worldRemoval?.node.affectedAppDeployments?.[0].affectedOperations.length).toBe(1);
-  expect(worldRemoval?.node.affectedAppDeployments?.[0].affectedOperations[0].hash).toBe(
-    'app-b-world-hash',
-  );
+  expect(worldRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
+  expect(worldRemoval?.node.affectedAppDeployments?.nodes?.[0].name).toBe('app-b');
+  expect(
+    worldRemoval?.node.affectedAppDeployments?.nodes?.[0].affectedOperations.nodes.length,
+  ).toBe(1);
+  expect(
+    worldRemoval?.node.affectedAppDeployments?.nodes?.[0].affectedOperations.nodes[0].hash,
+  ).toBe('app-b-world-hash');
 });
 
 test('retired app deployments are excluded from affected deployments', async () => {
@@ -3331,7 +3340,7 @@ test('retired app deployments are excluded from affected deployments', async () 
 
   // Retired deployment should NOT appear in affected deployments
   expect(helloRemoval).toBeDefined();
-  expect(helloRemoval?.node.affectedAppDeployments).toEqual([]);
+  expect(helloRemoval?.node.affectedAppDeployments).toBeNull();
 });
 
 test('pending (non-activated) app deployments are excluded from affected deployments', async () => {
@@ -3463,7 +3472,7 @@ test('pending (non-activated) app deployments are excluded from affected deploym
 
   // Pending (non-activated) deployment should NOT appear in affected deployments
   expect(helloRemoval).toBeDefined();
-  expect(helloRemoval?.node.affectedAppDeployments).toEqual([]);
+  expect(helloRemoval?.node.affectedAppDeployments).toBeNull();
 });
 
 test('multiple deployments affected by same breaking change all appear', async () => {
@@ -3601,7 +3610,7 @@ test('multiple deployments affected by same breaking change all appear', async (
         edge.node.message.includes('hello'),
       );
       // Wait until both deployments appear
-      return (helloRemoval?.node.affectedAppDeployments?.length ?? 0) >= 2;
+      return (helloRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0) >= 2;
     },
     { maxWait: 15_000 },
   );
@@ -3613,8 +3622,10 @@ test('multiple deployments affected by same breaking change all appear', async (
   );
 
   // Both deployments should appear
-  expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(2);
-  const appNames = helloRemoval?.node.affectedAppDeployments?.map((d: { name: string }) => d.name);
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(2);
+  const appNames = helloRemoval?.node.affectedAppDeployments?.nodes?.map(
+    (d: { name: string }) => d.name,
+  );
   expect(appNames).toContain('multi-app-1');
   expect(appNames).toContain('multi-app-2');
 });
@@ -3728,7 +3739,7 @@ test('anonymous operations (null name) are handled correctly', async () => {
       const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
         edge.node.message.includes('hello'),
       );
-      return !!(helloRemoval?.node.affectedAppDeployments?.length ?? 0);
+      return !!(helloRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0);
     },
     { maxWait: 15_000 },
   );
@@ -3739,8 +3750,9 @@ test('anonymous operations (null name) are handled correctly', async () => {
     edge.node.message.includes('hello'),
   );
 
-  expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(1);
-  const affectedOp = helloRemoval?.node.affectedAppDeployments?.[0].affectedOperations[0];
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
+  const affectedOp =
+    helloRemoval?.node.affectedAppDeployments?.nodes?.[0].affectedOperations.nodes[0];
   expect(affectedOp.hash).toBe('anon-op-hash');
   expect(affectedOp.name).toBeNull(); // Anonymous operation has null name
 });
@@ -3859,7 +3871,10 @@ test('multiple operations in same deployment affected by same change', async () 
         edge.node.message.includes('hello'),
       );
       // Wait until all 3 operations appear
-      return (helloRemoval?.node.affectedAppDeployments?.[0]?.affectedOperations?.length ?? 0) >= 3;
+      return (
+        (helloRemoval?.node.affectedAppDeployments?.nodes?.[0]?.affectedOperations?.nodes?.length ??
+          0) >= 3
+      );
     },
     { maxWait: 15_000 },
   );
@@ -3870,8 +3885,9 @@ test('multiple operations in same deployment affected by same change', async () 
     edge.node.message.includes('hello'),
   );
 
-  expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(1);
-  const affectedOps = helloRemoval?.node.affectedAppDeployments?.[0].affectedOperations;
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
+  const affectedOps =
+    helloRemoval?.node.affectedAppDeployments?.nodes?.[0].affectedOperations.nodes;
   expect(affectedOps.length).toBe(3);
 
   const opHashes = affectedOps.map((op: { hash: string }) => op.hash);
@@ -3991,7 +4007,7 @@ test('schema check fails if breaking change affects app deployment even when usa
     (edge: { node: { message: string } }) => edge.node.message.includes('hello'),
   );
   expect(baselineHelloRemoval?.node.isSafeBasedOnUsage).toBe(true);
-  expect(baselineHelloRemoval?.node.affectedAppDeployments).toEqual([]);
+  expect(baselineHelloRemoval?.node.affectedAppDeployments).toBeNull();
 
   await execute({
     document: CreateAppDeployment,
@@ -4091,7 +4107,7 @@ test('schema check fails if breaking change affects app deployment even when usa
       const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
         edge.node.message.includes('hello'),
       );
-      return !!(helloFieldRemoval?.node.affectedAppDeployments?.length ?? 0);
+      return !!(helloFieldRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0);
     },
     { maxWait: 15_000 },
   );
@@ -4109,15 +4125,15 @@ test('schema check fails if breaking change affects app deployment even when usa
   expect(helloFieldRemoval).toBeDefined();
   // The change should NOT be marked as safe because app deployment uses it
   expect(helloFieldRemoval?.node.isSafeBasedOnUsage).toBe(false);
-  expect(helloFieldRemoval?.node.affectedAppDeployments).toBeDefined();
-  expect(helloFieldRemoval?.node.affectedAppDeployments?.length).toBe(1);
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.nodes).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
 
-  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.[0];
+  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.nodes?.[0];
   expect(affectedDeployment?.name).toBe('my-app');
   expect(affectedDeployment?.version).toBe('2.0.0');
-  expect(affectedDeployment?.affectedOperations).toBeDefined();
-  expect(affectedDeployment?.affectedOperations.length).toBe(1);
-  expect(affectedDeployment?.affectedOperations[0].hash).toBe('hello-query-hash');
+  expect(affectedDeployment?.affectedOperations.nodes).toBeDefined();
+  expect(affectedDeployment?.affectedOperations.nodes.length).toBe(1);
+  expect(affectedDeployment?.affectedOperations.nodes[0].hash).toBe('hello-query-hash');
 });
 
 test('fields NOT used by app deployment remain safe based on usage', async () => {
@@ -4242,7 +4258,7 @@ test('fields NOT used by app deployment remain safe based on usage', async () =>
       const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
         edge.node.message.includes('hello'),
       );
-      return !!(helloRemoval?.node.affectedAppDeployments?.length ?? 0);
+      return !!(helloRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0);
     },
     { maxWait: 15_000 },
   );
@@ -4263,9 +4279,9 @@ test('fields NOT used by app deployment remain safe based on usage', async () =>
   // 'hello' should be UNSAFE because app deployment uses it
   expect(helloRemoval).toBeDefined();
   expect(helloRemoval?.node.isSafeBasedOnUsage).toBe(false);
-  expect(helloRemoval?.node.affectedAppDeployments?.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
 
   expect(unusedRemoval).toBeDefined();
   expect(unusedRemoval?.node.isSafeBasedOnUsage).toBe(true);
-  expect(unusedRemoval?.node.affectedAppDeployments?.length).toBe(0);
+  expect(unusedRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(0);
 });

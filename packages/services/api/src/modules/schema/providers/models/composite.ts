@@ -218,7 +218,11 @@ export class CompositeModel {
       targetId: selector.targetId,
     });
 
-    const getAffectedAppDeployments: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
+    const getAffectedAppDeployments: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.targetId,
         schemaCoordinates,
@@ -494,7 +498,11 @@ export class CompositeModel {
       targetId: target.id,
     });
 
-    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: target.id,
         schemaCoordinates,
@@ -669,7 +677,11 @@ export class CompositeModel {
       targetId: selector.target,
     });
 
-    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = (schemaCoordinates, firstDeployments, firstOperations) =>
+    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
         targetId: selector.target,
         schemaCoordinates,

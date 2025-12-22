@@ -95,14 +95,20 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
         percentageFormatted
       }
     }
-    affectedAppDeployments(first: 10, firstOperations: 10) {
-      id
-      name
-      version
-      affectedOperations {
-        hash
+    affectedAppDeployments(first: 5) {
+      nodes {
+        id
         name
+        version
+        affectedOperations(first: 5) {
+          nodes {
+            hash
+            name
+          }
+        }
+        totalAffectedOperations
       }
+      totalCount
     }
   }
 `);
@@ -247,12 +253,12 @@ function ChangeItem(
                     </span>
                   </span>
                 )}
-                {'affectedAppDeployments' in change && change.affectedAppDeployments?.length ? (
+                {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <span className="flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 font-bold">
                     <BoxIcon className="h-4 stroke-[1px]" />
                     <span className="text-xs">
-                      {change.affectedAppDeployments.length}{' '}
-                      {change.affectedAppDeployments.length === 1
+                      {change.affectedAppDeployments.totalCount}{' '}
+                      {change.affectedAppDeployments.totalCount === 1
                         ? 'app deployment'
                         : 'app deployments'}{' '}
                       affected
@@ -397,13 +403,14 @@ function ChangeItem(
                   </span>
                 )}
               </div>
-              {'affectedAppDeployments' in change && change.affectedAppDeployments?.length ? (
+              {'affectedAppDeployments' in change &&
+              change.affectedAppDeployments?.nodes?.length ? (
                 <div className="mt-6">
-                  <h4 className="mb-2 text-sm font-medium text-white">Affected App Deployments</h4>
+                  <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
+                  <p className="mb-2 text-sm text-gray-500">
+                    Active app deployments that have operations using this schema coordinate.
+                  </p>
                   <Table>
-                    <TableCaption>
-                      Active app deployments that have operations using this schema coordinate.
-                    </TableCaption>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[200px]">App Name</TableHead>
@@ -412,7 +419,7 @@ function ChangeItem(
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {change.affectedAppDeployments.map(deployment => (
+                      {change.affectedAppDeployments.nodes.map(deployment => (
                         <TableRow key={deployment.id}>
                           <TableCell className="font-medium">
                             <Link
@@ -424,6 +431,7 @@ function ChangeItem(
                                 appName: deployment.name,
                                 appVersion: deployment.version,
                               }}
+                              search={{ coordinates: change.path?.join('.') }}
                               className="text-orange-500 hover:text-orange-500 hover:underline"
                             >
                               {deployment.name}
@@ -434,8 +442,8 @@ function ChangeItem(
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button variant="link" className="h-auto p-0 text-orange-500">
-                                  {deployment.affectedOperations.length}{' '}
-                                  {deployment.affectedOperations.length === 1
+                                  {deployment.totalAffectedOperations}{' '}
+                                  {deployment.totalAffectedOperations === 1
                                     ? 'operation'
                                     : 'operations'}
                                 </Button>
@@ -444,12 +452,27 @@ function ChangeItem(
                                 <div className="space-y-2">
                                   <h5 className="font-medium text-white">Affected Operations</h5>
                                   <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
-                                    {deployment.affectedOperations.map(op => (
+                                    {deployment.affectedOperations.nodes.map(op => (
                                       <li key={op.hash} className="text-gray-300">
                                         {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                                       </li>
                                     ))}
                                   </ul>
+                                  <Link
+                                    to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                                    params={{
+                                      organizationSlug: props.organizationSlug,
+                                      projectSlug: props.projectSlug,
+                                      targetSlug: props.targetSlug,
+                                      appName: deployment.name,
+                                      appVersion: deployment.version,
+                                    }}
+                                    search={{ coordinates: change.path?.join('.') }}
+                                    className="block pt-2 text-sm text-orange-500 hover:underline"
+                                  >
+                                    Show all ({deployment.totalAffectedOperations}) affected
+                                    operations
+                                  </Link>
                                 </div>
                                 <PopoverArrow />
                               </PopoverContent>
@@ -459,16 +482,31 @@ function ChangeItem(
                       ))}
                     </TableBody>
                   </Table>
+                  {change.affectedAppDeployments.totalCount > 5 && (
+                    <Link
+                      to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
+                      params={{
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                        schemaCheckId: props.schemaCheckId,
+                      }}
+                      search={{ coordinate: change.path?.join('.') }}
+                      className="mt-2 block text-sm text-orange-500 hover:underline"
+                    >
+                      View all ({change.affectedAppDeployments.totalCount}) affected app deployments
+                    </Link>
+                  )}
                 </div>
               ) : null}
             </div>
-          ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.length ? (
+          ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.nodes?.length ? (
             <div>
-              <h4 className="mb-2 text-sm font-medium text-white">Affected App Deployments</h4>
+              <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
+              <p className="mb-2 text-sm text-gray-500">
+                Active app deployments that have operations using this schema coordinate.
+              </p>
               <Table>
-                <TableCaption>
-                  Active app deployments that have operations using this schema coordinate.
-                </TableCaption>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
@@ -477,7 +515,7 @@ function ChangeItem(
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {change.affectedAppDeployments.map(deployment => (
+                  {change.affectedAppDeployments.nodes.map(deployment => (
                     <TableRow key={deployment.id}>
                       <TableCell className="font-medium">
                         <Link
@@ -489,6 +527,7 @@ function ChangeItem(
                             appName: deployment.name,
                             appVersion: deployment.version,
                           }}
+                          search={{ coordinates: change.path?.join('.') }}
                           className="text-orange-500 hover:text-orange-500 hover:underline"
                         >
                           {deployment.name}
@@ -499,8 +538,8 @@ function ChangeItem(
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="link" className="h-auto p-0 text-orange-500">
-                              {deployment.affectedOperations.length}{' '}
-                              {deployment.affectedOperations.length === 1
+                              {deployment.totalAffectedOperations}{' '}
+                              {deployment.totalAffectedOperations === 1
                                 ? 'operation'
                                 : 'operations'}
                             </Button>
@@ -509,12 +548,26 @@ function ChangeItem(
                             <div className="space-y-2">
                               <h5 className="font-medium text-white">Affected Operations</h5>
                               <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
-                                {deployment.affectedOperations.map(op => (
+                                {deployment.affectedOperations.nodes.map(op => (
                                   <li key={op.hash} className="text-gray-300">
                                     {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                                   </li>
                                 ))}
                               </ul>
+                              <Link
+                                to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                                params={{
+                                  organizationSlug: props.organizationSlug,
+                                  projectSlug: props.projectSlug,
+                                  targetSlug: props.targetSlug,
+                                  appName: deployment.name,
+                                  appVersion: deployment.version,
+                                }}
+                                search={{ coordinates: change.path?.join('.') }}
+                                className="block pt-2 text-sm text-orange-500 hover:underline"
+                              >
+                                Show all ({deployment.totalAffectedOperations}) affected operations
+                              </Link>
                             </div>
                             <PopoverArrow />
                           </PopoverContent>
@@ -524,12 +577,23 @@ function ChangeItem(
                   ))}
                 </TableBody>
               </Table>
+              {change.affectedAppDeployments.totalCount > 5 && (
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                    schemaCheckId: props.schemaCheckId,
+                  }}
+                  search={{ coordinate: change.path?.join('.') }}
+                  className="mt-2 block text-sm text-orange-500 hover:underline"
+                >
+                  View all ({change.affectedAppDeployments.totalCount}) affected app deployments
+                </Link>
+              )}
             </div>
-          ) : change.severityLevel === SeverityLevelType.Breaking ? (
-            <>{change.severityReason ?? 'No details available for this breaking change.'}</>
-          ) : (
-            <>No details available for this change.</>
-          )}
+          ) : null}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

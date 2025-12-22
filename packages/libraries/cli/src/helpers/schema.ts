@@ -50,11 +50,15 @@ const RenderChanges_SchemaChanges = graphql(`
           }
         }
         affectedAppDeployments {
-          name
-          version
-          affectedOperations {
+          nodes {
             name
-            hash
+            version
+            affectedOperations {
+              nodes {
+                name
+                hash
+              }
+            }
           }
         }
       }
@@ -86,9 +90,9 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
       }
 
       t.indent(messageParts.join(' '));
-      if (change.affectedAppDeployments?.length) {
-        change.affectedAppDeployments.forEach(deployment => {
-          const ops = deployment.affectedOperations;
+      if (change.affectedAppDeployments?.nodes?.length) {
+        change.affectedAppDeployments.nodes.forEach(deployment => {
+          const ops = deployment.affectedOperations.nodes;
           const opNames = ops.map(op => op.name ?? `unnamed (${op.hash.slice(0, 7)})`).join(', ');
           t.indent(
             `  ${Texture.colors.yellow('-')} ${Texture.colors.bold(`${deployment.name}@${deployment.version}`)}: ${opNames}`,

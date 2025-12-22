@@ -40,7 +40,10 @@ export class SchemaCheckManager {
       return null;
     }
 
-    return schemaCheck.safeSchemaChanges;
+    return schemaCheck.safeSchemaChanges.map(change => ({
+      ...change,
+      targetId: schemaCheck.targetId,
+    }));
   }
 
   getAllSchemaChanges(schemaCheck: SchemaCheck) {
@@ -48,7 +51,13 @@ export class SchemaCheckManager {
       return null;
     }
 
-    return [...(schemaCheck.breakingSchemaChanges ?? []), ...(schemaCheck.safeSchemaChanges ?? [])];
+    return [
+      ...(schemaCheck.breakingSchemaChanges ?? []),
+      ...(schemaCheck.safeSchemaChanges ?? []),
+    ].map(change => ({
+      ...change,
+      targetId: schemaCheck.targetId,
+    }));
   }
 
   getBreakingSchemaChanges(schemaCheck: SchemaCheck) {
@@ -56,7 +65,10 @@ export class SchemaCheckManager {
       return null;
     }
 
-    return schemaCheck.breakingSchemaChanges;
+    return schemaCheck.breakingSchemaChanges.map(change => ({
+      ...change,
+      targetId: schemaCheck.targetId,
+    }));
   }
 
   getSchemaVersion(schemaCheck: SchemaCheck) {
