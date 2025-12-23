@@ -47,18 +47,27 @@ export interface LaboratoryTabSettings {
   readOnly?: boolean;
 }
 
+export interface LaboratoryTabCustom {
+  id: string;
+  type: string;
+  data: unknown;
+  readOnly?: boolean;
+}
+
 export type LaboratoryTabData =
   | Pick<LaboratoryOperation, 'id' | 'name'>
   | Pick<LaboratoryHistoryRequest, 'id'>
   | LaboratoryPreflight
   | LaboratoryEnv;
+
 export type LaboratoryTab =
   | LaboratoryTabOperation
   | LaboratoryTabPreflight
   | LaboratoryTabEnv
   | LaboratoryTabHistory
   | LaboratoryTabSettings
-  | LaboratoryTabTest;
+  | LaboratoryTabTest
+  | LaboratoryTabCustom;
 
 export interface LaboratoryTabsState {
   tabs: LaboratoryTab[];
