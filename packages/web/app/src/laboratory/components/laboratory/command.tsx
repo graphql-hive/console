@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { FilePlus2Icon, FolderPlusIcon, PlayIcon, RefreshCcwIcon, ServerIcon } from 'lucide-react';
 import { useLaboratory } from '@/laboratory/components/laboratory/context';
 import {
@@ -24,7 +24,9 @@ export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) 
     tabs,
     preflight,
     env,
+    plugins,
   } = useLaboratory();
+  const laboratory = useLaboratory();
   const [open, setOpen] = useState(props.open ?? false);
 
   useEffect(() => {
@@ -159,6 +161,33 @@ export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) 
               <span>Open Preflight Script</span>
             </CommandItem>
           </CommandGroup>
+          {plugins
+            .filter(plugin => !!plugin.commands?.length)
+            .map(plugin => (
+              <Fragment key={plugin.name}>
+                <CommandSeparator />
+                <CommandGroup heading={plugin.name}>
+                  {plugin.commands?.map((command, index) => (
+                    <CommandItem
+                      key={index}
+                      onSelect={() => {
+                        command.onClick(laboratory, {});
+                        setOpen(false);
+                      }}
+                    >
+                      {typeof command.icon === 'function'
+                        ? command.icon(laboratory, {})
+                        : command.icon}
+                      <span>
+                        {typeof command.name === 'function'
+                          ? command.name(laboratory, {})
+                          : command.name}
+                      </span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </Fragment>
+            ))}
         </CommandList>
       </CommandDialog>
     </>

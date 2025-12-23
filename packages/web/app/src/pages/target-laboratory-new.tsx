@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { throttle } from 'lodash';
+import { GlobeIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
@@ -703,7 +704,65 @@ function LaboratoryPageContent(props: {
           </div>
         </div>
         <div className="flex-1 overflow-hidden rounded-lg border">
-          <Laboratory key={url} defaultEndpoint={url} {...laboratoryState} />
+          <Laboratory
+            key={url}
+            defaultEndpoint={url}
+            {...laboratoryState}
+            plugins={[
+              {
+                name: 'Target Environment',
+                description: 'Environment variables for the target',
+                defaultState: getLocalStorageState('target-environment', {}),
+                onStateChange: state => {
+                  setLocalStorageState('target-environment', state);
+                },
+                preflight: {
+                  lab: {
+                    definition: `
+                      targetEnvironment: {
+                        set: (key: string, value: string) => void;
+                        get: (key: string) => string;
+                        delete: (key: string) => void;
+                      };
+                    `,
+                    object: (_laboratory, state, setState) => ({
+                      targetEnvironment: {
+                        set: (key: string, value: string) => setState({ ...state, [key]: value }),
+                        get: (key: string) => state[key],
+                        delete: (key: string) => setState({ ...state, [key]: null }),
+                      },
+                    }),
+                  },
+                },
+                commands: [
+                  {
+                    name: 'Open Target Environment Variables',
+                    icon: <GlobeIcon />,
+                    onClick: laboratory => {
+                      const tab =
+                        laboratory.tabs.find(t => t.type === 'target-env') ??
+                        laboratory.addTab({
+                          type: 'target-env',
+                          data: {},
+                        });
+
+                      laboratory.setActiveTab(tab);
+                    },
+                  },
+                ],
+                tabs: [
+                  {
+                    type: 'target-env',
+                    name: 'Target Environment Variables',
+                    icon: <GlobeIcon className="size-4 text-orange-400" />,
+                    component: () => {
+                      return <div>Target Environment Variables</div>;
+                    },
+                  },
+                ],
+              },
+            ]}
+          />
         </div>
       </div>
     </>

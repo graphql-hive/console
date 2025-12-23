@@ -58,9 +58,10 @@ import { useEndpoint } from '@/laboratory/lib/endpoint';
 import { useEnv } from '@/laboratory/lib/env';
 import { useHistory } from '@/laboratory/lib/history';
 import { useOperations } from '@/laboratory/lib/operations';
+import { LaboratoryPluginTab, usePlugins } from '@/laboratory/lib/plugins';
 import { usePreflight } from '@/laboratory/lib/preflight';
 import { useSettings } from '@/laboratory/lib/settings';
-import { useTabs } from '@/laboratory/lib/tabs';
+import { LaboratoryTabCustom, useTabs } from '@/laboratory/lib/tabs';
 import { useTests } from '@/laboratory/lib/tests';
 import { cn } from '@/laboratory/lib/utils';
 import { useForm } from '@tanstack/react-form';
@@ -163,8 +164,18 @@ const PreflightPromptModal = (props: {
 };
 
 const LaboratoryContent = () => {
-  const { activeTab, addOperation, collections, addTab, setActiveTab, preflight, tabs, env } =
-    useLaboratory();
+  const {
+    activeTab,
+    addOperation,
+    collections,
+    addTab,
+    setActiveTab,
+    preflight,
+    tabs,
+    env,
+    plugins,
+  } = useLaboratory();
+  const laboratory = useLaboratory();
   const [activePanel, setActivePanel] = useState<
     'collections' | 'history' | 'tests' | 'settings' | null
   >(collections.length > 0 ? 'collections' : null);
@@ -182,7 +193,22 @@ const LaboratoryContent = () => {
         return <HistoryItem />;
       case 'settings':
         return <Settings />;
-      default:
+      default: {
+        let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
+
+        for (const plugin of plugins) {
+          for (const tab of plugin.tabs ?? []) {
+            if (tab.type === activeTab?.type) {
+              customTab = tab;
+              break;
+            }
+          }
+        }
+
+        if (customTab) {
+          return customTab.component(activeTab as LaboratoryTabCustom, laboratory, {});
+        }
+
         return (
           <Empty className="w-full !px-0">
             <EmptyHeader>
@@ -220,6 +246,7 @@ const LaboratoryContent = () => {
             </EmptyContent>
           </Empty>
         );
+      }
     }
   }, [activeTab?.type, addOperation, addTab, setActiveTab]);
 
@@ -335,7 +362,7 @@ const LaboratoryContent = () => {
                 >
                   Preflight Script
                 </DropdownMenuItem>
-                {/* <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
@@ -349,7 +376,7 @@ const LaboratoryContent = () => {
                   }}
                 >
                   Settings
-                </DropdownMenuItem> */}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <TooltipContent side="right">Settings</TooltipContent>
@@ -366,7 +393,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="flex-1 overflow-hidden">{contentNode}</div>
+          <div className="bg-card flex-1 overflow-hidden">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -413,6 +440,7 @@ export const Laboratory = (
     | 'onSettingsChange'
     | 'defaultTests'
     | 'onTestsChange'
+    | 'plugins'
   >,
 ) => {
   const checkPermissions = useCallback(
@@ -437,6 +465,7 @@ export const Laboratory = (
     envApi,
   });
 
+  const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
   const endpointApi = useEndpoint(props);
@@ -723,6 +752,7 @@ export const Laboratory = (
         {...props}
         {...testsApi}
         {...settingsApi}
+        {...pluginsApi}
         {...envApi}
         {...preflightApi}
         {...tabsApi}
