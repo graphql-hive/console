@@ -8,6 +8,7 @@ import {
   HivePluginOptions,
   isHiveClient,
   joinUrl,
+  PersistedDocumentsCache,
   type CircuitBreakerConfiguration,
 } from '@graphql-hive/core';
 import { Logger } from '@graphql-hive/logger';
@@ -126,59 +127,76 @@ function addRequestWithHeaders(context: any, http?: HTTPGraphQLRequest) {
   return context;
 }
 
+function getLoggerFromContext(ctx?: GraphQLServerContext): Logger | undefined {
+  if (ctx?.logger) {
+    return new Logger({
+      level: 'debug',
+      writers: [
+        {
+          write(level, attrs, msg) {
+            const payload = attrs ? { msg, ...attrs } : msg;
+            switch (level) {
+              case 'trace':
+              case 'debug':
+                ctx.logger.debug(payload);
+                break;
+              case 'info':
+                ctx.logger.info(payload);
+                break;
+              case 'warn':
+                ctx.logger.warn(payload);
+                break;
+              case 'error':
+                ctx.logger.error(payload);
+                break;
+            }
+          },
+        },
+      ],
+    });
+  }
+  return undefined;
+}
+
+function getPersistedDocumentsCacheFromContext(
+  ctx?: GraphQLServerContext,
+): PersistedDocumentsCache | undefined {
+  if (ctx?.cache) {
+    return {
+      async get(key) {
+        const value = await ctx.cache.get(key);
+        return value != null ? value : null;
+      },
+      set(key, value, options) {
+        return ctx.cache.set(key, value, options);
+      },
+    };
+  }
+  return undefined;
+}
+
 export function createHive(clientOrOptions: HivePluginOptions, ctx?: GraphQLServerContext) {
+  const persistedDocumentsCache = getPersistedDocumentsCacheFromContext(ctx);
   return createHiveClient({
-    logger: ctx?.logger
-      ? new Logger({
-          level: 'debug',
-          writers: [
-            {
-              write(level, attrs, msg) {
-                const payload = attrs ? { msg, ...attrs } : msg;
-                switch (level) {
-                  case 'trace':
-                  case 'debug':
-                    ctx.logger.debug(payload);
-                    break;
-                  case 'info':
-                    ctx.logger.info(payload);
-                    break;
-                  case 'warn':
-                    ctx.logger.warn(payload);
-                    break;
-                  case 'error':
-                    ctx.logger.error(payload);
-                    break;
-                }
-              },
-            },
-          ],
-        })
-      : undefined,
+    logger: getLoggerFromContext(ctx),
     ...clientOrOptions,
     agent: {
-      name: 'hive-client-yoga',
+      name: 'hive-client-apollo',
       version,
       ...clientOrOptions.agent,
     },
-    experimental__persistedDocuments:
-      ctx?.cache && clientOrOptions.experimental__persistedDocuments
-        ? {
-            ...clientOrOptions.experimental__persistedDocuments,
-            layer2Cache: {
-              cache: {
-                async get(key) {
-                  const value = await ctx.cache.get(key);
-                  return value != null ? value : null;
-                },
-                set(key, value, options) {
-                  return ctx.cache.set(key, value, options);
-                },
-              },
-              ...clientOrOptions.experimental__persistedDocuments.layer2Cache,
-            },
-          }
-        : undefined,
+    experimental__persistedDocuments: clientOrOptions.experimental__persistedDocuments
+      ? {
+          ...clientOrOptions.experimental__persistedDocuments,
+          layer2Cache:
+            persistedDocumentsCache || clientOrOptions.experimental__persistedDocuments.layer2Cache
+              ? {
+                  cache: persistedDocumentsCache!,
+                  ...(clientOrOptions.experimental__persistedDocuments.layer2Cache || {}),
+                }
+              : undefined,
+        }
+      : undefined,
   });
 }
 
