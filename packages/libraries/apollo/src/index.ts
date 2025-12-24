@@ -1,5 +1,5 @@
 import { GraphQLError, type DocumentNode } from 'graphql';
-import type { ApolloServerPlugin, HTTPGraphQLRequest } from '@apollo/server';
+import type { ApolloServerPlugin, GraphQLServerContext, HTTPGraphQLRequest } from '@apollo/server';
 import {
   autoDisposeSymbol,
   createCDNArtifactFetcher,
@@ -126,21 +126,61 @@ function addRequestWithHeaders(context: any, http?: HTTPGraphQLRequest) {
   return context;
 }
 
-export function createHive(clientOrOptions: HivePluginOptions) {
+export function createHive(clientOrOptions: HivePluginOptions, ctx: GraphQLServerContext) {
   return createHiveClient({
+    logger: new Logger({
+      level: 'debug',
+      writers: [
+        {
+          write(level, attrs, msg) {
+            const payload = attrs ? { msg, ...attrs } : msg;
+            switch (level) {
+              case 'trace':
+              case 'debug':
+                ctx.logger.debug(payload);
+                break;
+              case 'info':
+                ctx.logger.info(payload);
+                break;
+              case 'warn':
+                ctx.logger.warn(payload);
+                break;
+              case 'error':
+                ctx.logger.error(payload);
+                break;
+            }
+          },
+        },
+      ],
+    }),
     ...clientOrOptions,
     agent: {
       name: 'hive-client-yoga',
       version,
       ...clientOrOptions.agent,
     },
+    experimental__persistedDocuments: clientOrOptions.experimental__persistedDocuments
+      ? {
+          ...clientOrOptions.experimental__persistedDocuments,
+          layer2Cache: {
+            cache: {
+              async get(key) {
+                const value = await ctx.cache.get(key);
+                return value != null ? value : null;
+              },
+              set(key, value, options) {
+                return ctx.cache.set(key, value, options);
+              },
+            },
+            ...clientOrOptions.experimental__persistedDocuments.layer2Cache,
+          },
+        }
+      : undefined,
   });
 }
 
 export function useHive(clientOrOptions: HiveClient | HivePluginOptions): ApolloServerPlugin {
-  const hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions);
-
-  void hive.info();
+  let hive: HiveClient;
 
   return {
     requestDidStart(context) {
@@ -382,6 +422,10 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
       })();
     },
     serverWillStart(ctx) {
+      hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions, ctx);
+
+      void hive.info();
+
       // `engine` does not exist in v3
       const isLegacyV0 = 'engine' in ctx;
 
