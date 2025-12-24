@@ -711,4 +711,321 @@ describe('Layer 2 Cache', () => {
     expect(result).toBe('query { fromCdn }');
     expect(cdnCalls).toHaveLength(1);
   });
+
+  test('waitUntil is called for L2 cache writes', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+    const waitUntilPromises: Promise<unknown>[] = [];
+    const waitUntil = vi.fn((promise: void | Promise<void>) => {
+      if (promise) waitUntilPromises.push(promise);
+    });
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~hash');
+    // waitUntil should be called with the cache write promise
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    expect(waitUntilPromises).toHaveLength(1);
+    // Wait for the promise to resolve
+    await waitUntilPromises[0];
+    expect(l2Cache.set).toHaveBeenCalled();
+  });
+
+  test('waitUntil is NOT called when cache has no set method', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      // No set method - read-only cache
+    };
+    const waitUntil = vi.fn();
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~hash');
+    // waitUntil should NOT be called since there's no set method
+    expect(waitUntil).not.toHaveBeenCalled();
+  });
+
+  test('waitUntil promise resolves (not rejects) when set fails', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockRejectedValue(new Error('Redis write failed')),
+    };
+    const waitUntilPromises: Promise<unknown>[] = [];
+    const waitUntil = vi.fn((promise: void | Promise<void>) => {
+      if (promise) waitUntilPromises.push(promise);
+    });
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~hash');
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    // The promise should resolve (not reject) because errors are caught internally
+    await expect(waitUntilPromises[0]).resolves.toBeUndefined();
+  });
+
+  test('waitUntil is called for negative cache writes (404)', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+    const waitUntilPromises: Promise<unknown>[] = [];
+    const waitUntil = vi.fn((promise: void | Promise<void>) => {
+      if (promise) waitUntilPromises.push(promise);
+    });
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        notFoundTtlSeconds: 60,
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('', { status: 404 });
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~notfound');
+    // waitUntil should be called for negative cache write
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    await waitUntilPromises[0];
+    expect(l2Cache.set).toHaveBeenCalledWith(
+      'app~v1~notfound',
+      PERSISTED_DOCUMENT_NOT_FOUND,
+      { ttl: 60 },
+    );
+  });
+
+  test('waitUntil is NOT called when notFoundTtlSeconds is 0', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+    const waitUntil = vi.fn();
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        notFoundTtlSeconds: 0, // Disable negative caching
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('', { status: 404 });
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~notfound');
+    // waitUntil should NOT be called since negative caching is disabled
+    expect(waitUntil).not.toHaveBeenCalled();
+    expect(l2Cache.set).not.toHaveBeenCalled();
+  });
+
+  test('waitUntil is NOT called on L2 cache hit', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue('query { cached }'),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+    const waitUntil = vi.fn();
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        throw new Error('Should not call CDN');
+      },
+    });
+
+    const result = await persistedDocuments.resolve('app~v1~hash');
+    expect(result).toBe('query { cached }');
+    // waitUntil should NOT be called since we got a cache hit (no write needed)
+    expect(waitUntil).not.toHaveBeenCalled();
+    expect(l2Cache.set).not.toHaveBeenCalled();
+  });
+
+  test('waitUntil from context is used when not configured', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+    const contextWaitUntilPromises: Promise<unknown>[] = [];
+    const contextWaitUntil = vi.fn((promise: void | Promise<void>) => {
+      if (promise) contextWaitUntilPromises.push(promise);
+    });
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        // No waitUntil configured
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    // Pass waitUntil via context
+    await persistedDocuments.resolve('app~v1~hash', { waitUntil: contextWaitUntil });
+    expect(contextWaitUntil).toHaveBeenCalledTimes(1);
+    await contextWaitUntilPromises[0];
+    expect(l2Cache.set).toHaveBeenCalled();
+  });
+
+  test('config waitUntil takes precedence over context waitUntil', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+    const configWaitUntil = vi.fn();
+    const contextWaitUntil = vi.fn();
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        waitUntil: configWaitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~hash', { waitUntil: contextWaitUntil });
+    // Config waitUntil should be used, not context
+    expect(configWaitUntil).toHaveBeenCalledTimes(1);
+    expect(contextWaitUntil).not.toHaveBeenCalled();
+  });
+
+  test('waitUntil is NOT called when set returns synchronously (undefined)', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockReturnValue(undefined), // Sync return, not Promise
+    };
+    const waitUntil = vi.fn();
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        waitUntil,
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    await persistedDocuments.resolve('app~v1~hash');
+    // waitUntil should NOT be called because set() returned undefined (falsy)
+    expect(waitUntil).not.toHaveBeenCalled();
+    // But set should still have been called
+    expect(l2Cache.set).toHaveBeenCalled();
+  });
+
+  test('L2 cache write succeeds without any waitUntil configured', async () => {
+    const logger = new Logger({ level: false });
+    const l2Cache = {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const persistedDocuments = createPersistedDocuments({
+      cdn: {
+        endpoint: 'https://cdn.localhost/artifacts/v1/target',
+        accessToken: 'foobars',
+      },
+      layer2Cache: {
+        cache: l2Cache,
+        // No waitUntil configured
+      },
+      logger,
+      async fetch() {
+        return new Response('query { doc }');
+      },
+    });
+
+    // Pass no context (no waitUntil anywhere)
+    await persistedDocuments.resolve('app~v1~hash');
+    // Give the fire-and-forget promise time to resolve
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    // Cache should still be written, just fire-and-forget
+    expect(l2Cache.set).toHaveBeenCalledWith('app~v1~hash', 'query { doc }', undefined);
+  });
 });

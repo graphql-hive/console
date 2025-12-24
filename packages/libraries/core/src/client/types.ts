@@ -5,6 +5,7 @@ import type { AgentOptions } from './agent.js';
 import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
 import type { SchemaReporter } from './reporting.js';
+import { MaybePromise } from '@graphql-tools/utils';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -41,7 +42,10 @@ export interface HiveClient {
   createInstrumentedSubscribe(executeImpl: any): any;
   dispose(): Promise<void>;
   experimental__persistedDocuments: null | {
-    resolve(documentId: string): PromiseOrValue<string | null>;
+    resolve(
+      documentId: string,
+      context?: { waitUntil?: (promise: Promise<void> | void) => void },
+    ): PromiseOrValue<string | null>;
     allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
   };
 }
@@ -343,13 +347,13 @@ export type PersistedDocumentsCache = {
    * Optional - if not provided, the cache is read-only.
    * @param key - The document ID
    * @param value - The document body or PERSISTED_DOCUMENT_NOT_FOUND for negative caching
-   * @param options - Optional TTL configuration
+   * @param options - Optional TTL configuration (ttl is in seconds)
    */
   set?(
     key: string,
     value: string | PersistedDocumentNotFound,
     options?: { ttl?: number },
-  ): Promise<void>;
+  ): MaybePromise<unknown>;
 };
 
 /**
@@ -373,6 +377,11 @@ export type Layer2CacheConfiguration = {
    * @default 60 (1 minute)
    */
   notFoundTtlSeconds?: number;
+
+  /**
+   * Optional function to register background work in serverless environments if not available in context.
+   */
+  waitUntil?: (promise: Promise<void> | void) => void;
 };
 
 export type PersistedDocumentsConfiguration = {
