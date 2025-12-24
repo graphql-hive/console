@@ -19,7 +19,10 @@ function isRequestOk(response: Response) {
 }
 
 type PersistedDocuments = {
-  resolve(documentId: string): PromiseOrValue<string | null>;
+  resolve(
+    documentId: string,
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ): PromiseOrValue<string | null>;
   allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
   dispose: () => void;
 };
@@ -39,6 +42,7 @@ export function createPersistedDocuments(
   const layer2Cache: PersistedDocumentsCache | undefined = config.layer2Cache?.cache;
   const layer2TtlSeconds = config.layer2Cache?.ttlSeconds;
   const layer2NotFoundTtlSeconds = config.layer2Cache?.notFoundTtlSeconds ?? 60;
+  const layer2WaitUntil = config.layer2Cache?.waitUntil;
 
   let allowArbitraryDocuments: (context: { headers?: HeadersObject }) => PromiseOrValue<boolean>;
 
@@ -126,7 +130,11 @@ export function createPersistedDocuments(
   }
 
   // store document in L2 cache (fire-and-forget, non-blocking)
-  function setInLayer2Cache(documentId: string, value: string | null): void {
+  function setInLayer2Cache(
+    documentId: string,
+    value: string | null,
+    waitUntil?: (promise: Promise<void> | void) => void,
+  ): void {
     if (!layer2Cache?.set) {
       return;
     }
@@ -141,15 +149,34 @@ export function createPersistedDocuments(
 
     // Fire-and-forget. don't await, don't block
     const setPromise = layer2Cache.set(documentId, cacheValue, ttl ? { ttl } : undefined);
-    if (setPromise && typeof setPromise.catch === 'function') {
-      setPromise.catch(error => {
-        config.logger.warn('L2 cache set failed for document %s: %O', documentId, error);
-      });
+    if (setPromise) {
+      const handledPromise: Promise<void> = Promise.resolve(setPromise).then(
+        () => {
+          config.logger.debug('L2 cache set succeeded for document %s', documentId);
+        },
+        error => {
+          config.logger.warn('L2 cache set failed for document %s: %O', documentId, error);
+        },
+      );
+
+      // Register with waitUntil for serverless environments
+      // Config waitUntil takes precedence over context waitUntil
+      const effectiveWaitUntil = layer2WaitUntil ?? waitUntil;
+      if (effectiveWaitUntil) {
+        try {
+          effectiveWaitUntil(handledPromise);
+        } catch (error) {
+          config.logger.warn('Failed to register L2 cache write with waitUntil: %O', error);
+        }
+      }
     }
   }
 
   /** Load a persisted document with L1 -> L2 -> CDN fallback */
-  function loadPersistedDocument(documentId: string) {
+  function loadPersistedDocument(
+    documentId: string,
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ) {
     // L1 cache check (in-memory)
     // Note: We need to distinguish between "not in cache" (undefined) and "cached as not found" (null)
     const cachedDocument = persistedDocumentsCache.get(documentId);
@@ -198,7 +225,7 @@ export function createPersistedDocuments(
         if (!fromL2) {
           persistedDocumentsCache.set(documentId, value);
           // Store in L2 cache (async, non-blocking), only for CDN fetched data
-          setInLayer2Cache(documentId, value);
+          setInLayer2Cache(documentId, value, context?.waitUntil);
         }
 
         return value;
