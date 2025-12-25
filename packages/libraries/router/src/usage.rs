@@ -8,6 +8,7 @@ use core::ops::Drop;
 use futures::StreamExt;
 use graphql_parser::parse_schema;
 use graphql_parser::schema::Document;
+use hive_console_sdk::agent::usage_agent::UsageAgentExt;
 use hive_console_sdk::agent::usage_agent::{ExecutionReport, UsageAgent};
 use http::HeaderValue;
 use rand::Rng;
@@ -47,7 +48,7 @@ struct OperationConfig {
 
 pub struct UsagePlugin {
     config: OperationConfig,
-    agent: Option<Arc<UsageAgent>>,
+    agent: Option<UsageAgent>,
     schema: Arc<Document<'static, String>>,
     cancellation_token: Arc<CancellationToken>,
 }

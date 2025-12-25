@@ -438,6 +438,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-dropper-simple"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7c4748dfe8cd3d625ec68fc424fa80c134319881185866f9e173af9e5d8add8"
+dependencies = [
+ "async-scoped",
+ "async-trait",
+ "futures",
+ "rustc_version",
+ "tokio",
+]
+
+[[package]]
 name = "async-executor"
 version = "1.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -520,6 +533,17 @@ dependencies = [
  "event-listener 5.4.1",
  "futures-lite",
  "rustix",
+]
+
+[[package]]
+name = "async-scoped"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4042078ea593edffc452eef14e99fdb2b120caa4ad9618bcdeabc4a023b98740"
+dependencies = [
+ "futures",
+ "pin-project",
+ "tokio",
 ]
 
 [[package]]
@@ -2612,6 +2636,7 @@ name = "hive-console-sdk"
 version = "0.2.2"
 dependencies = [
  "anyhow",
+ "async-dropper-simple",
  "async-trait",
  "axum-core 0.5.5",
  "futures-util",

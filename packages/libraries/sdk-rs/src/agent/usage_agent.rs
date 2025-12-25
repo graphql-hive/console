@@ -1,3 +1,4 @@
+use async_dropper_simple::{AsyncDrop, AsyncDropper};
 use graphql_parser::schema::Document;
 use recloser::AsyncRecloser;
 use reqwest_middleware::ClientWithMiddleware;
@@ -28,7 +29,7 @@ pub struct ExecutionReport {
 
 typify::import_types!(schema = "./usage-report-v2.schema.json");
 
-pub struct UsageAgent {
+pub struct UsageAgentInner {
     pub(crate) endpoint: String,
     pub(crate) buffer: Buffer<ExecutionReport>,
     pub(crate) processor: OperationProcessor,
@@ -71,10 +72,19 @@ pub enum AgentError {
     Unknown(String),
 }
 
-impl UsageAgent {
-    pub fn builder() -> UsageAgentBuilder {
+pub type UsageAgent = Arc<AsyncDropper<UsageAgentInner>>;
+
+#[async_trait::async_trait]
+pub trait UsageAgentExt {
+    fn builder() -> UsageAgentBuilder {
         UsageAgentBuilder::default()
     }
+    async fn flush(&self) -> Result<(), AgentError>;
+    async fn start_flush_interval(&self, token: &CancellationToken);
+    async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError>;
+}
+
+impl UsageAgentInner {
     fn produce_report(&self, reports: Vec<ExecutionReport>) -> Result<Report, AgentError> {
         let mut report = Report {
             size: 0,
@@ -205,16 +215,24 @@ impl UsageAgent {
         self.send_report(report).await
     }
 
-    pub async fn flush(&self) -> Result<(), AgentError> {
+    async fn flush(&self) -> Result<(), AgentError> {
         let execution_reports = self.buffer.drain().await;
 
         self.handle_drained(execution_reports).await?;
 
         Ok(())
     }
-    pub async fn start_flush_interval(&self, token: &CancellationToken) {
+}
+
+#[async_trait::async_trait]
+impl UsageAgentExt for UsageAgent {
+    async fn flush(&self) -> Result<(), AgentError> {
+        self.inner().flush().await
+    }
+
+    async fn start_flush_interval(&self, token: &CancellationToken) {
         loop {
-            tokio::time::sleep(self.flush_interval).await;
+            tokio::time::sleep(self.inner().flush_interval).await;
             if token.is_cancelled() {
                 println!("Shutting down.");
                 return;
@@ -225,12 +243,21 @@ impl UsageAgent {
         }
     }
 
-    pub async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
-        if let AddStatus::Full { drained } = self.buffer.add(execution_report).await {
-            self.handle_drained(drained).await?;
+    async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
+        if let AddStatus::Full { drained } = self.inner().buffer.add(execution_report).await {
+            self.inner().handle_drained(drained).await?;
         }
 
         Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl AsyncDrop for UsageAgentInner {
+    async fn async_drop(&mut self) {
+        if let Err(e) = self.flush().await {
+            tracing::error!("Failed to flush usage reports during drop: {}", e);
+        }
     }
 }
 
@@ -241,13 +268,13 @@ mod tests {
     use graphql_parser::{parse_query, parse_schema};
     use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 
-    use crate::agent::usage_agent::{ExecutionReport, Report, UsageAgent};
+    use crate::agent::usage_agent::{ExecutionReport, Report, UsageAgent, UsageAgentExt};
 
     const CONTENT_TYPE_VALUE: &'static str = "application/json";
     const GRAPHQL_CLIENT_NAME: &'static str = "Hive Client";
     const GRAPHQL_CLIENT_VERSION: &'static str = "1.0.0";
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn should_send_data_to_hive() {
         let token = "Token";
 
@@ -404,30 +431,31 @@ mod tests {
         )
         .expect("Failed to parse query");
 
-        let usage_agent = UsageAgent::builder()
-            .token(token.into())
-            .endpoint(format!("{}/200", server_url))
-            .user_agent(user_agent.into())
-            .build()
-            .expect("Failed to create UsageAgent");
+        // Testing async drop
+        {
+            let usage_agent = UsageAgent::builder()
+                .token(token.into())
+                .endpoint(format!("{}/200", server_url))
+                .user_agent(user_agent.into())
+                .build()
+                .expect("Failed to create UsageAgent");
 
-        usage_agent
-            .add_report(ExecutionReport {
-                schema: Arc::new(schema),
-                operation_body: op.to_string(),
-                operation_name: Some("deleteProject".to_string()),
-                client_name: Some(GRAPHQL_CLIENT_NAME.to_string()),
-                client_version: Some(GRAPHQL_CLIENT_VERSION.to_string()),
-                timestamp,
-                duration,
-                ok: true,
-                errors: 0,
-                persisted_document_hash: None,
-            })
-            .await
-            .expect("Failed to add report");
-
-        usage_agent.flush().await.expect("Failed to flush reports");
+            usage_agent
+                .add_report(ExecutionReport {
+                    schema: Arc::new(schema),
+                    operation_body: op.to_string(),
+                    operation_name: Some("deleteProject".to_string()),
+                    client_name: Some(GRAPHQL_CLIENT_NAME.to_string()),
+                    client_version: Some(GRAPHQL_CLIENT_VERSION.to_string()),
+                    timestamp,
+                    duration,
+                    ok: true,
+                    errors: 0,
+                    persisted_document_hash: None,
+                })
+                .await
+                .expect("Failed to add report");
+        }
 
         mock.assert_async().await;
     }

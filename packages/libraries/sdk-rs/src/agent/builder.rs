@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use async_dropper_simple::AsyncDropper;
 use once_cell::sync::Lazy;
 use recloser::AsyncRecloser;
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -7,7 +8,7 @@ use reqwest_middleware::ClientBuilder;
 use reqwest_retry::RetryTransientMiddleware;
 
 use crate::agent::buffer::Buffer;
-use crate::agent::usage_agent::{non_empty_string, AgentError, UsageAgent};
+use crate::agent::usage_agent::{non_empty_string, AgentError, UsageAgent, UsageAgentInner};
 use crate::agent::utils::OperationProcessor;
 use crate::circuit_breaker;
 use retry_policies::policies::ExponentialBackoff;
@@ -121,7 +122,7 @@ impl UsageAgentBuilder {
         self.retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
         self
     }
-    pub fn build(self) -> Result<Arc<UsageAgent>, AgentError> {
+    pub(crate) fn build_agent(self) -> Result<UsageAgentInner, AgentError> {
         let mut default_headers = HeaderMap::new();
 
         default_headers.insert("X-Usage-API-Version", HeaderValue::from_static("2"));
@@ -182,14 +183,18 @@ impl UsageAgentBuilder {
 
         let buffer = Buffer::new(self.buffer_size);
 
-        Ok(Arc::new(UsageAgent {
+        Ok(UsageAgentInner {
             endpoint,
             buffer,
             processor: OperationProcessor::new(),
             client,
             flush_interval: self.flush_interval,
             circuit_breaker,
-        }))
+        })
+    }
+    pub fn build(self) -> Result<UsageAgent, AgentError> {
+        let agent = self.build_agent()?;
+        Ok(Arc::new(AsyncDropper::new(agent)))
     }
 }
 
