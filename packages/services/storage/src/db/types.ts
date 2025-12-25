@@ -143,6 +143,7 @@ export interface migration {
 }
 
 export interface oidc_integrations {
+  additional_scopes: Array<string> | null;
   authorization_endpoint: string | null;
   client_id: string;
   client_secret: string;

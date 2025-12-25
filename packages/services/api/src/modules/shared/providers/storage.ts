@@ -630,6 +630,7 @@ export interface Storage {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
+    additionalScopes: readonly string[];
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
@@ -639,6 +640,7 @@ export interface Storage {
     tokenEndpoint: string | null;
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
+    additionalScopes: readonly string[] | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
