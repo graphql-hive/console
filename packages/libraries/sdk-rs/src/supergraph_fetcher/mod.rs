@@ -1,5 +1,6 @@
 use std::fmt::Display;
 use tokio::sync::RwLock;
+use tokio::sync::TryLockError;
 
 use crate::circuit_breaker::CircuitBreakerError;
 use crate::supergraph_fetcher::async_::SupergraphFetcherAsyncState;
@@ -23,28 +24,39 @@ impl SupergraphFetcher<SupergraphFetcherAsyncState> {
     }
 }
 
+pub enum LockErrorType {
+    Read,
+    Write,
+}
+
 pub enum SupergraphFetcherError {
-    FetcherCreationError(reqwest::Error),
-    NetworkError(reqwest_middleware::Error),
-    NetworkResponseError(reqwest::Error),
-    Lock(String),
+    HTTPClientCreation(reqwest::Error),
+    Network(reqwest_middleware::Error),
+    ResponseParse(reqwest::Error),
+    ETagRead(TryLockError),
+    ETagWrite(TryLockError),
     InvalidKey(InvalidHeaderValue),
     MissingConfigurationOption(String),
     RejectedByCircuitBreaker,
-    CircuitBreakerCreationError(CircuitBreakerError),
+    CircuitBreakerCreation(CircuitBreakerError),
 }
 
 impl Display for SupergraphFetcherError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SupergraphFetcherError::FetcherCreationError(e) => {
-                write!(f, "Creating fetcher failed: {}", e)
+            SupergraphFetcherError::HTTPClientCreation(e) => {
+                write!(f, "Creating HTTP Client failed: {}", e)
             }
-            SupergraphFetcherError::NetworkError(e) => write!(f, "Network error: {}", e),
-            SupergraphFetcherError::NetworkResponseError(e) => {
-                write!(f, "Network response error: {}", e)
+            SupergraphFetcherError::Network(e) => write!(f, "Network error: {}", e),
+            SupergraphFetcherError::ResponseParse(e) => {
+                write!(f, "Parsing response failed: {}", e)
             }
-            SupergraphFetcherError::Lock(e) => write!(f, "Lock error: {}", e),
+            SupergraphFetcherError::ETagRead(e) => {
+                write!(f, "Reading the etag record failed: {:?}", e)
+            }
+            SupergraphFetcherError::ETagWrite(e) => {
+                write!(f, "Updating the etag record failed: {:?}", e)
+            }
             SupergraphFetcherError::InvalidKey(e) => write!(f, "Invalid CDN key: {}", e),
             SupergraphFetcherError::MissingConfigurationOption(e) => {
                 write!(f, "Missing configuration option: {}", e)
@@ -52,7 +64,7 @@ impl Display for SupergraphFetcherError {
             SupergraphFetcherError::RejectedByCircuitBreaker => {
                 write!(f, "Request rejected by circuit breaker")
             }
-            SupergraphFetcherError::CircuitBreakerCreationError(e) => {
+            SupergraphFetcherError::CircuitBreakerCreation(e) => {
                 write!(f, "Creating circuit breaker failed: {}", e)
             }
         }

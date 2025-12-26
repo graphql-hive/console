@@ -35,15 +35,15 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
                                 req = req.header(IF_NONE_MATCH, etag);
                             }
                             let mut response = req.send().map_err(|err| {
-                                SupergraphFetcherError::NetworkError(
-                                    reqwest_middleware::Error::Reqwest(err),
-                                )
+                                SupergraphFetcherError::Network(reqwest_middleware::Error::Reqwest(
+                                    err,
+                                ))
                             });
 
                             // Server errors (5xx) are considered retryable
                             if let Ok(ok_res) = response {
                                 response = if ok_res.status().is_server_error() {
-                                    Err(SupergraphFetcherError::NetworkError(
+                                    Err(SupergraphFetcherError::Network(
                                         reqwest_middleware::Error::Middleware(anyhow::anyhow!(
                                             "Server error: {}",
                                             ok_res.status()
@@ -67,8 +67,18 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
                                         }
                                         RetryDecision::Retry { execute_after } => {
                                             n_past_retries += 1;
-                                            if let Ok(duration) = execute_after.elapsed() {
-                                                std::thread::sleep(duration);
+                                            match execute_after.elapsed() {
+                                                Ok(duration) => {
+                                                    std::thread::sleep(duration);
+                                                }
+                                                Err(err) => {
+                                                    tracing::error!(
+                                                        "Error determining sleep duration for retry: {}",
+                                                        err
+                                                    );
+                                                    // If elapsed time cannot be determined, do not wait
+                                                    return Err(e);
+                                                }
                                             }
                                         }
                                     }
@@ -103,7 +113,7 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
             self.update_latest_etag(last_resp.headers().get("etag"))?;
             let text = last_resp
                 .text()
-                .map_err(SupergraphFetcherError::NetworkResponseError)?;
+                .map_err(SupergraphFetcherError::ResponseParse)?;
             Ok(Some(text))
         } else if let Some(error) = last_error {
             Err(error)
@@ -112,16 +122,18 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
         }
     }
     fn get_latest_etag(&self) -> Result<Option<HeaderValue>, SupergraphFetcherError> {
-        let guard = self.etag.try_read().map_err(|e| {
-            SupergraphFetcherError::Lock(format!("Failed to read the etag record: {:?}", e))
-        })?;
+        let guard = self
+            .etag
+            .try_read()
+            .map_err(SupergraphFetcherError::ETagRead)?;
 
         Ok(guard.clone())
     }
     fn update_latest_etag(&self, etag: Option<&HeaderValue>) -> Result<(), SupergraphFetcherError> {
-        let mut guard = self.etag.try_write().map_err(|e| {
-            SupergraphFetcherError::Lock(format!("Failed to update the etag record: {:?}", e))
-        })?;
+        let mut guard = self
+            .etag
+            .try_write()
+            .map_err(SupergraphFetcherError::ETagWrite)?;
 
         if let Some(etag_value) = etag {
             *guard = Some(etag_value.clone());
@@ -153,7 +165,7 @@ impl SupergraphFetcherBuilder {
 
         let reqwest_client = reqwest_client
             .build()
-            .map_err(SupergraphFetcherError::FetcherCreationError)?;
+            .map_err(SupergraphFetcherError::HTTPClientCreation)?;
         let fetcher = SupergraphFetcher {
             state: SupergraphFetcherSyncState {
                 reqwest_client,
@@ -167,7 +179,7 @@ impl SupergraphFetcherBuilder {
                             .clone()
                             .unwrap_or_default()
                             .build_sync()
-                            .map_err(SupergraphFetcherError::CircuitBreakerCreationError);
+                            .map_err(SupergraphFetcherError::CircuitBreakerCreation);
                         circuit_breaker.map(|cb| (endpoint, cb))
                     })
                     .collect::<Result<Vec<_>, _>>()?,

@@ -26,14 +26,11 @@ impl SupergraphFetcher<SupergraphFetcherAsyncState> {
                 req = req.header(IF_NONE_MATCH, etag);
             }
             let resp_fut = async {
-                let mut resp = req
-                    .send()
-                    .await
-                    .map_err(SupergraphFetcherError::NetworkError);
+                let mut resp = req.send().await.map_err(SupergraphFetcherError::Network);
                 // Server errors (5xx) are considered errors
                 if let Ok(ok_res) = resp {
                     resp = if ok_res.status().is_server_error() {
-                        return Err(SupergraphFetcherError::NetworkError(
+                        return Err(SupergraphFetcherError::Network(
                             reqwest_middleware::Error::Middleware(anyhow::anyhow!(
                                 "Server error: {}",
                                 ok_res.status()
@@ -71,7 +68,7 @@ impl SupergraphFetcher<SupergraphFetcherAsyncState> {
             let text = last_resp
                 .text()
                 .await
-                .map_err(SupergraphFetcherError::NetworkResponseError)?;
+                .map_err(SupergraphFetcherError::ResponseParse)?;
             Ok(Some(text))
         } else if let Some(error) = last_error {
             Err(error)
@@ -116,7 +113,7 @@ impl SupergraphFetcherBuilder {
 
         let reqwest_agent = reqwest_agent
             .build()
-            .map_err(SupergraphFetcherError::FetcherCreationError)?;
+            .map_err(SupergraphFetcherError::HTTPClientCreation)?;
         let reqwest_client = ClientBuilder::new(reqwest_agent)
             .with(RetryTransientMiddleware::new_with_policy(self.retry_policy))
             .build();
@@ -133,7 +130,7 @@ impl SupergraphFetcherBuilder {
                             .clone()
                             .unwrap_or_default()
                             .build_async()
-                            .map_err(SupergraphFetcherError::CircuitBreakerCreationError);
+                            .map_err(SupergraphFetcherError::CircuitBreakerCreation);
                         circuit_breaker.map(|cb| (endpoint, cb))
                     })
                     .collect::<Result<Vec<_>, _>>()?,
