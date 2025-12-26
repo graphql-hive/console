@@ -175,15 +175,8 @@ impl UsageAgentInner {
         if report.size == 0 {
             return Ok(());
         }
-        let report_body =
-            serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
         // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
-        let resp_fut = self
-            .client
-            .post(&self.endpoint)
-            .header(reqwest::header::CONTENT_LENGTH, report_body.len())
-            .body(report_body)
-            .send();
+        let resp_fut = self.client.post(&self.endpoint).json(&report).send();
 
         let resp = self
             .circuit_breaker
@@ -435,8 +428,7 @@ mod tests {
                 .token(token.into())
                 .endpoint(format!("{}/200", server_url))
                 .user_agent(user_agent.into())
-                .build()
-                .expect("Failed to create UsageAgent");
+                .build()?;
 
             usage_agent
                 .add_report(ExecutionReport {

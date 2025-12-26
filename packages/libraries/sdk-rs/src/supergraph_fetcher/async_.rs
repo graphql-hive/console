@@ -1,30 +1,26 @@
 use futures_util::TryFutureExt;
+use recloser::AsyncRecloser;
 use reqwest::header::{HeaderValue, IF_NONE_MATCH};
-use reqwest_middleware::ClientBuilder;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::RetryTransientMiddleware;
 use tokio::sync::RwLock;
 
 use crate::supergraph_fetcher::{
-    builder::SupergraphFetcherBuilder, SupergraphFetcher, SupergraphFetcherAsyncOrSyncClient,
-    SupergraphFetcherError,
+    builder::SupergraphFetcherBuilder, SupergraphFetcher, SupergraphFetcherError,
 };
 
 #[derive(Debug)]
-pub struct SupergraphFetcherAsyncState;
+pub struct SupergraphFetcherAsyncState {
+    endpoints_with_circuit_breakers: Vec<(String, AsyncRecloser)>,
+    reqwest_client: ClientWithMiddleware,
+}
 
 impl SupergraphFetcher<SupergraphFetcherAsyncState> {
     pub async fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
-        let (endpoints_with_circuit_breakers, reqwest_client) = match &self.client {
-            SupergraphFetcherAsyncOrSyncClient::Async {
-                endpoints_with_circuit_breakers,
-                reqwest_client,
-            } => (endpoints_with_circuit_breakers, reqwest_client),
-            _ => unreachable!("Called async fetcher on sync client"),
-        };
         let mut last_error: Option<SupergraphFetcherError> = None;
         let mut last_resp = None;
-        for (endpoint, circuit_breaker) in endpoints_with_circuit_breakers {
-            let mut req = reqwest_client.get(endpoint);
+        for (endpoint, circuit_breaker) in &self.state.endpoints_with_circuit_breakers {
+            let mut req = self.state.reqwest_client.get(endpoint);
             let etag = self.get_latest_etag().await;
             if let Some(etag) = etag {
                 req = req.header(IF_NONE_MATCH, etag);
@@ -126,7 +122,7 @@ impl SupergraphFetcherBuilder {
             .build();
 
         Ok(SupergraphFetcher {
-            client: SupergraphFetcherAsyncOrSyncClient::Async {
+            state: SupergraphFetcherAsyncState {
                 reqwest_client,
                 endpoints_with_circuit_breakers: self
                     .endpoints
@@ -143,7 +139,6 @@ impl SupergraphFetcherBuilder {
                     .collect::<Result<Vec<_>, _>>()?,
             },
             etag: RwLock::new(None),
-            state: std::marker::PhantomData,
         })
     }
 }

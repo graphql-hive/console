@@ -1,34 +1,27 @@
 use std::time::SystemTime;
 
+use recloser::Recloser;
 use reqwest::header::{HeaderValue, IF_NONE_MATCH};
 use reqwest_retry::{RetryDecision, RetryPolicy};
+use retry_policies::policies::ExponentialBackoff;
 use tokio::sync::RwLock;
 
 use crate::supergraph_fetcher::{
-    builder::SupergraphFetcherBuilder, SupergraphFetcher, SupergraphFetcherAsyncOrSyncClient,
-    SupergraphFetcherError,
+    builder::SupergraphFetcherBuilder, SupergraphFetcher, SupergraphFetcherError,
 };
 
 #[derive(Debug)]
-pub struct SupergraphFetcherSyncState;
+pub struct SupergraphFetcherSyncState {
+    endpoints_with_circuit_breakers: Vec<(String, Recloser)>,
+    reqwest_client: reqwest::blocking::Client,
+    retry_policy: ExponentialBackoff,
+}
 
 impl SupergraphFetcher<SupergraphFetcherSyncState> {
     pub fn fetch_supergraph(&self) -> Result<Option<String>, SupergraphFetcherError> {
-        let (endpoints_with_circuit_breakers, reqwest_client, retry_policy) = match &self.client {
-            SupergraphFetcherAsyncOrSyncClient::Sync {
-                endpoints_with_circuit_breakers,
-                reqwest_client,
-                retry_policy,
-            } => (
-                endpoints_with_circuit_breakers,
-                reqwest_client,
-                retry_policy,
-            ),
-            _ => unreachable!("Called sync fetcher on async client"),
-        };
         let mut last_error: Option<SupergraphFetcherError> = None;
         let mut last_resp = None;
-        for (endpoint, circuit_breaker) in endpoints_with_circuit_breakers {
+        for (endpoint, circuit_breaker) in &self.state.endpoints_with_circuit_breakers {
             let resp = {
                 circuit_breaker
                     .call(|| {
@@ -36,7 +29,7 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
                         // Implementing retry logic for sync client
                         let mut n_past_retries = 0;
                         loop {
-                            let mut req = reqwest_client.get(endpoint);
+                            let mut req = self.state.reqwest_client.get(endpoint);
                             let etag = self.get_latest_etag()?;
                             if let Some(etag) = etag {
                                 req = req.header(IF_NONE_MATCH, etag);
@@ -64,7 +57,9 @@ impl SupergraphFetcher<SupergraphFetcherSyncState> {
                             match response {
                                 Ok(resp) => break Ok(resp),
                                 Err(e) => {
-                                    match retry_policy
+                                    match self
+                                        .state
+                                        .retry_policy
                                         .should_retry(request_start_time, n_past_retries)
                                     {
                                         RetryDecision::DoNotRetry => {
@@ -159,8 +154,8 @@ impl SupergraphFetcherBuilder {
         let reqwest_client = reqwest_client
             .build()
             .map_err(SupergraphFetcherError::FetcherCreationError)?;
-        let fetcher: SupergraphFetcher<SupergraphFetcherSyncState> = SupergraphFetcher {
-            client: SupergraphFetcherAsyncOrSyncClient::Sync {
+        let fetcher = SupergraphFetcher {
+            state: SupergraphFetcherSyncState {
                 reqwest_client,
                 retry_policy: self.retry_policy,
                 endpoints_with_circuit_breakers: self
@@ -178,7 +173,6 @@ impl SupergraphFetcherBuilder {
                     .collect::<Result<Vec<_>, _>>()?,
             },
             etag: RwLock::new(None),
-            state: std::marker::PhantomData,
         };
         Ok(fetcher)
     }

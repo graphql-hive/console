@@ -3,35 +3,17 @@ use tokio::sync::RwLock;
 
 use crate::circuit_breaker::CircuitBreakerError;
 use crate::supergraph_fetcher::async_::SupergraphFetcherAsyncState;
-use recloser::AsyncRecloser;
-use recloser::Recloser;
 use reqwest::header::HeaderValue;
 use reqwest::header::InvalidHeaderValue;
-use reqwest_middleware::ClientWithMiddleware;
-use retry_policies::policies::ExponentialBackoff;
 
 pub mod async_;
 pub mod builder;
 pub mod sync;
 
 #[derive(Debug)]
-pub struct SupergraphFetcher<AsyncOrSync> {
-    client: SupergraphFetcherAsyncOrSyncClient,
+pub struct SupergraphFetcher<State> {
+    state: State,
     etag: RwLock<Option<HeaderValue>>,
-    state: std::marker::PhantomData<AsyncOrSync>,
-}
-
-#[derive(Debug)]
-enum SupergraphFetcherAsyncOrSyncClient {
-    Async {
-        endpoints_with_circuit_breakers: Vec<(String, AsyncRecloser)>,
-        reqwest_client: ClientWithMiddleware,
-    },
-    Sync {
-        endpoints_with_circuit_breakers: Vec<(String, Recloser)>,
-        reqwest_client: reqwest::blocking::Client,
-        retry_policy: ExponentialBackoff,
-    },
 }
 
 // Doesn't matter which one we implement this for, both have the same builder
