@@ -275,7 +275,7 @@ mod tests {
     const GRAPHQL_CLIENT_VERSION: &'static str = "1.0.0";
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn should_send_data_to_hive() {
+    async fn should_send_data_to_hive() -> Result<(), Box<dyn std::error::Error>> {
         let token = "Token";
 
         let mut server = mockito::Server::new_async().await;
@@ -404,8 +404,7 @@ mod tests {
                     CUSTOM
                 }
         "#,
-        )
-        .expect("Failed to parse schema");
+        )?;
 
         let op: graphql_tools::static_graphql::query::Document = parse_query(
             r#"
@@ -428,8 +427,7 @@ mod tests {
                     type
                 }
         "#,
-        )
-        .expect("Failed to parse query");
+        )?;
 
         // Testing async drop
         {
@@ -453,10 +451,11 @@ mod tests {
                     errors: 0,
                     persisted_document_hash: None,
                 })
-                .await
-                .expect("Failed to add report");
+                .await?;
         }
 
         mock.assert_async().await;
+
+        Ok(())
     }
 }
