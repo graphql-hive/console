@@ -8,8 +8,8 @@ use core::ops::Drop;
 use futures::StreamExt;
 use graphql_parser::parse_schema;
 use graphql_parser::schema::Document;
-use hive_console_sdk::agent::UsageAgentExt;
-use hive_console_sdk::agent::{ExecutionReport, UsageAgent};
+use hive_console_sdk::agent::usage_agent::UsageAgentExt;
+use hive_console_sdk::agent::usage_agent::{ExecutionReport, UsageAgent};
 use http::HeaderValue;
 use rand::Rng;
 use schemars::JsonSchema;
@@ -19,6 +19,7 @@ use std::env;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tokio_util::sync::CancellationToken;
 use tower::BoxError;
 use tower::ServiceBuilder;
 use tower::ServiceExt;
@@ -47,11 +48,12 @@ struct OperationConfig {
 
 pub struct UsagePlugin {
     config: OperationConfig,
-    agent: Option<Arc<UsageAgent>>,
+    agent: Option<UsageAgent>,
     schema: Arc<Document<'static, String>>,
+    cancellation_token: Arc<CancellationToken>,
 }
 
-#[derive(Clone, Debug, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, Deserialize, JsonSchema, Default)]
 pub struct Config {
     /// Default: true
     enabled: Option<bool>,
@@ -93,26 +95,6 @@ pub struct Config {
     /// Frequency of flushing the buffer to the server
     /// Default: 5 seconds
     flush_interval: Option<u64>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            enabled: Some(true),
-            registry_token: None,
-            registry_usage_endpoint: Some(DEFAULT_HIVE_USAGE_ENDPOINT.into()),
-            sample_rate: Some(1.0),
-            exclude: None,
-            client_name_header: Some(String::from("graphql-client-name")),
-            client_version_header: Some(String::from("graphql-client-version")),
-            accept_invalid_certs: Some(false),
-            buffer_size: Some(1000),
-            connect_timeout: Some(5),
-            request_timeout: Some(15),
-            flush_interval: Some(5),
-            target: None,
-        }
-    }
 }
 
 impl UsagePlugin {
@@ -179,108 +161,95 @@ impl UsagePlugin {
     }
 }
 
-static DEFAULT_HIVE_USAGE_ENDPOINT: &str = "https://app.graphql-hive.com/usage";
-
 #[async_trait::async_trait]
 impl Plugin for UsagePlugin {
     type Config = Config;
 
     async fn new(init: PluginInit<Config>) -> Result<Self, BoxError> {
-        let token = init
-            .config
-            .registry_token
-            .clone()
-            .or_else(|| env::var("HIVE_TOKEN").ok());
-
-        if token.is_none() {
-            return Err("Hive token is required".into());
-        }
-
-        let endpoint = init
-            .config
-            .registry_usage_endpoint
-            .clone()
-            .unwrap_or_else(|| {
-                env::var("HIVE_ENDPOINT").unwrap_or(DEFAULT_HIVE_USAGE_ENDPOINT.to_string())
-            });
-
-        let target_id = init
-            .config
-            .target
-            .clone()
-            .or_else(|| env::var("HIVE_TARGET_ID").ok());
-
-        let default_config = Config::default();
         let user_config = init.config;
-        let enabled = user_config
-            .enabled
-            .or(default_config.enabled)
-            .expect("enabled has default value");
-        let buffer_size = user_config
-            .buffer_size
-            .or(default_config.buffer_size)
-            .expect("buffer_size has no default value");
-        let accept_invalid_certs = user_config
-            .accept_invalid_certs
-            .or(default_config.accept_invalid_certs)
-            .expect("accept_invalid_certs has no default value");
-        let connect_timeout = user_config
-            .connect_timeout
-            .or(default_config.connect_timeout)
-            .expect("connect_timeout has no default value");
-        let request_timeout = user_config
-            .request_timeout
-            .or(default_config.request_timeout)
-            .expect("request_timeout has no default value");
-        let flush_interval = user_config
-            .flush_interval
-            .or(default_config.flush_interval)
-            .expect("request_timeout has no default value");
+
+        let enabled = user_config.enabled.unwrap_or(true);
 
         if enabled {
             tracing::info!("Starting GraphQL Hive Usage plugin");
         }
-        let schema = parse_schema(&init.supergraph_sdl)
-            .expect("Failed to parse schema")
-            .into_static();
+
+        let cancellation_token = Arc::new(CancellationToken::new());
 
         let agent = if enabled {
-            let flush_interval = Duration::from_secs(flush_interval);
-            let agent = UsageAgent::try_new(
-                &token.expect("token is set"),
-                endpoint,
-                target_id,
-                buffer_size,
-                Duration::from_secs(connect_timeout),
-                Duration::from_secs(request_timeout),
-                accept_invalid_certs,
-                flush_interval,
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-            )
-            .map_err(Box::new)?;
-            start_flush_interval(agent.clone());
+            let mut agent =
+                UsageAgent::builder().user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION));
+
+            if let Some(endpoint) = user_config.registry_usage_endpoint {
+                agent = agent.endpoint(endpoint);
+            } else if let Ok(env_endpoint) = env::var("HIVE_ENDPOINT") {
+                agent = agent.endpoint(env_endpoint);
+            }
+
+            if let Some(token) = user_config.registry_token {
+                agent = agent.token(token);
+            } else if let Ok(env_token) = env::var("HIVE_TOKEN") {
+                agent = agent.token(env_token);
+            }
+
+            if let Some(target_id) = user_config.target {
+                agent = agent.target_id(target_id);
+            } else if let Ok(env_target) = env::var("HIVE_TARGET_ID") {
+                agent = agent.target_id(env_target);
+            }
+
+            if let Some(buffer_size) = user_config.buffer_size {
+                agent = agent.buffer_size(buffer_size);
+            }
+
+            if let Some(connect_timeout) = user_config.connect_timeout {
+                agent = agent.connect_timeout(Duration::from_secs(connect_timeout));
+            }
+
+            if let Some(request_timeout) = user_config.request_timeout {
+                agent = agent.request_timeout(Duration::from_secs(request_timeout));
+            }
+
+            if let Some(accept_invalid_certs) = user_config.accept_invalid_certs {
+                agent = agent.accept_invalid_certs(accept_invalid_certs);
+            }
+
+            if let Some(flush_interval) = user_config.flush_interval {
+                agent = agent.flush_interval(Duration::from_secs(flush_interval));
+            }
+
+            let agent = agent.build().map_err(Box::new)?;
+
+            let cancellation_token_for_interval = cancellation_token.clone();
+            let agent_for_interval = agent.clone();
+            tokio::task::spawn(async move {
+                agent_for_interval
+                    .start_flush_interval(&cancellation_token_for_interval)
+                    .await;
+            });
             Some(agent)
         } else {
             None
         };
+
+        let schema = parse_schema(&init.supergraph_sdl)
+            .expect("Failed to parse schema")
+            .into_static();
+
         Ok(UsagePlugin {
             schema: Arc::new(schema),
             config: OperationConfig {
-                sample_rate: user_config
-                    .sample_rate
-                    .or(default_config.sample_rate)
-                    .expect("sample_rate has no default value"),
-                exclude: user_config.exclude.or(default_config.exclude),
+                sample_rate: user_config.sample_rate.unwrap_or(1.0),
+                exclude: user_config.exclude,
                 client_name_header: user_config
                     .client_name_header
-                    .or(default_config.client_name_header)
-                    .expect("client_name_header has no default value"),
+                    .unwrap_or("graphql-client-name".to_string()),
                 client_version_header: user_config
                     .client_version_header
-                    .or(default_config.client_version_header)
-                    .expect("client_version_header has no default value"),
+                    .unwrap_or("graphql-client-version".to_string()),
             },
             agent,
+            cancellation_token,
         })
     }
 
@@ -342,58 +311,61 @@ impl Plugin for UsagePlugin {
 
                                 match result {
                                     Err(e) => {
-                                        agent
-                                            .add_report(ExecutionReport {
-                                                schema,
-                                                client_name,
-                                                client_version,
-                                                timestamp,
-                                                duration,
-                                                ok: false,
-                                                errors: 1,
-                                                operation_body,
-                                                operation_name,
-                                                persisted_document_hash,
-                                            })
-                                            .unwrap_or_else(|e| {
+                                        tokio::spawn(async move {
+                                            let res = agent
+                                                .add_report(ExecutionReport {
+                                                    schema,
+                                                    client_name,
+                                                    client_version,
+                                                    timestamp,
+                                                    duration,
+                                                    ok: false,
+                                                    errors: 1,
+                                                    operation_body,
+                                                    operation_name,
+                                                    persisted_document_hash,
+                                                })
+                                                .await;
+                                            if let Err(e) = res {
                                                 tracing::error!("Error adding report: {}", e);
-                                            });
+                                            }
+                                        });
                                         Err(e)
                                     }
                                     Ok(router_response) => {
                                         let is_failure =
                                             !router_response.response.status().is_success();
                                         Ok(router_response.map(move |response_stream| {
-                                            let client_name = client_name.clone();
-                                            let client_version = client_version.clone();
-                                            let operation_body = operation_body.clone();
-                                            let operation_name = operation_name.clone();
-
                                             let res = response_stream
                                                 .map(move |response| {
                                                     // make sure we send a single report, not for each chunk
                                                     let response_has_errors =
                                                         !response.errors.is_empty();
-                                                    agent
-                                                        .add_report(ExecutionReport {
-                                                            schema: schema.clone(),
-                                                            client_name: client_name.clone(),
-                                                            client_version: client_version.clone(),
-                                                            timestamp,
-                                                            duration,
-                                                            ok: !is_failure && !response_has_errors,
-                                                            errors: response.errors.len(),
-                                                            operation_body: operation_body.clone(),
-                                                            operation_name: operation_name.clone(),
-                                                            persisted_document_hash:
-                                                                persisted_document_hash.clone(),
-                                                        })
-                                                        .unwrap_or_else(|e| {
+                                                    let agent = agent.clone();
+                                                    let execution_report = ExecutionReport {
+                                                        schema: schema.clone(),
+                                                        client_name: client_name.clone(),
+                                                        client_version: client_version.clone(),
+                                                        timestamp,
+                                                        duration,
+                                                        ok: !is_failure && !response_has_errors,
+                                                        errors: response.errors.len(),
+                                                        operation_body: operation_body.clone(),
+                                                        operation_name: operation_name.clone(),
+                                                        persisted_document_hash:
+                                                            persisted_document_hash.clone(),
+                                                    };
+                                                    tokio::spawn(async move {
+                                                        let res = agent
+                                                            .add_report(execution_report)
+                                                            .await;
+                                                        if let Err(e) = res {
                                                             tracing::error!(
                                                                 "Error adding report: {}",
                                                                 e
                                                             );
-                                                        });
+                                                        }
+                                                    });
 
                                                     response
                                                 })
@@ -415,15 +387,9 @@ impl Plugin for UsagePlugin {
 
 impl Drop for UsagePlugin {
     fn drop(&mut self) {
-        tracing::debug!("UsagePlugin has been dropped!");
-        // TODO: flush the buffer
+        self.cancellation_token.cancel();
+        // Flush already done by UsageAgent's Drop impl
     }
-}
-
-pub fn start_flush_interval(agent_for_interval: Arc<UsageAgent>) {
-    tokio::task::spawn(async move {
-        agent_for_interval.start_flush_interval(None).await;
-    });
 }
 
 #[cfg(test)]
@@ -479,7 +445,7 @@ mod hive_usage_tests {
         }
 
         fn wait_for_processing(&self) -> tokio::time::Sleep {
-            tokio::time::sleep(tokio::time::Duration::from_secs(1))
+            tokio::time::sleep(tokio::time::Duration::from_secs(2))
         }
 
         fn activate_usage_mock(&'_ self) -> Mock<'_> {
@@ -584,6 +550,7 @@ mod hive_usage_tests {
         instance.execute_operation(req).await.next_response().await;
 
         instance.wait_for_processing().await;
+        println!("Waiting done");
 
         mock.assert();
         mock.assert_hits(1);

@@ -1,15 +1,17 @@
-use super::graphql::OperationProcessor;
+use async_dropper_simple::{AsyncDrop, AsyncDropper};
 use graphql_parser::schema::Document;
-use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use recloser::AsyncRecloser;
+use reqwest_middleware::ClientWithMiddleware;
 use std::{
-    collections::{hash_map::Entry, HashMap, VecDeque},
-    sync::{Arc, Mutex},
+    collections::{hash_map::Entry, HashMap},
+    sync::Arc,
     time::Duration,
 };
 use thiserror::Error;
 use tokio_util::sync::CancellationToken;
+
+use crate::agent::{buffer::AddStatus, utils::OperationProcessor};
+use crate::agent::{buffer::Buffer, builder::UsageAgentBuilder};
 
 #[derive(Debug, Clone)]
 pub struct ExecutionReport {
@@ -27,44 +29,16 @@ pub struct ExecutionReport {
 
 typify::import_types!(schema = "./usage-report-v2.schema.json");
 
-#[derive(Debug, Default)]
-pub struct Buffer(Mutex<VecDeque<ExecutionReport>>);
-
-impl Buffer {
-    fn new() -> Self {
-        Self(Mutex::new(VecDeque::new()))
-    }
-
-    fn lock_buffer(
-        &self,
-    ) -> Result<std::sync::MutexGuard<'_, VecDeque<ExecutionReport>>, AgentError> {
-        let buffer: Result<std::sync::MutexGuard<'_, VecDeque<ExecutionReport>>, AgentError> =
-            self.0.lock().map_err(|e| AgentError::Lock(e.to_string()));
-        buffer
-    }
-
-    pub fn push(&self, report: ExecutionReport) -> Result<usize, AgentError> {
-        let mut buffer = self.lock_buffer()?;
-        buffer.push_back(report);
-        Ok(buffer.len())
-    }
-
-    pub fn drain(&self) -> Result<Vec<ExecutionReport>, AgentError> {
-        let mut buffer = self.lock_buffer()?;
-        let reports: Vec<ExecutionReport> = buffer.drain(..).collect();
-        Ok(reports)
-    }
-}
-pub struct UsageAgent {
-    buffer_size: usize,
-    endpoint: String,
-    buffer: Buffer,
-    processor: OperationProcessor,
-    client: ClientWithMiddleware,
-    flush_interval: Duration,
+pub struct UsageAgentInner {
+    pub(crate) endpoint: String,
+    pub(crate) buffer: Buffer<ExecutionReport>,
+    pub(crate) processor: OperationProcessor,
+    pub(crate) client: ClientWithMiddleware,
+    pub(crate) flush_interval: Duration,
+    pub(crate) circuit_breaker: AsyncRecloser,
 }
 
-fn non_empty_string(value: Option<String>) -> Option<String> {
+pub fn non_empty_string(value: Option<String>) -> Option<String> {
     value.filter(|str| !str.is_empty())
 }
 
@@ -72,81 +46,45 @@ fn non_empty_string(value: Option<String>) -> Option<String> {
 pub enum AgentError {
     #[error("unable to acquire lock: {0}")]
     Lock(String),
-    #[error("unable to send report: token is missing")]
+    #[error("unable to send report: unauthorized")]
     Unauthorized,
     #[error("unable to send report: no access")]
     Forbidden,
     #[error("unable to send report: rate limited")]
     RateLimited,
-    #[error("invalid token provided: {0}")]
-    InvalidToken(String),
+    #[error("missing token")]
+    MissingToken,
+    #[error("your access token requires providing a 'target_id' option.")]
+    MissingTargetId,
+    #[error("using 'target_id' with legacy tokens is not supported")]
+    TargetIdWithLegacyToken,
+    #[error("invalid token provided")]
+    InvalidToken,
+    #[error("invalid target id provided: {0}, it should be either a slug like \"$organizationSlug/$projectSlug/$targetSlug\" or an UUID")]
+    InvalidTargetId(String),
     #[error("unable to instantiate the http client for reports sending: {0}")]
     HTTPClientCreationError(reqwest::Error),
+    #[error("unable to create circuit breaker: {0}")]
+    CircuitBreakerCreationError(#[from] crate::circuit_breaker::CircuitBreakerError),
+    #[error("rejected by the circuit breaker")]
+    CircuitBreakerRejected,
     #[error("unable to send report: {0}")]
     Unknown(String),
 }
 
-impl UsageAgent {
-    #[allow(clippy::too_many_arguments)]
-    pub fn try_new(
-        token: &str,
-        endpoint: String,
-        target_id: Option<String>,
-        buffer_size: usize,
-        connect_timeout: Duration,
-        request_timeout: Duration,
-        accept_invalid_certs: bool,
-        flush_interval: Duration,
-        user_agent: String,
-    ) -> Result<Arc<Self>, AgentError> {
-        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+pub type UsageAgent = Arc<AsyncDropper<UsageAgentInner>>;
 
-        let mut default_headers = HeaderMap::new();
-
-        default_headers.insert("X-Usage-API-Version", HeaderValue::from_static("2"));
-
-        let mut authorization_header = HeaderValue::from_str(&format!("Bearer {}", token))
-            .map_err(|_| AgentError::InvalidToken(token.to_string()))?;
-
-        authorization_header.set_sensitive(true);
-
-        default_headers.insert(reqwest::header::AUTHORIZATION, authorization_header);
-
-        default_headers.insert(
-            reqwest::header::CONTENT_TYPE,
-            HeaderValue::from_static("application/json"),
-        );
-
-        let reqwest_agent = reqwest::Client::builder()
-            .danger_accept_invalid_certs(accept_invalid_certs)
-            .connect_timeout(connect_timeout)
-            .timeout(request_timeout)
-            .user_agent(user_agent)
-            .default_headers(default_headers)
-            .build()
-            .map_err(AgentError::HTTPClientCreationError)?;
-        let client = ClientBuilder::new(reqwest_agent)
-            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
-            .build();
-
-        let mut endpoint = endpoint;
-
-        if token.starts_with("hvo1/") || token.starts_with("hvu1/") || token.starts_with("hvp1/") {
-            if let Some(target_id) = target_id {
-                endpoint.push_str(&format!("/{}", target_id));
-            }
-        }
-
-        Ok(Arc::new(Self {
-            buffer_size,
-            endpoint,
-            buffer: Buffer::new(),
-            processor: OperationProcessor::new(),
-            client,
-            flush_interval,
-        }))
+#[async_trait::async_trait]
+pub trait UsageAgentExt {
+    fn builder() -> UsageAgentBuilder {
+        UsageAgentBuilder::default()
     }
+    async fn flush(&self) -> Result<(), AgentError>;
+    async fn start_flush_interval(&self, token: &CancellationToken);
+    async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError>;
+}
 
+impl UsageAgentInner {
     fn produce_report(&self, reports: Vec<ExecutionReport>) -> Result<Report, AgentError> {
         let mut report = Report {
             size: 0,
@@ -233,21 +171,21 @@ impl UsageAgent {
         Ok(report)
     }
 
-    pub async fn send_report(&self, report: Report) -> Result<(), AgentError> {
+    async fn send_report(&self, report: Report) -> Result<(), AgentError> {
         if report.size == 0 {
             return Ok(());
         }
-        let report_body =
-            serde_json::to_vec(&report).map_err(|e| AgentError::Unknown(e.to_string()))?;
         // Based on https://the-guild.dev/graphql/hive/docs/specs/usage-reports#data-structure
+        let resp_fut = self.client.post(&self.endpoint).json(&report).send();
+
         let resp = self
-            .client
-            .post(&self.endpoint)
-            .header(reqwest::header::CONTENT_LENGTH, report_body.len())
-            .body(report_body)
-            .send()
+            .circuit_breaker
+            .call(resp_fut)
             .await
-            .map_err(|e| AgentError::Unknown(e.to_string()))?;
+            .map_err(|e| match e {
+                recloser::Error::Inner(e) => AgentError::Unknown(e.to_string()),
+                recloser::Error::Rejected => AgentError::CircuitBreakerRejected,
+            })?;
 
         match resp.status() {
             reqwest::StatusCode::OK => Ok(()),
@@ -262,67 +200,57 @@ impl UsageAgent {
         }
     }
 
-    pub async fn flush(&self) {
-        let execution_reports = match self.buffer.drain() {
-            Ok(res) => res,
-            Err(e) => {
-                tracing::error!("Unable to acquire lock for State in drain_reports: {}", e);
-                Vec::new()
-            }
-        };
-        let size = execution_reports.len();
-
-        if size > 0 {
-            match self.produce_report(execution_reports) {
-                Ok(report) => match self.send_report(report).await {
-                    Ok(_) => tracing::debug!("Reported {} operations", size),
-                    Err(e) => tracing::error!("{}", e),
-                },
-                Err(e) => tracing::error!("{}", e),
-            }
+    async fn handle_drained(&self, drained: Vec<ExecutionReport>) -> Result<(), AgentError> {
+        if drained.is_empty() {
+            return Ok(());
         }
+        let report = self.produce_report(drained)?;
+        self.send_report(report).await
     }
-    pub async fn start_flush_interval(&self, token: Option<CancellationToken>) {
-        let mut tokio_interval = tokio::time::interval(self.flush_interval);
 
-        match token {
-            Some(token) => loop {
-                tokio::select! {
-                    _ = tokio_interval.tick() => { self.flush().await; }
-                    _ = token.cancelled() => { println!("Shutting down."); return; }
-                }
-            },
-            None => loop {
-                tokio_interval.tick().await;
-                self.flush().await;
-            },
-        }
+    async fn flush(&self) -> Result<(), AgentError> {
+        let execution_reports = self.buffer.drain().await;
+
+        self.handle_drained(execution_reports).await?;
+
+        Ok(())
     }
 }
 
-pub trait UsageAgentExt {
-    fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError>;
-    fn flush_if_full(&self, size: usize) -> Result<(), AgentError>;
-}
+#[async_trait::async_trait]
+impl UsageAgentExt for UsageAgent {
+    async fn flush(&self) -> Result<(), AgentError> {
+        self.inner().flush().await
+    }
 
-impl UsageAgentExt for Arc<UsageAgent> {
-    fn flush_if_full(&self, size: usize) -> Result<(), AgentError> {
-        if size >= self.buffer_size {
-            let cloned_self = self.clone();
-            tokio::task::spawn(async move {
-                cloned_self.flush().await;
-            });
+    async fn start_flush_interval(&self, token: &CancellationToken) {
+        loop {
+            tokio::time::sleep(self.inner().flush_interval).await;
+            if token.is_cancelled() {
+                println!("Shutting down.");
+                return;
+            }
+            self.flush()
+                .await
+                .unwrap_or_else(|e| tracing::error!("Failed to flush usage reports: {}", e));
+        }
+    }
+
+    async fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
+        if let AddStatus::Full { drained } = self.inner().buffer.add(execution_report).await {
+            self.inner().handle_drained(drained).await?;
         }
 
         Ok(())
     }
+}
 
-    fn add_report(&self, execution_report: ExecutionReport) -> Result<(), AgentError> {
-        let size = self.buffer.push(execution_report)?;
-
-        self.flush_if_full(size)?;
-
-        Ok(())
+#[async_trait::async_trait]
+impl AsyncDrop for UsageAgentInner {
+    async fn async_drop(&mut self) {
+        if let Err(e) = self.flush().await {
+            tracing::error!("Failed to flush usage reports during drop: {}", e);
+        }
     }
 }
 
@@ -333,14 +261,14 @@ mod tests {
     use graphql_parser::{parse_query, parse_schema};
     use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 
-    use crate::agent::{ExecutionReport, Report, UsageAgent, UsageAgentExt};
+    use crate::agent::usage_agent::{ExecutionReport, Report, UsageAgent, UsageAgentExt};
 
     const CONTENT_TYPE_VALUE: &'static str = "application/json";
     const GRAPHQL_CLIENT_NAME: &'static str = "Hive Client";
     const GRAPHQL_CLIENT_VERSION: &'static str = "1.0.0";
 
-    #[tokio::test]
-    async fn should_send_data_to_hive() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn should_send_data_to_hive() -> Result<(), Box<dyn std::error::Error>> {
         let token = "Token";
 
         let mut server = mockito::Server::new_async().await;
@@ -349,13 +277,13 @@ mod tests {
 
         let timestamp = 1625247600;
         let duration = Duration::from_millis(20);
-        let user_agent = format!("hive-router-sdk-test");
+        let user_agent = "hive-router-sdk-test";
 
         let mock = server
             .mock("POST", "/200")
             .match_header(AUTHORIZATION, format!("Bearer {}", token).as_str())
             .match_header(CONTENT_TYPE, CONTENT_TYPE_VALUE)
-            .match_header(USER_AGENT, user_agent.as_str())
+            .match_header(USER_AGENT, user_agent)
             .match_header("X-Usage-API-Version", "2")
             .match_request(move |request| {
                 let request_body = request.body().expect("Failed to extract body");
@@ -469,8 +397,7 @@ mod tests {
                     CUSTOM
                 }
         "#,
-        )
-        .expect("Failed to parse schema");
+        )?;
 
         let op: graphql_tools::static_graphql::query::Document = parse_query(
             r#"
@@ -493,39 +420,34 @@ mod tests {
                     type
                 }
         "#,
-        )
-        .expect("Failed to parse query");
+        )?;
 
-        let usage_agent = UsageAgent::try_new(
-            token,
-            format!("{}/200", server_url),
-            None,
-            10,
-            Duration::from_millis(500),
-            Duration::from_millis(500),
-            false,
-            Duration::from_millis(10),
-            user_agent,
-        )
-        .expect("Failed to create UsageAgent");
+        // Testing async drop
+        {
+            let usage_agent = UsageAgent::builder()
+                .token(token.into())
+                .endpoint(format!("{}/200", server_url))
+                .user_agent(user_agent.into())
+                .build()?;
 
-        usage_agent
-            .add_report(ExecutionReport {
-                schema: Arc::new(schema),
-                operation_body: op.to_string(),
-                operation_name: Some("deleteProject".to_string()),
-                client_name: Some(GRAPHQL_CLIENT_NAME.to_string()),
-                client_version: Some(GRAPHQL_CLIENT_VERSION.to_string()),
-                timestamp: timestamp.try_into().unwrap(),
-                duration,
-                ok: true,
-                errors: 0,
-                persisted_document_hash: None,
-            })
-            .expect("Failed to add report");
-
-        usage_agent.flush().await;
+            usage_agent
+                .add_report(ExecutionReport {
+                    schema: Arc::new(schema),
+                    operation_body: op.to_string(),
+                    operation_name: Some("deleteProject".to_string()),
+                    client_name: Some(GRAPHQL_CLIENT_NAME.to_string()),
+                    client_version: Some(GRAPHQL_CLIENT_VERSION.to_string()),
+                    timestamp,
+                    duration,
+                    ok: true,
+                    errors: 0,
+                    persisted_document_hash: None,
+                })
+                .await?;
+        }
 
         mock.assert_async().await;
+
+        Ok(())
     }
 }

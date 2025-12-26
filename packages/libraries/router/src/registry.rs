@@ -1,14 +1,13 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
+use hive_console_sdk::supergraph_fetcher::sync::SupergraphFetcherSyncState;
 use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
-use hive_console_sdk::supergraph_fetcher::SupergraphFetcherSyncState;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
 use std::io::Write;
 use std::thread;
-use std::time::Duration;
 
 #[derive(Debug)]
 pub struct HiveRegistry {
@@ -18,7 +17,7 @@ pub struct HiveRegistry {
 }
 
 pub struct HiveRegistryConfig {
-    endpoint: Option<String>,
+    endpoints: Vec<String>,
     key: Option<String>,
     poll_interval: Option<u64>,
     accept_invalid_certs: Option<bool>,
@@ -29,7 +28,7 @@ impl HiveRegistry {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(user_config: Option<HiveRegistryConfig>) -> Result<()> {
         let mut config = HiveRegistryConfig {
-            endpoint: None,
+            endpoints: vec![],
             key: None,
             poll_interval: None,
             accept_invalid_certs: Some(true),
@@ -38,7 +37,7 @@ impl HiveRegistry {
 
         // Pass values from user's config
         if let Some(user_config) = user_config {
-            config.endpoint = user_config.endpoint;
+            config.endpoints = user_config.endpoints;
             config.key = user_config.key;
             config.poll_interval = user_config.poll_interval;
             config.accept_invalid_certs = user_config.accept_invalid_certs;
@@ -47,9 +46,9 @@ impl HiveRegistry {
 
         // Pass values from environment variables if they are not set in the user's config
 
-        if config.endpoint.is_none() {
+        if config.endpoints.is_empty() {
             if let Ok(endpoint) = env::var("HIVE_CDN_ENDPOINT") {
-                config.endpoint = Some(endpoint);
+                config.endpoints.push(endpoint);
             }
         }
 
@@ -86,7 +85,7 @@ impl HiveRegistry {
         }
 
         // Resolve values
-        let endpoint = config.endpoint.unwrap_or_default();
+        let endpoint = config.endpoints;
         let key = config.key.unwrap_or_default();
         let poll_interval: u64 = config.poll_interval.unwrap_or(10);
         let accept_invalid_certs = config.accept_invalid_certs.unwrap_or(false);
@@ -120,19 +119,23 @@ impl HiveRegistry {
                 .to_string_lossy()
                 .to_string(),
         );
-        env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
-        env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
+        unsafe {
+            env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
+            env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
+        }
 
-        let fetcher = SupergraphFetcher::try_new_sync(
-            endpoint,
-            &key,
-            format!("hive-apollo-router/{}", PLUGIN_VERSION),
-            Duration::from_secs(5),
-            Duration::from_secs(60),
-            accept_invalid_certs,
-            3,
-        )
-        .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
+        let mut fetcher = SupergraphFetcher::builder()
+            .key(key)
+            .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION))
+            .accept_invalid_certs(accept_invalid_certs);
+
+        for ep in endpoint {
+            fetcher = fetcher.add_endpoint(ep);
+        }
+
+        let fetcher = fetcher
+            .build_sync()
+            .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
 
         let registry = HiveRegistry {
             fetcher,

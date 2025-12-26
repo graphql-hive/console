@@ -784,7 +784,7 @@ fn definition_kind_ordering<'a, T: Text<'a>>(definition: &Definition<'a, T>) -> 
 pub fn normalize_operation<'a>(operation_document: &Document<'a, String>) -> Document<'a, String> {
     let mut strip_literals_transformer = StripLiteralsTransformer {};
     let normalized = strip_literals_transformer
-        .transform_document(&operation_document)
+        .transform_document(operation_document)
         .replace_or_else(|| operation_document.clone());
 
     SortSelectionsTransform::new()

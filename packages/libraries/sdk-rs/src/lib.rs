@@ -1,4 +1,4 @@
 pub mod agent;
-pub mod graphql;
+pub mod circuit_breaker;
 pub mod persisted_documents;
 pub mod supergraph_fetcher;
