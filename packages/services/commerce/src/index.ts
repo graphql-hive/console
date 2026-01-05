@@ -29,8 +29,7 @@ async function main() {
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
   if (env.sentry) {

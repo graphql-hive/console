@@ -616,6 +616,63 @@ test('operation with non-existing field is handled gracefully', async ({ expect 
   });
 });
 
+test('respects "graphql-client-name" and "graphql-client-version" headers by default', async ({
+  expect,
+}) => {
+  const fetchSpy = vi.fn(async (_input: string | URL | globalThis.Request, _init?: RequestInit) =>
+    Response.json({}, { status: 200 }),
+  );
+
+  const hive = createHive({
+    enabled: true,
+    debug: false,
+    token: 'my-token',
+    agent: {
+      maxRetries: 0,
+      sendInterval: 10,
+      timeout: 50,
+      fetch: fetchSpy,
+    },
+    reporting: false,
+    usage: {
+      endpoint: 'http://yoga.localhost:4200/usage',
+    },
+  });
+
+  const yoga = createYoga({
+    schema: createSchema({
+      typeDefs,
+      resolvers,
+    }),
+    plugins: [useHive(hive)],
+    logging: false,
+  });
+
+  await yoga.fetch(`http://localhost/graphql`, {
+    method: 'POST',
+    body: JSON.stringify({
+      query: /* GraphQL */ `
+        {
+          hello
+        }
+      `,
+    }),
+    headers: {
+      'content-type': 'application/json',
+      'graphql-client-name': 'my-client',
+      'graphql-client-version': '1.2.3',
+    },
+  });
+  await waitFor(50);
+  await hive.dispose();
+  expect(fetchSpy).toHaveBeenCalledWith(
+    'http://yoga.localhost:4200/usage',
+    expect.objectContaining({
+      body: expect.stringContaining('"client":{"name":"my-client","version":"1.2.3"}'),
+    }),
+  );
+});
+
 describe('subscription usage reporting', () => {
   describe('built-in see', () => {
     test('reports usage for successful subscription operation', async ({ expect }) => {

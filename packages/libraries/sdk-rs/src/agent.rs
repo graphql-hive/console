@@ -387,9 +387,17 @@ mod tests {
                     "ProjectSelectorInput.project",
                 ];
                 for field in &expected_fields {
-                    assert!(record.fields.contains(&field.to_string()));
+                    assert!(
+                        record.fields.contains(&field.to_string()),
+                        "Missing field: {}",
+                        field
+                    );
                 }
-                assert_eq!(record.fields.len(), expected_fields.len());
+                assert_eq!(
+                    record.fields.len(),
+                    expected_fields.len(),
+                    "Unexpected number of fields"
+                );
 
                 // Operations
                 let operations = report.operations;
