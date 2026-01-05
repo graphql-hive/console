@@ -1,3 +1,4 @@
+import mjml2html from 'mjml';
 import { mjml, type MJMLValue } from './mjml.js';
 
 export { mjml };
@@ -19,13 +20,13 @@ export function button(input: { url: string; text: string }) {
 }
 
 export function email(input: { title: string | MJMLValue; body: MJMLValue }) {
-  return mjml`
+  const body = mjml`
     <mjml>
       <mj-body>
         <mj-section background-color="#e6eded">
           <mj-column>
             <mj-text color="#245850" font-size="28px" font-weight="300">
-              Hive
+              Hive Console
             </mj-text>
           </mj-column>
         </mj-section>
@@ -49,4 +50,15 @@ export function email(input: { title: string | MJMLValue; body: MJMLValue }) {
       </mj-body>
     </mjml>
   `.content;
+
+  const rendered = mjml2html(body, {
+    minify: false,
+    minifyOptions: undefined,
+  });
+
+  if (rendered.errors.length > 0) {
+    throw new Error(rendered.errors.map(e => e.formattedMessage).join('\n'));
+  }
+
+  return rendered.html;
 }
