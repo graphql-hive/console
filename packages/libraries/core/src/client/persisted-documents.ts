@@ -6,8 +6,8 @@ import { defaultCircuitBreakerConfiguration } from './circuit-breaker.js';
 import { http, HttpCallConfig } from './http-client.js';
 import {
   PERSISTED_DOCUMENT_NOT_FOUND,
-  type PersistedDocumentsConfiguration,
   type PersistedDocumentsCache,
+  type PersistedDocumentsConfiguration,
 } from './types.js';
 
 type HeadersObject = {

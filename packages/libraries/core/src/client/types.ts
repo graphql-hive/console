@@ -1,11 +1,11 @@
 import type { ExecutionArgs } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
+import { MaybePromise } from '@graphql-tools/utils';
 import type { AgentOptions } from './agent.js';
 import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
 import type { SchemaReporter } from './reporting.js';
-import { MaybePromise } from '@graphql-tools/utils';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -316,7 +316,7 @@ export type PersistedDocumentNotFound = typeof PERSISTED_DOCUMENT_NOT_FOUND;
  * ```typescript
  * import { createClient } from 'redis';
  * import { createHive} from '@graphql-hive/core';
- * 
+ *
  * const redis = createClient({ url: 'redis://localhost:6379' });
  * await redis.connect();
  *

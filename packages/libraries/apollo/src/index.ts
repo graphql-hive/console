@@ -177,8 +177,13 @@ function getPersistedDocumentsCacheFromContext(
 
 export function createHive(clientOrOptions: HivePluginOptions, ctx?: GraphQLServerContext) {
   const persistedDocumentsCache = getPersistedDocumentsCacheFromContext(ctx);
+  // Only use context logger if user didn't provide their own
+  const contextLogger =
+    !clientOrOptions.logger && !clientOrOptions.agent?.logger
+      ? getLoggerFromContext(ctx)
+      : undefined;
   return createHiveClient({
-    logger: getLoggerFromContext(ctx),
+    logger: contextLogger,
     ...clientOrOptions,
     agent: {
       name: 'hive-client-apollo',
@@ -455,7 +460,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
       if (isLegacyV0) {
         return {
           async serverWillStop() {
-            if (hive[autoDisposeSymbol]) {
+            if (hive?.[autoDisposeSymbol]) {
               await hive.dispose();
             }
           },
@@ -466,7 +471,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
       return Promise.resolve({
         async serverWillStop() {
-          if (hive[autoDisposeSymbol]) {
+          if (hive?.[autoDisposeSymbol]) {
             await hive.dispose();
           }
         },

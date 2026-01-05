@@ -838,11 +838,9 @@ describe('Layer 2 Cache', () => {
     // waitUntil should be called for negative cache write
     expect(waitUntil).toHaveBeenCalledTimes(1);
     await waitUntilPromises[0];
-    expect(l2Cache.set).toHaveBeenCalledWith(
-      'app~v1~notfound',
-      PERSISTED_DOCUMENT_NOT_FOUND,
-      { ttl: 60 },
-    );
+    expect(l2Cache.set).toHaveBeenCalledWith('app~v1~notfound', PERSISTED_DOCUMENT_NOT_FOUND, {
+      ttl: 60,
+    });
   });
 
   test('waitUntil is NOT called when notFoundTtlSeconds is 0', async () => {
