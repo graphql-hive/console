@@ -7,7 +7,6 @@ import { Clickhouse } from './clickhouse';
 import { CommerceService } from './commerce';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
-import { Emails } from './emails';
 import { Environment } from './environment';
 import { GitHubApp } from './github';
 import { Observability } from './observability';
@@ -20,7 +19,6 @@ import { Sentry } from './sentry';
 import { Supertokens } from './supertokens';
 import { Tokens } from './tokens';
 import { Usage } from './usage';
-import { Webhooks } from './webhooks';
 import { Zendesk } from './zendesk';
 
 export type GraphQL = ReturnType<typeof deployGraphQL>;
@@ -35,7 +33,6 @@ export function deployGraphQL({
   image,
   environment,
   tokens,
-  webhooks,
   schema,
   schemaPolicy,
   cdn,
@@ -43,7 +40,6 @@ export function deployGraphQL({
   usage,
   commerce,
   dbMigrations,
-  emails,
   supertokens,
   s3,
   s3Mirror,
@@ -62,7 +58,6 @@ export function deployGraphQL({
   clickhouse: Clickhouse;
   environment: Environment;
   tokens: Tokens;
-  webhooks: Webhooks;
   schema: Schema;
   schemaPolicy: SchemaPolicy;
   redis: Redis;
@@ -73,7 +68,6 @@ export function deployGraphQL({
   usage: Usage;
   dbMigrations: DbMigrations;
   commerce: CommerceService;
-  emails: Emails;
   supertokens: Supertokens;
   zendesk: Zendesk;
   docker: Docker;
