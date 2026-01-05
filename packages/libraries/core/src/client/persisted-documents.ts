@@ -4,7 +4,11 @@ import { Logger } from '@graphql-hive/logger';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { defaultCircuitBreakerConfiguration } from './circuit-breaker.js';
 import { http, HttpCallConfig } from './http-client.js';
-import type { PersistedDocumentsConfiguration } from './types';
+import {
+  PERSISTED_DOCUMENT_NOT_FOUND,
+  type PersistedDocumentsCache,
+  type PersistedDocumentsConfiguration,
+} from './types.js';
 
 type HeadersObject = {
   get(name: string): string | null;
@@ -87,7 +91,10 @@ function createValidationError(
 }
 
 type PersistedDocuments = {
-  resolve(documentId: string): PromiseOrValue<string | null>;
+  resolve(
+    documentId: string,
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ): PromiseOrValue<string | null>;
   allowArbitraryDocuments(context: { headers?: HeadersObject }): PromiseOrValue<boolean>;
   dispose: () => void;
 };
@@ -100,7 +107,14 @@ export function createPersistedDocuments(
     timeout?: HttpCallConfig['retry'];
   },
 ): PersistedDocuments {
-  const persistedDocumentsCache = LRU<string>(config.cache ?? 10_000);
+  // L1
+  const persistedDocumentsCache = LRU<string | null>(config.cache ?? 10_000);
+
+  // L2
+  const layer2Cache: PersistedDocumentsCache | undefined = config.layer2Cache?.cache;
+  const layer2TtlSeconds = config.layer2Cache?.ttlSeconds;
+  const layer2NotFoundTtlSeconds = config.layer2Cache?.notFoundTtlSeconds ?? 60;
+  const layer2WaitUntil = config.layer2Cache?.waitUntil;
 
   let allowArbitraryDocuments: (context: { headers?: HeadersObject }) => PromiseOrValue<boolean>;
 
@@ -154,33 +168,127 @@ export function createPersistedDocuments(
     return circuitBreaker;
   });
 
-  /** Batch load a persisted documents */
-  function loadPersistedDocument(documentId: string) {
+  // Attempt to get document from L2 cache, returns: { hit: true, value: string | null } or { hit: false }
+  async function getFromLayer2Cache(
+    documentId: string,
+  ): Promise<{ hit: true; value: string | null } | { hit: false }> {
+    if (!layer2Cache) {
+      return { hit: false };
+    }
+
+    let cached: string | typeof PERSISTED_DOCUMENT_NOT_FOUND | null;
+    try {
+      cached = await layer2Cache.get(documentId);
+    } catch (error) {
+      // L2 cache failure should not break the request
+      config.logger.warn('L2 cache get failed for document %s: %O', documentId, error);
+      return { hit: false };
+    }
+
+    if (cached === null) {
+      // Cache miss
+      return { hit: false };
+    }
+
+    if (cached === PERSISTED_DOCUMENT_NOT_FOUND) {
+      // Negative cache hit, document was previously not found
+      config.logger.debug('L2 cache negative hit for document %s', documentId);
+      return { hit: true, value: null };
+    }
+
+    // Cache hit with document
+    config.logger.debug('L2 cache hit for document %s', documentId);
+    return { hit: true, value: cached };
+  }
+
+  // store document in L2 cache (fire-and-forget, non-blocking)
+  function setInLayer2Cache(
+    documentId: string,
+    value: string | null,
+    waitUntil?: (promise: Promise<void> | void) => void,
+  ): void {
+    if (!layer2Cache?.set) {
+      return;
+    }
+
+    // Skip negative caching if TTL is 0
+    if (value === null && layer2NotFoundTtlSeconds === 0) {
+      return;
+    }
+
+    const cacheValue = value === null ? PERSISTED_DOCUMENT_NOT_FOUND : value;
+    const ttl = value === null ? layer2NotFoundTtlSeconds : layer2TtlSeconds;
+
+    // Fire-and-forget. don't await, don't block
+    const setPromise = layer2Cache.set(documentId, cacheValue, ttl ? { ttl } : undefined);
+    if (setPromise) {
+      const handledPromise: Promise<void> = Promise.resolve(setPromise).then(
+        () => {
+          config.logger.debug('L2 cache set succeeded for document %s', documentId);
+        },
+        error => {
+          config.logger.warn('L2 cache set failed for document %s: %O', documentId, error);
+        },
+      );
+
+      // Register with waitUntil for serverless environments
+      // Config waitUntil takes precedence over context waitUntil
+      const effectiveWaitUntil = layer2WaitUntil ?? waitUntil;
+      if (effectiveWaitUntil) {
+        try {
+          effectiveWaitUntil(handledPromise);
+        } catch (error) {
+          config.logger.warn('Failed to register L2 cache write with waitUntil: %O', error);
+        }
+      }
+    }
+  }
+
+  /** Load a persisted document with validation and L1 -> L2 -> CDN fallback */
+  function loadPersistedDocument(
+    documentId: string,
+    context?: { waitUntil?: (promise: Promise<void> | void) => void },
+  ) {
+    // Validate document ID format first
     const validationError = validateDocumentId(documentId);
     if (validationError) {
       // Return a promise that will be rejected with a proper error
       return Promise.reject(createValidationError(documentId, validationError.error));
     }
 
-    const document = persistedDocumentsCache.get(documentId);
-    if (document) {
-      return document;
+    // L1 cache check (in-memory)
+    // Note: We need to distinguish between "not in cache" (undefined) and "cached as not found" (null)
+    const cachedDocument = persistedDocumentsCache.get(documentId);
+    if (cachedDocument !== undefined) {
+      // Cache hit, return the value
+      return cachedDocument;
     }
 
+    // Check in-flight requests
     let promise = fetchCache.get(documentId);
     if (promise) {
       return promise;
     }
 
     promise = Promise.resolve()
-      .then(async () => {
+      .then(async (): Promise<{ value: string | null; fromL2: boolean }> => {
+        // L2 cache check
+        const l2Result = await getFromLayer2Cache(documentId);
+        if (l2Result.hit) {
+          // L2 cache hit, store in L1 for faster subsequent access
+          persistedDocumentsCache.set(documentId, l2Result.value);
+          return { value: l2Result.value, fromL2: true };
+        }
+
+        // CDN fetch
         const cdnDocumentId = documentId.replaceAll('~', '/');
 
         let lastError: unknown = null;
 
         for (const breaker of circuitBreakers) {
           try {
-            return await breaker.fire(cdnDocumentId);
+            const result = await breaker.fire(cdnDocumentId);
+            return { value: result, fromL2: false };
           } catch (error: unknown) {
             config.logger.debug({ error });
             lastError = error;
@@ -191,9 +299,15 @@ export function createPersistedDocuments(
         }
         throw new Error('Failed to look up persisted operation.');
       })
-      .then(result => {
-        persistedDocumentsCache.set(documentId, result);
-        return result;
+      .then(({ value, fromL2 }) => {
+        // Store in L1 cache (in-memory), only if not already stored from L2 hit
+        if (!fromL2) {
+          persistedDocumentsCache.set(documentId, value);
+          // Store in L2 cache (async, non-blocking), only for CDN fetched data
+          setInLayer2Cache(documentId, value, context?.waitUntil);
+        }
+
+        return value;
       })
       .finally(() => {
         fetchCache.delete(documentId);
