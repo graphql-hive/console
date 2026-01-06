@@ -379,6 +379,12 @@ export type Layer2CacheConfiguration = {
   notFoundTtlSeconds?: number;
 
   /**
+   * Key prefix for cached persisted documents.
+   * @default "" (no prefix)
+   */
+  keyPrefix?: string;
+
+  /**
    * Optional function to register background work in serverless environments if not available in context.
    */
   waitUntil?: (promise: Promise<void> | void) => void;
