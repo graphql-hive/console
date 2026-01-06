@@ -69,7 +69,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       <table
         aria-label="change-document"
         className={cn(
-          'min-w-full cursor-default whitespace-pre font-mono text-white',
+          'min-w-full cursor-default whitespace-pre font-mono text-sm text-white',
           props.className,
         )}
         style={{ counterReset: 'olddoc newdoc' }}
@@ -125,7 +125,7 @@ export function ChangeRow(props: {
       <tr style={{ counterIncrement: incrementCounter }}>
         <td
           className={cn(
-            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
+            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
@@ -133,7 +133,7 @@ export function ChangeRow(props: {
         />
         <td
           className={cn(
-            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
+            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'invisible',
             props.type === 'addition' && 'bg-green-900/30',
