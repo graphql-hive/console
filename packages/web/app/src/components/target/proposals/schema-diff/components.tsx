@@ -37,9 +37,9 @@ import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { compareLists, diffArrays, matchArrays } from './compare-lists';
 
 type RootFieldsType = {
-  query: GraphQLField<any, any>;
-  mutation: GraphQLField<any, any>;
-  subscription: GraphQLField<any, any>;
+  query: GraphQLField<any, any> | null;
+  mutation: GraphQLField<any, any> | null;
+  subscription: GraphQLField<any, any> | null;
 };
 
 const TAB = <>&nbsp;&nbsp;</>;
@@ -745,123 +745,127 @@ export function SchemaDefinitionDiff({
   newSchema: GraphQLSchema | undefined | null;
   annotations: (coordinat: string) => ReactElement | null;
 }) {
-  const defaultNames = {
-    query: 'Query',
-    mutation: 'Mutation',
-    subscription: 'Subscription',
-  };
+  const oldQuery = oldSchema?.getQueryType();
+  const oldMutation = oldSchema?.getMutationType();
+  const oldSubscription = oldSchema?.getSubscriptionType();
   const oldRoot: RootFieldsType = {
-    query: {
-      args: [],
-      name: 'query',
-      type:
-        oldSchema?.getQueryType() ??
-        ({ name: defaultNames.query, toString: () => defaultNames.query } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    mutation: {
-      args: [],
-      name: 'mutation',
-      type:
-        oldSchema?.getMutationType() ??
-        ({
-          name: defaultNames.mutation,
-          toString: () => defaultNames.mutation,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    subscription: {
-      args: [],
-      name: 'subscription',
-      type:
-        oldSchema?.getSubscriptionType() ??
-        ({
-          name: defaultNames.subscription,
-          toString: () => defaultNames.subscription,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
+    query: oldQuery
+      ? {
+          args: [],
+          name: 'query',
+          type: oldQuery,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    mutation: oldMutation
+      ? {
+          args: [],
+          name: 'mutation',
+          type: oldMutation,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    subscription: oldSubscription
+      ? {
+          args: [],
+          name: 'subscription',
+          type: oldSubscription,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
   };
+
+  const newQuery = newSchema?.getQueryType();
+  const newMutation = newSchema?.getMutationType();
+  const newSubscription = newSchema?.getSubscriptionType();
   const newRoot: RootFieldsType = {
-    query: {
-      args: [],
-      name: 'query',
-      type:
-        newSchema?.getQueryType() ??
-        ({ name: defaultNames.query, toString: () => defaultNames.query } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    mutation: {
-      args: [],
-      name: 'mutation',
-      type:
-        newSchema?.getMutationType() ??
-        ({
-          name: defaultNames.mutation,
-          toString: () => defaultNames.mutation,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    subscription: {
-      args: [],
-      name: 'subscription',
-      type:
-        newSchema?.getSubscriptionType() ??
-        ({
-          name: defaultNames.subscription,
-          toString: () => defaultNames.subscription,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
+    query: newQuery
+      ? {
+          args: [],
+          name: 'query',
+          type: newQuery,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    mutation: newMutation
+      ? {
+          args: [],
+          name: 'mutation',
+          type: newMutation,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    subscription: newSubscription
+      ? {
+          args: [],
+          name: 'subscription',
+          type: newSubscription,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
   };
   // @todo verify using this as the path is correct.
   const path = [''];
   const changeType = determineChangeType(oldSchema, newSchema);
 
+  const newSchemaDef = [oldRoot.mutation, oldRoot.query, oldRoot.subscription].every(
+    field => field === null,
+  );
+  const removedSchemaDef = [newRoot.mutation, newRoot.query, newRoot.subscription].every(
+    field => field === null,
+  );
+  const schemaDefType = newSchemaDef ? 'addition' : removedSchemaDef ? 'removal' : 'mutual';
+
   return (
     <>
       <ChangeSpacing type={changeType} />
-      <ChangeRow coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow coordinate={path.join('.')} annotations={annotations} type={schemaDefType}>
         <Keyword term="schema" />
         {' {'}
       </ChangeRow>
-      <DiffField
-        oldField={oldRoot.query}
-        newField={newRoot.query}
-        parentPath={path}
-        annotations={annotations}
-      />
-      <DiffField
-        oldField={oldRoot.mutation}
-        newField={newRoot.mutation}
-        parentPath={path}
-        annotations={annotations}
-      />
-      <DiffField
-        oldField={oldRoot.subscription}
-        newField={newRoot.subscription}
-        parentPath={path}
-        annotations={annotations}
-      />
-      <ChangeRow>{'}'}</ChangeRow>
+      {oldRoot.query || newRoot.query ? (
+        <DiffField
+          oldField={oldRoot.query}
+          newField={newRoot.query!}
+          parentPath={path}
+          annotations={annotations}
+        />
+      ) : null}
+      {oldRoot.mutation || newRoot.mutation ? (
+        <DiffField
+          oldField={oldRoot.mutation}
+          newField={newRoot.mutation!}
+          parentPath={path}
+          annotations={annotations}
+        />
+      ) : null}
+      {oldRoot.subscription || newRoot.subscription ? (
+        <DiffField
+          oldField={oldRoot.subscription}
+          newField={newRoot.subscription!}
+          parentPath={path}
+          annotations={annotations}
+        />
+      ) : null}
+      <ChangeRow type={schemaDefType}>{'}'}</ChangeRow>
     </>
   );
 }
