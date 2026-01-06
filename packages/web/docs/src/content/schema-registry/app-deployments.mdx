@@ -462,6 +462,56 @@ const yoga = createYoga({
 For further configuration options, please refer to the
 [Hive Client API reference](/docs/api-reference/client#persisted-documents).
 
+#### Layer 2 Cache (Optional)
+
+For serverless environments or multi-instance deployments, you can add a Layer 2 (L2) cache between
+the in-memory cache and the CDN. This is useful when in-memory cache is lost between invocations or
+to share cached documents across server instances.
+
+```typescript filename="Persisted Documents with L2 Cache (Redis)" {14-24}
+import { createYoga } from 'graphql-hive'
+import { createClient } from 'redis'
+import { useHive } from '@graphql-hive/yoga'
+import schema from './schema.js'
+
+const redis = createClient()
+await redis.connect()
+
+const yoga = createYoga({
+  schema,
+  plugins: [
+    useHive({
+      enabled: false,
+      experimental__persistedDocuments: {
+        cdn: {
+          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+          accessToken: '<cdn_access_token>'
+        },
+        layer2Cache: {
+          cache: {
+            get: key => redis.get(`hive:pd:${key}`),
+            set: (key, value, opts) =>
+              redis.set(`hive:pd:${key}`, value, opts?.ttl ? { EX: opts.ttl } : {})
+          },
+          ttlSeconds: 3600, // 1 hour for found documents
+          notFoundTtlSeconds: 60 // 1 minute for not-found (negative caching)
+        }
+      }
+    })
+  ]
+})
+```
+
+The lookup flow is: **L1 (memory) -> L2 (Redis/external) -> CDN**
+
+| Option               | Description                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| `cache.get`          | Async function to get a value from the cache. Returns `null` for cache miss.                    |
+| `cache.set`          | Async function to set a value in the cache. Receives an optional `ttl` option.                  |
+| `ttlSeconds`         | TTL in seconds for successfully found documents.                                                |
+| `notFoundTtlSeconds` | TTL in seconds for not-found documents (negative caching). Set to `0` to disable. Default: `60` |
+| `waitUntil`          | Optional function for serverless environments to ensure cache writes complete.                  |
+
 </Tabs.Tab>
 
 {/* Apollo Server */}
@@ -497,6 +547,44 @@ const server = new ApolloServer({
 
 For further configuration options, please refer to the
 [Hive Client API reference](/docs/api-reference/client#persisted-documents).
+
+#### Layer 2 Cache (Optional)
+
+Apollo Server automatically uses the server's context cache for L2 caching if available. You can
+also configure a custom L2 cache:
+
+```typescript filename="Persisted Documents with L2 Cache" {10-20}
+import { createClient } from 'redis'
+import { ApolloServer } from '@apollo/server'
+import { useHive } from '@graphql-hive/apollo'
+import schema from './schema.js'
+
+const redis = createClient()
+await redis.connect()
+
+const server = new ApolloServer({
+  schema,
+  plugins: [
+    useHive({
+      experimental__persistedDocuments: {
+        cdn: {
+          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+          accessToken: '<cdn_access_token>'
+        },
+        layer2Cache: {
+          cache: {
+            get: key => redis.get(`hive:pd:${key}`),
+            set: (key, value, opts) =>
+              redis.set(`hive:pd:${key}`, value, opts?.ttl ? { EX: opts.ttl } : {})
+          },
+          ttlSeconds: 3600,
+          notFoundTtlSeconds: 60
+        }
+      }
+    })
+  ]
+})
+```
 
 </Tabs.Tab>
 
