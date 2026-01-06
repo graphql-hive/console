@@ -8,6 +8,7 @@ export type ServiceProposalDetails = {
   compositionErrors?: FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>;
   beforeSchema: GraphQLSchema | null;
   afterSchema: GraphQLSchema | null;
+  buildError: Error | null;
   allChanges: Change<any>[];
   // Required because the component ChangesBlock uses this fragment.
   rawChanges: FragmentType<typeof ProposalOverview_ChangeFragment>[];
