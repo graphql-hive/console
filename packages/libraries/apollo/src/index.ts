@@ -193,13 +193,16 @@ export function createHive(clientOrOptions: HivePluginOptions, ctx?: GraphQLServ
     experimental__persistedDocuments: clientOrOptions.experimental__persistedDocuments
       ? {
           ...clientOrOptions.experimental__persistedDocuments,
-          layer2Cache:
-            persistedDocumentsCache || clientOrOptions.experimental__persistedDocuments.layer2Cache
-              ? {
-                  cache: persistedDocumentsCache!,
-                  ...(clientOrOptions.experimental__persistedDocuments.layer2Cache || {}),
-                }
-              : undefined,
+          layer2Cache: (() => {
+            const userL2Config = clientOrOptions.experimental__persistedDocuments?.layer2Cache;
+            if (persistedDocumentsCache) {
+              return {
+                cache: persistedDocumentsCache,
+                ...(userL2Config || {}),
+              };
+            }
+            return userL2Config;
+          })(),
         }
       : undefined,
   });
@@ -312,8 +315,13 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           ) {
             persistedDocumentHash = context.request.http.body.documentId;
             try {
+              // Pass waitUntil from context if available for serverless environments
+              const contextValue = isLegacyV3
+                ? (context as any).context
+                : (context as any).contextValue;
               const document = await hive.experimental__persistedDocuments.resolve(
                 context.request.http.body.documentId,
+                { waitUntil: contextValue?.waitUntil },
               );
 
               if (document) {
