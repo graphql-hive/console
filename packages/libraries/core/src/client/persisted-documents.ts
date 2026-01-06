@@ -237,7 +237,11 @@ export function createPersistedDocuments(
     const ttl = value === null ? layer2NotFoundTtlSeconds : layer2TtlSeconds;
 
     // Fire-and-forget. don't await, don't block
-    const setPromise = layer2Cache.set(layer2KeyPrefix + documentId, cacheValue, ttl ? { ttl } : undefined);
+    const setPromise = layer2Cache.set(
+      layer2KeyPrefix + documentId,
+      cacheValue,
+      ttl ? { ttl } : undefined,
+    );
     if (setPromise) {
       const handledPromise: Promise<void> = Promise.resolve(setPromise).then(
         () => {
