@@ -467,8 +467,8 @@ payloads.
                 });
                 // Here we short-circuit the request processing by returning an early response
                 return payload.end_response_body(
-                    StatusCode::BAD_REQUEST,
                     body,
+                    StatusCode::BAD_REQUEST,
                 );
 ```
 
