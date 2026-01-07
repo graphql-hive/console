@@ -147,7 +147,7 @@ registerShutdown({
       await server.close();
       logger.info('HTTP server stopped');
     } catch (error: unknown) {
-      logger.error({ error }, 'Unepected error occured');
+      logger.error({ error }, 'Unexpected error occurred');
       process.exit(1);
     }
   },
