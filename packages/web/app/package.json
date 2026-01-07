@@ -145,7 +145,7 @@
     "regenerator-runtime": "0.14.1",
     "snarkdown": "2.0.0",
     "sonner": "^2.0.7",
-    "storybook": "8.4.7",
+    "storybook": "8.6.15",
     "supertokens-auth-react": "0.38.0",
     "supertokens-web-js": "0.9.0",
     "tailwind-merge": "2.6.0",

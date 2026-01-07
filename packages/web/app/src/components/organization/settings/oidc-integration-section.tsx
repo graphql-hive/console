@@ -225,6 +225,7 @@ const CreateOIDCIntegrationModal_CreateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
         }
       }
     }
@@ -446,6 +447,7 @@ function CreateOIDCIntegrationForm(props: {
       authorizationEndpoint: '',
       clientId: '',
       clientSecret: '',
+      additionalScopes: '',
     },
     async onSubmit(values) {
       const result = await mutate({
@@ -456,6 +458,7 @@ function CreateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret,
+          additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
         },
       });
 
@@ -561,6 +564,20 @@ function CreateOIDCIntegrationForm(props: {
             />
             <FormError>
               {mutation.data?.createOIDCIntegration.error?.details.clientSecret}
+            </FormError>
+          </div>
+
+          <div>
+            <Label htmlFor="additionalScopes">Additional Scopes</Label>
+            <Input
+              placeholder="Separated by spaces"
+              id="additionalScopes"
+              name="additionalScopes"
+              onChange={formik.handleChange}
+              value={formik.values.additionalScopes}
+            />
+            <FormError>
+              {mutation.data?.createOIDCIntegration.error?.details.additionalScopes}
             </FormError>
           </div>
 
@@ -833,6 +850,7 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     authorizationEndpoint
     clientId
     clientSecretPreview
+    additionalScopes
     oidcUserAccessOnly
     defaultMemberRole {
       id
@@ -857,6 +875,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           authorizationEndpoint
           clientId
           clientSecretPreview
+          additionalScopes
         }
       }
       error {
@@ -867,6 +886,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
         }
       }
     }
@@ -914,6 +934,7 @@ function UpdateOIDCIntegrationForm(props: {
       authorizationEndpoint: props.oidcIntegration.authorizationEndpoint,
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
+      additionalScopes: props.oidcIntegration.additionalScopes.join(' '),
     },
     async onSubmit(values) {
       const result = await oidcUpdateMutate({
@@ -924,6 +945,7 @@ function UpdateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret === '' ? undefined : values.clientSecret,
+          additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
         },
       });
 
@@ -1165,6 +1187,21 @@ function UpdateOIDCIntegrationForm(props: {
                     {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.clientSecret}
                   </FormError>
                 </div>
+
+                <div>
+                  <Label htmlFor="additionalScopes">Additional Scopes</Label>
+                  <Input
+                    placeholder="Separated by spaces"
+                    id="additionalScopes"
+                    name="additionalScopes"
+                    onChange={formik.handleChange}
+                    value={formik.values.additionalScopes}
+                  />
+                  <FormError>
+                    {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.additionalScopes}
+                  </FormError>
+                </div>
+
                 <div className="space-x-2 pb-4 text-right">
                   <Button
                     variant="outline"

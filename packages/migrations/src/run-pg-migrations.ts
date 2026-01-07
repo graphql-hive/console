@@ -174,5 +174,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2025.08.30T00-00-00.schema-proposals'),
       await import('./actions/2025.12.5T00-00-00.schema-check-url'),
       await import('./actions/2025.12.30T00-00-00.schema-proposals-part-2'),
+      await import('./actions/2025.12.17T00-00-00.custom-oidc-scopes'),
     ],
   });

@@ -1,5 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { createContext, Fragment, ReactElement, ReactNode, useContext, useState } from 'react';
+import {
+  createContext,
+  Fragment,
+  ReactElement,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import {
   astFromValue,
   ConstArgumentNode,
@@ -35,11 +43,12 @@ import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { compareLists, diffArrays, matchArrays } from './compare-lists';
+import { ChangeRowContext } from './context';
 
 type RootFieldsType = {
-  query: GraphQLField<any, any>;
-  mutation: GraphQLField<any, any>;
-  subscription: GraphQLField<any, any>;
+  query: GraphQLField<any, any> | null;
+  mutation: GraphQLField<any, any> | null;
+  subscription: GraphQLField<any, any> | null;
 };
 
 const TAB = <>&nbsp;&nbsp;</>;
@@ -69,7 +78,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       <table
         aria-label="change-document"
         className={cn(
-          'min-w-full cursor-default whitespace-pre font-mono text-white',
+          'min-w-full cursor-default whitespace-pre font-mono text-sm text-white',
           props.className,
         )}
         style={{ counterReset: 'olddoc newdoc' }}
@@ -120,23 +129,29 @@ export function ChangeRow(props: {
     ctx.annotatedCoordinates?.add(props.coordinate!);
   }
 
+  // if the children include any additions or subtractions
+  const [added, setAdded] = useState(false);
+  const [removed, setRemoved] = useState(false);
+
   return (
-    <>
+    <ChangeRowContext.Provider
+      value={{ change: { addition: added, removal: removed }, setAdded, setRemoved }}
+    >
       <tr style={{ counterIncrement: incrementCounter }}>
         <td
           className={cn(
-            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
+            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
             props.className,
-            props.type === 'removal' && 'bg-red-900/30',
+            (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
           )}
         />
         <td
           className={cn(
-            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
+            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'invisible',
-            props.type === 'addition' && 'bg-green-900/30',
+            (props.type === 'addition' || added) && 'bg-green-900/30',
           )}
         />
         <td
@@ -182,7 +197,7 @@ export function ChangeRow(props: {
           <td colSpan={3}>{annotation}</td>
         </tr>
       )}
-    </>
+    </ChangeRowContext.Provider>
   );
 }
 
@@ -191,6 +206,13 @@ function Keyword(props: { term: string }) {
 }
 
 function Removal(props: { children: ReactNode | string; className?: string }): ReactNode {
+  const { setRemoved, change } = useContext(ChangeRowContext);
+  useEffect(() => {
+    if (!change.removal) {
+      setRemoved(true);
+    }
+  }, [change.removal]);
+
   return (
     <span
       className={cn(
@@ -204,6 +226,12 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 }
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
+  const { setAdded, change } = useContext(ChangeRowContext);
+  useEffect(() => {
+    if (!change.addition) {
+      setAdded(true);
+    }
+  }, [change.addition]);
   return (
     <span className={cn('bg-[#11362b] hover:bg-green-900', props.className)}>{props.children}</span>
   );
@@ -745,123 +773,127 @@ export function SchemaDefinitionDiff({
   newSchema: GraphQLSchema | undefined | null;
   annotations: (coordinat: string) => ReactElement | null;
 }) {
-  const defaultNames = {
-    query: 'Query',
-    mutation: 'Mutation',
-    subscription: 'Subscription',
-  };
+  const oldQuery = oldSchema?.getQueryType();
+  const oldMutation = oldSchema?.getMutationType();
+  const oldSubscription = oldSchema?.getSubscriptionType();
   const oldRoot: RootFieldsType = {
-    query: {
-      args: [],
-      name: 'query',
-      type:
-        oldSchema?.getQueryType() ??
-        ({ name: defaultNames.query, toString: () => defaultNames.query } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    mutation: {
-      args: [],
-      name: 'mutation',
-      type:
-        oldSchema?.getMutationType() ??
-        ({
-          name: defaultNames.mutation,
-          toString: () => defaultNames.mutation,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    subscription: {
-      args: [],
-      name: 'subscription',
-      type:
-        oldSchema?.getSubscriptionType() ??
-        ({
-          name: defaultNames.subscription,
-          toString: () => defaultNames.subscription,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
+    query: oldQuery
+      ? {
+          args: [],
+          name: 'query',
+          type: oldQuery,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    mutation: oldMutation
+      ? {
+          args: [],
+          name: 'mutation',
+          type: oldMutation,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    subscription: oldSubscription
+      ? {
+          args: [],
+          name: 'subscription',
+          type: oldSubscription,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
   };
+
+  const newQuery = newSchema?.getQueryType();
+  const newMutation = newSchema?.getMutationType();
+  const newSubscription = newSchema?.getSubscriptionType();
   const newRoot: RootFieldsType = {
-    query: {
-      args: [],
-      name: 'query',
-      type:
-        newSchema?.getQueryType() ??
-        ({ name: defaultNames.query, toString: () => defaultNames.query } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    mutation: {
-      args: [],
-      name: 'mutation',
-      type:
-        newSchema?.getMutationType() ??
-        ({
-          name: defaultNames.mutation,
-          toString: () => defaultNames.mutation,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
-    subscription: {
-      args: [],
-      name: 'subscription',
-      type:
-        newSchema?.getSubscriptionType() ??
-        ({
-          name: defaultNames.subscription,
-          toString: () => defaultNames.subscription,
-        } as GraphQLOutputType),
-      astNode: null,
-      deprecationReason: null,
-      description: null,
-      extensions: {},
-    },
+    query: newQuery
+      ? {
+          args: [],
+          name: 'query',
+          type: newQuery,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    mutation: newMutation
+      ? {
+          args: [],
+          name: 'mutation',
+          type: newMutation,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    subscription: newSubscription
+      ? {
+          args: [],
+          name: 'subscription',
+          type: newSubscription,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
   };
   // @todo verify using this as the path is correct.
   const path = [''];
   const changeType = determineChangeType(oldSchema, newSchema);
 
+  const newSchemaDef = [oldRoot.mutation, oldRoot.query, oldRoot.subscription].every(
+    field => field === null,
+  );
+  const removedSchemaDef = [newRoot.mutation, newRoot.query, newRoot.subscription].every(
+    field => field === null,
+  );
+  const schemaDefType = newSchemaDef ? 'addition' : removedSchemaDef ? 'removal' : 'mutual';
+
   return (
     <>
       <ChangeSpacing type={changeType} />
-      <ChangeRow coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow coordinate={path.join('.')} annotations={annotations} type={schemaDefType}>
         <Keyword term="schema" />
         {' {'}
       </ChangeRow>
-      <DiffField
-        oldField={oldRoot.query}
-        newField={newRoot.query}
-        parentPath={path}
-        annotations={annotations}
-      />
-      <DiffField
-        oldField={oldRoot.mutation}
-        newField={newRoot.mutation}
-        parentPath={path}
-        annotations={annotations}
-      />
-      <DiffField
-        oldField={oldRoot.subscription}
-        newField={newRoot.subscription}
-        parentPath={path}
-        annotations={annotations}
-      />
-      <ChangeRow>{'}'}</ChangeRow>
+      {oldRoot.query || newRoot.query ? (
+        <DiffField
+          oldField={oldRoot.query}
+          newField={newRoot.query!}
+          parentPath={path}
+          annotations={annotations}
+        />
+      ) : null}
+      {oldRoot.mutation || newRoot.mutation ? (
+        <DiffField
+          oldField={oldRoot.mutation}
+          newField={newRoot.mutation!}
+          parentPath={path}
+          annotations={annotations}
+        />
+      ) : null}
+      {oldRoot.subscription || newRoot.subscription ? (
+        <DiffField
+          oldField={oldRoot.subscription}
+          newField={newRoot.subscription!}
+          parentPath={path}
+          annotations={annotations}
+        />
+      ) : null}
+      <ChangeRow type={schemaDefType}>{'}'}</ChangeRow>
     </>
   );
 }
