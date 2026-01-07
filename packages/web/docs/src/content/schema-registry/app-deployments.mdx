@@ -474,7 +474,7 @@ import { createClient } from 'redis'
 import { useHive } from '@graphql-hive/yoga'
 import schema from './schema.js'
 
-const redis = createClient()
+const redis = createClient({ url: 'redis://localhost:6379' })
 await redis.connect()
 
 const yoga = createYoga({
@@ -559,7 +559,7 @@ import { ApolloServer } from '@apollo/server'
 import { useHive } from '@graphql-hive/apollo'
 import schema from './schema.js'
 
-const redis = createClient()
+const redis = createClient({ url: 'redis://localhost:6379' })
 await redis.connect()
 
 const server = new ApolloServer({
