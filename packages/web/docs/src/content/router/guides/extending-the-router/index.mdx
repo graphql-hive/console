@@ -426,7 +426,7 @@ impl RouterPlugin for ForbidAnonymousOperationsPlugin {
                     ]
                 });
                 // Here we short-circuit the request processing by returning an early response
-                return payload.end_response(
+                return payload.end_with_response(
                     Response::with_body(
                         StatusCode::BAD_REQUEST,
                         body.to_string().into(),
@@ -435,24 +435,24 @@ impl RouterPlugin for ForbidAnonymousOperationsPlugin {
             }
             // we're good to go!
             tracing::info!("operation is allowed!");
-            payload.cont()
+            payload.proceed()
         })
     }
 }
 ```
 
-Here we use `end_response` method on the `OnGraphQLParamsEndHookPayload` to provide a custom HTTP
-response. But there are some helper methods to make it easier to create early responses.
+Here we use `end_with_response` method on the `OnGraphQLParamsEndHookPayload` to provide a custom
+HTTP response. But there are some helper methods to make it easier to create early responses.
 
 ### Helpers for early responses
 
 To make it easier to create early responses, Hive Router provides some helper methods on the hook
 payloads.
 
-- `end_response_body(body: Serialize, status_code: StatusCode)` - This method allows you to provide
-  a response body that is serializable using `serde`. It automatically serializes the body to JSON
-  and sets the appropriate headers. So if we want to write less code for the above example, we can
-  do the following;
+- `end_with_response_body(body: Serialize, status_code: StatusCode)` - This method allows you to
+  provide a response body that is serializable using `serde`. It automatically serializes the body
+  to JSON and sets the appropriate headers. So if we want to write less code for the above example,
+  we can do the following;
 
 ```rust filename="src/forbid_anon_ops.rs" {33-52}
                 let body = json!({
@@ -466,19 +466,20 @@ payloads.
                     ]
                 });
                 // Here we short-circuit the request processing by returning an early response
-                return payload.end_response_body(
+                return payload.end_with_response_body(
                     body,
                     StatusCode::BAD_REQUEST,
                 );
 ```
 
-- `end_graphql_error(error: GraphQLError, status: StatusCode)` - This method allows you to provide a
-  `GraphQLError` directly, and it constructs the appropriate GraphQL error response for you.
+- `end_with_graphql_error(error: GraphQLError, status: StatusCode)` - This method allows you to
+  provide a `GraphQLError` directly, and it constructs the appropriate GraphQL error response for
+  you.
 
 ```rust filename="src/forbid_anon_ops.rs" {33-52}
                 let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
                 // Here we short-circuit the request processing by returning an early response
-                return payload.end_graphql_error(
+                return payload.end_with_graphql_error(
                     graphql_error,
                     StatusCode::BAD_REQUEST,
                 );
@@ -520,7 +521,7 @@ impl RouterPlugin for APQPlugin {
                 match persisted_query_ext.get(&"version").and_then(|v| v.as_i64()) {
                     Some(1) => {}
                     _ => {
-                        return payload.end_graphql_error(
+                        return payload.end_with_graphql_error(
                             GraphQLError::from_message_and_code(
                                 "Unsupported persisted query version",
                                 "UNSUPPORTED_PERSISTED_QUERY_VERSION",
@@ -535,7 +536,7 @@ impl RouterPlugin for APQPlugin {
                 {
                     Some(h) => h,
                     None => {
-                        return payload.end_graphql_error(
+                        return payload.end_with_graphql_error(
                             GraphQLError::from_message_and_code(
                                 "Missing sha256Hash in persisted query",
                                 "MISSING_PERSISTED_QUERY_HASH",
@@ -554,7 +555,7 @@ impl RouterPlugin for APQPlugin {
                         // Update the graphql_params with the cached query
                         payload.graphql_params.query = Some(cached_query.value().to_string());
                     } else {
-                        return payload.end_graphql_error(
+                        return payload.end_with_graphql_error(
                             GraphQLError::from_message_and_code(
                                 "Persisted query not found",
                                 "PERSISTED_QUERY_NOT_FOUND",
@@ -565,7 +566,7 @@ impl RouterPlugin for APQPlugin {
                 }
             }
 
-            payload.cont()
+            payload.proceed()
         })
     }
 }
@@ -597,22 +598,22 @@ impl RouterPlugin for ContextDataPlugin {
             response_count: 0,
         };
 
-        payload.context.insert(context_data);
+        payload.proceedext.insert(context_data);
 
         payload.on_end(|payload| {
-            let context_data = payload.context.get_mut::<ContextData>();
+            let context_data = payload.proceedext.get_mut::<ContextData>();
             if let Some(mut context_data) = context_data {
                 context_data.response_count += 1;
                 tracing::info!("subrequest count {}", context_data.response_count);
             }
-            payload.cont()
+            payload.proceed()
         })
     }
     async fn on_subgraph_execute<'exec>(
         &'exec self,
         mut payload: OnSubgraphExecuteStartHookPayload<'exec>,
     ) -> OnSubgraphExecuteStartHookResult<'exec> {
-        let context_data_entry = payload.context.get_ref::<ContextData>();
+        let context_data_entry = payload.proceedext.get_ref::<ContextData>();
         if let Some(ref context_data_entry) = context_data_entry {
             tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
             let new_header_value = format!("Hello {}", context_data_entry.incoming_data);
@@ -622,12 +623,12 @@ impl RouterPlugin for ContextDataPlugin {
             );
         }
         payload.on_end(|payload: OnSubgraphExecuteEndHookPayload<'exec>| {
-            let context_data = payload.context.get_mut::<ContextData>();
+            let context_data = payload.proceedext.get_mut::<ContextData>();
             if let Some(mut context_data) = context_data {
                 context_data.response_count += 1;
                 tracing::info!("subrequest count {}", context_data.response_count);
             }
-            payload.cont()
+            payload.proceed()
         })
     }
 }
@@ -695,7 +696,7 @@ pub struct ResponseCachePlugin {
         });
         self.ttl_per_type.store(ttl_per_type.into())
 
-        payload.cont()
+        payload.proceed()
     }
 ```
 
@@ -754,7 +755,7 @@ How do we use this `ttl_per_type` map during request processing?
                     trace!("Cached response for key: {} with TTL: {}", key, max_ttl);
                 }
             }
-            payload.cont()
+            payload.proceed()
         })
     }
 ```
@@ -799,7 +800,7 @@ impl RouterPlugin for AllowClientIdFromFilePlugin {
 
                         if !allowed_clients.contains(&client_id.to_string()) {
                             // Prepare an HTTP 403 response with a GraphQL error message
-                            return payload.end_graphql_error(
+                            return payload.end_with_graphql_error(
                                 GraphQLError::from_message_and_code(
                                     "client-id is not allowed",
                                     "UNAUTHORIZED_CLIENT_ID",
@@ -811,7 +812,7 @@ impl RouterPlugin for AllowClientIdFromFilePlugin {
                     Err(_not_a_string_error) => {
                         let message = format!("'{}' value is not a string", &self.header_key);
                         tracing::error!(message);
-                        return payload.end_graphql_error(
+                        return payload.end_with_graphql_error(
                             GraphQLError::from_message_and_code(
                                 &message,
                                 "BAD_CLIENT_ID",
@@ -824,7 +825,7 @@ impl RouterPlugin for AllowClientIdFromFilePlugin {
             None => {
                 let message = format!("Missing '{}' header", &self.header_key);
                 tracing::error!(message);
-                return payload.end_graphql_error(
+                return payload.end_with_graphql_error(
                     GraphQLError::from_message_and_code(
                         &message,
                         "MISSING_CLIENT_ID",
@@ -833,7 +834,7 @@ impl RouterPlugin for AllowClientIdFromFilePlugin {
                 );
             }
         }
-        payload.cont()
+        payload.proceed()
     }
 }
 ```
@@ -945,7 +946,7 @@ impl RouterPlugin for UsageReportingPlugin {
             "Pushed usage report for operation: {:?}",
             payload.operation_for_plan.name
         );
-        payload.cont()
+        payload.proceed()
     }
     // This method is called when the router is shutting down
     async fn on_shutdown<'exec>(&'exec self) {
