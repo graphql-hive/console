@@ -369,6 +369,21 @@ You can check the following example implementations;
 - `response_cache` plugin that precalculates the TTL information based on `@cacheControl` directives
   in the supergraph schema for response caching.
 
+### `on_shutdown`
+
+This hook is called when the router is shutting down. If your plugin holds resources that need to be
+cleaned up, you can implement this method to perform the necessary cleanup.
+
+You can do the following things for example;
+
+- Close database connections or file handles.
+- Flush any pending logs or metrics.
+- Perform any other necessary cleanup tasks to ensure a graceful shutdown.
+
+You can check the following example implementations;
+
+- `usage_reporting` plugin that flushes any pending usage reports to the server before shutdown.
+
 ## Short Circuit Responses
 
 In many of the hooks mentioned above, you have the ability to short-circuit the request processing
@@ -411,11 +426,12 @@ impl RouterPlugin for ForbidAnonymousOperationsPlugin {
                     ]
                 });
                 // Here we short-circuit the request processing by returning an early response
-                return payload.end_response(HttpResponse {
-                    body: body.to_string().into(),
-                    headers: http::HeaderMap::new(),
-                    status: StatusCode::BAD_REQUEST,
-                });
+                return payload.end_response(
+                    Response::with_body(
+                        StatusCode::BAD_REQUEST,
+                        body.to_string().into(),
+                    )
+                );
             }
             // we're good to go!
             tracing::info!("operation is allowed!");
@@ -426,7 +442,46 @@ impl RouterPlugin for ForbidAnonymousOperationsPlugin {
 ```
 
 Here we use `end_response` method on the `OnGraphQLParamsEndHookPayload` to provide a custom HTTP
-response. Then the router will skip all further processing and return this response to the client.
+response. But there are some helper methods to make it easier to create early responses.
+
+### Helpers for early responses
+
+To make it easier to create early responses, Hive Router provides some helper methods on the hook
+payloads.
+
+- `end_response_body(T: Serialize)` - This method allows you to provide a response body that is
+  serializable using `serde`. It automatically serializes the body to JSON and sets the appropriate
+  headers. So if we want to write less code for the above example, we can do the following;
+
+```rust filename="src/forbid_anon_ops.rs" {33-52}
+                let body = json!({
+                    "errors": [
+                        {
+                            "message": "Anonymous operations are not allowed",
+                            "extensions": {
+                                "code": "ANONYMOUS_OPERATION"
+                            }
+                        }
+                    ]
+                });
+                // Here we short-circuit the request processing by returning an early response
+                return payload.end_response_body(
+                    StatusCode::BAD_REQUEST,
+                    &body,
+                );
+```
+
+- `end_graphql_error(error: GraphQLError, status: StatusCode)` - This method allows you to provide a
+  `GraphQLError` directly, and it constructs the appropriate GraphQL error response for you.
+
+```rust filename="src/forbid_anon_ops.rs" {33-52}
+                let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
+                // Here we short-circuit the request processing by returning an early response
+                return payload.end_graphql_error(
+                    graphql_error,
+                    StatusCode::BAD_REQUEST,
+                );
+```
 
 ## Overriding Default Behavior
 
@@ -464,21 +519,13 @@ impl RouterPlugin for APQPlugin {
                 match persisted_query_ext.get(&"version").and_then(|v| v.as_i64()) {
                     Some(1) => {}
                     _ => {
-                        let body = json!({
-                            "errors": [
-                                {
-                                    "message": "Unsupported persisted query version",
-                                    "extensions": {
-                                        "code": "UNSUPPORTED_PERSISTED_QUERY_VERSION"
-                                    }
-                                }
-                            ]
-                        });
-                        return payload.end_response(HttpResponse {
-                            body: body.to_string().into_bytes().into(),
-                            status: StatusCode::BAD_REQUEST,
-                            headers: http::HeaderMap::new(),
-                        });
+                        return payload.end_graphql_error(
+                            GraphQLError::from_message_and_code(
+                                "Unsupported persisted query version",
+                                "UNSUPPORTED_PERSISTED_QUERY_VERSION",
+                            ),
+                            StatusCode::BAD_REQUEST,
+                        );
                     }
                 }
                 let sha256_hash = match persisted_query_ext
@@ -487,21 +534,13 @@ impl RouterPlugin for APQPlugin {
                 {
                     Some(h) => h,
                     None => {
-                        let body = json!({
-                            "errors": [
-                                {
-                                    "message": "Missing sha256Hash in persisted query",
-                                    "extensions": {
-                                        "code": "MISSING_PERSISTED_QUERY_HASH"
-                                    }
-                                }
-                            ]
-                        });
-                        return payload.end_response(HttpResponse {
-                            body: body.to_string().into_bytes().into(),
-                            status: StatusCode::BAD_REQUEST,
-                            headers: http::HeaderMap::new(),
-                        });
+                        return payload.end_graphql_error(
+                            GraphQLError::from_message_and_code(
+                                "Missing sha256Hash in persisted query",
+                                "MISSING_PERSISTED_QUERY_HASH",
+                            ),
+                            StatusCode::BAD_REQUEST,
+                        );
                     }
                 };
                 if let Some(query_param) = &payload.graphql_params.query {
@@ -514,21 +553,13 @@ impl RouterPlugin for APQPlugin {
                         // Update the graphql_params with the cached query
                         payload.graphql_params.query = Some(cached_query.value().to_string());
                     } else {
-                        let body = json!({
-                            "errors": [
-                                {
-                                    "message": "PersistedQueryNotFound",
-                                    "extensions": {
-                                        "code": "PERSISTED_QUERY_NOT_FOUND"
-                                    }
-                                }
-                            ]
-                        });
-                        return payload.end_response(HttpResponse {
-                            body: body.to_string().into_bytes().into(),
-                            status: StatusCode::NOT_FOUND,
-                            headers: http::HeaderMap::new(),
-                        });
+                        return payload.end_graphql_error(
+                            GraphQLError::from_message_and_code(
+                                "Persisted query not found",
+                                "PERSISTED_QUERY_NOT_FOUND",
+                            ),
+                            StatusCode::NOT_FOUND,
+                        );
                     }
                 }
             }
@@ -676,7 +707,6 @@ Let's say we have a custom auth logic that checks the expected header values fro
 dynamically.
 
 ```rust
-
 pub struct AllowClientIdFromFilePlugin {
     header_key: String,
     allowed_ids_path: PathBuf,
@@ -705,68 +735,38 @@ impl RouterPlugin for AllowClientIdFromFilePlugin {
 
                         if !allowed_clients.contains(&client_id.to_string()) {
                             // Prepare an HTTP 403 response with a GraphQL error message
-                            let body = json!(
-                                {
-                                    "errors": [
-                                        {
-                                            "message": "client-id is not allowed",
-                                            "extensions": {
-                                                "code": "UNAUTHORIZED_CLIENT_ID"
-                                            }
-                                        }
-                                    ]
-                                }
+                            return payload.end_graphql_error(
+                                GraphQLError::from_message_and_code(
+                                    "client-id is not allowed",
+                                    "UNAUTHORIZED_CLIENT_ID",
+                                ),
+                                http::StatusCode::FORBIDDEN,
                             );
-                            return payload.end_response(HttpResponse {
-                                body: sonic_rs::to_vec(&body).unwrap_or_default().into(),
-                                headers: http::HeaderMap::new(),
-                                status: http::StatusCode::FORBIDDEN,
-                            });
                         }
                     }
                     Err(_not_a_string_error) => {
                         let message = format!("'{}' value is not a string", &self.header_key);
                         tracing::error!(message);
-                        let body = json!(
-                            {
-                                "errors": [
-                                    {
-                                        "message": message,
-                                        "extensions": {
-                                            "code": "BAD_CLIENT_ID"
-                                        }
-                                    }
-                                ]
-                            }
+                        return payload.end_graphql_error(
+                            GraphQLError::from_message_and_code(
+                                &message,
+                                "BAD_CLIENT_ID",
+                            ),
+                            http::StatusCode::BAD_REQUEST,
                         );
-                        return payload.end_response(HttpResponse {
-                            body: sonic_rs::to_vec(&body).unwrap_or_default().into(),
-                            headers: http::HeaderMap::new(),
-                            status: http::StatusCode::BAD_REQUEST,
-                        });
                     }
                 }
             }
             None => {
                 let message = format!("Missing '{}' header", &self.header_key);
                 tracing::error!(message);
-                let body = json!(
-                    {
-                        "errors": [
-                            {
-                                "message": message,
-                                "extensions": {
-                                    "code": "AUTH_ERROR"
-                                }
-                            }
-                        ]
-                    }
+                return payload.end_graphql_error(
+                    GraphQLError::from_message_and_code(
+                        &message,
+                        "MISSING_CLIENT_ID",
+                    ),
+                    http::StatusCode::UNAUTHORIZED,
                 );
-                return payload.end_response(HttpResponse {
-                    body: sonic_rs::to_vec(&body).unwrap_or_default().into(),
-                    headers: http::HeaderMap::new(),
-                    status: http::StatusCode::UNAUTHORIZED,
-                });
             }
         }
         payload.cont()
@@ -790,7 +790,7 @@ pub struct AllowClientIdConfig {
 Then attach it to the plugin struct;
 
 ```rust filename="src/dynamic_auth.rs"
-impl RouterPluginWithConfig for AllowClientIdFromFilePlugin {
+impl RouterPlugin for AllowClientIdFromFilePlugin {
     type Config = AllowClientIdConfig;
     fn plugin_name() -> &'static str {
         "allow_client_id_from_file"
@@ -837,4 +837,70 @@ Then pass the `plugin_registry` to the `router_entrypoint` function as shown ear
 
 ```rust filename="src/main.rs" {15}
     match router_entrypoint(Some(plugin_registry)).await {
+```
+
+## Cleanup State on Shutdown
+
+If your plugin holds resources that need to be cleaned up, you can implement the `on_shutdown`
+method to perform the necessary cleanup.
+
+For example, if your plugin opens a database connection or a file handle, you should close them
+gracefully in the `on_shutdown` method.
+
+```rust filename="usage_reporting.rs"
+struct UsageReportingPlugin {
+    endpoint: String,
+    reports: Mutex<Vec<UsageReport>>,
+}
+
+#[async_trait::async_trait]
+impl RouterPlugin for UsageReportingPlugin {
+    type Config = UsageReportingPluginConfig;
+    fn plugin_name() -> &'static str {
+        "usage_reporting"
+    }
+    fn from_config(config: UsageReportingPluginConfig) -> Option<Self> {
+        if config.enabled {
+            Some(UsageReportingPlugin {
+                endpoint: config.endpoint,
+                reports: Default::default(),
+            })
+        } else {
+            None
+        }
+    }
+    async fn on_execute<'exec>(
+        &'exec self,
+        payload: OnExecuteStartHookPayload<'exec>,
+    ) -> OnExecuteStartHookResult<'exec> {
+        self.reports.lock().await.push(UsageReport {
+            query: payload.operation_for_plan.to_string(),
+            operation_name: payload.operation_for_plan.name.clone(),
+        });
+        tracing::trace!(
+            "Pushed usage report for operation: {:?}",
+            payload.operation_for_plan.name
+        );
+        payload.cont()
+    }
+    // This method is called when the router is shutting down
+    async fn on_shutdown<'exec>(&'exec self) {
+        println!("Disposing UsageReportingPlugin and sending usage report");
+        // Here you would gather and send the usage report
+        let reports = self.reports.lock().await;
+        match reqwest::Client::new()
+            .post(&self.endpoint)
+            .json(reports.as_slice())
+            .send()
+            .await
+        {
+            Ok(response) => {
+                tracing::trace!("Usage report sent successfully: {:?}", response);
+            }
+            Err(e) => {
+                tracing::trace!("Failed to send usage report: {:?}", e);
+            }
+        }
+    }
+}
 ```
