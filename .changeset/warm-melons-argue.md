@@ -21,7 +21,7 @@ import { createYoga } from 'graphql-yoga'
 import { useHive } from '@graphql-hive/yoga'
 import { createClient } from 'redis'
 
-const redis = createClient()
+const redis = createClient({ url: 'redis://localhost:6379' })
 await redis.connect()
 
 const yoga = createYoga({
