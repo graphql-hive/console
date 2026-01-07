@@ -174,6 +174,8 @@ const LaboratoryContent = () => {
     tabs,
     env,
     plugins,
+    pluginsState,
+    setPluginsState,
   } = useLaboratory();
   const laboratory = useLaboratory();
   const [activePanel, setActivePanel] = useState<
@@ -194,19 +196,26 @@ const LaboratoryContent = () => {
       case 'settings':
         return <Settings />;
       default: {
+        let pluginId: string | null = null;
         let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
 
         for (const plugin of plugins) {
           for (const tab of plugin.tabs ?? []) {
             if (tab.type === activeTab?.type) {
               customTab = tab;
+              pluginId = plugin.id;
               break;
             }
           }
         }
 
-        if (customTab) {
-          return customTab.component(activeTab as LaboratoryTabCustom, laboratory, {});
+        if (customTab && pluginId) {
+          return customTab.component(
+            activeTab as LaboratoryTabCustom,
+            laboratory,
+            pluginsState[pluginId] ?? {},
+            (state: Record<string, unknown>) => setPluginsState({ ...pluginsState, [pluginId]: state }),
+          );
         }
 
         return (
@@ -441,6 +450,8 @@ export const Laboratory = (
     | 'defaultTests'
     | 'onTestsChange'
     | 'plugins'
+    | 'defaultPluginsState'
+    | 'onPluginsStateChange'
   >,
 ) => {
   const checkPermissions = useCallback(
@@ -481,6 +492,7 @@ export const Laboratory = (
     envApi,
     preflightApi,
     settingsApi,
+    pluginsApi,
     checkPermissions,
   });
 

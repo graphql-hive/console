@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/laboratory/lib/env';
+import { LaboratoryPlugin } from '@/laboratory/lib/plugins';
 
 export interface LaboratoryPreflightLog {
   level: 'log' | 'warn' | 'error' | 'info' | 'system';
@@ -14,6 +15,7 @@ export interface LaboratoryPreflightResult {
   logs: LaboratoryPreflightLog[];
   env: LaboratoryEnv;
   headers: Record<string, string>;
+  pluginsState: Record<string, any>;
 }
 
 export interface LaboratoryPreflight {
@@ -28,7 +30,10 @@ export interface LaboratoryPreflightState {
 
 export interface LaboratoryPreflightActions {
   setPreflight: (preflight: LaboratoryPreflight) => void;
-  runPreflight: () => Promise<LaboratoryPreflightResult | null>;
+  runPreflight: (
+    plugins?: LaboratoryPlugin[],
+    pluginsState?: Record<string, any>,
+  ) => Promise<LaboratoryPreflightResult | null>;
   setLastTestResult: (result: LaboratoryPreflightResult | null) => void;
 }
 
@@ -50,13 +55,22 @@ export const usePreflight = (props: {
     [props],
   );
 
-  const runPreflight = useCallback(async () => {
-    if (!preflight?.enabled) {
-      return null;
-    }
+  const runPreflight = useCallback(
+    async (plugins?: LaboratoryPlugin[], pluginsState?: Record<string, any>) => {
+      if (!preflight?.enabled) {
+        return null;
+      }
 
-    return runIsolatedLabScript(preflight.script, props.envApi?.env ?? { variables: {} });
-  }, [preflight, props.envApi.env]);
+      return runIsolatedLabScript(
+        preflight.script,
+        props.envApi?.env ?? { variables: {} },
+        undefined,
+        plugins,
+        pluginsState,
+      );
+    },
+    [preflight, props.envApi.env],
+  );
 
   const setLastTestResult = useCallback(
     (result: LaboratoryPreflightResult | null) => {
@@ -81,7 +95,13 @@ export async function runIsolatedLabScript(
   script: string,
   env: LaboratoryEnv,
   prompt?: (placeholder: string, defaultValue: string) => Promise<string | null>,
+  plugins: LaboratoryPlugin[] = [],
+  pluginsState: Record<string, any> = {},
 ): Promise<LaboratoryPreflightResult> {
+  const pluginsObjects = plugins
+    .filter(plugin => plugin.preflight?.lab?.object)
+    .map(plugin => plugin.preflight?.lab?.object);
+
   return new Promise(resolve => {
     const blob = new Blob(
       [
@@ -112,6 +132,12 @@ export async function runIsolatedLabScript(
                   self.postMessage({ type: 'log', level: 'info', message: args });
                 },
               };
+
+              let state = ${JSON.stringify(pluginsState)};
+
+              const setState = (id, newState) => {
+                Object.assign(state[id] ?? {}, newState);
+              };
               
               const lab = Object.freeze({
                 environment: {
@@ -132,14 +158,24 @@ export async function runIsolatedLabScript(
                     self.postMessage({ type: 'prompt', placeholder, defaultValue });
                   });
                 },
-                // CryptoJS: CryptoJS
+                plugins: {
+                  ${pluginsObjects
+                    .map(obj => obj?.toString())
+                    .map(obj => (obj?.startsWith('object') ? `function${obj.slice(6)}` : obj))
+                    .map(
+                      (obj, i) => `
+                   ...(${obj})(${JSON.stringify(plugins[i].preflight?.lab?.props ?? {})}, state['${plugins[i].id}'] ?? {}, (newState) => setState('${plugins[i].id}', newState))  
+                  `,
+                    )
+                    .join(',')}
+                }
               });
   
               // Make CryptoJS available globally in the script context
               const AsyncFunction = async function () {}.constructor;
               await new AsyncFunction('lab', 'CryptoJS', 'with(lab){' + event.data.script + '}')(lab, CryptoJS);
               
-              self.postMessage({ type: 'result', env: env, headers: Object.fromEntries(lab.request.headers.entries()) });
+              self.postMessage({ type: 'result', env: env, headers: Object.fromEntries(lab.request.headers.entries()), pluginsState: state });
             } catch (err) {
               self.console.error(err);
               self.postMessage({ type: 'result', error: err.message || String(err) });
@@ -166,6 +202,7 @@ export async function runIsolatedLabScript(
             logs,
             env,
             headers: data.headers,
+            pluginsState: data.pluginsState,
           });
         } else {
           if (Object.keys(data.headers).length > 0) {
@@ -181,6 +218,7 @@ export async function runIsolatedLabScript(
             logs,
             env: data.env,
             headers: data.headers,
+            pluginsState: data.pluginsState,
           });
         }
       } else if (data.type === 'log') {
@@ -207,6 +245,7 @@ export async function runIsolatedLabScript(
         logs,
         env,
         headers: {},
+        pluginsState,
       });
     };
 

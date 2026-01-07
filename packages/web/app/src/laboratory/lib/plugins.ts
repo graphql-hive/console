@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import type { LaboratoryContextProps } from '@/laboratory/components/laboratory/context';
 import { LaboratoryTabCustom } from '@/laboratory/lib/tabs';
 
@@ -9,10 +10,12 @@ export interface LaboratoryPluginTab<State = Record<string, unknown>> {
     tab: LaboratoryTabCustom,
     laboratory: LaboratoryContextProps,
     state: State,
+    setState: (state: State) => void,
   ) => React.ReactNode;
 }
 
 export interface LaboratoryPlugin<State = Record<string, unknown>> {
+  id: string;
   name: string;
   description?: string;
   icon?: React.ReactNode;
@@ -29,8 +32,9 @@ export interface LaboratoryPlugin<State = Record<string, unknown>> {
   preflight?: {
     lab?: {
       definition?: string;
+      props?: Record<string, string>;
       object: (
-        laboratory: LaboratoryContextProps,
+        props: Record<string, string>,
         state: State,
         setState: (state: State) => void,
       ) => Record<string, unknown>;
@@ -40,14 +44,41 @@ export interface LaboratoryPlugin<State = Record<string, unknown>> {
 
 export interface LaboratoryPluginsState {
   plugins: LaboratoryPlugin[];
+  pluginsState: Record<string, any>;
 }
 
-export interface LaboratoryPluginsActions {}
+export interface LaboratoryPluginsActions {
+  setPluginsState: (state: Record<string, any>) => void;
+}
 
 export const usePlugins = (props: {
   plugins?: LaboratoryPlugin[];
+  defaultPluginsState?: Record<string, any>;
+  onPluginsStateChange?: (state: Record<string, any>) => void;
 }): LaboratoryPluginsState & LaboratoryPluginsActions => {
+  // eslint-disable-next-line react/hook-use-state
+  const [pluginsState, _setPluginsState] = useState<Record<string, any>>({
+    ...props.plugins?.reduce(
+      (acc, plugin) => {
+        acc[plugin.id] = plugin.defaultState ?? {};
+        return acc;
+      },
+      {} as Record<string, any>,
+    ),
+    ...props.defaultPluginsState,
+  });
+
+  const setPluginsState = useCallback(
+    (state: Record<string, any>) => {
+      _setPluginsState(state);
+      props.onPluginsStateChange?.(state);
+    },
+    [props],
+  );
+
   return {
     plugins: props.plugins ?? [],
+    pluginsState,
+    setPluginsState,
   };
 };
