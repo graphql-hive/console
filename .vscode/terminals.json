@@ -66,10 +66,10 @@
       "command": "pnpm dev"
     },
     {
-      "name": "emails:dev",
-      "description": "Run Emails Service",
+      "name": "workflows:dev",
+      "description": "Run Wrokflows Service",
       "open": true,
-      "cwd": "packages/services/emails",
+      "cwd": "packages/services/workflows",
       "command": "pnpm dev"
     },
     {

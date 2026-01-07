@@ -9,7 +9,6 @@ import { deployCommerce } from './services/commerce';
 import { deployDatabaseCleanupJob } from './services/database-cleanup';
 import { deployDbMigrations } from './services/db-migrations';
 import { configureDocker } from './services/docker';
-import { deployEmails } from './services/emails';
 import { prepareEnvironment } from './services/environment';
 import { configureGithubApp } from './services/github';
 import { deployGraphQL } from './services/graphql';
@@ -29,7 +28,6 @@ import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
-import { deployWebhooks } from './services/webhooks';
 import { deployWorkflows, PostmarkSecret } from './services/workflows';
 import { configureZendesk } from './services/zendesk';
 import { optimizeAzureCluster } from './utils/azure-helpers';
@@ -138,27 +136,6 @@ const tokens = deployTokens({
   observability,
 });
 
-const webhooks = deployWebhooks({
-  image: docker.factory.getImageId('webhooks', imagesTag),
-  environment,
-  heartbeat: heartbeatsConfig.get('webhooks'),
-  broker,
-  docker,
-  redis,
-  sentry,
-  observability,
-});
-
-const emails = deployEmails({
-  image: docker.factory.getImageId('emails', imagesTag),
-  docker,
-  environment,
-  redis,
-  postmarkSecret,
-  sentry,
-  observability,
-});
-
 deployWorkflows({
   image: docker.factory.getImageId('workflows', imagesTag),
   docker,
@@ -178,7 +155,6 @@ const commerce = deployCommerce({
   dbMigrations,
   sentry,
   observability,
-  emails,
   postgres,
 });
 
@@ -237,7 +213,6 @@ const graphql = deployGraphQL({
   image: docker.factory.getImageId('server', imagesTag),
   docker,
   tokens,
-  webhooks,
   schema,
   schemaPolicy,
   dbMigrations,
@@ -245,7 +220,6 @@ const graphql = deployGraphQL({
   usage,
   cdn,
   commerce,
-  emails,
   supertokens,
   s3,
   s3Mirror,
@@ -368,7 +342,6 @@ export const usageApiServiceId = usage.service.id;
 export const usageIngestorApiServiceId = usageIngestor.service.id;
 export const tokensApiServiceId = tokens.service.id;
 export const schemaApiServiceId = schema.service.id;
-export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
 export const otelCollectorId = otelCollector.deployment.id;
