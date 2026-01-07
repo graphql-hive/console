@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { throttle } from 'lodash';
-import { GlobeIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
@@ -15,6 +14,7 @@ import {
   Laboratory,
   LaboratoryCollection,
   LaboratoryCollectionOperation,
+  LaboratoryEnv,
   LaboratoryHistory,
   LaboratoryOperation,
   LaboratoryPreflight,
@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from '@/laboratory/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
@@ -481,6 +482,14 @@ function useLaboratoryState(props: {
           enabled: getLocalStorageState('preflightEnabled', true),
         }
       : null,
+    defaultEnv: getLocalStorageState('env', {}),
+    onEnvChange: (env: LaboratoryEnv | null) => {
+      setLocalStorageState('env', env);
+    },
+    defaultPluginsState: getLocalStorageState('pluginsState', {}),
+    onPluginsStateChange: (pluginsState: Record<string, any>) => {
+      setLocalStorageState('pluginsState', pluginsState);
+    },
     onOperationsChange: (operations: LaboratoryOperation[]) => {
       setLocalStorageState('operations', operations);
     },
@@ -709,58 +718,11 @@ function LaboratoryPageContent(props: {
             defaultEndpoint={url}
             {...laboratoryState}
             plugins={[
-              {
-                name: 'Target Environment',
-                description: 'Environment variables for the target',
-                defaultState: getLocalStorageState('target-environment', {}),
-                onStateChange: state => {
-                  setLocalStorageState('target-environment', state);
-                },
-                preflight: {
-                  lab: {
-                    definition: `
-                      targetEnvironment: {
-                        set: (key: string, value: string) => void;
-                        get: (key: string) => string;
-                        delete: (key: string) => void;
-                      };
-                    `,
-                    object: (_laboratory, state, setState) => ({
-                      targetEnvironment: {
-                        set: (key: string, value: string) => setState({ ...state, [key]: value }),
-                        get: (key: string) => state[key],
-                        delete: (key: string) => setState({ ...state, [key]: null }),
-                      },
-                    }),
-                  },
-                },
-                commands: [
-                  {
-                    name: 'Open Target Environment Variables',
-                    icon: <GlobeIcon />,
-                    onClick: laboratory => {
-                      const tab =
-                        laboratory.tabs.find(t => t.type === 'target-env') ??
-                        laboratory.addTab({
-                          type: 'target-env',
-                          data: {},
-                        });
-
-                      laboratory.setActiveTab(tab);
-                    },
-                  },
-                ],
-                tabs: [
-                  {
-                    type: 'target-env',
-                    name: 'Target Environment Variables',
-                    icon: <GlobeIcon className="size-4 text-orange-400" />,
-                    component: () => {
-                      return <div>Target Environment Variables</div>;
-                    },
-                  },
-                ],
-              },
+              TargetEnvPlugin({
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }),
             ]}
           />
         </div>

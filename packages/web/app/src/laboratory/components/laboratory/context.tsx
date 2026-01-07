@@ -163,7 +163,9 @@ export interface LaboratoryApi {
   checkPermissions?: (
     permission: `${keyof LaboratoryPermissions & string}:${keyof LaboratoryPermission & string}`,
   ) => boolean;
-  plugins?: LaboratoryPlugin[];
+  plugins?: LaboratoryPlugin<Record<string, any>>[];
+  defaultPluginsState?: Record<string, any>;
+  onPluginsStateChange?: (state: Record<string, any>) => void;
 }
 
 export type LaboratoryContextProps = LaboratoryContextState &

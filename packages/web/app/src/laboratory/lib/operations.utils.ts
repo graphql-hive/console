@@ -20,7 +20,7 @@ import {
   type VariableDefinitionNode,
 } from 'graphql';
 import type { Maybe } from 'graphql/jsutils/Maybe';
-import type { LaboratoryEnv } from '@/laboratory/lib/env';
+import { get } from 'lodash';
 import type { LaboratoryOperation } from '@/laboratory/lib/operations';
 
 export function healQuery(query: string) {
@@ -910,8 +910,8 @@ export function getOpenPaths(query: string): string[] {
   return extractPaths(query).map(v => v.join('.'));
 }
 
-export function handleTemplate(query: string, env: LaboratoryEnv) {
+export function handleTemplate(query: string, env: Record<string, any>) {
   return query.replace(/\{\{(.*?)\}\}/g, (match, p1) => {
-    return env.variables[p1] ?? match;
+    return get(env, p1) ?? match;
   });
 }
