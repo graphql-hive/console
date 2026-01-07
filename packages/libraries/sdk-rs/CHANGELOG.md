@@ -1,5 +1,47 @@
 # hive-console-sdk-rs
 
+## 0.2.3
+
+### Patch Changes
+
+- [#7446](https://github.com/graphql-hive/console/pull/7446)
+  [`0ac2e06`](https://github.com/graphql-hive/console/commit/0ac2e06fd6eb94c9d9817f78faf6337118f945eb)
+  Thanks [@ardatan](https://github.com/ardatan)! - Fixed the stack overflow error while collecting
+  schema coordinates from the recursive input object types correctly;
+
+  Let's consider the following schema:
+
+  ```graphql
+  input RecursiveInput {
+    field: String
+    nested: RecursiveInput
+  }
+  ```
+
+  And you have an operation that uses this input type:
+
+  ```graphql
+  query UserQuery($input: RecursiveInput!) {
+    user(input: $input) {
+      id
+    }
+  }
+  ```
+
+  When collecting schema coordinates from operations that use this input type, the previous
+  implementation could enter an infinite recursion when traversing the nested `RecursiveInput` type.
+  This would lead to a stack overflow error.
+
+- [#7448](https://github.com/graphql-hive/console/pull/7448)
+  [`4b796f9`](https://github.com/graphql-hive/console/commit/4b796f95bbc0fc37aac2c3a108a6165858b42b49)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - export `minify_query` and
+  `normalize_operation` functions (mainly for Hive Router)
+
+- [#7439](https://github.com/graphql-hive/console/pull/7439)
+  [`a9905ec`](https://github.com/graphql-hive/console/commit/a9905ec7198cf1bec977a281c5021e0ef93c2c34)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove the usage flag (!) from non-null, but unused
+  variables to match js sdk
+
 ## 0.2.2
 
 ### Patch Changes
