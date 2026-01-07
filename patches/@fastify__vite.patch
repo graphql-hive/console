@@ -1,3 +1,29 @@
+diff --git a/html.js b/html.js
+index 479125b6e98296863245c3f226ce3edf57af5f8b..b1e2b63f33d290e63ec65e425dbad03c1aa384af 100644
+--- a/html.js
++++ b/html.js
+@@ -35,10 +35,10 @@ function createHtmlTemplateFunction(source) {
+   // biome-ignore lint/style/noCommaOperator: indirect call to eval() to ensure global scope
+   const compiledTemplatingFunction = (0, eval)(
+     // biome-ignore lint/style/useTemplate: needed for compiling
+-    `(asReadable) => (function ({ ${[
+-      ...new Set(params.map((s) => s.split('.')[0])),
+-    ].join(', ')} }) {` +
+-      `return asReadable\`${interpolated.map((s) => serialize(s)).join('')}\`` +
++    `(asReadable) => (function ({ ${[...new Set(params.map(s => s.split('.')[0]))].join(
++      ', ',
++    )} }) {` +
++      `return asReadable\`${interpolated.map(s => serialize(s)).join('')}\`` +
+       '})',
+   )(asReadable)
+ 
+@@ -75,5 +75,5 @@ function serialize(frag) {
+   if (typeof frag === 'object') {
+     return `$\{${frag.param}}`
+   }
+-  return frag
++  return frag.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
+ }
 diff --git a/mode/development.js b/mode/development.js
 index af9de9d75a3689cd4f4b5d2876f2e38bd2674ae4..94ecb29a8e0d2615b1ecd0114dba7f3979dc2b11 100644
 --- a/mode/development.js

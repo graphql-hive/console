@@ -116,6 +116,56 @@ curl -v -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
   "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/metadata"
 ```
 
+## Versioned Artifacts
+
+You can fetch artifacts for a specific schema version using the versioned endpoints. This is useful
+for retrieving historical schemas or ensuring consistent deployments.
+
+### Fetching Artifacts by Version ID
+
+Use the `/version/:versionId` path segment to fetch artifacts for a specific version:
+
+```bash
+curl -L -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
+  "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/version/VERSION_ID/sdl"
+```
+
+All artifact types are supported with versioned endpoints:
+
+- `/artifacts/v1/TARGET_ID/version/VERSION_ID/sdl`
+- `/artifacts/v1/TARGET_ID/version/VERSION_ID/services`
+- `/artifacts/v1/TARGET_ID/version/VERSION_ID/supergraph`
+- `/artifacts/v1/TARGET_ID/version/VERSION_ID/metadata`
+
+### Versioned Contract Artifacts
+
+For Federation projects with contracts, you can fetch versioned contract artifacts:
+
+```bash
+curl -L -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
+  "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/version/VERSION_ID/contracts/CONTRACT_NAME/supergraph"
+```
+
+### Schema Version ID Header
+
+Every CDN artifact response includes the `x-hive-schema-version-id` header, which contains the
+version ID of the schema being served. This header is present in responses from both latest and
+versioned endpoints.
+
+```bash copy=false filename="Example response"
+curl -v -L -H 'X-Hive-CDN-Key: CDN_ACCESS_TOKEN' \
+  "https://cdn.graphql-hive.com/artifacts/v1/TARGET_ID/sdl"
+
+abc123-def456-789 < x-hive-schema-version-id:
+"a1b2c3d4" < etag:
+```
+
+You can use this header to:
+
+- Track which schema version your gateways are currently running
+- Correlate schema versions with deployments and logs
+- Fetch the exact same schema version later using the versioned endpoint
+
 ## How it works
 
 Every time you successfully publish a GraphQL schema to the schema registry, Hive replicated the

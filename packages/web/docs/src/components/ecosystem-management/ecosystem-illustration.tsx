@@ -1,5 +1,12 @@
 import { ReactNode } from 'react';
-import { cn, CodegenIcon, HiveGatewayIcon, HiveIcon } from '@theguild/components';
+import {
+  cn,
+  CodegenIcon,
+  HiveGatewayIcon,
+  HiveIcon,
+  HiveRouterIcon,
+  StellateIcon,
+} from '@theguild/components';
 import { DashedLine } from './dashed-line';
 import { GraphQLLogo } from './graphql-logo';
 import { IconGradientDefs } from './icon-gradient-defs';
@@ -113,7 +120,7 @@ export function EcosystemIllustration(props: { className?: string }) {
             }
             className="h-[--stellate-height] max-md:px-6"
           >
-            <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
+            <StellateIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
         </div>
 
@@ -127,15 +134,19 @@ export function EcosystemIllustration(props: { className?: string }) {
           >
             <div className="flex flex-col items-center gap-2">
               <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
-              <span className="font-medium text-green-100">Hive Gateway</span>
+              <span className="text-center font-medium text-green-100">
+                Hive Gateway
+                <br />
+                <span className="text-sm text-green-200">(JavaScript)</span>
+              </span>
             </div>
             <div className="w-px bg-green-700" />
             <div className="flex flex-col items-center gap-2">
-              <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
+              <HiveRouterIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.2px]" />
               <span className="text-center font-medium text-green-100">
                 Hive Router
                 <br />
-                (Rust)
+                <span className="text-sm text-green-200">(Rust)</span>
               </span>
             </div>
           </Node>

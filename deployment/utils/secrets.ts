@@ -11,9 +11,6 @@ export class ServiceSecret<T extends Record<string, string | Output<string>>> {
   ) {
     this.raw = data;
     this.record = new k8s.core.v1.Secret(this.name, {
-      metadata: {
-        name: this.name,
-      },
       stringData: this.data,
       type: 'Opaque',
     });

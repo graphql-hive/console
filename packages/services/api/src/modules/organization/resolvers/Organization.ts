@@ -1,5 +1,4 @@
 import { Session } from '../../auth/lib/authz';
-import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { OrganizationMemberRoles } from '../providers/organization-member-roles';
@@ -206,8 +205,8 @@ export const Organization: Pick<
       },
     });
   },
-  availableMemberPermissionGroups: () => {
-    return OrganizationMemberPermissions.permissionGroups;
+  availableMemberPermissionGroups: (organization, _, { injector }) => {
+    return injector.get(OrganizationAccessTokens).getAvailableMemberPermissionGroups(organization);
   },
   availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
     return injector

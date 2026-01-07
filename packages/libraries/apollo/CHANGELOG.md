@@ -1,5 +1,20 @@
 # @graphql-hive/apollo
 
+## 0.46.0
+
+### Minor Changes
+
+- [#7422](https://github.com/graphql-hive/console/pull/7422)
+  [`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf)
+  Thanks [@santino](https://github.com/santino)! - Introduce validation for Persisted Document ID
+
+### Patch Changes
+
+- Updated dependencies
+  [[`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf),
+  [`4f9f988`](https://github.com/graphql-hive/console/commit/4f9f988d62c54f6e7a6820eba1fa9913146dcf9e)]:
+  - @graphql-hive/core@0.19.0
+
 ## 0.45.0
 
 ### Minor Changes

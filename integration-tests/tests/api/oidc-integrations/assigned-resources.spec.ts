@@ -113,6 +113,7 @@ async function setup() {
         tokenEndpoint: 'http://localhost:8888/oauth/token',
         userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
         authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+        additionalScopes: [],
       },
     },
     authToken: ownerToken,

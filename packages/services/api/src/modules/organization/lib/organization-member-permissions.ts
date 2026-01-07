@@ -245,6 +245,25 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'schema-proposals',
+    title: 'Schema Proposals',
+    permissions: [
+      {
+        id: 'schemaProposal:describe',
+        title: 'View schema proposals',
+        description: 'Member can view schema proposals and their content',
+        dependsOn: 'project:describe',
+      },
+      {
+        id: 'schemaProposal:modify',
+        title: 'Modify schema proposals',
+        description:
+          'Member can create, approve, cancel, or edit the contents of schema proposals.',
+        dependsOn: 'project:describe',
+      },
+    ],
+  },
+  {
     id: 'cli-actions',
     title: 'CLI/API Actions',
     permissions: [

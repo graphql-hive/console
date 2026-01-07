@@ -109,8 +109,9 @@ export default {
 ##### Client Information
 
 You can associate a client name and version with any operation reported to Hive, by sending the
-`x-graphql-client-name` and `x-graphql-client-version` HTTP headers for requests sent to your
-GraphQL Yoga server.
+client information HTTP headers for requests sent to your GraphQL Yoga server. Those are
+`x-graphql-client-name` (or `graphql-client-name`) and `x-graphql-client-version` (or
+`graphql-client-version`).
 
 ```bash filename="Example HTTP Request with client headers" {2-3}
 curl \

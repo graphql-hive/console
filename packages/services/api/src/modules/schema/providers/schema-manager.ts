@@ -369,6 +369,19 @@ export class SchemaManager {
     };
   }
 
+  async getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(args: {
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    proposalId: string;
+    first: number | null;
+    cursor: string | null;
+    latest?: boolean;
+  }) {
+    const connection = await this.storage.getPaginatedSchemaChecksForSchemaProposal(args);
+    return connection;
+  }
+
   async getSchemaLog(selector: { commit: string } & TargetSelector) {
     this.logger.debug('Fetching schema log (selector=%o)', selector);
     return this.storage.getSchemaLog({
@@ -399,7 +412,7 @@ export class SchemaManager {
       base_schema: string | null;
       metadata: string | null;
       projectType: ProjectType;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       coordinatesDiff: SchemaCoordinatesDiffResult | null;
       previousSchemaVersion: string | null;

@@ -67,7 +67,13 @@
         "./packages/services/usage-ingestor/src/normalize-operation.ts"
       ],
       "@/*": ["./packages/web/app/src/*"],
-      "testkit/*": ["./integration-tests/testkit/*"]
+      "testkit/*": ["./integration-tests/testkit/*"],
+      "@graphql-hive/plugin-opentelemetry/api": [
+        "./node_modules/@graphql-hive/plugin-opentelemetry/dist/api.d.ts"
+      ],
+      "@graphql-hive/plugin-opentelemetry/setup": [
+        "./node_modules/@graphql-hive/plugin-opentelemetry/dist/setup.d.ts"
+      ]
     }
   },
   "include": ["packages", "tsup.config.node.ts"],

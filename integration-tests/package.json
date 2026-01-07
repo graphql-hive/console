@@ -7,6 +7,7 @@
     "prepare:env": "cd ../ && pnpm build:libraries && pnpm build:services",
     "start": "./local.sh",
     "test:integration": "vitest",
+    "test:integration:apollo-router": "TEST_APOLLO_ROUTER=1 vitest tests/apollo-router",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
@@ -21,9 +22,9 @@
     "@hive/schema": "workspace:*",
     "@hive/server": "workspace:*",
     "@hive/storage": "workspace:*",
-    "@theguild/federation-composition": "0.21.0",
-    "@trpc/client": "10.45.2",
-    "@trpc/server": "10.45.2",
+    "@theguild/federation-composition": "0.21.1",
+    "@trpc/client": "10.45.3",
+    "@trpc/server": "10.45.3",
     "@types/async-retry": "1.4.8",
     "@types/dockerode": "3.3.43",
     "async-retry": "1.3.3",

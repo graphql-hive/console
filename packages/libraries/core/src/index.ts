@@ -5,6 +5,8 @@ export type {
   HiveClient,
   CollectUsageCallback,
   LegacyLogger as Logger,
+  PersistedDocumentsCache,
+  Layer2CacheConfiguration,
 } from './client/types.js';
 export { createSchemaFetcher, createServicesFetcher } from './client/gateways.js';
 export { createHive, autoDisposeSymbol } from './client/client.js';

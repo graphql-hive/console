@@ -4,6 +4,7 @@ import { Output } from '@pulumi/pulumi';
 import { memoryParser } from './k8s';
 import { getLocalComposeConfig } from './local-config';
 import { normalizeEnv, PodBuilder } from './pod-builder';
+import { createService } from './service-deployment';
 
 const REDIS_PORT = 6379;
 const METRICS_PORT = 9121;
@@ -168,7 +169,7 @@ export class Redis {
       },
     });
 
-    const service = deployment.createService({});
+    const service = createService(name, deployment);
 
     return { deployment, service, redisPort: REDIS_PORT, metricsPort: METRICS_PORT };
   }

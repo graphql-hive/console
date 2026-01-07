@@ -80,16 +80,16 @@ class CorsError extends Error {
 export async function main() {
   let tracing: TracingInstance | undefined;
 
-  if (env.tracing.enabled && env.tracing.collectorEndpoint) {
+  if (env.tracing.enabled) {
     tracing = configureTracing({
       collectorEndpoint: env.tracing.collectorEndpoint,
       serviceName: 'graphql-api',
       enableConsoleExporter: env.tracing.enableConsoleExporter,
+      hiveTracing: env.tracing.hive,
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
   init({
@@ -422,6 +422,7 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       prometheus: env.prometheus,
     });
@@ -560,6 +561,7 @@ export async function main() {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
                 'x-signature': signature,
+                'x-hive-tracing': 'ignore',
               },
             }),
             storage.isReady(),

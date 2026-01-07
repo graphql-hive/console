@@ -1,8 +1,8 @@
 import { fastify } from 'fastify';
 import cors from '@fastify/cors';
 import * as Sentry from '@sentry/node';
+import { useHTTPErrorHandler } from './http-error-handler';
 import { useRequestLogging } from './request-logs';
-import { useSentryErrorHandler } from './sentry';
 
 export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 
@@ -42,9 +42,7 @@ export async function createServer(options: {
       server.log.error(err as any, 'Uncaught Exception thrown');
     });
 
-  if (options.sentryErrorHandler) {
-    await useSentryErrorHandler(server);
-  }
+  await useHTTPErrorHandler(server, options.sentryErrorHandler);
 
   if (options.log.requests) {
     await useRequestLogging(server);

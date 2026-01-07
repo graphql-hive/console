@@ -4,6 +4,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-main
+  cancel-in-progress: false
+
 jobs:
   # Release NPM packages and tarballs
   package:

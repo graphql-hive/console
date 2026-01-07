@@ -121,9 +121,7 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                     }
                   }
                 }
-                rateLimit {
-                  retentionInDays
-                }
+                usageRetentionInDays
               }
             }
           }

@@ -197,9 +197,6 @@ const ChecksPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      rateLimit {
-        retentionInDays
-      }
     }
     target(
       reference: {

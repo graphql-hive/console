@@ -41,7 +41,7 @@ services:
       - './.hive-dev/redis/db:/bitnami/redis/data'
 
   s3:
-    image: quay.io/minio/minio:RELEASE.2022-11-29T23-40-49Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     mem_limit: 200m
     command: server /data --console-address ":9001"
     ports:
@@ -144,7 +144,7 @@ services:
 
   oidc-server-mock:
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
-    mem_limit: 150m
+    mem_limit: 200m
     ports:
       - '7043:80'
     environment:
@@ -199,7 +199,6 @@ services:
       - '4318:4318'
       - '10254:10254'
       - '1777:1777'
-      - '8081:8081'
       - '55679:55679'
     networks:
       - 'stack'

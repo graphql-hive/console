@@ -405,12 +405,37 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
+  // @todo consider moving to proposals provider
+  getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(_: {
+    proposalId: string;
+    first: number | null;
+    cursor: null | string;
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    latest?: boolean;
+  }): Promise<
+    Readonly<{
+      edges: ReadonlyArray<{
+        // @todo consider conditionally excluding this from the query for performance
+        // Omit<TransformedSchemaCheck, 'supergraphSDL' | 'compositeSchemaSDL' | 'schemaSDL'>;
+        node: TransformedSchemaCheck;
+        cursor: string;
+      }>;
+      pageInfo: Readonly<{
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+        startCursor: string;
+        endCursor: string;
+      }>;
+    }>
+  >;
   getMaybeVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | null>;
   deleteSchema(
     _: {
       serviceName: string;
       composable: boolean;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
@@ -451,7 +476,7 @@ export interface Storage {
       commit: string;
       logIds: string[];
       base_schema: string | null;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       diffSchemaVersionId: null | string;
@@ -605,6 +630,7 @@ export interface Storage {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
+    additionalScopes: readonly string[];
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
@@ -614,6 +640,7 @@ export interface Storage {
     tokenEndpoint: string | null;
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
+    additionalScopes: readonly string[] | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
@@ -748,7 +775,9 @@ export interface Storage {
   /**
    * Persist a schema check record in the database.
    */
-  createSchemaCheck(_: SchemaCheckInput & { expiresAt: Date | null }): Promise<SchemaCheck>;
+  createSchemaCheck(
+    _: SchemaCheckInput & { expiresAt: Date | null; schemaProposalId?: string | null },
+  ): Promise<SchemaCheck>;
   /**
    * Delete the expired schema checks from the database.
    */

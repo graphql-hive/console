@@ -67,7 +67,7 @@ export const createPublicGraphQLHandler = (
             }
           : false,
       }),
-      args.tracing ? useHiveTracing(args.tracing.traceProvider()) : {},
+      args.tracing ? useHiveTracing() : {},
       useExecutionCancellation(),
     ],
     graphqlEndpoint: '/graphql-public',

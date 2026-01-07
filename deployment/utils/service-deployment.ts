@@ -320,7 +320,7 @@ export class ServiceDeployment {
       });
     }
 
-    const service = deployment.createService({});
+    const service = createService(this.name, deployment);
 
     if (this.options.autoScaling) {
       new k8s.autoscaling.v2.HorizontalPodAutoscaler(
@@ -359,4 +359,33 @@ export class ServiceDeployment {
 
     return { deployment, service };
   }
+}
+
+export function createService(name: string, deployment: kx.Deployment) {
+  const labels = deployment.spec.selector.matchLabels;
+  const ports = deployment.spec.template.spec.containers.apply(containers => {
+    const ports: { name: string; port: number }[] = [];
+
+    containers.forEach(container => {
+      if (container.ports) {
+        container.ports.forEach(port => {
+          ports.push({ name: port.name || name, port: port.containerPort });
+        });
+      }
+    });
+
+    return ports;
+  });
+
+  return new k8s.core.v1.Service(
+    name,
+    {
+      spec: {
+        ports: ports,
+        selector: labels,
+        type: 'ClusterIP',
+      },
+    },
+    {},
+  );
 }

@@ -25,7 +25,7 @@ jobs:
     strategy:
       matrix:
         # Divide integration tests into 3 shards, to run them in parallel.
-        shardIndex: [1, 2, 3]
+        shardIndex: [1, 2, 3, 'apollo-router']
 
     env:
       DOCKER_REGISTRY: ${{ inputs.registry }}/${{ inputs.imageName }}/
@@ -68,10 +68,61 @@ jobs:
         run: |
           docker compose -f docker/docker-compose.community.yml -f ./integration-tests/docker-compose.integration.yaml --env-file ./integration-tests/.env ps
 
-      - name: run integration tests
-        timeout-minutes: 10
+      ##  ---- START ---- Apollo Router specific steps
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: Install Rust
+        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af # v1
+        with:
+          toolchain: '1.91.1'
+          default: true
+          override: true
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: Cache Rust
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: build apollo router
         run: |
-          VITEST_MAX_THREADS=${{ steps.cpu-cores.outputs.count }} pnpm --filter integration-tests test:integration --shard=${{ matrix.shardIndex }}/3
+          cargo build
+
+      # ---- START ---- Disk space cleanup before apollo router tests
+      - if: matrix.shardIndex == 'apollo-router'
+        name: Before cleanup disk space
+        run: df -h
+      - if: matrix.shardIndex == 'apollo-router'
+        name: Cleanup disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+      - if: matrix.shardIndex == 'apollo-router'
+        name: After cleanup disk space
+        run: df -h
+      # ---- END ---- Disk space cleanup before apollo router tests
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: run apollo router integration tests
+        timeout-minutes: 30
+        run: |
+          pnpm test:integration:apollo-router
+
+      ## ---- END ---- Apollo Router specific steps
+
+      - if: matrix.shardIndex != 'apollo-router'
+        name: run integration tests
+        timeout-minutes: 30
+        run: |
+          pnpm test:integration --shard=${{ matrix.shardIndex }}/3
+        env:
+          VITEST_MAX_THREADS: ${{ steps.cpu-cores.outputs.count }}
 
       - name: log dump
         if: ${{ failure() }}

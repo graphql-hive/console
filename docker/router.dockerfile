@@ -3,7 +3,7 @@ FROM scratch AS router_pkg
 FROM scratch AS sdk_rs_pkg
 FROM scratch AS config
 
-FROM rust:1.90-slim-bookworm AS build
+FROM rust:1.91.1-slim-bookworm AS build
 
 # Required by Apollo Router
 RUN apt-get update
@@ -21,6 +21,11 @@ RUN USER=root cargo new sdk-rs
 COPY --from=router_pkg Cargo.toml /usr/src/router/
 COPY --from=sdk_rs_pkg Cargo.toml /usr/src/sdk-rs/
 COPY --from=config Cargo.lock /usr/src/router/
+
+# Copy usage report schema
+# `agent.rs` uses it
+# So we need to place it accordingly
+COPY --from=usage_service usage-report-v2.schema.json /usr/src/sdk-rs/
 
 WORKDIR /usr/src/sdk-rs
 # Get the dependencies cached, so we can use dummy input files so Cargo wont fail

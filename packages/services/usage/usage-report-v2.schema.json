@@ -5,7 +5,8 @@
   "type": "object",
   "properties": {
     "size": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0
     },
     "map": {
       "type": "object",
@@ -41,7 +42,8 @@
         "type": "object",
         "properties": {
           "timestamp": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0
           },
           "operationMapKey": {
             "type": "string"
@@ -55,10 +57,12 @@
                 "type": "boolean"
               },
               "duration": {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0
               },
               "errorsTotal": {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0
               }
             },
             "required": ["ok", "duration", "errorsTotal"]
@@ -101,7 +105,8 @@
         "type": "object",
         "properties": {
           "timestamp": {
-            "type": "integer"
+            "type": "integer",
+            "minimum": 0
           },
           "operationMapKey": {
             "type": "string"

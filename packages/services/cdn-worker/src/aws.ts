@@ -341,6 +341,12 @@ export class AwsV4Signer {
 
     const theHeaders: Array<string> = ['host'];
 
+    this.headers.forEach((_, key) => {
+      if (key.toLowerCase().startsWith('x-amz-meta-')) {
+        theHeaders.push(key.toLowerCase());
+      }
+    });
+
     // headers are always lowercase in keys()
     this.signableHeaders = theHeaders
       .filter(header => allHeaders || !UNSIGNABLE_HEADERS.has(header))

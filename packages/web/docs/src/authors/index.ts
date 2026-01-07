@@ -262,6 +262,11 @@ export const authors = {
     link: 'https://www.linkedin.com/in/emily-y-goodwin/',
     github: 'egoodwinx',
   },
+  adam: {
+    name: 'Adam Benhassen',
+    link: 'https://github.com/adambenhassen',
+    github: 'adambenhassen',
+  },
 } satisfies Record<string, Author>;
 
 export type AuthorId = keyof typeof authors;

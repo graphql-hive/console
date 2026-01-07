@@ -102,9 +102,7 @@ const TargetExplorerPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
       slug
     }
     target(
@@ -161,7 +159,7 @@ function ExplorerPageContent(props: {
   });
 
   const currentOrganization = query.data?.organization;
-  const retentionInDays = currentOrganization?.rateLimit.retentionInDays;
+  const retentionInDays = currentOrganization?.usageRetentionInDays;
 
   useEffect(() => {
     if (typeof retentionInDays === 'number' && dataRetentionInDays !== retentionInDays) {

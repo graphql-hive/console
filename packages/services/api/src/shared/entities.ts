@@ -192,6 +192,7 @@ export interface Organization {
     forceLegacyCompositionInTargets: string[];
     appDeployments: boolean;
     otelTracing: boolean;
+    schemaProposals: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */
@@ -223,6 +224,7 @@ export interface OIDCIntegration {
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
+  additionalScopes: string[];
   oidcUserAccessOnly: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;

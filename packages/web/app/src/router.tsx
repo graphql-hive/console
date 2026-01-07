@@ -22,12 +22,15 @@ import {
   parseSearchWith,
   stringifySearchWith,
   useNavigate,
+  useParams,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
 import { AuthOIDCPage } from './pages/auth-oidc';
@@ -73,6 +76,10 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
+import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-laboratory-new';
+import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
+import { TargetProposalsPage } from './pages/target-proposals';
+import { TargetProposalsNewPage } from './pages/target-proposals-new';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {
@@ -572,14 +579,35 @@ const targetLaboratoryRoute = createRoute({
   path: 'laboratory',
   validateSearch: () => ({}) as { operation?: string; operationString?: string },
   component: function TargetLaboratoryRoute() {
+    const [laboratoryTab, setLaboratoryTab] = useLocalStorage(
+      'hive:laboratory:type',
+      'hive-laboratory',
+    );
+
     const { organizationSlug, projectSlug, targetSlug } = targetLaboratoryRoute.useParams();
     const { operation } = targetLaboratoryRoute.useSearch();
+
+    if (laboratoryTab === 'hive-laboratory') {
+      return (
+        <TargetLaboratoryPageNew
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          selectedOperationId={operation}
+          defaultLaboratoryTab={laboratoryTab as 'graphiql' | 'hive-laboratory'}
+          onLaboratoryTabChange={setLaboratoryTab}
+        />
+      );
+    }
+
     return (
       <TargetLaboratoryPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         selectedOperationId={operation}
+        defaultLaboratoryTab={laboratoryTab as 'graphiql' | 'hive-laboratory'}
+        onLaboratoryTabChange={setLaboratoryTab}
       />
     );
   },
@@ -896,6 +924,80 @@ const targetChecksSingleRoute = createRoute({
   },
 });
 
+const targetProposalsRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals',
+  validateSearch: z.object({
+    stage: z
+      .enum(Object.values(SchemaProposalStage).map(s => s.toLowerCase()) as [string, ...string[]])
+      .array()
+      .optional()
+      .catch(() => void 0),
+    user: z.string().array().optional(),
+  }),
+  component: function TargetProposalsRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
+    // select proposalId from child route
+    const proposalId = useParams({
+      strict: false,
+      select: p => p.proposalId,
+    });
+    const { stage, user } = targetProposalsRoute.useSearch();
+    return (
+      <TargetProposalsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        filterStages={stage}
+        filterUserIds={user}
+        selectedProposalId={proposalId}
+      />
+    );
+  },
+});
+
+const targetProposalsNewRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals/new',
+  component: function TargetProposalRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetProposalsNewRoute.useParams();
+    return (
+      <TargetProposalsNewPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const targetProposalsSingleRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals/$proposalId',
+  validateSearch: z.object({
+    page: z
+      .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
+      .optional()
+      .catch(() => void 0),
+    version: z.string().optional(),
+  }),
+  component: function TargetProposalRoute() {
+    const { organizationSlug, projectSlug, targetSlug, proposalId } =
+      targetProposalsSingleRoute.useParams();
+    const { page, version } = targetProposalsSingleRoute.useSearch();
+    return (
+      <TargetProposalsSinglePage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        proposalId={proposalId}
+        tab={page ?? (ProposalTab.DETAILS as string)}
+        version={version}
+      />
+    );
+  },
+});
+
 const routeTree = root.addChildren([
   notFoundRoute,
   anonymousRoute.addChildren([
@@ -948,6 +1050,7 @@ const routeTree = root.addChildren([
       targetChecksRoute.addChildren([targetChecksSingleRoute]),
       targetAppVersionRoute,
       targetAppsRoute,
+      targetProposalsRoute.addChildren([targetProposalsNewRoute, targetProposalsSingleRoute]),
     ]),
   ]),
 ]);

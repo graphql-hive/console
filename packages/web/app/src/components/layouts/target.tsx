@@ -42,6 +42,7 @@ export enum Page {
   Traces = 'traces',
   Laboratory = 'laboratory',
   Apps = 'apps',
+  Proposals = 'proposals',
   Settings = 'settings',
 }
 
@@ -105,6 +106,7 @@ const TargetLayoutQuery = graphql(`
           viewerCanViewAppDeployments
           viewerCanAccessSettings
           viewerCanAccessTraces
+          viewerCanViewSchemaProposals
           latestSchemaVersion {
             id
           }
@@ -289,6 +291,20 @@ export const TargetLayout = ({
                         </Link>
                       </TabsTrigger>
                     )}
+                    {currentTarget.viewerCanViewSchemaProposals && (
+                      <TabsTrigger variant="menu" value={Page.Proposals} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                          }}
+                        >
+                          Proposals
+                        </Link>
+                      </TabsTrigger>
+                    )}
                     {currentTarget.viewerCanAccessSettings && (
                       <TabsTrigger variant="menu" value={Page.Settings} asChild>
                         <Link
@@ -317,7 +333,7 @@ export const TargetLayout = ({
                   <Button
                     onClick={toggleModalOpen}
                     variant="link"
-                    className="whitespace-nowrap text-orange-500"
+                    className="hidden whitespace-nowrap text-orange-500 md:flex"
                   >
                     <LinkIcon size={16} className="mr-2" />
                     Connect to CDN

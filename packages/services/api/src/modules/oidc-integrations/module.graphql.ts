@@ -17,6 +17,7 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
+    additionalScopes: [String!]!
     oidcUserAccessOnly: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
@@ -80,6 +81,7 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
+    additionalScopes: [String!]!
   }
 
   type CreateOIDCIntegrationResult {
@@ -98,6 +100,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: String
   }
 
   type CreateOIDCIntegrationError implements Error {
@@ -112,6 +115,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: [String!]
   }
 
   type UpdateOIDCIntegrationResult {
@@ -129,6 +133,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: String
   }
 
   type UpdateOIDCIntegrationError implements Error {

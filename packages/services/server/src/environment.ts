@@ -42,6 +42,9 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
   FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
@@ -137,15 +140,29 @@ const CdnApiModel = zod.union([
   }),
 ]);
 
-const HiveModel = zod.union([
-  zod.object({ HIVE_USAGE: emptyString(zod.literal('0').optional()) }),
-  zod.object({
-    HIVE_USAGE: zod.literal('1'),
-    HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
-    HIVE_USAGE_TARGET: zod.string(),
-    HIVE_USAGE_ACCESS_TOKEN: zod.string(),
-  }),
-]);
+const HiveModel = zod.intersection(
+  zod.union([
+    zod.object({ HIVE_USAGE: emptyString(zod.literal('0').optional()) }),
+    zod.object({
+      HIVE_USAGE: zod.literal('1'),
+      HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
+      HIVE_TARGET: zod.string(),
+      HIVE_ACCESS_TOKEN: zod.string(),
+    }),
+  ]),
+  zod.union([
+    zod.object({ HIVE_TRACING: emptyString(zod.literal('0').optional()) }),
+    zod.object({
+      HIVE_TRACING: zod.literal('1'),
+      HIVE_TRACING_ENDPOINT: zod
+        .string()
+        .url()
+        .default('https://api.graphql-hive.com/otel/v1/traces'),
+      HIVE_TARGET: zod.string(),
+      HIVE_ACCESS_TOKEN: zod.string(),
+    }),
+  ]),
+);
 
 const PrometheusModel = zod.object({
   PROMETHEUS_METRICS: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
@@ -336,8 +353,8 @@ const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
 const hiveUsageConfig =
   hive.HIVE_USAGE === '1'
     ? {
-        target: hive.HIVE_USAGE_TARGET,
-        token: hive.HIVE_USAGE_ACCESS_TOKEN,
+        target: hive.HIVE_TARGET,
+        token: hive.HIVE_ACCESS_TOKEN,
         endpoint: hive.HIVE_USAGE_ENDPOINT ?? null,
       }
     : null;
@@ -358,9 +375,17 @@ export const env = {
   release: base.RELEASE ?? 'local',
   encryptionSecret: base.ENCRYPTION_SECRET,
   tracing: {
-    enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
+    enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT || hive.HIVE_TRACING === '1',
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     enableConsoleExporter: tracing.OPENTELEMETRY_CONSOLE_EXPORTER === '1',
+    hive:
+      hive.HIVE_TRACING === '1'
+        ? {
+            endpoint: hive.HIVE_TRACING_ENDPOINT,
+            target: hive.HIVE_TARGET,
+            accessToken: hive.HIVE_ACCESS_TOKEN,
+          }
+        : undefined,
   },
   hiveServices: {
     webApp: {
@@ -532,6 +557,8 @@ export const env = {
   featureFlags: {
     /** Whether app deployments should be enabled by default for everyone. */
     appDeploymentsEnabled: base.FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED === '1',
+    /** Whether schema proposals should be enabled for all organizations. */
+    schemaProposalsEnabled: base.FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED === '1',
     /** Whether OTEL tracing should be enabled for all organizations. */
     otelTracingEnabled: base.FEATURE_FLAGS_OTEL_TRACING_ENABLED === '1',
   },

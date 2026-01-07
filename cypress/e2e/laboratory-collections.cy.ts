@@ -2,6 +2,8 @@ import { laboratory } from '../support/testkit';
 
 beforeEach(() => {
   cy.clearAllLocalStorage().then(() => {
+    window.localStorage.setItem('hive:laboratory:type', 'graphiql');
+
     return cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
       cy.setCookie('sRefreshToken', refreshToken);
 
