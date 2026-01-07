@@ -57,10 +57,10 @@ Next, you need to create an entrypoint for your custom router. This is where you
 router and register your plugins. Create a new file `src/main.rs` and add the following code:
 
 ```rust
-use hive_router::{PluginRegistry, router_entrypoint};
+use hive_router::{PluginRegistry, router_entrypoint, BoxError};
 
 #[ntex::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), BoxError> {
     /// This is where you can register your custom plugins
     let plugin_registry = PluginRegistry::new();
     /// Start the Hive Router with the plugin registry
