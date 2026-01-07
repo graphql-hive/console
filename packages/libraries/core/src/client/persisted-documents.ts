@@ -112,9 +112,26 @@ export function createPersistedDocuments(
 
   // L2
   const layer2Cache: PersistedDocumentsCache | undefined = config.layer2Cache?.cache;
-  const layer2TtlSeconds = config.layer2Cache?.ttlSeconds;
-  const layer2NotFoundTtlSeconds = config.layer2Cache?.notFoundTtlSeconds ?? 60;
+  let layer2TtlSeconds = config.layer2Cache?.ttlSeconds;
+  let layer2NotFoundTtlSeconds: number | undefined = config.layer2Cache?.notFoundTtlSeconds ?? 60;
+  const layer2KeyPrefix = config.layer2Cache?.keyPrefix ?? '';
   const layer2WaitUntil = config.layer2Cache?.waitUntil;
+
+  // Validate L2 cache options
+  if (layer2TtlSeconds !== undefined && layer2TtlSeconds < 0) {
+    config.logger.warn(
+      'Negative ttlSeconds (%d) provided for L2 cache; treating as no expiration',
+      layer2TtlSeconds,
+    );
+    layer2TtlSeconds = undefined;
+  }
+  if (layer2NotFoundTtlSeconds !== undefined && layer2NotFoundTtlSeconds < 0) {
+    config.logger.warn(
+      'Negative notFoundTtlSeconds (%d) provided for L2 cache; treating as no expiration',
+      layer2NotFoundTtlSeconds,
+    );
+    layer2NotFoundTtlSeconds = undefined;
+  }
 
   let allowArbitraryDocuments: (context: { headers?: HeadersObject }) => PromiseOrValue<boolean>;
 
@@ -178,7 +195,7 @@ export function createPersistedDocuments(
 
     let cached: string | typeof PERSISTED_DOCUMENT_NOT_FOUND | null;
     try {
-      cached = await layer2Cache.get(documentId);
+      cached = await layer2Cache.get(layer2KeyPrefix + documentId);
     } catch (error) {
       // L2 cache failure should not break the request
       config.logger.warn('L2 cache get failed for document %s: %O', documentId, error);
@@ -220,7 +237,11 @@ export function createPersistedDocuments(
     const ttl = value === null ? layer2NotFoundTtlSeconds : layer2TtlSeconds;
 
     // Fire-and-forget. don't await, don't block
-    const setPromise = layer2Cache.set(documentId, cacheValue, ttl ? { ttl } : undefined);
+    const setPromise = layer2Cache.set(
+      layer2KeyPrefix + documentId,
+      cacheValue,
+      ttl ? { ttl } : undefined,
+    );
     if (setPromise) {
       const handledPromise: Promise<void> = Promise.resolve(setPromise).then(
         () => {
