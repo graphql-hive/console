@@ -449,9 +449,10 @@ response. But there are some helper methods to make it easier to create early re
 To make it easier to create early responses, Hive Router provides some helper methods on the hook
 payloads.
 
-- `end_response_body(T: Serialize)` - This method allows you to provide a response body that is
-  serializable using `serde`. It automatically serializes the body to JSON and sets the appropriate
-  headers. So if we want to write less code for the above example, we can do the following;
+- `end_response_body(body: Serialize, status_code: StatusCode)` - This method allows you to provide
+  a response body that is serializable using `serde`. It automatically serializes the body to JSON
+  and sets the appropriate headers. So if we want to write less code for the above example, we can
+  do the following;
 
 ```rust filename="src/forbid_anon_ops.rs" {33-52}
                 let body = json!({
