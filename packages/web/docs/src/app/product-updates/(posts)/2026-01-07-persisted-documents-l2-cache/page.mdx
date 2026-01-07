@@ -10,13 +10,14 @@ performance in serverless and multi-instance deployments.
 
 ## The Problem
 
-The in-memory cache (L1) for persisted documents is lost when:
+The in-memory LRU cache (L1) for persisted documents has limitations:
 
-- Serverless functions cold start
-- Server instances restart
-- New instances are added during scaling
+- **Cache lost on restart**: Serverless cold starts, instance restarts, and scaling events clear the cache
+- **No shared state**: Each instance maintains its own cache, leading to redundant CDN calls
+- **Scale constraints**: Large supergraphs with many queries can hit LRU cache limits quickly
+- **No CDN resilience**: If the CDN is unavailable, there's no fallback layer
 
-This results in repeated CDN calls for the same documents.
+Teams with high-scale requirements often needed to build custom persisted document implementations to use Redis or other distributed caches.
 
 ## The Solution
 
