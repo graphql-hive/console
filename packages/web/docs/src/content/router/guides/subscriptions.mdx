@@ -61,7 +61,7 @@ router-to-subgraph communication:
 - [Server-Sent Events (SSE)](#server-sent-events-sse) - A simple, efficient protocol built on
   standard HTTP
 - [Incremental Delivery over HTTP](#incremental-delivery) - From the
-  [official GraphQL over HTTP spec RFC](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md).
+  [Official GraphQL over HTTP spec RFC](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md)
 - [Multipart HTTP](#multipart-http) - Based on
   [Apollo's Multipart HTTP protocol](https://www.apollographql.com/docs/graphos/routing/operations/subscriptions/multipart-protocol)
 
@@ -244,7 +244,7 @@ Accept: multipart/mixed
 ```
 
 The router responds with multipart HTTP responses conforming to
-[the Offical GraphQL over HTTP Incremental Delivery over HTTP RFC](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md).
+[the Official GraphQL over HTTP Incremental Delivery over HTTP RFC](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md).
 
 ### Apollo Client
 
@@ -260,7 +260,7 @@ multipart HTTP out-of-the-box.
 [`meros`](https://github.com/maraisr/meros) is a fast utility that makes reading multipart responses
 simple. It works in both the browser and Node.js.
 
-Using it with Relay is quite straight forward, here's an example setup:
+Using it with Relay is quite straightforward, here's an example setup:
 
 ```npm2yarn
 npm install meros
@@ -313,8 +313,8 @@ export const network = Network.create(fetchOrSubscribe, fetchOrSubscribe)
 
 Alternatively, you can also use
 [`fetch-multipart-graphql`](https://github.com/relay-tools/fetch-multipart-graphql) for Relay
-clients to add support incremental delivery over HTTP. It's a library maintained by Relay Tools -
-community-built tools for working with Relay.
+clients to add support for incremental delivery over HTTP. It's a library maintained by Relay
+Tools - community-built tools for working with Relay.
 
 </Callout>
 
@@ -388,14 +388,14 @@ This example subscription emits three events and then closes the connection. Not
 ### Apollo Client
 
 The required headers are automatically added by Apollo Client.
-[Multipart subscriptions are support out-of-the-box.](https://www.apollographql.com/docs/react/data/subscriptions#subscriptions-via-multipart-http)
+[Multipart subscriptions are supported out-of-the-box.](https://www.apollographql.com/docs/react/data/subscriptions#subscriptions-via-multipart-http)
 
 ```npm2yarn
 npm install @apollo/client graphql rxjs
 ```
 
 ```ts
-import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client'
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
 
 const client = new ApolloClient({
   link: new HttpLink({ uri: 'http://localhost:4000/graphql' }),
