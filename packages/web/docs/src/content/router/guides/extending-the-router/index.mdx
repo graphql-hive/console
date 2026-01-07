@@ -661,7 +661,7 @@ supergraph is reloaded by visiting the schema and looking for `@cacheControl` di
 ```rust
 pub struct ResponseCachePlugin {
     /// ...
-    ttl_per_type: DashMap<String, u64>,
+    ttl_per_type: ArcSwap<HashMap<String, u64>>,
 }
 
 
@@ -670,6 +670,8 @@ pub struct ResponseCachePlugin {
         &'a self,
         payload: OnSupergraphLoadStartHookPayload,
     ) -> OnSupergraphLoadStartHookResult<'a> {
+        // Create a new map
+        let ttl_per_type = HashMap::new();
         // Visit the schema and update ttl_per_type based on some directive
         payload.new_ast.definitions.iter().for_each(|def| {
             if let graphql_parser::schema::Definition::TypeDefinition(type_def) = def {
@@ -680,7 +682,7 @@ pub struct ResponseCachePlugin {
                                 if arg.0 == "maxAge" {
                                     if let graphql_parser::query::Value::Int(max_age) = &arg.1 {
                                         if let Some(max_age) = max_age.as_i64() {
-                                            self.ttl_per_type
+                                            ttl_per_type
                                                 .insert(obj_type.name.clone(), max_age as u64);
                                         }
                                     }
@@ -691,8 +693,69 @@ pub struct ResponseCachePlugin {
                 }
             }
         });
+        self.ttl_per_type.store(ttl_per_type.into())
 
         payload.cont()
+    }
+```
+
+> Notice that we use `ArcSwap` here, because the supergraph reload can happen at any time, so we
+> want to make sure we use the same `ttl_per_type` map during request processing.
+
+How do we use this `ttl_per_type` map during request processing?
+
+```rust
+    async fn on_execute<'exec>(
+        &'exec self,
+        payload: OnExecuteStartHookPayload<'exec>,
+    ) -> OnExecuteStartHookResult<'exec> {
+        /**
+         * ...
+        */
+        payload.on_end(|payload| {
+            /**
+             * ...
+            */
+            if let Ok(serialized) = sonic_rs::to_vec(&payload.data) {
+                // Here we load the ttl_per_type map once
+                let ttl_per_type = self.ttl_per_type.load();
+                trace!("Caching response for key: {}", key);
+                // Decide on the ttl somehow
+                // Get the type names
+                let mut max_ttl = 0;
+
+                // Imagine this code is traversing the response data to find type names
+                if let Some(obj) = payload.data.as_object() {
+                    if let Some(typename) = obj
+                        .iter()
+                        .position(|(k, _)| k == &TYPENAME_FIELD_NAME)
+                        .and_then(|idx| obj[idx].1.as_str())
+                    {
+                        if let Some(ttl) = ttl_per_type.get(typename) {
+                            max_ttl = max_ttl.max(*ttl);
+                        }
+                    }
+                }
+
+                // If no ttl found, default
+                if max_ttl == 0 {
+                    max_ttl = self.default_ttl_seconds;
+                }
+                trace!("Using TTL of {} seconds for key: {}", max_ttl, key);
+
+                // Insert the ttl into extensions for client awareness
+                payload.add_extension("response_cache_ttl", max_ttl);
+
+                // Set the cache with the decided ttl
+                let result = conn.set_ex::<&str, Vec<u8>, ()>(&key, serialized, max_ttl);
+                if let Err(err) = result {
+                    trace!("Failed to set cache for key {}: {}", key, err);
+                } else {
+                    trace!("Cached response for key: {} with TTL: {}", key, max_ttl);
+                }
+            }
+            payload.cont()
+        })
     }
 ```
 
