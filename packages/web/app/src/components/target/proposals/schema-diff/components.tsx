@@ -1,5 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { createContext, Fragment, ReactElement, ReactNode, useContext, useState } from 'react';
+import {
+  createContext,
+  Fragment,
+  ReactElement,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import {
   astFromValue,
   ConstArgumentNode,
@@ -35,6 +43,7 @@ import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { compareLists, diffArrays, matchArrays } from './compare-lists';
+import { ChangeRowContext } from './context';
 
 type RootFieldsType = {
   query: GraphQLField<any, any> | null;
@@ -120,14 +129,20 @@ export function ChangeRow(props: {
     ctx.annotatedCoordinates?.add(props.coordinate!);
   }
 
+  // if the children include any additions or subtractions
+  const [added, setAdded] = useState(false);
+  const [removed, setRemoved] = useState(false);
+
   return (
-    <>
+    <ChangeRowContext.Provider
+      value={{ change: { addition: added, removal: removed }, setAdded, setRemoved }}
+    >
       <tr style={{ counterIncrement: incrementCounter }}>
         <td
           className={cn(
             'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
             props.className,
-            props.type === 'removal' && 'bg-red-900/30',
+            (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
           )}
         />
@@ -136,7 +151,7 @@ export function ChangeRow(props: {
             'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 p-1 pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'invisible',
-            props.type === 'addition' && 'bg-green-900/30',
+            (props.type === 'addition' || added) && 'bg-green-900/30',
           )}
         />
         <td
@@ -182,7 +197,7 @@ export function ChangeRow(props: {
           <td colSpan={3}>{annotation}</td>
         </tr>
       )}
-    </>
+    </ChangeRowContext.Provider>
   );
 }
 
@@ -191,6 +206,13 @@ function Keyword(props: { term: string }) {
 }
 
 function Removal(props: { children: ReactNode | string; className?: string }): ReactNode {
+  const { setRemoved, change } = useContext(ChangeRowContext);
+  useEffect(() => {
+    if (!change.removal) {
+      setRemoved(true);
+    }
+  }, [change.removal]);
+
   return (
     <span
       className={cn(
@@ -204,6 +226,12 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 }
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
+  const { setAdded, change } = useContext(ChangeRowContext);
+  useEffect(() => {
+    if (!change.addition) {
+      setAdded(true);
+    }
+  }, [change.addition]);
   return (
     <span className={cn('bg-[#11362b] hover:bg-green-900', props.className)}>{props.children}</span>
   );
