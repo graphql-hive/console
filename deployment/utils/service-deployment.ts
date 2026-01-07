@@ -369,7 +369,7 @@ export function createService(name: string, deployment: kx.Deployment) {
     containers.forEach(container => {
       if (container.ports) {
         container.ports.forEach(port => {
-          ports.push({ name: port.name, port: port.containerPort });
+          ports.push({ name: port.name || name, port: port.containerPort });
         });
       }
     });
