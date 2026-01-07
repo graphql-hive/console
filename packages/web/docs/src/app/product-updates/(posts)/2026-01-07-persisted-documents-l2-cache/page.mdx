@@ -12,12 +12,14 @@ performance in serverless and multi-instance deployments.
 
 The in-memory LRU cache (L1) for persisted documents has limitations:
 
-- **Cache lost on restart**: Serverless cold starts, instance restarts, and scaling events clear the cache
+- **Cache lost on restart**: Serverless cold starts, instance restarts, and scaling events clear the
+  cache
 - **No shared state**: Each instance maintains its own cache, leading to redundant CDN calls
 - **Scale constraints**: Large supergraphs with many queries can hit LRU cache limits quickly
 - **No CDN resilience**: If the CDN is unavailable, there's no fallback layer
 
-Teams with high-scale requirements often needed to build custom persisted document implementations to use Redis or other distributed caches.
+Teams with high-scale requirements often needed to build custom persisted document implementations
+to use Redis or other distributed caches.
 
 ## The Solution
 
@@ -27,8 +29,8 @@ Add a distributed cache (Redis, Memcached, etc.) as an L2 layer between the in-m
 
 ```typescript
 import { createYoga } from 'graphql-yoga'
-import { useHive } from '@graphql-hive/yoga'
 import { createClient } from 'redis'
+import { useHive } from '@graphql-hive/yoga'
 
 const redis = createClient()
 await redis.connect()
@@ -80,14 +82,14 @@ hive-gateway supergraph \
 
 ## Features
 
-| Option | Description |
-| --- | --- |
-| `ttlSeconds` / `cacheTtlSeconds` | TTL for found documents |
+| Option                                           | Description                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `ttlSeconds` / `cacheTtlSeconds`                 | TTL for found documents                                      |
 | `notFoundTtlSeconds` / `cacheNotFoundTtlSeconds` | TTL for not-found documents (negative caching). Default: 60s |
-| `waitUntil` | Register cache writes in serverless environments |
+| `waitUntil`                                      | Register cache writes in serverless environments             |
 
-Apollo Server automatically uses `ctx.cache` as the L2 cache when available.
-Hive Gateway automatically uses the gateway cache when TTL options are provided.
+Apollo Server automatically uses `ctx.cache` as the L2 cache when available. Hive Gateway
+automatically uses the gateway cache when TTL options are provided.
 
 ---
 
