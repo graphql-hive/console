@@ -62,6 +62,7 @@ export const ManagePaymentMethod = (props: {
           <br />
           <Button
             variant="primary"
+            disabled={mutation.fetching || loadingDashboard}
             onClick={() => {
               setLoadingDashboard(true);
               void mutate({
