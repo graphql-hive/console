@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useState } from 'react';
 import clsx from 'clsx';
 import { useMutation } from 'urql';
 import { Section } from '@/components/common';
@@ -40,6 +40,8 @@ export const ManagePaymentMethod = (props: {
   const organization = useFragment(BillingPaymentMethod_OrganizationFragment, props.organization);
   const info = organization.billingConfiguration.paymentMethod;
 
+  const [loadingDashboard, setLoadingDashboard] = useState(false);
+
   if (!info) {
     return null;
   }
@@ -61,18 +63,23 @@ export const ManagePaymentMethod = (props: {
           <Button
             variant="primary"
             onClick={() => {
+              setLoadingDashboard(true);
               void mutate({
                 selector: {
                   organizationSlug: organization.slug,
                 },
-              }).then(result => {
-                if (result.data?.generateStripePortalLink) {
-                  window.location.href = result.data.generateStripePortalLink;
-                }
-              });
+              })
+                .then(result => {
+                  if (result.data?.generateStripePortalLink) {
+                    window.location.href = result.data.generateStripePortalLink;
+                  }
+                })
+                .catch(() => {
+                  setLoadingDashboard(false);
+                });
             }}
           >
-            {mutation.fetching ? (
+            {mutation.fetching || loadingDashboard ? (
               'Loading...'
             ) : (
               <div className="flex items-center">

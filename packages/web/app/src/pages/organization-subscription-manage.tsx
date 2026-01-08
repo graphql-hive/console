@@ -325,6 +325,11 @@ function Inner(props: {
     <div className="flex w-full flex-col gap-5">
       <Card className="w-full">
         <Heading className="mb-4">Choose Your Plan</Heading>
+        {organization.billingConfiguration.canUpdateSubscription ? (
+          <div className="mb-3 text-sm text-orange-500">
+            Only the organization owner can update the plan.
+          </div>
+        ) : null}
         <BillingPlanPicker
           disabled={
             organization.plan === BillingPlanType.Enterprise ||

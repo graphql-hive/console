@@ -18,7 +18,7 @@ export const Organization: Pick<
   | 'viewerCanModifyBilling'
 > = {
   plan: org => (org.billingPlan || 'HOBBY') as BillingPlanType,
-  billingConfiguration: async (org, _args, { injector }) => {
+  billingConfiguration: async (org, _args, { injector, session }) => {
     if (org.billingPlan === 'ENTERPRISE') {
       return {
         hasActiveSubscription: true,
@@ -80,13 +80,14 @@ export const Organization: Pick<
       };
     }
 
-    const [invoices, upcomingInvoice] = await Promise.all([
+    const [invoices, upcomingInvoice, user] = await Promise.all([
       injector.get(BillingProvider).invoices({
         organizationId: billingRecord.organizationId,
       }),
       injector.get(BillingProvider).upcomingInvoice({
         organizationId: billingRecord.organizationId,
       }),
+      session.getViewer(),
     ]);
 
     const hasPaymentIssues = invoices?.some(
@@ -99,7 +100,7 @@ export const Organization: Pick<
 
     return {
       hasActiveSubscription: subscriptionInfo.subscription !== null,
-      canUpdateSubscription: subscriptionInfo.subscription !== null,
+      canUpdateSubscription: org.ownerId === user.id,
       hasPaymentIssues,
       paymentMethod: subscriptionInfo.paymentMethod?.card || null,
       billingAddress: subscriptionInfo.paymentMethod?.billing_details || null,
