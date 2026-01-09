@@ -522,13 +522,7 @@ export class GitHubIntegrationManager {
 }
 
 function isOctokitRequestError(error: unknown): error is RequestError {
-  return (
-    !!error &&
-    typeof error === 'object' &&
-    'status' in error &&
-    'name' in error &&
-    error.name === 'HttpError'
-  );
+  return error instanceof RequestError;
 }
 
 export type GitHubCheckRun = {
