@@ -262,7 +262,7 @@ function ChangeItem(
                     <>
                       {' '}
                       <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 py-1 align-middle font-bold">
-                        <BoxIcon className="h-4 stroke-[1px]" />
+                        <BoxIcon className="size-4 stroke-[2px]" />
                         <span className="text-xs">
                           {change.affectedAppDeployments.totalCount}{' '}
                           {change.affectedAppDeployments.totalCount === 1
