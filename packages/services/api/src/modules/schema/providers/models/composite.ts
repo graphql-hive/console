@@ -228,6 +228,7 @@ export class CompositeModel {
         schemaCoordinates,
         firstDeployments,
         firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
       });
 
     const contractChecks = await this.getContractChecks({
@@ -508,6 +509,7 @@ export class CompositeModel {
         schemaCoordinates,
         firstDeployments,
         firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
       });
 
     const diffCheck = await this.checks.diff({
@@ -687,6 +689,7 @@ export class CompositeModel {
         schemaCoordinates,
         firstDeployments,
         firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
       });
 
     const diffCheck = await this.checks.diff({

@@ -34,6 +34,7 @@ export type ConditionalBreakingChangeDiffConfig = {
   requestCountThreshold: number;
   targetIds: string[];
   excludedClientNames: string[] | null;
+  excludedAppDeploymentNames: string[] | null;
 };
 
 export type AffectedAppDeployment = {

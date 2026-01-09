@@ -1485,6 +1485,7 @@ export const ConditionalBreakingChangeMetadataModel = z.object({
     requestCount: z.number().default(1),
     breakingChangeFormula: z.enum(['PERCENTAGE', 'REQUEST_COUNT']).default('PERCENTAGE'),
     excludedClientNames: z.array(z.string()).nullable(),
+    excludedAppDeploymentNames: z.array(z.string()).nullable(),
     /** we keep both reference to id and name so in case target gets deleted we can still display the name */
     targets: z.array(
       z.object({

@@ -692,6 +692,7 @@ export default gql`
     retentionInDays: Int! @tag(name: "public")
     percentage: Float! @tag(name: "public")
     excludedClientNames: [String!] @tag(name: "public")
+    excludedAppDeploymentNames: [String!] @tag(name: "public")
     targets: [BreakingChangeMetadataTarget!]! @tag(name: "public")
   }
 

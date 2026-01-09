@@ -839,6 +839,7 @@ export class AppDeployments {
     firstDeployments?: number;
     afterCursor?: string;
     firstOperations?: number;
+    excludedAppDeploymentNames?: string[] | null;
   }) {
     const emptyResult = {
       deployments: [],
@@ -893,7 +894,22 @@ export class AppDeployments {
       appVersion: z.string(),
     });
 
-    const activeDeployments = z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
+    let activeDeployments = z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
+
+    // Filter out excluded app deployment names
+    if (args.excludedAppDeploymentNames?.length) {
+      const excludedNamesSet = new Set(args.excludedAppDeploymentNames);
+      const originalCount = activeDeployments.length;
+      activeDeployments = activeDeployments.filter(d => !excludedNamesSet.has(d.appName));
+      if (activeDeployments.length !== originalCount) {
+        this.logger.debug(
+          'Filtered out %d app deployments by excluded names (targetId=%s, excludedNames=%o)',
+          originalCount - activeDeployments.length,
+          args.targetId,
+          args.excludedAppDeploymentNames,
+        );
+      }
+    }
 
     if (activeDeployments.length === 0) {
       this.logger.debug('No active app deployments found (targetId=%s)', args.targetId);

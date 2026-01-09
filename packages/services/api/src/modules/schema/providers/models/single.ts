@@ -137,6 +137,7 @@ export class SingleModel {
         schemaCoordinates,
         firstDeployments,
         firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
       });
 
     const [diffCheck, policyCheck] = await Promise.all([
@@ -286,6 +287,7 @@ export class SingleModel {
         schemaCoordinates,
         firstDeployments,
         firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
       });
 
     const [metadataCheck, diffCheck] = await Promise.all([

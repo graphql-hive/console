@@ -387,6 +387,9 @@ export class TargetManager {
       excludedClients: args.configuration.excludedClients?.length
         ? Array.from(args.configuration.excludedClients)
         : undefined,
+      excludedAppDeployments: args.configuration.excludedAppDeployments?.length
+        ? Array.from(args.configuration.excludedAppDeployments)
+        : undefined,
       targets: validationResult.data.targetIds ?? undefined,
       isEnabled: args.configuration.isEnabled ?? undefined,
     });
