@@ -30,35 +30,25 @@ export class BreakingSchemaChangeUsageHelper {
 
     const metadata = this.breakingSchemaChangeToMetadataMap.get(schemaChange);
 
-    if (metadata == null) {
-      return null;
-    }
+    // If metadata is missing, still return basic data with default values
+    // This ensures the badge shows even when WeakMap lookup fails (e.g., after cache refresh)
+    const totalRequestCount =
+      metadata && Number.isFinite(metadata.usage.totalRequestCount)
+        ? Math.max(1, metadata.usage.totalRequestCount)
+        : 1;
+    const targetIds = metadata?.settings.targets.map(target => target.id) ?? [];
 
     return {
       topAffectedOperations: schemaChange.usageStatistics.topAffectedOperations.map(operation => {
-        // Note:
-        // "metadata.usage.totalRequestCount" is sometimes 0/NaN in integration tests
-        // due to ClickHouse eventual consistency lag.
-        // We ensure the percentage is always a finite number to avoid GraphQL serialization errors.
-        const totalRequestCount = Number.isFinite(metadata.usage.totalRequestCount)
-          ? Math.max(1, metadata.usage.totalRequestCount)
-          : 1;
         const count = Number.isFinite(operation.count) ? operation.count : 0;
         const percentage = (count / totalRequestCount) * 100;
         return {
           ...operation,
           percentage,
-          targetIds: metadata.settings.targets.map(target => target.id),
+          targetIds,
         };
       }),
       topAffectedClients: schemaChange.usageStatistics.topAffectedClients.map(client => {
-        // Note:
-        // "metadata.usage.totalRequestCount" is sometimes 0/NaN in integration tests
-        // due to ClickHouse eventual consistency lag.
-        // We ensure the percentage is always a finite number to avoid GraphQL serialization errors.
-        const totalRequestCount = Number.isFinite(metadata.usage.totalRequestCount)
-          ? Math.max(1, metadata.usage.totalRequestCount)
-          : 1;
         const count = Number.isFinite(client.count) ? client.count : 0;
         const percentage = (count / totalRequestCount) * 100;
 
