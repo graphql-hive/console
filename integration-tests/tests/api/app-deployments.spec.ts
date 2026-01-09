@@ -4285,3 +4285,441 @@ test('fields NOT used by app deployment remain safe based on usage', async () =>
   expect(unusedRemoval?.node.isSafeBasedOnUsage).toBe(true);
   expect(unusedRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(0);
 });
+
+test('excludedAppDeployments filters out matching app deployments from affected list', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+
+  await setFeatureFlag('appDeployments', true);
+
+  const { createTargetAccessToken, project, target, toggleTargetValidation } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  await toggleTargetValidation(true);
+
+  // Publish initial schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForExcludedAppDeployments($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+          ... on SchemaPublishSuccess {
+            valid
+          }
+          ... on SchemaPublishError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+            world: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create first app deployment (will be excluded)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'excluded-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'excluded-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'excluded-app-hello-hash',
+            body: 'query ExcludedHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'excluded-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create second app deployment (will NOT be excluded)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'included-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'included-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'included-app-hello-hash',
+            body: 'query IncludedHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'included-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Configure conditional breaking changes with excludedAppDeployments
+  await execute({
+    document: graphql(`
+      mutation UpdateTargetValidationForExcludedAppDeployments(
+        $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+      ) {
+        updateTargetConditionalBreakingChangeConfiguration(input: $input) {
+          ok {
+            target {
+              id
+              conditionalBreakingChangeConfiguration {
+                excludedAppDeployments
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        conditionalBreakingChangeConfiguration: {
+          isEnabled: true,
+          percentage: 0,
+          period: 2,
+          targetIds: [target.id],
+          excludedAppDeployments: ['excluded-app'],
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Run schema check that removes hello field (both apps use it)
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForExcludedAppDeployments($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      // Wait until affectedAppDeployments is populated
+      return !!(helloRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Only included-app should appear (excluded-app should be filtered out)
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.[0].name).toBe('included-app');
+  // Breaking change is still breaking since included-app uses the field
+  expect(helloRemoval?.node.isSafeBasedOnUsage).toBe(false);
+});
+
+test('excludedAppDeployments returns empty list when all affected apps are excluded', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+
+  await setFeatureFlag('appDeployments', true);
+
+  const { createTargetAccessToken, project, target, toggleTargetValidation } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  await toggleTargetValidation(true);
+
+  // Publish initial schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForFullExclusion($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create single app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'only-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'only-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'only-app-hello-hash',
+            body: 'query OnlyHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'only-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Exclude the only app deployment
+  await execute({
+    document: graphql(`
+      mutation UpdateTargetValidationForFullExclusion(
+        $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+      ) {
+        updateTargetConditionalBreakingChangeConfiguration(input: $input) {
+          ok {
+            target {
+              id
+              conditionalBreakingChangeConfiguration {
+                excludedAppDeployments
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        conditionalBreakingChangeConfiguration: {
+          isEnabled: true,
+          percentage: 0,
+          period: 2,
+          targetIds: [target.id],
+          excludedAppDeployments: ['only-app'],
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Run schema check that removes hello field
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForFullExclusion($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                foo: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      // Check that we got the breaking change (affectedAppDeployments might be empty/null since all are excluded)
+      return !!helloRemoval;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // When all affected app deployments are excluded, the list should be empty
+  expect(helloRemoval?.node.affectedAppDeployments?.nodes?.length ?? 0).toBe(0);
+});

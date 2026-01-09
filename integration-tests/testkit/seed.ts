@@ -687,6 +687,7 @@ export function initSeed() {
                 async updateTargetValidationSettings({
                   isEnabled,
                   excludedClients,
+                  excludedAppDeployments,
                   percentage,
                   target: ttarget = target,
                   requestCount,
@@ -706,6 +707,7 @@ export function initSeed() {
                       conditionalBreakingChangeConfiguration: {
                         isEnabled,
                         excludedClients,
+                        excludedAppDeployments,
                         percentage,
                         requestCount,
                         breakingChangeFormula,

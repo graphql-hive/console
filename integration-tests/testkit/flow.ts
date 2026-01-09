@@ -1007,6 +1007,7 @@ export function updateTargetValidationSettings(
                   id
                 }
                 excludedClients
+                excludedAppDeployments
               }
             }
           }
