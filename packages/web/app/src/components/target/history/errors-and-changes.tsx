@@ -222,6 +222,7 @@ function ChangeItem(
           <AccordionTrigger className="py-3 hover:no-underline">
             <div
               className={clsx(
+                'text-left',
                 (change.approval && 'text-orange-500') ||
                   (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
@@ -236,38 +237,48 @@ function ChangeItem(
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
                 )}
-                {'usageStatistics' in change && change.usageStatistics && (
-                  <span className="flex items-center space-x-1 rounded-sm bg-gray-800 px-2 font-bold">
-                    <PulseIcon className="h-6 stroke-[1px]" />
-                    <span className="text-xs">
-                      {change.usageStatistics.topAffectedOperations.length}
-                      {change.usageStatistics.topAffectedOperations.length > 10 ? '+' : ''}{' '}
-                      {change.usageStatistics.topAffectedOperations.length === 1
-                        ? 'operation'
-                        : 'operations'}{' '}
-                      by {change.usageStatistics.topAffectedClients.length}{' '}
-                      {change.usageStatistics.topAffectedClients.length === 1
-                        ? 'client'
-                        : 'clients'}{' '}
-                      affected
-                    </span>
-                  </span>
+                {change.approval && (
+                  <>
+                    {' '}
+                    <ApprovedByBadge approval={change.approval} />
+                  </>
                 )}
-                {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
-                  <span className="ml-2 inline-flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 py-1 align-middle font-bold">
-                    <BoxIcon className="h-4 stroke-[1px]" />
-                    <span className="text-xs">
-                      {change.affectedAppDeployments.totalCount}{' '}
-                      {change.affectedAppDeployments.totalCount === 1
-                        ? 'app deployment'
-                        : 'app deployments'}{' '}
-                      affected
+                {'usageStatistics' in change && change.usageStatistics && (
+                  <>
+                    {' '}
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-gray-800 px-2 py-1 align-middle font-bold">
+                      <PulseIcon className="h-4 stroke-[1px]" />
+                      <span className="text-xs">
+                        {change.usageStatistics.topAffectedOperations.length}
+                        {change.usageStatistics.topAffectedOperations.length > 10 ? '+' : ''}{' '}
+                        {change.usageStatistics.topAffectedOperations.length === 1
+                          ? 'operation'
+                          : 'operations'}{' '}
+                        by {change.usageStatistics.topAffectedClients.length}{' '}
+                        {change.usageStatistics.topAffectedClients.length === 1
+                          ? 'client'
+                          : 'clients'}{' '}
+                        affected
+                      </span>
                     </span>
-                  </span>
-                ) : null}
-                {change.approval ? (
-                  <ApprovedByBadge approval={change.approval} />
-                ) : null}
+                  </>
+                )}
+                {'affectedAppDeployments' in change &&
+                  change.affectedAppDeployments?.totalCount && (
+                    <>
+                      {' '}
+                      <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 py-1 align-middle font-bold">
+                        <BoxIcon className="h-4 stroke-[1px]" />
+                        <span className="text-xs">
+                          {change.affectedAppDeployments.totalCount}{' '}
+                          {change.affectedAppDeployments.totalCount === 1
+                            ? 'app deployment'
+                            : 'app deployments'}{' '}
+                          affected
+                        </span>
+                      </span>
+                    </>
+                  )}
               </div>
             </div>
           </AccordionTrigger>
@@ -284,9 +295,50 @@ function ChangeItem(
           )}
           {'usageStatistics' in change && change.usageStatistics && metadata ? (
             <div>
+              <h4 className="mb-1 text-sm font-medium text-white">Affected Operations (based on usage)</h4>
+              <div className="mb-2 flex justify-between text-sm text-gray-500">
+                <span>Top 10 operations and clients affected by this change based on usage data.</span>
+                {metadata && (
+                  <span className="text-xs text-gray-100">
+                    See{' '}
+                    {metadata.settings.targets.map((target, index, arr) => (
+                      <>
+                        {!target.target ? (
+                          <TooltipProvider key={index}>
+                            <Tooltip>
+                              <TooltipTrigger>{target.slug}</TooltipTrigger>
+                              <TooltipContent>Target does no longer exist.</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <Link
+                            key={index}
+                            className="text-orange-500 hover:text-orange-500"
+                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                              projectSlug: props.projectSlug,
+                              targetSlug: target.target.slug,
+                              coordinate: change.path!.join('.'),
+                            }}
+                            target="_blank"
+                          >
+                            {target.slug}
+                          </Link>
+                        )}
+                        {index === arr.length - 1
+                          ? null
+                          : index === arr.length - 2
+                            ? ' and '
+                            : ', '}
+                      </>
+                    ))}{' '}
+                    target insights for live usage data.
+                  </span>
+                )}
+              </div>
               <div className="flex space-x-4">
                 <Table>
-                  <TableCaption>Top 10 affected operations.</TableCaption>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[150px]">Operation Name</TableHead>
@@ -340,7 +392,6 @@ function ChangeItem(
                   </TableBody>
                 </Table>
                 <Table>
-                  <TableCaption>Top 10 affected clients.</TableCaption>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[150px]">Client Name</TableHead>
@@ -361,52 +412,12 @@ function ChangeItem(
                   </TableBody>
                 </Table>
               </div>
-              <div className="mt-4 flex justify-end pt-2 text-xs text-gray-100">
-                {metadata && (
-                  <span>
-                    See{' '}
-                    {metadata.settings.targets.map((target, index, arr) => (
-                      <>
-                        {!target.target ? (
-                          <TooltipProvider key={index}>
-                            <Tooltip>
-                              <TooltipTrigger>{target.slug}</TooltipTrigger>
-                              <TooltipContent>Target does no longer exist.</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : (
-                          <Link
-                            key={index}
-                            className="text-orange-500 hover:text-orange-500"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: target.target.slug,
-                              coordinate: change.path!.join('.'),
-                            }}
-                            target="_blank"
-                          >
-                            {target.slug}
-                          </Link>
-                        )}
-                        {index === arr.length - 1
-                          ? null
-                          : index === arr.length - 2
-                            ? ' and '
-                            : ', '}
-                      </>
-                    ))}{' '}
-                    target insights for live usage data.
-                  </span>
-                )}
-              </div>
               {'affectedAppDeployments' in change &&
               change.affectedAppDeployments?.nodes?.length ? (
                 <div className="mt-6">
                   <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
                   <p className="mb-2 text-sm text-gray-500">
-                    Active app deployments that have operations using this schema coordinate.
+                    Top 5 active app deployments that have operations using this schema coordinate.
                   </p>
                   <Table>
                     <TableHeader>
@@ -502,7 +513,7 @@ function ChangeItem(
             <div>
               <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
               <p className="mb-2 text-sm text-gray-500">
-                Active app deployments that have operations using this schema coordinate.
+                Top 5 active app deployments that have operations using this schema coordinate.
               </p>
               <Table>
                 <TableHeader>
