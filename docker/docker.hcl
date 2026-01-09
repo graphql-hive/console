@@ -341,8 +341,6 @@ target "apollo-router" {
   inherits = ["router-base", get_target()]
   contexts = {
     router_pkg = "${PWD}/packages/libraries/router"
-    sdk_rs_pkg = "${PWD}/packages/libraries/sdk-rs"
-    usage_service = "${PWD}/packages/services/usage"
     config = "${PWD}/configs/cargo"
   }
   args = {
