@@ -25,6 +25,7 @@ import { Link } from '@tanstack/react-router';
 const ManageSubscriptionInner_OrganizationFragment = graphql(`
   fragment ManageSubscriptionInner_OrganizationFragment on Organization {
     slug
+    viewerCanModifyBilling
     billingConfiguration {
       hasPaymentIssues
       canUpdateSubscription
@@ -313,6 +314,12 @@ function Inner(props: {
     return null;
   };
 
+  // Only show the permission warning if not on the enterprise plan. Since enterprise plans must be manually updated through us.
+  const missingBillingUpdatePermissions =
+    plan !== 'ENTERPRISE' &&
+    !organization.billingConfiguration.canUpdateSubscription &&
+    !organization.viewerCanModifyBilling;
+
   const error =
     upgradeToProMutationState.error ||
     downgradeToHobbyMutationState.error ||
@@ -325,16 +332,13 @@ function Inner(props: {
     <div className="flex w-full flex-col gap-5">
       <Card className="w-full">
         <Heading className="mb-4">Choose Your Plan</Heading>
-        {!organization.billingConfiguration.canUpdateSubscription ? (
+        {missingBillingUpdatePermissions ? (
           <div className="mb-3 text-sm text-orange-500">
-            Only the organization owner can update the plan.
+            You lack the necessary permission 'billing:update' to update the subscription plan.
           </div>
         ) : null}
         <BillingPlanPicker
-          disabled={
-            organization.plan === BillingPlanType.Enterprise ||
-            !organization.billingConfiguration.canUpdateSubscription
-          }
+          disabled={!organization.billingConfiguration.canUpdateSubscription}
           activePlan={organization.plan}
           value={plan}
           plans={billingPlans}

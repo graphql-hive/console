@@ -71,7 +71,13 @@ export const Organization: Pick<
       logger.info('No active subscription for organization (id=%s)', org.id);
       return {
         hasActiveSubscription: false,
-        canUpdateSubscription: true,
+        canUpdateSubscription: await session.canPerformAction({
+          action: 'billing:update',
+          organizationId: org.id,
+          params: {
+            organizationId: billingRecord.organizationId,
+          },
+        }),
         hasPaymentIssues: false,
         paymentMethod: null,
         billingAddress: null,
@@ -80,14 +86,20 @@ export const Organization: Pick<
       };
     }
 
-    const [invoices, upcomingInvoice, user] = await Promise.all([
+    const [invoices, upcomingInvoice, canUpdateSubscription] = await Promise.all([
       injector.get(BillingProvider).invoices({
         organizationId: billingRecord.organizationId,
       }),
       injector.get(BillingProvider).upcomingInvoice({
         organizationId: billingRecord.organizationId,
       }),
-      session.getViewer(),
+      session.canPerformAction({
+        action: 'billing:update',
+        organizationId: org.id,
+        params: {
+          organizationId: billingRecord.organizationId,
+        },
+      }),
     ]);
 
     const hasPaymentIssues = invoices?.some(
@@ -100,7 +112,7 @@ export const Organization: Pick<
 
     return {
       hasActiveSubscription: subscriptionInfo.subscription !== null,
-      canUpdateSubscription: org.ownerId === user.id,
+      canUpdateSubscription: canUpdateSubscription,
       hasPaymentIssues,
       paymentMethod: subscriptionInfo.paymentMethod?.card || null,
       billingAddress: subscriptionInfo.paymentMethod?.billing_details || null,
