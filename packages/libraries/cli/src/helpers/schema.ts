@@ -83,23 +83,14 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
           ),
         );
       }
-
-      t.indent(messageParts.join(' '));
-      if (change.affectedAppDeployments?.nodes?.length) {
-        const totalDeployments = change.affectedAppDeployments.totalCount;
-        const shownDeployments = change.affectedAppDeployments.nodes.length;
-        const deploymentNames = change.affectedAppDeployments.nodes
-          .map(d => `${d.name}@${d.version}`)
-          .join(', ');
-        const moreText =
-          totalDeployments > shownDeployments
-            ? ` ${Texture.colors.dim(`and ${totalDeployments - shownDeployments} more`)}`
-            : '';
-
-        t.indent(
-          `  ${Texture.colors.yellow('-')} App Deployment${totalDeployments !== 1 ? 's' : ''} affected: ${Texture.colors.bold(deploymentNames)}${moreText}`,
+      if (change.affectedAppDeployments?.totalCount) {
+        const count = change.affectedAppDeployments.totalCount;
+        messageParts.push(
+          Texture.colors.yellow(`[${count} app deployment${count !== 1 ? 's' : ''} affected]`),
         );
       }
+
+      t.indent(messageParts.join(' '));
     });
   };
 
