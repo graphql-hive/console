@@ -40,7 +40,7 @@ export const upgradeToPro: NonNullable<MutationResolvers['upgradeToPro']> = asyn
       });
     } catch (e) {
       if (e instanceof TRPCClientError) {
-        throw new GraphQLError(`Falied to upgrade: ${e.message}`);
+        throw new GraphQLError(`Failed to upgrade: ${e.message}`);
       }
 
       throw e;
