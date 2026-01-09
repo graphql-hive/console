@@ -1,5 +1,13 @@
 # 16.10.2024
 
+## 2.3.7
+
+### Patch Changes
+
+- [#7479](https://github.com/graphql-hive/console/pull/7479)
+  [`382b481`](https://github.com/graphql-hive/console/commit/382b481e980e588e3e6cf7831558b2d0811253f5)
+  Thanks [@ardatan](https://github.com/ardatan)! - Update dependencies
+
 ## 2.3.6
 
 ### Patch Changes
