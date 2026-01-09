@@ -237,12 +237,6 @@ function ChangeItem(
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
                 )}
-                {change.approval && (
-                  <>
-                    {' '}
-                    <ApprovedByBadge approval={change.approval} />
-                  </>
-                )}
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
@@ -279,6 +273,12 @@ function ChangeItem(
                       </span>
                     </>
                   )}
+                {change.approval && (
+                  <>
+                    {' '}
+                    <ApprovedByBadge approval={change.approval} />
+                  </>
+                )}
               </div>
             </div>
           </AccordionTrigger>
