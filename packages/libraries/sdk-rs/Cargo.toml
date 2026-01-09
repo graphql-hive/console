@@ -25,8 +25,7 @@ anyhow = "1"
 tracing = "0.1"
 serde = "1"
 tokio = { version = "1.36.0", features = ["full"] }
-graphql-tools = "0.4.0"
-graphql-parser = "0.4.1"
+graphql-tools = { git = "https://github.com/graphql-hive/router.git", branch = "kamil-tools-parser" }
 md5 = "0.7.0"
 serde_json = "1"
 moka = { version = "0.12.10", features = ["future", "sync"] }

@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use anyhow::Error;
-use graphql_parser::schema::InputObjectType;
+use graphql_tools::parser::schema::InputObjectType;
 use graphql_tools::ast::ext::SchemaDocumentExtension;
 use graphql_tools::ast::FieldByNameExtension;
 use graphql_tools::ast::TypeDefinitionExtension;
@@ -11,13 +11,13 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-pub use graphql_parser::minify_query;
-use graphql_parser::parse_query;
-use graphql_parser::query::{
+pub use graphql_tools::parser::minify_query;
+use graphql_tools::parser::parse_query;
+use graphql_tools::parser::query::{
     Definition, Directive, Document, Field, FragmentDefinition, Number, OperationDefinition,
     Selection, SelectionSet, Text, Type, Value, VariableDefinition,
 };
-use graphql_parser::schema::{Document as SchemaDocument, TypeDefinition};
+use graphql_tools::parser::schema::{Document as SchemaDocument, TypeDefinition};
 use graphql_tools::ast::{
     visit_document, OperationTransformer, OperationVisitor, OperationVisitorContext, Transformed,
     TransformedValue,
@@ -563,8 +563,8 @@ impl<'a, T: Text<'a> + Clone> OperationTransformer<'a, T> for StripLiteralsTrans
 
     fn transform_field(
         &mut self,
-        field: &graphql_parser::query::Field<'a, T>,
-    ) -> Transformed<graphql_parser::query::Selection<'a, T>> {
+        field: &graphql_tools::parser::query::Field<'a, T>,
+    ) -> Transformed<graphql_tools::parser::query::Selection<'a, T>> {
         let selection_set = self.transform_selection_set(&field.selection_set);
         let arguments = self.transform_arguments(&field.arguments);
         let directives = self.transform_directives(&field.directives);
@@ -866,7 +866,7 @@ impl OperationProcessor {
 
         let normalized = normalize_operation(&parsed);
 
-        let printed = minify_query(format!("{}", normalized.clone())).map_err(|e| e.to_string())?;
+        let printed = minify_query(format!("{}", normalized.clone()).as_str()).map_err(|e| e.to_string())?;
         let hash = format!("{:x}", md5::compute(printed.clone()));
 
         Ok(Some(ProcessedOperation {
@@ -881,8 +881,8 @@ impl OperationProcessor {
 mod tests {
     use std::collections::HashSet;
 
-    use graphql_parser::parse_query;
-    use graphql_parser::parse_schema;
+    use graphql_tools::parser::parse_query;
+    use graphql_tools::parser::parse_schema;
 
     use super::collect_schema_coordinates;
 

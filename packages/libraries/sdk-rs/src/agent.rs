@@ -1,5 +1,5 @@
 use super::graphql::OperationProcessor;
-use graphql_parser::schema::Document;
+use graphql_tools::parser::schema::Document;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -330,7 +330,7 @@ impl UsageAgentExt for Arc<UsageAgent> {
 mod tests {
     use std::{sync::Arc, time::Duration};
 
-    use graphql_parser::{parse_query, parse_schema};
+    use graphql_tools::parser::{parse_query, parse_schema};
     use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 
     use crate::agent::{ExecutionReport, Report, UsageAgent, UsageAgentExt};
