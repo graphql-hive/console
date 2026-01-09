@@ -48,8 +48,6 @@
       "@hive/usage-ingestor": ["./packages/services/usage-ingestor/src/index.ts"],
       "@hive/policy": ["./packages/services/policy/src/api.ts"],
       "@hive/tokens": ["./packages/services/tokens/src/api.ts"],
-      "@hive/webhooks": ["./packages/services/webhooks/src/api.ts"],
-      "@hive/emails": ["./packages/services/emails/src/api.ts"],
       "@hive/commerce": ["./packages/services/commerce/src/api.ts"],
       "@hive/storage": ["./packages/services/storage/src/index.ts"],
       "@hive/storage/*": ["./packages/services/storage/src/*"],
@@ -66,6 +64,8 @@
       "@hive/usage-ingestor/src/normalize-operation": [
         "./packages/services/usage-ingestor/src/normalize-operation.ts"
       ],
+      "@hive/workflows/kit": ["./packages/services/workflows/src/kit.ts"],
+      "@hive/workflows/tasks/*": ["./packages/services/workflows/src/tasks/*"],
       "@/*": ["./packages/web/app/src/*"],
       "testkit/*": ["./integration-tests/testkit/*"],
       "@graphql-hive/plugin-opentelemetry/api": [

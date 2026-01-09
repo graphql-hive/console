@@ -2,11 +2,12 @@ import { stringify } from 'csv-stringify';
 import { endOfDay, startOfDay } from 'date-fns';
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { AuditLogExportTask } from '@hive/workflows/tasks/audit-log-export';
 import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
 import { type AwsClient } from '../../cdn/providers/aws';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
-import { Emails } from '../../shared/providers/emails';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { formatToClickhouseDateTime } from './audit-log-recorder';
@@ -33,7 +34,7 @@ export class AuditLogManager {
     logger: Logger,
     private clickHouse: ClickHouse,
     private s3Config: AuditLogS3Config,
-    private emailProvider: Emails,
+    private taskScheduler: TaskScheduler,
     private session: Session,
     private storage: Storage,
   ) {
@@ -212,7 +213,8 @@ export class AuditLogManager {
       const organization = await this.storage.getOrganization({
         organizationId,
       });
-      await this.emailProvider.api?.sendAuditLogsReportEmail.mutate({
+
+      await this.taskScheduler.scheduleTask(AuditLogExportTask, {
         email: email,
         organizationName: organization.name,
         organizationId: organization.id,

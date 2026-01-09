@@ -11,6 +11,7 @@ import {
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { TaskScheduler } from '@hive/workflows/kit';
 import * as Sentry from '@sentry/node';
 import { commerceRouter } from './api';
 import { env } from './environment';
@@ -58,6 +59,8 @@ async function main() {
       tracing ? [tracing.instrumentSlonik()] : undefined,
     );
 
+    const taskScheduler = new TaskScheduler(postgres.pool.pool);
+
     const usageEstimator = createEstimator({
       logger: server.log,
       clickhouse: {
@@ -75,11 +78,7 @@ async function main() {
         interval: env.rateLimit.limitCacheUpdateIntervalMs,
       },
       usageEstimator,
-      emails: env.hiveServices.emails.endpoint
-        ? {
-            endpoint: env.hiveServices.emails.endpoint,
-          }
-        : undefined,
+      taskScheduler,
       storage: postgres,
     });
 
