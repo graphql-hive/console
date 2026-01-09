@@ -19,7 +19,7 @@ path = "src/lib.rs"
 [dependencies]
 apollo-router = { version = "^2.0.0" }
 axum-core = "0.5"
-hive-console-sdk = { path = "../sdk-rs", version = "0" }
+hive-console-sdk = "0.3.3"
 sha2 = { version = "0.10.8", features = ["std"] }
 anyhow = "1"
 tracing = "0.1"
@@ -33,7 +33,7 @@ tokio = { version = "1.36.0", features = ["full"] }
 tower = { version = "0.5", features = ["full"] }
 http = "1"
 http-body-util = "0.1"
-graphql-parser = "0.4.1"
+graphql-tools = "0.4.2"
 rand = "0.9.0"
 tokio-util = "0.7.16"
 

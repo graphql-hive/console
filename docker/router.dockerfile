@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
 FROM scratch AS router_pkg
-FROM scratch AS sdk_rs_pkg
 FROM scratch AS config
 
 FROM rust:1.91.1-slim-bookworm AS build
@@ -15,28 +14,10 @@ RUN rustup component add rustfmt
 WORKDIR /usr/src
 # Create blank projects
 RUN USER=root cargo new router
-RUN USER=root cargo new sdk-rs
 
 # Copy Cargo files
 COPY --from=router_pkg Cargo.toml /usr/src/router/
-COPY --from=sdk_rs_pkg Cargo.toml /usr/src/sdk-rs/
 COPY --from=config Cargo.lock /usr/src/router/
-
-# Copy usage report schema
-# `agent.rs` uses it
-# So we need to place it accordingly
-COPY --from=usage_service usage-report-v2.schema.json /usr/src/sdk-rs/
-
-WORKDIR /usr/src/sdk-rs
-# Get the dependencies cached, so we can use dummy input files so Cargo wont fail
-RUN echo 'fn main() { println!(""); }' > ./src/main.rs
-RUN echo 'fn main() { println!(""); }' > ./src/lib.rs
-RUN cargo build --release
-
-# Copy in the actual source code
-COPY --from=sdk_rs_pkg src ./src
-RUN touch ./src/main.rs
-RUN touch ./src/lib.rs
 
 WORKDIR /usr/src/router
 # Get the dependencies cached, so we can use dummy input files so Cargo wont fail

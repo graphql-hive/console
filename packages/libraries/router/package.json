@@ -4,8 +4,5 @@
   "private": true,
   "scripts": {
     "sync-cargo-file": "./sync-cargo-file.sh"
-  },
-  "dependencies": {
-    "hive-console-sdk-rs": "workspace:*"
   }
 }
