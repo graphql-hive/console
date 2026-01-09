@@ -226,8 +226,8 @@ function ChangeItem(
                   (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
-              <div className="inline-flex justify-start space-x-2">
-                <span className="text-left text-gray-600 dark:text-white">
+              <div>
+                <span className="text-gray-600 dark:text-white">
                   {labelize(change.message)}
                 </span>
                 {change.isSafeBasedOnUsage && (
@@ -254,7 +254,7 @@ function ChangeItem(
                   </span>
                 )}
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
-                  <span className="flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 font-bold">
+                  <span className="ml-2 inline-flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 py-1 align-middle font-bold">
                     <BoxIcon className="h-4 stroke-[1px]" />
                     <span className="text-xs">
                       {change.affectedAppDeployments.totalCount}{' '}
@@ -266,9 +266,7 @@ function ChangeItem(
                   </span>
                 ) : null}
                 {change.approval ? (
-                  <div className="self-end">
-                    <ApprovedByBadge approval={change.approval} />
-                  </div>
+                  <ApprovedByBadge approval={change.approval} />
                 ) : null}
               </div>
             </div>
