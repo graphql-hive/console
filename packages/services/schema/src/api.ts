@@ -158,7 +158,33 @@ export const schemaBuilderApiRouter = t.router({
 
         assertAllCasesExhausted(input);
       } catch (error) {
-        ctx.req.log.error('Composition timed out. (error=%o)', error);
+        if (
+          error instanceof Error &&
+          'code' in error &&
+          error.code === 'ERR_WORKER_OUT_OF_MEMORY'
+        ) {
+          ctx.req.log.error('Composition memory limit exceeded. (error=%o)');
+
+          return {
+            errors: [
+              {
+                message:
+                  'Composition exceeded resouce limits. Please contact the Hive Console Team.',
+                source: 'composition',
+              },
+            ],
+            sdl: null,
+            supergraph: null,
+            includesNetworkError: false,
+            includesException: true,
+            contracts: null,
+            tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
+          } satisfies CompositionResponse;
+        }
+
+        ctx.req.log.error('Composition timed out.(error=%o)');
 
         // Treat timeouts caused by external composition as "expected errors"
         if (ctx.cache.isTimeoutError(error)) {
