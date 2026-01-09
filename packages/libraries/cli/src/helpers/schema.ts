@@ -54,13 +54,6 @@ const RenderChanges_SchemaChanges = graphql(`
           nodes {
             name
             version
-            totalAffectedOperations
-            affectedOperations(first: 5) {
-              nodes {
-                name
-                hash
-              }
-            }
           }
         }
       }
@@ -95,26 +88,17 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
       if (change.affectedAppDeployments?.nodes?.length) {
         const totalDeployments = change.affectedAppDeployments.totalCount;
         const shownDeployments = change.affectedAppDeployments.nodes.length;
+        const deploymentNames = change.affectedAppDeployments.nodes
+          .map(d => `${d.name}@${d.version}`)
+          .join(', ');
+        const moreText =
+          totalDeployments > shownDeployments
+            ? ` ${Texture.colors.dim(`and ${totalDeployments - shownDeployments} more`)}`
+            : '';
 
-        change.affectedAppDeployments.nodes.forEach(deployment => {
-          const ops = deployment.affectedOperations.nodes;
-          const totalOps = deployment.totalAffectedOperations;
-          const shownOps = ops.length;
-          const opNames = ops.map(op => op.name ?? `unnamed (${op.hash.slice(0, 7)})`).join(', ');
-          const opsDisplay =
-            totalOps > shownOps
-              ? `${opNames} ${Texture.colors.dim(`... and ${totalOps - shownOps} more`)}`
-              : opNames;
-          t.indent(
-            `  ${Texture.colors.yellow('-')} ${Texture.colors.bold(`${deployment.name}@${deployment.version}`)} (${totalOps} operation${totalOps !== 1 ? 's' : ''}): ${opsDisplay}`,
-          );
-        });
-
-        if (totalDeployments > shownDeployments) {
-          t.indent(
-            `  ${Texture.colors.dim(`... and ${totalDeployments - shownDeployments} more app deployment${totalDeployments - shownDeployments !== 1 ? 's' : ''}`)}`,
-          );
-        }
+        t.indent(
+          `  ${Texture.colors.yellow('-')} App Deployment${totalDeployments !== 1 ? 's' : ''} affected: ${Texture.colors.bold(deploymentNames)}${moreText}`,
+        );
       }
     });
   };
