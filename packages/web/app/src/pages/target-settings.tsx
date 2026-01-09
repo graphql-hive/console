@@ -419,6 +419,14 @@ function AppDeploymentExclusion(
     },
   });
 
+  if (availableAppDeploymentNamesQuery.error) {
+    return (
+      <div className="text-sm text-red-500">
+        Failed to load app deployments. Please try again.
+      </div>
+    );
+  }
+
   const appDeploymentNamesFromQuery = [
     ...new Set(
       availableAppDeploymentNamesQuery.data?.target?.appDeployments?.edges.map(e => e.node.name) ??
