@@ -49,12 +49,8 @@ const RenderChanges_SchemaChanges = graphql(`
             displayName
           }
         }
-        affectedAppDeployments(first: 5) {
+        affectedAppDeployments(first: 0) {
           totalCount
-          nodes {
-            name
-            version
-          }
         }
       }
     }
