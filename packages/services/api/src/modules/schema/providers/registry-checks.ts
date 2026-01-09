@@ -11,7 +11,6 @@ import {
   type RegistryServiceUrlChangeSerializableChange,
   type SchemaChangeType,
 } from '@hive/storage';
-import * as Sentry from '@sentry/node';
 import { ProjectType } from '../../../shared/entities';
 import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
 import { OperationsReader } from '../../operations/providers/operations-reader';
@@ -678,13 +677,7 @@ export class RegistryChecks {
             breakingCoordinates.size,
             error instanceof Error ? error.stack : String(error),
           );
-          Sentry.captureException(error, {
-            tags: { operation: 'app-deployment-check' },
-            extra: { coordinateCount: breakingCoordinates.size },
-          });
-          throw new Error(
-            `Unable to verify schema changes against app deployments. Please retry. If the issue persists, contact support.`,
-          );
+          throw error;
         }
       }
     }
