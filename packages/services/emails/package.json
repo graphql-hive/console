@@ -14,7 +14,7 @@
     "@sentry/node": "7.120.2",
     "@trpc/server": "10.45.3",
     "@types/mjml": "4.7.1",
-    "@types/nodemailer": "7.0.3",
+    "@types/nodemailer": "7.0.4",
     "@types/sendmail": "1.4.7",
     "bullmq": "5.34.8",
     "copyfiles": "2.4.1",
