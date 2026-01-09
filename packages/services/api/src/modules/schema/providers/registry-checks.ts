@@ -599,16 +599,7 @@ export class RegistryChecks {
       for (const change of inspectorChanges) {
         if (change.criticality === CriticalityLevel.Breaking) {
           // Initialize affectedAppDeployments to empty array for all breaking changes
-          (
-            change as {
-              affectedAppDeployments: Array<{
-                id: string;
-                name: string;
-                version: string;
-                affectedOperations: Array<{ hash: string; name: string | null }>;
-              }>;
-            }
-          ).affectedAppDeployments = [];
+          change.affectedAppDeployments = [];
 
           const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
           if (coordinate) {
@@ -649,16 +640,7 @@ export class RegistryChecks {
                     change.isSafeBasedOnUsage = false;
 
                     // Update affected app deployments for this change
-                    (
-                      change as {
-                        affectedAppDeployments: Array<{
-                          id: string;
-                          name: string;
-                          version: string;
-                          affectedOperations: Array<{ hash: string; name: string | null }>;
-                        }>;
-                      }
-                    ).affectedAppDeployments = deploymentsForCoordinate.map(d => ({
+                    change.affectedAppDeployments = deploymentsForCoordinate.map(d => ({
                       id: d.appDeployment.id,
                       name: d.appDeployment.name,
                       version: d.appDeployment.version,
