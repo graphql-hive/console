@@ -6,6 +6,7 @@ use apollo_router::plugin::PluginInit;
 use apollo_router::services::router;
 use apollo_router::services::router::Body;
 use apollo_router::Context;
+use bytes::Bytes;
 use core::ops::Drop;
 use futures::FutureExt;
 use hive_console_sdk::persisted_documents::PersistedDocumentsError;
@@ -14,7 +15,6 @@ use http::StatusCode;
 use http_body_util::combinators::UnsyncBoxBody;
 use http_body_util::BodyExt;
 use http_body_util::Full;
-use hyper::body::Bytes;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -133,7 +133,7 @@ impl Plugin for PersistedDocumentsPlugin {
                     let mgr = mgr.clone();
                     async move {
                         let (parts, body) = req.router_request.into_parts();
-                        let bytes: hyper::body::Bytes = body
+                        let bytes = body
                             .collect()
                             .await
                             .map_err(|err| PersistedDocumentsError::FailedToReadBody(err.to_string()))?
@@ -266,7 +266,7 @@ struct ExpectedBodyStructure {
 }
 
 fn extract_document_id(
-    body: &hyper::body::Bytes,
+    body: &bytes::Bytes,
 ) -> Result<ExpectedBodyStructure, PersistedDocumentsError> {
     serde_json::from_slice::<ExpectedBodyStructure>(body)
         .map_err(PersistedDocumentsError::FailedToParseBody)

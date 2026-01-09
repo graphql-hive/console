@@ -162,6 +162,11 @@ let config = withGuildDocs({
       permanent: true,
     },
     {
+      source: '/docs/schema-registry/link-specifications',
+      destination: '/docs/api-reference/link-specifications',
+      permanent: true,
+    },
+    {
       source: '/docs/specs/link-specifications',
       destination: '/docs/api-reference/link-specifications',
       permanent: true,

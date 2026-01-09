@@ -142,7 +142,7 @@ dependencies = [
  "multimap 0.10.1",
  "nom",
  "nom_locate",
- "parking_lot 0.12.5",
+ "parking_lot",
  "percent-encoding",
  "petgraph 0.8.3",
  "regex",
@@ -259,7 +259,7 @@ dependencies = [
  "opentelemetry-semantic-conventions",
  "opentelemetry-zipkin",
  "opentelemetry_sdk",
- "parking_lot 0.12.5",
+ "parking_lot",
  "paste",
  "pin-project-lite",
  "prometheus",
@@ -620,9 +620,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "aws-config"
-version = "1.8.8"
+version = "1.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37cf2b6af2a95a20e266782b4f76f1a5e12bf412a9db2de9c1e9123b9d8c0ad8"
+checksum = "96571e6996817bf3d58f6b569e4b9fd2e9d2fcf9f7424eed07b2ce9bb87535e5"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -645,9 +645,9 @@ dependencies = [
 
 [[package]]
 name = "aws-credential-types"
-version = "1.2.8"
+version = "1.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faf26925f4a5b59eb76722b63c2892b1d70d06fa053c72e4a100ec308c1d47bc"
+checksum = "3cd362783681b15d136480ad555a099e82ecd8e2d10a841e14dfd0078d67fee3"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
@@ -657,9 +657,9 @@ dependencies = [
 
 [[package]]
 name = "aws-runtime"
-version = "1.5.12"
+version = "1.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa006bb32360ed90ac51203feafb9d02e3d21046e1fd3a450a404b90ea73e5d"
+checksum = "d81b5b2898f6798ad58f484856768bca817e3cd9de0974c24ae0f1113fe88f1b"
 dependencies = [
  "aws-credential-types",
  "aws-sigv4",
@@ -681,9 +681,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sdk-sts"
-version = "1.88.0"
+version = "1.95.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d30990923f4f675523c51eb1c0dec9b752fb267b36a61e83cbc219c9d86da715"
+checksum = "55542378e419558e6b1f398ca70adb0b2088077e79ad9f14eb09441f2f7b2164"
 dependencies = [
  "aws-credential-types",
  "aws-runtime",
@@ -704,9 +704,9 @@ dependencies = [
 
 [[package]]
 name = "aws-sigv4"
-version = "1.3.5"
+version = "1.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bffc03068fbb9c8dd5ce1c6fb240678a5cffb86fb2b7b1985c999c4b83c8df68"
+checksum = "69e523e1c4e8e7e8ff219d732988e22bfeae8a1cafdbe6d9eca1546fa080be7c"
 dependencies = [
  "aws-credential-types",
  "aws-smithy-http",
@@ -726,9 +726,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-async"
-version = "1.2.6"
+version = "1.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "127fcfad33b7dfc531141fda7e1c402ac65f88aca5511a4d31e2e3d2cd01ce9c"
+checksum = "9ee19095c7c4dda59f1697d028ce704c24b2d33c6718790c7f1d5a3015b4107c"
 dependencies = [
  "futures-util",
  "pin-project-lite",
@@ -737,15 +737,16 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-http"
-version = "0.62.4"
+version = "0.62.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3feafd437c763db26aa04e0cc7591185d0961e64c61885bece0fb9d50ceac671"
+checksum = "826141069295752372f8203c17f28e30c464d22899a43a0c9fd9c458d469c88b"
 dependencies = [
  "aws-smithy-runtime-api",
  "aws-smithy-types",
  "bytes",
  "bytes-utils",
  "futures-core",
+ "futures-util",
  "http 0.2.12",
  "http 1.3.1",
  "http-body 0.4.6",
@@ -757,9 +758,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-http-client"
-version = "1.1.3"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1053b5e587e6fa40ce5a79ea27957b04ba660baa02b28b7436f64850152234f1"
+checksum = "59e62db736db19c488966c8d787f52e6270be565727236fd5579eaa301e7bc4a"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
@@ -781,27 +782,27 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-json"
-version = "0.61.6"
+version = "0.61.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cff418fc8ec5cadf8173b10125f05c2e7e1d46771406187b2c878557d4503390"
+checksum = "49fa1213db31ac95288d981476f78d05d9cbb0353d22cdf3472cc05bb02f6551"
 dependencies = [
  "aws-smithy-types",
 ]
 
 [[package]]
 name = "aws-smithy-observability"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d1881b1ea6d313f9890710d65c158bdab6fb08c91ea825f74c1c8c357baf4cc"
+checksum = "17f616c3f2260612fe44cede278bafa18e73e6479c4e393e2c4518cf2a9a228a"
 dependencies = [
  "aws-smithy-runtime-api",
 ]
 
 [[package]]
 name = "aws-smithy-query"
-version = "0.60.8"
+version = "0.60.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d28a63441360c477465f80c7abac3b9c4d075ca638f982e605b7dc2a2c7156c9"
+checksum = "ae5d689cf437eae90460e944a58b5668530d433b4ff85789e69d2f2a556e057d"
 dependencies = [
  "aws-smithy-types",
  "urlencoding",
@@ -809,9 +810,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-runtime"
-version = "1.9.3"
+version = "1.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40ab99739082da5347660c556689256438defae3bcefd66c52b095905730e404"
+checksum = "a392db6c583ea4a912538afb86b7be7c5d8887d91604f50eb55c262ee1b4a5f5"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-http",
@@ -832,9 +833,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-runtime-api"
-version = "1.9.1"
+version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3683c5b152d2ad753607179ed71988e8cfd52964443b4f74fd8e552d0bbfeb46"
+checksum = "ab0d43d899f9e508300e587bf582ba54c27a452dd0a9ea294690669138ae14a2"
 dependencies = [
  "aws-smithy-async",
  "aws-smithy-types",
@@ -849,9 +850,9 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-types"
-version = "1.3.3"
+version = "1.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f5b3a7486f6690ba25952cabf1e7d75e34d69eaff5081904a47bc79074d6457"
+checksum = "905cb13a9895626d49cf2ced759b062d913834c7482c38e49557eac4e6193f01"
 dependencies = [
  "base64-simd",
  "bytes",
@@ -872,18 +873,18 @@ dependencies = [
 
 [[package]]
 name = "aws-smithy-xml"
-version = "0.60.11"
+version = "0.60.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9c34127e8c624bc2999f3b657e749c1393bedc9cd97b92a804db8ced4d2e163"
+checksum = "11b2f670422ff42bf7065031e72b45bc52a3508bd089f743ea90731ca2b6ea57"
 dependencies = [
  "xmlparser",
 ]
 
 [[package]]
 name = "aws-types"
-version = "1.3.9"
+version = "1.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2fd329bf0e901ff3f60425691410c69094dc2a1f34b331f37bfc4e9ac1565a1"
+checksum = "1d980627d2dd7bfc32a3c025685a033eeab8d365cc840c631ef59d1b8f428164"
 dependencies = [
  "aws-credential-types",
  "aws-smithy-async",
@@ -1189,9 +1190,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
-version = "1.10.1"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d71b6127be86fdcfddb610f7182ac57211d4b18a3e9c82eb2d17662f2227ad6a"
+checksum = "b35204fbdc0b3f4446b89fc1ac2cf84a8a68971995d0bf2e925ec7cd960f9cb3"
 
 [[package]]
 name = "bytes-utils"
@@ -1651,7 +1652,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "lock_api",
  "once_cell",
- "parking_lot_core 0.9.12",
+ "parking_lot_core",
  "serde",
 ]
 
@@ -2127,7 +2128,7 @@ dependencies = [
  "fred-macros",
  "futures",
  "log",
- "parking_lot 0.12.5",
+ "parking_lot",
  "rand 0.8.5",
  "redis-protocol",
  "rustls",
@@ -2563,7 +2564,7 @@ dependencies = [
  "ipconfig",
  "moka",
  "once_cell",
- "parking_lot 0.12.5",
+ "parking_lot",
  "rand 0.9.2",
  "resolv-conf",
  "smallvec",
@@ -2574,33 +2575,26 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "2.3.5"
+version = "2.3.6"
 dependencies = [
  "anyhow",
  "apollo-router",
  "async-trait",
  "axum-core 0.5.5",
+ "bytes",
  "futures",
  "graphql-parser",
- "graphql-tools",
  "hive-console-sdk",
  "http 1.3.1",
  "http-body-util",
  "httpmock",
- "hyper 1.7.0",
  "jsonschema 0.29.1",
  "lazy_static",
- "lru",
- "md5",
  "rand 0.9.2",
- "reqwest",
- "reqwest-middleware",
- "reqwest-retry 0.7.0",
  "schemars 1.0.4",
  "serde",
  "serde_json",
  "sha2",
- "thiserror 2.0.17",
  "tokio",
  "tower 0.5.2",
  "tracing",
@@ -2608,7 +2602,7 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2621,7 +2615,7 @@ dependencies = [
  "regress",
  "reqwest",
  "reqwest-middleware",
- "reqwest-retry 0.8.0",
+ "reqwest-retry",
  "serde",
  "serde_json",
  "sha2",
@@ -3076,9 +3070,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
 dependencies = [
  "cfg-if",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
@@ -3365,7 +3356,7 @@ checksum = "416f7e718bdb06000964960ffa43b4335ad4012ae8b99060261aa4a8088d5ccb"
 dependencies = [
  "bitflags 2.10.0",
  "libc",
- "redox_syscall 0.5.18",
+ "redox_syscall",
 ]
 
 [[package]]
@@ -3433,9 +3424,9 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.16.2"
+version = "0.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96051b46fc183dc9cd4a223960ef37b9af631b55191852a8274bfef064cda20f"
+checksum = "a1dc47f592c06f33f8e3aea9591776ec7c9f9e4124778ff8a3c3b87159f7e593"
 dependencies = [
  "hashbrown 0.16.0",
 ]
@@ -3602,7 +3593,7 @@ dependencies = [
  "equivalent",
  "event-listener 5.4.1",
  "futures-util",
- "parking_lot 0.12.5",
+ "parking_lot",
  "portable-atomic",
  "rustc_version",
  "smallvec",
@@ -4092,37 +4083,12 @@ checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
 
 [[package]]
 name = "parking_lot"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
-dependencies = [
- "instant",
- "lock_api",
- "parking_lot_core 0.8.6",
-]
-
-[[package]]
-name = "parking_lot"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93857453250e3077bd71ff98b6a65ea6621a19bb0f559a85248955ac12c45a1a"
 dependencies = [
  "lock_api",
- "parking_lot_core 0.9.12",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60a2cfe6f0ad2bfc16aefa463b497d5c7a5ecd44a23efa72aa342d90177356dc"
-dependencies = [
- "cfg-if",
- "instant",
- "libc",
- "redox_syscall 0.2.16",
- "smallvec",
- "winapi",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -4133,7 +4099,7 @@ checksum = "2621685985a2ebf1c516881c026032ac7deafcda1a2c9b7850dc81e3dfcb64c1"
 dependencies = [
  "cfg-if",
  "libc",
- "redox_syscall 0.5.18",
+ "redox_syscall",
  "smallvec",
  "windows-link 0.2.1",
 ]
@@ -4417,7 +4383,7 @@ dependencies = [
  "fnv",
  "lazy_static",
  "memchr",
- "parking_lot 0.12.5",
+ "parking_lot",
  "protobuf",
  "thiserror 1.0.69",
 ]
@@ -4439,7 +4405,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be769465445e8c1474e9c5dac2018218498557af32d9ed057325ec9a41ae81bf"
 dependencies = [
  "heck 0.5.0",
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "log",
  "multimap 0.10.1",
  "once_cell",
@@ -4459,7 +4425,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.11.0",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn 2.0.108",
@@ -4639,15 +4605,6 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
-dependencies = [
- "bitflags 1.3.2",
-]
-
-[[package]]
-name = "redox_syscall"
 version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed2bf2547551a7053d6fdfafda3f938979645c44812fbfcda098faae3f1a362d"
@@ -4706,7 +4663,7 @@ dependencies = [
  "ahash",
  "fluent-uri 0.3.2",
  "once_cell",
- "parking_lot 0.12.5",
+ "parking_lot",
  "percent-encoding",
  "serde_json",
 ]
@@ -4721,7 +4678,7 @@ dependencies = [
  "fluent-uri 0.4.1",
  "getrandom 0.3.4",
  "hashbrown 0.16.0",
- "parking_lot 0.12.5",
+ "parking_lot",
  "percent-encoding",
  "serde_json",
 ]
@@ -4832,28 +4789,6 @@ dependencies = [
 
 [[package]]
 name = "reqwest-retry"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29c73e4195a6bfbcb174b790d9b3407ab90646976c55de58a6515da25d851178"
-dependencies = [
- "anyhow",
- "async-trait",
- "futures",
- "getrandom 0.2.16",
- "http 1.3.1",
- "hyper 1.7.0",
- "parking_lot 0.11.2",
- "reqwest",
- "reqwest-middleware",
- "retry-policies 0.4.0",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
- "wasm-timer",
-]
-
-[[package]]
-name = "reqwest-retry"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "105747e3a037fe5bf17458d794de91149e575b6183fc72c85623a44abb9683f5"
@@ -4866,7 +4801,7 @@ dependencies = [
  "hyper 1.7.0",
  "reqwest",
  "reqwest-middleware",
- "retry-policies 0.5.1",
+ "retry-policies",
  "thiserror 2.0.17",
  "tokio",
  "tracing",
@@ -4878,15 +4813,6 @@ name = "resolv-conf"
 version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b3789b30bd25ba102de4beabd95d21ac45b69b1be7d14522bab988c526d6799"
-
-[[package]]
-name = "retry-policies"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5875471e6cab2871bc150ecb8c727db5113c9338cc3354dc5ee3425b6aa40a1c"
-dependencies = [
- "rand 0.8.5",
-]
 
 [[package]]
 name = "retry-policies"
@@ -5591,7 +5517,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf776ba3fa74f83bf4b63c3dcbbf82173db2632ed8452cb2d891d33f459de70f"
 dependencies = [
  "new_debug_unreachable",
- "parking_lot 0.12.5",
+ "parking_lot",
  "phf_shared",
  "precomputed-hash",
 ]
@@ -5913,7 +5839,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
- "parking_lot 0.12.5",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2 0.6.1",
@@ -6622,21 +6548,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-timer"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be0ecb0db480561e9a7642b5d3e4187c128914e58aa84330b9493e3eb68c5e7f"
-dependencies = [
- "futures",
- "js-sys",
- "parking_lot 0.11.2",
- "pin-utils",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
 name = "wasmtimer"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6644,7 +6555,7 @@ checksum = "1c598d6b99ea013e35844697fc4670d08339d5cda15588f193c6beedd12f644b"
 dependencies = [
  "futures",
  "js-sys",
- "parking_lot 0.12.5",
+ "parking_lot",
  "pin-utils",
  "slab",
  "wasm-bindgen",
