@@ -1,6 +1,7 @@
 import { buildSchema } from 'graphql';
 import { useQuery } from 'urql';
 import { ProposalOverview_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
+import { AnnotatedProvider } from '@/components/target/proposals/schema-diff/components';
 import { SchemaDiff } from '@/components/target/proposals/schema-diff/schema-diff';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -120,7 +121,11 @@ function SupergraphDiff(props: {
       }
     }
     const after = patchSchema(before, changes, { onError: errors.looseErrorHandler });
-    return <SchemaDiff before={before} after={after} annotations={() => null} />;
+    return (
+      <AnnotatedProvider>
+        <SchemaDiff before={before} after={after} annotations={() => null} />
+      </AnnotatedProvider>
+    );
   } catch (e: unknown) {
     return (
       <>

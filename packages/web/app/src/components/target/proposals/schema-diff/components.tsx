@@ -6,6 +6,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -55,20 +56,31 @@ const TAB = <>&nbsp;&nbsp;</>;
 
 export const AnnotatedContext = createContext({
   annotatedCoordinates: null,
-} as Readonly<{
+  newDocumentRowNumber: 1,
+  oldDocumentRowNumber: 1,
+} as {
   /**
    * As annotations are rendered, this tracks coordinates used. This is used internally to
    * show annotations that are not resolved but that are not tied to a coordinate that exists anymore.
    *
    * Note that adding a value to this Set does not trigger a rerender.
-   * Special care must be taken to ensure the render order is correct
+   * Special care must be taken to ensure the render order is correct.
+   *
+   * This could be adjusted by setting the state in a useEffect callback...
    */
   annotatedCoordinates: Set<string> | null;
-}>);
+
+  newDocumentRowNumber: number;
+  oldDocumentRowNumber: number;
+});
 
 export function AnnotatedProvider(props: { children: ReactNode }) {
   // eslint-disable-next-line react/hook-use-state
-  const [context, _] = useState({ annotatedCoordinates: new Set<string>() });
+  const [context, _] = useState({
+    annotatedCoordinates: new Set<string>(),
+    oldDocumentRowNumber: 1,
+    newDocumentRowNumber: 1,
+  });
   return <AnnotatedContext.Provider value={context}>{props.children}</AnnotatedContext.Provider>;
 }
 
@@ -117,43 +129,56 @@ export function ChangeRow(props: {
   annotations?: (coordinate: string) => ReactElement | null;
 }) {
   const ctx = useContext(AnnotatedContext);
-  const incrementCounter =
-    props.type === 'mutual' || props.type === undefined
-      ? 'olddoc newdoc'
-      : props.type === 'removal'
-        ? 'olddoc'
-        : 'newdoc';
+
+  // if the children include any additions or subtractions
+  const [added, setAdded] = useState(false);
+  const [removed, setRemoved] = useState(false);
+
+  // const noChangeRow = (props.type === 'mutual' || props.type === undefined) && !removed && !added;
+
+  // run once on first render...
+
+  const newDocumentRowNumber = useRef(ctx.newDocumentRowNumber);
+  const oldDocumentRowNumber = useRef(ctx.oldDocumentRowNumber);
+  if (props.type === 'addition') {
+    ctx.newDocumentRowNumber += 1;
+  } else if (props.type === 'removal') {
+    ctx.oldDocumentRowNumber += 1;
+  } else {
+    ctx.oldDocumentRowNumber += 1;
+    ctx.newDocumentRowNumber += 1;
+  }
   const annotation = !!props.coordinate && props.annotations?.(props.coordinate);
 
   if (annotation) {
     ctx.annotatedCoordinates?.add(props.coordinate!);
   }
 
-  // if the children include any additions or subtractions
-  const [added, setAdded] = useState(false);
-  const [removed, setRemoved] = useState(false);
-
   return (
     <ChangeRowContext.Provider
       value={{ change: { addition: added, removal: removed }, setAdded, setRemoved }}
     >
-      <tr style={{ counterIncrement: incrementCounter }}>
+      <tr>
         <td
           className={cn(
-            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
             props.className,
             (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
           )}
-        />
+        >
+          {oldDocumentRowNumber.current}
+        </td>
         <td
           className={cn(
-            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-green-900/30',
           )}
-        />
+        >
+          {newDocumentRowNumber.current}
+        </td>
         <td
           className={cn(
             'bg-gray-900 px-2',
