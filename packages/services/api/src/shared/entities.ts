@@ -350,7 +350,6 @@ export interface User {
   provider: AuthProviderType;
   superTokensUserId: string | null;
   isAdmin: boolean;
-  oidcIntegrationId: string | null;
   zendeskId: string | null;
 }
 
