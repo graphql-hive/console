@@ -1,6 +1,6 @@
 import { createServer, Server } from 'http';
 import { createLogger, createSchema, createYoga } from 'graphql-yoga';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { useHive } from '../src';
 
 const logger = createLogger('silent');
@@ -735,4 +735,138 @@ test('usage reporting with batch execution and persisted documents', async () =>
       },
     }
   `);
+});
+
+test('L2 cache with waitUntil from yoga context', () => {
+  expect.assertions(5);
+  const setDeferred = Promise.withResolvers<void>();
+  const l2Cache = {
+    get: vi.fn().mockResolvedValue(null), // cache miss
+    set: vi.fn().mockImplementation(() => {
+      return setDeferred.promise;
+    }),
+  };
+
+  let resolved = false;
+  const dispose$ = Promise.resolve()
+    .then(async () => {
+      await using yoga = createYoga({
+        schema: createSchema({
+          typeDefs: /* GraphQL */ `
+            type Query {
+              hi: String
+            }
+          `,
+        }),
+        plugins: [
+          useHive({
+            enabled: false,
+            experimental__persistedDocuments: {
+              cdn: {
+                endpoint: 'http://artifacts-cdn.localhost',
+                accessToken: 'foo',
+              },
+              layer2Cache: {
+                cache: l2Cache,
+                ttlSeconds: 3600,
+              },
+              async fetch() {
+                return new Response('query { hi }');
+              },
+            },
+            agent: {
+              logger,
+            },
+          }),
+        ],
+      });
+
+      const response = await yoga.fetch('http://localhost/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: 'client-name~client-version~hash',
+        }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ data: { hi: null } });
+
+      // L2 cache should have been checked
+      expect(l2Cache.get).toHaveBeenCalledWith('client-name~client-version~hash');
+
+      // L2 cache set should have been called
+      expect(l2Cache.set).toHaveBeenCalledWith('client-name~client-version~hash', 'query { hi }', {
+        ttl: 3600,
+      });
+    })
+    .then(() => {
+      resolved = true;
+    });
+
+  expect(resolved).toBe(false); // Should still be pending
+
+  setDeferred.resolve();
+  return dispose$;
+});
+
+test('L2 cache hit skips CDN fetch', async () => {
+  const cdnFetch = vi.fn();
+  const l2Cache = {
+    get: vi.fn().mockResolvedValue('query { hi }'), // cache hit
+    set: vi.fn(),
+  };
+
+  const yoga = createYoga({
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          hi: String
+        }
+      `,
+    }),
+    plugins: [
+      useHive({
+        enabled: false,
+        experimental__persistedDocuments: {
+          cdn: {
+            endpoint: 'http://artifacts-cdn.localhost',
+            accessToken: 'foo',
+          },
+          layer2Cache: {
+            cache: l2Cache,
+          },
+          async fetch(...args) {
+            cdnFetch(...args);
+            return new Response('query { hi }');
+          },
+        },
+        agent: {
+          logger,
+        },
+      }),
+    ],
+  });
+
+  const response = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      documentId: 'client-name~client-version~hash',
+    }),
+  });
+
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ data: { hi: null } });
+
+  // L2 cache was checked
+  expect(l2Cache.get).toHaveBeenCalledWith('client-name~client-version~hash');
+  // CDN was NOT called because L2 cache hit
+  expect(cdnFetch).not.toHaveBeenCalled();
+  // L2 set was NOT called because data came from L2
+  expect(l2Cache.set).not.toHaveBeenCalled();
 });

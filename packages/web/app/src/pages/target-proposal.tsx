@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { buildSchema } from 'graphql';
+import { buildSchema, GraphQLSchema } from 'graphql';
 import { useMutation, useQuery, UseQueryExecute } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
@@ -224,6 +224,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
   // Takes all the data provided by the queries to apply the patch to the schema and
   // categorize changes.
   const services = useMemo(() => {
+    if (changesQuery.fetching || query.fetching) {
+      return [];
+    }
     return (
       changesQuery.data?.schemaProposal?.checks?.edges?.map(
         ({ node: proposalVersion }): ServiceProposalDetails => {
@@ -241,6 +244,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               latestSchema.__typename === 'SingleSchema' /* &&
                 (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
+
           const beforeSchema = existingSchema?.length
             ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
             : null;
@@ -266,21 +270,34 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               }) ?? [];
           const conflictingChanges: Array<{ change: Change; error: Error }> = [];
           const ignoredChanges: Array<{ change: Change; error: Error }> = [];
-          const afterSchema = beforeSchema
-            ? patchSchema(beforeSchema, allChanges, {
-                onError(error, change) {
-                  if (error instanceof NoopError) {
-                    ignoredChanges.push({ change, error });
-                  }
-                  conflictingChanges.push({ change, error });
-                  return errors.looseErrorHandler(error, change);
-                },
-              })
-            : buildSchema(proposalVersion.schemaSDL, { assumeValid: true, assumeValidSDL: true });
+          let buildError: Error | null = null;
+          let afterSchema: GraphQLSchema | null = null;
+          if (beforeSchema) {
+            afterSchema = patchSchema(beforeSchema, allChanges, {
+              onError(error, change) {
+                if (error instanceof NoopError) {
+                  ignoredChanges.push({ change, error });
+                }
+                conflictingChanges.push({ change, error });
+                return errors.looseErrorHandler(error, change);
+              },
+            });
+          } else {
+            try {
+              afterSchema = buildSchema(proposalVersion.schemaSDL, {
+                assumeValid: true,
+                assumeValidSDL: true,
+              });
+            } catch (e: unknown) {
+              console.error(e);
+              buildError = e as Error;
+            }
+          }
 
           return {
             beforeSchema,
             afterSchema,
+            buildError,
             allChanges,
             rawChanges: proposalVersion.schemaChanges?.edges.map(({ node }) => node) ?? [],
             conflictingChanges,
@@ -295,6 +312,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     // @todo handle pagination
     changesQuery.data?.schemaProposal?.checks?.edges,
     query.data?.latestValidVersion?.schemas.edges,
+    changesQuery.fetching,
+    query.fetching,
   ]);
   const proposal = query.data?.schemaProposal;
 

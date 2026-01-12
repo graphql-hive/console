@@ -1,5 +1,51 @@
 # 16.10.2024
 
+## 3.0.0
+
+### Major Changes
+
+- [#7379](https://github.com/graphql-hive/console/pull/7379)
+  [`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37)
+  Thanks [@ardatan](https://github.com/ardatan)! - - Multiple endpoints support for `HiveRegistry`
+  and `PersistedOperationsPlugin`
+
+  Breaking Changes:
+
+  - Now there is no `endpoint` field in the configuration, it has been replaced with `endpoints`,
+    which is an array of strings. You are not affected if you use environment variables to set the
+    endpoint.
+
+  ```diff
+  HiveRegistry::new(
+      Some(
+          HiveRegistryConfig {
+  -            endpoint: String::from("CDN_ENDPOINT"),
+  +            endpoints: vec![String::from("CDN_ENDPOINT1"), String::from("CDN_ENDPOINT2")],
+      )
+  )
+  ```
+
+### Patch Changes
+
+- [#7479](https://github.com/graphql-hive/console/pull/7479)
+  [`382b481`](https://github.com/graphql-hive/console/commit/382b481e980e588e3e6cf7831558b2d0811253f5)
+  Thanks [@ardatan](https://github.com/ardatan)! - Update dependencies
+
+- Updated dependencies
+  [[`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37),
+  [`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37)]:
+  - hive-console-sdk-rs@0.3.0
+
+## 2.3.6
+
+### Patch Changes
+
+- Updated dependencies
+  [[`0ac2e06`](https://github.com/graphql-hive/console/commit/0ac2e06fd6eb94c9d9817f78faf6337118f945eb),
+  [`4b796f9`](https://github.com/graphql-hive/console/commit/4b796f95bbc0fc37aac2c3a108a6165858b42b49),
+  [`a9905ec`](https://github.com/graphql-hive/console/commit/a9905ec7198cf1bec977a281c5021e0ef93c2c34)]:
+  - hive-console-sdk-rs@0.2.3
+
 ## 2.3.5
 
 ### Patch Changes

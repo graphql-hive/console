@@ -1,5 +1,32 @@
 # @graphql-hive/cli
 
+## 0.57.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`60133a4`](https://github.com/graphql-hive/console/commit/60133a41a684a0c1b1a45d47cf3cd30cc804c19d)]:
+  - @graphql-hive/core@0.20.0
+
+## 0.57.0
+
+### Minor Changes
+
+- [#6836](https://github.com/graphql-hive/console/pull/6836)
+  [`128ce1b`](https://github.com/graphql-hive/console/commit/128ce1bdf26c07f7bfe7a598951562df6471bb73)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf),
+  [`4f9f988`](https://github.com/graphql-hive/console/commit/4f9f988d62c54f6e7a6820eba1fa9913146dcf9e)]:
+  - @graphql-hive/core@0.19.0
+
 ## 0.56.0
 
 ### Minor Changes

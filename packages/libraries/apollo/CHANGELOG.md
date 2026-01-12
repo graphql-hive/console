@@ -1,5 +1,85 @@
 # @graphql-hive/apollo
 
+## 0.47.0
+
+### Minor Changes
+
+- [#7462](https://github.com/graphql-hive/console/pull/7462)
+  [`60133a4`](https://github.com/graphql-hive/console/commit/60133a41a684a0c1b1a45d47cf3cd30cc804c19d)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add Layer 2 (L2) cache support for
+  persisted documents.
+
+  This feature adds a second layer of caching between the in-memory cache (L1) and the CDN for
+  persisted documents. This is particularly useful for:
+
+  - **Serverless environments**: Where in-memory cache is lost between invocations
+  - **Multi-instance deployments**: To share cached documents across server instances
+  - **Reducing CDN calls**: By caching documents in Redis or similar external caches
+
+  The lookup flow is: L1 (memory) -> L2 (Redis/external) -> CDN
+
+  **Example with GraphQL Yoga:**
+
+  ```typescript
+  import { createYoga } from 'graphql-yoga'
+  import { createClient } from 'redis'
+  import { useHive } from '@graphql-hive/yoga'
+
+  const redis = createClient({ url: 'redis://localhost:6379' })
+  await redis.connect()
+
+  const yoga = createYoga({
+    plugins: [
+      useHive({
+        experimental__persistedDocuments: {
+          cdn: {
+            endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+            accessToken: '<cdn_access_token>'
+          },
+          layer2Cache: {
+            cache: {
+              get: key => redis.get(`hive:pd:${key}`),
+              set: (key, value, opts) =>
+                redis.set(`hive:pd:${key}`, value, opts?.ttl ? { EX: opts.ttl } : {})
+            },
+            ttlSeconds: 3600, // 1 hour for found documents
+            notFoundTtlSeconds: 60 // 1 minute for not-found (negative caching)
+          }
+        }
+      })
+    ]
+  })
+  ```
+
+  **Features:**
+
+  - Configurable TTL for found documents (`ttlSeconds`)
+  - Configurable TTL for negative caching (`notFoundTtlSeconds`)
+  - Graceful fallback to CDN if L2 cache fails
+  - Support for `waitUntil` in serverless environments
+  - Apollo Server integration auto-uses context cache if available
+
+### Patch Changes
+
+- Updated dependencies
+  [[`60133a4`](https://github.com/graphql-hive/console/commit/60133a41a684a0c1b1a45d47cf3cd30cc804c19d)]:
+  - @graphql-hive/core@0.20.0
+
+## 0.46.0
+
+### Minor Changes
+
+- [#7422](https://github.com/graphql-hive/console/pull/7422)
+  [`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf)
+  Thanks [@santino](https://github.com/santino)! - Introduce validation for Persisted Document ID
+
+### Patch Changes
+
+- Updated dependencies
+  [[`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf),
+  [`4f9f988`](https://github.com/graphql-hive/console/commit/4f9f988d62c54f6e7a6820eba1fa9913146dcf9e)]:
+  - @graphql-hive/core@0.19.0
+
 ## 0.45.0
 
 ### Minor Changes

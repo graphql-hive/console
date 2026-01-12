@@ -1,5 +1,5 @@
 import { GraphQLError, type DocumentNode } from 'graphql';
-import type { ApolloServerPlugin, HTTPGraphQLRequest } from '@apollo/server';
+import type { ApolloServerPlugin, GraphQLServerContext, HTTPGraphQLRequest } from '@apollo/server';
 import {
   autoDisposeSymbol,
   createCDNArtifactFetcher,
@@ -8,6 +8,7 @@ import {
   HivePluginOptions,
   isHiveClient,
   joinUrl,
+  PersistedDocumentsCache,
   type CircuitBreakerConfiguration,
 } from '@graphql-hive/core';
 import { Logger } from '@graphql-hive/logger';
@@ -126,21 +127,89 @@ function addRequestWithHeaders(context: any, http?: HTTPGraphQLRequest) {
   return context;
 }
 
-export function createHive(clientOrOptions: HivePluginOptions) {
+function getLoggerFromContext(ctx?: GraphQLServerContext): Logger | undefined {
+  if (ctx?.logger) {
+    return new Logger({
+      level: 'debug',
+      writers: [
+        {
+          write(level, attrs, msg) {
+            const payload = attrs ? { msg, ...attrs } : msg;
+            switch (level) {
+              case 'trace':
+              case 'debug':
+                ctx.logger.debug(payload);
+                break;
+              case 'info':
+                ctx.logger.info(payload);
+                break;
+              case 'warn':
+                ctx.logger.warn(payload);
+                break;
+              case 'error':
+                ctx.logger.error(payload);
+                break;
+            }
+          },
+        },
+      ],
+    });
+  }
+  return undefined;
+}
+
+function getPersistedDocumentsCacheFromContext(
+  ctx?: GraphQLServerContext,
+): PersistedDocumentsCache | undefined {
+  if (ctx?.cache) {
+    return {
+      async get(key) {
+        const value = await ctx.cache.get(key);
+        return value != null ? value : null;
+      },
+      set(key, value, options) {
+        return ctx.cache.set(key, value, options);
+      },
+    };
+  }
+  return undefined;
+}
+
+export function createHive(clientOrOptions: HivePluginOptions, ctx?: GraphQLServerContext) {
+  const persistedDocumentsCache = getPersistedDocumentsCacheFromContext(ctx);
+  // Only use context logger if user didn't provide their own
+  const contextLogger =
+    !clientOrOptions.logger && !clientOrOptions.agent?.logger
+      ? getLoggerFromContext(ctx)
+      : undefined;
   return createHiveClient({
+    logger: contextLogger,
     ...clientOrOptions,
     agent: {
-      name: 'hive-client-yoga',
+      name: 'hive-client-apollo',
       version,
       ...clientOrOptions.agent,
     },
+    experimental__persistedDocuments: clientOrOptions.experimental__persistedDocuments
+      ? {
+          ...clientOrOptions.experimental__persistedDocuments,
+          layer2Cache: (() => {
+            const userL2Config = clientOrOptions.experimental__persistedDocuments?.layer2Cache;
+            if (persistedDocumentsCache) {
+              return {
+                cache: persistedDocumentsCache,
+                ...(userL2Config || {}),
+              };
+            }
+            return userL2Config;
+          })(),
+        }
+      : undefined,
   });
 }
 
 export function useHive(clientOrOptions: HiveClient | HivePluginOptions): ApolloServerPlugin {
-  const hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions);
-
-  void hive.info();
+  let hive: HiveClient;
 
   return {
     requestDidStart(context) {
@@ -246,8 +315,13 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
           ) {
             persistedDocumentHash = context.request.http.body.documentId;
             try {
+              // Pass waitUntil from context if available for serverless environments
+              const contextValue = isLegacyV3
+                ? (context as any).context
+                : (context as any).contextValue;
               const document = await hive.experimental__persistedDocuments.resolve(
                 context.request.http.body.documentId,
+                { waitUntil: contextValue?.waitUntil },
               );
 
               if (document) {
@@ -382,6 +456,10 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
       })();
     },
     serverWillStart(ctx) {
+      hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions, ctx);
+
+      void hive.info();
+
       // `engine` does not exist in v3
       const isLegacyV0 = 'engine' in ctx;
 
@@ -390,7 +468,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
       if (isLegacyV0) {
         return {
           async serverWillStop() {
-            if (hive[autoDisposeSymbol]) {
+            if (hive?.[autoDisposeSymbol]) {
               await hive.dispose();
             }
           },
@@ -401,7 +479,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
       return Promise.resolve({
         async serverWillStop() {
-          if (hive[autoDisposeSymbol]) {
+          if (hive?.[autoDisposeSymbol]) {
             await hive.dispose();
           }
         },

@@ -14,7 +14,7 @@
     "@hive/storage": "workspace:*",
     "@sentry/node": "7.120.2",
     "@types/mjml": "4.7.1",
-    "@types/nodemailer": "7.0.3",
+    "@types/nodemailer": "7.0.4",
     "bentocache": "1.1.0",
     "dotenv": "16.4.7",
     "graphile-worker": "0.16.6",
