@@ -4,7 +4,7 @@ repository = "https://github.com/graphql-hive/console/"
 edition = "2021"
 license = "MIT"
 publish = true
-version = "0.2.3"
+version = "0.3.0"
 description = "Rust SDK for Hive Console"
 
 [lib]
