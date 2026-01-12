@@ -1,9 +1,4 @@
-import {
-  type DocumentNode,
-  isTypeDefinitionNode,
-  isTypeExtensionNode,
-  Kind,
-} from 'graphql';
+import { isTypeDefinitionNode, isTypeExtensionNode, Kind, type DocumentNode } from 'graphql';
 
 /**
  * Apollo Link spec v1.0 reserved type identifiers.
@@ -43,9 +38,7 @@ export interface LinkSpecConflict {
  * @param documentNode - The parsed GraphQL document to validate
  * @returns Array of conflicts found, empty if no conflicts
  */
-export function validateLinkSpecReservedTypes(
-  documentNode: DocumentNode,
-): LinkSpecConflict[] {
+export function validateLinkSpecReservedTypes(documentNode: DocumentNode): LinkSpecConflict[] {
   const conflicts: LinkSpecConflict[] = [];
 
   for (const definition of documentNode.definitions) {

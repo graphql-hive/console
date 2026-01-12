@@ -1,10 +1,10 @@
 import { parse } from 'graphql';
-import {
-  validateLinkSpecReservedTypes,
-  LINK_SPEC_RESERVED_TYPES,
-  LINK_SPEC_RESERVED_DIRECTIVES,
-} from '../src/lib/link-spec-reserved-types';
 import { createComposeFederation } from '../src/composition/federation';
+import {
+  LINK_SPEC_RESERVED_DIRECTIVES,
+  LINK_SPEC_RESERVED_TYPES,
+  validateLinkSpecReservedTypes,
+} from '../src/lib/link-spec-reserved-types';
 
 describe('Link Spec Reserved Types Validation', () => {
   describe('validateLinkSpecReservedTypes', () => {
@@ -303,8 +303,7 @@ describe('Link Spec Reserved Types Validation', () => {
           {
             source: 'products',
             raw: /* GraphQL */ `
-              extend schema
-                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+              extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
 
               enum Purpose {
                 FOO
@@ -343,8 +342,7 @@ describe('Link Spec Reserved Types Validation', () => {
           {
             source: 'products',
             raw: /* GraphQL */ `
-              extend schema
-                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+              extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
 
               enum Purpose {
                 FOO
@@ -362,8 +360,7 @@ describe('Link Spec Reserved Types Validation', () => {
           {
             source: 'reviews',
             raw: /* GraphQL */ `
-              extend schema
-                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+              extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
 
               scalar Import
 
@@ -398,8 +395,7 @@ describe('Link Spec Reserved Types Validation', () => {
           {
             source: 'products',
             raw: /* GraphQL */ `
-              extend schema
-                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+              extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
 
               type Product @key(fields: "id") {
                 id: ID!
@@ -452,8 +448,8 @@ describe('Link Spec Reserved Types Validation', () => {
       // Federation v1 schemas can use these names, validation is skipped
       // The composition may fail for other reasons (Fed v1 validation), but not for reserved types
       if (result.type === 'failure') {
-        const hasReservedTypeError = result.result.errors.some(
-          e => e.message.includes('conflicts with Apollo Link spec'),
+        const hasReservedTypeError = result.result.errors.some(e =>
+          e.message.includes('conflicts with Apollo Link spec'),
         );
         expect(hasReservedTypeError).toBe(false);
       }

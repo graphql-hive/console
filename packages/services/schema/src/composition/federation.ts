@@ -24,10 +24,7 @@ import {
   createTagDirectiveNameExtractionStrategy,
   extractTagsFromDocument,
 } from '../lib/federation-tag-extraction';
-import {
-  validateLinkSpecReservedTypes,
-  type LinkSpecConflict,
-} from '../lib/link-spec-reserved-types';
+import { validateLinkSpecReservedTypes } from '../lib/link-spec-reserved-types';
 import { extractMetadata, mergeMetadata } from '../lib/metadata-extraction';
 import { SetMap } from '../lib/setmap';
 import { trimDescriptions } from '../lib/trim-descriptions';
