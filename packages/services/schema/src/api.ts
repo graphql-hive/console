@@ -169,7 +169,7 @@ export const schemaBuilderApiRouter = t.router({
             errors: [
               {
                 message:
-                  'Composition exceeded resouce limits. Please contact the Hive Console Team.',
+                  'Composition exceeded resource limits. Please contact the Hive Console Team.',
                 source: 'composition',
               },
             ],
