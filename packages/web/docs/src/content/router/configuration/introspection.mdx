@@ -1,11 +1,11 @@
 ---
-title: 'disable_introspection'
+title: 'introspection'
 ---
 
-# disable_introspection
+# introspection
 
-The `disable_introspection` configuration option allows you to disable GraphQL introspection queries
-for added security.
+The `introspection` configuration option allows you to enable or disable GraphQL introspection
+queries for added security.
 
 ## Why Disable Introspection?
 
@@ -17,21 +17,21 @@ surface of your GraphQL API and help protect against unauthorized access.
 
 ## Configuration Structure
 
-The `disable_introspection` key is a top-level property in your `router.config.yaml`. You can either
-set it to a static boolean value, or use an expression for dynamic evaluation.
+The `introspection` key is a top-level property in your `router.config.yaml`. You can either set it
+to a static boolean value, or use an expression for dynamic evaluation.
 
 ## Value Options
 
 ### Static Boolean
 
 - **Type:** `boolean`
-- **Default:** `false`
+- **Default:** `true`
 
-When set to `true`, all introspection queries will be blocked by the router. When set to `false`,
+When set to `false`, all introspection queries will be blocked by the router. When set to `true`,
 introspection queries will be allowed as normal.
 
 ```yaml
-disable_introspection: true
+introspection: true
 ```
 
 ### Dynamic with `expression`
@@ -50,8 +50,8 @@ Within the `expression`, you have access to the following context:
 - `.request`: The incoming HTTP request object, including its headers.
 
 ```yaml
-disable_introspection:
-  expression: '.request.headers."x-enable-introspection" != "true"'
+introspection:
+  expression: '.request.headers."x-enable-introspection" == "true"'
 ```
 
 This configuration will disable introspection for all requests that do not include the header
@@ -60,6 +60,9 @@ This configuration will disable introspection for all requests that do not inclu
 Or you can dynamically change it using an environment variable:
 
 ```yaml
-disable_introspection:
-  expression: 'env("DISABLE_INTROSPECTION") == "true"'
+introspection:
+  expression: 'env("DISABLE_INTROSPECTION") != "true"'
 ```
+
+In this example, introspection will be disabled if the environment variable `DISABLE_INTROSPECTION`
+is set to `true`.
