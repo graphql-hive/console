@@ -1035,7 +1035,7 @@ test.concurrent(
       stdout--------------------------------------------:
       ✖ Detected 1 error
 
-         - Composition exceeded resouce limits. Please contact the Hive Console Team.
+         - Composition exceeded resource limits. Please contact the Hive Console Team.
 
       View full report:
       http://__URL__
