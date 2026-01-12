@@ -31,6 +31,10 @@ services:
 +      SENTRY_DSN: '${SENTRY_DSN:-}'
 +      PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
 +      LOG_JSON: '1'
+-  emails:
+-    ...
+-  webhooks:
+-    ...
 ```
 
 For different setups, we recommend using this as a reference.
