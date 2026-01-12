@@ -1,4 +1,3 @@
-version: '3.8'
 name: 'hive-dev'
 services:
   db:
@@ -16,13 +15,14 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: registry
       PGDATA: /var/lib/postgresql/data
+      HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
     volumes:
       - ./.hive-dev/postgresql/db:/var/lib/postgresql/data
     ports:
       - '5432:5432'
 
   redis:
-    image: bitnami/redis:7.4.2
+    image: bitnamilegacy/redis:7.4.2
     mem_limit: 50m
     networks:
       - 'stack'
@@ -41,7 +41,7 @@ services:
       - './.hive-dev/redis/db:/bitnami/redis/data'
 
   s3:
-    image: quay.io/minio/minio:RELEASE.2022-11-29T23-40-49Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     mem_limit: 200m
     command: server /data --console-address ":9001"
     ports:
@@ -74,7 +74,7 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:24.8-alpine
-    mem_limit: 2048m
+    mem_limit: 4096m
     environment:
       CLICKHOUSE_USER: test
       CLICKHOUSE_PASSWORD: test
@@ -144,7 +144,7 @@ services:
 
   oidc-server-mock:
     image: ghcr.io/soluto/oidc-server-mock:0.8.6
-    mem_limit: 150m
+    mem_limit: 200m
     ports:
       - '7043:80'
     environment:
@@ -173,6 +173,33 @@ services:
     volumes:
       - ./configs/oidc-server-mock/clients-config.json:/tmp/config/clients-config.json:ro
       - ./configs/oidc-server-mock/users-config.json:/tmp/config/users-config.json:ro
+    networks:
+      - 'stack'
+
+  otel-collector:
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    build:
+      context: ./configs/otel-collector
+      dockerfile: ./../../otel-collector.dockerfile
+    mem_limit: 1000m
+    environment:
+      HIVE_OTEL_AUTH_ENDPOINT: 'http://host.docker.internal:3001/otel-auth'
+      CLICKHOUSE_PROTOCOL: 'http'
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USERNAME: test
+      CLICKHOUSE_PASSWORD: test
+    volumes:
+      - ./configs/otel-collector/builder-config.yaml:/builder-config.yaml
+      - ./configs/otel-collector/config.yaml:/etc/otel-config.yaml
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+      - '10254:10254'
+      - '1777:1777'
+      - '55679:55679'
     networks:
       - 'stack'
 

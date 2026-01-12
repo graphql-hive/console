@@ -1,11 +1,13 @@
 /* eslint-disable no-process-env */
 import { createHash } from 'node:crypto';
-import { ProjectType } from 'testkit/gql/graphql';
+import stripAnsi from 'strip-ansi';
+import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import type { CompositeSchema } from '@hive/api/__generated__/types';
 import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
+import { createPolicy } from '../api/policy/policy-check.spec';
 
 expect.addSnapshotSerializer(cliOutputSnapshotSerializer);
 
@@ -503,7 +505,7 @@ describe.each([ProjectType.Stitching, ProjectType.Federation, ProjectType.Single
         const numSchemas = schema.latestVersion?.schemas.nodes.length;
         const fetchCmd = cli.fetch({
           type: 'subgraphs',
-          actionId: 'abc123',
+          commit: 'abc123',
         });
         const rHeader = `service\\s+url\\s+date`;
         const rUrl = `http:\\/\\/\\S+(:\\d+)?|n/a`;
@@ -903,3 +905,103 @@ test('schema:publish with `--target` flag succeeds for organization access token
     ℹ Available at http://__URL__
   `);
 });
+
+test.concurrent(
+  'schema:check --forceSafe auto-approves breaking changes using target access token',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+
+    const writeToken = await createTargetAccessToken({
+      mode: 'readWrite',
+    });
+
+    await schemaPublish([
+      '--registry.accessToken',
+      writeToken.secret,
+      '--commit',
+      'abc123',
+      'fixtures/init-schema.graphql',
+    ]);
+
+    await expect(
+      schemaCheck([
+        '--registry.accessToken',
+        writeToken.secret,
+        '--commit',
+        'def456',
+        '--forceSafe',
+        '--target',
+        `${organization.slug}/${project.slug}/${target.slug}`,
+        'fixtures/breaking-schema.graphql',
+      ]),
+    ).resolves.toContain('Breaking changes were expected (forced)');
+  },
+);
+
+test.concurrent(
+  'schema:check --forceSafe fails when schema policy errors prevent approval',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, setProjectSchemaPolicy, project, target } =
+      await createProject(ProjectType.Single);
+    await setProjectSchemaPolicy(createPolicy(RuleInstanceSeverityLevel.Error));
+
+    const writeToken = await createTargetAccessToken({
+      mode: 'readWrite',
+    });
+
+    await schemaPublish([
+      '--registry.accessToken',
+      writeToken.secret,
+      '--commit',
+      'abc123',
+      'fixtures/init-schema.graphql',
+    ]);
+
+    await expect(
+      schemaCheck([
+        '--registry.accessToken',
+        writeToken.secret,
+        '--commit',
+        'def456',
+        '--forceSafe',
+        '--target',
+        `${organization.slug}/${project.slug}/${target.slug}`,
+        'fixtures/breaking-schema.graphql',
+      ]),
+    ).rejects.toThrow('Failed to auto-approve: Schema check has schema policy errors');
+  },
+);
+
+test.concurrent(
+  'schema:check displays enum deprecation reason with single quotes correctly',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Test',
+      '--commit',
+      'init',
+      'fixtures/enum-with-deprecation-init.graphql',
+    ]);
+
+    const result = await schemaCheck([
+      '--registry.accessToken',
+      secret,
+      'fixtures/enum-with-deprecation-change.graphql',
+    ]);
+
+    expect(stripAnsi(result)).toContain(
+      "Enum value Status.INACTIVE was deprecated with reason Use 'DISABLED' instead, it's clearer",
+    );
+  },
+);

@@ -27,6 +27,7 @@ import {
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
+import { SchemaProposalStorage } from '../../proposals/providers/schema-proposal-storage';
 import { DistributedCache } from '../../shared/providers/distributed-cache';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -87,7 +88,9 @@ const schemaDeleteCount = new promClient.Counter({
   labelNames: ['model', 'projectType'],
 });
 
-export type CheckInput = Types.SchemaCheckInput;
+export type CheckInput = Types.SchemaCheckInput & {
+  schemaProposalId?: string | null;
+};
 
 export type DeleteInput = Types.SchemaDeleteInput;
 
@@ -142,6 +145,7 @@ export class SchemaPublisher {
     private schemaManager: SchemaManager,
     private targetManager: TargetManager,
     private alertsManager: AlertsManager,
+    private schemaProposals: SchemaProposalStorage,
     private gitHubIntegrationManager: GitHubIntegrationManager,
     private distributedCache: DistributedCache,
     private artifactStorageWriter: ArtifactStorageWriter,
@@ -230,7 +234,13 @@ export class SchemaPublisher {
         failDiffOnDangerousChange: settings.failDiffOnDangerousChange,
       };
     } catch (error: unknown) {
-      this.logger.error(`Failed to get settings`, error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(`Failed to get settings (error=%s)`, errorText);
       throw error;
     }
   }
@@ -313,7 +323,7 @@ export class SchemaPublisher {
       },
     });
 
-    const [target, project, organization, latestVersion, latestComposableVersion] =
+    const [target, project, organization, latestVersion, latestComposableVersion, schemaProposal] =
       await Promise.all([
         this.storage.getTarget({
           organizationId: selector.organizationId,
@@ -338,7 +348,27 @@ export class SchemaPublisher {
           targetId: selector.targetId,
           onlyComposable: true,
         }),
+        input.schemaProposalId
+          ? this.schemaProposals.getProposal({
+              id: input.schemaProposalId,
+            })
+          : null,
       ]);
+
+    if (input.schemaProposalId && schemaProposal?.targetId !== selector.targetId) {
+      return {
+        __typename: 'SchemaCheckError',
+        valid: false,
+        changes: [],
+        warnings: [],
+        errors: [
+          {
+            message:
+              'Invalid schema proposal reference. No proposal found with that ID for the target.',
+          },
+        ],
+      } as const;
+    }
 
     if (input.service) {
       let serviceExists = false;
@@ -592,6 +622,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          filterNestedChanges: !input.schemaProposalId,
         });
         break;
       case ProjectType.FEDERATION:
@@ -637,6 +668,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          filterNestedChanges: !input.schemaProposalId,
         });
         break;
       default:
@@ -653,6 +685,7 @@ export class SchemaPublisher {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
         schemaVersionId: latestVersion?.versionId ?? null,
@@ -700,12 +733,14 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId ?? null,
       });
       this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
         schemaVersionId: latestVersion?.versionId ?? null,
@@ -745,6 +780,7 @@ export class SchemaPublisher {
             breakingSchemaChanges: contract.schemaChanges?.breaking ?? null,
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
+        schemaProposalId: input.schemaProposalId ?? null,
       });
       this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
@@ -761,6 +797,7 @@ export class SchemaPublisher {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,
         serviceName: input.service ?? null,
+        serviceUrl: input.url ?? null,
         meta: input.meta ?? null,
         targetId: target.id,
         schemaVersionId: latestSchemaVersion.id ?? null,
@@ -822,6 +859,7 @@ export class SchemaPublisher {
               })),
             )
           : null,
+        schemaProposalId: input.schemaProposalId ?? null,
       });
       this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
@@ -1424,7 +1462,7 @@ export class SchemaPublisher {
                     schemaMetadata: null,
                     metadataAttributes: null,
                   }),
-              actionFn: async () => {
+              actionFn: async (versionId: string) => {
                 if (deleteResult.state.composable) {
                   const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
                   for (const contract of deleteResult.state.contracts ?? []) {
@@ -1445,6 +1483,7 @@ export class SchemaPublisher {
                     // pass all schemas except the one we are deleting
                     schemas: deleteResult.state.schemas,
                     contracts,
+                    versionId,
                   });
                 }
               },
@@ -1939,7 +1978,7 @@ export class SchemaPublisher {
       metadata: input.metadata ?? null,
       projectType: project.type,
       github,
-      actionFn: async () => {
+      actionFn: async (versionId: string) => {
         if (composable && fullSchemaSdl) {
           const contracts: Array<{ name: string; sdl: string; supergraph: string }> = [];
           for (const contract of publishState.contracts ?? []) {
@@ -1959,6 +1998,7 @@ export class SchemaPublisher {
             fullSchemaSdl,
             schemas,
             contracts,
+            versionId,
           });
         }
       },
@@ -2011,7 +2051,7 @@ export class SchemaPublisher {
           target,
           schema: {
             id: schemaVersion.id,
-            commit: schemaVersion.actionId,
+            commit: input.commit,
             valid: schemaVersion.isComposable,
           },
           changes,
@@ -2019,8 +2059,14 @@ export class SchemaPublisher {
           errors,
           initial,
         })
-        .catch(err => {
-          this.logger.error('Failed to trigger schema change notifications', err);
+        .catch(error => {
+          const errorText =
+            error instanceof Error
+              ? error.toString()
+              : typeof error === 'string'
+                ? error
+                : JSON.stringify(error);
+          this.logger.error('Failed to trigger schema change notifications (error=%s)', errorText);
         });
     }
 
@@ -2232,6 +2278,7 @@ export class SchemaPublisher {
     fullSchemaSdl,
     schemas,
     contracts,
+    versionId,
   }: {
     target: Target;
     project: Project;
@@ -2239,6 +2286,7 @@ export class SchemaPublisher {
     fullSchemaSdl: string;
     schemas: readonly Schema[];
     contracts: null | Array<{ name: string; supergraph: string; sdl: string }>;
+    versionId: string;
   }) {
     const publishMetadata = async () => {
       const metadata: Array<Record<string, any>> = [];
@@ -2256,6 +2304,7 @@ export class SchemaPublisher {
           artifact: project.type === ProjectType.SINGLE ? metadata[0] : metadata,
           artifactType: 'metadata',
           contractName: null,
+          versionId,
         });
       }
     };
@@ -2273,12 +2322,14 @@ export class SchemaPublisher {
             url: s.service_url,
           })),
           contractName: null,
+          versionId,
         }),
         this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'sdl',
           artifact: fullSchemaSdl,
           contractName: null,
+          versionId,
         }),
       ]);
     };
@@ -2289,6 +2340,7 @@ export class SchemaPublisher {
         artifactType: 'sdl',
         artifact: fullSchemaSdl,
         contractName: null,
+        versionId,
       });
     };
 
@@ -2307,6 +2359,7 @@ export class SchemaPublisher {
             artifactType: 'supergraph',
             artifact: supergraph,
             contractName: null,
+            versionId,
           }),
         );
       }
@@ -2321,12 +2374,14 @@ export class SchemaPublisher {
               artifactType: 'sdl',
               artifact: contract.sdl,
               contractName: contract.name,
+              versionId,
             }),
             this.artifactStorageWriter.writeArtifact({
               targetId: target.id,
               artifactType: 'supergraph',
               artifact: contract.supergraph,
               contractName: contract.name,
+              versionId,
             }),
           );
         }

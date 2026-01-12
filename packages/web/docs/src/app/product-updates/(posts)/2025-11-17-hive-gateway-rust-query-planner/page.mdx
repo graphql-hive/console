@@ -1,0 +1,70 @@
+---
+title: Supercharge Your Hive Gateway with Rust-Powered Speed
+description:
+  Unleash blazing-fast GraphQL federation with up to 3x performance boost and full audit
+  compatibility.
+date: 2025-11-17
+authors: [enisdenjo]
+---
+
+import { Callout } from '#components/callout'
+
+We're thrilled to announce the integration of our
+[Rust Query Planner into Hive Gateway](/docs/gateway/other-features/rust-query-planner), bringing
+the lightning-fast performance of [Hive Router](/docs/router) directly to your Node.js, Bun, and
+Deno environments!
+
+This integration was made possible through our dedicated work on both Hive Gateway and Hive Router,
+ensuring everything works great together. We leveraged [napi.rs](https://napi.rs/) to create a
+cross-platform Node addon that supports Node.js, Bun, and Deno effortlessly.
+
+## Performance That'll Blow Your Mind
+
+Experience **up to 3x faster query planning per core** and **2x reduced latency** - beating Apollo
+Router by almost 2x - all while maintaining 100% compatibility with the Federation-Compatibility
+Audit. This means your federated GraphQL architecture stays standards-compliant and interoperable,
+but now with Rust's unmatched speed under the hood.
+
+The following results benchmark a scenario runing 4 subgraphs and a GraphQL gateway with Federation
+spec, and runs a heavy query. It's being executed with a constant amount of VUs over a fixed amount
+of time.
+
+| Gateway                      | RPS ⬇️ |       Requests        |        Duration        |
+| :--------------------------- | :----: | :-------------------: | :--------------------: |
+| Hive Router                  |  1633  | 98510 total, 0 failed |  avg: 30ms, p95: 52ms  |
+| Grafbase                     |  1568  | 94625 total, 0 failed |  avg: 31ms, p95: 55ms  |
+| Cosmo                        |  650   | 39305 total, 0 failed | avg: 76ms, p95: 112ms  |
+| 🚀 Hive Gateway (Rust QP)    |  619   | 37616 total, 0 failed | avg: 79ms, p95: 110ms  |
+| Apollo Router                |  313   | 19100 total, 0 failed | avg: 157ms, p95: 208ms |
+| Hive Gateway (JavaScript QP) |  291   | 17933 total, 0 failed | avg: 167ms, p95: 279ms |
+| Apollo Gateway               |  118   | 7240 total, 0 failed  | avg: 415ms, p95: 488ms |
+
+[See the full benchmark results.](https://github.com/graphql-hive/graphql-gateways-benchmark/blob/main/constant-vus-over-time_result.md)
+
+## Full JavaScript Ecosystem Support
+
+One of the key advantages of this integration is that it preserves the full power of the JavaScript
+ecosystem. All your existing plugins, integrations, and tools continue to work seamlessly - from
+Envelop and Yoga plugins to custom Gateway plugins. You get the best of both worlds: Rust's
+performance under the hood with JavaScript's flexibility on top.
+
+<Callout type="warning">
+
+While the Rust Query Planner delivers a lot, it currently doesn't support a handfull of Hive Gateway
+features. We're hard at work to achieve full compatibility soon! Check out the
+[feature comparison](/docs/gateway/other-features/rust-query-planner#compared-to-javascript-query-planner)
+for details.
+
+</Callout>
+
+## Easy Integration, Massive Gains
+
+Ready to get started? Head over to our
+[Rust Query Planner documentation](/docs/gateway/other-features/rust-query-planner) for step-by-step
+setup instructions and great speed!
+
+---
+
+- [Learn more about Rust Query Planner in Hive Gateway](/docs/gateway/other-features/rust-query-planner)
+- [See the Federation-Compatibility results](https://the-guild.dev/graphql/hive/federation-gateway-audit)
+- [See the benchmark results for constant VUs over time](https://github.com/graphql-hive/graphql-gateways-benchmark/blob/main/constant-vus-over-time_result.md)

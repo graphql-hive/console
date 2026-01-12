@@ -14,6 +14,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can see the organization. Permission can not be modified.',
         level: PermissionLevelType.Organization,
         title: 'View organization',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -23,6 +24,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access, create and reply to support tickets.',
         level: PermissionLevelType.Organization,
         title: 'Access support tickets',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -32,6 +34,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can modify the organization slug.',
         level: PermissionLevelType.Organization,
         title: 'Update organization slug',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -41,6 +44,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access and export the audit log.',
         level: PermissionLevelType.Organization,
         title: 'Export audit log',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -50,6 +54,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can delete the Organization.',
         level: PermissionLevelType.Organization,
         title: 'Delete organization',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -66,6 +71,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the organization member overview.',
         level: PermissionLevelType.Organization,
         title: 'View members',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -77,6 +83,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         title: 'Assign member role',
         warning:
           'Granting a role the ability to assign roles enables it to elevate its own permissions.',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -93,6 +100,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can view the billing information.',
         level: PermissionLevelType.Organization,
         title: 'View billing',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -102,6 +110,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can change the organization plan.',
         level: PermissionLevelType.Organization,
         title: 'Update billing',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -118,6 +127,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can connect, modify, and remove an OIDC provider to the connection.',
         level: PermissionLevelType.Organization,
         title: 'Manage OpenID Connect integration',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -135,6 +145,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
           'Member can connect, modify, and remove access for the GitHub integration and repository access.',
         level: PermissionLevelType.Organization,
         title: 'Manage GitHub integration',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -152,6 +163,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
           'Member can connect, modify, and remove access for the Slack integration and repository access.',
         level: PermissionLevelType.Organization,
         title: 'Manage Slack integration',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -168,6 +180,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can create new projects.',
         level: PermissionLevelType.Organization,
         title: 'Create project',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -177,6 +190,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the specified projects.',
         level: PermissionLevelType.Project,
         title: 'View project',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -186,6 +200,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the specified projects.',
         level: PermissionLevelType.Project,
         title: 'Delete project',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -195,6 +210,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the specified projects.',
         level: PermissionLevelType.Project,
         title: 'Modify Settings',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -211,6 +227,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can view and modify the organization schema linting rules.',
         level: PermissionLevelType.Organization,
         title: 'Manage organization level schema linting',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -220,6 +237,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can view and modify the projects schema linting rules.',
         level: PermissionLevelType.Project,
         title: 'Manage project level schema linting',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -236,6 +254,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can create new projects.',
         level: PermissionLevelType.Project,
         title: 'Create target',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -245,6 +264,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the specified projects.',
         level: PermissionLevelType.Target,
         title: 'Delete target',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -254,6 +274,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the specified projects.',
         level: PermissionLevelType.Target,
         title: 'Modify settings',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -263,6 +284,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Can create alerts for schema versions.',
         level: PermissionLevelType.Project,
         title: 'Modify alerts',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -272,6 +294,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Allow managing access tokens for CLI and Usage Reporting.',
         level: PermissionLevelType.Target,
         title: 'Manage registry access tokens',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -281,6 +304,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Allow managing access tokens for the CDN.',
         level: PermissionLevelType.Target,
         title: 'Manage CDN access tokens',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -297,6 +321,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can access the laboratory, view and execute GraphQL documents.',
         level: PermissionLevelType.Target,
         title: 'View laboratory',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -307,6 +332,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
           'Member can create, delete and update collections and documents in the laboratory.',
         level: PermissionLevelType.Target,
         title: 'Modify laboratory',
+        isAssignableByViewer: true,
       },
       {
         __typename: 'Permission',
@@ -316,6 +342,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can update the laboratory preflight script.',
         level: PermissionLevelType.Target,
         title: 'Modify the laboratory preflight script',
+        isAssignableByViewer: true,
       },
     ],
   },
@@ -332,6 +359,7 @@ export const availableMemberPermissionGroups: Organization['availableMemberPermi
         description: 'Member can approve failed schema checks.',
         level: PermissionLevelType.Service,
         title: 'Approve schema check',
+        isAssignableByViewer: true,
       },
     ],
   },

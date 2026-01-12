@@ -5,6 +5,7 @@ import { App } from './app';
 import { Environment } from './environment';
 import { GraphQL } from './graphql';
 import { Observability } from './observability';
+import { OTELCollector } from './otel-collector';
 import { type PublicGraphQLAPIGateway } from './public-graphql-api-gateway';
 import { Usage } from './usage';
 
@@ -15,6 +16,7 @@ export function deployProxy({
   environment,
   observability,
   publicGraphQLAPIGateway,
+  otelCollector,
 }: {
   observability: Observability;
   environment: Environment;
@@ -22,6 +24,7 @@ export function deployProxy({
   app: App;
   usage: Usage;
   publicGraphQLAPIGateway: PublicGraphQLAPIGateway;
+  otelCollector: OTELCollector;
 }) {
   const { tlsIssueName } = new CertManager().deployCertManagerAndIssuer();
   const commonConfig = new pulumi.Config('common');
@@ -32,9 +35,9 @@ export function deployProxy({
   })
     .deployProxy({
       envoy: {
-        replicas: environment.isProduction ? 3 : 1,
-        cpu: environment.isProduction ? '800m' : '150m',
-        memory: environment.isProduction ? '800Mi' : '192Mi',
+        replicas: environment.podsConfig.envoy.replicas,
+        cpu: environment.podsConfig.envoy.cpuLimit,
+        memory: environment.podsConfig.envoy.memoryLimit,
       },
       tracing: observability.enabled
         ? { collectorService: observability.observability!.otlpCollectorService }
@@ -110,6 +113,14 @@ export function deployProxy({
         path: '/graphql',
         customRewrite: '/graphql',
         service: publicGraphQLAPIGateway.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
+      {
+        name: 'otel-traces',
+        path: '/otel/v1/traces',
+        customRewrite: '/v1/traces',
+        service: otelCollector.service,
         requestTimeout: '60s',
         retriable: true,
       },

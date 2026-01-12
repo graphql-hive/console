@@ -76,7 +76,7 @@ export class Proxy {
   }
 
   registerService(
-    dns: { record: string; apex?: boolean },
+    dns: { record: string },
     routes: {
       name: string;
       path: string;
@@ -135,7 +135,7 @@ export class Proxy {
               secretName: dns.record,
             },
             corsPolicy: {
-              allowOrigin: ['https://app.graphql-hive.com', 'https://graphql-hive.com'],
+              allowOrigin: [`https://${dns.record}`],
               allowMethods: ['GET', 'POST', 'OPTIONS'],
               allowHeaders: ['*'],
               exposeHeaders: ['*'],
@@ -302,7 +302,16 @@ export class Proxy {
               }
             : undefined,
       },
+      // Needed because we override the `contour.image.repository` field.
+      global: {
+        security: {
+          allowInsecureImages: true,
+        },
+      },
       contour: {
+        image: {
+          repository: 'bitnamilegacy/contour',
+        },
         podAnnotations: {
           'prometheus.io/scrape': 'true',
           'prometheus.io/port': '8000',
@@ -317,6 +326,9 @@ export class Proxy {
         },
       },
       envoy: {
+        image: {
+          repository: 'bitnamilegacy/envoy',
+        },
         resources: {
           limits: {},
         },

@@ -3,8 +3,12 @@ import { AlertCircleIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import {
-  ArgumentVisibilityFilter,
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
+import {
   DateRangeFilter,
+  DescriptionsVisibilityFilter,
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
@@ -56,39 +60,33 @@ function SchemaView(props: {
         <GraphQLObjectTypeComponent
           type={query}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {mutation ? (
         <GraphQLObjectTypeComponent
           type={mutation}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
       {subscription ? (
         <GraphQLObjectTypeComponent
           type={subscription}
           totalRequests={totalRequests}
-          collapsed
           targetSlug={props.targetSlug}
           projectSlug={props.projectSlug}
           organizationSlug={props.organizationSlug}
           warnAboutDeprecatedArguments={false}
           warnAboutUnusedArguments={false}
-          styleDeprecated
         />
       ) : null}
     </div>
@@ -104,9 +102,7 @@ const TargetExplorerPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
       slug
     }
     target(
@@ -163,7 +159,7 @@ function ExplorerPageContent(props: {
   });
 
   const currentOrganization = query.data?.organization;
-  const retentionInDays = currentOrganization?.rateLimit.retentionInDays;
+  const retentionInDays = currentOrganization?.usageRetentionInDays;
 
   useEffect(() => {
     if (typeof retentionInDays === 'number' && dataRetentionInDays !== retentionInDays) {
@@ -210,7 +206,7 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ArgumentVisibilityFilter />
+              <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -224,7 +220,7 @@ function ExplorerPageContent(props: {
           )}
         </div>
       </div>
-      {!query.fetching && !query.stale && (
+      {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>
@@ -271,6 +267,10 @@ function ExplorerPageContent(props: {
             />
           )}
         </>
+      ) : (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
       )}
     </>
   );

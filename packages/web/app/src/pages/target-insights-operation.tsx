@@ -98,6 +98,7 @@ function OperationView({
             <ClientsFilterTrigger
               period={dateRangeController.resolvedRange}
               selected={selectedClients}
+              selectedOperationIds={[operationHash]}
               onFilter={setSelectedClients}
               organizationSlug={organizationSlug}
               projectSlug={projectSlug}
@@ -163,9 +164,7 @@ const OperationInsightsPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -226,7 +225,7 @@ function OperationInsightsContent(props: {
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       operationHash={props.operationHash}
       operationName={props.operationName}
     />

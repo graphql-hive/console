@@ -4,7 +4,7 @@ import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/ty
 
 export const SchemaCoordinateStats: Pick<
   SchemaCoordinateStatsResolvers,
-  'clients' | 'operations' | 'requestsOverTime' | 'totalRequests' | '__isTypeOf'
+  'clients' | 'operations' | 'requestsOverTime' | 'totalRequests'
 > = {
   totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
     return injector.get(OperationsManager).countRequestsWithSchemaCoordinate({

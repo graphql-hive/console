@@ -1,4 +1,5 @@
 export default {
+  index: 'Introduction',
   'graphql-yoga': 'GraphQL Yoga',
   envelop: 'Envelop',
   'schema-stitching': 'Schema Stitching',
@@ -10,4 +11,5 @@ export default {
   'ci-cd': 'CI/CD Guide',
   'code-first': 'Code-First Frameworks',
   'graphql-code-generator': 'GraphQL Code Generator',
+  'gqlgen-go': 'GQLGen (GoLang)',
 };

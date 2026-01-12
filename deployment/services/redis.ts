@@ -19,15 +19,10 @@ export function deployRedis(input: { environment: Environment }) {
   const redisApi = new RedisStore({
     password: redisPassword,
   }).deploy({
-    limits: input.environment.isProduction
-      ? {
-          memory: '6Gi',
-          cpu: '1000m',
-        }
-      : {
-          memory: '100Mi',
-          cpu: '50m',
-        },
+    limits: {
+      memory: input.environment.podsConfig.redis.memoryLimit,
+      cpu: input.environment.podsConfig.redis.cpuLimit,
+    },
   });
 
   const host = serviceLocalHost(redisApi.service);

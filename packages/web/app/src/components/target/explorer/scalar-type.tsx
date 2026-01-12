@@ -32,11 +32,11 @@ export function GraphQLScalarTypeComponent(props: {
       projectSlug={props.projectSlug}
       organizationSlug={props.organizationSlug}
     >
-      <div className="flex flex-row gap-4 p-4">
-        <div className="grow text-sm">
-          {typeof ttype.description === 'string' ? <Markdown content={ttype.description} /> : null}
+      <div className="flex flex-row justify-between p-4">
+        <div className="max-w-2xl grow text-sm">
+          {typeof ttype.description === 'string' && <Markdown content={ttype.description} />}
         </div>
-        {typeof props.totalRequests === 'number' ? (
+        {typeof props.totalRequests === 'number' && (
           <SchemaExplorerUsageStats
             totalRequests={props.totalRequests}
             usage={ttype.usage}
@@ -44,7 +44,7 @@ export function GraphQLScalarTypeComponent(props: {
             projectSlug={props.projectSlug}
             organizationSlug={props.organizationSlug}
           />
-        ) : null}
+        )}
       </div>
     </GraphQLTypeCard>
   );

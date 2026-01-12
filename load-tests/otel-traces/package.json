@@ -1,0 +1,7 @@
+{
+  "name": "loade-test-otel-traces",
+  "private": true,
+  "devDependencies": {
+    "@types/k6": "1.2.0"
+  }
+}

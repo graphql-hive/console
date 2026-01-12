@@ -10,7 +10,7 @@ import { PreflightScriptProvider } from '../providers/preflight-script.provider'
  *
  * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
  */
-export const Target: Pick<TargetResolvers, 'preflightScript' | '__isTypeOf'> = {
+export const Target: Pick<TargetResolvers, 'preflightScript'> = {
   preflightScript: (parent, _args, { injector }) =>
     injector.get(PreflightScriptProvider).getPreflightScript(parent.id),
 };

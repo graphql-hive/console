@@ -7,10 +7,8 @@ const BillingView_OrganizationFragment = graphql(`
     id
     slug
     plan
-    rateLimit {
-      retentionInDays
-      operations
-    }
+    usageRetentionInDays
+    monthlyOperationsLimit
   }
 `);
 
@@ -38,7 +36,7 @@ export function BillingView(props: {
 
   return (
     <PlanSummary
-      operationsRateLimit={Math.floor(organization.rateLimit.operations / 1_000_000)}
+      operationsRateLimit={Math.floor(organization.monthlyOperationsLimit / 1_000_000)}
       plan={plan}
     >
       {props.children}

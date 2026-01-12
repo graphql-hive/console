@@ -6,6 +6,11 @@ import {
 import type { Interceptor, Query, QueryContext } from 'slonik';
 import zod from 'zod';
 import {
+  HiveTracingSpanProcessor,
+  HiveTracingSpanProcessorOptions,
+  openTelemetrySetup,
+} from '@graphql-hive/plugin-opentelemetry/setup';
+import {
   Attributes,
   AttributeValue,
   context,
@@ -17,16 +22,14 @@ import {
   trace,
   type Span,
 } from '@opentelemetry/api';
-import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { Resource } from '@opentelemetry/resources';
-import { NodeSDK, NodeSDKConfiguration } from '@opentelemetry/sdk-node';
-import { SamplingDecision } from '@opentelemetry/sdk-trace-base';
+import { Instrumentation, registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
   BatchSpanProcessor,
-  ConsoleSpanExporter,
   Sampler,
-  SimpleSpanProcessor,
+  SamplingDecision,
+  SpanProcessor,
 } from '@opentelemetry/sdk-trace-node';
 import {
   SEMATTRS_HTTP_METHOD,
@@ -35,40 +38,47 @@ import {
   SEMATTRS_HTTP_ROUTE,
   SEMATTRS_HTTP_STATUS_CODE,
   SEMATTRS_HTTP_USER_AGENT,
-  SEMRESATTRS_SERVICE_NAME,
 } from '@opentelemetry/semantic-conventions';
 import openTelemetryPlugin, { OpenTelemetryPluginOptions } from './fastify-tracing';
 
 export { trace, context, Span, SpanKind, SamplingDecision, SpanStatusCode };
 
-type Instrumentations = NodeSDKConfiguration['instrumentations'];
 export class TracingInstance {
-  private instrumentations: Instrumentations = [];
-  private sdk: NodeSDK | undefined;
+  private instrumentations: Instrumentation[] = [];
 
   constructor(
     private options: {
-      collectorEndpoint: string;
+      collectorEndpoint?: string;
       serviceName: string;
       enableConsoleExporter?: boolean;
       sampler?: Sampler['shouldSample'];
+      hiveTracing?: HiveTracingSpanProcessorOptions;
     },
   ) {
     console.info('🛣️ OpenTelemetry tracing enabled');
     diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.WARN);
   }
 
-  build(): TracingInstance {
-    const httpExporter = new OTLPTraceExporter({ url: this.options.collectorEndpoint });
-    const processor = new BatchSpanProcessor(httpExporter);
-    const contextManager = new AsyncHooksContextManager();
+  setup(): TracingInstance {
+    const processors: SpanProcessor[] = [];
+    if (this.options.collectorEndpoint) {
+      // Grafana endpoint
+      const httpExporter = new OTLPTraceExporter({ url: this.options.collectorEndpoint });
+      processors.push(new BatchSpanProcessor(httpExporter));
+    }
+    if (this.options.hiveTracing) {
+      // Hive Tracing endpoint
+      processors.push(new HiveTracingSpanProcessor(this.options.hiveTracing));
+    }
 
-    const sdk = new NodeSDK({
-      resource: new Resource({
-        [SEMRESATTRS_SERVICE_NAME]: this.options.serviceName,
-      }),
-      resourceDetectors: [],
-      contextManager,
+    openTelemetrySetup({
+      configureDiagLogger: false,
+      contextManager: new AsyncLocalStorageContextManager(),
+      resource: { serviceName: this.options.serviceName },
+      traces: {
+        processors,
+        console: this.options.enableConsoleExporter,
+      },
       sampler: {
         shouldSample: (context, traceId, spanName, spanKind, attributes, links) => {
           if (
@@ -93,40 +103,18 @@ export class TracingInstance {
           return `${this.options.serviceName}-sampler`;
         },
       },
-      spanProcessors: this.options.enableConsoleExporter
-        ? [processor, new SimpleSpanProcessor(new ConsoleSpanExporter())]
-        : [processor],
-      instrumentations: this.instrumentations,
     });
 
-    contextManager.enable();
+    registerInstrumentations({ instrumentations: this.instrumentations });
 
-    this.sdk = sdk;
     return this;
   }
 
-  start() {
-    if (!this.sdk) {
-      throw new Error('Tracing instance not built yet.');
-    }
-
-    this.sdk.start();
-  }
-
-  traceProvider() {
-    if (!this.sdk) {
-      throw new Error('Tracing instance not built yet.');
-    }
-
-    return trace.getTracerProvider();
-  }
-
   async shutdown() {
-    if (!this.sdk) {
-      throw new Error('Tracing instance not built yet.');
+    const tracerProvider = trace.getTracerProvider();
+    if ('shutdown' in tracerProvider && typeof tracerProvider.shutdown === 'function') {
+      await tracerProvider.shutdown();
     }
-
-    await this.sdk.shutdown();
   }
 
   instrumentSlonik(options: SlonikTracingInterceptorOptions = {}): Interceptor {
@@ -473,8 +461,8 @@ export function traceFn<This extends Object, TArgs extends any[], TResult>(
   options?: FunctionTraceOptions<TArgs, Awaited<TResult>>,
 ) {
   return function (
-    target: This,
-    key: PropertyKey,
+    _target: This,
+    _key: PropertyKey,
     descriptor: TypedPropertyDescriptor<(...args: TArgs) => TResult>,
   ) {
     const originalMethod = descriptor.value;

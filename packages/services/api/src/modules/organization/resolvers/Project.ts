@@ -1,0 +1,42 @@
+import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
+import type { ProjectResolvers } from './../../../__generated__/types';
+
+/*
+ * Note: This object type is generated because "ProjectMapper" is declared. This is to ensure runtime safety.
+ *
+ * When a mapper is used, it is possible to hit runtime errors in some scenarios:
+ * - given a field name, the schema type's field type does not match mapper's field type
+ * - or a schema type's field does not exist in the mapper's fields
+ *
+ * If you want to skip this file generation, remove the mapper or update the pattern in the `resolverGeneration.object` config.
+ */
+export const Project: Pick<
+  ProjectResolvers,
+  | 'accessToken'
+  | 'accessTokens'
+  | 'availableProjectAccessTokenPermissionGroups'
+  | 'viewerCanManageProjectAccessTokens'
+> = {
+  availableProjectAccessTokenPermissionGroups(project, _, { injector }) {
+    return injector.get(OrganizationAccessTokens).getAvailablePermissionsGroupsForProject(project);
+  },
+  accessToken(project, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getForProject(project, args.id);
+  },
+  accessTokens(project, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getPaginatedForProject(project, {
+      first: args.first ?? null,
+      after: args.after ?? null,
+    });
+  },
+  viewerCanManageProjectAccessTokens(project, _arg, { session }) {
+    return session.canPerformAction({
+      organizationId: project.orgId,
+      action: 'projectAccessToken:modify',
+      params: {
+        organizationId: project.orgId,
+        projectId: project.id,
+      },
+    });
+  },
+};

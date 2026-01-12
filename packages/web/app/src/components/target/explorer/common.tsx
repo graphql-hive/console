@@ -2,49 +2,28 @@ import React, { ReactElement, ReactNode, useMemo } from 'react';
 import { clsx } from 'clsx';
 import { PulseIcon, UsersIcon } from '@/components/ui/icon';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { SupergraphMetadataList_SupergraphMetadataFragmentFragment } from '@/gql/graphql';
 import { formatNumber, toDecimal } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
-import { ChatBubbleIcon } from '@radix-ui/react-icons';
+import { capitalize, cn } from '@/lib/utils';
 import { Link as NextLink, useRouter } from '@tanstack/react-router';
-import { useArgumentListToggle, useSchemaExplorerContext } from './provider';
+import { useDescriptionsVisibleToggle } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
+import { useExplorerFieldFiltering } from './utils';
 
-const noop = () => {};
+export function Description(props: { description: string }) {
+  const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
 
-function useCollapsibleList<T>(list: ReadonlyArray<T>, max: number, defaultValue: boolean) {
-  const [collapsed, setCollapsed] = React.useState(defaultValue === true && list.length > max);
-  const expand = React.useCallback(() => {
-    setCollapsed(false);
-  }, [setCollapsed]);
-
-  if (collapsed) {
-    return [list.slice(0, max), collapsed, expand] as const;
-  }
-
-  return [list, collapsed, noop] as const;
-}
-
-function Description(props: { description: string }) {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button title="Description is available" className="text-gray-500 hover:text-white">
-          <ChatBubbleIcon className="h-5 w-auto" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="max-w-screen-sm rounded-md p-4 text-sm shadow-md"
-        side="right"
-        sideOffset={5}
-      >
-        <PopoverArrow />
-        <Markdown content={props.description} />
-      </PopoverContent>
-    </Popover>
+    <div
+      className={clsx('mb-2 mt-0 block max-w-screen-sm', {
+        hidden: !isDescriptionsVisible,
+      })}
+    >
+      <Markdown className={clsx('text-left text-sm text-gray-400')} content={props.description} />
+    </div>
   );
 }
 
@@ -67,9 +46,12 @@ export function SchemaExplorerUsageStats(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  kindLabel?: string;
 }) {
   const usage = useFragment(SchemaExplorerUsageStats_UsageFragment, props.usage);
   const percentage = props.totalRequests ? (usage.total / props.totalRequests) * 100 : 0;
+
+  const kindLabel = useMemo(() => props.kindLabel ?? 'field', [props.kindLabel]);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -89,22 +71,23 @@ export function SchemaExplorerUsageStats(props: {
         <Tooltip>
           <TooltipContent>
             <div className="z-10">
-              <div className="mb-1 text-lg font-bold">Field Usage</div>
+              <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Usage</div>
               {usage.isUsed === false ? (
-                <div>This field is currently not in use.</div>
+                <div>This {kindLabel} is currently not in use.</div>
               ) : (
                 <div>
                   <ul>
                     <li>
-                      This field has been queried in <strong>{formatNumber(usage.total)}</strong>{' '}
-                      requests.
+                      This {kindLabel} has been queried in{' '}
+                      <strong>{formatNumber(usage.total)}</strong> requests.
                     </li>
                     <li>
-                      <strong>{toDecimal(percentage)}%</strong> of all requests use this field.
+                      <strong>{toDecimal(percentage)}%</strong> of all requests use this {kindLabel}
+                      .
                     </li>
                   </ul>
 
-                  {Array.isArray(usage.topOperations) ? (
+                  {Array.isArray(usage.topOperations) && (
                     <table className="mt-4 table-auto">
                       <thead>
                         <tr>
@@ -139,7 +122,7 @@ export function SchemaExplorerUsageStats(props: {
                         ))}
                       </tbody>
                     </table>
-                  ) : null}
+                  )}
                 </div>
               )}
             </div>
@@ -156,9 +139,9 @@ export function SchemaExplorerUsageStats(props: {
             <>
               <div className="mb-1 text-lg font-bold">Client Usage</div>
 
-              {Array.isArray(usage.usedByClients) ? (
+              {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
                 <>
-                  <div className="mb-2">This field is used by the following clients:</div>
+                  <div className="mb-2">This {kindLabel} is used by the following clients:</div>
                   <ul>
                     {usage.usedByClients.map(clientName => (
                       <li key={clientName} className="font-bold">
@@ -179,7 +162,7 @@ export function SchemaExplorerUsageStats(props: {
                   </ul>
                 </>
               ) : (
-                <div>This field is not used by any client.</div>
+                <div>This {kindLabel} is not used by any client.</div>
               )}
             </>
           </TooltipContent>
@@ -193,36 +176,6 @@ export function SchemaExplorerUsageStats(props: {
     </TooltipProvider>
   );
 }
-
-const GraphQLFields_FieldFragment = graphql(`
-  fragment GraphQLFields_FieldFragment on GraphQLField {
-    name
-    description
-    type
-    isDeprecated
-    deprecationReason
-    usage {
-      total
-      ...SchemaExplorerUsageStats_UsageFragment
-    }
-    args {
-      ...GraphQLArguments_ArgumentFragment
-    }
-    supergraphMetadata {
-      ...SupergraphMetadataList_SupergraphMetadataFragment
-    }
-  }
-`);
-
-const GraphQLArguments_ArgumentFragment = graphql(`
-  fragment GraphQLArguments_ArgumentFragment on GraphQLArgument {
-    name
-    description
-    type
-    isDeprecated
-    deprecationReason
-  }
-`);
 
 const GraphQLInputFields_InputFieldFragment = graphql(`
   fragment GraphQLInputFields_InputFieldFragment on GraphQLInputField {
@@ -252,7 +205,6 @@ const GraphQLTypeCard_SupergraphMetadataFragment = graphql(`
 
 export function DeprecationNote(props: {
   deprecationReason: string | null | undefined;
-  styleDeprecated: boolean;
   children: ReactNode;
 }) {
   if (!props.deprecationReason) {
@@ -260,11 +212,9 @@ export function DeprecationNote(props: {
   }
 
   return (
-    <TooltipProvider delayDuration={100}>
+    <TooltipProvider delayDuration={0}>
       <Tooltip>
-        <TooltipTrigger
-          className={cn(props.styleDeprecated ? 'line-through hover:line-through' : '')}
-        >
+        <TooltipTrigger className="line-through hover:line-through">
           {props.children}
         </TooltipTrigger>
         <TooltipContent className="min-w-6 max-w-screen-md" side="right" sideOffset={5}>
@@ -293,12 +243,13 @@ export function GraphQLTypeCard(props: {
     GraphQLTypeCard_SupergraphMetadataFragment,
     props.supergraphMetadata,
   );
+
   return (
     <div className="rounded-md border-2 border-gray-900">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
-            <div className="font-normal text-gray-500">{props.kind}</div>
+            <div className="font-normal text-gray-400">{props.kind}</div>
             <div className="font-semibold">
               <GraphQLTypeAsLink
                 organizationSlug={props.organizationSlug}
@@ -307,12 +258,12 @@ export function GraphQLTypeCard(props: {
                 type={props.name}
               />
             </div>
-            {props.description ? <Description description={props.description} /> : null}
           </div>
+          {props.description && <Description description={props.description} />}
         </div>
-        {Array.isArray(props.implements) && props.implements.length > 0 ? (
-          <div className="flex flex-row items-center text-sm text-gray-500">
-            <div className="mr-2">implements</div>
+        {Array.isArray(props.implements) && props.implements.length > 0 && (
+          <div className="flex flex-row items-center text-sm text-gray-400">
+            <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
                 <GraphQLTypeAsLink
@@ -325,129 +276,28 @@ export function GraphQLTypeCard(props: {
               ))}
             </div>
           </div>
-        ) : null}
-        {props.usage && typeof props.totalRequests !== 'undefined' ? (
+        )}
+        {props.usage && typeof props.totalRequests !== 'undefined' && (
           <SchemaExplorerUsageStats
+            kindLabel={props.kind}
             totalRequests={props.totalRequests}
             usage={props.usage}
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}
             targetSlug={props.targetSlug}
           />
-        ) : null}
-        {supergraphMetadata ? (
+        )}
+        {supergraphMetadata && (
           <SupergraphMetadataList
             targetSlug={props.targetSlug}
             projectSlug={props.projectSlug}
             organizationSlug={props.organizationSlug}
             supergraphMetadata={supergraphMetadata}
           />
-        ) : null}
+        )}
       </div>
       <div>{props.children}</div>
     </div>
-  );
-}
-
-function GraphQLArguments(props: {
-  parentCoordinate: string;
-  args: FragmentType<typeof GraphQLArguments_ArgumentFragment>[];
-  styleDeprecated: boolean;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-}) {
-  const args = useFragment(GraphQLArguments_ArgumentFragment, props.args);
-  const [isCollapsedGlobally] = useArgumentListToggle();
-  const [collapsed, setCollapsed] = React.useState(isCollapsedGlobally);
-  const hasMoreThanTwo = args.length > 2;
-  const showAll = hasMoreThanTwo && !collapsed;
-
-  React.useEffect(() => {
-    setCollapsed(isCollapsedGlobally);
-  }, [isCollapsedGlobally, setCollapsed]);
-
-  if (showAll) {
-    return (
-      <span className="ml-1 text-gray-500">
-        <span>(</span>
-        <div className="pl-4 text-gray-500">
-          {args.map(arg => {
-            const coordinate = `${props.parentCoordinate}.${arg.name}`;
-            return (
-              <div key={arg.name}>
-                <DeprecationNote
-                  styleDeprecated={props.styleDeprecated}
-                  deprecationReason={arg.deprecationReason}
-                >
-                  <LinkToCoordinatePage
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    coordinate={coordinate}
-                  >
-                    {arg.name}
-                  </LinkToCoordinatePage>
-                </DeprecationNote>
-                {': '}
-                <GraphQLTypeAsLink
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  type={arg.type}
-                />
-                {arg.description ? <Description description={arg.description} /> : null}
-              </div>
-            );
-          })}
-        </div>
-        <span>)</span>
-      </span>
-    );
-  }
-
-  return (
-    <span className="ml-1 text-gray-500">
-      <span>(</span>
-      <span className="space-x-2">
-        {args.slice(0, 2).map(arg => {
-          const coordinate = `${props.parentCoordinate}.${arg.name}`;
-          return (
-            <span key={arg.name}>
-              <DeprecationNote
-                styleDeprecated={props.styleDeprecated}
-                deprecationReason={arg.deprecationReason}
-              >
-                <LinkToCoordinatePage
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  coordinate={coordinate}
-                >
-                  {arg.name}
-                </LinkToCoordinatePage>
-              </DeprecationNote>
-              {': '}
-              <GraphQLTypeAsLink
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                type={arg.type}
-              />
-            </span>
-          );
-        })}
-        {hasMoreThanTwo ? (
-          <span
-            className="cursor-pointer rounded bg-gray-900 p-1 text-xs text-gray-300 hover:bg-gray-700 hover:text-white"
-            onClick={() => setCollapsed(prev => !prev)}
-          >
-            {props.args.length - 2} hidden
-          </span>
-        ) : null}
-      </span>
-      <span>)</span>
-    </span>
   );
 }
 
@@ -471,158 +321,6 @@ export function GraphQLTypeCardListItem(props: {
   );
 }
 
-export function GraphQLFields(props: {
-  typeName: string;
-  fields: Array<FragmentType<typeof GraphQLFields_FieldFragment>>;
-  totalRequests?: number;
-  collapsed?: boolean;
-  targetSlug: string;
-  projectSlug: string;
-  organizationSlug: string;
-  filterValue?: string;
-  warnAboutUnusedArguments: boolean;
-  warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
-}) {
-  const { totalRequests, filterValue /** filterMeta */ } = props;
-  const fieldsFromFragment = useFragment(GraphQLFields_FieldFragment, props.fields);
-  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
-
-  const sortedAndFilteredFields = useMemo(() => {
-    return fieldsFromFragment
-      .filter(field => {
-        let matchesFilter = true;
-        if (filterValue) {
-          matchesFilter &&= field.name.toLowerCase().includes(filterValue);
-        }
-        if (filterMeta.length) {
-          const matchesMeta =
-            field.supergraphMetadata &&
-            (
-              field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment
-            ).metadata?.some(m => hasMetadataFilter(m.name, m.content));
-          matchesFilter &&= !!matchesMeta;
-        }
-        return matchesFilter;
-      })
-      .sort(
-        // Sort by usage DESC, name ASC
-        (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
-      );
-  }, [fieldsFromFragment, filterValue, filterMeta]);
-  const [fields, collapsed, expand] = useCollapsibleList(
-    sortedAndFilteredFields,
-    5,
-    props.collapsed ?? false,
-  );
-
-  return (
-    <TooltipProvider delayDuration={0}>
-      <div className="flex flex-col">
-        {fields.map((field, i) => {
-          const coordinate = `${props.typeName}.${field.name}`;
-          const isUsed = field.usage.total > 0;
-          const hasUnusedArguments = field.args.length > 0;
-          const showsUnusedSchema = typeof totalRequests !== 'number';
-          const isDeprecated = field.isDeprecated;
-
-          return (
-            <GraphQLTypeCardListItem key={field.name} index={i}>
-              <div>
-                {props.warnAboutUnusedArguments &&
-                isUsed &&
-                hasUnusedArguments &&
-                showsUnusedSchema ? (
-                  <Tooltip>
-                    <TooltipContent>
-                      This field is used but the presented arguments are not.
-                    </TooltipContent>
-                    <TooltipTrigger>
-                      <span className="mr-1 text-sm text-orange-500">*</span>
-                    </TooltipTrigger>
-                  </Tooltip>
-                ) : null}
-                {props.warnAboutDeprecatedArguments && !isDeprecated ? (
-                  <Tooltip>
-                    <TooltipContent>
-                      This field is not deprecated but the presented arguments are.
-                    </TooltipContent>
-                    <TooltipTrigger>
-                      <span className="mr-1 text-sm text-orange-500">*</span>
-                    </TooltipTrigger>
-                  </Tooltip>
-                ) : null}
-                <DeprecationNote
-                  styleDeprecated={props.styleDeprecated}
-                  deprecationReason={field.deprecationReason}
-                >
-                  <LinkToCoordinatePage
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    coordinate={coordinate}
-                    className="font-semibold"
-                  >
-                    {field.name}
-                  </LinkToCoordinatePage>
-                </DeprecationNote>
-                {field.args.length > 0 ? (
-                  <GraphQLArguments
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
-                    styleDeprecated={props.styleDeprecated}
-                    parentCoordinate={coordinate}
-                    args={field.args}
-                  />
-                ) : null}
-                <span className="mr-1">:</span>
-                <GraphQLTypeAsLink
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  className="font-semibold text-gray-400"
-                  type={field.type}
-                />
-              </div>
-              <div className="flex flex-row items-center">
-                {field.supergraphMetadata ? (
-                  <div className="ml-1">
-                    <SupergraphMetadataList
-                      targetSlug={props.targetSlug}
-                      projectSlug={props.projectSlug}
-                      organizationSlug={props.organizationSlug}
-                      supergraphMetadata={field.supergraphMetadata}
-                    />
-                  </div>
-                ) : null}
-                {typeof totalRequests === 'number' ? (
-                  <SchemaExplorerUsageStats
-                    totalRequests={totalRequests}
-                    usage={field.usage}
-                    targetSlug={props.targetSlug}
-                    projectSlug={props.projectSlug}
-                    organizationSlug={props.organizationSlug}
-                  />
-                ) : null}
-              </div>
-            </GraphQLTypeCardListItem>
-          );
-        })}
-        {collapsed && sortedAndFilteredFields.length > fields.length ? (
-          <GraphQLTypeCardListItem
-            index={fields.length}
-            className="cursor-pointer font-semibold hover:bg-gray-800"
-            onClick={expand}
-          >
-            Show {sortedAndFilteredFields.length - fields.length} more fields
-          </GraphQLTypeCardListItem>
-        ) : null}
-      </div>
-    </TooltipProvider>
-  );
-}
-
 export function GraphQLInputFields(props: {
   typeName: string;
   fields: FragmentType<typeof GraphQLInputFields_InputFieldFragment>[];
@@ -630,34 +328,12 @@ export function GraphQLInputFields(props: {
   targetSlug: string;
   projectSlug: string;
   organizationSlug: string;
-  styleDeprecated: boolean;
-  filterValue?: string;
 }): ReactElement {
   const fields = useFragment(GraphQLInputFields_InputFieldFragment, props.fields);
-  const { filterValue } = props;
-  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
-  const sortedAndFilteredFields = useMemo(() => {
-    return fields
-      .filter(field => {
-        let matchesFilter = true;
-        if (filterValue) {
-          matchesFilter &&= field.name.toLowerCase().includes(filterValue);
-        }
-        if (filterMeta.length) {
-          const matchesMeta =
-            field.supergraphMetadata &&
-            (
-              field.supergraphMetadata as SupergraphMetadataList_SupergraphMetadataFragmentFragment
-            ).metadata?.some(m => hasMetadataFilter(m.name, m.content));
-          matchesFilter &&= !!matchesMeta;
-        }
-        return matchesFilter;
-      })
-      .sort(
-        // Sort by usage DESC, name ASC
-        (a, b) => b.usage.total - a.usage.total || a.name.localeCompare(b.name),
-      );
-  }, [fields, filterValue, filterMeta]);
+
+  const sortedAndFilteredFields = useExplorerFieldFiltering({
+    fields,
+  });
 
   return (
     <div className="flex flex-col">
@@ -665,39 +341,41 @@ export function GraphQLInputFields(props: {
         const coordinate = `${props.typeName}.${field.name}`;
         return (
           <GraphQLTypeCardListItem key={field.name} index={i}>
-            <div className="text-gray-400">
-              <DeprecationNote
-                styleDeprecated={props.styleDeprecated}
-                deprecationReason={field.deprecationReason}
-              >
-                <LinkToCoordinatePage
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
-                  targetSlug={props.targetSlug}
-                  coordinate={coordinate}
-                  className="font-semibold text-white"
-                >
-                  {field.name}
-                </LinkToCoordinatePage>
-              </DeprecationNote>
-              <span className="mr-1">:</span>
-              <GraphQLTypeAsLink
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                className="font-semibold"
-                type={field.type}
-              />
+            <div>
+              <div className="flex w-full flex-row items-center justify-between">
+                <div className="text-gray-400">
+                  <DeprecationNote deprecationReason={field.deprecationReason}>
+                    <LinkToCoordinatePage
+                      organizationSlug={props.organizationSlug}
+                      projectSlug={props.projectSlug}
+                      targetSlug={props.targetSlug}
+                      coordinate={coordinate}
+                      className="font-semibold text-white"
+                    >
+                      {field.name}
+                    </LinkToCoordinatePage>
+                  </DeprecationNote>
+                  <span className="mr-1">:</span>
+                  <GraphQLTypeAsLink
+                    organizationSlug={props.organizationSlug}
+                    projectSlug={props.projectSlug}
+                    targetSlug={props.targetSlug}
+                    className="font-semibold"
+                    type={field.type}
+                  />
+                </div>
+                {typeof props.totalRequests === 'number' && (
+                  <SchemaExplorerUsageStats
+                    totalRequests={props.totalRequests}
+                    usage={field.usage}
+                    targetSlug={props.targetSlug}
+                    projectSlug={props.projectSlug}
+                    organizationSlug={props.organizationSlug}
+                  />
+                )}
+              </div>
+              {field.description && <Description description={field.description} />}
             </div>
-            {typeof props.totalRequests === 'number' ? (
-              <SchemaExplorerUsageStats
-                totalRequests={props.totalRequests}
-                usage={field.usage}
-                targetSlug={props.targetSlug}
-                projectSlug={props.projectSlug}
-                organizationSlug={props.organizationSlug}
-              />
-            ) : null}
           </GraphQLTypeCardListItem>
         );
       })}
@@ -705,7 +383,7 @@ export function GraphQLInputFields(props: {
   );
 }
 
-function GraphQLTypeAsLink(props: {
+export function GraphQLTypeAsLink(props: {
   type: string;
   className?: string;
   organizationSlug: string;
@@ -791,3 +469,47 @@ export const LinkToCoordinatePage = React.forwardRef<
     </NextLink>
   );
 });
+
+const getRandomWidth = () => {
+  const values = ['w-32', 'w-48', 'w-64', 'w-96'];
+
+  return values[Math.floor(Math.random() * values.length)];
+};
+
+export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
+  const widths = useMemo(() => {
+    const count = props.count ?? 5;
+
+    return Array.from({ length: count }, () => getRandomWidth());
+  }, [props.count]);
+
+  return (
+    <div className="flex w-full flex-col">
+      {widths.map((width, index) => (
+        <GraphQLTypeCardListItem key={index} index={index} className="w-full">
+          <div className="flex w-full flex-row items-center gap-2">
+            <Skeleton className={cn('bg-muted my-1 h-4', width)} />
+            <div className="ml-auto flex flex-row items-center gap-2">
+              <Skeleton className="bg-muted my-1 size-4" />
+              <Skeleton className="bg-muted my-1 size-4" />
+              <Skeleton className="bg-muted my-1 size-4" />
+            </div>
+          </div>
+        </GraphQLTypeCardListItem>
+      ))}
+    </div>
+  );
+};
+
+export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
+  return (
+    <div className="rounded-md border-2 border-gray-900">
+      <div className="flex flex-row justify-between p-4">
+        <div className="flex flex-row items-center gap-2">
+          <Skeleton className="bg-muted my-1 h-4 w-32" />
+        </div>
+      </div>
+      <div>{props.children}</div>
+    </div>
+  );
+};

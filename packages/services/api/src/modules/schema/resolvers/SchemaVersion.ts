@@ -1,6 +1,7 @@
 import { createPeriod, parseDateRangeInput } from '../../../shared/helpers';
 import { buildASTSchema } from '../../../shared/schema';
 import { OperationsManager } from '../../operations/providers/operations-manager';
+import { Logger } from '../../shared/providers/logger';
 import { onlyDeprecatedDocumentNode } from '../lib/deprecated-graphql';
 import { extractSuperGraphInformation } from '../lib/federation-super-graph';
 import { stripUsedSchemaCoordinatesFromDocumentNode } from '../lib/unused-graphql';
@@ -119,7 +120,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
       },
     };
   },
-  unusedSchema: async (version, { usage }, { injector }) => {
+  unusedSchema: async (version, args, { injector }) => {
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
       injector.get(SchemaVersionHelper).getSupergraphAst(version),
@@ -129,11 +130,15 @@ export const SchemaVersion: SchemaVersionResolvers = {
       return null;
     }
 
+    const period = args.period?.absoluteRange
+      ? parseDateRangeInput(args.period.absoluteRange)
+      : createPeriod('30d');
+
     const usedCoordinates = await injector.get(OperationsManager).getReportedSchemaCoordinates({
       targetId: version.targetId,
       projectId: version.projectId,
       organizationId: version.organizationId,
-      period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+      period,
     });
 
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
@@ -141,7 +146,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return {
       sdl: stripUsedSchemaCoordinatesFromDocumentNode(schemaAst, usedCoordinates),
       usage: {
-        period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+        period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
@@ -158,7 +163,17 @@ export const SchemaVersion: SchemaVersionResolvers = {
       },
     };
   },
-  deprecatedSchema: async (version, { usage }, { injector }) => {
+  deprecatedSchema: async (version, args, { injector }) => {
+    const logger = injector.get(Logger);
+
+    logger.debug(
+      'Build deprecated schema explorer. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+      version.organizationId,
+      version.projectId,
+      version.targetId,
+      version.id,
+    );
+
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
       injector.get(SchemaVersionHelper).getSupergraphAst(version),
@@ -170,10 +185,32 @@ export const SchemaVersion: SchemaVersionResolvers = {
 
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
 
+    const period = args.period?.absoluteRange
+      ? parseDateRangeInput(args.period.absoluteRange)
+      : createPeriod('30d');
+
+    logger.debug(
+      'Start filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+      version.organizationId,
+      version.projectId,
+      version.targetId,
+      version.id,
+    );
+
+    const filteredSdl = onlyDeprecatedDocumentNode(schemaAst);
+
+    logger.debug(
+      'Finished filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+      version.organizationId,
+      version.projectId,
+      version.targetId,
+      version.id,
+    );
+
     return {
-      sdl: onlyDeprecatedDocumentNode(schemaAst),
+      sdl: filteredSdl,
       usage: {
-        period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+        period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,

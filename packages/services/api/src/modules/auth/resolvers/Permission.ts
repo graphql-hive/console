@@ -23,9 +23,12 @@ export const Permission: PermissionResolvers = {
   warning: async (permission, _arg, _ctx) => {
     return permission.warning ?? null;
   },
+  isAssignableByViewer(permission) {
+    return permission.isAssignableByViewer ?? true;
+  },
 };
 
-function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
+export function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
   switch (resourceLevel) {
     case 'target':
       return 'TARGET' as const;
@@ -37,5 +40,20 @@ function resourceLevelToResourceLevelType(resourceLevel: ResourceLevel) {
       return 'ORGANIZATION' as const;
     case 'appDeployment':
       return 'APP_DEPLOYMENT' as const;
+  }
+}
+
+export function resourceLevelToHumanReadableName(resourceLevel: ResourceLevel) {
+  switch (resourceLevel) {
+    case 'target':
+      return 'Target' as const;
+    case 'service':
+      return 'Service' as const;
+    case 'project':
+      return 'Project' as const;
+    case 'organization':
+      return 'Organization' as const;
+    case 'appDeployment':
+      return 'App Deployment' as const;
   }
 }

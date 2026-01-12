@@ -198,6 +198,7 @@ export class ProjectManager {
         projectId: selector.projectId,
       },
     });
+
     return this.storage.getProject(selector);
   }
 

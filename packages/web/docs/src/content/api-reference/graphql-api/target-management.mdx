@@ -1,0 +1,161 @@
+---
+title: Target Management via the GraphQL API
+description: Learn how to manage targets via the Hive Console GraphQL API.
+---
+
+# Target Management via the GraphQL API
+
+Targets can be managed via the Hive Console GraphQL API. For more information, please refer to our
+[target documentation](/docs/management/targets).
+
+## Retrieve a Single Target
+
+Use the `Query.target` field to retrieve a target either by its `id` or `slug` selector.
+
+```graphql filename="Example: Retrieve a single Target via Slug"
+query TargetById($targetId: ID!) {
+  target(reference: { byId: $targetId }) {
+    id
+    slug
+  }
+}
+```
+
+## Retrieve a List of Targets within a Project
+
+Use the `Project.targets` field to retrieve a list of targets within the organization. **Note:**
+This field will currently return all targets within the project.
+
+```graphql filename="Example: Retrieve a list of Targets in Project"
+query TargetById($projectId: ID!) {
+  project(reference: { byId: $projectId }) {
+    id
+    targets {
+      edges {
+        node {
+          id
+          slug
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+```
+
+## Create a Target
+
+Use the `Mutation.createTarget` field for creating a new target within a project.
+
+```graphql
+mutation CreateTarget($input: CreateTargetInput!) {
+  createTarget(input: $input) {
+    ok {
+      createdTarget {
+        id
+        slug
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Update the Target GraphQL Endpoint URL
+
+Use the `Mutation.updateTargetGraphQLEndpointUrl` field for updating the GraphQL endpoint url that
+is used in the laboratory for querying the GraphQL server.
+
+```graphql
+mutation UpdateTargetGraphQLEndpointUrl($input: UpdateTargetGraphQLEndpointUrlInput!) {
+  updateTargetGraphQLEndpointUrl(input: $input) {
+    ok {
+      target {
+        id
+        slug
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Update the Breaking Change Configuration
+
+Use the `Mutation.updateTargetConditionalBreakingChangeConfiguration` field for updating the
+conditional breaking change configuration.
+
+```graphql
+mutation UpdateTargetConditionalBreakingChangeConfiguration(
+  $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+) {
+  updateTargetConditionalBreakingChangeConfiguration(input: $input) {
+    ok {
+      target {
+        id
+        slug
+        conditionalBreakingChangeConfiguration {
+          isEnabled
+          period
+          percentage
+          requestCount
+          breakingChangeFormula
+          targets {
+            id
+            slug
+          }
+          excludedClients
+        }
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Update Dangerous Change Classification
+
+Use the `Mutation.updateTargetDangerousChangeClassification` field to set whether dangerous schema
+changes should fail a schema check (if they are not safe based on usage).
+
+```graphql
+mutation UpdateTargetGraphQLEndpointUrl($input: UpdateTargetDangerousChangeClassificationInput!) {
+  updateTargetDangerousChangeClassification(input: $input) {
+    ok {
+      target {
+        id
+        slug
+      }
+    }
+    error {
+      message
+    }
+  }
+}
+```
+
+## Delete a Target
+
+Use the `Mutation.deleteTarget` field for deleting a target within a project.
+
+```graphql
+mutation DeleteTarget($input: DeleteTargetInput!) {
+  deleteTarget(input: $input) {
+    ok {
+      deletedTargetId
+    }
+    error {
+      message
+    }
+  }
+}
+```

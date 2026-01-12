@@ -28,7 +28,7 @@ import { SelectedPermissionOverview } from '../../members/selected-permission-ov
 import { permissionLevelToResourceName, resolveResources } from './shared-helpers';
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-const TitleInputModel = z
+export const TitleInputModel = z
   .string()
   .trim()
   .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
@@ -36,7 +36,7 @@ const TitleInputModel = z
   .max(100, 'Maximum length is 100 characters.');
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
-const DescriptionInputModel = z
+export const DescriptionInputModel = z
   .string()
   .trim()
   .max(248, 'Maximum length is 248 characters.')
@@ -169,6 +169,14 @@ export function CreateAccessTokenSheetContent(
           description: error.message,
         });
       }
+      return;
+    }
+    if (result.error) {
+      toast({
+        variant: 'destructive',
+        title: 'An error occured',
+        description: 'Something went wrong. Try again later.',
+      });
       return;
     }
   }
@@ -316,6 +324,16 @@ export function CreateAccessTokenSheetContent(
                                       Granted on {permissionLevelToResourceName(group.level)}:
                                     </p>
                                     <ul className="flex list-none flex-wrap gap-1">
+                                      {!resolvedResources[group.level]?.length && (
+                                        <li>
+                                          <Badge
+                                            className="px-3 py-1 font-mono text-xs text-red-500"
+                                            variant="outline"
+                                          >
+                                            No {group.level} selected.
+                                          </Badge>
+                                        </li>
+                                      )}
                                       {resolvedResources[group.level].map(id => (
                                         <li key={id}>
                                           <Badge

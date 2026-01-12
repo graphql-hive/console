@@ -12,7 +12,6 @@ import type {
   CreateTokenInput,
   DeleteMemberRoleInput,
   DeleteTokensInput,
-  EnableExternalSchemaCompositionInput,
   Experimental__UpdateTargetSchemaCompositionInput,
   InviteToOrganizationByEmailInput,
   OrganizationSelectorInput,
@@ -27,6 +26,7 @@ import type {
   UpdateMemberRoleInput,
   UpdateOrganizationSlugInput,
   UpdateProjectSlugInput,
+  UpdateSchemaCompositionInput,
   UpdateTargetConditionalBreakingChangeConfigurationInput,
   UpdateTargetSlugInput,
 } from './gql/graphql';
@@ -121,9 +121,7 @@ export function createOrganization(input: CreateOrganizationInput, authToken: st
                     }
                   }
                 }
-                rateLimit {
-                  retentionInDays
-                }
+                usageRetentionInDays
               }
             }
           }
@@ -396,6 +394,7 @@ export function createProject(input: CreateProjectInput, authToken: string) {
               id
               slug
               name
+              createdAt
             }
             createdTargets {
               id
@@ -672,6 +671,7 @@ export function readProjectInfo(
         project(reference: { bySelector: $selector }) {
           id
           slug
+          createdAt
         }
       }
     `),
@@ -1508,14 +1508,11 @@ export async function updateOrgRateLimit(
   });
 }
 
-export async function enableExternalSchemaComposition(
-  input: EnableExternalSchemaCompositionInput,
-  token: string,
-) {
+export async function updateSchemaComposition(input: UpdateSchemaCompositionInput, token: string) {
   return execute({
     document: graphql(`
-      mutation enableExternalSchemaComposition($input: EnableExternalSchemaCompositionInput!) {
-        enableExternalSchemaComposition(input: $input) {
+      mutation updateSchemaComposition($input: UpdateSchemaCompositionInput!) {
+        updateSchemaComposition(input: $input) {
           ok {
             id
             externalSchemaComposition {
@@ -1523,10 +1520,12 @@ export async function enableExternalSchemaComposition(
             }
           }
           error {
-            message
-            inputErrors {
-              endpoint
-              secret
+            ... on UpdateSchemaCompositionExternalError {
+              message
+              inputErrors {
+                endpoint
+                secret
+              }
             }
           }
         }

@@ -7,7 +7,9 @@ function applyEnv(env: Record<string, string>) {
   }
 }
 
-const serverEnvVars = parse(readFileSync('../packages/services/server/.env', 'utf-8'));
+const __dirname = import.meta.dirname;
+
+const serverEnvVars = parse(readFileSync(__dirname + '/../packages/services/server/.env', 'utf-8'));
 
 applyEnv({
   SUPERTOKENS_CONNECTION_URI: serverEnvVars.SUPERTOKENS_CONNECTION_URI,

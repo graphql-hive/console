@@ -4,14 +4,10 @@ import { graphql } from 'testkit/gql';
 /* eslint-disable no-process-env */
 import { ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
-import { getServiceHost } from 'testkit/utils';
+import { assertNonNull, getServiceHost } from 'testkit/utils';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
-import {
-  createTarget,
-  enableExternalSchemaComposition,
-  publishSchema,
-} from '../../../testkit/flow';
+import { createTarget, publishSchema, updateSchemaComposition } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -610,11 +606,12 @@ describe('schema publishing changes are persisted', () => {
         return;
       }
 
-      const latestVersion = await storage.getLatestVersion({
+      const latestVersion = await storage.getMaybeLatestVersion({
         targetId: target.id,
         projectId: project.id,
         organizationId: organization.id,
       });
+      assertNonNull(latestVersion);
 
       const changes = await storage.getSchemaChangesForVersion({
         versionId: latestVersion.id,
@@ -821,6 +818,9 @@ describe('schema publishing changes are persisted', () => {
     equalsObject: {
       meta: {
         addedDirectiveName: 'foo',
+        addedDirectiveDescription: null,
+        addedDirectiveLocations: ['FIELD'],
+        addedDirectiveRepeatable: false,
       },
       type: 'DIRECTIVE_ADDED',
     },
@@ -1281,8 +1281,10 @@ describe('schema publishing changes are persisted', () => {
     `,
     equalsObject: {
       meta: {
+        addedDirectiveDescription: null,
         enumName: 'Foo',
         addedEnumValueName: 'b',
+        addedToNewType: false,
       },
       type: 'ENUM_VALUE_ADDED',
     },
@@ -1526,6 +1528,7 @@ describe('schema publishing changes are persisted', () => {
         typeName: 'Query',
         addedFieldName: 'b',
         typeType: 'object type',
+        addedFieldReturnType: 'String',
       },
       type: 'FIELD_ADDED',
     },
@@ -1789,6 +1792,7 @@ describe('schema publishing changes are persisted', () => {
         addedArgumentType: 'String!',
         hasDefaultValue: false,
         isAddedFieldArgumentBreaking: true,
+        addedToNewField: false,
       },
       type: 'FIELD_ARGUMENT_ADDED',
     },
@@ -1814,6 +1818,7 @@ describe('schema publishing changes are persisted', () => {
         addedArgumentType: 'String',
         hasDefaultValue: false,
         isAddedFieldArgumentBreaking: false,
+        addedToNewField: false,
       },
       type: 'FIELD_ARGUMENT_ADDED',
     },
@@ -1869,6 +1874,7 @@ describe('schema publishing changes are persisted', () => {
         addedInputFieldName: 'b',
         isAddedInputFieldTypeNullable: true,
         addedInputFieldType: 'String',
+        addedToNewType: false,
       },
       type: 'INPUT_FIELD_ADDED',
     },
@@ -1901,6 +1907,7 @@ describe('schema publishing changes are persisted', () => {
         addedInputFieldName: 'b',
         isAddedInputFieldTypeNullable: false,
         addedInputFieldType: 'String!',
+        addedToNewType: false,
       },
       type: 'INPUT_FIELD_ADDED',
     },
@@ -2128,6 +2135,7 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         objectTypeName: 'Query',
         addedInterfaceName: 'Foo',
+        addedToNewType: false,
       },
       type: 'OBJECT_TYPE_INTERFACE_ADDED',
     },
@@ -2340,6 +2348,7 @@ describe('schema publishing changes are persisted', () => {
     equalsObject: {
       meta: {
         addedTypeName: 'A',
+        addedTypeKind: 'ObjectTypeDefinition',
       },
       type: 'TYPE_ADDED',
     },
@@ -2511,13 +2520,14 @@ describe('schema publishing changes are persisted', () => {
       meta: {
         unionName: 'C',
         addedUnionMemberTypeName: 'B',
+        addedToNewType: false,
       },
       type: 'UNION_MEMBER_ADDED',
     },
   });
 
   persistedTest({
-    name: 'UnionMemberAddedModel',
+    name: 'UnionMemberRemovedModel',
     schemaBefore: /* GraphQL */ `
       type Query {
         a: String!
@@ -2580,6 +2590,566 @@ describe('schema publishing changes are persisted', () => {
         },
       },
       type: 'REGISTRY_SERVICE_URL_CHANGED',
+    },
+  });
+
+  // DirectiveUsage tests
+  persistedTest({
+    name: 'DirectiveUsageEnumValueAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER @auth
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        enumName: 'Role',
+        enumValueName: 'USER',
+        addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ENUM_VALUE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageEnumValueRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER @auth
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on ENUM_VALUE
+
+      enum Role {
+        ADMIN
+        USER
+      }
+
+      type Query {
+        me: String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        enumName: 'Role',
+        enumValueName: 'USER',
+        removedDirectiveName: 'auth',
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ENUM_VALUE_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageFieldDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String @deprecated
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        deprecationReason: 'No longer supported',
+        typeName: 'User',
+        fieldName: 'name',
+      },
+      type: 'FIELD_DEPRECATION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageFieldDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String @deprecated
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @deprecated on FIELD_DEFINITION
+
+      type User {
+        id: ID!
+        name: String
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'User',
+        fieldName: 'name',
+      },
+      type: 'FIELD_DEPRECATION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID! @validate): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'Query',
+        fieldName: 'user',
+        argumentName: 'id',
+        addedDirectiveName: 'validate',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID! @validate): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on ARGUMENT_DEFINITION
+
+      type Query {
+        user(id: ID!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        typeName: 'Query',
+        fieldName: 'user',
+        argumentName: 'id',
+        removedDirectiveName: 'validate',
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_DEFINITION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageObjectAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User @auth {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        objectName: 'User',
+        addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_OBJECT_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageObjectRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User @auth {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      type User {
+        id: ID!
+      }
+
+      type Query {
+        user: User
+      }
+    `,
+    equalsObject: {
+      meta: {
+        objectName: 'User',
+        removedDirectiveName: 'auth',
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_OBJECT_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInputFieldDefinitionAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String!
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String! @validate
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        inputObjectName: 'UserInput',
+        inputFieldName: 'email',
+        addedDirectiveName: 'validate',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+        inputFieldType: 'String!',
+      },
+      type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInputFieldDefinitionRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String! @validate
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @validate on INPUT_FIELD_DEFINITION
+
+      input UserInput {
+        name: String!
+        email: String!
+      }
+
+      type Query {
+        createUser(input: UserInput!): String
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveRepeatedTimes: 0,
+        inputObjectName: 'UserInput',
+        inputFieldName: 'email',
+        removedDirectiveName: 'validate',
+      },
+      type: 'DIRECTIVE_USAGE_INPUT_FIELD_DEFINITION_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInterfaceAddedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node @auth {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        interfaceName: 'Node',
+        addedDirectiveName: 'auth',
+        addedToNewType: false,
+        directiveRepeatedTimes: 1,
+      },
+      type: 'DIRECTIVE_USAGE_INTERFACE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageInterfaceRemovedModel',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node @auth {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on INTERFACE
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveRepeatedTimes: 1,
+        interfaceName: 'Node',
+        removedDirectiveName: 'auth',
+      },
+      type: 'DIRECTIVE_USAGE_INTERFACE_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentAdded',
+    schemaBefore: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth(roles: ["node:read"]) {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        addedArgumentName: 'roles',
+        addedArgumentValue: '["node:read"]',
+        directiveName: 'auth',
+        directiveRepeatedTimes: 1,
+        oldArgumentValue: null,
+        parentArgumentName: null,
+        parentEnumValueName: null,
+        parentFieldName: null,
+        parentTypeName: 'Query',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveUsageArgumentRemoved',
+    schemaBefore: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth(roles: ["node:read"]) {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth(roles: [String!]) on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+        directiveRepeatedTimes: 1,
+        parentArgumentName: null,
+        parentEnumValueName: null,
+        parentFieldName: null,
+        parentTypeName: 'Query',
+        removedArgumentName: 'roles',
+      },
+      type: 'DIRECTIVE_USAGE_ARGUMENT_REMOVED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveRepeatableAdded',
+    schemaBefore: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth repeatable on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+      },
+      type: 'DIRECTIVE_REPEATABLE_ADDED',
+    },
+  });
+
+  persistedTest({
+    name: 'DirectiveRepeatableRemoved',
+    schemaBefore: /* GraphQL */ `
+      directive @auth repeatable on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    schemaAfter: /* GraphQL */ `
+      directive @auth on OBJECT
+
+      interface Node {
+        id: ID!
+      }
+
+      type Query @auth {
+        node: Node
+      }
+    `,
+    equalsObject: {
+      meta: {
+        directiveName: 'auth',
+      },
+      type: 'DIRECTIVE_REPEATABLE_REMOVED',
     },
   });
 });
@@ -2714,11 +3284,12 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -2804,13 +3375,15 @@ test('Composition Error (Federation 2) can be served from the database', async (
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2844,11 +3417,12 @@ test('Composition Error (Federation 2) can be served from the database', async (
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,
@@ -2924,13 +3498,15 @@ test('Composition Network Failure (Federation 2)', async () => {
     );
     const readWriteToken = await createTargetAccessToken({});
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2965,12 +3541,14 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    await enableExternalSchemaComposition(
+    await updateSchemaComposition(
       {
-        endpoint: `http://${serviceAddress}/no_compose`,
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+        external: {
+          endpoint: `http://${serviceAddress}/no_compose`,
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -2992,11 +3570,12 @@ test('Composition Network Failure (Federation 2)', async () => {
       return;
     }
 
-    const latestVersion = await storage.getLatestVersion({
+    const latestVersion = await storage.getMaybeLatestVersion({
       targetId: target.id,
       projectId: project.id,
       organizationId: organization.id,
     });
+    assertNonNull(latestVersion);
 
     const result = await execute({
       document: SchemaCompareToPreviousVersionQuery,

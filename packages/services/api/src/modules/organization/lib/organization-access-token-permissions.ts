@@ -98,12 +98,17 @@ export const permissionGroups: Array<PermissionGroup> = [
   },
   {
     id: 'usage-reporting',
-    title: 'Usage Reporting',
+    title: 'Usage Reporting and Tracing',
     permissions: [
       {
         id: 'usage:report',
         title: 'Report usage data',
         description: 'Grant access to report usage data.',
+      },
+      {
+        id: 'traces:report',
+        title: 'Report OTEL traces',
+        description: 'Grant access to reporting traces.',
       },
     ],
   },
@@ -112,9 +117,14 @@ export const permissionGroups: Array<PermissionGroup> = [
     title: 'Schema Registry',
     permissions: [
       {
+        id: 'schema:compose',
+        title: 'Compose schema',
+        description: 'Allow using "hive dev" command for local composition.',
+      },
+      {
         id: 'schemaCheck:create',
         title: 'Check schema/service/subgraph',
-        description: 'Grant access to publish services/schemas.',
+        description: 'Grant access to run checks for services/schemas.',
       },
       {
         id: 'schemaVersion:publish',
@@ -141,6 +151,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         id: 'appDeployment:publish',
         title: 'Publish app deployment',
         description: 'Grant access to publishing app deployments.',
+      },
+      {
+        id: 'appDeployment:retire',
+        title: 'Retire app deployment',
+        description: 'Grant access to retring app deployments.',
       },
     ],
   },

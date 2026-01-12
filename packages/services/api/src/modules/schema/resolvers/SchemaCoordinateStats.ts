@@ -3,10 +3,7 @@ import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
 import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types';
 
-export const SchemaCoordinateStats: Pick<
-  SchemaCoordinateStatsResolvers,
-  'supergraphMetadata' | '__isTypeOf'
-> = {
+export const SchemaCoordinateStats: Pick<SchemaCoordinateStatsResolvers, 'supergraphMetadata'> = {
   supergraphMetadata: async (
     { organization, project, target, schemaCoordinate },
     _,
@@ -21,7 +18,6 @@ export const SchemaCoordinateStats: Pick<
     // @note: `SchemaVersionHelper.getSupergraphAst` is cached
     const supergraphAst = await injector.get(SchemaVersionHelper).getSupergraphAst(latestVersion);
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
-    supergraph?.schemaCoordinateServicesMappings;
 
     return {
       __typename: 'SupergraphMetadata',

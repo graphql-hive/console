@@ -20,22 +20,20 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
   const { title, tags } = frontmatter;
   const date = new Date(frontmatter.date);
 
-  const postAuthors: Author[] = (
-    typeof frontmatter.authors === 'string'
-      ? [authors[frontmatter.authors as AuthorId]]
-      : frontmatter.authors.map(author => authors[author as AuthorId])
-  ).filter(Boolean);
+  const authorsArray = Array.isArray(frontmatter.authors)
+    ? frontmatter.authors
+    : [frontmatter.authors];
 
-  if (postAuthors.length === 0) {
-    console.error('author not found', frontmatter);
-    throw new Error(`authors ${JSON.stringify(frontmatter.authors)} not found`);
-  }
-
-  const firstAuthor = postAuthors[0];
+  const firstAuthor: Author | undefined = authorsArray
+    .map((authorId: AuthorId | Author) =>
+      typeof authorId === 'string' ? authors[authorId] : authorId,
+    )
+    .find(Boolean);
 
   // todo: show more authors on hover?
   const avatarSrc =
-    firstAuthor.avatar || `https://avatars.githubusercontent.com/${firstAuthor.github}?v=4&s=48`;
+    firstAuthor &&
+    (firstAuthor.avatar || `https://avatars.githubusercontent.com/${firstAuthor.github}?v=4&s=48`);
 
   return (
     <Anchor
@@ -44,6 +42,7 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
         className,
       )}
       href={post.route}
+      scroll
     >
       <article
         className={cn(
@@ -71,17 +70,22 @@ export function BlogCard({ post, className, variant, tag }: BlogCardProps) {
           {title}
         </h3>
         <footer className="mt-auto flex items-center gap-3">
-          <div className="relative size-6">
-            <Image
-              src={avatarSrc}
-              alt={firstAuthor.name}
-              width={24}
-              height={24}
-              className="rounded-full"
-            />
-            <div className="bg-beige-200/70 absolute inset-0 size-full rounded-full opacity-30 mix-blend-hue" />
-          </div>
-          <span className="text-sm/5 font-medium">{firstAuthor.name}</span>
+          {avatarSrc && firstAuthor && (
+            <>
+              <div className="relative size-6">
+                <Image
+                  src={avatarSrc}
+                  alt=""
+                  role="presentation"
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <div className="bg-beige-200/70 absolute inset-0 size-full rounded-full opacity-30 mix-blend-hue" />
+              </div>
+              <span className="text-sm/5 font-medium">{firstAuthor.name}</span>
+            </>
+          )}
         </footer>
       </article>
     </Anchor>

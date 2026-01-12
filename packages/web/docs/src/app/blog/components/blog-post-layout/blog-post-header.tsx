@@ -4,14 +4,14 @@ import { Anchor, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../../../../components/arrow-icon';
 import { useFrontmatter } from '../../../../components/use-frontmatter';
 import { ProductUpdateAuthors } from '../../../product-updates/(posts)/product-update-header';
-import type { BlogFrontmatter } from '../../blog-types';
+import { BlogFrontmatter } from '../../blog-types';
 import { BlogTagChip } from '../blog-tag-chip';
 import { BlogPostPicture } from './blog-post-picture';
 
 export function BlogPostHeader({ className }: { className?: string }) {
   const {
     frontmatter: { image, tags, authors, title, date },
-  } = useFrontmatter<BlogFrontmatter>();
+  } = useFrontmatter(BlogFrontmatter);
 
   const tag = tags[0];
 
@@ -20,7 +20,7 @@ export function BlogPostHeader({ className }: { className?: string }) {
       {image && <BlogPostPicture image={image} />}
       <header
         className={cn(
-          'flex flex-col rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 sm:items-center md:px-12 md:pb-12 md:pt-6 xl:w-[888px]',
+          'flex flex-col rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 sm:items-center md:px-12 md:pb-16 md:pt-12 xl:w-[888px]',
           image && '-mt-20 max-sm:mx-6',
           className,
         )}

@@ -233,6 +233,7 @@ export async function createStorage(
       createdAt: invitation.created_at as any,
       expiresAt: invitation.expires_at as any,
       roleId: invitation.role.id,
+      assignedResources: invitation.assigned_resources as any,
     };
   }
 
@@ -243,6 +244,7 @@ export async function createStorage(
       orgId: project.org_id,
       name: project.name,
       type: project.type as ProjectType,
+      createdAt: new Date(project.created_at).toISOString(),
       buildUrl: project.build_url,
       validationUrl: project.validation_url,
       gitRepository: project.git_repository as `${string}/${string}` | null,
@@ -506,7 +508,7 @@ export async function createStorage(
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
-            (organization_id, user_id, role_id, created_at)
+            (organization_id, user_id, role_id, assigned_resources, created_at)
           VALUES
             (
               ${linkedOrganizationId},
@@ -518,6 +520,14 @@ export async function createStorage(
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
+              ),
+              (
+                SELECT
+                  default_assigned_resources
+                FROM
+                  oidc_integrations
+                WHERE
+                  id = ${args.oidcIntegrationId}
               ),
               now()
             )
@@ -654,7 +664,7 @@ export async function createStorage(
       return userIds.map(async id => mappings.get(id) ?? null);
     }),
     async updateUser({ id, displayName, fullName }) {
-      await pool.one<users>(sql`/* updateUser */
+      await pool.query<users>(sql`/* updateUser */
         UPDATE "users"
         SET
           "display_name" = ${displayName}
@@ -1120,19 +1130,34 @@ export async function createStorage(
         `),
       );
     },
-    async createOrganizationInvitation({ organizationId: organization, email, roleId }) {
+    async createOrganizationInvitation(args) {
       return transformOrganizationInvitation(
         await tracedTransaction('createOrganizationInvitation', pool, async trx => {
           const invitation =
             await trx.one<organization_invitations>(sql`/* createOrganizationInvitation */
-          INSERT INTO organization_invitations (organization_id, email, role_id)
-          VALUES (${organization}, ${email}, ${roleId})
-          RETURNING *
-        `);
+            INSERT INTO "organization_invitations" (
+              "organization_id"
+              , "email"
+              , "role_id"
+              , "assigned_resources"
+            )
+            VALUES (
+              ${args.organizationId}
+              , ${args.email}
+              , ${args.roleId}
+              , ${args.resourceAssignments === null ? null : sql.jsonb(args.resourceAssignments)}
+            )
+            RETURNING *
+          `);
 
           const role = await trx.one<organization_member_roles>(sql`/* getOrganizationRole */
-          SELECT * FROM organization_member_roles WHERE id = ${roleId} LIMIT 1
-        `);
+            SELECT *
+            FROM
+              "organization_member_roles"
+            WHERE
+              "id" = ${args.roleId}
+            LIMIT 1
+          `);
 
           return {
             ...invitation,
@@ -1180,18 +1205,37 @@ export async function createStorage(
       organizationId: organization,
     }) {
       await tracedTransaction('addOrganizationMemberViaInvitationCode', pool, async trx => {
-        const roleId = await trx.oneFirst<string>(sql`/* deleteInviteAndGetRoleId */
-          DELETE FROM organization_invitations
-          WHERE organization_id = ${organization} AND code = ${code}
-          RETURNING role_id
+        const { roleId, assignedResources } = await trx.one<{
+          roleId: string;
+          assignedResources: null | Record<string, any>;
+        }>(sql`/* deleteInviteAndGetRoleId */
+          DELETE
+          FROM
+            "organization_invitations"
+          WHERE
+            "organization_id" = ${organization}
+            AND "code" = ${code}
+          RETURNING
+            role_id as "roleId"
+            , assigned_resources as "assignedResources"
         `);
 
         await trx.query(
           sql`/* addOrganizationMemberViaInvitationCode */
-            INSERT INTO organization_member
-              (organization_id, user_id, role_id, created_at)
-            VALUES
-              (${organization}, ${user}, ${roleId}, now())
+            INSERT INTO "organization_member" (
+              "organization_id"
+              , "user_id"
+              , "role_id"
+              , "assigned_resources"
+              , "created_at"
+            )
+            VALUES (
+              ${organization}
+              , ${user}
+              , ${roleId}
+              , ${assignedResources === null ? null : sql.json(assignedResources)}
+              , now()
+            )
           `,
         );
       });
@@ -1482,7 +1526,8 @@ export async function createStorage(
         await pool.one<projects>(sql`/* updateNativeSchemaComposition */
           UPDATE projects
           SET
-            native_federation = ${enabled}
+            native_federation = ${enabled},
+            external_composition_enabled = FALSE
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1493,22 +1538,10 @@ export async function createStorage(
         await pool.one<Slonik<projects>>(sql`/* enableExternalSchemaComposition */
           UPDATE projects
           SET
+            native_federation = FALSE,
             external_composition_enabled = TRUE,
             external_composition_endpoint = ${endpoint},
             external_composition_secret = ${encryptedSecret}
-          WHERE id = ${project}
-          RETURNING *
-        `),
-      );
-    },
-    async disableExternalSchemaComposition({ projectId: project }) {
-      return transformProject(
-        await pool.one<Slonik<projects>>(sql`/* disableExternalSchemaComposition */
-          UPDATE projects
-          SET
-            external_composition_enabled = FALSE,
-            external_composition_endpoint = NULL,
-            external_composition_secret = NULL
           WHERE id = ${project}
           RETURNING *
         `),
@@ -1725,21 +1758,21 @@ export async function createStorage(
         orgId: organization,
       };
     },
-    async getTargets({ organizationId: organization, projectId: project }) {
+    async getTargets({ organizationId, projectId }) {
       const results = await pool.query<unknown>(sql`/* getTargets */
         SELECT
           ${targetSQLFields}
         FROM
           targets
         WHERE
-          project_id = ${project}
+          project_id = ${projectId}
         ORDER BY
           created_at DESC
       `);
 
       return results.rows.map(r => ({
         ...TargetModel.parse(r),
-        orgId: organization,
+        orgId: organizationId,
       }));
     },
     findTargetsByIds: batchBy<
@@ -2034,31 +2067,17 @@ export async function createStorage(
 
       return SchemaVersionModel.parse(version);
     },
-    async getLatestVersion(args) {
-      const version = await pool.maybeOne<unknown>(
-        sql`/* getLatestVersion */
-          SELECT
-            ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
-          LIMIT 1
-        `,
-      );
-
-      return SchemaVersionModel.parse(version);
-    },
-
     async getMaybeLatestVersion(args) {
       const version = await pool.maybeOne<unknown>(
         sql`/* getMaybeLatestVersion */
           SELECT
             ${schemaVersionSQLFields(sql`sv.`)}
-          FROM schema_versions as sv
-          LEFT JOIN targets as t ON (t.id = sv.target_id)
-          WHERE sv.target_id = ${args.targetId} AND t.project_id = ${args.projectId}
-          ORDER BY sv.created_at DESC
+          FROM
+            "schema_versions" AS "sv"
+          WHERE
+            "sv"."target_id" = ${args.targetId}
+          ORDER BY
+            "sv"."created_at" DESC
           LIMIT 1
         `,
       );
@@ -2298,8 +2317,8 @@ export async function createStorage(
       return { serviceName: after.service_name, after: after.sdl, before: before?.sdl ?? null };
     },
 
-    async getVersion({ projectId: project, targetId: target, versionId: version }) {
-      const result = await pool.one(sql`/* getVersion */
+    async getMaybeVersion({ projectId: project, targetId: target, versionId: version }) {
+      const result = await pool.maybeOne(sql`/* getMaybeVersion */
         SELECT
           ${schemaVersionSQLFields(sql`sv.`)}
         FROM schema_versions as sv
@@ -2311,6 +2330,10 @@ export async function createStorage(
           AND sv.id = ${version}
         LIMIT 1
       `);
+
+      if (!result) {
+        return null;
+      }
 
       return SchemaVersionModel.parse(result);
     },
@@ -2486,7 +2509,7 @@ export async function createStorage(
           });
         }
 
-        await args.actionFn();
+        await args.actionFn(newVersion.id);
 
         return {
           kind: 'composite',
@@ -2593,7 +2616,7 @@ export async function createStorage(
           });
         }
 
-        await input.actionFn();
+        await input.actionFn(version.id);
 
         return {
           version,
@@ -3044,8 +3067,10 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
@@ -3071,8 +3096,10 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
@@ -3115,7 +3142,8 @@ export async function createStorage(
             "client_secret",
             "token_endpoint",
             "userinfo_endpoint",
-            "authorization_endpoint"
+            "authorization_endpoint",
+            "additional_scopes"
           )
           VALUES (
             ${args.organizationId},
@@ -3123,7 +3151,8 @@ export async function createStorage(
             ${args.encryptedClientSecret},
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
-            ${args.authorizationEndpoint}
+            ${args.authorizationEndpoint},
+            ${sql.array(args.additionalScopes, 'text')}
           )
           RETURNING
             "id"
@@ -3134,8 +3163,10 @@ export async function createStorage(
             , "token_endpoint"
             , "userinfo_endpoint"
             , "authorization_endpoint"
+            , "additional_scopes"
             , "oidc_user_access_only"
             , "default_role_id"
+            , "default_assigned_resources"
         `);
 
         return {
@@ -3177,6 +3208,7 @@ export async function createStorage(
             /** update existing columns to the old legacy values if not yet stored */
             sql`COALESCE("authorization_endpoint", CONCAT("oauth_api_url", "/authorize"))`
           }
+          , "additional_scopes" = ${args.additionalScopes ? sql.array(args.additionalScopes, 'text') : sql`"additional_scopes"`}
           , "oauth_api_url" = NULL
         WHERE
           "id" = ${args.oidcIntegrationId}
@@ -3189,8 +3221,10 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3212,11 +3246,40 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
       `);
 
       return decodeOktaIntegrationRecord(result);
+    },
+
+    async updateOIDCDefaultAssignedResources(args) {
+      return tracedTransaction('updateOIDCDefaultAssignedResources', pool, async _ => {
+        const result = await pool.one(sql`/* updateOIDCDefaultAssignedResources */
+          UPDATE "oidc_integrations"
+          SET
+            "default_assigned_resources" = ${sql.jsonb(args.assignedResources)}
+          WHERE
+            "id" = ${args.oidcIntegrationId}
+          RETURNING
+          "id"
+          , "linked_organization_id"
+          , "client_id"
+          , "client_secret"
+          , "oauth_api_url"
+          , "token_endpoint"
+          , "userinfo_endpoint"
+          , "authorization_endpoint"
+          , "oidc_user_access_only"
+          , "additional_scopes"
+          , "default_role_id"
+          , "default_assigned_resources"
+        `);
+
+        return decodeOktaIntegrationRecord(result);
+      });
     },
 
     async updateOIDCDefaultMemberRole(args) {
@@ -3250,8 +3313,10 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "additional_scopes"
           , "oidc_user_access_only"
           , "default_role_id"
+          , "default_assigned_resources"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -3874,6 +3939,7 @@ export async function createStorage(
           INSERT INTO "schema_checks" (
               "schema_sdl_store_id"
             , "service_name"
+            , "service_url"
             , "meta"
             , "target_id"
             , "schema_version_id"
@@ -3894,10 +3960,12 @@ export async function createStorage(
             , "context_id"
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
+            , "schema_proposal_id"
           )
           VALUES (
               ${schemaSDLHash}
             , ${args.serviceName}
+            , ${args.serviceUrl}
             , ${jsonify(args.meta)}
             , ${args.targetId}
             , ${args.schemaVersionId}
@@ -3922,6 +3990,7 @@ export async function createStorage(
               ) ?? false
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
+            , ${args.schemaProposalId ?? null}
           )
           RETURNING
             "id"
@@ -4018,6 +4087,7 @@ export async function createStorage(
         userId: args.userId,
         date: new Date().toISOString(),
         schemaCheckId: schemaCheck.id,
+        author: args.author ?? undefined,
       };
 
       if (schemaCheck.contextId !== null && !!schemaCheck.breakingSchemaChanges) {
@@ -4085,6 +4155,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
+            AND "schema_policy_errors" IS NULL
           RETURNING
             "id"
         `);
@@ -4103,6 +4174,7 @@ export async function createStorage(
             "id" = ${args.schemaCheckId}
             AND "is_success" = false
             AND "schema_composition_errors" IS NULL
+            AND "schema_policy_errors" IS NULL
           RETURNING
             "id"
         `);
@@ -4228,6 +4300,111 @@ export async function createStorage(
 
       return {
         items,
+        pageInfo: {
+          hasNextPage,
+          hasPreviousPage: cursor !== null,
+          get endCursor() {
+            return items[items.length - 1]?.cursor ?? '';
+          },
+          get startCursor() {
+            return items[0]?.cursor ?? '';
+          },
+        },
+      };
+    },
+
+    async getPaginatedSchemaChecksForSchemaProposal(args) {
+      let cursor: null | {
+        createdAt: string;
+        id: string;
+      } = null;
+
+      const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+
+      if (args.cursor) {
+        cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
+      }
+
+      // gets the most recently created schema checks per service name
+      const result = await pool.any<unknown>(sql`/* getPaginatedSchemaChecksForSchemaProposal */
+        SELECT
+          ${schemaCheckSQLFields}
+        FROM
+          "schema_checks" as c
+        ${
+          args.latest
+            ? sql`
+            INNER JOIN (
+              SELECT COALESCE("service_name", '') as "service", "schema_proposal_id", max("created_at") as "maxdate"
+              FROM schema_checks
+              ${
+                cursor
+                  ? sql`
+                    WHERE "schema_proposal_id" = ${args.proposalId}
+                    AND (
+                      (
+                        "created_at" = ${cursor.createdAt}
+                        AND "id" < ${cursor.id}
+                      )
+                      OR "created_at" < ${cursor.createdAt}
+                    )
+                  `
+                  : sql``
+              }
+              GROUP BY "service", "schema_proposal_id"
+            ) as cc
+            ON c."schema_proposal_id" = cc."schema_proposal_id"
+              AND COALESCE(c."service_name", '') = cc."service"
+              AND c."created_at" = cc."maxdate"
+          `
+            : sql``
+        }
+        LEFT JOIN "sdl_store" as s_schema
+          ON s_schema."id" = c."schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_composite_schema
+          ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
+        LEFT JOIN "sdl_store" as s_supergraph
+          ON s_supergraph."id" = c."supergraph_sdl_store_id"
+        WHERE
+          c."schema_proposal_id" = ${args.proposalId}
+          ${
+            cursor
+              ? sql`
+                AND (
+                  (
+                    c."created_at" = ${cursor.createdAt}
+                    AND c."id" < ${cursor.id}
+                  )
+                  OR c."created_at" < ${cursor.createdAt}
+                )
+              `
+              : sql``
+          }
+        ORDER BY
+          c."created_at" DESC
+          , c."id" DESC
+        LIMIT ${limit + 1}
+      `);
+
+      let items = result.map(row => {
+        const node = SchemaCheckModel.parse(row);
+        return {
+          get node() {
+            // TODO: remove this any cast and fix the type issues...
+            return (args.transformNode?.(node) ?? node) as any;
+          },
+          get cursor() {
+            return encodeCreatedAtAndUUIDIdBasedCursor(node);
+          },
+        };
+      });
+
+      const hasNextPage = items.length > limit;
+
+      items = items.slice(0, limit);
+
+      return {
+        edges: items,
         pageInfo: {
           hasNextPage,
           hasPreviousPage: cursor !== null,
@@ -4491,14 +4668,14 @@ export async function createStorage(
       });
     },
 
-    async getSchemaVersionByActionId(args) {
-      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByActionId */
+    async getSchemaVersionByCommit(args) {
+      const record = await pool.maybeOne<unknown>(sql`/* getSchemaVersionByCommit */
         SELECT
           ${schemaVersionSQLFields()}
         FROM
           "schema_versions"
         WHERE
-          "action_id" = ANY(
+          "action_id" = (
             SELECT
               "id"
             FROM
@@ -4506,7 +4683,9 @@ export async function createStorage(
             WHERE
               "schema_log"."project_id" = ${args.projectId}
               AND "schema_log"."target_id" = ${args.targetId}
-              AND "schema_log"."commit" = ${args.actionId}
+              AND "schema_log"."commit" = ${args.commit}
+            ORDER BY "schema_log"."created_at" DESC
+            LIMIT 1
           )
         LIMIT 1
       `);
@@ -4654,8 +4833,13 @@ const OktaIntegrationBaseModel = zod.object({
   linked_organization_id: zod.string(),
   client_id: zod.string(),
   client_secret: zod.string(),
+  additional_scopes: zod
+    .array(zod.string())
+    .nullable()
+    .transform(value => (value === null ? [] : value)),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
+  default_assigned_resources: zod.any().nullable(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -4689,8 +4873,10 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       tokenEndpoint: `${rawRecord.oauth_api_url}/token`,
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
+      additionalScopes: rawRecord.additional_scopes,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
+      defaultResourceAssignment: rawRecord.default_assigned_resources,
     };
   }
 
@@ -4702,8 +4888,10 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     tokenEndpoint: rawRecord.token_endpoint,
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
+    additionalScopes: rawRecord.additional_scopes,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
+    defaultResourceAssignment: rawRecord.default_assigned_resources,
   };
 };
 
@@ -4737,6 +4925,9 @@ const FeatureFlagsModel = zod
     forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
     /** whether app deployments are enabled for the given organization */
     appDeployments: zod.boolean().default(false),
+    /** whether otel tracing is enabled for the given organization */
+    otelTracing: zod.boolean().default(false),
+    schemaProposals: zod.boolean().default(false),
   })
   .optional()
   .nullable()
@@ -4747,6 +4938,8 @@ const FeatureFlagsModel = zod
         compareToPreviousComposableVersion: false,
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
+        otelTracing: false,
+        schemaProposals: false,
       },
   );
 
@@ -5115,9 +5308,10 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
   type: string;
   meta: Record<string, SerializableValue>;
   approvalMetadata: null | {
-    userId: string;
+    userId: string | null;
     date: string;
     schemaCheckId: string;
+    author?: string;
   };
   isSafeBasedOnUsage: boolean;
   usageStatistics: null | {
@@ -5148,6 +5342,7 @@ const schemaCheckSQLFields = sql`
   , to_json(c."updated_at") as "updatedAt"
   , coalesce(c."schema_sdl", s_schema."sdl") as "schemaSDL"
   , c."service_name" as "serviceName"
+  , c."service_url" as "serviceUrl"
   , c."meta"
   , c."target_id" as "targetId"
   , c."schema_version_id" as "schemaVersionId"
@@ -5167,6 +5362,7 @@ const schemaCheckSQLFields = sql`
   , c."manual_approval_comment" as "manualApprovalComment"
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
+  , c."schema_proposal_id" as "schemaProposalId"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`

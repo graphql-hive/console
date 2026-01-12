@@ -27,7 +27,7 @@ jobs:
             node_modules/.cache/prettier
           key:
             lint-cache-${{ hashFiles('**/pnpm-lock.yaml', 'packages/web/*/tailwind.config.ts',
-            'tsconfig.eslint.json', 'packages/web/app/tsconfig.json') }}-${{github.sha}}
+            'tsconfig.eslint.json', 'packages/web/app/tsconfig.json') }}
           restore-keys: |
             lint-cache-${{ hashFiles('**/pnpm-lock.yaml', 'packages/web/*/tailwind.config.ts',
             'tsconfig.eslint.json', 'packages/web/app/tsconfig.json') }}-
@@ -58,9 +58,6 @@ jobs:
             echo "" && \
             exit 1 \
           )
-
-      - name: Generate Types
-        run: pnpm graphql:generate
 
       - name: Operation Check
         run: |

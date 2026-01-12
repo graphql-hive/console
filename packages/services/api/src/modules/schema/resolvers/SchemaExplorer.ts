@@ -22,7 +22,7 @@ import {
   Kind,
 } from 'graphql';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { withUsedByClients } from '../utils';
+import { memo, withUsedByClients } from '../utils';
 import type { SchemaExplorerResolvers } from './../../../__generated__/types';
 
 export const SchemaExplorer: SchemaExplorerResolvers = {
@@ -162,21 +162,24 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
     const typeMap = schema.getTypeMap();
     const operationsManager = injector.get(OperationsManager);
 
-    async function getStats(typename: string) {
-      const stats = await operationsManager.countCoordinatesOfTarget({
-        targetId: usage.targetId,
-        organizationId: usage.organizationId,
-        projectId: usage.projectId,
-        period: usage.period,
-      });
+    const getStats = memo(
+      async function _getStats(typename: string) {
+        const stats = await operationsManager.countCoordinatesOfTarget({
+          targetId: usage.targetId,
+          organizationId: usage.organizationId,
+          projectId: usage.projectId,
+          period: usage.period,
+        });
 
-      return withUsedByClients(stats, {
-        selector: usage,
-        period: usage.period,
-        operationsManager,
-        typename,
-      });
-    }
+        return withUsedByClients(stats, {
+          selector: usage,
+          period: usage.period,
+          operationsManager,
+          typename,
+        });
+      },
+      arg => arg,
+    );
 
     for (const typename in typeMap) {
       if (typename.startsWith('__')) {

@@ -1,9 +1,10 @@
-import { ReactElement, useEffect, useRef } from 'react';
+import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { useFormik } from 'formik';
 import { useForm } from 'react-hook-form';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useClient, useMutation } from 'urql';
+import { useDebouncedCallback } from 'use-debounce';
 import { z } from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -22,10 +23,11 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import { AlertTriangleIcon, KeyIcon } from '@/components/ui/icon';
+import { AlertTriangleIcon, CheckIcon, KeyIcon, XIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { Tag } from '@/components/v2';
@@ -38,6 +40,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
 import { RoleSelector } from '../members/common';
+import {
+  createResourceSelectionFromResourceAssignment,
+  ResourceSelection,
+  ResourceSelector,
+  resourceSlectionToGraphQLSchemaResourceAssignmentInput,
+} from '../members/resource-selector';
 
 function CopyInput(props: { value: string; id?: string }) {
   const copy = useClipboard();
@@ -71,6 +79,12 @@ function FormError({ children }: { children: React.ReactNode }) {
 const OIDCIntegrationSection_OrganizationFragment = graphql(`
   fragment OIDCIntegrationSection_OrganizationFragment on Organization {
     id
+    slug
+    availableOrganizationAccessTokenPermissionGroups {
+      ...PermissionSelector_PermissionGroupsFragment
+      ...SelectedPermissionOverview_PermissionGroupFragment
+    }
+    ...ResourceSelector_OrganizationFragment
     oidcIntegration {
       id
       ...UpdateOIDCIntegration_OIDCIntegrationFragment
@@ -170,6 +184,7 @@ export function OIDCIntegrationSection(props: {
         key={organization.oidcIntegration?.id ?? 'noop'}
         isAdmin={isAdmin}
         organizationId={organization.id}
+        organization={organization}
         oidcIntegration={organization.oidcIntegration ?? null}
         memberRoles={organization.memberRoles?.edges.map(edge => edge.node) ?? null}
         isOpen={isUpdateOIDCIntegrationModalOpen}
@@ -210,6 +225,7 @@ const CreateOIDCIntegrationModal_CreateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
         }
       }
     }
@@ -344,8 +360,8 @@ function OIDCMetadataFetcher(props: {
                 metadataResult.error.formErrors.fieldErrors.userinfo_endpoint?.[0],
               ]
                 .filter(Boolean)
-                .map(msg => (
-                  <p>{msg}</p>
+                .map((msg, i) => (
+                  <p key={i}>{msg}</p>
                 ))}
             </>
           ),
@@ -431,6 +447,7 @@ function CreateOIDCIntegrationForm(props: {
       authorizationEndpoint: '',
       clientId: '',
       clientSecret: '',
+      additionalScopes: '',
     },
     async onSubmit(values) {
       const result = await mutate({
@@ -441,6 +458,7 @@ function CreateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret,
+          additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
         },
       });
 
@@ -549,6 +567,20 @@ function CreateOIDCIntegrationForm(props: {
             </FormError>
           </div>
 
+          <div>
+            <Label htmlFor="additionalScopes">Additional Scopes</Label>
+            <Input
+              placeholder="Separated by spaces"
+              id="additionalScopes"
+              name="additionalScopes"
+              onChange={formik.handleChange}
+              value={formik.values.additionalScopes}
+            />
+            <FormError>
+              {mutation.data?.createOIDCIntegration.error?.details.additionalScopes}
+            </FormError>
+          </div>
+
           <div className="flex w-full justify-end gap-x-2">
             <Button variant="outline" disabled={mutation.fetching} onClick={props.close}>
               Cancel
@@ -571,6 +603,7 @@ function ManageOIDCIntegrationModal(props: {
   openCreateModalHash: string;
   oidcIntegration: FragmentType<typeof UpdateOIDCIntegration_OIDCIntegrationFragment> | null;
   memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>> | null;
+  organization: DocumentType<typeof OIDCIntegrationSection_OrganizationFragment>;
 }) {
   const oidcIntegration = useFragment(
     UpdateOIDCIntegration_OIDCIntegrationFragment,
@@ -612,8 +645,9 @@ function ManageOIDCIntegrationModal(props: {
       isOpen={props.isOpen}
       isAdmin={props.isAdmin}
       key={oidcIntegration.id}
-      oidcIntegration={oidcIntegration}
       memberRoles={props.memberRoles}
+      oidcIntegration={oidcIntegration}
+      organization={props.organization}
     />
   );
 }
@@ -644,11 +678,32 @@ const OIDCDefaultRoleSelector_UpdateMutation = graphql(`
   }
 `);
 
+const OIDCDefaultResourceSelector_UpdateMutation = graphql(`
+  mutation OIDCDefaultResourceSelector_UpdateMutation(
+    $input: UpdateOIDCDefaultResourceAssignmentInput!
+  ) {
+    updateOIDCDefaultResourceAssignment(input: $input) {
+      ok {
+        updatedOIDCIntegration {
+          id
+          defaultResourceAssignment {
+            ...OIDCDefaultResourceSelector_ResourceAssignmentFragment
+          }
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 function OIDCDefaultRoleSelector(props: {
   oidcIntegrationId: string;
   disabled: boolean;
   defaultRole: FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>;
   memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>>;
+  className?: string;
 }) {
   const defaultRole = useFragment(OIDCDefaultRoleSelector_MemberRoleFragment, props.defaultRole);
   const memberRoles = useFragment(OIDCDefaultRoleSelector_MemberRoleFragment, props.memberRoles);
@@ -657,6 +712,7 @@ function OIDCDefaultRoleSelector(props: {
 
   return (
     <RoleSelector
+      className={props.className}
       roles={memberRoles}
       defaultRole={defaultRole}
       disabled={props.disabled}
@@ -702,6 +758,90 @@ function OIDCDefaultRoleSelector(props: {
   );
 }
 
+const OIDCDefaultResourceSelector_ResourceAssignmentFragment = graphql(`
+  fragment OIDCDefaultResourceSelector_ResourceAssignmentFragment on ResourceAssignment {
+    ...createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment
+  }
+`);
+
+function OIDCDefaultResourceSelector(props: {
+  disabled?: boolean;
+  oidcIntegrationId: string;
+  organization: DocumentType<typeof OIDCIntegrationSection_OrganizationFragment>;
+  resourceAssignment: FragmentType<typeof OIDCDefaultResourceSelector_ResourceAssignmentFragment>;
+}) {
+  const resourceAssignment = useFragment(
+    OIDCDefaultResourceSelector_ResourceAssignmentFragment,
+    props.resourceAssignment,
+  );
+  const [_, mutate] = useMutation(OIDCDefaultResourceSelector_UpdateMutation);
+  const [selection, setSelection] = useState<ResourceSelection>(() =>
+    createResourceSelectionFromResourceAssignment(resourceAssignment),
+  );
+
+  const [mutateState, setMutateState] = useState<null | 'loading' | 'success' | 'error'>(null);
+  const debouncedMutate = useDebouncedCallback(
+    async (args: Parameters<typeof mutate>[0]) => {
+      setMutateState('loading');
+      await mutate(args)
+        .then(data => {
+          if (data.error) {
+            setMutateState('error');
+          } else {
+            setMutateState('success');
+          }
+          return data;
+        })
+        .catch((err: unknown) => {
+          console.error(err);
+          setMutateState('error');
+        });
+    },
+    1500,
+    { leading: false },
+  );
+
+  function MutateState() {
+    if (debouncedMutate.isPending() || mutateState === 'loading') {
+      return <Spinner className="absolute right-0 top-0" />;
+    }
+
+    if (mutateState === 'error') {
+      return <XIcon className="absolute right-0 top-0 text-red-500" />;
+    }
+
+    if (mutateState === 'success') {
+      return <CheckIcon className="absolute right-0 top-0 text-emerald-500" />;
+    }
+
+    return null;
+  }
+
+  const _setSelection = useCallback(
+    async (resources: ResourceSelection) => {
+      setSelection(resources);
+      await debouncedMutate({
+        input: {
+          oidcIntegrationId: props.oidcIntegrationId,
+          resources: resourceSlectionToGraphQLSchemaResourceAssignmentInput(resources),
+        },
+      });
+    },
+    [debouncedMutate, setSelection, props.oidcIntegrationId],
+  );
+
+  return (
+    <div className="relative">
+      <MutateState />
+      <ResourceSelector
+        selection={selection}
+        onSelectionChange={props.disabled ? () => void 0 : _setSelection}
+        organization={props.organization}
+      />
+    </div>
+  );
+}
+
 const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
   fragment UpdateOIDCIntegration_OIDCIntegrationFragment on OIDCIntegration {
     id
@@ -710,10 +850,14 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     authorizationEndpoint
     clientId
     clientSecretPreview
+    additionalScopes
     oidcUserAccessOnly
     defaultMemberRole {
       id
       ...OIDCDefaultRoleSelector_MemberRoleFragment
+    }
+    defaultResourceAssignment {
+      ...OIDCDefaultResourceSelector_ResourceAssignmentFragment
     }
   }
 `);
@@ -731,6 +875,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           authorizationEndpoint
           clientId
           clientSecretPreview
+          additionalScopes
         }
       }
       error {
@@ -741,6 +886,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           tokenEndpoint
           userinfoEndpoint
           authorizationEndpoint
+          additionalScopes
         }
       }
     }
@@ -771,6 +917,7 @@ function UpdateOIDCIntegrationForm(props: {
   oidcIntegration: DocumentType<typeof UpdateOIDCIntegration_OIDCIntegrationFragment>;
   isAdmin: boolean;
   memberRoles: Array<FragmentType<typeof OIDCDefaultRoleSelector_MemberRoleFragment>>;
+  organization: DocumentType<typeof OIDCIntegrationSection_OrganizationFragment>;
 }): ReactElement {
   const [oidcUpdateMutation, oidcUpdateMutate] = useMutation(
     UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation,
@@ -787,6 +934,7 @@ function UpdateOIDCIntegrationForm(props: {
       authorizationEndpoint: props.oidcIntegration.authorizationEndpoint,
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
+      additionalScopes: props.oidcIntegration.additionalScopes.join(' '),
     },
     async onSubmit(values) {
       const result = await oidcUpdateMutate({
@@ -797,6 +945,7 @@ function UpdateOIDCIntegrationForm(props: {
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
           clientSecret: values.clientSecret === '' ? undefined : values.clientSecret,
+          additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
         },
       });
 
@@ -857,10 +1006,10 @@ function UpdateOIDCIntegrationForm(props: {
 
   return (
     <Dialog open={props.isOpen} onOpenChange={props.close}>
-      <DialogContent className="flex min-h-[600px] w-[960px] max-w-none">
-        <div className={cn(classes.container, 'flex-1')}>
-          <div className="flex gap-x-5">
-            <div className="flex-1">
+      <DialogContent className="flex max-h-[100vh] w-[960px] max-w-[100%] overflow-y-auto">
+        <div className={classes.container}>
+          <div className="bg-border grid grid-cols-1 gap-[1px] md:grid-cols-2">
+            <div className="bg-background py-4 pr-4 md:pt-0">
               <div className="flex flex-col gap-y-5">
                 <div className={cn(classes.container, 'flex flex-col gap-y-4')}>
                   <div>
@@ -915,36 +1064,42 @@ function UpdateOIDCIntegrationForm(props: {
                     </div>
                     <div
                       className={cn(
-                        'flex items-center justify-between space-x-4',
+                        'space-y-1 text-sm font-medium leading-none',
                         props.isAdmin ? null : 'cursor-not-allowed',
                       )}
                     >
-                      <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                        <p>Default Member Role</p>
-                        <p className="text-muted-foreground text-xs font-normal leading-snug">
-                          This role is assigned to new members who sign in via OIDC.{' '}
-                          <span className="font-medium">
-                            Only members with the Admin role can modify it.
-                          </span>
-                        </p>
+                      <p>Default Member Role</p>
+                      <div className="flex items-start justify-between space-x-4">
+                        <div className="flex basis-2/3 flex-col md:basis-1/2">
+                          <p className="text-muted-foreground text-xs font-normal leading-snug">
+                            This role is assigned to new members who sign in via OIDC.{' '}
+                            <span className="font-medium">
+                              Only members with the Admin role can modify it.
+                            </span>
+                          </p>
+                        </div>
+                        <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
+                          <OIDCDefaultRoleSelector
+                            className="w-full"
+                            disabled={!props.isAdmin}
+                            oidcIntegrationId={props.oidcIntegration.id}
+                            defaultRole={props.oidcIntegration.defaultMemberRole}
+                            memberRoles={props.memberRoles}
+                          />
+                        </div>
                       </div>
-                      <OIDCDefaultRoleSelector
-                        disabled={!props.isAdmin}
-                        oidcIntegrationId={props.oidcIntegration.id}
-                        defaultRole={props.oidcIntegration.defaultMemberRole}
-                        memberRoles={props.memberRoles}
-                      />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <Separator orientation="vertical" />
-
             <form
-              className={cn(classes.container, 'flex flex-1 flex-col gap-y-4')}
               onSubmit={formik.handleSubmit}
+              className={cn(
+                classes.container,
+                'bg-background order-first pb-4 md:order-none md:pl-4',
+              )}
             >
               <div>
                 <div className="text-lg font-medium">Properties</div>
@@ -1032,7 +1187,22 @@ function UpdateOIDCIntegrationForm(props: {
                     {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.clientSecret}
                   </FormError>
                 </div>
-                <div className="space-x-2 text-right">
+
+                <div>
+                  <Label htmlFor="additionalScopes">Additional Scopes</Label>
+                  <Input
+                    placeholder="Separated by spaces"
+                    id="additionalScopes"
+                    name="additionalScopes"
+                    onChange={formik.handleChange}
+                    value={formik.values.additionalScopes}
+                  />
+                  <FormError>
+                    {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.additionalScopes}
+                  </FormError>
+                </div>
+
+                <div className="space-x-2 pb-4 text-right">
                   <Button
                     variant="outline"
                     onClick={ev => {
@@ -1042,14 +1212,29 @@ function UpdateOIDCIntegrationForm(props: {
                     }}
                     tabIndex={0}
                   >
-                    Close
+                    Cancel
                   </Button>
                   <Button type="submit" disabled={oidcUpdateMutation.fetching}>
-                    Save
+                    Save Properties
                   </Button>
                 </div>
               </div>
             </form>
+          </div>
+          <div className="space-y-1 text-sm font-medium leading-none">
+            <p>Default Resource Assignments</p>
+            <p className="text-muted-foreground text-xs font-normal leading-snug">
+              This permitted resources for new members who sign in via OIDC.{' '}
+              <span className="font-medium">Only members with the Admin role can modify it.</span>
+            </p>
+          </div>
+          <div className="pb-4">
+            <OIDCDefaultResourceSelector
+              oidcIntegrationId={props.oidcIntegration.id}
+              disabled={!props.isAdmin}
+              organization={props.organization}
+              resourceAssignment={props.oidcIntegration.defaultResourceAssignment ?? {}}
+            />
           </div>
         </div>
       </DialogContent>

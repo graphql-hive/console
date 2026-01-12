@@ -54,6 +54,7 @@ function OperationsView({
             period={dateRangeController.resolvedRange}
             selected={selectedOperations}
             onFilter={setSelectedOperations}
+            clientNames={selectedClients}
           />
           <ClientsFilterTrigger
             organizationSlug={organizationSlug}
@@ -61,6 +62,7 @@ function OperationsView({
             targetSlug={targetSlug}
             period={dateRangeController.resolvedRange}
             selected={selectedClients}
+            selectedOperationIds={selectedOperations}
             onFilter={setSelectedClients}
           />
           <DateRangePicker
@@ -109,9 +111,7 @@ const TargetOperationsPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -171,7 +171,7 @@ function TargetOperationsPageContent(props: {
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
     />
   );
 }

@@ -1,8 +1,15 @@
 export default {
   index: 'Introduction',
-  'usage-reporting': 'Usage Reporting and Monitoring',
-  'schema-policy': 'Schema Policies',
+  'get-started': 'Getting Started',
+  management: 'Management',
+  explorer: 'Schema Explorer',
+  'usage-reporting': 'Usage Reporting and Insights',
+  laboratory: 'Laboratory',
+  'high-availability-cdn': 'High-Availability CDN',
   contracts: 'Schema Contracts',
+  'schema-policy': 'Schema Policies',
   'app-deployments': 'App Deployments (Persisted Documents)',
   'external-schema-composition': 'External Schema Composition',
+  'high-availability-resilence': 'High-Availability and Resilence',
+  'self-hosting': 'Self-Hosting',
 };

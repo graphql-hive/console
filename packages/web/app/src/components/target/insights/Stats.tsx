@@ -28,7 +28,7 @@ import {
   useFormattedThroughput,
 } from '@/lib/hooks';
 import { pick } from '@/lib/object';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './Fallback';
 import { resolutionToMilliseconds } from './utils';
@@ -716,11 +716,12 @@ function ClientsStats(props: {
                     trigger: 'item',
                     formatter(dataPoint: {
                       data: {
+                        path: string;
                         name: string;
                         value: number;
                       };
                     }) {
-                      return `${dataPoint.data.name}: ${formatNumber(dataPoint.data.value)}`;
+                      return `<div>${dataPoint.data.path ?? dataPoint.data.name}</div>Operations: <b>${formatNumber(dataPoint.data.value)}</b>`;
                     },
                   },
                   legend: {
@@ -731,16 +732,29 @@ function ClientsStats(props: {
                       name: 'All clients and versions',
                       type: 'treemap',
                       label: {
+                        position: ['50%', '50%'],
+                        offset: [0, -15],
                         show: true,
-                        formatter: '{b}',
+                        formatter: '{a|{b}}',
+                        overflow: 'none',
+                        align: 'center',
+                        rich: {
+                          a: {
+                            padding: 4,
+                            height: 15,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                          },
+                        },
                       },
                       upperLabel: {
                         show: true,
                         height: 30,
+                        formatter: '{b}',
                         color: '#fff',
                         backgroundColor: 'transparent',
                         padding: 5,
                         fontWeight: 'bold',
+                        overflow: 'none',
                       },
                       itemStyle: {
                         borderColor: 'rgba(255, 255, 255, 0.2)',

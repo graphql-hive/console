@@ -38,9 +38,6 @@ export function deployUsage({
   docker: Docker;
   sentry: Sentry;
 }) {
-  const replicas = environment.isProduction ? 3 : 1;
-  const cpuLimit = environment.isProduction ? '600m' : '300m';
-  const maxReplicas = environment.isProduction ? 6 : 2;
   const kafkaBufferDynamic =
     kafka.config.bufferDynamic === 'true' || kafka.config.bufferDynamic === '1' ? '1' : '0';
 
@@ -50,7 +47,7 @@ export function deployUsage({
       {
         image,
         imagePullSecret: docker.secret,
-        replicas,
+        replicas: environment.podsConfig.usageService.replicas,
         readinessProbe: {
           initialDelaySeconds: 10,
           periodSeconds: 5,
@@ -85,10 +82,10 @@ export function deployUsage({
         pdb: true,
         autoScaling: {
           cpu: {
-            cpuAverageToScale: 60,
-            limit: cpuLimit,
+            cpuAverageToScale: environment.podsConfig.usageService.cpuAverageToScale,
+            limit: environment.podsConfig.usageService.cpuLimit,
           },
-          maxReplicas,
+          maxReplicas: environment.podsConfig.usageService.maxReplicas,
         },
       },
       [

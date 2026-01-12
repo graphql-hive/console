@@ -64,6 +64,8 @@ jobs:
       - name: build packages and applications
         if: ${{ inputs.build }}
         run: pnpm build
+        env:
+          NODE_OPTIONS: '--max-old-space-size=14336' # GitHub Actions gives us 16GB, it's ok to use 80%
 
       - name: test ESM & CJS exports integrity
         if: ${{ inputs.build }}
@@ -77,6 +79,7 @@ jobs:
           files:
             packages/services/broker-worker/dist/index.worker.mjs
             packages/services/cdn-worker/dist/index.worker.mjs
+            packages/services/cdn-worker/dist/index.lambda.mjs
           dest: ${{ inputs.imageTag }}.zip
 
       - name: upload artifact
@@ -166,6 +169,7 @@ jobs:
           source: .
           set: |
             *.cache-from=type=gha,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
+            *.cache-from=type=gha,ignore-error=true,scope=refs_heads_main-${{ inputs.targets }}-${{ matrix.platform == 'linux/amd64' && 'linux_amd64' || 'linux_arm64' }}
             *.cache-to=type=gha,mode=max,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
 
       - name: docker details pr comment
@@ -182,14 +186,6 @@ jobs:
             **Platforms**: `${{ matrix.platform }}`
 
             **Image Tag**: `${{ inputs.imageTag }}`
-
-            <details>
-              <summary>Docker Bake metadata</summary>
-
-              ```json
-              ${{ steps.docker-bake.outputs.metadata }}
-              ```
-            </details>
 
       - name: upload sourcemaps to Sentry
         if: ${{ inputs.publishSourceMaps }}

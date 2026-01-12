@@ -33,6 +33,7 @@ export const PermissionSelector_PermissionGroupsFragment = graphql(`
       title
       isReadOnly
       warning
+      isAssignableByViewer
     }
   }
 `);
@@ -139,11 +140,29 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         }
                       }}
                     >
-                      <div className={cn(needsDependency && 'opacity-30')}>
+                      <div
+                        className={cn(
+                          (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
+                        )}
+                      >
                         <div className="font-semibold text-white">{permission.title}</div>
                         <div className="text-xs text-gray-400">{permission.description}</div>
                       </div>
-                      {permission.warning && props.selectedPermissionIds.has(permission.id) ? (
+                      {permission.isAssignableByViewer === false ? (
+                        <div className="flex grow justify-end">
+                          <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <InfoIcon />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Your membership has insufficient authority for assigning this
+                                permission.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : permission.warning && props.selectedPermissionIds.has(permission.id) ? (
                         <div className="flex grow justify-end">
                           <TooltipProvider delayDuration={0}>
                             <Tooltip>
@@ -205,7 +224,12 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         )
                       )}
                       <Select
-                        disabled={props.isReadOnly || permission.isReadOnly || needsDependency}
+                        disabled={
+                          props.isReadOnly ||
+                          permission.isReadOnly ||
+                          needsDependency ||
+                          !permission.isAssignableByViewer
+                        }
                         value={
                           permission.isReadOnly || props.selectedPermissionIds.has(permission.id)
                             ? 'allow'

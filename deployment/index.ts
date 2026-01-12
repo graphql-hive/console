@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import { deployApp } from './services/app';
+import { deployAWSArtifactsLambdaFunction } from './services/aws-artifacts-lambda-function';
 import { deployCFBroker } from './services/cf-broker';
 import { deployCFCDN } from './services/cf-cdn';
 import { deployClickhouse } from './services/clickhouse';
@@ -8,12 +9,12 @@ import { deployCommerce } from './services/commerce';
 import { deployDatabaseCleanupJob } from './services/database-cleanup';
 import { deployDbMigrations } from './services/db-migrations';
 import { configureDocker } from './services/docker';
-import { deployEmails } from './services/emails';
 import { prepareEnvironment } from './services/environment';
 import { configureGithubApp } from './services/github';
 import { deployGraphQL } from './services/graphql';
 import { deployKafka } from './services/kafka';
 import { deployObservability } from './services/observability';
+import { deployOTELCollector } from './services/otel-collector';
 import { deploySchemaPolicy } from './services/policy';
 import { deployPostgres } from './services/postgres';
 import { deployProxy } from './services/proxy';
@@ -27,7 +28,7 @@ import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
-import { deployWebhooks } from './services/webhooks';
+import { deployWorkflows, PostmarkSecret } from './services/workflows';
 import { configureZendesk } from './services/zendesk';
 import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
@@ -66,6 +67,13 @@ const docker = configureDocker();
 const envName = pulumi.getStack();
 const heartbeatsConfig = new pulumi.Config('heartbeats');
 
+const emailConfig = new pulumi.Config('email');
+const postmarkSecret = new PostmarkSecret('postmark', {
+  token: emailConfig.requireSecret('token'),
+  from: emailConfig.require('from'),
+  messageStream: emailConfig.require('messageStream'),
+});
+
 const sentry = configureSentry();
 const environment = prepareEnvironment({
   release: imagesTag,
@@ -85,6 +93,11 @@ const cdn = deployCFCDN({
   s3,
   s3Mirror,
   sentry,
+  environment,
+});
+
+const lambdaFunction = deployAWSArtifactsLambdaFunction({
+  s3Mirror,
   environment,
 });
 
@@ -123,24 +136,15 @@ const tokens = deployTokens({
   observability,
 });
 
-const webhooks = deployWebhooks({
-  image: docker.factory.getImageId('webhooks', imagesTag),
-  environment,
-  heartbeat: heartbeatsConfig.get('webhooks'),
-  broker,
-  docker,
-  redis,
-  sentry,
-  observability,
-});
-
-const emails = deployEmails({
-  image: docker.factory.getImageId('emails', imagesTag),
+deployWorkflows({
+  image: docker.factory.getImageId('workflows', imagesTag),
   docker,
   environment,
-  redis,
-  sentry,
+  postgres,
+  postmarkSecret,
   observability,
+  sentry,
+  heartbeat: heartbeatsConfig.get('workflows'),
 });
 
 const commerce = deployCommerce({
@@ -151,7 +155,6 @@ const commerce = deployCommerce({
   dbMigrations,
   sentry,
   observability,
-  emails,
   postgres,
 });
 
@@ -210,7 +213,6 @@ const graphql = deployGraphQL({
   image: docker.factory.getImageId('server', imagesTag),
   docker,
   tokens,
-  webhooks,
   schema,
   schemaPolicy,
   dbMigrations,
@@ -218,7 +220,6 @@ const graphql = deployGraphQL({
   usage,
   cdn,
   commerce,
-  emails,
   supertokens,
   s3,
   s3Mirror,
@@ -234,22 +235,29 @@ const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
   usageAccessToken: hiveConfig.requireSecret('cliAccessToken'),
 });
 
-const publishGraphQLSchemaCommand = publishGraphQLSchema({
-  graphql,
-  registry: {
-    endpoint: `https://${environment.appDns}/registry`,
-    accessToken: hiveConfigSecret.raw.usageAccessToken,
-    target: hiveConfig.require('target'),
-  },
-  version: {
-    commit: imagesTag,
-  },
-  schemaPath: graphqlSchemaAbsolutePath,
-});
+// You can change this to `false` in cases when you don't want to publish commands.
+// For example, if the entire env is down or if you are having SSL issues.
+// eslint-disable-next-line no-process-env
+const RUN_PUBLISH_COMMANDS: boolean = process.env.SKIP_PUBLISH_COMMANDS !== '1';
+
+const publishGraphQLSchemaCommand = RUN_PUBLISH_COMMANDS
+  ? publishGraphQLSchema({
+      graphql,
+      registry: {
+        endpoint: `https://${environment.appDns}/registry`,
+        accessToken: hiveConfigSecret.raw.usageAccessToken,
+        target: hiveConfig.require('target'),
+      },
+      version: {
+        commit: imagesTag,
+      },
+      schemaPath: graphqlSchemaAbsolutePath,
+    })
+  : null;
 
 let publishAppDeploymentCommand: pulumi.Resource | undefined;
 
-if (hiveAppPersistedDocumentsAbsolutePath) {
+if (hiveAppPersistedDocumentsAbsolutePath && RUN_PUBLISH_COMMANDS) {
   publishAppDeploymentCommand = publishAppDeployment({
     appName: 'hive-app',
     registry: {
@@ -268,9 +276,18 @@ if (hiveAppPersistedDocumentsAbsolutePath) {
           dockerSecret: docker.secret,
         },
     // We need to wait until the new GraphQL schema is published before we can publish the app deployment.
-    dependsOn: [publishGraphQLSchemaCommand],
+    dependsOn: publishGraphQLSchemaCommand ? [publishGraphQLSchemaCommand] : [],
   });
 }
+
+const otelCollector = deployOTELCollector({
+  environment,
+  graphql,
+  dbMigrations,
+  clickhouse,
+  image: docker.factory.getImageId('otel-collector', imagesTag),
+  docker,
+});
 
 const app = deployApp({
   environment,
@@ -291,6 +308,7 @@ const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
   graphql,
   docker,
   observability,
+  otelCollector,
 });
 
 const proxy = deployProxy({
@@ -300,6 +318,7 @@ const proxy = deployProxy({
   usage,
   environment,
   publicGraphQLAPIGateway,
+  otelCollector,
 });
 
 deployCloudFlareSecurityTransform({
@@ -316,18 +335,6 @@ deployCloudFlareSecurityTransform({
     '/api/github',
     '/api/slack',
   ],
-  ignoredHosts: [
-    // Ignore CSP for Production CDN
-    'cdn.graphql-hive.com',
-    // Staging
-    'staging.graphql-hive.com',
-    'app.staging.graphql-hive.com',
-    'cdn.staging.graphql-hive.com',
-    // Dev
-    'dev.graphql-hive.com',
-    'app.dev.graphql-hive.com',
-    'cdn.dev.graphql-hive.com',
-  ],
 });
 
 export const graphqlApiServiceId = graphql.service.id;
@@ -335,7 +342,8 @@ export const usageApiServiceId = usage.service.id;
 export const usageIngestorApiServiceId = usageIngestor.service.id;
 export const tokensApiServiceId = tokens.service.id;
 export const schemaApiServiceId = schema.service.id;
-export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
+export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
+export const awsLambdaArtifactsFunctionUrl = lambdaFunction;

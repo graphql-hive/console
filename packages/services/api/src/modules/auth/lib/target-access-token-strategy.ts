@@ -8,7 +8,7 @@ import {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../providers/scopes';
-import { AuthNStrategy, Session, type AuthorizationPolicyStatement } from './authz';
+import { AuthNStrategy, Permission, Session, type AuthorizationPolicyStatement } from './authz';
 
 export class TargetAccessTokenSession extends Session {
   public readonly organizationId: string;
@@ -55,6 +55,11 @@ export class TargetAccessTokenSession extends Session {
       projectId: this.projectId,
       targetId: this.targetId,
     };
+  }
+
+  get allowedPermissions(): Array<Permission> {
+    // Since the list is static and computed below, we can safely hard-cast it and treat all policy statements as "allow"
+    return this.policies.map(policy => policy.action) as Array<Permission>;
   }
 
   public async getActor(): Promise<never> {
@@ -182,6 +187,7 @@ function transformAccessTokenLegacyScopes(args: {
               'schemaVersion:publish',
               'schemaVersion:deleteService',
               'schemaVersion:publish',
+              'schemaCheck:approve',
             ],
             resource: [`hrn:${args.organizationId}:target/${args.targetId}`],
           },

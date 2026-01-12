@@ -23,6 +23,8 @@ const data: { slug: string } = {
 
 beforeEach(() => {
   cy.clearLocalStorage().then(async () => {
+    window.localStorage.setItem('hive:laboratory:type', 'graphiql');
+
     cy.task('seedTarget').then(({ slug, refreshToken }: any) => {
       cy.setCookie('sRefreshToken', refreshToken);
       data.slug = slug;
@@ -232,9 +234,11 @@ describe('Execution', () => {
     const baseHeaders = {
       accept: 'application/json, multipart/mixed',
     };
-    cy.intercept({ headers: baseHeaders }).as('integrityCheck');
+    // Wait for GraphiQL editor to be ready before clicking execute
+    cy.get('.graphiql-query-editor .cm-s-graphiql').should('exist');
+    cy.intercept('POST', '**/api/lab/**').as('integrityCheck');
     cy.get(selectors.graphiql.buttonExecute).click();
-    cy.wait('@integrityCheck');
+    cy.wait('@integrityCheck').its('request.headers.accept').should('include', baseHeaders.accept);
     // Setup Preflight Script
     const preflightHeaders = {
       accept: 'application/graphql-response+json; charset=utf-8, application/json; charset=utf-8',

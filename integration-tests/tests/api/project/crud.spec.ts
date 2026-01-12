@@ -1,5 +1,5 @@
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
-import { updateProjectSlug } from '../../../testkit/flow';
+import { readProjectInfo, updateProjectSlug } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -28,6 +28,43 @@ test.concurrent(
         name: 'production',
       }),
     );
+  },
+);
+
+test.concurrent(
+  'creating a project should return createdAt as a valid ISO date string',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    expect(project.createdAt).toBeDefined();
+    expect(typeof project.createdAt).toBe('string');
+    // Verify it's a valid ISO date string
+    const parsedDate = new Date(project.createdAt);
+    expect(parsedDate.toISOString()).toBe(project.createdAt);
+  },
+);
+
+test.concurrent(
+  'querying a project should return createdAt as a valid ISO date string',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    const result = await readProjectInfo(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.project?.createdAt).toBeDefined();
+    expect(typeof result.project?.createdAt).toBe('string');
+    // Verify it matches the createdAt from the mutation
+    expect(result.project?.createdAt).toBe(project.createdAt);
   },
 );
 

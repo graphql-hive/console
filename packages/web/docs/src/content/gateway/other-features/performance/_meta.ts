@@ -6,7 +6,7 @@ export default {
   'execution-cancellation': 'Execution Cancellation',
   'upstream-cancellation': 'Upstream Cancellation',
   'http-caching': 'Upstream HTTP Caching',
-  'deduplicate-request': 'Deduplicate HTTP Requests',
+  'deduplicate-inflight-requests': 'Deduplicate Inflight Requests',
   'automatic-persisted-queries': 'Automatic Persisted Queries',
   'request-batching': 'Request Batching',
 };

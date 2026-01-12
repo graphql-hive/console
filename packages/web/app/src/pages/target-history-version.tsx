@@ -1,20 +1,22 @@
 import { ReactElement, useMemo, useState } from 'react';
 import { CheckIcon, GitCompareIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import {
   ChangesBlock,
   CompositionErrorsSection,
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
+import { CopyText } from '@/components/ui/copy-text';
 import { DiffIcon } from '@/components/ui/icon';
 import { Subtitle, Title } from '@/components/ui/page';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { DiffEditor } from '@/components/v2';
+import { DiffEditor, TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType, SeverityLevelType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
+import { cn, isValidUUID } from '@/lib/utils';
 import {
   CheckCircledIcon,
   CrossCircledIcon,
@@ -43,6 +45,15 @@ const SchemaVersionView_SchemaVersionFragment = graphql(`
     ...DefaultSchemaVersionView_SchemaVersionFragment
     hasSchemaChanges
     isComposable
+    log {
+      ... on PushedSchemaLog {
+        id
+        author
+        service
+        commit
+        date
+      }
+    }
     contractVersions {
       edges {
         node {
@@ -79,6 +90,55 @@ function SchemaVersionView(props: {
       <div className="py-6">
         <Title>Schema Version {schemaVersion.id}</Title>
         <Subtitle>Detailed view of the schema version</Subtitle>
+      </div>
+      <div className="mb-3">
+        <div className="grid items-center justify-between gap-x-4 gap-y-2 rounded-md border border-gray-800 p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+          <div className="min-w-0">
+            <div className="text-xs">Status</div>
+            <div
+              className={cn(
+                'truncate text-sm font-semibold text-white',
+                !schemaVersion.isComposable && 'text-red-600',
+              )}
+            >
+              {schemaVersion.isComposable === false ? <>Composition Errors</> : <>Composable</>}
+            </div>
+          </div>
+          {'service' in schemaVersion.log && schemaVersion.log.service ? (
+            <div className="min-w-0">
+              <div className="text-xs">Service</div>
+              <div
+                className="truncate text-sm font-semibold text-white"
+                title={schemaVersion.log.service}
+              >
+                {schemaVersion.log.service}
+              </div>
+            </div>
+          ) : null}
+          {'date' in schemaVersion.log && (
+            <div className="min-w-0">
+              <div className="text-xs">
+                Triggered <TimeAgo date={schemaVersion.log.date} />
+              </div>
+              {'author' in schemaVersion.log && schemaVersion.log.author && (
+                <div className="truncate text-sm text-white" title={schemaVersion.log.author}>
+                  by {schemaVersion.log.author}
+                </div>
+              )}
+            </div>
+          )}
+          {'commit' in schemaVersion.log && schemaVersion.log.commit && (
+            <div className="min-w-0">
+              <div className="text-xs">Commit</div>
+              <div
+                className="truncate text-sm font-semibold text-white"
+                title={schemaVersion.log.commit}
+              >
+                <CopyText>{schemaVersion.log.commit}</CopyText>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       {schemaVersion.contractVersions?.edges && (
         <Tabs
@@ -183,15 +243,11 @@ const DefaultSchemaVersionView_SchemaVersionFragment = graphql(`
     log {
       ... on PushedSchemaLog {
         id
-        author
-        service
-        commit
         serviceSdl
         previousServiceSdl
       }
       ... on DeletedSchemaLog {
         id
-        deletedService
         previousServiceSdl
       }
     }
@@ -384,9 +440,6 @@ function DefaultSchemaVersionView(props: {
 const ContractVersionView_ContractVersionFragment = graphql(`
   fragment ContractVersionView_ContractVersionFragment on ContractVersion {
     id
-    contractName
-    isComposable
-    hasSchemaChanges
     isFirstComposableVersion
     supergraphSDL
     compositeSchemaSDL
@@ -581,6 +634,8 @@ function ActiveSchemaVersion(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
+  const isValidVersionId = isValidUUID(props.versionId);
+
   const [query] = useQuery({
     query: ActiveSchemaVersion_SchemaVersionQuery,
     variables: {
@@ -589,21 +644,43 @@ function ActiveSchemaVersion(props: {
       targetSlug: props.targetSlug,
       versionId: props.versionId,
     },
+    // don't fire query if this is an invalid UUID
+    pause: !isValidVersionId,
   });
 
   const { error } = query;
-
   const isLoading = query.fetching || query.stale;
   const project = query.data?.project;
   const schemaVersion = project?.target?.schemaVersion;
   const projectType = query.data?.project?.type;
 
-  if (isLoading || !schemaVersion || !projectType) {
+  if (!isValidVersionId) {
+    return (
+      <NotFoundContent
+        heading="Invalid version ID"
+        subheading="The provided version ID is not a valid UUID format."
+        includeBackButton={false}
+      />
+    );
+  }
+
+  if (isLoading || !projectType) {
     return (
       <div className="flex size-full flex-col items-center justify-center self-center text-sm text-gray-500">
         <Spinner className="mb-3 size-8" />
         Loading schema version...
       </div>
+    );
+  }
+
+  // if we're here, we have a valid UUID for versionId but the schemaVersion is doesn't exist
+  if (!schemaVersion) {
+    return (
+      <NotFoundContent
+        heading="Schema Version not found."
+        subheading="This schema version does not seem to exist anymore."
+        includeBackButton={false}
+      />
     );
   }
 

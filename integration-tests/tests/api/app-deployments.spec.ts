@@ -1133,7 +1133,9 @@ test('activate app deployment fails if app deployment is retired', async () => {
     document: RetireAppDeployment,
     variables: {
       input: {
-        targetId: target.id,
+        target: {
+          byId: target.id,
+        },
         appName: 'my-app',
         appVersion: '1.0.0',
       },
@@ -1147,7 +1149,7 @@ test('activate app deployment fails if app deployment is retired', async () => {
         retiredAppDeployment: {
           id: expect.any(String),
           name: 'my-app',
-          status: 'active',
+          status: 'retired',
           version: '1.0.0',
         },
       },
@@ -1185,7 +1187,9 @@ test('retire app deployment fails if app deployment does not exist', async () =>
     document: RetireAppDeployment,
     variables: {
       input: {
-        targetId: target.id,
+        target: {
+          byId: target.id,
+        },
         appName: 'my-app',
         appVersion: '1.0.0',
       },
@@ -1223,7 +1227,9 @@ test('retire app deployment fails if app deployment is pending (not active)', as
     document: RetireAppDeployment,
     variables: {
       input: {
-        targetId: target.id,
+        target: {
+          byId: target.id,
+        },
         appName: 'my-app',
         appVersion: '1.0.0',
       },
@@ -1272,7 +1278,9 @@ test('retire app deployment succeeds if app deployment is active', async () => {
     document: RetireAppDeployment,
     variables: {
       input: {
-        targetId: target.id,
+        target: {
+          byId: target.id,
+        },
         appName: 'my-app',
         appVersion: '1.0.0',
       },
@@ -1286,7 +1294,7 @@ test('retire app deployment succeeds if app deployment is active', async () => {
       retiredAppDeployment: {
         id: expect.any(String),
         name: 'my-app',
-        status: 'active',
+        status: 'retired',
         version: '1.0.0',
       },
     },
@@ -1363,7 +1371,9 @@ test('retire app deployments makes the persisted operations unavailable via CDN'
     document: RetireAppDeployment,
     variables: {
       input: {
-        targetId: target.id,
+        target: {
+          byId: target.id,
+        },
         appName: 'my-app',
         appVersion: '1.0.0',
       },
@@ -1391,7 +1401,9 @@ test('retire app deployments fails without feature flag enabled for organization
     document: RetireAppDeployment,
     variables: {
       input: {
-        targetId: target.id,
+        target: {
+          byId: target.id,
+        },
         appName: 'my-app',
         appVersion: '1.0.0',
       },

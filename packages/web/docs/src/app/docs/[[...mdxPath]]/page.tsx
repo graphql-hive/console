@@ -19,6 +19,9 @@ export async function generateMetadata(
     ...(mdxPath?.[0] === 'gateway' && {
       title: { absolute: `${metadata.title} | Hive Gateway` },
     }),
+    ...(mdxPath?.[0] === 'router' && {
+      title: { absolute: `${metadata.title} | Hive Router` },
+    }),
   };
 
   // TODO: Remove this when Components have a fix for OG Images with basePath

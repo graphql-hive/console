@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
 
+export const commonErrorStrings = {
+  reported: 'This error was reported automatically to our technical support team.',
+  track: 'To share additional details with us, contact our support team',
+  link: 'here',
+};
+
 export function ErrorComponent(props: { error: any; message?: string }) {
   const router = useRouter();
   const session = useSessionContext();
@@ -39,11 +45,11 @@ export function ErrorComponent(props: { error: any; message?: string }) {
           </h1>
           <div className="mt-2">
             <div className="text-sm">
-              <p>Don't worry, our technical support got this error reported automatically.</p>
+              <p>{commonErrorStrings.reported}</p>
               <p>
-                If you wish to track it later or share more details with us,{' '}
+                {commonErrorStrings.track}{' '}
                 <Button variant="link" className="h-auto p-0 text-orange-500" asChild>
-                  <a href="mailto:support@graphql-hive.com">you can use the support</a>
+                  <a href="mailto:support@graphql-hive.com">{commonErrorStrings.link}</a>
                 </Button>
                 .
               </p>

@@ -303,7 +303,19 @@ export class GitHubIntegrationManager {
         },
       };
     } catch (error) {
-      this.logger.error('Failed to create check-run', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(
+        'Failed to create check-run (owner=%s, name=%s, sha=%s, error=%s)',
+        input.repositoryOwner,
+        input.repositoryName,
+        input.sha,
+        errorText,
+      );
 
       if (isOctokitRequestError(error)) {
         this.logger.debug(
@@ -337,7 +349,7 @@ export class GitHubIntegrationManager {
           success: false,
           error:
             `Missing permissions for updating check-runs on GitHub repository '${input.repositoryOwner}/${input.repositoryName}'. ` +
-            'Please make sure that the GitHub App has access on the repository.',
+            'Please make sure that the Hive Console GitHub App installation has access on the repository.',
         };
       }
 
@@ -447,7 +459,19 @@ export class GitHubIntegrationManager {
         url: result.data.url,
       } as const;
     } catch (error) {
-      this.logger.error('Failed to update check-run', error);
+      const errorText =
+        error instanceof Error
+          ? error.toString()
+          : typeof error === 'string'
+            ? error
+            : JSON.stringify(error);
+      this.logger.error(
+        'Failed to update check-run (owner=%s, name=%s, checkId=%s, error=%s)',
+        args.checkRun.owner,
+        args.checkRun.repository,
+        args.checkRun.checkRunId,
+        errorText,
+      );
 
       if (isOctokitRequestError(error)) {
         this.logger.debug(
@@ -498,7 +522,7 @@ export class GitHubIntegrationManager {
 }
 
 function isOctokitRequestError(error: unknown): error is RequestError {
-  return !!error && typeof error === 'object' && 'code' in error && 'status' in error;
+  return error instanceof RequestError;
 }
 
 export type GitHubCheckRun = {

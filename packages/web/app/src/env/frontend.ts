@@ -43,7 +43,6 @@ const BaseSchema = protectedObject({
   GRAPHQL_PUBLIC_ENDPOINT: zod.string().url(),
   GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.string().url(),
   GRAPHQL_PUBLIC_ORIGIN: zod.string().url(),
-  GA_TRACKING_ID: emptyString(zod.string().optional()),
   DOCS_URL: emptyString(zod.string().url().optional()),
   STRIPE_PUBLIC_KEY: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
@@ -154,9 +153,6 @@ function buildConfig() {
       okta: authOkta.AUTH_OKTA === '1' ? { hidden: authOkta.AUTH_OKTA_HIDDEN === '1' } : null,
       requireEmailVerification: base.AUTH_REQUIRE_EMAIL_VERIFICATION === '1',
       oidc: authOktaMultiTenant.AUTH_ORGANIZATION_OIDC === '1',
-    },
-    analytics: {
-      googleAnalyticsTrackingId: base.GA_TRACKING_ID,
     },
     integrations: {
       slack: integrationSlack.INTEGRATION_SLACK === '1',

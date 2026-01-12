@@ -1,5 +1,4 @@
-mod agent;
-mod graphql;
+pub mod consts;
 pub mod persisted_documents;
 pub mod registry;
 pub mod registry_logger;

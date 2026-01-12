@@ -1,11 +1,9 @@
 import * as pulumi from '@pulumi/pulumi';
-import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
 import { Clickhouse } from './clickhouse';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
-import { Emails } from './emails';
 import { Environment } from './environment';
 import { Observability } from './observability';
 import { Postgres } from './postgres';
@@ -22,7 +20,6 @@ export function deployCommerce({
   observability,
   environment,
   dbMigrations,
-  emails,
   image,
   docker,
   postgres,
@@ -34,7 +31,6 @@ export function deployCommerce({
   environment: Environment;
   dbMigrations: DbMigrations;
   docker: Docker;
-  emails: Emails;
   postgres: Postgres;
   clickhouse: Clickhouse;
   sentry: Sentry;
@@ -49,14 +45,13 @@ export function deployCommerce({
     {
       image,
       imagePullSecret: docker.secret,
-      replicas: environment.isProduction ? 3 : 1,
+      replicas: environment.podsConfig.general.replicas,
       readinessProbe: '/_readiness',
       livenessProbe: '/_health',
       startupProbe: '/_health',
       env: {
         ...environment.envVars,
         SENTRY: sentry.enabled ? '1' : '0',
-        EMAILS_ENDPOINT: serviceLocalEndpoint(emails.service),
         WEB_APP_URL: `https://${environment.appDns}/`,
         OPENTELEMETRY_TRACE_USAGE_REQUESTS: observability.enabledForUsageService ? '1' : '',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:

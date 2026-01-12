@@ -16,11 +16,12 @@ import { SchemaChecksFilter } from '../../../__generated__/types';
 import * as GraphQLSchema from '../../../__generated__/types';
 import {
   DateRange,
-  NativeFederationCompatibilityStatus,
+  NativeFederationCompatibilityStatusType,
   Organization,
   Project,
   ProjectType,
   Target,
+  User,
 } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
@@ -321,9 +322,21 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersion(selector: TargetSelector & { versionId: string }) {
+  async getSchemaVersion(
+    selector: TargetSelector & { versionId: string },
+  ): Promise<SchemaVersion | null> {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
-    const result = await this.storage.getVersion(selector);
+
+    if (isUUID(selector.versionId) === false) {
+      this.logger.debug('Invalid UUID provided. (versionId=%s)', selector.versionId);
+      return null;
+    }
+
+    const result = await this.storage.getMaybeVersion(selector);
+
+    if (!result) {
+      return null;
+    }
 
     return {
       projectId: selector.projectId,
@@ -356,6 +369,19 @@ export class SchemaManager {
     };
   }
 
+  async getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(args: {
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    proposalId: string;
+    first: number | null;
+    cursor: string | null;
+    latest?: boolean;
+  }) {
+    const connection = await this.storage.getPaginatedSchemaChecksForSchemaProposal(args);
+    return connection;
+  }
+
   async getSchemaLog(selector: { commit: string } & TargetSelector) {
     this.logger.debug('Fetching schema log (selector=%o)', selector);
     return this.storage.getSchemaLog({
@@ -386,7 +412,7 @@ export class SchemaManager {
       base_schema: string | null;
       metadata: string | null;
       projectType: ProjectType;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       coordinatesDiff: SchemaCoordinatesDiffResult | null;
       previousSchemaVersion: string | null;
@@ -570,82 +596,19 @@ export class SchemaManager {
     }
   }
 
-  async disableExternalSchemaComposition(input: ProjectSelector) {
-    this.logger.debug('Disabling external composition (input=%o)', input);
-    await this.session.assertPerformAction({
-      organizationId: input.organizationId,
-      action: 'project:modifySettings',
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
-
-    await this.storage.disableExternalSchemaComposition(input);
-
-    return {
-      ok: await this.projectManager.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      }),
-    };
-  }
-
-  async enableExternalSchemaComposition(
-    input: ProjectSelector & {
-      endpoint: string;
-      secret: string;
-    },
+  async updateSchemaComposition(
+    input: ProjectSelector &
+      (
+        | { mode: 'native' }
+        | { mode: 'legacy' }
+        | {
+            mode: 'external';
+            endpoint: string;
+            secret: string;
+          }
+      ),
   ) {
-    this.logger.debug('Enabling external composition (input=%o)', lodash.omit(input, ['secret']));
-    await this.session.assertPerformAction({
-      organizationId: input.organizationId,
-      action: 'project:modifySettings',
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
-    const parseResult = ENABLE_EXTERNAL_COMPOSITION_SCHEMA.safeParse({
-      endpoint: input.endpoint,
-      secret: input.secret,
-    });
-
-    if (!parseResult.success) {
-      return {
-        error: {
-          message: parseResult.error.message,
-          inputErrors: {
-            endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
-            secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
-          },
-        },
-      };
-    }
-
-    const encryptedSecret = this.crypto.encrypt(input.secret);
-
-    await this.storage.enableExternalSchemaComposition({
-      projectId: input.projectId,
-      organizationId: input.organizationId,
-      endpoint: input.endpoint.trim(),
-      encryptedSecret,
-    });
-
-    return {
-      ok: await this.projectManager.getProject({
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      }),
-    };
-  }
-
-  async updateNativeSchemaComposition(
-    input: ProjectSelector & {
-      enabled: boolean;
-    },
-  ) {
-    this.logger.debug('Updating native schema composition (input=%o)', input);
+    this.logger.debug('Updating schema composition settings (input=%o)', input);
     await this.session.assertPerformAction({
       organizationId: input.organizationId,
       action: 'project:modifySettings',
@@ -661,14 +624,70 @@ export class SchemaManager {
     });
 
     if (project.type !== ProjectType.FEDERATION) {
-      throw new HiveError(`Native schema composition is supported only by Federation projects`);
+      const message = 'Schema composition is supported only by Federation projects';
+      if (input.mode === 'native') {
+        return { error: { __typename: 'UpdateSchemaCompositionNativeError', message } } as const;
+      }
+      if (input.mode === 'legacy') {
+        return { error: { __typename: 'UpdateSchemaCompositionLegacyError', message } } as const;
+      }
+      if (input.mode === 'external') {
+        return { error: { __typename: 'UpdateSchemaCompositionExternalError', message } } as const;
+      }
     }
 
-    return this.storage.updateNativeSchemaComposition({
-      projectId: input.projectId,
-      organizationId: input.organizationId,
-      enabled: input.enabled,
-    });
+    switch (input.mode) {
+      case 'native': {
+        return {
+          ok: await this.storage.updateNativeSchemaComposition({
+            projectId: input.projectId,
+            organizationId: input.organizationId,
+            enabled: true,
+          }),
+        };
+      }
+      case 'legacy': {
+        return {
+          ok: await this.storage.updateNativeSchemaComposition({
+            projectId: input.projectId,
+            organizationId: input.organizationId,
+            enabled: false,
+          }),
+        };
+      }
+      case 'external': {
+        const parseResult = ENABLE_EXTERNAL_COMPOSITION_SCHEMA.safeParse({
+          endpoint: input.endpoint,
+          secret: input.secret,
+        });
+
+        if (!parseResult.success) {
+          return {
+            error: {
+              __typename: 'UpdateSchemaCompositionExternalError' as const,
+              message: parseResult.error.message,
+              inputErrors: {
+                endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
+                secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
+              },
+            },
+          };
+        }
+
+        return {
+          ok: await this.storage.enableExternalSchemaComposition({
+            projectId: input.projectId,
+            organizationId: input.organizationId,
+            endpoint: parseResult.data.endpoint.trim(),
+            encryptedSecret: this.crypto.encrypt(parseResult.data.secret),
+          }),
+        };
+      }
+      default: {
+        const _: never = input;
+        throw new HiveError('Unexpected input');
+      }
+    }
   }
 
   async getPaginatedSchemaChecksForTarget<TransformedSchemaCheck extends SchemaCheck>(
@@ -867,15 +886,22 @@ export class SchemaManager {
     organizationId: string;
     schemaCheckId: string;
     comment: string | null | undefined;
+    author?: string | null;
   }) {
     this.logger.debug('Manually approve failed schema check (args=%o)', args);
 
-    let [schemaCheck, viewer, target] = await Promise.all([
+    let viewer: User | null = null;
+    try {
+      viewer = await this.session.getViewer();
+    } catch (error) {
+      this.logger.debug('No viewer available (likely using CLI) (args=%o)', args);
+    }
+
+    let [schemaCheck, target] = await Promise.all([
       this.storage.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
       }),
-      this.session.getViewer(),
       this.storage.getTarget({
         organizationId: args.organizationId,
         projectId: args.projectId,
@@ -957,11 +983,25 @@ export class SchemaManager {
       targetId: target.id,
       contracts: this.contracts,
       schemaCheckId: args.schemaCheckId,
-      userId: viewer.id,
+      userId: viewer?.id ?? null,
       comment: args.comment,
+      author: args.author ?? null,
     });
 
     if (!schemaCheck) {
+      // Re-fetch the schema check to determine why approval failed
+      const recheck = await this.storage.findSchemaCheck({
+        targetId: args.targetId,
+        schemaCheckId: args.schemaCheckId,
+      });
+
+      if (recheck?.schemaPolicyErrors !== null) {
+        return {
+          type: 'error',
+          reason: 'Schema check has schema policy errors that must be resolved before approval.',
+        } as const;
+      }
+
       return {
         type: 'error',
         reason: "Schema check doesn't exist.",
@@ -984,8 +1024,8 @@ export class SchemaManager {
     });
   }
 
-  async getSchemaVersionByActionId(args: {
-    actionId: string;
+  async getSchemaVersionByCommit(args: {
+    commit: string;
     target: GraphQLSchema.TargetReferenceInput | null;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
@@ -996,10 +1036,10 @@ export class SchemaManager {
       this.session.raise('project:describe');
     }
 
-    this.logger.debug('Fetch schema version by action id. (args=%o)', {
+    this.logger.debug('Fetch schema version by commit. (args=%o)', {
       projectId: selector.projectId,
       targetId: selector.targetId,
-      actionId: args.actionId,
+      commit: args.commit,
     });
 
     await this.session.assertPerformAction({
@@ -1011,10 +1051,10 @@ export class SchemaManager {
       },
     });
 
-    const record = await this.storage.getSchemaVersionByActionId({
+    const record = await this.storage.getSchemaVersionByCommit({
       projectId: selector.projectId,
       targetId: selector.targetId,
-      actionId: args.actionId,
+      commit: args.commit,
     });
 
     if (!record) {
@@ -1123,7 +1163,18 @@ export class SchemaManager {
     return true;
   }
 
-  async getNativeFederationCompatibilityStatus(project: Project) {
+  async getNativeFederationCompatibilityStatus(project: Project): Promise<{
+    status: NativeFederationCompatibilityStatusType;
+    results: Array<null | {
+      schemaVersion: SchemaVersion;
+      target: Target;
+      nativeCompositionResult: {
+        supergraphSdl: string | null;
+        errors: Array<{ message: string }> | null;
+      };
+      currentSupergraphSdl: string;
+    }>;
+  }> {
     this.logger.debug(
       'Get native Federation compatibility status (organization=%s, project=%s)',
       project.orgId,
@@ -1131,7 +1182,10 @@ export class SchemaManager {
     );
 
     if (project.type !== ProjectType.FEDERATION) {
-      return NativeFederationCompatibilityStatus.NOT_APPLICABLE;
+      return {
+        status: NativeFederationCompatibilityStatusType.NOT_APPLICABLE,
+        results: [],
+      };
     }
 
     const targets = await this.targetManager.getTargets({
@@ -1139,48 +1193,39 @@ export class SchemaManager {
       projectId: project.id,
     });
 
-    const possibleVersions = await Promise.all(
-      targets.map(target => this.getMaybeLatestValidVersion(target)),
-    );
+    const results = await Promise.all(
+      targets.map(async target => {
+        const schemaVersion = await this.getMaybeLatestValidVersion(target);
 
-    const versions = possibleVersions.filter((v): v is SchemaVersion => !!v);
+        if (schemaVersion === null) {
+          return null;
+        }
 
-    this.logger.debug('Found %s targets and %s versions', targets.length, versions.length);
+        const currentSupergraphSdl = print(
+          removeDescriptions(
+            sortSDL(
+              parseGraphQLSource(
+                schemaVersion.supergraphSDL!,
+                'parsing native supergraph in getNativeFederationCompatibilityStatus',
+              ),
+            ),
+          ),
+        );
 
-    // If there are no composable versions available, we can't determine the compatibility status.
-    if (
-      versions.length === 0 ||
-      !versions.every(
-        version => version && version.isComposable && typeof version.supergraphSDL === 'string',
-      )
-    ) {
-      this.logger.debug('No composable versions available (status: unknown)');
-      return NativeFederationCompatibilityStatus.UNKNOWN;
-    }
+        const schemas = await this.getSchemasOfVersion({
+          organizationId: target.orgId,
+          projectId: target.projectId,
+          targetId: target.id,
+          versionId: schemaVersion.id,
+        });
 
-    const schemasPerVersion = await Promise.all(
-      versions.map(async version =>
-        this.getSchemasOfVersion({
-          organizationId: version.organizationId,
-          projectId: version.projectId,
-          targetId: version.targetId,
-          versionId: version.id,
-        }),
-      ),
-    );
-
-    this.logger.debug('Checking compatibility of %s versions', versions.length);
-
-    const compatibilityResults = await Promise.all(
-      versions.map(async (version, i) => {
-        if (schemasPerVersion[i].length === 0) {
-          this.logger.debug('No schemas (version=%s)', version.id);
-          return NativeFederationCompatibilityStatus.UNKNOWN;
+        if (schemas.length === 0) {
+          return null;
         }
 
         const compositionResult = await this.compositionOrchestrator.composeAndValidate(
           'federation',
-          ensureCompositeSchemas(schemasPerVersion[i]).map(s =>
+          ensureCompositeSchemas(schemas).map(s =>
             this.schemaHelper.createSchemaObject({
               sdl: s.sdl,
               service_name: s.service_name,
@@ -1196,53 +1241,52 @@ export class SchemaManager {
           },
         );
 
-        if (compositionResult.supergraph) {
-          const sortedExistingSupergraph = print(
-            removeDescriptions(
-              sortSDL(
-                parseGraphQLSource(
-                  compositionResult.supergraph,
-                  'parsing existing supergraph in getNativeFederationCompatibilityStatus',
+        const supergraphSdl = compositionResult.supergraph
+          ? print(
+              removeDescriptions(
+                sortSDL(
+                  parseGraphQLSource(
+                    compositionResult.supergraph,
+                    'parsing native supergraph in getNativeFederationCompatibilityStatus',
+                  ),
                 ),
               ),
-            ),
-          );
-          const sortedNativeSupergraph = print(
-            removeDescriptions(
-              sortSDL(
-                parseGraphQLSource(
-                  version.supergraphSDL!,
-                  'parsing native supergraph in getNativeFederationCompatibilityStatus',
-                ),
-              ),
-            ),
-          );
+            )
+          : null;
 
-          if (sortedNativeSupergraph === sortedExistingSupergraph) {
-            return NativeFederationCompatibilityStatus.COMPATIBLE;
-          }
-
-          this.logger.debug('Produced different supergraph (version=%s)', version.id);
-        } else {
-          this.logger.debug('Failed to produce supergraph (version=%s)', version.id);
-        }
-
-        return NativeFederationCompatibilityStatus.INCOMPATIBLE;
+        return {
+          target,
+          schemaVersion,
+          currentSupergraphSdl,
+          nativeCompositionResult: {
+            supergraphSdl,
+            errors: compositionResult.errors,
+          },
+        };
       }),
     );
 
-    if (compatibilityResults.includes(NativeFederationCompatibilityStatus.UNKNOWN)) {
-      this.logger.debug('One of the versions seems empty (status: unknown)');
-      return NativeFederationCompatibilityStatus.UNKNOWN;
-    }
+    let status = NativeFederationCompatibilityStatusType.INCOMPATIBLE;
 
-    if (compatibilityResults.every(r => r === NativeFederationCompatibilityStatus.COMPATIBLE)) {
+    if (results.every(result => result === null)) {
+      this.logger.debug('No composable versions available (status: unknown)');
+      status = NativeFederationCompatibilityStatusType.UNKNOWN;
+    } else if (
+      results.every(
+        result =>
+          result === null ||
+          (result.nativeCompositionResult &&
+            result.currentSupergraphSdl === result.nativeCompositionResult.supergraphSdl),
+      )
+    ) {
       this.logger.debug('All versions are compatible (status: compatible)');
-      return NativeFederationCompatibilityStatus.COMPATIBLE;
+      status = NativeFederationCompatibilityStatusType.COMPATIBLE;
     }
 
-    this.logger.debug('Some versions are incompatible (status: incompatible)');
-    return NativeFederationCompatibilityStatus.INCOMPATIBLE;
+    return {
+      status,
+      results,
+    };
   }
 
   async getGitHubMetadata(schemaVersion: SchemaVersion): Promise<null | {

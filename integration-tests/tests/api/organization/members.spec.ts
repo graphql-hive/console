@@ -1,4 +1,5 @@
 import { graphql } from 'testkit/gql';
+import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { history } from '../../../testkit/emails';
 import { initSeed } from '../../../testkit/seed';
@@ -24,9 +25,11 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       slackIntegration:modify,
       project:create,
       schemaLinting:modifyOrganizationRules,
+      personalAccessToken:modify,
       project:describe,
       project:delete,
       project:modifySettings,
+      projectAccessToken:modify,
       schemaLinting:modifyProjectRules,
       target:create,
       alert:modify,
@@ -37,7 +40,18 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       laboratory:describe,
       laboratory:modify,
       laboratory:modifyPreflightScript,
+      schemaProposal:describe,
+      schemaProposal:modify,
+      schema:compose,
+      usage:report,
+      traces:report,
       schemaCheck:approve,
+      schemaCheck:create,
+      schemaVersion:publish,
+      schemaVersion:deleteService,
+      appDeployment:create,
+      appDeployment:publish,
+      appDeployment:retire,
     ]
   `);
 });
@@ -109,6 +123,57 @@ test.concurrent('email invitation', async ({ expect }) => {
 
   const sentEmails = await history();
   expect(sentEmails).toContainEqual(expect.objectContaining({ to: inviteEmail }));
+});
+
+test.concurrent('can not invite with role not existing in organization', async ({ expect }) => {
+  const seed = initSeed();
+  const owner1 = await seed.createOwner();
+  const org1 = await owner1.createOrg();
+  const owner2 = await seed.createOwner();
+  const org2 = await owner2.createOrg();
+  // no idea why the createMemberRole functionality is "hidden" in the tests SDK and requires to invite a user first to get to :D
+  const org2Members = await org2.inviteAndJoinMember();
+  const org2Role = await org2Members.createMemberRole(['organization:describe']);
+
+  const result = await org1.inviteMember(undefined, undefined, org2Role.id);
+  expect(result).toEqual({
+    error: {
+      message: 'The provided member role does not exist.',
+    },
+    ok: null,
+  });
+});
+
+test.concurrent('invite user with assigned resouces', async ({ expect }) => {
+  const seed = initSeed();
+  const owner = await seed.createOwner();
+  const org = await owner.createOrg();
+  const { project: project1 } = await org.createProject();
+  // we just create this to make sure it does not show up :)
+  const { project: _project2 } = await org.createProject();
+  const { project: project3 } = await org.createProject();
+
+  const m = await org.inviteAndJoinMember();
+  const role = await m.createMemberRole(['organization:describe', 'project:describe']);
+
+  const member = await org.inviteAndJoinMember(undefined, role.id, {
+    mode: ResourceAssignmentModeType.Granular,
+    projects: [
+      {
+        projectId: project1.id,
+        targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+      },
+      {
+        projectId: project3.id,
+        targets: { mode: ResourceAssignmentModeType.Granular, targets: [] },
+      },
+    ],
+  });
+
+  const result = await org.projects(member.memberToken);
+  expect(result).toHaveLength(2);
+  expect(result[0].id).toEqual(project3.id);
+  expect(result[1].id).toEqual(project1.id);
 });
 
 test.concurrent(

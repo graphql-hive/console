@@ -1,22 +1,34 @@
 import type { StaticImageData } from 'next/image';
+import { z } from 'zod';
 import saihajPhoto from './saihaj.webp';
 
-export type Author =
-  | {
-      name: string;
-      link: `https://${string}`;
-      twitter?: string;
-      github?: string;
-      avatar: string | StaticImageData;
-    }
-  | {
-      name: string;
-      link: `https://${string}`;
-      twitter?: string;
-      github: string;
+const commonAuthorFields = z.object({
+  name: z.string(),
+  link: z.string().url(),
+  twitter: z.string().optional(),
+});
+
+export const staticImageDataSchema = z.object({
+  src: z.string(),
+}) as unknown as z.ZodType<StaticImageData>;
+
+export const Author = z.intersection(
+  commonAuthorFields,
+  z.union([
+    z.object({
+      // if we have a GitHub handle, we don't require the avatar
+      avatar: z.union([z.string(), staticImageDataSchema]),
+      github: z.string().optional(),
+    }),
+    z.object({
+      github: z.string(),
       // if the author has no avatar, we'll take it from GitHub
-      avatar?: string | StaticImageData;
-    };
+      avatar: z.union([z.string(), staticImageDataSchema]).optional(),
+    }),
+  ]),
+);
+
+export type Author = z.infer<typeof Author>;
 
 export const authors = {
   kamil: {
@@ -250,6 +262,18 @@ export const authors = {
     link: 'https://www.linkedin.com/in/emily-y-goodwin/',
     github: 'egoodwinx',
   },
+  adam: {
+    name: 'Adam Benhassen',
+    link: 'https://github.com/adambenhassen',
+    github: 'adambenhassen',
+  },
 } satisfies Record<string, Author>;
 
 export type AuthorId = keyof typeof authors;
+
+export const AuthorId = z.string().refine((val): val is AuthorId => val in authors, {
+  message: `AuthorId must be one of: ${Object.keys(authors).join(', ')}`,
+});
+
+export const AuthorOrId = z.union([AuthorId, Author]);
+export type AuthorOrId = z.infer<typeof AuthorOrId>;

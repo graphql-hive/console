@@ -100,7 +100,9 @@ export const NoSchemaVersion = ({
     <EmptyList
       title="Hive is waiting for your first schema"
       description="You can publish a schema with Hive CLI and Hive Client"
-      docsUrl="/features/schema-registry#publish-a-schema"
+      docsUrl={
+        recommendedAction === 'publish' ? '/features/schema-registry#publish-a-schema' : undefined
+      }
     >
       {children}
     </EmptyList>

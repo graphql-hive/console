@@ -2,6 +2,10 @@ import { memo, ReactElement, useEffect, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import {
+  GraphQLFieldsSkeleton,
+  GraphQLTypeCardSkeleton,
+} from '@/components/target/explorer/common';
 import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -142,7 +146,6 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
               targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments
               warnAboutUnusedArguments={false}
-              styleDeprecated={false}
             />
           );
         })}
@@ -185,7 +188,7 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
             values
           }
         }
-        deprecatedSchema(usage: { period: $period }) {
+        deprecatedSchema(period: { absoluteRange: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
         }
       }
@@ -262,7 +265,7 @@ function DeprecatedSchemaExplorer(props: {
           ) : null}
         </div>
       </div>
-      {!query.fetching && (
+      {!query.fetching && !query.stale ? (
         <>
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (
             <>
@@ -307,6 +310,10 @@ function DeprecatedSchemaExplorer(props: {
             />
           )}
         </>
+      ) : (
+        <GraphQLTypeCardSkeleton>
+          <GraphQLFieldsSkeleton count={15} />
+        </GraphQLTypeCardSkeleton>
       )}
     </>
   );
@@ -320,9 +327,7 @@ const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
       slug
     }
     hasCollectedOperations(
@@ -367,7 +372,7 @@ function ExplorerDeprecatedSchemaPageContent(props: {
 
   return (
     <DeprecatedSchemaExplorer
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}

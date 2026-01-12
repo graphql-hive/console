@@ -4,8 +4,8 @@ import type { QueryResolvers } from './../../../../__generated__/types';
 export const schemaVersionForActionId: NonNullable<
   QueryResolvers['schemaVersionForActionId']
 > = async (_, args, { injector }) => {
-  return injector.get(SchemaManager).getSchemaVersionByActionId({
-    actionId: args.actionId,
+  return injector.get(SchemaManager).getSchemaVersionByCommit({
+    commit: args.actionId, // @note actionId is a misnomer here. It is the commit/external ID
     target: args.target ?? null,
   });
 };

@@ -3,8 +3,7 @@ import { GraphQLError } from 'graphql';
 import { createClient } from 'graphql-ws';
 import { useServer as useWSServer } from 'graphql-ws/lib/use/ws';
 import { createLogger, createSchema, createYoga } from 'graphql-yoga';
-import nock from 'nock';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import { useDeferStream } from '@graphql-yoga/plugin-defer-stream';
 import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
@@ -13,10 +12,6 @@ import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Response } from '@whatwg-node/fetch';
 import { createHiveTestingLogger } from '../../core/tests/test-utils';
 import { createHive, useHive } from '../src/index.js';
-
-afterEach(() => {
-  nock.cleanAll();
-});
 
 function waitFor(ms: number) {
   return new Promise<void>(resolve => {
@@ -101,20 +96,12 @@ test('should not interrupt the process', async () => {
   );
   await waitFor(50);
 
-  const reportingLogs = logger
-    .getLogs()
-    .split(`\n`)
-    .filter(item => item.includes(`[hive][reporting]`))
-    .join(`\n`);
+  const reportingLogs = logger.getLogs().split(`\n`).join(`\n`);
 
   expect(reportingLogs).includes('Publish schema');
   expect(reportingLogs).includes('POST http://404.localhost.noop/registry');
 
-  const usageLogs = logger
-    .getLogs()
-    .split(`\n`)
-    .filter(item => item.includes(`[hive][usage]`))
-    .join(`\n`);
+  const usageLogs = logger.getLogs().split(`\n`).join(`\n`);
 
   expect(usageLogs).includes('POST http://404.localhost.noop/usage');
 
@@ -286,23 +273,8 @@ test('send usage reports in intervals', async () => {
 }, 1_000);
 
 test('reports usage', async ({ expect }) => {
-  const graphqlScope = nock('http://localhost')
-    .post('/usage', body => {
-      expect(body.map).toMatchInlineSnapshot(`
-        {
-          f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
-            fields: [
-              Query.hi,
-            ],
-            operation: {hi},
-            operationName: anonymous,
-          },
-        }
-      `);
+  const d = Promise.withResolvers<[URL, RequestInit]>();
 
-      return true;
-    })
-    .reply(200);
   const yoga = createYoga({
     schema: createSchema({
       typeDefs: /* GraphQL */ `
@@ -333,54 +305,47 @@ test('reports usage', async ({ expect }) => {
         agent: {
           maxSize: 1,
           logger: createLogger('silent'),
+          async fetch(req, data) {
+            d.resolve([req as URL, data as RequestInit]);
+            return new Response('Ok.');
+          },
         },
       }),
     ],
   });
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      resolve();
-    }, 1000);
-    let requestCount = 0;
-
-    graphqlScope.on('request', () => {
-      requestCount = requestCount + 1;
-      if (requestCount === 2) {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
-
-    (async () => {
-      const res = await yoga.fetch('http://localhost/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `{ hi }`,
-        }),
-      });
-      expect(res.status).toBe(200);
-      expect(await res.text()).toMatchInlineSnapshot('{"data":{"hi":null}}');
-    })().catch(reject);
+  const res = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: `{ hi }`,
+    }),
   });
+  expect(res.status).toBe(200);
+  expect(await res.text()).toMatchInlineSnapshot('{"data":{"hi":null}}');
 
-  graphqlScope.done();
+  const [url, init] = await d.promise;
+  expect(url).toMatchInlineSnapshot(`http://localhost/usage`);
+  const body = JSON.parse(init.body as string);
+  expect(body.map).toMatchInlineSnapshot(`
+    {
+      f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
+        fields: [
+          Query.hi,
+        ],
+        operation: {hi},
+        operationName: anonymous,
+      },
+    }
+  `);
 });
 
 test('reports usage with response cache', async ({ expect }) => {
   let usageCount = 0;
+  const d = Promise.withResolvers<void>();
   const results: Array<Record<string, any>> = [];
-  const graphqlScope = nock('http://localhost')
-    .post('/usage', body => {
-      usageCount++;
-      results.push(body);
-      return true;
-    })
-    .thrice()
-    .reply(200);
 
   const yoga = createYoga({
     schema: createSchema({
@@ -416,6 +381,16 @@ test('reports usage with response cache', async ({ expect }) => {
         agent: {
           maxSize: 1,
           logger: createLogger('silent'),
+          async fetch(_url, init) {
+            usageCount++;
+            results.push(JSON.parse(init?.body as string));
+
+            if (usageCount === 3) {
+              d.resolve();
+            }
+
+            return new Response('Ok.');
+          },
         },
       }),
     ],
@@ -438,13 +413,7 @@ test('reports usage with response cache', async ({ expect }) => {
     }
   }
 
-  await waitFor(50);
-  if (!graphqlScope.isDone()) {
-    console.error(
-      `Still waiting on mocks: ${graphqlScope.pendingMocks().join(', ')}. Results so far: ${JSON.stringify(results)}`,
-    );
-  }
-  graphqlScope.done();
+  await d.promise;
   expect(usageCount).toBe(3);
 
   for (const body of results) {
@@ -647,35 +616,67 @@ test('operation with non-existing field is handled gracefully', async ({ expect 
   });
 });
 
+test('respects "graphql-client-name" and "graphql-client-version" headers by default', async ({
+  expect,
+}) => {
+  const fetchSpy = vi.fn(async (_input: string | URL | globalThis.Request, _init?: RequestInit) =>
+    Response.json({}, { status: 200 }),
+  );
+
+  const hive = createHive({
+    enabled: true,
+    debug: false,
+    token: 'my-token',
+    agent: {
+      maxRetries: 0,
+      sendInterval: 10,
+      timeout: 50,
+      fetch: fetchSpy,
+    },
+    reporting: false,
+    usage: {
+      endpoint: 'http://yoga.localhost:4200/usage',
+    },
+  });
+
+  const yoga = createYoga({
+    schema: createSchema({
+      typeDefs,
+      resolvers,
+    }),
+    plugins: [useHive(hive)],
+    logging: false,
+  });
+
+  await yoga.fetch(`http://localhost/graphql`, {
+    method: 'POST',
+    body: JSON.stringify({
+      query: /* GraphQL */ `
+        {
+          hello
+        }
+      `,
+    }),
+    headers: {
+      'content-type': 'application/json',
+      'graphql-client-name': 'my-client',
+      'graphql-client-version': '1.2.3',
+    },
+  });
+  await waitFor(50);
+  await hive.dispose();
+  expect(fetchSpy).toHaveBeenCalledWith(
+    'http://yoga.localhost:4200/usage',
+    expect.objectContaining({
+      body: expect.stringContaining('"client":{"name":"my-client","version":"1.2.3"}'),
+    }),
+  );
+});
+
 describe('subscription usage reporting', () => {
   describe('built-in see', () => {
     test('reports usage for successful subscription operation', async ({ expect }) => {
-      const graphqlScope = nock('http://localhost')
-        .post('/usage', body => {
-          expect(body.map).toEqual({
-            '74cf03b67c3846231d04927b02e1fca45e727223': {
-              fields: ['Subscription.hi'],
-              operation: 'subscription{hi}',
-              operationName: 'anonymous',
-            },
-          });
-
-          expect(body.operations).toBeUndefined();
-          expect(body.subscriptionOperations).toMatchObject([
-            {
-              operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
-              metadata: {
-                client: {
-                  name: 'brrr',
-                  version: '1',
-                },
-              },
-            },
-          ]);
-
-          return true;
-        })
-        .reply(200);
+      const d = Promise.withResolvers<RequestInit>();
 
       const yoga = createYoga({
         logging: false,
@@ -723,80 +724,59 @@ describe('subscription usage reporting', () => {
             agent: {
               maxSize: 1,
               logger: createLogger('silent'),
+              async fetch(_req, init) {
+                d.resolve(init!);
+
+                return new Response('Ok.');
+              },
             },
           }),
         ],
       });
-
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 1000);
-        let requestCount = 0;
-
-        graphqlScope.on('request', () => {
-          requestCount = requestCount + 1;
-          if (requestCount === 2) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        });
-
-        (async () => {
-          const res = await yoga.fetch('http://localhost/graphql', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              query: `subscription { hi }`,
-            }),
-          });
-          expect(res.status).toBe(200);
-          expect(await res.text()).toMatchInlineSnapshot(`
+      const res = await yoga.fetch('http://localhost/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `subscription { hi }`,
+        }),
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toMatchInlineSnapshot(`
           :
 
           event: complete
           data:
         `);
-        })().catch(reject);
+
+      const init = await d.promise;
+      const body = JSON.parse(init.body as string);
+
+      expect(body.map).toEqual({
+        '74cf03b67c3846231d04927b02e1fca45e727223': {
+          fields: ['Subscription.hi'],
+          operation: 'subscription{hi}',
+          operationName: 'anonymous',
+        },
       });
-      graphqlScope.done();
+
+      expect(body.operations).toBeUndefined();
+      expect(body.subscriptionOperations).toMatchObject([
+        {
+          operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
+          metadata: {
+            client: {
+              name: 'brrr',
+              version: '1',
+            },
+          },
+        },
+      ]);
     });
 
     test('reports usage for exception from subscription event stream', async ({ expect }) => {
-      const graphqlScope = nock('http://localhost')
-        .post('/usage', body => {
-          expect(body.map).toMatchInlineSnapshot(`
-          {
-            74cf03b67c3846231d04927b02e1fca45e727223: {
-              fields: [
-                Subscription.hi,
-              ],
-              operation: subscription{hi},
-              operationName: anonymous,
-            },
-          }
-        `);
-
-          expect(body).toMatchObject({
-            subscriptionOperations: [
-              {
-                operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
-                metadata: {
-                  client: {
-                    name: 'brrr',
-                    version: '1',
-                  },
-                },
-              },
-            ],
-          });
-
-          return true;
-        })
-        .reply(200);
-
+      const d = Promise.withResolvers<RequestInit>();
       const yoga = createYoga({
         logging: false,
         schema: createSchema({
@@ -842,37 +822,26 @@ describe('subscription usage reporting', () => {
             agent: {
               maxSize: 1,
               logger: createLogger('silent'),
+              async fetch(_req, init) {
+                d.resolve(init!);
+                return new Response('Ok.');
+              },
             },
           }),
         ],
       });
 
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 1000);
-        let requestCount = 0;
-
-        graphqlScope.on('request', () => {
-          requestCount = requestCount + 1;
-          if (requestCount === 2) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        });
-
-        (async () => {
-          const res = await yoga.fetch('http://localhost/graphql', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              query: `subscription { hi }`,
-            }),
-          });
-          expect(res.status).toBe(200);
-          expect(await res.text()).toMatchInlineSnapshot(`
+      const res = await yoga.fetch('http://localhost/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `subscription { hi }`,
+        }),
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toMatchInlineSnapshot(`
             :
 
             event: next
@@ -881,37 +850,41 @@ describe('subscription usage reporting', () => {
             event: complete
             data:
           `);
-        })().catch(reject);
+
+      const init = await d.promise;
+      const body = JSON.parse(init.body as string);
+
+      expect(body.map).toMatchInlineSnapshot(`
+        {
+          74cf03b67c3846231d04927b02e1fca45e727223: {
+            fields: [
+              Subscription.hi,
+            ],
+            operation: subscription{hi},
+            operationName: anonymous,
+          },
+        }
+      `);
+
+      expect(body).toMatchObject({
+        subscriptionOperations: [
+          {
+            operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
+            metadata: {
+              client: {
+                name: 'brrr',
+                version: '1',
+              },
+            },
+          },
+        ],
       });
-      graphqlScope.done();
     });
   });
 
   describe('@graphql-yoga/plugin-graphql-sse (distinct connection mode)', () => {
     test('reports usage for successful subscription operation', async ({ expect }) => {
-      const graphqlScope = nock('http://localhost')
-        .post('/usage', body => {
-          expect(body.map).toMatchInlineSnapshot(`
-          {
-            74cf03b67c3846231d04927b02e1fca45e727223: {
-              fields: [
-                Subscription.hi,
-              ],
-              operation: subscription{hi},
-              operationName: anonymous,
-            },
-          }
-        `);
-
-          expect(body.subscriptionOperations[0].metadata.client).toEqual({
-            name: 'my-client',
-            version: '1.0.0',
-          });
-
-          return true;
-        })
-        .reply(200);
-
+      const d = Promise.withResolvers<RequestInit>();
       const yoga = createYoga({
         logging: false,
         schema: createSchema({
@@ -965,54 +938,38 @@ describe('subscription usage reporting', () => {
             agent: {
               maxSize: 1,
               logger: createLogger('silent'),
+              async fetch(_req, init) {
+                d.resolve(init!);
+                return new Response('Ok.');
+              },
             },
           }),
         ],
       });
 
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 1000);
-        let requestCount = 0;
-
-        graphqlScope.on('request', () => {
-          requestCount = requestCount + 1;
-          if (requestCount === 2) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        });
-
-        (async () => {
-          const url = new URL('http://localhost/graphql/stream');
-          url.searchParams.set('query', 'subscription { hi }');
-          const res = await yoga.fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'text/event-stream',
-              accept: 'text/event-stream',
-              'x-graphql-client-name': 'my-client',
-              'x-graphql-client-version': '1.0.0',
-            },
-          });
-
-          expect(res.status).toBe(200);
-          expect(await res.text()).toMatchInlineSnapshot(`
+      const url = new URL('http://localhost/graphql/stream');
+      url.searchParams.set('query', 'subscription { hi }');
+      const res = await yoga.fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'text/event-stream',
+          accept: 'text/event-stream',
+          'x-graphql-client-name': 'my-client',
+          'x-graphql-client-version': '1.0.0',
+        },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toMatchInlineSnapshot(`
             :
 
             event: complete
             data:
           `);
-        })().catch(reject);
-      });
-      graphqlScope.done();
-    });
 
-    test.skip('reports usage for exception from subscription event stream', async ({ expect }) => {
-      const graphqlScope = nock('http://localhost')
-        .post('/usage', body => {
-          expect(body.map).toMatchInlineSnapshot(`
+      const init = await d.promise;
+      const body = JSON.parse(init.body as string);
+
+      expect(body.map).toMatchInlineSnapshot(`
           {
             74cf03b67c3846231d04927b02e1fca45e727223: {
               fields: [
@@ -1024,13 +981,14 @@ describe('subscription usage reporting', () => {
           }
         `);
 
-          expect(body).toMatchObject({
-            subscriptionOperations: [{}],
-          });
+      expect(body.subscriptionOperations[0].metadata.client).toEqual({
+        name: 'my-client',
+        version: '1.0.0',
+      });
+    });
 
-          return true;
-        })
-        .reply(200);
+    test.skip('reports usage for exception from subscription event stream', async ({ expect }) => {
+      const d = Promise.withResolvers<RequestInit>();
 
       const yoga = createYoga({
         logging: false,
@@ -1078,39 +1036,29 @@ describe('subscription usage reporting', () => {
             agent: {
               maxSize: 1,
               logger: createLogger('silent'),
+              async fetch(_req, init) {
+                d.resolve(init!);
+                return new Response('Ok.');
+              },
             },
           }),
         ],
       });
 
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 1000);
-        let requestCount = 0;
+      const url = new URL('http://localhost/graphql/stream');
+      url.searchParams.set('query', 'subscription { hi }');
+      const res = await yoga.fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'text/event-stream',
+          accept: 'text/event-stream',
+          'x-graphql-client-name': 'foo',
+          'x-graphql-client-version': '1',
+        },
+      });
+      expect(res.status).toBe(200);
 
-        graphqlScope.on('request', () => {
-          requestCount = requestCount + 1;
-          if (requestCount === 2) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        });
-
-        (async () => {
-          const url = new URL('http://localhost/graphql/stream');
-          url.searchParams.set('query', 'subscription { hi }');
-          const res = await yoga.fetch(url, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'text/event-stream',
-              accept: 'text/event-stream',
-              'x-graphql-client-name': 'foo',
-              'x-graphql-client-version': '1',
-            },
-          });
-          expect(res.status).toBe(200);
-          expect(await res.text()).toMatchInlineSnapshot(`
+      expect(await res.text()).toMatchInlineSnapshot(`
             :
 
             event: next
@@ -1119,36 +1067,29 @@ describe('subscription usage reporting', () => {
             event: complete
             data:
           `);
-        })().catch(reject);
-      });
+      const init = await d.promise;
+      const body = JSON.parse(init.body as string);
+      expect(body.map).toMatchInlineSnapshot(`
+          {
+            74cf03b67c3846231d04927b02e1fca45e727223: {
+              fields: [
+                Subscription.hi,
+              ],
+              operation: subscription{hi},
+              operationName: anonymous,
+            },
+          }
+        `);
 
-      graphqlScope.done();
+      expect(body).toMatchObject({
+        subscriptionOperations: [{}],
+      });
     });
   });
 
   describe('graphql-ws', () => {
     test('reports usage for successful subscription operation', async ({ expect }) => {
-      const graphqlScope = nock('http://localhost')
-        .post('/usage', body => {
-          expect(body.map).toMatchInlineSnapshot(`
-        {
-          74cf03b67c3846231d04927b02e1fca45e727223: {
-            fields: [
-              Subscription.hi,
-            ],
-            operation: subscription{hi},
-            operationName: anonymous,
-          },
-        }
-      `);
-          expect(body.subscriptionOperations[0].metadata.client).toEqual({
-            name: 'foo',
-            version: '1',
-          });
-
-          return true;
-        })
-        .reply(200);
+      const d = Promise.withResolvers<RequestInit>();
 
       const yoga = createYoga({
         logging: false,
@@ -1208,6 +1149,10 @@ describe('subscription usage reporting', () => {
             agent: {
               maxSize: 1,
               logger: createLogger('silent'),
+              async fetch(_req, init) {
+                d.resolve(init!);
+                return new Response('Ok.');
+              },
             },
           }),
         ],
@@ -1258,51 +1203,27 @@ describe('subscription usage reporting', () => {
 
       const port = (httpServer.address() as any).port as number;
 
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 1000);
-        let requestCount = 0;
-
-        graphqlScope.on('request', () => {
-          requestCount = requestCount + 1;
-          if (requestCount === 2) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        });
-
-        (async () => {
-          const client = createClient({
-            url: `ws://localhost:${port}${yoga.graphqlEndpoint}`,
-            webSocketImpl: WebSocket,
-            connectionParams: {
-              client: {
-                name: 'foo',
-                version: '1',
-              },
-            },
-          });
-
-          const query = client.iterate({
-            query: 'subscription { hi }',
-          });
-
-          const { done } = await query.next();
-          expect(done).toEqual(true);
-        })().catch(reject);
+      const client = createClient({
+        url: `ws://localhost:${port}${yoga.graphqlEndpoint}`,
+        webSocketImpl: WebSocket,
+        connectionParams: {
+          client: {
+            name: 'foo',
+            version: '1',
+          },
+        },
       });
-      await new Promise<void>(resolve => {
-        httpServer.close(() => {
-          resolve();
-        });
+
+      const query = client.iterate({
+        query: 'subscription { hi }',
       });
-      graphqlScope.done();
-    });
-    test.skip('reports usage for exception from subscription event stream', async ({ expect }) => {
-      const graphqlScope = nock('http://localhost')
-        .post('/usage', body => {
-          expect(body.map).toMatchInlineSnapshot(`
+
+      const { done } = await query.next();
+      expect(done).toEqual(true);
+
+      const init = await d.promise;
+      const body = JSON.parse(init.body as string);
+      expect(body.map).toMatchInlineSnapshot(`
         {
           74cf03b67c3846231d04927b02e1fca45e727223: {
             fields: [
@@ -1313,14 +1234,18 @@ describe('subscription usage reporting', () => {
           },
         }
       `);
-
-          expect(body).toMatchObject({
-            subscriptionOperations: [{}],
-          });
-
-          return true;
-        })
-        .reply(200);
+      expect(body.subscriptionOperations[0].metadata.client).toEqual({
+        name: 'foo',
+        version: '1',
+      });
+      await new Promise<void>(resolve => {
+        httpServer.close(() => {
+          resolve();
+        });
+      });
+    });
+    test.skip('reports usage for exception from subscription event stream', async ({ expect }) => {
+      const d = Promise.withResolvers<RequestInit>();
 
       const yoga = createYoga({
         logging: false,
@@ -1367,6 +1292,10 @@ describe('subscription usage reporting', () => {
             agent: {
               maxSize: 1,
               logger: createLogger('silent'),
+              async fetch(_req, init) {
+                d.resolve(init!);
+                return new Response('Ok.');
+              },
             },
           }),
         ],
@@ -1421,27 +1350,12 @@ describe('subscription usage reporting', () => {
         webSocketImpl: WebSocket,
       });
 
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          resolve();
-        }, 1000);
-        let requestCount = 0;
+      const query = client.iterate({
+        query: 'subscription { hi }',
+      });
 
-        graphqlScope.on('request', () => {
-          requestCount = requestCount + 1;
-          if (requestCount === 2) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        });
-
-        (async () => {
-          const query = client.iterate({
-            query: 'subscription { hi }',
-          });
-
-          const { value } = await query.next();
-          expect(value).toMatchInlineSnapshot(`
+      const { value } = await query.next();
+      expect(value).toMatchInlineSnapshot(`
             {
               errors: [
                 {
@@ -1459,48 +1373,37 @@ describe('subscription usage reporting', () => {
               ],
             }
           `);
-        })().catch(reject);
+
+      const body = JSON.parse((await d.promise).body as string);
+
+      expect(body.map).toMatchInlineSnapshot(`
+        {
+          74cf03b67c3846231d04927b02e1fca45e727223: {
+            fields: [
+              Subscription.hi,
+            ],
+            operation: subscription{hi},
+            operationName: anonymous,
+          },
+        }
+      `);
+
+      expect(body).toMatchObject({
+        subscriptionOperations: [{}],
       });
+
       await new Promise<void>(resolve => {
         httpServer.close(() => {
           resolve();
         });
       });
-      graphqlScope.done();
     });
   });
 });
 
 describe('incremental delivery usage reporting', () => {
   test('reports usage for successful incremental deliver operation', async ({ expect }) => {
-    const graphqlScope = nock('http://localhost')
-      .post('/usage', body => {
-        expect(body.map).toMatchInlineSnapshot(`
-          {
-            b78b2367025b1253b17f5362d5f0b4d5b27c4a08: {
-              fields: [
-                Query.greetings,
-              ],
-              operation: {greetings@stream},
-              operationName: anonymous,
-            },
-          }
-        `);
-
-        expect(body.operations).toMatchObject([
-          {
-            metadata: {
-              client: {
-                name: 'foo',
-                version: '4.2.0',
-              },
-            },
-          },
-        ]);
-
-        return true;
-      })
-      .reply(200);
+    const d = Promise.withResolvers<RequestInit>();
 
     const yoga = createYoga({
       schema: createSchema({
@@ -1538,40 +1441,29 @@ describe('incremental delivery usage reporting', () => {
           agent: {
             maxSize: 1,
             logger: createLogger('silent'),
+            async fetch(_req, init) {
+              d.resolve(init!);
+              return new Response('Ok.');
+            },
           },
         }),
       ],
     });
 
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        resolve();
-      }, 1000);
-      let requestCount = 0;
-
-      graphqlScope.on('request', () => {
-        requestCount = requestCount + 1;
-        if (requestCount === 2) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-
-      (async () => {
-        const res = await yoga.fetch('http://localhost/graphql', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            accept: 'multipart/mixed',
-            'x-graphql-client-name': 'foo',
-            'x-graphql-client-version': '4.2.0',
-          },
-          body: JSON.stringify({
-            query: `query { greetings @stream }`,
-          }),
-        });
-        expect(res.status).toBe(200);
-        expect(await res.text()).toMatchInlineSnapshot(`
+    const res = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        accept: 'multipart/mixed',
+        'x-graphql-client-name': 'foo',
+        'x-graphql-client-version': '4.2.0',
+      },
+      body: JSON.stringify({
+        query: `query { greetings @stream }`,
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.text()).toMatchInlineSnapshot(`
           ---
           Content-Type: application/json; charset=utf-8
           Content-Length: 40
@@ -1599,58 +1491,37 @@ describe('incremental delivery usage reporting', () => {
           {"hasNext":false}
           -----
         `);
-      })().catch(reject);
-    });
 
-    graphqlScope.done();
+    const body = JSON.parse((await d.promise).body! as string);
+
+    expect(body.map).toMatchInlineSnapshot(`
+          {
+            b78b2367025b1253b17f5362d5f0b4d5b27c4a08: {
+              fields: [
+                Query.greetings,
+              ],
+              operation: {greetings@stream},
+              operationName: anonymous,
+            },
+          }
+        `);
+
+    expect(body.operations).toMatchObject([
+      {
+        metadata: {
+          client: {
+            name: 'foo',
+            version: '4.2.0',
+          },
+        },
+      },
+    ]);
   });
 });
 
 describe('request batching usage reporting', () => {
   test('reports usage for batch execution', async () => {
-    const graphqlScope = nock('http://localhost')
-      .post('/usage', body => {
-        expect(body.map).toMatchInlineSnapshot(`
-        {
-          43e84c7ba2c9fff1700237aa7822544e3a66f038: {
-            fields: [
-              Query.a,
-            ],
-            operation: query A{a},
-            operationName: A,
-          },
-          727c980e5b1ce7c94b587c835cd1388b79714fcc: {
-            fields: [
-              Query.b,
-            ],
-            operation: query B{b},
-            operationName: B,
-          },
-        }
-      `);
-
-        expect(body.operations).toMatchObject([
-          {
-            metadata: {
-              client: {
-                name: 'foo',
-                version: '4.2.0',
-              },
-            },
-          },
-          {
-            metadata: {
-              client: {
-                name: 'foo',
-                version: '4.2.0',
-              },
-            },
-          },
-        ]);
-
-        return true;
-      })
-      .reply(200);
+    const d = Promise.withResolvers<RequestInit>();
 
     const yoga = createYoga({
       schema: createSchema({
@@ -1685,48 +1556,73 @@ describe('request batching usage reporting', () => {
             maxSize: 1,
             sendInterval: 10,
             logger: createLogger('silent'),
+            async fetch(_req, init) {
+              d.resolve(init!);
+              return new Response('Ok.');
+            },
           },
         }),
       ],
     });
 
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        resolve();
-      }, 1000);
-      let requestCount = 0;
-
-      graphqlScope.on('request', () => {
-        requestCount = requestCount + 1;
-        if (requestCount === 2) {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-
-      (async () => {
-        const res = await yoga.fetch('http://localhost/graphql', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            'x-graphql-client-name': 'foo',
-            'x-graphql-client-version': '4.2.0',
-          },
-          body: JSON.stringify([
-            {
-              query: 'query A { a }',
-            },
-            {
-              query: 'query B { b }',
-            },
-          ]),
-        });
-
-        expect(res.status).toBe(200);
-        expect(await res.text()).toMatchInlineSnapshot('[{"data":{"a":"a"}},{"data":{"b":"b"}}]');
-      })().catch(reject);
+    const res = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-graphql-client-name': 'foo',
+        'x-graphql-client-version': '4.2.0',
+      },
+      body: JSON.stringify([
+        {
+          query: 'query A { a }',
+        },
+        {
+          query: 'query B { b }',
+        },
+      ]),
     });
 
-    graphqlScope.done();
+    expect(res.status).toBe(200);
+    expect(await res.text()).toMatchInlineSnapshot('[{"data":{"a":"a"}},{"data":{"b":"b"}}]');
+
+    const body = JSON.parse((await d.promise).body! as string);
+
+    expect(body.map).toMatchInlineSnapshot(`
+        {
+          43e84c7ba2c9fff1700237aa7822544e3a66f038: {
+            fields: [
+              Query.a,
+            ],
+            operation: query A{a},
+            operationName: A,
+          },
+          727c980e5b1ce7c94b587c835cd1388b79714fcc: {
+            fields: [
+              Query.b,
+            ],
+            operation: query B{b},
+            operationName: B,
+          },
+        }
+      `);
+
+    expect(body.operations).toMatchObject([
+      {
+        metadata: {
+          client: {
+            name: 'foo',
+            version: '4.2.0',
+          },
+        },
+      },
+      {
+        metadata: {
+          client: {
+            name: 'foo',
+            version: '4.2.0',
+          },
+        },
+      },
+    ]);
   });
 });

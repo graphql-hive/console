@@ -6,6 +6,10 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
       "inputs": ["../../web/app/src/gql/persisted-documents.json"]
+    },
+    "dev": {
+      "persistent": true,
+      "cache": false
     }
   }
 }

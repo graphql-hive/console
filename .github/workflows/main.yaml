@@ -4,6 +4,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-main
+  cancel-in-progress: false
+
 jobs:
   # Release NPM packages and tarballs
   package:
@@ -42,6 +46,7 @@ jobs:
     needs:
       - build
     runs-on: ubuntu-22.04
+    if: ${{ vars.ENABLE_STAGING_DEPLOYMENT == '1' }}
     steps:
       - name: Dispatch Deployment
         run: |
@@ -64,10 +69,6 @@ jobs:
   # ESLint and Prettier
   code-style:
     uses: ./.github/workflows/lint.yaml
-
-  # CodeQL
-  static-analysis:
-    uses: ./.github/workflows/codeql-analysis.yml
 
   # TypeScript Typecheck and compiler checks
   typescript:

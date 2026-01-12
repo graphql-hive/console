@@ -40,6 +40,8 @@ export class ServiceDeployment {
       args?: kx.types.Container['args'];
       image: string;
       port?: number;
+      /** Port to use for liveness, startup and readiness probes. */
+      probePort?: number;
       serviceAccountName?: pulumi.Output<string>;
       livenessProbe?: string | ProbeConfig;
       readinessProbe?: string | ProbeConfig;
@@ -107,6 +109,7 @@ export class ServiceDeployment {
 
   createPod(asJob: boolean) {
     const port = this.options.port || 3000;
+    const probePort = this.options.probePort ?? port;
     const additionalEnv: any[] = normalizeEnv(this.options.env);
     const secretsEnv: any[] = normalizeEnvSecrets(this.envSecrets);
 
@@ -125,14 +128,14 @@ export class ServiceDeployment {
               timeoutSeconds: 5,
               httpGet: {
                 path: this.options.livenessProbe,
-                port,
+                port: probePort,
               },
             }
           : {
               ...this.options.livenessProbe,
               httpGet: {
                 path: this.options.livenessProbe.endpoint,
-                port,
+                port: probePort,
               },
             };
     }
@@ -147,14 +150,14 @@ export class ServiceDeployment {
               timeoutSeconds: 5,
               httpGet: {
                 path: this.options.readinessProbe,
-                port,
+                port: probePort,
               },
             }
           : {
               ...this.options.readinessProbe,
               httpGet: {
                 path: this.options.readinessProbe.endpoint,
-                port,
+                port: probePort,
               },
             };
     }
@@ -169,14 +172,14 @@ export class ServiceDeployment {
               timeoutSeconds: 10,
               httpGet: {
                 path: this.options.startupProbe,
-                port,
+                port: probePort,
               },
             }
           : {
               ...this.options.startupProbe,
               httpGet: {
                 path: this.options.startupProbe.endpoint,
-                port,
+                port: probePort,
               },
             };
     }
@@ -192,8 +195,8 @@ export class ServiceDeployment {
       // and ensure that we are not exposed to downtime issues caused by node failures/restarts:
       topologySpreadConstraints.push({
         maxSkew: 1,
-        topologyKey: 'topology.kubernetes.io/zone',
-        whenUnsatisfiable: 'DoNotSchedule',
+        topologyKey: 'kubernetes.io/hostname',
+        whenUnsatisfiable: 'ScheduleAnyway',
         labelSelector: {
           matchLabels: {
             app: this.name,
@@ -317,7 +320,7 @@ export class ServiceDeployment {
       });
     }
 
-    const service = deployment.createService({});
+    const service = createService(this.name, deployment);
 
     if (this.options.autoScaling) {
       new k8s.autoscaling.v2.HorizontalPodAutoscaler(
@@ -356,4 +359,33 @@ export class ServiceDeployment {
 
     return { deployment, service };
   }
+}
+
+export function createService(name: string, deployment: kx.Deployment) {
+  const labels = deployment.spec.selector.matchLabels;
+  const ports = deployment.spec.template.spec.containers.apply(containers => {
+    const ports: { name: string; port: number }[] = [];
+
+    containers.forEach(container => {
+      if (container.ports) {
+        container.ports.forEach(port => {
+          ports.push({ name: port.name || name, port: port.containerPort });
+        });
+      }
+    });
+
+    return ports;
+  });
+
+  return new k8s.core.v1.Service(
+    name,
+    {
+      spec: {
+        ports: ports,
+        selector: labels,
+        type: 'ClusterIP',
+      },
+    },
+    {},
+  );
 }

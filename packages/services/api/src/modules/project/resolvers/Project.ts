@@ -6,6 +6,7 @@ export const Project: Pick<
   ProjectResolvers,
   | 'buildUrl'
   | 'cleanId'
+  | 'createdAt'
   | 'experimental_nativeCompositionPerTarget'
   | 'id'
   | 'name'
@@ -16,7 +17,6 @@ export const Project: Pick<
   | 'viewerCanDelete'
   | 'viewerCanModifyAlerts'
   | 'viewerCanModifySettings'
-  | '__isTypeOf'
 > = {
   experimental_nativeCompositionPerTarget: async (project, _, { injector }) => {
     if (project.type !== ProjectType.FEDERATION) {

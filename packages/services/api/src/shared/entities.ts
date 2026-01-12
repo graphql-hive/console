@@ -12,6 +12,7 @@ import type {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../__generated__/types';
+import type { ResourceAssignmentGroup } from '../modules/organization/lib/resource-assignment-model';
 import { parseGraphQLSource, sortDocumentNode } from './schema';
 
 export const NameModel = z
@@ -145,7 +146,7 @@ export enum ProjectType {
   SINGLE = 'SINGLE',
 }
 
-export enum NativeFederationCompatibilityStatus {
+export enum NativeFederationCompatibilityStatusType {
   COMPATIBLE = 'COMPATIBLE',
   INCOMPATIBLE = 'INCOMPATIBLE',
   UNKNOWN = 'UNKNOWN',
@@ -190,6 +191,8 @@ export interface Organization {
      */
     forceLegacyCompositionInTargets: string[];
     appDeployments: boolean;
+    otelTracing: boolean;
+    schemaProposals: boolean;
   };
   zendeskId: string | null;
   /** ID of the user that owns the organization */
@@ -204,6 +207,7 @@ export interface OrganizationInvitation {
   createdAt: string;
   expiresAt: string;
   roleId: string;
+  assignedResources: ResourceAssignmentGroup | null;
 }
 
 export interface OrganizationBilling {
@@ -220,8 +224,10 @@ export interface OIDCIntegration {
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
+  additionalScopes: string[];
   oidcUserAccessOnly: boolean;
   defaultMemberRoleId: string | null;
+  defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
 
 export interface CDNAccessToken {
@@ -297,6 +303,7 @@ export interface Project {
   orgId: string;
   name: string;
   type: ProjectType;
+  createdAt: string;
   buildUrl?: string | null;
   validationUrl?: string | null;
   /**

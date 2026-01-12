@@ -1,0 +1,110 @@
+extensions:
+  hiveauth:
+    endpoint: ${HIVE_OTEL_AUTH_ENDPOINT}
+  health_check:
+    endpoint: '0.0.0.0:13133'
+  # pprof:
+  #   endpoint: '0.0.0.0:1777'
+  # statsviz:
+  #   endpoint: '0.0.0.0:8081'
+  # zpages:
+  #   endpoint: '0.0.0.0:55679'
+  file_storage:
+    directory: /var/lib/otelcol/file_storage
+    timeout: 2s
+    fsync: false
+    compaction:
+      directory: /var/lib/otelcol/file_storage
+      on_start: true
+      on_rebound: true
+      rebound_needed_threshold_mib: 5
+      rebound_trigger_threshold_mib: 3
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        include_metadata: true
+        endpoint: '0.0.0.0:4317'
+        auth:
+          authenticator: hiveauth
+      http:
+        cors:
+          allowed_origins: ['*']
+          allowed_headers: ['*']
+        include_metadata: true
+        endpoint: '0.0.0.0:4318'
+        auth:
+          authenticator: hiveauth
+processors:
+  attributes:
+    actions:
+      - key: hive.target_id
+        from_context: auth.targetId
+        action: insert
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
+    spike_limit_mib: 200
+    # limit_percentage: 80
+    # spike_limit_percentage: 20
+  batch:
+    timeout: 100ms
+    send_batch_size: 5000
+exporters:
+  debug:
+    verbosity: basic
+  clickhouse:
+    endpoint: ${CLICKHOUSE_PROTOCOL}://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}?dial_timeout=10s&compress=lz4&async_insert=1&wait_for_async_insert=0
+    database: default
+    async_insert: true
+    username: ${CLICKHOUSE_USERNAME}
+    password: ${CLICKHOUSE_PASSWORD}
+    create_schema: false
+    ttl: 720h
+    compress: lz4
+    logs_table_name: otel_logs
+    traces_table_name: otel_traces
+    metrics_table_name: otel_metrics
+    timeout: 5s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 1
+      queue_size: 5000
+      storage: file_storage
+service:
+  extensions:
+    - hiveauth
+    - health_check
+    # - pprof
+    # - statsviz
+    # - zpages
+    - file_storage
+  telemetry:
+    logs:
+      level: DEBUG
+      encoding: json
+      output_paths: ['stdout']
+      error_output_paths: ['stderr']
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: '0.0.0.0'
+                port: 10254
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors:
+        - memory_limiter
+        - attributes
+        - batch
+      exporters:
+        - clickhouse
+        # - debug

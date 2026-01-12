@@ -42,10 +42,31 @@ export function withUsedByClients<
     typename: string;
   }
 > {
-  return Object.fromEntries(
-    Object.entries(input).map(([schemaCoordinate, record]) => [
-      schemaCoordinate,
-      {
+  // input can contain ALLLLLLLLLL the schema coordinates.
+  // in order to be more efficient we lazily create the properties here as we could accidentially create way tooo much stuff!
+  return new Proxy(input, {
+    get(target, property, receiver) {
+      if (
+        typeof property !== 'string' ||
+        /** some code might check if this is a promise :D */
+        property === 'then'
+      ) {
+        return Reflect.get(target, property, receiver);
+      }
+
+      // Guard against trying to look up properties that do not belong to this typename!
+      if (!property.startsWith(deps.typename)) {
+        return undefined;
+      }
+
+      const schemaCoordinate = property;
+      const record = input[property];
+
+      if (!record) {
+        return undefined;
+      }
+
+      return {
         selector: deps.selector,
         period: deps.period,
         typename: deps.typename,
@@ -62,13 +83,22 @@ export function withUsedByClients<
           return deps.operationsManager.getClientNamesPerCoordinateOfType({
             ...deps.selector,
             period: deps.period,
-            typename: deps.typename,
             schemaCoordinate,
           });
         },
-      },
-    ]),
-  );
+      };
+    },
+  }) as Record<
+    string,
+    T & {
+      usedByClients: () => PromiseOrValue<Array<string>>;
+      period: DateRange;
+      organizationId: string;
+      projectId: string;
+      targetId: string;
+      typename: string;
+    }
+  >;
 }
 
 function deprecationReasonFromDirectives(directives: readonly ConstDirectiveNode[] | undefined) {
@@ -384,4 +414,21 @@ export function stringifyDefaultValue(value: unknown): string | null {
     return stringify(value);
   }
   return null;
+}
+
+export function memo<R, A, K>(fn: (arg: A) => R, cacheKeyFn: (arg: A) => K): (arg: A) => R {
+  let memoizedResult: R | null = null;
+  let memoizedKey: K | null = null;
+
+  return (arg: A) => {
+    const currentKey = cacheKeyFn(arg);
+    if (memoizedKey === currentKey) {
+      return memoizedResult!;
+    }
+
+    memoizedKey = currentKey;
+    memoizedResult = fn(arg);
+
+    return memoizedResult;
+  };
 }

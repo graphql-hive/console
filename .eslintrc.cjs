@@ -55,14 +55,6 @@ module.exports = {
     'codegen.cjs',
     'tsup',
   ],
-  // parserOptions: {
-  //   ecmaVersion: 2020,
-  //   sourceType: 'module',
-  //   project: ['./tsconfig.eslint.json'],
-  // },
-  // parser: '@typescript-eslint/parser',
-  // plugins: [...guildConfig.plugins, 'hive'],
-  // extends: guildConfig.extends,
   overrides: [
     {
       // Setup GraphQL Parser
@@ -88,12 +80,16 @@ module.exports = {
       },
     },
     {
+      files: ['*.cjs'],
+      parserOptions: { ecmaVersion: 2020 },
+    },
+    {
       files: ['packages/**/*.ts', 'packages/**/*.tsx', 'cypress/**/*.ts', 'cypress/**/*.tsx'],
       reportUnusedDisableDirectives: true,
       parserOptions: {
         ecmaVersion: 2020,
         sourceType: 'module',
-        project: ['./tsconfig.eslint.json'],
+        project: [path.join(__dirname, './tsconfig.eslint.json')],
       },
       parser: '@typescript-eslint/parser',
       plugins: [...guildConfig.plugins, 'hive'],
@@ -183,19 +179,20 @@ module.exports = {
         'react/jsx-no-useless-fragment': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-empty-function': 'off',
-        'react-hooks/rules-of-hooks': 'off',
+        'react-hooks/rules-of-hooks': 'error',
         'react-hooks/exhaustive-deps': 'off',
         'unicorn/filename-case': 'off',
         'import/no-default-export': 'off',
         '@next/next/no-img-element': 'off',
         '@typescript-eslint/ban-types': 'off',
-        'react/jsx-key': 'off',
         'jsx-a11y/label-has-associated-control': 'off',
         'jsx-a11y/click-events-have-key-events': 'off',
         'jsx-a11y/no-static-element-interactions': 'off',
         '@next/next/no-html-link-for-pages': 'off',
         'unicorn/no-negated-condition': 'off',
         'no-implicit-coercion': 'off',
+
+        'react/jsx-key': 'warn',
       },
     },
     {
@@ -209,13 +206,12 @@ module.exports = {
         },
       },
     },
-    // {
-    //   files: ['packages/web/app/**'],
-    //   excludedFiles: ['packages/web/app/src/pages/**'],
-    //   rules: {
-    //     'import/no-unused-modules': ['error', { unusedExports: true }],
-    //   },
-    // },
+    {
+      files: ['packages/web/app/**/*.stories.tsx', 'packages/web/docs/**'],
+      rules: {
+        'react-hooks/rules-of-hooks': 'off',
+      },
+    },
     {
       files: ['packages/web/docs/**'],
       settings: {

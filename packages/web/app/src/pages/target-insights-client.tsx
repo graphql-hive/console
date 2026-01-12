@@ -17,7 +17,7 @@ import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const ClientView_ClientStatsQuery = graphql(`
@@ -359,9 +359,7 @@ const ClientInsightsPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -419,7 +417,7 @@ function ClientInsightsPageContent(props: {
   return (
     <ClientView
       clientName={props.name}
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}

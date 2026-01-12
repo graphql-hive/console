@@ -48,14 +48,19 @@ export function RoleSelector<T>(props: {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={cn('flex items-center gap-x-4', props.className)}
+          className={cn('flex items-center', props.className)}
           data-cy="role-selector-trigger"
           disabled={props.disabled === true || isBusy}
           onClick={() => {
             props.onBlur?.();
           }}
         >
-          {props.defaultRole?.name ?? 'Select role'}
+          <span
+            className="flex grow truncate"
+            {...(props.defaultRole?.name ? { title: props.defaultRole?.name } : {})}
+          >
+            {props.defaultRole?.name ?? 'Select role'}
+          </span>
           <ChevronDownIcon className="text-muted-foreground ml-2 size-4" />
         </Button>
       </PopoverTrigger>

@@ -36,7 +36,15 @@ export class BreakingSchemaChangeUsageHelper {
 
     return {
       topAffectedOperations: schemaChange.usageStatistics.topAffectedOperations.map(operation => {
-        const percentage = (operation.count / metadata.usage.totalRequestCount) * 100;
+        // Note:
+        // "metadata.usage.totalRequestCount" is sometimes 0/NaN in integration tests
+        // due to ClickHouse eventual consistency lag.
+        // We ensure the percentage is always a finite number to avoid GraphQL serialization errors.
+        const totalRequestCount = Number.isFinite(metadata.usage.totalRequestCount)
+          ? Math.max(1, metadata.usage.totalRequestCount)
+          : 1;
+        const count = Number.isFinite(operation.count) ? operation.count : 0;
+        const percentage = (count / totalRequestCount) * 100;
         return {
           ...operation,
           percentage,
@@ -44,11 +52,19 @@ export class BreakingSchemaChangeUsageHelper {
         };
       }),
       topAffectedClients: schemaChange.usageStatistics.topAffectedClients.map(client => {
-        const percentage = (client.count / metadata.usage.totalRequestCount) * 100;
+        // Note:
+        // "metadata.usage.totalRequestCount" is sometimes 0/NaN in integration tests
+        // due to ClickHouse eventual consistency lag.
+        // We ensure the percentage is always a finite number to avoid GraphQL serialization errors.
+        const totalRequestCount = Number.isFinite(metadata.usage.totalRequestCount)
+          ? Math.max(1, metadata.usage.totalRequestCount)
+          : 1;
+        const count = Number.isFinite(client.count) ? client.count : 0;
+        const percentage = (count / totalRequestCount) * 100;
 
         return {
           ...client,
-          countFormatted: formatNumber(client.count),
+          countFormatted: formatNumber(count),
           percentage,
           percentageFormatted: formatPercentage(percentage),
         };

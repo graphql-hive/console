@@ -1,10 +1,13 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { maskToken } from '@hive/service-common';
+import * as GraphQLSchema from '../../../__generated__/types';
 import { OIDCIntegration } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
+import { ResourceAssignments } from '../../organization/providers/resource-assignments';
 import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
@@ -26,6 +29,7 @@ export class OIDCIntegrationsProvider {
     @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
     @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
     private session: Session,
+    private resourceAssignments: ResourceAssignments,
   ) {
     this.logger = logger.child({ source: 'OIDCIntegrationsProvider' });
   }
@@ -89,6 +93,7 @@ export class OIDCIntegrationsProvider {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
+    additionalScopes: readonly string[];
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -118,13 +123,15 @@ export class OIDCIntegrationsProvider {
     const tokenEndpointResult = OAuthAPIUrlModel.safeParse(args.tokenEndpoint);
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
+    const additionalScopesResult = OIDCAdditionalScopesModel.safeParse(args.additionalScopes);
 
     if (
       clientIdResult.success &&
       clientSecretResult.success &&
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
-      authorizationEndpointResult.success
+      authorizationEndpointResult.success &&
+      additionalScopesResult.success
     ) {
       const creationResult = await this.storage.createOIDCIntegrationForOrganization({
         organizationId: args.organizationId,
@@ -133,6 +140,7 @@ export class OIDCIntegrationsProvider {
         tokenEndpoint: tokenEndpointResult.data,
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
+        additionalScopes: additionalScopesResult.data,
       });
 
       if (creationResult.type === 'ok') {
@@ -156,6 +164,7 @@ export class OIDCIntegrationsProvider {
           tokenEndpoint: null,
           userinfoEndpoint: null,
           authorizationEndpoint: null,
+          additionalScopes: null,
         },
       } as const;
     }
@@ -177,6 +186,9 @@ export class OIDCIntegrationsProvider {
         authorizationEndpoint: authorizationEndpointResult.success
           ? null
           : authorizationEndpointResult.error.issues[0].message,
+        additionalScopes: additionalScopesResult.success
+          ? null
+          : additionalScopesResult.error.issues[0].message,
       },
     } as const;
   }
@@ -188,6 +200,7 @@ export class OIDCIntegrationsProvider {
     tokenEndpoint: string | null;
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
+    additionalScopes: readonly string[] | null;
   }) {
     if (this.isEnabled() === false) {
       return {
@@ -227,13 +240,17 @@ export class OIDCIntegrationsProvider {
     const authorizationEndpointResult = maybe(OAuthAPIUrlModel).safeParse(
       args.authorizationEndpoint,
     );
+    const additionalScopesResult = maybe(OIDCAdditionalScopesModel).safeParse(
+      args.additionalScopes,
+    );
 
     if (
       clientIdResult.success &&
       clientSecretResult.success &&
       tokenEndpointResult.success &&
       userinfoEndpointResult.success &&
-      authorizationEndpointResult.success
+      authorizationEndpointResult.success &&
+      additionalScopesResult.success
     ) {
       const oidcIntegration = await this.storage.updateOIDCIntegration({
         oidcIntegrationId: args.oidcIntegrationId,
@@ -244,6 +261,7 @@ export class OIDCIntegrationsProvider {
         tokenEndpoint: tokenEndpointResult.data,
         userinfoEndpoint: userinfoEndpointResult.data,
         authorizationEndpoint: authorizationEndpointResult.data,
+        additionalScopes: additionalScopesResult.data,
       });
 
       const redactedClientSecret = maskToken(oidcIntegration.clientId);
@@ -259,6 +277,7 @@ export class OIDCIntegrationsProvider {
             tokenEndpoint: redactedTokenEndpoint,
             userinfoEndpoint: args.userinfoEndpoint,
             authorizationEndpoint: args.authorizationEndpoint,
+            additionalScopes: args.additionalScopes,
           }),
           integrationId: args.oidcIntegrationId,
         },
@@ -287,6 +306,9 @@ export class OIDCIntegrationsProvider {
         authorizationEndpoint: authorizationEndpointResult.success
           ? null
           : authorizationEndpointResult.error.issues[0].message,
+        additionalScopes: additionalScopesResult.success
+          ? null
+          : additionalScopesResult.error.issues[0].message,
       },
     } as const;
   }
@@ -364,6 +386,51 @@ export class OIDCIntegrationsProvider {
     return {
       type: 'ok',
       oidcIntegration: await this.storage.updateOIDCRestrictions(args),
+    } as const;
+  }
+
+  async updateOIDCDefaultAssignedResources(args: {
+    oidcIntegrationId: string;
+    assignedResources: GraphQLSchema.ResourceAssignmentInput;
+  }) {
+    if (this.isEnabled() === false) {
+      return {
+        type: 'error',
+        message: 'OIDC integrations are disabled.',
+      } as const;
+    }
+
+    const oidcIntegration = await this.storage.getOIDCIntegrationById({
+      oidcIntegrationId: args.oidcIntegrationId,
+    });
+
+    if (oidcIntegration === null) {
+      return {
+        type: 'error',
+        message: 'Integration not found.',
+      } as const;
+    }
+
+    await this.session.assertPerformAction({
+      organizationId: oidcIntegration.linkedOrganizationId,
+      action: 'oidc:modify',
+      params: {
+        organizationId: oidcIntegration.linkedOrganizationId,
+      },
+    });
+
+    const assignedResources: ResourceAssignmentGroup =
+      await this.resourceAssignments.transformGraphQLResourceAssignmentInputToResourceAssignmentGroup(
+        oidcIntegration.linkedOrganizationId,
+        args.assignedResources,
+      );
+
+    return {
+      type: 'ok',
+      oidcIntegration: await this.storage.updateOIDCDefaultAssignedResources({
+        oidcIntegrationId: args.oidcIntegrationId,
+        assignedResources,
+      }),
     } as const;
   }
 
@@ -472,5 +539,16 @@ const OIDCClientSecretModel = zod
   .max(200, 'Can not be longer than 200 characters.');
 
 const OAuthAPIUrlModel = zod.string().url('Must be a valid OAuth API url.');
+
+const OIDCAdditionalScopesModel = zod
+  .array(
+    zod
+      .string()
+      .toLowerCase()
+      .nonempty('Must not be empty.')
+      .max(50, 'Can not be longer than 50 characters.')
+      .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.'),
+  )
+  .max(20, 'Can not be more than 20 items.');
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);

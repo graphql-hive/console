@@ -1,16 +1,17 @@
 import { Session } from '../../auth/lib/authz';
-import * as OrganizationAccessTokensPermissions from '../lib/organization-access-token-permissions';
-import * as OrganizationMemberPermissions from '../lib/organization-member-permissions';
 import { OrganizationAccessTokens } from '../providers/organization-access-tokens';
 import { OrganizationManager } from '../providers/organization-manager';
 import { OrganizationMemberRoles } from '../providers/organization-member-roles';
 import { OrganizationMembers } from '../providers/organization-members';
+import { ResourceSelector } from '../providers/resource-selector';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
 export const Organization: Pick<
   OrganizationResolvers,
   | 'accessToken'
+  | 'accessTokenById'
   | 'accessTokens'
+  | 'allAccessTokens'
   | 'availableMemberPermissionGroups'
   | 'availableOrganizationAccessTokenPermissionGroups'
   | 'cleanId'
@@ -22,6 +23,8 @@ export const Organization: Pick<
   | 'members'
   | 'name'
   | 'owner'
+  | 'projectForResourceSelector'
+  | 'projectsForResourceSelector'
   | 'slug'
   | 'viewerCanAccessSettings'
   | 'viewerCanAssignUserRoles'
@@ -29,15 +32,12 @@ export const Organization: Pick<
   | 'viewerCanExportAuditLogs'
   | 'viewerCanManageAccessTokens'
   | 'viewerCanManageInvitations'
+  | 'viewerCanManagePersonalAccessTokens'
   | 'viewerCanManageRoles'
   | 'viewerCanModifySlug'
   | 'viewerCanSeeMembers'
   | 'viewerCanTransferOwnership'
-  | '__isTypeOf'
 > = {
-  __isTypeOf: organization => {
-    return !!organization.id;
-  },
   owner: async (organization, _, { injector }) => {
     const owner = await injector.get(OrganizationManager).findOrganizationOwner(organization);
     if (!owner) {
@@ -66,6 +66,7 @@ export const Organization: Pick<
       .getPaginatedOrganizationMembersForOrganization(organization, {
         first: args.first ?? null,
         after: args.after ?? null,
+        searchTerm: args.filters?.searchTerm ?? null,
       });
   },
   invitations: async (organization, args, { injector }) => {
@@ -204,17 +205,19 @@ export const Organization: Pick<
       },
     });
   },
-  availableMemberPermissionGroups: () => {
-    return OrganizationMemberPermissions.permissionGroups;
+  availableMemberPermissionGroups: (organization, _, { injector }) => {
+    return injector.get(OrganizationAccessTokens).getAvailableMemberPermissionGroups(organization);
   },
-  availableOrganizationAccessTokenPermissionGroups: () => {
-    return OrganizationAccessTokensPermissions.permissionGroups;
+  availableOrganizationAccessTokenPermissionGroups: async (organization, _, { injector }) => {
+    return injector
+      .get(OrganizationAccessTokens)
+      .getAvailablePermissionGroupsForOrganization(organization);
   },
   accessTokens: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).getPaginated({
-      organizationId: organization.id,
+    return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {
       first: args.first ?? null,
       after: args.after ?? null,
+      includeOnlyOrganizationScoped: true,
     });
   },
   viewerCanManageAccessTokens: async (organization, _arg, { session }) => {
@@ -227,9 +230,34 @@ export const Organization: Pick<
     });
   },
   accessToken: async (organization, args, { injector }) => {
-    return injector.get(OrganizationAccessTokens).get({
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id, true);
+  },
+  viewerCanManagePersonalAccessTokens: async (organization, _arg, { session }) => {
+    return session.canPerformAction({
       organizationId: organization.id,
-      id: args.id,
+      action: 'personalAccessToken:modify',
+      params: {
+        organizationId: organization.id,
+      },
     });
+  },
+  accessTokenById: async (organization, args, { injector }) => {
+    return injector.get(OrganizationAccessTokens).getForOrganization(organization, args.id);
+  },
+  async allAccessTokens(organization, args, { injector }) {
+    return injector.get(OrganizationAccessTokens).getPaginatedForOrganization(organization, {
+      first: args.first ?? null,
+      after: args.after ?? null,
+    });
+  },
+  projectForResourceSelector: async (organization, args, { injector }) => {
+    return await injector
+      .get(ResourceSelector)
+      .getProjectFromOrganizationForResourceSelector(organization, args.projectId, args.intent);
+  },
+  projectsForResourceSelector: async (organization, args, { injector }) => {
+    return await injector
+      .get(ResourceSelector)
+      .getProjectsFromOrganizationForResourceSelector(organization, args.intent);
   },
 };

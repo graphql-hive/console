@@ -8,7 +8,6 @@ export const Project: Pick<
   | 'isNativeFederationEnabled'
   | 'nativeFederationCompatibility'
   | 'schemaVersionsCount'
-  | '__isTypeOf'
 > = {
   externalSchemaComposition: project => {
     if (project.externalComposition.enabled && project.externalComposition.endpoint) {

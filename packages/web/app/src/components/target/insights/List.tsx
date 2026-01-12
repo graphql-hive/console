@@ -6,6 +6,7 @@ import { useDebouncedCallback } from 'use-debounce';
 import { Scale, Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Link } from '@/components/ui/link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
@@ -14,7 +15,6 @@ import { DateRangeInput } from '@/gql/graphql';
 import { useDecimal, useFormattedDuration, useFormattedNumber } from '@/lib/hooks';
 import { pick } from '@/lib/object';
 import { ChevronUpIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Link } from '@tanstack/react-router';
 import {
   createColumnHelper,
   flexRender,
@@ -68,7 +68,7 @@ function OperationRow({
       <Tr>
         <Td className="font-medium">
           <div className="flex items-center gap-2">
-            <Button variant="orangeLink" className="h-auto p-0" asChild>
+            <Button variant="orangeLink" className="h-auto p-0" asChild title={operation.name}>
               <Link
                 className="block max-w-[300px] truncate"
                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
@@ -234,9 +234,16 @@ function OperationsTable({
   const sortedColumnsById = tableInstance.getState().sorting.map(s => s.id);
 
   return (
-    <div className={clsx('rounded-md border border-gray-800 bg-gray-900/50 p-5', className)}>
+    <div
+      className={clsx(
+        'overflow-x-scroll rounded-md border border-gray-800 bg-gray-900/50 p-5',
+        className,
+      )}
+    >
       <Section.Title>Operations</Section.Title>
-      <Section.Subtitle>List of all operations with their statistics</Section.Subtitle>
+      <Section.Subtitle>
+        List of all operations with their statistics, filtered by selected clients.
+      </Section.Subtitle>
 
       <Table>
         <THead>
@@ -377,7 +384,6 @@ const OperationsTableContainer_OperationsStatsFragment = graphql(`
 `);
 
 function OperationsTableContainer({
-  operationsFilter,
   organizationSlug,
   projectSlug,
   targetSlug,
@@ -388,7 +394,6 @@ function OperationsTableContainer({
   ...props
 }: {
   operationStats: FragmentType<typeof OperationsTableContainer_OperationsStatsFragment> | null;
-  operationsFilter: readonly string[];
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
@@ -405,13 +410,6 @@ function OperationsTableContainer({
     const records: Operation[] = [];
     if (operationStats) {
       for (const { node: op } of operationStats.operations.edges) {
-        if (
-          operationsFilter.length > 0 &&
-          op.operationHash &&
-          !operationsFilter.includes(op.operationHash)
-        ) {
-          continue;
-        }
         records.push({
           id: op.id,
           name: op.name,
@@ -429,7 +427,7 @@ function OperationsTableContainer({
     }
 
     return records;
-  }, [operationStats?.operations.edges, operationsFilter]);
+  }, [operationStats?.operations.edges]);
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
@@ -512,7 +510,8 @@ export function OperationsList({
   projectSlug: string;
   targetSlug: string;
   period: DateRangeInput;
-  operationsFilter: readonly string[];
+  /** Operation IDs to filter on */
+  operationsFilter: string[];
   clientNamesFilter: string[];
   selectedPeriod: null | { to: string; from: string };
 }): ReactElement {
@@ -527,6 +526,7 @@ export function OperationsList({
       },
       period,
       filter: {
+        operationIds: operationsFilter,
         clientNames: clientNamesFilter,
       },
     },
@@ -547,7 +547,6 @@ export function OperationsList({
     >
       <OperationsTableContainer
         operationStats={query.data?.target?.operationsStats ?? null}
-        operationsFilter={operationsFilter}
         className={className}
         setClientFilter={setClientFilter}
         clientFilter={clientFilter}

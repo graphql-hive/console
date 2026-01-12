@@ -5,7 +5,7 @@ import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { objectEntries, objectFromEntries } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
-import type { OrganizationAccessToken } from '../../organization/providers/organization-access-tokens';
+import { CachedAccessToken } from '../../organization/providers/organization-access-tokens-cache';
 import { Logger } from '../../shared/providers/logger';
 
 export type AuthorizationPolicyStatement = {
@@ -55,7 +55,7 @@ export type UserActor = {
 
 export type OrganizationAccessTokenActor = {
   type: 'organizationAccessToken';
-  organizationAccessToken: OrganizationAccessToken;
+  organizationAccessToken: CachedAccessToken;
 };
 
 type Actor = UserActor | OrganizationAccessTokenActor;
@@ -281,16 +281,22 @@ function isActionMatch(actionContainingWildcard: string, action: string) {
   if (actionContainingWildcard === '*') {
     return true;
   }
+
   // exact match
   if (actionContainingWildcard === action) {
     return true;
   }
 
-  const [actionScope] = action.split(':');
+  const [actionScope, actionId] = action.split(':');
   const [userSpecifiedActionScope, userSpecifiedActionId] = actionContainingWildcard.split(':');
 
   // wildcard match "scope:*"
   if (actionScope === userSpecifiedActionScope && userSpecifiedActionId === '*') {
+    return true;
+  }
+
+  // wildcard match "*:scope"
+  if (userSpecifiedActionScope === '*' && userSpecifiedActionId === actionId) {
     return true;
   }
 
@@ -387,6 +393,7 @@ const permissionsByLevel = {
     z.literal('schemaLinting:modifyOrganizationRules'),
     z.literal('auditLog:export'),
     z.literal('accessToken:modify'),
+    z.literal('personalAccessToken:modify'),
   ],
   project: [
     z.literal('project:describe'),
@@ -395,6 +402,7 @@ const permissionsByLevel = {
     z.literal('alert:modify'),
     z.literal('schemaLinting:modifyProjectRules'),
     z.literal('target:create'),
+    z.literal('projectAccessToken:modify'),
   ],
   target: [
     z.literal('targetAccessToken:modify'),
@@ -406,6 +414,9 @@ const permissionsByLevel = {
     z.literal('laboratory:modifyPreflightScript'),
     z.literal('schema:compose'),
     z.literal('usage:report'),
+    z.literal('traces:report'),
+    z.literal('schemaProposal:describe'),
+    z.literal('schemaProposal:modify'),
   ],
   service: [
     z.literal('schemaCheck:create'),
@@ -500,7 +511,7 @@ type ActionDefinitionMap = {
   [key: `${string}:${string}`]: (args: any) => Array<string>;
 };
 
-const actionDefinitions = {
+export const actionDefinitions = {
   ...objectFromEntries(permissionsByLevel['organization'].map(t => [t.value, defaultOrgIdentity])),
   ...objectFromEntries(permissionsByLevel['project'].map(t => [t.value, defaultProjectIdentity])),
   ...objectFromEntries(permissionsByLevel['target'].map(t => [t.value, defaultTargetIdentity])),
@@ -514,10 +525,10 @@ const actionDefinitions = {
 
 type Actions = keyof typeof actionDefinitions;
 
-type ActionStrings = Actions | '*';
+type ActionStrings = Actions | '*' | '*:describe';
 
 /** Unauthenticated session that is returned by default. */
-class UnauthenticatedSession extends Session {
+export class UnauthenticatedSession extends Session {
   protected loadPolicyStatementsForOrganization(
     _: string,
   ): Promise<Array<AuthorizationPolicyStatement>> | Array<AuthorizationPolicyStatement> {

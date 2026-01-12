@@ -151,11 +151,9 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     } else if (envName && env[envName] !== undefined) {
       value = env[envName] as TArgs[keyof TArgs] as NonNullable<GetConfigurationValueType<TKey>>;
     } else {
-      const configValue = this._userConfig!.get(key) as NonNullable<
-        GetConfigurationValueType<TKey>
-      >;
+      const configValue = this._userConfig!.get(key) as GetConfigurationValueType<TKey>;
 
-      if (configValue !== undefined) {
+      if (configValue != null) {
         value = configValue;
       } else if (defaultValue) {
         value = defaultValue;
@@ -216,19 +214,19 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
               variables: args.variables,
             }),
             {
-              logger: {
-                info: (...args) => {
-                  if (isDebug) {
-                    this.logInfo(...args);
+              logger: isDebug
+                ? {
+                    info: (...args) => {
+                      this.logInfo(...args);
+                    },
+                    error: (...args) => {
+                      this.logWarning(...args);
+                    },
+                    debug: (...args) => {
+                      this.logInfo(...args);
+                    },
                   }
-                },
-                error: (...args) => {
-                  // Allow retrying requests without noise
-                  if (isDebug) {
-                    this.logWarning(...args);
-                  }
-                },
-              },
+                : undefined,
               headers: requestHeaders,
               timeout: args.timeout,
             },

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { ChangeEvent, useCallback, useMemo } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,11 @@ import {
   useLocation,
   useRouter,
 } from '@tanstack/react-router';
-import { useArgumentListToggle, usePeriodSelector, useSchemaExplorerContext } from './provider';
+import {
+  useDescriptionsVisibleToggle,
+  usePeriodSelector,
+  useSchemaExplorerContext,
+} from './provider';
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -111,24 +115,33 @@ export function TypeFilter(props: {
     [allNamedTypes],
   );
 
+  const onChange = useCallback(
+    (option: SelectOption | null) => {
+      void router.navigate({
+        search: router.latestLocation.search,
+        to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
+        params: {
+          organizationSlug: props.organizationSlug,
+          projectSlug: props.projectSlug,
+          targetSlug: props.targetSlug,
+          typename: option?.value ?? '',
+        },
+      });
+    },
+    [router],
+  );
+
+  const defaultValue = useMemo(() => {
+    return props.typename ? { value: props.typename, label: props.typename } : null;
+  }, [props.typename]);
+
   return (
     <Autocomplete
       className="min-w-[200px] grow cursor-text"
       placeholder="Search for a type"
-      defaultValue={props.typename ? { value: props.typename, label: props.typename } : null}
+      defaultValue={defaultValue}
       options={types}
-      onChange={(option: SelectOption | null) => {
-        void router.navigate({
-          search: router.latestLocation.search,
-          to: '/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename',
-          params: {
-            organizationSlug: props.organizationSlug,
-            projectSlug: props.projectSlug,
-            targetSlug: props.targetSlug,
-            typename: option?.value ?? '',
-          },
-        });
-      }}
+      onChange={onChange}
       loading={query.fetching}
     />
   );
@@ -137,37 +150,48 @@ export function TypeFilter(props: {
 export function FieldByNameFilter() {
   const router = useRouter();
 
+  const onChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      void router.navigate({
+        search: {
+          ...router.latestLocation.search,
+          search: e.target.value === '' ? undefined : e.target.value,
+        },
+        replace: true,
+      });
+    },
+    [router],
+  );
+
+  const initialValue =
+    'search' in router.latestLocation.search &&
+    typeof router.latestLocation.search.search === 'string'
+      ? router.latestLocation.search.search
+      : '';
+
   return (
     <Input
       className="w-[200px] grow cursor-text"
       placeholder="Filter by field name"
-      onChange={e => {
-        void router.navigate({
-          search: {
-            ...router.latestLocation.search,
-            search: e.target.value === '' ? undefined : e.target.value,
-          },
-        });
-      }}
-      value={
-        'search' in router.latestLocation.search &&
-        typeof router.latestLocation.search.search === 'string'
-          ? router.latestLocation.search.search
-          : ''
-      }
+      onChange={onChange}
+      defaultValue={initialValue}
     />
   );
 }
 
 export function DateRangeFilter() {
   const periodSelector = usePeriodSelector();
+  const onUpdate = useCallback(
+    (value: { preset: { range: { from: string; to: string } } }) => {
+      periodSelector.setPeriod(value.preset.range);
+    },
+    [periodSelector],
+  );
 
   return (
     <DateRangePicker
       validUnits={['y', 'M', 'w', 'd']}
-      onUpdate={value => {
-        periodSelector.setPeriod(value.preset.range);
-      }}
+      onUpdate={onUpdate}
       selectedRange={periodSelector.period}
       startDate={periodSelector.startDate}
       align="end"
@@ -175,28 +199,28 @@ export function DateRangeFilter() {
   );
 }
 
-export function ArgumentVisibilityFilter() {
-  const [collapsed, toggleCollapsed] = useArgumentListToggle();
+export function DescriptionsVisibilityFilter() {
+  const { isDescriptionsVisible, toggleDescriptionsVisible } = useDescriptionsVisibleToggle();
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="bg-secondary flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
             <div>
-              <Label htmlFor="filter-toggle-arguments" className="text-sm font-normal">
-                All arguments
+              <Label htmlFor="filter-toggle-descriptions" className="text-sm font-normal">
+                Show descriptions
               </Label>
             </div>
             <Switch
-              checked={!collapsed}
-              onCheckedChange={toggleCollapsed}
-              id="filter-toggle-arguments"
+              checked={isDescriptionsVisible}
+              onCheckedChange={toggleDescriptionsVisible}
+              id="filter-toggle-descriptions"
             />
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          List of arguments is collapsed by default. You can toggle this setting to display all
-          arguments.
+          Descriptions are not visible by default. You can toggle this setting to display all
+          descriptions.
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -300,7 +324,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
       >
         {props.options.map(({ name, values }, i) => (
           <React.Fragment key={name}>
-            {i > 0 ? <DropdownMenuSeparator /> : null}
+            {i > 0 && <DropdownMenuSeparator />}
             <DropdownMenuGroup
               className="flex cursor-pointer overflow-x-hidden text-sm text-gray-400 hover:underline"
               onClick={() => {

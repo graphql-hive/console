@@ -1,0 +1,105 @@
+---
+title: 'Performance Tuning & Traffic Shaping'
+---
+
+# Performance Tuning & Traffic Shaping
+
+Hive Router is built for performance right out of the box, but every production setup is different.
+Tuning the router's traffic management settings to match your specific workload and subgraph
+capabilities can unlock significantly better throughput and reliability.
+
+This guide covers the `traffic_shaping` configuration in detail, explains the trade-offs of each
+setting, and gives you a practical approach to benchmarking and optimizing your deployment.
+
+For a quick reference of the configuration syntax, see the
+[`traffic_shaping` configuration reference](../configuration/traffic_shaping).
+
+## Understanding Connection Limits
+
+The most important setting for both performance and stability is `max_connections_per_host`. This
+controls how many concurrent HTTP connections the router will open to each subgraph host (like
+`products.api.example.com`).
+
+- **Default Value:** `100`
+
+### Finding the Sweet Spot
+
+Getting this right is about balancing maximum throughput with protecting your subgraphs from
+overload.
+
+**Too low = bottleneck:**
+
+- Even if your subgraphs have plenty of capacity, a low connection limit will queue requests inside
+  the router, adding latency
+- Your subgraph services might sit idle while the router artificially throttles traffic
+- You're leaving performance on the table
+
+**Too high = overload risk:**
+
+- During traffic spikes, the router might flood subgraphs with more connections than they can handle
+- This can overwhelm connection pools, CPU, or memory on your subgraphs
+- Can trigger cascading failures or "thundering herd" problems where sudden traffic surges crash
+  downstream services
+- More open connections may lead to ephemeral port exhaustion
+
+### How to Tune It
+
+Start with the default and adjust based on your observations:
+
+1. **Monitor subgraph performance** under normal and peak load
+2. **Watch for connection pool exhaustion** in your subgraph logs
+3. **Look for queuing in router metrics** - if requests are waiting for connections, you might need
+   to increase the limit
+4. **Load test gradually** - increase the limit incrementally and measure the impact
+
+## Managing Idle Connections
+
+The `pool_idle_timeout` setting controls how long unused connections stay open in the router's
+connection pool before being closed.
+
+- **Default Value:** `50s`
+
+It takes a duration string (like `30s` for 30 seconds, or `1m` for 1 minute). This setting affects
+how aggressively the router reuses existing connections versus closing them to free up resources.
+
+### The Connection Reuse Trade-off
+
+**Too short = latency overhead:**
+
+- Connections get closed quickly, so new requests have to establish fresh TCP/TLS connections
+- Each new connection adds handshake latency (especially noticeable with TLS)
+- Your router and subgraphs spend more CPU on connection setup
+
+**Too long = resource waste:**
+
+- Idle connections consume memory and file descriptors on both the router and subgraph servers
+- Network devices (load balancers, firewalls) might have shorter timeouts and silently drop
+  connections, leading to "zombie" connections that fail when used
+
+### Tuning Guidelines
+
+- **High-traffic APIs:** Use longer timeouts (60-300 seconds) since connections are likely to be
+  reused quickly
+- **Low-traffic APIs:** Use shorter timeouts (10-30 seconds) to free up resources
+- **Check your infrastructure:** Make sure this timeout is shorter than any load balancer or
+  firewall timeouts in your stack
+- **Monitor connection errors:** If you see connection failures, your timeout might be longer than
+  network device timeouts
+
+## Request Deduplication
+
+The `dedupe_enabled` setting turns on in-flight request deduplication. When multiple identical
+GraphQL operations arrive simultaneously, the router sends only one request to subgraphs and shares
+the response with all waiting clients.
+
+- **Default Value:** `true`
+
+This is almost always beneficial to keep enabled. It dramatically reduces load on subgraphs when
+multiple clients request the same data at once (think of popular content or dashboard queries that
+many users run simultaneously).
+
+**When you might disable it:**
+
+- Your queries are always unique (heavily personalized)
+- You're debugging and want to see every request
+- You have very low traffic where deduplication doesn't help

@@ -1,3 +1,5 @@
+import { OrganizationManager } from '../../organization/providers/organization-manager';
+import { SCHEMA_PROPOSALS_ENABLED } from '../../proposals/providers/schema-proposals-enabled-token';
 import { CollectionProvider } from '../providers/collection.provider';
 import type { TargetResolvers } from './../../../__generated__/types';
 
@@ -9,7 +11,7 @@ export const Target: Pick<
   | 'viewerCanModifyLaboratory'
   | 'viewerCanModifyPreflightScript'
   | 'viewerCanViewLaboratory'
-  | '__isTypeOf'
+  | 'viewerCanViewSchemaProposals'
 > = {
   documentCollections: (target, args, { injector }) =>
     injector.get(CollectionProvider).getCollections(target, args.first, args.after),
@@ -27,6 +29,19 @@ export const Target: Pick<
         targetId: target.id,
       },
     });
+  },
+  viewerCanViewSchemaProposals: async (target, _arg, { injector }) => {
+    const organization = await injector.get(OrganizationManager).getOrganization({
+      organizationId: target.orgId,
+    });
+
+    if (
+      organization.featureFlags.schemaProposals === false &&
+      injector.get<boolean>(SCHEMA_PROPOSALS_ENABLED) === false
+    ) {
+      return false;
+    }
+    return true;
   },
   viewerCanModifyLaboratory: (target, _arg, { session }) => {
     return session.canPerformAction({

@@ -11,6 +11,7 @@ export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
+export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
 
 export interface alert_channels {
@@ -135,6 +136,12 @@ export interface document_preflight_scripts {
   updated_at: Date;
 }
 
+export interface graphile_worker_deduplication {
+  dedupe_key: string;
+  expires_at: Date;
+  task_name: string;
+}
+
 export interface migration {
   date: Date;
   hash: string;
@@ -142,10 +149,12 @@ export interface migration {
 }
 
 export interface oidc_integrations {
+  additional_scopes: Array<string> | null;
   authorization_endpoint: string | null;
   client_id: string;
   client_secret: string;
   created_at: Date;
+  default_assigned_resources: any | null;
   default_role_id: string | null;
   id: string;
   linked_organization_id: string;
@@ -164,11 +173,14 @@ export interface organization_access_tokens {
   hash: string;
   id: string;
   organization_id: string;
-  permissions: Array<string>;
+  permissions: Array<string> | null;
+  project_id: string | null;
   title: string;
+  user_id: string | null;
 }
 
 export interface organization_invitations {
+  assigned_resources: any | null;
   code: string;
   created_at: Date;
   email: string;
@@ -276,10 +288,12 @@ export interface schema_checks {
   schema_composition_errors: any | null;
   schema_policy_errors: any | null;
   schema_policy_warnings: any | null;
+  schema_proposal_id: string | null;
   schema_sdl: string | null;
   schema_sdl_store_id: string | null;
   schema_version_id: string | null;
   service_name: string | null;
+  service_url: string | null;
   supergraph_sdl: string | null;
   supergraph_sdl_store_id: string | null;
   target_id: string;
@@ -315,6 +329,38 @@ export interface schema_policy_config {
   created_at: Date;
   resource_id: string;
   resource_type: schema_policy_resource;
+  updated_at: Date;
+}
+
+export interface schema_proposal_comments {
+  author: string;
+  body: string;
+  created_at: Date;
+  id: string;
+  schema_proposal_review_id: string | null;
+  updated_at: Date;
+}
+
+export interface schema_proposal_reviews {
+  author: string;
+  created_at: Date;
+  id: string;
+  line_text: string | null;
+  schema_coordinate: string | null;
+  schema_proposal_id: string;
+  service_name: string;
+  stage_transition: schema_proposal_stage;
+}
+
+export interface schema_proposals {
+  author: string;
+  comments_count: number;
+  created_at: Date;
+  description: string;
+  id: string;
+  stage: schema_proposal_stage;
+  target_id: string;
+  title: string;
   updated_at: Date;
 }
 
@@ -437,6 +483,7 @@ export interface DBTables {
   document_collection_documents: document_collection_documents;
   document_collections: document_collections;
   document_preflight_scripts: document_preflight_scripts;
+  graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
   oidc_integrations: oidc_integrations;
   organization_access_tokens: organization_access_tokens;
@@ -451,6 +498,9 @@ export interface DBTables {
   schema_coordinate_status: schema_coordinate_status;
   schema_log: schema_log;
   schema_policy_config: schema_policy_config;
+  schema_proposal_comments: schema_proposal_comments;
+  schema_proposal_reviews: schema_proposal_reviews;
+  schema_proposals: schema_proposals;
   schema_version_changes: schema_version_changes;
   schema_version_to_log: schema_version_to_log;
   schema_versions: schema_versions;

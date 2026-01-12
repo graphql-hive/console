@@ -1,0 +1,70 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@shareable", "@inaccessible", "@tag"]
+  )
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "priority", content: "tier1")
+
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+type Query {
+  allProducts: [ProductItf] @meta(name: "owner", content: "hive-team")
+  product(id: ID!): ProductItf
+}
+
+interface ProductItf implements SkuItf @meta(name: "domain", content: "products") {
+  id: ID!
+  sku: String
+  name: String
+  package: String
+  variation: ProductVariation
+  dimensions: ProductDimension
+  createdBy: User
+  hidden: String @inaccessible
+  oldField: String @deprecated(reason: "refactored out")
+}
+
+interface SkuItf {
+  sku: String
+}
+
+type Product implements ProductItf & SkuItf
+  @key(fields: "id")
+  @key(fields: "sku package")
+  @key(fields: "sku variation { id }")
+  @meta(name: "owner", content: "product-team") {
+  id: ID!
+  sku: String @meta(name: "unique", content: "true")
+  name: String
+  package: String
+  variation: ProductVariation
+  dimensions: ProductDimension
+  createdBy: User
+  hidden: String
+  reviewsScore: Float!
+  oldField: String @deprecated(reason: "Not used any longer")
+}
+
+enum ShippingClass {
+  STANDARD
+  EXPRESS
+}
+
+type ProductVariation {
+  id: ID!
+  name: String
+}
+
+type ProductDimension @shareable {
+  size: String
+  weight: Float
+}
+
+type User @key(fields: "email") {
+  email: ID!
+  totalProductsCreated: Int @shareable
+}

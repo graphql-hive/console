@@ -25,6 +25,6 @@
       }
     ]
   },
-  "include": ["src"],
+  "include": ["src", "tailwind.config.ts", "tailwind.d.ts"],
   "exclude": ["node_modules"]
 }

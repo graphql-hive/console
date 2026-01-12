@@ -1,0 +1,221 @@
+---
+title: GraphQL Codemod Use Case - Migrating from Apollo Client Generated Hooks to Client Preset
+description:
+  Learn how to migrate from @graphql-codegen/typescript-react-apollo to Client Preset using a
+  codemod. Improve type safety, reduce bundle size, and automate the migration process with ease.
+date: 2025-08-01
+authors: eddeee888
+tags: [graphql, graphql-code-generator, graphql-codegen, client-preset, typescript-react-apollo]
+---
+
+import { Callout } from '@theguild/components'
+
+It is now easier than ever to migrate from Apollo Client generated hooks (by
+`@graphql-codegen/typescript-react-apollo`) to Client Preset with our brand new GraphQL codemod.
+
+## Why do you need to migrate?
+
+Apollo Client v4 has a lot of interesting type overrides to serve as type-hint during development
+time. However, we lose these types by using the Apollo Client generated hooks.
+[Client Preset](https://the-guild.dev/graphql/codegen/plugins/presets/preset-client) was created to
+solve this issue (and the bloated bundle size caused by the generated hooks), so it remains our
+recommended approach to write GraphQL operations.
+
+There are lots more benefits for using Client Preset:
+
+- Works with any GraphQL: Apollo Client, urql, GraphQL Request, and more.
+- Supports
+  [fragment masking](https://the-guild.dev/graphql/hive/blog/unleash-the-power-of-fragments-with-graphql-codegen):
+  Components get exactly what they declare, no surprises.
+- Managed experience: Code more, configure less.
+
+We have created a codemod
+[@eddeee888/gcg-operation-location-migration](https://www.npmjs.com/package/@eddeee888/gcg-operation-location-migration)
+to make the migration smoother.
+
+## Codemod usage
+
+The codemod can be plugged easily into your Codegen config and run once during the migration.
+
+### How it works
+
+#### Before
+
+There are two main approaches to using a `@graphql-codegen/typescript-react-apollo` setup:
+
+- Index-based approach, where all hooks are generated into one file
+- Near-operation file approach, where hooks are generated into a file next to the consuming
+  component
+
+For example, given an operation document file like this:
+
+```graphql
+# src/operations/User.graphql
+query User($id: ID!) {
+  user(id: $id) {
+    id
+    name
+  }
+}
+```
+
+A generated hook/s would be generated into an index or near-operation file:
+
+```ts
+// src/generated/types.ts
+export function useUserQuery(
+  baseOptions: Apollo.QueryHookOptions<UserQuery, UserQueryVariables> &
+    ({ variables: UserQueryVariables; skip?: boolean } | { skip: boolean })
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<UserQuery, UserQueryVariables>(UserDocument, options)
+}
+```
+
+And, the hook is then used in a component file:
+
+```tsx
+// src/User.tsx
+import { useUserQuery } from './generated/types'
+
+export const User = ({ id }) => {
+  const { data } = useUserQuery({ variables: { id } })
+  // ...
+}
+```
+
+#### After
+
+After running the codemod, your component file will be updated to support the Client Preset
+approach!
+
+```tsx
+// src/User.tsx
+import { graphql } from './gql'
+
+const UserDoc = graphql(`
+  query User($id: ID!) {
+    user(id: $id) {
+      id
+      name
+    }
+  }
+`)
+
+export const User = ({ id }) => {
+  const { data } = useQuery(UserDoc, { variables: { id } })
+  // ...
+}
+```
+
+<Callout type="info">
+  You may see type errors if Client Preset is not fully set up by this point. Read on to see how the
+  migration process works end-to-end.
+</Callout>
+
+### How to run the codemod
+
+#### Installation
+
+```sh npm2yarn
+npm install --save-dev @eddeee888/gcg-operation-location-migration
+```
+
+### Updating Codegen config
+
+Comment out all other Codegen `generates` blocks as they may interfere with the codemod, then add
+codemod config like the example below:
+
+```ts
+// codegen.ts
+import { defineConfig } from '@eddeee888/gcg-operation-location-migration'
+import type { CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: 'src/**/*.graphqls', // 👈 This points to your usual GraphQL schema endpoint or files.
+  documents: 'src/**/*.graphql', // 👈 This points to your operation files.
+  generates: {
+    /*
+     * 💡 Example of index file generation approach
+     * Once migrated, you can remove this completely
+     */
+    // 'src/generated/types.ts': {
+    //  plugins: ['typescript', 'typescript-operations', 'typescript-react-apollo'],
+    // },
+
+    /*
+     * 💡 Example of near-operation file approach
+     * Once migrated, you can remove this completely
+     */
+    // 'src/graphql/types.ts': {
+    //   plugins: ['typescript'],
+    // },
+    // './src/': {
+    //   preset: 'near-operation-file',
+    //   presetConfig: {
+    //     baseTypesPath: './graphql/types.ts',
+    //     extension: '.generated.ts',
+    //   },
+    //   plugins: ['typescript-operations', 'typescript-react-apollo'],
+    // },
+
+    // 💡 Codemod config example
+    // `src/` is the base path where we want to run the codemod.
+    'src/': defineConfig({
+      tsConfigFilePath: './tsconfig.json', // 👈 Path from project root to your project tsconfig.json (Note: not from the base path).
+      gqlTag: {
+        name: 'graphql', // 👈 The tag used to parse operation documents.
+        importFrom: './gql', // 👈 The the module to import the graphql tag.
+        importType: 'relative' // 👈 Whether `importFrom` is relative or absolute. If relative, the path from the base path to the module.
+      },
+      hooksImportFrom: '@apollo/client/react' // 👈 The module to import Apollo Client hooks. Use @apollo/client for older Apollo Client v3 versions.
+    })
+  }
+}
+
+export default config
+```
+
+### Running the codemod
+
+Since the codemod is a Codegen preset, you can simply run Codegen to trigger it:
+
+```sh npm2yarn
+npm run codegen
+```
+
+If the codemod runs successfully, you should see your components file getting updated!
+
+<Callout type="info">
+  We have successfully tested the codemod on a few production repos with commonly used setup. If it
+  does not work for your use case, please file an issue here:
+  https://github.com/eddeee888/graphql-code-generator-plugins/issues
+</Callout>
+
+### Setting up Client Preset
+
+Now, you can make small changes to your Codegen config to be using Client Preset, then run Codegen
+again to wire up the migrated files!
+
+```ts
+// codegen.ts
+import type { CodegenConfig } from '@graphql-codegen/cli'
+
+const config: CodegenConfig = {
+  schema: 'src/**/*.graphqls',
+  documents: 'src/**/*.tsx', // 👈 Update this to point to your component files, where your operations have been migrated to.
+  generates: {
+    'src/gql/': {
+      preset: 'client'
+    }
+  }
+}
+
+export default config
+```
+
+## Summary
+
+In this blog post, we explored how to use GraphQL codemod to migrate from Apollo Client generated
+hooks approach to Client Preset. We hope this guide saves you time and reduces friction in your
+migration. Please reach out to [@eddeee888](https://x.com/eddeee888) if you encounter any issues!

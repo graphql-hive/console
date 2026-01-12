@@ -2,6 +2,10 @@ name: pr
 on:
   pull_request: {}
 
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
 
@@ -61,13 +65,14 @@ jobs:
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
 
+  # Changeset Validation
+  # Validates that changesets reference valid packages that exist in the monorepo
+  changeset-validation:
+    uses: ./.github/workflows/changeset-validation.yaml
+
   # ESLint and Prettier
   code-style:
     uses: ./.github/workflows/lint.yaml
-
-  # CodeQL
-  static-analysis:
-    uses: ./.github/workflows/codeql-analysis.yml
 
   # TypeScript Typecheck and compiler checks
   typescript:
@@ -99,7 +104,6 @@ jobs:
       npmTag: rc
       restoreDeletedChangesets: true
       buildScript: build:libraries
-      nodeVersion: 22.6
       packageManager: pnpm
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}

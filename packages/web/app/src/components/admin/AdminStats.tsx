@@ -26,7 +26,7 @@ import { CHART_PRIMARY_COLOR } from '@/constants';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { ChevronUpIcon } from '@radix-ui/react-icons';
 import {
   createColumnHelper,
@@ -85,6 +85,7 @@ function CollectedOperationsOverTime(props: {
   const dataRef = useRef<[string, number][]>();
   dataRef.current ||= operations.map(node => [node.date, node.count]);
   const data = dataRef.current;
+  const chartStyles = useChartStyles();
 
   return (
     <AutoSizer disableHeight>
@@ -93,7 +94,7 @@ function CollectedOperationsOverTime(props: {
           style={{ width: size.width, height: 200 }}
           theme={theme.theme}
           option={{
-            ...useChartStyles(),
+            ...chartStyles,
             grid: {
               left: 50,
               top: 50,

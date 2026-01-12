@@ -8,11 +8,12 @@ import nock from 'nock';
 import { beforeAll, describe, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { startStandaloneServer } from '@apollo/server/standalone';
+import { expressMiddleware } from '@as-integrations/express4';
 import { http } from '@graphql-hive/core';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import { createHiveTestingLogger } from '../../core/tests/test-utils';
 import { createHive, useHive } from '../src';
 
 function createLogger() {
@@ -60,11 +61,9 @@ function handleProcess() {
   };
 }
 
-test('should not interrupt the process', async () => {
-  const logger = {
-    error: vi.fn(),
-    info: vi.fn(),
-  };
+test('should not interrupt the process', async ({ expect }) => {
+  const logger = createHiveTestingLogger();
+
   const clean = handleProcess();
   const apollo = new ApolloServer({
     typeDefs,
@@ -102,9 +101,7 @@ test('should not interrupt the process', async () => {
   await waitFor(200);
   await apollo.stop();
   clean();
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('[hive][info]'));
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('[hive][usage]'));
-  expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('[hive][reporting]'));
+  expect(logger.getLogs()).toContain(`[DBG] Disposing`);
 }, 1_000);
 
 test('should capture client name and version headers', async () => {

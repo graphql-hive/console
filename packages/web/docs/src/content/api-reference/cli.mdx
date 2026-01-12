@@ -1,3 +1,7 @@
+---
+title: 'Hive CLI (Command Line Interface)'
+---
+
 import { Callout, Tabs } from '@theguild/components'
 
 # Hive CLI (Command Line Interface)
@@ -147,7 +151,7 @@ git config --global user.email "john@doe.org"
 You can use the CLI for publishing schema or services/subgraphs to the schema registry.
 
 <Callout type="info" emoji="🔑">
-  This CLI command requires a access token with the `Schema publish` permissions on the specified
+  This CLI command requires an access token with the `Schema publish` permissions on the specified
   target. Please refer to our access token [documentation for creating an access
   token](/docs/management/access-tokens).
 </Callout>
@@ -173,7 +177,7 @@ hive schema:publish \
 **Further reading:**
 
 - [Publishing a schema to the Schema Registry](/docs/schema-registry#publish-a-schema)
-- [`schema:publish` API Reference](https://github.com/graphql-hive/console/blob/main/packages/libraries/cli/README.md#hive-apppublish)
+- [`schema:publish` API Reference](https://github.com/graphql-hive/console/blob/main/packages/libraries/cli/README.md#hive-schemapublish-file)
 - [Apollo Router integration](/docs/other-integrations/apollo-router)
 - [Apollo-Server integration](/docs/other-integrations/apollo-server)
 
@@ -236,9 +240,9 @@ hive schema:publish \
 
 <Callout>
   For most cases, it's recommended to add metadata directly to your schema with the [@meta Link
-  Specification](/docs/specs/link-specifications#meta) instead of using `--metadata`. Directives
-  allow you to enhance specific parts of your schema with this important information, which can be
-  especially useful for large projects with multiple owners.
+  Specification](/docs/schema-registry/link-specifications#meta) instead of using `--metadata`.
+  Directives allow you to enhance specific parts of your schema with this important information,
+  which can be especially useful for large projects with multiple owners.
 </Callout>
 
 You can attach metadata to your schema publication. Metadata files published to Hive must be valid
@@ -271,12 +275,12 @@ hive schema:publish \
 **Further reading:**
 
 - [Fetching Hive Metadata from the CDN](/docs/high-availability-cdn)
-- [Using the @meta Link Specification](/docs/specs/link-specifications#meta)
+- [Using the @meta Link Specification](/docs/schema-registry/link-specifications#meta)
 
 ### Check a Schema
 
 <Callout type="info" emoji="🔑">
-  This CLI command requires a access token with the `Schema Check` permissions on the specified
+  This CLI command requires an access token with the `Schema Check` permissions on the specified
   target. Please refer to our access token [documentation for creating an access
   token](/docs/management/access-tokens).
 </Callout>
@@ -356,7 +360,7 @@ hive schema:check \
 </Callout>
 
 <Callout type="info" emoji="🔑">
-  This CLI command requires a access token with the `Delete subgraph` permissions on the specified
+  This CLI command requires an access token with the `Delete subgraph` permissions on the specified
   target. Please refer to our [documentation for creating access
   tokens](/docs/management/access-tokens).
 </Callout>
@@ -403,7 +407,7 @@ changes. GraphQL Hive helps you to do that with the `hive dev` command.
 
 <Callout type="info" emoji="🔑">
   This CLI command requires an active registry token with **Read** permissions to the target and the
-  project, to preform a composition according to your project configuration.
+  project, to perform a composition according to your project configuration.
 </Callout>
 
 This mode enables you to replace the subgraph(s) available in the Registry with your local

@@ -1,6 +1,6 @@
 FROM node:22.13.0-slim
 
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
 
 ARG CLI_VERSION
 
@@ -17,8 +17,8 @@ LABEL org.opencontainers.image.vendor="Kamil Kisiela"
 LABEL org.opencontainers.image.url="https://github.com/graphql-hive/platform"
 LABEL org.opencontainers.image.source="https://github.com/graphql-hive/platform"
 
-ENV ENVIRONMENT production
-ENV RELEASE $RELEASE
+ENV ENVIRONMENT=production
+ENV RELEASE=$RELEASE
 RUN hive --version
 
 ENTRYPOINT ["hive"]

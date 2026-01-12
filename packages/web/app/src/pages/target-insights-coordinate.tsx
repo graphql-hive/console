@@ -26,7 +26,7 @@ import { CHART_PRIMARY_COLOR } from '@/constants';
 import { graphql } from '@/gql';
 import { formatNumber, formatThroughput, toDecimal } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useChartStyles } from '@/utils';
+import { useChartStyles } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 
 const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
@@ -35,6 +35,7 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
     $period: DateRangeInput!
     $resolution: Int!
     $schemaCoordinate: String!
+    $type: String!
   ) {
     target(reference: { bySelector: $targetSelector }) {
       id
@@ -67,6 +68,14 @@ const SchemaCoordinateView_SchemaCoordinateStatsQuery = graphql(`
           }
         }
       }
+      latestValidSchemaVersion {
+        id
+        explorer {
+          type(name: $type) {
+            __typename
+          }
+        }
+      }
     }
   }
 `);
@@ -84,6 +93,8 @@ function SchemaCoordinateView(props: {
     defaultPreset: presetLast7Days,
   });
 
+  const typeName = props.coordinate.split('.')[0];
+
   const [query, refetch] = useQuery({
     query: SchemaCoordinateView_SchemaCoordinateStatsQuery,
     variables: {
@@ -92,6 +103,7 @@ function SchemaCoordinateView(props: {
         projectSlug: props.projectSlug,
         targetSlug: props.targetSlug,
       },
+      type: typeName,
       schemaCoordinate: props.coordinate,
       period: dateRangeController.resolvedRange,
       resolution: dateRangeController.resolution,
@@ -118,6 +130,8 @@ function SchemaCoordinateView(props: {
   const totalClients = query.data?.target?.schemaCoordinateStats?.clients.edges.length ?? 0;
 
   const supergraphMetadata = query.data?.target?.schemaCoordinateStats?.supergraphMetadata;
+  const kind = query.data?.target?.latestValidSchemaVersion?.explorer?.type?.__typename;
+  const title = kind === 'GraphQLEnumType' ? `${typeName} (${props.coordinate})` : props.coordinate;
 
   if (query.error) {
     return <QueryError organizationSlug={props.organizationSlug} error={query.error} />;
@@ -128,7 +142,7 @@ function SchemaCoordinateView(props: {
       <div className="flex flex-row items-center justify-between py-6">
         <div>
           <div className="flex flex-row items-center justify-between">
-            <Title className="pr-8">{props.coordinate}</Title>
+            <Title className="pr-8">{title}</Title>
             {supergraphMetadata ? (
               <SupergraphMetadataList
                 organizationSlug={props.organizationSlug}
@@ -414,9 +428,7 @@ const TargetSchemaCoordinatePageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
     }
     hasCollectedOperations(
       selector: {
@@ -474,7 +486,7 @@ function TargetSchemaCoordinatePageContent(props: {
   return (
     <SchemaCoordinateView
       coordinate={props.coordinate}
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}

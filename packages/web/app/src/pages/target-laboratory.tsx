@@ -58,6 +58,7 @@ import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
+import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
 
@@ -281,6 +282,8 @@ function LaboratoryPageContent(props: {
   projectSlug: string;
   targetSlug: string;
   selectedOperationId?: string;
+  defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
+  onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
@@ -456,10 +459,29 @@ function LaboratoryPageContent(props: {
       {preflight.iframeElement}
       <div className="flex py-6">
         <div className="flex-1">
-          <Title>Laboratory</Title>
+          <div className="flex items-center gap-2">
+            <Title>Laboratory</Title>
+            <div className="h-4 w-px bg-gray-800" />
+            <Tabs
+              defaultValue={props.defaultLaboratoryTab}
+              onValueChange={value =>
+                props.onLaboratoryTabChange(value as 'graphiql' | 'hive-laboratory')
+              }
+            >
+              <TabsList className="h-auto p-1">
+                <TabsTrigger value="graphiql" className="px-2 py-0">
+                  GraphiQL
+                </TabsTrigger>
+                <TabsTrigger value="hive-laboratory" className="px-2 py-0">
+                  Hive Laboratory
+                  <div className="size-2 rounded-full bg-orange-500" />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
           <Subtitle>Explore your GraphQL schema and run queries against your GraphQL API.</Subtitle>
           <p>
-            <DocsLink className="text-muted-foreground text-sm" href="/features/laboratory">
+            <DocsLink className="text-muted-foreground text-sm" href="/schema-registry/laboratory">
               Learn more about the Laboratory
             </DocsLink>
           </p>
@@ -657,6 +679,8 @@ export function TargetLaboratoryPage(props: {
   projectSlug: string;
   targetSlug: string;
   selectedOperationId: string | undefined;
+  defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
+  onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
   return (
     <>

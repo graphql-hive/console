@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import ghost from '../../public/images/figures/ghost.svg?url';
+import { useEffect, useState } from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
+import { AppFilter } from '@/components/apps/AppFilter';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -39,7 +40,7 @@ const TargetAppsVersionQuery = graphql(`
     $appName: String!
     $appVersion: String!
     $first: Int
-    $after: String
+    $documentsFilter: AppDeploymentDocumentsFilterInput
   ) {
     target(
       reference: {
@@ -56,7 +57,49 @@ const TargetAppsVersionQuery = graphql(`
         id
         name
         version
-        documents(first: $first, after: $after) {
+        documents(first: $first, filter: $documentsFilter) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          edges {
+            node {
+              hash
+              body
+              operationName
+              insightsHash
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const TargetAppsVersionFetchMoreQuery = graphql(`
+  query TargetAppsVersionFetchMore(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $appName: String!
+    $appVersion: String!
+    $first: Int
+    $after: String
+    $documentsFilter: AppDeploymentDocumentsFilterInput
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      appDeployment(appName: $appName, appVersion: $appVersion) {
+        id
+        documents(first: $first, after: $after, filter: $documentsFilter) {
           pageInfo {
             hasNextPage
             endCursor
@@ -82,6 +125,21 @@ function TargetAppVersionContent(props: {
   appName: string;
   appVersion: string;
 }) {
+  const router = useRouter();
+  const search =
+    typeof router.latestLocation.search.search === 'string'
+      ? router.latestLocation.search.search
+      : '';
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms debounce delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [search]);
   const [data] = useQuery({
     query: TargetAppsVersionQuery,
     variables: {
@@ -91,10 +149,11 @@ function TargetAppVersionContent(props: {
       appName: props.appName,
       appVersion: props.appVersion,
       first: 20,
-      after: null,
+      documentsFilter: {
+        operationName: debouncedSearch,
+      },
     },
   });
-  const router = useRouter();
   const client = useClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -138,20 +197,10 @@ function TargetAppVersionContent(props: {
     return (
       <>
         <Meta title="App Version Not found" />
-        <div className="flex h-full flex-1 flex-col items-center justify-center gap-2.5 py-6">
-          <img
-            src={ghost}
-            alt="Ghost illustration"
-            width="200"
-            height="200"
-            className="drag-none"
-          />
-          <h2 className="text-xl font-bold">App Version not found.</h2>
-          <h3 className="font-semibold">This app does not seem to exist anymore.</h3>
-          <Button variant="secondary" className="mt-2" onClick={router.history.back}>
-            Go back
-          </Button>
-        </div>
+        <NotFoundContent
+          heading="App Version not found."
+          subheading="This app does not seem to exist anymore."
+        />
       </>
     );
   }
@@ -197,7 +246,9 @@ function TargetAppVersionContent(props: {
                 </CardDescription> */}
             </>
           }
-        />
+        >
+          <AppFilter />
+        </SubPageLayoutHeader>
         <div className="mt-4" />
         {data.fetching || data.stale ? (
           <div className="flex h-fit flex-1 items-center justify-center">
@@ -208,7 +259,11 @@ function TargetAppVersionContent(props: {
           </div>
         ) : !data.data?.target?.appDeployment?.documents?.edges.length ? (
           <EmptyList
-            title="No documents have been uploaded for this app deployment"
+            title={
+              debouncedSearch
+                ? 'No documents found matching that operation name'
+                : 'No documents have been uploaded for this app deployment'
+            }
             description="You can upload documents via the Hive CLI"
             docsUrl="/features/schema-registry#app-deplyments"
           />
@@ -227,8 +282,8 @@ function TargetAppVersionContent(props: {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.data?.target?.appDeployment.documents?.edges.map(edge => (
-                    <TableRow>
+                  {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
+                    <TableRow key={i}>
                       <TableCell>
                         <span className="rounded bg-gray-800 p-1 font-mono text-sm">
                           {edge.node.hash}
@@ -320,7 +375,7 @@ function TargetAppVersionContent(props: {
                   ) {
                     setIsLoadingMore(true);
                     void client
-                      .query(TargetAppsVersionQuery, {
+                      .query(TargetAppsVersionFetchMoreQuery, {
                         organizationSlug: props.organizationSlug,
                         projectSlug: props.projectSlug,
                         targetSlug: props.targetSlug,
@@ -328,6 +383,9 @@ function TargetAppVersionContent(props: {
                         appVersion: props.appVersion,
                         first: 20,
                         after: data?.data?.target?.appDeployment?.documents.pageInfo?.endCursor,
+                        documentsFilter: {
+                          operationName: debouncedSearch,
+                        },
                       })
                       .toPromise()
                       .finally(() => {

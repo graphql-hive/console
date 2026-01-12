@@ -26,12 +26,7 @@ export function deployCFBroker({
   const broker = new CloudflareBroker({
     envName: environment.envName,
     zoneId: cfConfig.require('zoneId'),
-    // We can't cdn for staging env, since CF certificate only covers
-    // one level of subdomains. See: https://community.cloudflare.com/t/ssl-handshake-error-cloudflare-proxy/175088
-    // So for staging env, we are going to use `broker-staging` instead of `broker.staging`.
-    cdnDnsRecord: environment.isProduction
-      ? `broker.${environment.rootDns}`
-      : `broker-${environment.rootDns}`,
+    cdnDnsRecord: `broker.${environment.rootDns}`,
     secretSignature: cfBrokerSignature,
     sentryDsn: sentry.enabled && sentry.secret ? sentry.secret.raw.dsn : '',
     release: environment.release,

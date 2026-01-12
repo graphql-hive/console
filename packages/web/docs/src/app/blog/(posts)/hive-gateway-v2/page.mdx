@@ -1,0 +1,192 @@
+---
+title: 'Hive Gateway v2: Next-Generation GraphQL Federation Features'
+tags: [platform, graphql, graphql-federation, graphql-hive, hive-gateway]
+authors: enisdenjo
+date: 2025-09-04
+description:
+  "Discover Hive Gateway v2's next-generation features: enhanced OpenTelemetry integration, advanced
+  structured logging, distributed subscription architecture, and intelligent request deduplication.
+  Built on v1's proven foundation with production feedback-driven improvements."
+featured: true
+---
+
+We're excited to announce Hive Gateway v2 – a major release that builds on v1's proven production
+success with advanced observability, performance optimizations, and distributed systems
+capabilities. Based on extensive feedback from companies running Hive Gateway v1 in production, v2
+delivers the next generation of features that take GraphQL federation to the next level.
+
+## What's New: The Big Four
+
+### 🔍 Enhanced OpenTelemetry Integration
+
+Based on feedback from production teams using v1, we've completely rebuilt our OpenTelemetry
+integration from the ground up, following official OpenTelemetry best practices and conventions.
+
+- **Proper span hierarchy**: Every GraphQL operation now gets its own span, correctly nested under
+  HTTP request spans
+- **Complete trace coverage**: From initial request to subgraph execution, every step is traced
+- **Flexible SDK setup**: Bring your own OpenTelemetry SDK version – we don't force dependencies
+- **Rich contextual data**: Spans include GraphQL context, HTTP request details, and upstream
+  execution information
+- **CLI-first configuration**: Set up tracing with a single `--opentelemetry` flag
+
+The new integration uses the standard OpenTelemetry Context API, meaning your custom spans will
+automatically parent correctly without extra configuration. This addresses one of the most requested
+improvements from v1 production users.
+
+**[New OpenTelemetry integration in Hive Gateway v2 →](/blog/opentelemetry-gateway-v2)**
+
+**[Migration guide for OpenTelemetry →](/docs/migration-guides/gateway-v1-v2#opentelemetry)**
+
+### 📊 Advanced Structured Logging
+
+Production teams running v1 deserved better request tracing capabilities across concurrent
+operations. v2 introduces a completely new logging architecture that solves this observability
+challenge.
+
+**The game-changer: Child loggers with inherited metadata**
+
+Every log entry now carries contextual metadata like request IDs, subgraph names, and execution
+phases. This means you can filter your logs by a specific request and see its entire journey through
+your gateway:
+
+```
+2025-04-10T14:00:00.000Z INF Executing...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+2025-04-10T14:00:00.000Z INF Creating delegation plan...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+2025-04-10T14:00:00.000Z INF Executing on subgraph...
+  requestId: "0b1dce69-5eb0-4d7b-97d8-1337535a620e"
+  subgraph: "accounts"
+```
+
+**Dynamic log levels in production**
+
+Here's where it gets really powerful: you can now change log levels at runtime without restarting
+your gateway. Facing a production issue? Switch to debug mode instantly, investigate, then switch
+back to info level – all without downtime.
+
+The new logger also supports:
+
+- **Extensible writers**: Plug in Pino, Winston, or your custom logging solution
+- **Structured JSON output**: Perfect for log aggregation systems
+- **Performance optimizations**: Lazy evaluation and efficient metadata propagation
+
+**[Migration guide for logging →](/docs/migration-guides/gateway-v1-v2#hive-logger)**
+
+### 🚀 Distributed Subscription Architecture
+
+Teams running federated GraphQL at scale identified subscription distribution as a key area for
+enhancement. v2 introduces a completely rewritten PubSub interface that enables true distributed
+subscriptions across your federation.
+
+**Why teams requested this enhancement:**
+
+The previous interface was purely synchronous and in-memory only. This meant:
+
+- No error handling for external pub/sub systems
+- No support for distributed subscription systems
+- Limited to single-instance deployments
+
+**What's possible now:**
+
+The new async PubSub interface supports:
+
+- **Asynchronous operations**: Await publish confirmation from external systems
+- **Proper error handling**: Handle network failures and service unavailability gracefully
+- **Distributed subscriptions**: Connect multiple gateway instances through external message brokers
+- **Resource management**: Follows modern patterns like
+  [Explicit Resource Management](https://v8.dev/features/explicit-resource-management)
+
+This unlocks
+[Event-Driven Federated Subscriptions (EDFS)](https://wundergraph.com/blog/distributed_graphql_subscriptions_with_nats_and_event_driven_architecture)
+– a pattern where your subscriptions can scale horizontally and survive individual service failures.
+
+**Built-in adapters for production**: Hive Gateway v2 ships with ready-to-use adapters for Redis and
+NATS, making EDFS integration straightforward. No need to build custom pub/sub implementations –
+just configure your preferred message broker and you're ready for distributed subscriptions.
+
+**[Migration guide for PubSub →](/docs/migration-guides/gateway-v1-v2#new-hive-pubsub-interface)**
+
+### ⚡ Intelligent Request Deduplication
+
+Here's a performance optimization that emerged from analyzing real-world usage patterns: intelligent
+request deduplication at the subgraph level.
+
+**The opportunity**: In busy federated systems, identical requests to subgraphs often happen
+simultaneously. Production teams noticed that gateways might receive multiple queries that require
+the same data from the same subgraph at nearly the same time. Each request traditionally triggers
+its own subgraph call, creating optimization opportunities.
+
+**The solution**: v2 automatically detects when multiple in-flight requests target the same subgraph
+with identical parameters (request body + headers + all request parameters). Instead of making
+duplicate network calls, the gateway waits for the first request to complete and shares the result
+with all waiting requests.
+
+**Real-world impact**:
+
+- **Reduced network calls**: Eliminate redundant requests to your subgraphs
+- **Lower latency**: Subsequent requests don't wait for their own network round-trip
+- **Better resource utilization**: Your subgraphs handle fewer duplicate operations
+- **Cost savings**: Fewer compute cycles and network transfers across your federation
+
+This optimization is completely transparent – your application logic doesn't change, but your
+performance metrics will thank you. It's especially powerful during traffic spikes when identical
+queries are most likely to overlap.
+
+## Enhanced Production Defaults
+
+### Configurable Worker Forking
+
+v1's automatic worker forking was designed to help, but production feedback showed it often impacted
+performance. Here's why: if you have a 12-core processor, spawning 12 Node.js workers isn't optimal
+– it's usually slower due to:
+
+- Context switching overhead between processes
+- Inter-process communication (IPC) latency
+- Memory consumption from process duplication
+- Garbage collection pauses across multiple processes
+- Load balancer coordination overhead
+
+Real-world example: on a 24-core CPU, the optimal fork count is often just 3 workers, not 24. v2
+gives advanced users full control over this decision based on their specific workload and
+infrastructure.
+
+**[Read more about the configurable forking →](/docs/migration-guides/gateway-v1-v2#disabled-automatic-forking)**
+
+### Secure-by-Default Multipart Handling
+
+Based on security findings in the ecosystem,
+[like this vulnerability](https://medium.com/@lclrobert2020_38117/exposed-the-critical-multer-bug-that-can-bring-your-server-down-robert-li-dev-space-86df9b020257),
+and GraphQL conventions, file uploads through GraphQL multipart requests are now disabled by
+default. While convenient, they can pose security considerations and go against GraphQL's design
+principles. If you need file uploads, you can explicitly enable them – but we recommend dedicated
+file upload services instead.
+
+**[Read more about the multipart requests default →](/docs/migration-guides/gateway-v1-v2#multipart-requests-are-disabled-by-default)**
+
+## Modern Foundation: Node.js v20+
+
+v2 requires Node.js v20 or higher, ensuring you get the latest security patches, performance
+improvements, and language features. Node.js v18 reached end-of-life on April 30, 2025, and
+continuing support would mean missing critical security updates.
+
+All our dependencies have been updated to their latest versions, giving you access to the newest
+features and bug fixes across the entire GraphQL ecosystem.
+
+## Start Building with Hive Gateway v2
+
+Hive Gateway v2 represents the next major evolution of GraphQL federation, building on v1's proven
+foundation with advanced capabilities requested by production teams. Whether you're already running
+v1 successfully or evaluating GraphQL gateway solutions, v2 delivers the enhanced observability,
+performance, and reliability features that scale with your growing federation.
+
+**For existing v1 users**: We've created a comprehensive migration guide that walks through each
+breaking change with clear before/after examples.
+
+**For teams evaluating GraphQL gateways**: v2 is the perfect foundation for your federated
+architecture, with advanced observability and performance optimizations built-in from day one.
+
+Hive Gateway v2 is available now. Check out our [documentation](/docs/gateway) to get started or the
+[complete migration guide](/docs/migration-guides/gateway-v1-v2) to get going with the new release!

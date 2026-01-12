@@ -12,7 +12,6 @@ jobs:
     with:
       npmTag: alpha
       buildScript: build:libraries
-      nodeVersion: '22.6'
       packageManager: pnpm
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}

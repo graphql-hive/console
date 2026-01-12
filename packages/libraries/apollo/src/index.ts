@@ -1,14 +1,18 @@
 import { GraphQLError, type DocumentNode } from 'graphql';
-import type { ApolloServerPlugin, HTTPGraphQLRequest } from '@apollo/server';
+import type { ApolloServerPlugin, GraphQLServerContext, HTTPGraphQLRequest } from '@apollo/server';
 import {
   autoDisposeSymbol,
+  createCDNArtifactFetcher,
   createHive as createHiveClient,
-  createSupergraphSDLFetcher,
   HiveClient,
   HivePluginOptions,
   isHiveClient,
-  SupergraphSDLFetcherOptions,
+  joinUrl,
+  PersistedDocumentsCache,
+  type CircuitBreakerConfiguration,
 } from '@graphql-hive/core';
+import { Logger } from '@graphql-hive/logger';
+import { version } from './version.js';
 
 export {
   atLeastOnceSampler,
@@ -16,14 +20,65 @@ export {
   createServicesFetcher,
   createSupergraphSDLFetcher,
 } from '@graphql-hive/core';
+
+/** @deprecated Use {CreateSupergraphManagerArgs} instead */
 export type { SupergraphSDLFetcherOptions } from '@graphql-hive/core';
 
-export function createSupergraphManager({
-  pollIntervalInMs,
-  ...superGraphFetcherOptions
-}: { pollIntervalInMs?: number } & SupergraphSDLFetcherOptions) {
-  pollIntervalInMs = pollIntervalInMs ?? 30_000;
-  const fetchSupergraph = createSupergraphSDLFetcher(superGraphFetcherOptions);
+/**
+ * Configuration for {createSupergraphManager}.
+ */
+export type CreateSupergraphManagerArgs = {
+  /**
+   * The artifact endpoint to poll.
+   * E.g. `https://cdn.graphql-hive.com/<uuid>/supergraph`
+   */
+  endpoint: string | [string, string];
+  /**
+   * The CDN access key for fetching artifact.
+   */
+  key: string;
+  logger?: Logger;
+  /**
+   * The supergraph poll interval in milliseconds
+   * Default: 30_000
+   */
+  pollIntervalInMs?: number;
+  /** Circuit breaker configuration override. */
+  circuitBreaker?: CircuitBreakerConfiguration;
+  fetchImplementation?: typeof fetch;
+  /**
+   * Client name override
+   * Default: `@graphql-hive/apollo`
+   */
+  name?: string;
+  /**
+   * Client version override
+   * Default: currents package version
+   */
+  version?: string;
+};
+
+export function createSupergraphManager(args: CreateSupergraphManagerArgs) {
+  const logger = args.logger ?? new Logger({ level: false });
+  const pollIntervalInMs = args.pollIntervalInMs ?? 30_000;
+  let endpoints = Array.isArray(args.endpoint) ? args.endpoint : [args.endpoint];
+
+  const endpoint = endpoints.map(endpoint =>
+    endpoint.endsWith('/supergraph') ? endpoint : joinUrl(endpoint, 'supergraph'),
+  );
+
+  const artifactsFetcher = createCDNArtifactFetcher({
+    endpoint: endpoint as [string, string],
+    accessKey: args.key,
+    client: {
+      name: args.name ?? '@graphql-hive/apollo',
+      version: args.version ?? version,
+    },
+    logger,
+    fetch: args.fetchImplementation,
+    circuitBreaker: args.circuitBreaker,
+  });
+
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   return {
@@ -31,19 +86,17 @@ export function createSupergraphManager({
       supergraphSdl: string;
       cleanup?: () => Promise<void>;
     }> {
-      const initialResult = await fetchSupergraph();
+      const initialResult = await artifactsFetcher.fetch();
 
       function poll() {
         timer = setTimeout(async () => {
           try {
-            const result = await fetchSupergraph();
-            if (result.supergraphSdl) {
-              hooks.update?.(result.supergraphSdl);
+            const result = await artifactsFetcher.fetch();
+            if (result.contents) {
+              hooks.update?.(result.contents);
             }
           } catch (error) {
-            console.error(
-              `Failed to update supergraph: ${error instanceof Error ? error.message : error}`,
-            );
+            logger.error({ error }, `Failed to update supergraph.`);
           }
           poll();
         }, pollIntervalInMs);
@@ -52,11 +105,12 @@ export function createSupergraphManager({
       poll();
 
       return {
-        supergraphSdl: initialResult.supergraphSdl,
+        supergraphSdl: initialResult.contents,
         cleanup: async () => {
           if (timer) {
             clearTimeout(timer);
           }
+          artifactsFetcher.dispose();
         },
       };
     },
@@ -73,20 +127,89 @@ function addRequestWithHeaders(context: any, http?: HTTPGraphQLRequest) {
   return context;
 }
 
-export function createHive(clientOrOptions: HivePluginOptions) {
+function getLoggerFromContext(ctx?: GraphQLServerContext): Logger | undefined {
+  if (ctx?.logger) {
+    return new Logger({
+      level: 'debug',
+      writers: [
+        {
+          write(level, attrs, msg) {
+            const payload = attrs ? { msg, ...attrs } : msg;
+            switch (level) {
+              case 'trace':
+              case 'debug':
+                ctx.logger.debug(payload);
+                break;
+              case 'info':
+                ctx.logger.info(payload);
+                break;
+              case 'warn':
+                ctx.logger.warn(payload);
+                break;
+              case 'error':
+                ctx.logger.error(payload);
+                break;
+            }
+          },
+        },
+      ],
+    });
+  }
+  return undefined;
+}
+
+function getPersistedDocumentsCacheFromContext(
+  ctx?: GraphQLServerContext,
+): PersistedDocumentsCache | undefined {
+  if (ctx?.cache) {
+    return {
+      async get(key) {
+        const value = await ctx.cache.get(key);
+        return value != null ? value : null;
+      },
+      set(key, value, options) {
+        return ctx.cache.set(key, value, options);
+      },
+    };
+  }
+  return undefined;
+}
+
+export function createHive(clientOrOptions: HivePluginOptions, ctx?: GraphQLServerContext) {
+  const persistedDocumentsCache = getPersistedDocumentsCacheFromContext(ctx);
+  // Only use context logger if user didn't provide their own
+  const contextLogger =
+    !clientOrOptions.logger && !clientOrOptions.agent?.logger
+      ? getLoggerFromContext(ctx)
+      : undefined;
   return createHiveClient({
+    logger: contextLogger,
     ...clientOrOptions,
     agent: {
-      name: 'hive-client-yoga',
+      name: 'hive-client-apollo',
+      version,
       ...clientOrOptions.agent,
     },
+    experimental__persistedDocuments: clientOrOptions.experimental__persistedDocuments
+      ? {
+          ...clientOrOptions.experimental__persistedDocuments,
+          layer2Cache: (() => {
+            const userL2Config = clientOrOptions.experimental__persistedDocuments?.layer2Cache;
+            if (persistedDocumentsCache) {
+              return {
+                cache: persistedDocumentsCache,
+                ...(userL2Config || {}),
+              };
+            }
+            return userL2Config;
+          })(),
+        }
+      : undefined,
   });
 }
 
 export function useHive(clientOrOptions: HiveClient | HivePluginOptions): ApolloServerPlugin {
-  const hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions);
-
-  void hive.info();
+  let hive: HiveClient;
 
   return {
     requestDidStart(context) {
@@ -191,22 +314,49 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             typeof context.request.http.body.documentId === 'string'
           ) {
             persistedDocumentHash = context.request.http.body.documentId;
-            const document = await hive.experimental__persistedDocuments.resolve(
-              context.request.http.body.documentId,
-            );
+            try {
+              // Pass waitUntil from context if available for serverless environments
+              const contextValue = isLegacyV3
+                ? (context as any).context
+                : (context as any).contextValue;
+              const document = await hive.experimental__persistedDocuments.resolve(
+                context.request.http.body.documentId,
+                { waitUntil: contextValue?.waitUntil },
+              );
 
-            if (document) {
-              context.request.query = document;
-            } else {
-              context.request.query = '{__typename}';
-              persistedDocumentError = new GraphQLError('Persisted document not found.', {
-                extensions: {
-                  code: 'PERSISTED_DOCUMENT_NOT_FOUND',
-                  http: {
-                    status: 400,
+              if (document) {
+                context.request.query = document;
+              } else {
+                // Document not found - this is also a client error (400)
+                context.request.query = '{__typename}';
+                persistedDocumentError = new GraphQLError('Persisted document not found.', {
+                  extensions: {
+                    code: 'PERSISTED_DOCUMENT_NOT_FOUND',
+                    http: {
+                      status: 400,
+                    },
                   },
-                },
-              });
+                });
+              }
+            } catch (error: any) {
+              // Check if this is a client error (400-range status) - preserve the error
+              if (error?.status >= 400 && error?.status < 500) {
+                context.request.query = '{__typename}';
+                // Use the original error's extensions if available, otherwise create basic ones
+                const extensions = {
+                  ...error?.extensions,
+                  code: error?.code || 'CLIENT_ERROR',
+                  http: {
+                    status: error?.status || 400,
+                  },
+                };
+                persistedDocumentError = new GraphQLError(error.message || 'Client error.', {
+                  extensions,
+                });
+              } else {
+                // Re-throw server errors (500+ status) - these should remain as server errors
+                throw error;
+              }
             }
           } else if (
             false ===
@@ -306,6 +456,10 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
       })();
     },
     serverWillStart(ctx) {
+      hive = isHiveClient(clientOrOptions) ? clientOrOptions : createHive(clientOrOptions, ctx);
+
+      void hive.info();
+
       // `engine` does not exist in v3
       const isLegacyV0 = 'engine' in ctx;
 
@@ -314,7 +468,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
       if (isLegacyV0) {
         return {
           async serverWillStop() {
-            if (hive[autoDisposeSymbol]) {
+            if (hive?.[autoDisposeSymbol]) {
               await hive.dispose();
             }
           },
@@ -325,7 +479,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
 
       return Promise.resolve({
         async serverWillStop() {
-          if (hive[autoDisposeSymbol]) {
+          if (hive?.[autoDisposeSymbol]) {
             await hive.dispose();
           }
         },

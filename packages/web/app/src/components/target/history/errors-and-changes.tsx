@@ -31,11 +31,10 @@ import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
 export function labelize(message: string) {
-  // Turn " into '
-  // Replace '...' with <Label>...</Label>
-  return reactStringReplace(message.replace(/"/g, "'"), /'([^']+)'/gim, (match, i) => {
-    return <Label key={i}>{match}</Label>;
-  });
+  // Replace '...' and "..." with <Label>...</Label>
+  return reactStringReplace(message.replace(/"/g, "'"), /'((?:[^'\\]|\\.)+?)'/g, (match, i) => (
+    <Label key={i}>{match.replace(/\\'/g, "'")}</Label>
+  ));
 }
 
 const severityLevelMapping = {
@@ -63,6 +62,10 @@ const ChangesBlock_SchemaChangeApprovalFragment = graphql(`
     approvedBy {
       id
       displayName
+    }
+    cliApprovalMetadata {
+      displayName
+      email
     }
     approvedAt
     schemaCheckId
@@ -95,7 +98,7 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
   }
 `);
 
-const ChangesBlock_SchemaChangeFragment = graphql(`
+export const ChangesBlock_SchemaChangeFragment = graphql(`
   fragment ChangesBlock_SchemaChangeFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
@@ -130,13 +133,23 @@ export function ChangesBlock(
       }
   ),
 ): ReactElement | null {
-  const changes = props.changesWithUsage ?? props.changes;
-
   return (
     <div>
       <h2 className="mb-3 font-bold text-gray-900 dark:text-white">{props.title}</h2>
       <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
-        {changes.map((change, key) => (
+        {props.changesWithUsage?.map((change, key) => (
+          <ChangeItem
+            organizationSlug={props.organizationSlug}
+            projectSlug={props.projectSlug}
+            targetSlug={props.targetSlug}
+            schemaCheckId={props.schemaCheckId}
+            key={key}
+            change={null}
+            changeWithUsage={change}
+            conditionBreakingChangeMetadata={props.conditionBreakingChangeMetadata ?? null}
+          />
+        ))}
+        {props.changes?.map((change, key) => (
           <ChangeItem
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}
@@ -144,6 +157,7 @@ export function ChangesBlock(
             schemaCheckId={props.schemaCheckId}
             key={key}
             change={change}
+            changeWithUsage={null}
             conditionBreakingChangeMetadata={props.conditionBreakingChangeMetadata ?? null}
           />
         ))}
@@ -152,32 +166,34 @@ export function ChangesBlock(
   );
 }
 
-// Obviously I'm not proud of this...
-// But I didn't want to spend too much time on this
-function isChangesBlock_SchemaChangeWithUsageFragment(
-  fragment: any,
-): fragment is FragmentType<typeof ChangesBlock_SchemaChangeWithUsageFragment> {
-  return (
-    !!fragment[' $fragmentRefs'] &&
-    'ChangesBlock_SchemaChangeWithUsageFragment' in fragment[' $fragmentRefs']
+function ChangeItem(
+  props: {
+    conditionBreakingChangeMetadata: FragmentType<
+      typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
+    > | null;
+    organizationSlug: string;
+    projectSlug: string;
+    targetSlug: string;
+    schemaCheckId: string;
+  } & (
+    | {
+        change: FragmentType<typeof ChangesBlock_SchemaChangeFragment>;
+        changeWithUsage: null;
+      }
+    | {
+        change: null;
+        changeWithUsage: FragmentType<typeof ChangesBlock_SchemaChangeWithUsageFragment>;
+      }
+  ),
+) {
+  const cchange = useFragment(ChangesBlock_SchemaChangeFragment, props.change);
+  const cchangeWithUsage = useFragment(
+    ChangesBlock_SchemaChangeWithUsageFragment,
+    props.changeWithUsage,
   );
-}
 
-function ChangeItem(props: {
-  change:
-    | FragmentType<typeof ChangesBlock_SchemaChangeWithUsageFragment>
-    | FragmentType<typeof ChangesBlock_SchemaChangeFragment>;
-  conditionBreakingChangeMetadata: FragmentType<
-    typeof ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment
-  > | null;
-  organizationSlug: string;
-  projectSlug: string;
-  targetSlug: string;
-  schemaCheckId: string;
-}) {
-  const change = isChangesBlock_SchemaChangeWithUsageFragment(props.change)
-    ? useFragment(ChangesBlock_SchemaChangeWithUsageFragment, props.change)
-    : useFragment(ChangesBlock_SchemaChangeFragment, props.change);
+  // at least one prop must be provided :)
+  const change = (cchange ?? cchangeWithUsage)!;
 
   const metadata = useFragment(
     ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,
@@ -376,7 +392,8 @@ function ApprovedByBadge(props: {
   approval: FragmentType<typeof ChangesBlock_SchemaChangeApprovalFragment>;
 }) {
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
-  const approvalName = approval.approvedBy?.displayName ?? '<unknown>';
+  const approvalName =
+    approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
     <span className="cursor-pointer text-green-500">
@@ -393,7 +410,8 @@ function SchemaChangeApproval(props: {
   schemaCheckId: string;
 }) {
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
-  const approvalName = approval.approvedBy?.displayName ?? '<unknown>';
+  const approvalName =
+    approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
   const approvalDate = format(new Date(approval.approvedAt), 'do MMMM yyyy');
   const schemaCheckPath =
     '/' +
@@ -422,7 +440,7 @@ function SchemaChangeApproval(props: {
   );
 }
 
-const CompositionErrorsSection_SchemaErrorConnection = graphql(`
+export const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
     edges {
       node {
