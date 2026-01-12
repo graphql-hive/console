@@ -7,14 +7,9 @@ import { Environment } from './environment';
 import { Observability } from './observability';
 import { Redis } from './redis';
 import { Sentry } from './sentry';
+import { PostmarkSecret } from './workflows';
 
 export type Emails = ReturnType<typeof deployEmails>;
-
-class PostmarkSecret extends ServiceSecret<{
-  token: pulumi.Output<string> | string;
-  from: string;
-  messageStream: string;
-}> {}
 
 export function deployEmails({
   environment,
@@ -24,22 +19,17 @@ export function deployEmails({
   docker,
   sentry,
   observability,
+  postmarkSecret,
 }: {
   observability: Observability;
   environment: Environment;
   image: string;
   redis: Redis;
   docker: Docker;
+  postmarkSecret: PostmarkSecret;
   heartbeat?: string;
   sentry: Sentry;
 }) {
-  const emailConfig = new pulumi.Config('email');
-  const postmarkSecret = new PostmarkSecret('postmark', {
-    token: emailConfig.requireSecret('token'),
-    from: emailConfig.require('from'),
-    messageStream: emailConfig.require('messageStream'),
-  });
-
   const { deployment, service } = new ServiceDeployment(
     'emails-service',
     {

@@ -1,0 +1,27 @@
+{
+  "name": "@hive/workflows",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsx ../../../scripts/runify.ts",
+    "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@graphql-hive/logger": "1.0.9",
+    "@hive/service-common": "workspace:*",
+    "@hive/storage": "workspace:*",
+    "@sentry/node": "7.120.2",
+    "@types/mjml": "4.7.1",
+    "@types/nodemailer": "7.0.4",
+    "bentocache": "1.1.0",
+    "dotenv": "16.4.7",
+    "graphile-worker": "0.16.6",
+    "mjml": "4.14.0",
+    "nodemailer": "7.0.11",
+    "sendmail": "1.6.1",
+    "slonik": "30.4.4",
+    "zod": "3.25.76"
+  }
+}

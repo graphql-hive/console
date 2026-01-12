@@ -56,7 +56,6 @@ export function deployCommerce({
       env: {
         ...environment.envVars,
         SENTRY: sentry.enabled ? '1' : '0',
-        EMAILS_ENDPOINT: serviceLocalEndpoint(emails.service),
         WEB_APP_URL: `https://${environment.appDns}/`,
         OPENTELEMETRY_TRACE_USAGE_REQUESTS: observability.enabledForUsageService ? '1' : '',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:

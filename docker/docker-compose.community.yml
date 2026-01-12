@@ -218,10 +218,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: '${REDIS_PASSWORD}'
       TOKENS_ENDPOINT: http://tokens:3003
-      WEBHOOKS_ENDPOINT: http://webhooks:3005
       SCHEMA_ENDPOINT: http://schema:3002
       SCHEMA_POLICY_ENDPOINT: http://policy:3012
-      EMAILS_ENDPOINT: http://emails:3011
       ENCRYPTION_SECRET: '${HIVE_ENCRYPTION_SECRET}'
       WEB_APP_URL: '${HIVE_APP_BASE_URL}'
       PORT: 3001
@@ -341,10 +339,32 @@ services:
       EMAIL_FROM: no-reply@graphql-hive.com
       EMAIL_PROVIDER: sendmail
       LOG_LEVEL: '${LOG_LEVEL:-debug}'
-      OPENTELEMETRY_COLLECTOR_ENDPOINT: '${OPENTELEMETRY_COLLECTOR_ENDPOINT:-}'
       SENTRY: '${SENTRY:-0}'
       SENTRY_DSN: '${SENTRY_DSN:-}'
       PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
+
+  workflows:
+    image: '${DOCKER_REGISTRY}workflows${DOCKER_TAG}'
+    networks:
+      - 'stack'
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3014
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: '${POSTGRES_DB}'
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+      EMAIL_FROM: no-reply@graphql-hive.com
+      EMAIL_PROVIDER: sendmail
+      LOG_LEVEL: '${LOG_LEVEL:-debug}'
+      SENTRY: '${SENTRY:-0}'
+      SENTRY_DSN: '${SENTRY_DSN:-}'
+      PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
+      LOG_JSON: '1'
 
   usage:
     image: '${DOCKER_REGISTRY}usage${DOCKER_TAG}'
