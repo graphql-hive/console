@@ -21,6 +21,7 @@ fn main() {
     register_plugins();
 
     // Initialize the Hive Registry and start the Apollo Router
+    // TODO: Look at builder pattern in Executable::builder().start()
     match HiveRegistry::new(None).and(apollo_router::main()) {
         Ok(_) => {}
         Err(e) => {

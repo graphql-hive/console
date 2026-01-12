@@ -122,8 +122,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      emails:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       LOG_LEVEL: debug
@@ -138,7 +136,6 @@ services:
       CLICKHOUSE_PORT: '8123'
       CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
       CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
-      EMAILS_ENDPOINT: http://emails:3011
       STRIPE_SECRET_KEY: empty
       PORT: 3009
 
@@ -239,12 +236,12 @@ services:
       tokens:
         condition: service_healthy
 
-  emails:
+  workflows:
     environment:
       EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
       LOG_LEVEL: debug
     ports:
-      - '3011:3011'
+      - '3014:3014'
 
   schema:
     environment:

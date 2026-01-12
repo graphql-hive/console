@@ -1,5 +1,24 @@
 # hive
 
+## 8.14.1
+
+### Patch Changes
+
+- [#7477](https://github.com/graphql-hive/console/pull/7477)
+  [`b90f215`](https://github.com/graphql-hive/console/commit/b90f215213996ac755caca853a91816350936303)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show correct error message for insufficient GitHub
+  App installation permissions when attempting to create a check run as part of a schema check.
+
+- [#7459](https://github.com/graphql-hive/console/pull/7459)
+  [`0ce9c82`](https://github.com/graphql-hive/console/commit/0ce9c82b810fef311f3856bb90b2e2a1823a7101)
+  Thanks [@jdolle](https://github.com/jdolle)! - Set usageEstimation year validation range at
+  runtime to avoid issues during the new year. This fixes an issue where the organization settings
+  usage data was not loading for January until the service was deployed again.
+
+- [#7451](https://github.com/graphql-hive/console/pull/7451)
+  [`bd4e36d`](https://github.com/graphql-hive/console/commit/bd4e36d4860c2ae0c2671fa713d0f445b47447d4)
+  Thanks [@jdolle](https://github.com/jdolle)! - Show diff on proposals editor
+
 ## 8.14.0
 
 ### Minor Changes

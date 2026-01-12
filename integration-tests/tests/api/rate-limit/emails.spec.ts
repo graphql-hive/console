@@ -54,12 +54,16 @@ test('rate limit approaching and reached for organization', async () => {
     return filterEmailsByOrg(organization.slug, sent)?.length === 1;
   });
 
-  let sent = await emails.history();
-  expect(sent).toContainEqual({
-    to: ownerEmail,
-    subject: `${organization.slug} is approaching its rate limit`,
-    body: expect.any(String),
-  });
+  let sent = await emails.history(ownerEmail);
+
+  expect(sent).toEqual([
+    {
+      to: ownerEmail,
+      subject: `${organization.slug} is approaching its rate limit`,
+      body: expect.any(String),
+    },
+  ]);
+
   expect(filterEmailsByOrg(organization.slug, sent)).toHaveLength(1);
 
   // Collect operations and check for rate-limit reached
@@ -70,11 +74,11 @@ test('rate limit approaching and reached for organization', async () => {
 
   // wait for the quota email to send...
   await pollFor(async () => {
-    let sent = await emails.history();
+    let sent = await emails.history(ownerEmail);
     return filterEmailsByOrg(organization.slug, sent)?.length === 2;
   });
 
-  sent = await emails.history();
+  sent = await emails.history(ownerEmail);
 
   expect(sent).toContainEqual({
     to: ownerEmail,

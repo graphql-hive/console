@@ -1,6 +1,9 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { OrganizationReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import { z } from 'zod';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
+import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
@@ -9,7 +12,6 @@ import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
 import { BillingProvider } from '../../commerce/providers/billing.provider';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
-import { Emails } from '../../shared/providers/emails';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { Logger } from '../../shared/providers/logger';
@@ -43,7 +45,7 @@ export class OrganizationManager {
     private tokenStorage: TokenStorage,
     private billingProvider: BillingProvider,
     private oidcIntegrationProvider: OIDCIntegrationsProvider,
-    private emails: Emails,
+    private taskScheduler: TaskScheduler,
     private organizationMemberRoles: OrganizationMemberRoles,
     private organizationMembers: OrganizationMembers,
     private resourceAssignments: ResourceAssignments,
@@ -626,7 +628,7 @@ export class OrganizationManager {
         step: 'invitingMembers',
       }),
       // schedule an email
-      this.emails.api?.sendOrganizationInviteEmail.mutate({
+      this.taskScheduler.scheduleTask(OrganizationInvitationTask, {
         organizationId: invitation.organizationId,
         organizationName: organization.name,
         email,
@@ -745,7 +747,7 @@ export class OrganizationManager {
       userId: member.user.id,
     });
 
-    await this.emails.api?.sendOrganizationOwnershipTransferEmail.mutate({
+    await this.taskScheduler.scheduleTask(OrganizationOwnershipTransferTask, {
       email: member.user.email,
       organizationId: organization.id,
       organizationName: organization.name,
