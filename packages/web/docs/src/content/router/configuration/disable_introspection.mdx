@@ -1,0 +1,65 @@
+---
+title: 'disable_introspection'
+---
+
+# disable_introspection
+
+The `disable_introspection` configuration option allows you to disable GraphQL introspection queries
+for added security.
+
+## Why Disable Introspection?
+
+Introspection queries provide detailed information about the schema of your GraphQL API, which can
+be useful for development and debugging. However, in production environments, exposing this
+information can pose security risks, as it may reveal sensitive details about your API's structure
+and capabilities to potential attackers. By disabling introspection, you can reduce the attack
+surface of your GraphQL API and help protect against unauthorized access.
+
+## Configuration Structure
+
+The `disable_introspection` key is a top-level property in your `router.config.yaml`. You can either
+set it to a static boolean value, or use an expression for dynamic evaluation.
+
+## Value Options
+
+### Static Boolean
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+When set to `true`, all introspection queries will be blocked by the router. When set to `false`,
+introspection queries will be allowed as normal.
+
+```yaml
+disable_introspection: true
+```
+
+### Dynamic with `expression`
+
+- **Type:** `object`
+
+When an `object` is provided, it must contain a VRL `expression` that evaluates to a boolean (`true`
+or `false`). The expression is evaluated for each request, allowing for request-time decisions on
+whether to disable introspection.
+
+- `expression`: **(string, required)** A VRL expression that computes whether introspection should
+  be disabled for the request.
+
+Within the `expression`, you have access to the following context:
+
+- `.request`: The incoming HTTP request object, including its headers.
+
+```yaml
+disable_introspection:
+  expression: '.request.headers."x-enable-introspection" != "true"'
+```
+
+This configuration will disable introspection for all requests that do not include the header
+`x-enable-introspection` set to `true`.
+
+Or you can dynamically change it using an environment variable:
+
+```yaml
+disable_introspection:
+  expression: 'env("DISABLE_INTROSPECTION") == "true"'
+```
