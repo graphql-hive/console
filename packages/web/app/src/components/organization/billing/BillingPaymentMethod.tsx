@@ -40,6 +40,11 @@ export const ManagePaymentMethod = (props: {
   const organization = useFragment(BillingPaymentMethod_OrganizationFragment, props.organization);
   const info = organization.billingConfiguration.paymentMethod;
 
+  /**
+   * The mutation loads only the url, then the page tries to redirect. If the user has a slow connection,
+   * then the button shows that the page is loading and then it resets to normal. Tracking "loading" as a
+   * state lets us show that the page is loading during the entire duration of the url generation + redirect.
+   */
   const [loadingDashboard, setLoadingDashboard] = useState(false);
 
   if (!info) {
