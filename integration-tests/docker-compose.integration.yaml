@@ -122,8 +122,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      emails:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       LOG_LEVEL: debug
@@ -237,13 +235,6 @@ services:
         condition: service_started # Redpand is ready when it starts
       tokens:
         condition: service_healthy
-
-  emails:
-    environment:
-      EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
-      LOG_LEVEL: debug
-    ports:
-      - '3011:3011'
 
   workflows:
     environment:
