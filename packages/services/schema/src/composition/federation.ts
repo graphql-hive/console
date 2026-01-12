@@ -144,14 +144,12 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
       });
 
     if (isFederationV2) {
-      const allConflicts = [];
-
-      for (const subgraph of subgraphs) {
-        const conflicts = validateLinkSpecReservedTypes(subgraph.typeDefs);
-        if (conflicts.length > 0) {
-          allConflicts.push({ subgraph: subgraph.name, conflicts });
-        }
-      }
+      const allConflicts = subgraphs
+        .map(subgraph => ({
+          subgraph: subgraph.name,
+          conflicts: validateLinkSpecReservedTypes(subgraph.typeDefs),
+        }))
+        .filter(({ conflicts }) => conflicts.length > 0);
 
       if (allConflicts.length > 0) {
         return {
