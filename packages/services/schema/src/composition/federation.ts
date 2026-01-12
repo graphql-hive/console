@@ -24,6 +24,10 @@ import {
   createTagDirectiveNameExtractionStrategy,
   extractTagsFromDocument,
 } from '../lib/federation-tag-extraction';
+import {
+  validateLinkSpecReservedTypes,
+  type LinkSpecConflict,
+} from '../lib/link-spec-reserved-types';
 import { extractMetadata, mergeMetadata } from '../lib/metadata-extraction';
 import { SetMap } from '../lib/setmap';
 import { trimDescriptions } from '../lib/trim-descriptions';
@@ -127,6 +131,53 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         }
         return subgraph;
       });
+
+    // Validate reserved types for schemas using Federation v2 composition or @link directive.
+    // When args.native is true (native Federation v2 composition) or when any subgraph uses
+    // the @link directive (federation or link spec), the Apollo Link spec reserves certain
+    // type names (Purpose, Import) that will conflict if users define their own types.
+    const isFederationV2 =
+      args.native ||
+      subgraphs.some(subgraph => {
+        const { matchesImplementation } = extractLinkImplementations(subgraph.typeDefs);
+        return (
+          matchesImplementation('https://specs.apollo.dev/federation', null) ||
+          matchesImplementation('https://specs.apollo.dev/link', null)
+        );
+      });
+
+    if (isFederationV2) {
+      const allConflicts = [];
+
+      for (const subgraph of subgraphs) {
+        const conflicts = validateLinkSpecReservedTypes(subgraph.typeDefs);
+        if (conflicts.length > 0) {
+          allConflicts.push({ subgraph: subgraph.name, conflicts });
+        }
+      }
+
+      if (allConflicts.length > 0) {
+        return {
+          type: 'failure',
+          result: {
+            supergraph: null,
+            sdl: null,
+            errors: allConflicts.flatMap(({ subgraph, conflicts }) =>
+              conflicts.map(conflict => ({
+                message: `[${subgraph}] ${conflict.message}`,
+                source: 'composition' as const,
+              })),
+            ),
+            contracts: null,
+            includesNetworkError: false,
+            includesException: false,
+            tags: null,
+            schemaMetadata: null,
+            metadataAttributes: null,
+          },
+        };
+      }
+    }
 
     /** Determine the correct compose method... */
     let compose: (subgraphs: Array<SubgraphInput>) => Promise<
