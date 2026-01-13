@@ -43,7 +43,7 @@ const IncrementalNativeCompositionSwitch = (props: {
   return (
     <div
       className={cn(
-        'flex flex-row items-center gap-x-10 rounded-sm border-[1px] border-gray-800 bg-gray-800/50 p-4',
+        'flex flex-row items-center gap-x-10 rounded-sm border border-gray-800 bg-gray-800/50 p-4',
         mutation.fetching && 'animate-pulse',
       )}
     >

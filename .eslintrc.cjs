@@ -205,6 +205,8 @@ module.exports = {
       rules: {
         // better-tailwindcss assumes you're using v4...we're being explicit here due to our dual tailwind setups
         'better-tailwindcss/no-deprecated-classes': 'error',
+        // Tailwind v4 uses CSS variables without var() syntax
+        'better-tailwindcss/enforce-consistent-variable-syntax': 'off',
         'better-tailwindcss/no-unknown-classes': [
           'error',
           {

@@ -552,7 +552,7 @@ function ProposalsNewContent(
           variant="content"
           className={cn(
             'flex h-full w-[20vw] min-w-[160px] flex-col items-start border-0',
-            '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-3',
+            '*:flex *:w-full *:justify-start *:p-3',
           )}
         >
           <TabsTrigger variant="menu" value="overview" asChild>
