@@ -520,7 +520,7 @@
   }
 
   .hive-markdown code {
-    @apply rounded bg-white/10 px-2 py-1 text-orange-500;
+    @apply rounded-sm bg-white/10 px-2 py-1 text-orange-500;
   }
 
   .hive-loading-indicator {

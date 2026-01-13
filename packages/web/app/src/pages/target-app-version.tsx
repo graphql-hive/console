@@ -285,7 +285,7 @@ function TargetAppVersionContent(props: {
                   {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
                     <TableRow key={i}>
                       <TableCell>
-                        <span className="rounded bg-gray-800 p-1 font-mono text-sm">
+                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-sm">
                           {edge.node.hash}
                         </span>
                       </TableCell>
@@ -302,13 +302,13 @@ function TargetAppVersionContent(props: {
                             </Tooltip>
                           </TooltipProvider>
                         ) : (
-                          <span className="rounded bg-gray-800 p-1 font-mono text-xs">
+                          <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
                             {edge.node.operationName}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-end">
-                        <span className="rounded bg-gray-800 p-1 font-mono text-xs">
+                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
                           {edge.node.body.length > 43
                             ? edge.node.body.substring(0, 43).replace(/\n/g, '\\n') + '...'
                             : edge.node.body}
@@ -424,7 +424,7 @@ export function TargetAppVersionPage(props: {
         projectSlug={props.projectSlug}
         organizationSlug={props.organizationSlug}
         page={Page.Apps}
-        className="min-h-content"
+        className="min-h-[--min-h-content]"
       >
         <TargetAppVersionContent {...props} />
       </TargetLayout>
