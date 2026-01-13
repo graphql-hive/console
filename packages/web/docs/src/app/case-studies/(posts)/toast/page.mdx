@@ -1,7 +1,7 @@
 export const metadata = {
   title: "How Toast's bet on Hive's GraphQL open source stack has paid off at scale",
   excerpt:
-    "Toast's journey of migrating from Apollo to Hive to increased productivity, better support, long-term stability, cost reduction and no vendor lock-in.",
+    "How Toast achieved increased productivity, direct developer support, long-term stability, cost reduction and no vendor lock-in with The Guild's open source GraphQL stack.",
   category: 'Point of Sale',
   date: '2025-10-23',
   authors: [
@@ -47,8 +47,9 @@ their engineering fast and reliable.
 
 ### Problem
 
-Apollo’s tooling became a bottleneck. Performance issues, limited support, and vendor lock-in risks
-made it harder to manage a large federated setup and slowed down teams.
+Federation would become load-bearing infrastructure — the thing every team builds on, every request
+flows through. Pick wrong, and you're stuck with technical debt that outlasts the people who created
+it
 
 ### Solution
 
@@ -71,7 +72,7 @@ The main options were GraphOS/Apollo Studio and Hive Console.
 
 After extensive testing, Toast chose Hive Console:
 
-1. Reliability – Hive Console proved to have significantly better registry uptime than Apollo Studio
+1. Reliability – Hive Console provided the stability Toast needed at scale
 2. It had all the features they needed while actively growing and being developed in the open
 3. Fair and safe pricing that scales with their needs
 4. No vendor-lock which gave them the option to individually choose the best pieces of their
@@ -100,20 +101,19 @@ separation.
 
 That article also highlights the importance of a good schema registry to move quickly and safely.
 
-## Gateway and subgraphs – Starting with Apollo, scaling with Hive
+## Gateway and subgraphs – Why Toast chose Hive
 
-In the early stages of adopting GraphQL Federation, they used Apollo's gateway and subgraphs. As
-they scaled GraphQL Federation across the organization and different teams, they saw some
-shortcomings with their federation solution:
+When evaluating GraphQL Federation, Toast tested Apollo's gateway and subgraphs on one project.
+During that evaluation, they identified concerns that led them to choose Hive instead:
 
 1. The implementations of Apollo Gateway and Apollo Server weren’t well maintained, up to date, or
    performant enough
 2. Active support from core developers of the platform was lacking, including responses to feature
    requests and raised issues
 
-From a business perspective, these limitations translated into:
+From a business perspective, these concerns pointed to potential risks:
 
-1. More stability issues – outdated components made the system harder to rely on at scale.
+1. Stability risks – outdated components could become harder to rely on at scale.
 2. Higher compute usage – less efficient gateway performance resulted in unnecessary resource
    consumption and increased infrastructure costs.
 3. Slower issue resolution – lack of active support from core developers delayed fixes and responses
@@ -138,8 +138,7 @@ including Apollo Server, Toast was able to use Hive Console while keeping their 
 implementations. As Toast already chose Hive Console from the start, they were good to go and could
 focus on the later phases of the migration when they actually felt the need.
 
-The second phase of the transition was to migrate from the unmaintained Apollo Server to GraphQL
-Yoga server by The Guild, which
+The second phase is migrating from Apollo Server to GraphQL Yoga server by The Guild, which
 [outperforms Apollo Server in every single metric](https://the-guild.dev/graphql/yoga-server/docs/comparison).
 
 The third phase was to migrate Apollo Gateway to Hive Gateway, which resulted in easier maintenance,
