@@ -147,7 +147,7 @@ module.exports = {
       extends: [
         '@theguild',
         '@theguild/eslint-config/react',
-        'plugin:tailwindcss/recommended',
+        'plugin:better-tailwindcss/legacy-recommended',
         'plugin:@next/next/recommended',
       ],
       settings: {
@@ -159,13 +159,11 @@ module.exports = {
       },
       rules: {
         // conflicts with official prettier-plugin-tailwindcss and tailwind v3
-        'tailwindcss/classnames-order': 'off',
-        'tailwindcss/no-unnecessary-arbitrary-value': 'off',
+        'better-tailwindcss/enforce-consistent-class-order': 'off',
         // set more strict to highlight in editor
-        'tailwindcss/enforces-shorthand': 'error',
-        'tailwindcss/no-custom-classname': 'error',
-        'tailwindcss/migration-from-tailwind-2': 'error',
-        'tailwindcss/no-contradicting-classname': 'error',
+        'better-tailwindcss/enforce-canonical-classes': 'warn',
+        'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
+        'better-tailwindcss/enforce-shorthand-classes': 'off',
         'react/display-name': 'off',
         'react/prop-types': 'off',
         'react/no-unknown-property': 'off',
@@ -198,12 +196,52 @@ module.exports = {
     {
       files: ['packages/web/app/**'],
       settings: {
-        tailwindcss: {
+        'better-tailwindcss': {
+          // tailwindcss 4: the path to the entry file of the css based tailwind config (eg: `src/global.css`)
+          entryPoint: 'packages/web/app/src/index.css',
           callees: tailwindCallees,
-          config: path.join(__dirname, './packages/web/app/tailwind.config.ts'),
-          whitelist: ['drag-none'],
-          cssFiles: ['packages/web/app/src/index.css', 'node_modules/graphiql/dist/style.css'],
         },
+      },
+      rules: {
+        // better-tailwindcss assumes you're using v4...we're being explicit here due to our dual tailwind setups
+        'better-tailwindcss/no-deprecated-classes': 'error',
+        'better-tailwindcss/no-unknown-classes': [
+          'error',
+          {
+            ignore: [
+              'drag-none',
+              // Tailwind v4 semantic colors from @theme in index.css
+              // Regex patterns to match all utility variants (bg-*, text-*, border-*, etc.)
+              // Includes optional opacity modifier (/40, /60, etc.)
+              '(bg|text|border|ring|outline|shadow|from|via|to|fill|stroke|caret|accent|divide|placeholder)-(background|foreground|card|card-foreground|popover|popover-foreground|primary|primary-foreground|secondary|secondary-foreground|muted|muted-foreground|accent|accent-foreground|destructive|destructive-foreground|border|input|ring|sidebar|sidebar-background|sidebar-foreground|sidebar-primary|sidebar-primary-foreground|sidebar-accent|sidebar-accent-foreground|sidebar-border|sidebar-ring|chart-1|chart-2)(/.*)?',
+              // Animation utilities (from index.css, replaces tailwindcss-animate)
+              'animate-in',
+              'animate-out',
+              'fade-in-.*',
+              'fade-out-.*',
+              'zoom-in-.*',
+              'zoom-out-.*',
+              'slide-in-from-.*',
+              'slide-out-to-.*',
+              // Custom radius from @theme
+              'rounded-xs',
+              // ring-offset with semantic colors
+              'ring-offset-.*',
+              // Data attribute variants with custom animations (for Radix UI components)
+              'data-\\[side=(top|right|bottom|left)\\]:animate-slide-(up|down|left|right)-fade',
+              // GraphiQL classes
+              'graphiql-.*',
+              // hive classes
+              'hive-.*',
+              // Schema diff custom classes (defined in index.css)
+              'schema-doc-row-.*',
+              // No scrollbar utility (defined in index.css)
+              'no-scrollbar',
+              // Tailwind v4 CSS variable syntax (without var())
+              '.*-\\[--.*\\]',
+            ],
+          },
+        ],
       },
     },
     {
@@ -218,23 +256,38 @@ module.exports = {
         next: {
           rootDir: 'packages/web/docs',
         },
-        tailwindcss: {
+        'better-tailwindcss': {
+          // tailwindcss 3: the path to the tailwind config file (eg: `tailwind.config.js`)
+          tailwindConfig: 'packages/web/docs/tailwind.config.ts',
           callees: tailwindCallees,
-          whitelist: [
-            'light',
-            'hive-focus',
-            'hive-focus-within',
-            'nextra-scrollbar',
-            'no-scrollbar', // from Nextra
-            'hive-slider',
-            'hive-prose',
-            'subheader',
-          ],
-          config: path.join(__dirname, './packages/web/docs/tailwind.config.ts'),
         },
       },
       rules: {
         'import/extensions': 'off',
+        // better-tailwindcss assumes you're using v4...we're being explicit here due to our dual tailwind setups
+        'better-tailwindcss/no-deprecated-classes': 'off',
+        'better-tailwindcss/no-unknown-classes': [
+          'error',
+          {
+            ignore: [
+              'light',
+              'hive-focus',
+              'hive-focus-within',
+              'nextra-focus',
+              'nextra-scrollbar',
+              'no-scrollbar', // from Nextra
+              'hive-slider',
+              'hive-prose',
+              'subheader',
+              'subheading-anchor',
+              'duration-\\[.*\\]', // Allow arbitrary duration values like duration-[.8s]
+              'ease-\\[var\\(--.*\\)\\]', // Allow CSS variables in arbitrary ease values
+              'x:.*', // Allow Nextra 4 custom variant prefix
+            ],
+          },
+        ],
+        // Allow CSS variables in arbitrary values for Tailwind v3
+        'better-tailwindcss/enforce-consistent-variable-syntax': 'off',
       },
     },
     {
