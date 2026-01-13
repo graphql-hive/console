@@ -144,7 +144,7 @@ deployWorkflows({
   postmarkSecret,
   observability,
   sentry,
-  heartbeat: heartbeatsConfig.get('workflows'),
+  heartbeat: heartbeatsConfig.get('webhooks'),
 });
 
 const commerce = deployCommerce({
