@@ -57,9 +57,11 @@ jobs:
         with:
           toolchain: stable
 
+      # see https://github.com/changesets/action/issues/523
       - name: fix gh-api issues with changesets
         run: |
           echo "Cargo.lock" >> .gitignore
+          git ls-files | while read -r file; do [ -x "$file" ] && chmod -x "$file" || true; done
 
       - name: publish stable
         id: changesets
