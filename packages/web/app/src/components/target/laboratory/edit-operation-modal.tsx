@@ -168,7 +168,7 @@ export const EditOperationModalContent = (props: {
       }}
     >
       <DialogContent
-        className="container w-4/5 max-w-[600px] md:w-3/5"
+        className="w-4/5 max-w-[600px] md:w-3/5"
         data-cy="edit-operation-modal"
       >
         {!props.fetching && (

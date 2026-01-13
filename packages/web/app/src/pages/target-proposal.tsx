@@ -169,7 +169,7 @@ export function TargetProposalsSinglePage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Proposals}
-        className="flex h-[--content-height] min-h-[300px] flex-col pb-0"
+        className="flex h-(--content-height) min-h-[300px] flex-col pb-0"
       >
         <ProposalsContent {...props} />
       </TargetLayout>

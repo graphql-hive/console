@@ -760,7 +760,7 @@ export function TargetLaboratoryPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Laboratory}
-        className="flex h-[--content-height] flex-col pb-0"
+        className="flex h-(--content-height) flex-col pb-0"
       >
         <LaboratoryPageContent {...props} />
       </TargetLayout>

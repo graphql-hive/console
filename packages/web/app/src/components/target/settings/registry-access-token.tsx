@@ -166,7 +166,7 @@ export function CreatedTokenContent(props: {
 }) {
   return (
     <DialogContent
-      className="container w-4/5 max-w-[600px] md:w-3/5"
+      className="w-4/5 max-w-[600px] md:w-3/5"
       data-cy="registry-token-created"
     >
       <DialogHeader className="flex flex-col gap-5">
@@ -197,7 +197,7 @@ export function GenerateTokenContent(props: {
   noPermissionsSelected: boolean;
 }) {
   return (
-    <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+    <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
       <Form {...props.form}>
         <form
           className="flex grow flex-col gap-5"

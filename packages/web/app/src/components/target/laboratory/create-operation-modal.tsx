@@ -191,7 +191,7 @@ export function CreateOperationModalContent(props: {
       }}
     >
       <DialogContent
-        className="container w-4/5 max-w-[600px] md:w-3/5"
+        className="w-4/5 max-w-[600px] md:w-3/5"
         data-cy="create-operation-modal"
       >
         {!props.fetching && (
@@ -231,7 +231,7 @@ export function CreateOperationModalContent(props: {
                             {props.collections.find(c => c.id === field.value)?.name ??
                               'Select a Collection'}
                           </SelectTrigger>
-                          <SelectContent className="w-[--radix-select-trigger-width]">
+                          <SelectContent className="w-(--radix-select-trigger-width)">
                             {props.collections.map(c => (
                               <SelectItem key={c.id} value={c.id} data-cy="collection-select-item">
                                 {c.name}

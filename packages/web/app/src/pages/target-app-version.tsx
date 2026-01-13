@@ -424,7 +424,7 @@ export function TargetAppVersionPage(props: {
         projectSlug={props.projectSlug}
         organizationSlug={props.organizationSlug}
         page={Page.Apps}
-        className="min-h-[--min-h-content]"
+        className="min-h-(--min-h-content)"
       >
         <TargetAppVersionContent {...props} />
       </TargetLayout>

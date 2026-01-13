@@ -236,7 +236,7 @@ export function CreateCollectionModalContent(props: {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
       <DialogContent
-        className="container w-4/5 max-w-[600px] md:w-3/5"
+        className="w-4/5 max-w-[600px] md:w-3/5"
         data-cy="create-collection-modal"
       >
         {!props.fetching && (

@@ -239,8 +239,8 @@ module.exports = {
               'schema-doc-row-.*',
               // No scrollbar utility (defined in index.css)
               'no-scrollbar',
-              // Tailwind v4 CSS variable syntax (without var())
-              '.*-\\[--.*\\]',
+              // Tailwind v4 CSS variable syntax with parentheses
+              '.*-\\(--.*\\)',
             ],
           },
         ],
