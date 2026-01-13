@@ -1005,3 +1005,40 @@ test.concurrent(
     );
   },
 );
+
+test.concurrent(
+  'huge schema causing composition to go OOM gives correct error message',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Federation);
+    const { secret } = await createTargetAccessToken({});
+
+    await expect(
+      schemaCheck([
+        '--registry.accessToken',
+        secret,
+        '--author',
+        'Test',
+        '--commit',
+        'init',
+        '--service foo',
+        '--url http://localhost.localhost/graphql',
+        'fixtures/huge-schema.graphql',
+      ]),
+    ).rejects.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI FAILURE OUTPUT :::::::::::::::
+      exitCode------------------------------------------:
+      1
+      stderr--------------------------------------------:
+      __NONE__
+      stdout--------------------------------------------:
+      ✖ Detected 1 error
+
+         - Composition exceeded resource limits. Please contact the Hive Console Team.
+
+      View full report:
+      http://__URL__
+    `);
+  },
+);
