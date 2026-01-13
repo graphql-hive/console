@@ -19,9 +19,7 @@ test("should log that it's not enabled", async () => {
     .then(() => 'OK')
     .catch(() => 'ERROR');
 
-  expect(logger.info).toHaveBeenCalledWith(
-    expect.stringContaining(`[hive] Plugin is not enabled.`),
-  );
+  expect(logger.info).toHaveBeenCalledWith(expect.stringContaining(`Plugin is not enabled.`));
   expect(result).toBe('OK');
 });
 
@@ -53,6 +51,5 @@ test('should not throw exception about missing token when disabled', async () =>
     agent: { logger },
   });
 
-  expect(logger.info).not.toBeCalled();
   expect(hive.info()).toBeUndefined();
 });

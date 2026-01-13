@@ -146,7 +146,6 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
               targetSlug={props.targetSlug}
               warnAboutDeprecatedArguments
               warnAboutUnusedArguments={false}
-              styleDeprecated={false}
             />
           );
         })}
@@ -328,9 +327,7 @@ const TargetExplorerDeprecatedSchemaPageQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
-      rateLimit {
-        retentionInDays
-      }
+      usageRetentionInDays
       slug
     }
     hasCollectedOperations(
@@ -375,7 +372,7 @@ function ExplorerDeprecatedSchemaPageContent(props: {
 
   return (
     <DeprecatedSchemaExplorer
-      dataRetentionInDays={currentOrganization.rateLimit.retentionInDays}
+      dataRetentionInDays={currentOrganization.usageRetentionInDays}
       organizationSlug={props.organizationSlug}
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}

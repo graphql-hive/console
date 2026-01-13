@@ -1,355 +1,262 @@
-'use client';
-
-import { ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { cn, CodegenIcon, HiveGatewayIcon, HiveIcon, YogaIcon } from '@theguild/components';
+import { ReactNode } from 'react';
+import {
+  cn,
+  CodegenIcon,
+  HiveGatewayIcon,
+  HiveIcon,
+  HiveRouterIcon,
+  StellateIcon,
+} from '@theguild/components';
+import { DashedLine } from './dashed-line';
 import { GraphQLLogo } from './graphql-logo';
 import { IconGradientDefs } from './icon-gradient-defs';
+import { AndroidLogo } from './logos/android';
+import { AppleLogo } from './logos/apple';
+import { GrpcLogo } from './logos/grpc';
+import { McpLogo } from './logos/mcp';
+import { OpenAPILogo } from './logos/openapi';
+import { ReactLogo } from './logos/react';
 import styles from './ecosystem-management.module.css';
 
-const edgeTexts = [
-  'Apps send requests to Hive Gateway that acts as the api gateway to data from your federated graph.',
-  'Developers that build the apps/api clients will use GraphQL Codegen for generating type-safe code that makes writing apps safer and faster.',
-  'Codegen uses Hive to pull the GraphQL schema for generating the code.',
-  'Hive Gateway pulls the supergraph from the Hive Schema Registry that gives it all the information about the subgraphs and available data to serve to the outside world.',
-  'Hive Gateway delegates GraphQL requests to the corresponding Yoga subgraphs within your internal network.',
-  'Check the subgraph schema against the Hive Schema Registry before deployment to ensure integrity. After deploying a new subgraph version, publish its schema to Hive, to generate the supergraph used by Gateway.',
-];
-const longestEdgeText = edgeTexts.reduce((a, b) => (a.length > b.length ? a : b));
+const boxHeight = 66;
+const halfBoxHeight = boxHeight / 2;
+const stellateHeight = 96;
+const gatewayHeight = 136;
 
-const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+const firstRow = `calc(${halfBoxHeight}px + var(--edge) + ${stellateHeight / 2}px)`;
+const secondRow = `calc(${stellateHeight / 2}px + (var(--edge) / 2))`;
+const thirdRow = `calc((var(--edge) / 2) + ${gatewayHeight / 2}px)`;
+const fullHeight = `calc(${boxHeight}px + var(--edge) + ${stellateHeight}px + var(--edge) + ${gatewayHeight}px + var(--edge) + ${boxHeight}px)`;
 
-const EDGE_HOVER_INTERVAL_TIME = 5000;
-const EDGE_HOVER_RESET_TIME = 10_000;
-
+/**
+ *                      +-----------------------------+
+ *                      |   Clients / Applications    |
+ *                  .-->| (React, iOS, Android, etc.) |<--.
+ *                  |   +--------------+--------------+   |
+ *                  |                  |                  |
+ *                  |                  |                  |
+ *                  |        +---------v---------+        |
+ *                  |        |     Stellate      |        |
+ *                  |        |   (Edge Security  |<-------+
+ *                  |        |  & Caching Layer) |        |
+ *                  |        +---------+---------+        |
+ *                  |                  |                  |
+ * +-------------+  |                  |                  |  +-------+------+
+ * |   Codegen   |  |                  |                  |  | Hive Console |
+ * |  (GraphQL   +--+                  |                  +--+   (Schema    |
+ * | Code Gen.)  |  |                  |                  |  |  Registry)   |
+ * +-------------+  |                  |                  |  +-------+------+
+ *                  |                  |                  |
+ *                  |        +-------------------+        |
+ *                  |        |    Hive Gateway   |        |
+ *                  |        |         &         |<-------+
+ *                  |        |    Hive Router    |        |
+ *                  |        +---------+---------+        |
+ *                  |                  |                  |
+ *                  |                  |                  |
+ *                  |        +---------v---------+        |
+ *                  `------->|     Services      |<-------'
+ *                           |  (GraphQL, gRPC)  |
+ *                           +-------------------+
+ */
 export function EcosystemIllustration(props: { className?: string }) {
-  const [highlightedEdge, setHighlightedEdge] = useState<number | null>(4);
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useIsomorphicLayoutEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setHighlightedEdge(prev => (prev! % 6) + 1);
-    }, EDGE_HOVER_INTERVAL_TIME);
-
-    return () => clearInterval(intervalRef.current || undefined);
-  }, []);
-
-  const highlightEdge = (edgeNumber: number) => {
-    clearInterval(intervalRef.current || undefined);
-
-    setHighlightedEdge(edgeNumber);
-
-    // after 10 seconds, we'll start stepping through edges again
-    intervalRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(() => {
-        setHighlightedEdge(prev => (prev! % 6) + 1);
-      }, EDGE_HOVER_INTERVAL_TIME);
-    }, EDGE_HOVER_RESET_TIME);
-  };
-
-  const onPointerOverEdge = (event: React.PointerEvent<HTMLElement>) => {
-    const edgeNumber = parseInt(event.currentTarget.textContent!);
-    if (Number.isNaN(edgeNumber) || edgeNumber < 1 || edgeNumber > 6) {
-      return;
-    }
-
-    highlightEdge(edgeNumber);
-  };
-
-  const highlightIterators = useRef<{ node: number[]; index: number }>({ node: [], index: -1 });
-  const onHighlightNode = (edges: number[]) => {
-    clearInterval(intervalRef.current || undefined);
-
-    let previousIndex: number;
-    if (highlightIterators.current.node.every((x, i) => edges[i] === x)) {
-      previousIndex = highlightIterators.current.index;
-    } else {
-      highlightIterators.current.node = edges;
-      previousIndex = -1;
-    }
-
-    let index = (previousIndex + 1) % edges.length;
-
-    // if edge under index is already highlighted, we move forward
-    if (highlightedEdge === edges[index]) {
-      index = (index + 1) % edges.length;
-    }
-
-    highlightIterators.current.index = index;
-    highlightEdge(edges[index]);
-  };
-
   return (
     <div
       className={cn(
-        'relative flex min-h-[400px] flex-1 flex-col items-center',
+        'grid h-min flex-1 grid-cols-1 items-center gap-y-0 overflow-visible md:grid-cols-[auto_minmax(2rem,1fr)_min-content_minmax(2rem,1fr)_auto]',
         props.className,
         styles.container,
+        '[--edge:32px] sm:[--edge:48px] md:[--edge:96px]',
       )}
+      style={
+        {
+          '--stellate-height': `${stellateHeight}px`,
+          '--gateway-height': `${gatewayHeight}px`,
+        } as React.CSSProperties
+      }
     >
       <IconGradientDefs />
-      <div className={'flex flex-row ' + styles.vars}>
-        <Edge top bottom left highlighted={highlightedEdge === 5}>
-          <div
-            style={{
-              height:
-                'calc(var(--node-h) / 2 + var(--gap) + var(--big-node-h) / 2 - var(--label-h) / 2)',
-            }}
-            className="ml-[calc(1rem+1px-var(--bw))] mt-[calc(var(--node-h)/2)] w-10 rounded-tl-xl"
-          />
-          <EdgeLabel onPointerOver={onPointerOverEdge}>5</EdgeLabel>
-          <div
-            style={{
-              height:
-                'calc(var(--node-h) / 2 + var(--gap) + var(--big-node-h) / 2 - var(--label-h) / 2)',
-            }}
-            className="ml-[calc(1rem+1px-var(--bw))] box-content w-10 rounded-bl-xl"
-          />
-        </Edge>
-        <div>
+
+      {/* Col 1: Codegen (Desktop) */}
+      <div className="hidden items-center justify-end md:flex">
+        <Node
+          title="Codegen"
+          description={
+            <>
+              GraphQL Code
+              <br />
+              Generation
+            </>
+          }
+          className="z-20"
+        >
+          <CodegenIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
+        </Node>
+      </div>
+
+      <LeftConnections />
+
+      <div className="flex h-full w-max flex-col items-center max-md:mx-auto">
+        <div className="z-20 flex justify-center">
+          <div className="firefox:[backdrop-filter:blur(12px)] flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
+            <ReactLogo className="size-8" />
+            <AppleLogo className="size-8" />
+            <AndroidLogo className="size-8" />
+            <McpLogo className="size-8" />
+          </div>
+        </div>
+
+        <VerticalEdge />
+
+        <div className="z-20 flex justify-center">
           <Node
-            title={
+            title="Stellate"
+            description={
               <>
-                <span className={styles.smHidden}>Hive</span> Gateway
+                GraphQL Edge Security
+                <br />
+                and Caching Layer
               </>
             }
-            description="GraphQL Router"
-            edges={[1, 4, 5]}
-            highlightedEdge={highlightedEdge}
-            onHighlight={onHighlightNode}
+            className="h-[--stellate-height] max-md:px-6"
           >
-            <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
-          </Node>
-          <Edge
-            left
-            className="ml-[calc(var(--node-w)/2-var(--label-h)/2-4px)]"
-            highlighted={highlightedEdge === 4}
-          >
-            <div className="ml-[calc(var(--label-h)/2-.5px)] h-[calc((var(--gap)-var(--label-h))/2)]" />
-            <EdgeLabel onPointerOver={onPointerOverEdge}>4</EdgeLabel>
-            <div className="ml-[calc(var(--label-h)/2-.5px)] h-[calc((var(--gap)-var(--label-h))/2)]" />
-          </Edge>
-          <Node
-            className="h-[var(--big-node-h)] w-[var(--node-w)] flex-col text-center"
-            title={
-              <>
-                <span className={styles.smHidden}>Hive</span> Console
-              </>
-            }
-            description="Schema Registry and CDN"
-            edges={[3, 4, 6]}
-            highlightedEdge={highlightedEdge}
-            onHighlight={onHighlightNode}
-          >
-            <HiveIcon className="size-[var(--big-logo-size)] [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
-          </Node>
-          <Edge
-            left
-            className="ml-[calc(var(--node-w)/2-var(--label-h)/2-4px)]"
-            highlighted={highlightedEdge === 6}
-          >
-            <div className="ml-[calc(var(--label-h)/2-.5px)] h-6" />
-            <EdgeLabel onPointerOver={onPointerOverEdge}>6</EdgeLabel>
-            <div className="ml-[calc(var(--label-h)/2-.5px)] h-6" />
-          </Edge>
-          <Node
-            title="Yoga"
-            description="GraphQL Subgraph"
-            edges={[5, 6]}
-            highlightedEdge={highlightedEdge}
-            onHighlight={onHighlightNode}
-          >
-            <YogaIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.5px]" />
+            <StellateIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
           </Node>
         </div>
-        <div>
-          <Edge
-            top
-            className="flex h-[var(--node-h)] flex-row items-center"
-            highlighted={highlightedEdge === 1}
+
+        <VerticalEdge />
+
+        <div className="z-20 flex justify-center">
+          <Node
+            title={null}
+            description={null}
+            className="h-[--gateway-height] flex-row gap-2 px-8"
           >
-            <div className="w-[calc(var(--label-h)/1.6)]" />
-            <EdgeLabel onPointerOver={onPointerOverEdge}>1</EdgeLabel>
-            <div className="w-[calc(var(--label-h)/1.6)]" />
-          </Edge>
-          <div className="h-[var(--gap)]" />
-          <Edge
-            top
-            highlighted={highlightedEdge === 3}
-            className="flex h-[var(--big-node-h)] flex-row items-center"
-          >
-            <div className="w-[calc(var(--label-h)/1.6)]" />
-            <EdgeLabel onPointerOver={onPointerOverEdge}>3</EdgeLabel>
-            <div className="w-[calc(var(--label-h)/1.6)]" />
-          </Edge>
+            <div className="flex flex-col items-center gap-2">
+              <HiveGatewayIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
+              <span className="text-center font-medium text-green-100">
+                Hive Gateway
+                <br />
+                <span className="text-sm text-green-200">(JavaScript)</span>
+              </span>
+            </div>
+            <div className="w-px bg-green-700" />
+            <div className="flex flex-col items-center gap-2">
+              <HiveRouterIcon className="size-12 [&>path]:fill-[url(#linear-blue)] [&>path]:stroke-[url(#linear-white)] [&>path]:stroke-[0.2px]" />
+              <span className="text-center font-medium text-green-100">
+                Hive Router
+                <br />
+                <span className="text-sm text-green-200">(Rust)</span>
+              </span>
+            </div>
+          </Node>
         </div>
-        <div>
-          <Node
-            title="Client"
-            description={
-              <span className="[@media(max-width:1438px)]:hidden">GraphQL Client of Choice</span>
-            }
-            edges={[1, 2]}
-            highlightedEdge={highlightedEdge}
-            onHighlight={onHighlightNode}
-          >
-            <GraphQLLogo className="size-12" />
-          </Node>
-          <Edge
-            left
-            className="flex h-[calc(var(--gap)+var(--big-node-h)/2-var(--node-h)/2)] flex-col items-center"
-            highlighted={highlightedEdge === 2}
-          >
-            <div className="flex-1" />
-            <EdgeLabel onPointerOver={onPointerOverEdge}>2</EdgeLabel>
-            <div className="flex-1" />
-          </Edge>
-          <Node
-            title="Codegen"
-            description={
-              <span className="[@media(max-width:1438px)]:hidden">GraphQL Code Generation</span>
-            }
-            edges={[2, 3]}
-            highlightedEdge={highlightedEdge}
-            onHighlight={onHighlightNode}
-          >
-            <CodegenIcon className="size-12 fill-[url(#linear-blue)] stroke-[url(#linear-white)] stroke-[0.5px]" />
-          </Node>
+
+        <VerticalEdge />
+
+        <div className="z-20 flex justify-center">
+          <div className="firefox:[backdrop-filter:blur(12px)] flex gap-4 rounded-2xl border border-green-700 bg-white/5 p-4 backdrop-blur-md">
+            <GraphQLLogo className="size-8" />
+            <OpenAPILogo className="size-8" />
+            <GrpcLogo className="size-8" />
+          </div>
         </div>
       </div>
-      <p className={cn('relative text-white/80', styles.text)}>
-        {/* We use the longest text to ensure we have enough space. */}
-        <span className="invisible">{longestEdgeText}</span>
-        {edgeTexts.map((text, i) => {
-          return (
-            <span
-              key={i}
-              className={cn(
-                'absolute inset-0',
-                // Makes it accessible by crawlers.
-                highlightedEdge !== null && highlightedEdge - 1 === i ? 'visible' : 'invisible',
-              )}
-            >
-              {text}
-            </span>
-          );
-        })}
-      </p>
+
+      <RightConnections />
+
+      {/* Col 5: Console (Desktop) */}
+      <div className="hidden items-center justify-start md:flex">
+        <Node
+          title={
+            <>
+              <span className={styles.smHidden}>Hive</span> Console
+            </>
+          }
+          description={
+            <>
+              Schema registry
+              <br />
+              and monitoring
+            </>
+          }
+          className="z-20"
+        >
+          <HiveIcon className="size-12 [&>g]:fill-[url(#linear-blue)] [&>g]:stroke-[url(#linear-white)] [&>g]:stroke-[0.2px]" />
+        </Node>
+      </div>
     </div>
-  );
-}
-
-interface EdgeProps extends React.HTMLAttributes<HTMLElement> {
-  highlighted: boolean;
-  top?: boolean;
-  left?: boolean;
-  bottom?: boolean;
-}
-
-function Edge({ highlighted, top, bottom, left, className, ...rest }: EdgeProps) {
-  return (
-    <div
-      style={{ '--bw': highlighted ? '2px' : '1px' }}
-      className={cn(
-        className,
-        '[&>*]:transition-colors [&>*]:duration-500 [&>:nth-child(odd)]:border-green-700',
-        top &&
-          (bottom
-            ? '[&>:nth-child(1)]:border-t-[length:var(--bw)] [&>:nth-child(3)]:border-b-[length:var(--bw)]'
-            : '[&>:nth-child(odd)]:border-t-[length:var(--bw)]'),
-        left && '[&>:nth-child(odd)]:border-l-[length:var(--bw)]',
-        highlighted &&
-          '[&>*]:text-green-1000 [&>:nth-child(even)]:bg-green-300 [&>:nth-child(odd)]:border-green-300',
-      )}
-      {...rest}
-    />
-  );
-}
-
-interface EdgeLabelProps extends React.HTMLAttributes<HTMLElement> {
-  onPointerOver: React.PointerEventHandler<HTMLElement>;
-}
-function EdgeLabel(props: EdgeLabelProps) {
-  return (
-    <div
-      className={
-        'flex size-8 h-[var(--label-h)] items-center justify-center' +
-        ' cursor-default rounded bg-green-700 text-sm font-medium leading-5' +
-        ' hover:ring-2 hover:ring-green-700'
-      }
-      {...props}
-    />
   );
 }
 
 interface NodeProps extends Omit<React.HTMLAttributes<HTMLElement>, 'title'> {
   title: ReactNode;
   description?: ReactNode;
-  edges: number[];
-  highlightedEdge: number | null;
-  onHighlight: (edges: number[]) => void;
 }
-function Node({
-  title,
-  description,
-  children,
-  edges,
-  highlightedEdge,
-  className,
-  onHighlight,
-  ...rest
-}: NodeProps) {
-  const highlighted = edges.includes(highlightedEdge!);
 
-  const hovered = useRef(false);
-
+function Node({ title, description, children, className, ...rest }: NodeProps) {
   return (
     <div
-      onPointerOver={event => {
-        if (hovered.current || event.currentTarget !== event.target) {
-          return;
-        }
-
-        hovered.current = true;
-
-        if (edges.includes(highlightedEdge!)) return;
-        onHighlight([edges[0]]);
-      }}
-      onPointerOut={event => {
-        if (
-          !event.currentTarget.contains(event.relatedTarget as Node) &&
-          event.currentTarget === event.target
-        ) {
-          hovered.current = false;
-        }
-      }}
-      onClick={() => onHighlight(edges)}
       className={cn(
         styles.node,
-        'relative z-10 flex h-[var(--node-h)] items-center gap-2 rounded-2xl p-4 xl:gap-4 xl:p-[22px]' +
-          ' bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))]' +
-          ' cursor-pointer transition-colors duration-500 [&>svg]:flex-shrink-0',
-        // todo: linear gradients don't transition, so we should add white/10 background layer'
-        highlighted &&
-          'bg-[linear-gradient(135deg,rgb(255_255_255_/0.2),rgb(255_255_255/0.3))] ring ring-green-300',
+        'firefox:[backdrop-filter:blur(12px)] relative z-10 flex min-h-[96px] items-center gap-4 rounded-2xl bg-[linear-gradient(135deg,rgb(255_255_255/0.10),rgb(255_255_255/0.20))] p-4 backdrop-blur-md xl:p-[22px] [&>svg]:shrink-0',
+        description && 'flex-row',
         className,
       )}
       {...rest}
     >
       {children}
-      <div>
-        <div className="font-medium text-green-100">{title}</div>
-        {description && (
-          <div
-            className="mt-0.5 text-sm leading-5 text-green-200"
-            style={{
-              display: 'var(--node-desc-display)',
-            }}
-          >
-            {description}
-          </div>
-        )}
-      </div>
+      {(title || description) && (
+        <div className="flex flex-col text-left">
+          <div className="font-medium text-green-100">{title}</div>
+          {description && (
+            <div className={cn('mt-0.5 text-sm leading-5 text-green-200', styles.desc)}>
+              {description}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VerticalEdge() {
+  return <div className="h-[--edge] w-[3px] bg-green-700" />;
+}
+
+function LeftConnections() {
+  return (
+    <div
+      className="hidden flex-col items-center justify-center md:flex"
+      style={{ paddingBlock: halfBoxHeight, height: fullHeight }}
+    >
+      <DashedLine className="h-1/2 translate-x-[1.5px] translate-y-[-1.5px] text-green-700" />
+      <DashedLine className="h-1/2 translate-x-[1.5px] translate-y-[1.5px] -scale-y-100 text-green-700" />
+    </div>
+  );
+}
+
+function RightConnections() {
+  return (
+    <div
+      className="relative hidden shrink grow-0 grid-flow-col-dense grid-cols-1 place-items-center justify-center md:grid"
+      style={{
+        paddingBlock: halfBoxHeight,
+        height: fullHeight,
+        // todo: change 20px and 14px to something based on cqi or vars?
+        gridTemplateRows: `${firstRow} calc(${secondRow} + 20px) calc(${thirdRow} - 14px) 1fr`,
+      }}
+    >
+      <DashedLine className="row-span-2 row-start-1 translate-x-[-1.5px] translate-y-[-1.5px] -scale-x-100 self-start text-green-700" />
+      <DashedLine className="row-span-2 row-start-3 translate-x-[-1.5px] translate-y-[1.5px] -scale-100 self-end text-green-700" />
+      <DashedLine
+        className="absolute top-0 row-span-1 row-start-3 translate-x-[-1.5px] translate-y-[-1.5px] -scale-100 self-end text-green-700 [mask-image:linear-gradient(to_bottom,black_30%,transparent_40%)]"
+        short
+      />
+      <DashedLine
+        className="absolute row-span-1 row-start-2 translate-x-[-1.5px] translate-y-[1.5px] -scale-x-100 self-end text-green-700 [mask-image:linear-gradient(to_top,transparent_57%,black_75%)]"
+        short
+      />
     </div>
   );
 }

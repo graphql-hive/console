@@ -3,6 +3,7 @@ import { BlocksIcon, BoxIcon, FoldVerticalIcon } from 'lucide-react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { NotFoundContent } from '@/components/common/not-found-content';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -63,11 +64,14 @@ const OrganizationLayout_OrganizationFragment = graphql(`
 `);
 
 const OrganizationLayoutQuery = graphql(`
-  query OrganizationLayoutQuery {
+  query OrganizationLayoutQuery($organizationSlug: String!) {
     me {
       id
       provider
       ...UserMenu_MeFragment
+    }
+    organizationBySlug(organizationSlug: $organizationSlug) {
+      id
     }
     organizations {
       ...OrganizationSelector_OrganizationConnectionFragment
@@ -93,8 +97,13 @@ export function OrganizationLayout({
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
     query: OrganizationLayoutQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+    },
     requestPolicy: 'cache-first',
   });
+
+  const organizationExists = query.data?.organizationBySlug;
 
   const organizations = useFragment(
     OrganizationLayout_OrganizationFragment,
@@ -107,6 +116,10 @@ export function OrganizationLayout({
   if (query.error) {
     return <QueryError error={query.error} organizationSlug={props.organizationSlug} />;
   }
+
+  // Only show the null state state if the query has finished fetching and data is not stale
+  // This prevents showing null state when switching between orgs with cached data
+  const shouldShowNoOrg = !query.fetching && !query.stale && !organizationExists;
 
   return (
     <>
@@ -219,7 +232,16 @@ export function OrganizationLayout({
             <RateLimitWarn organization={currentOrganization} />
           </>
         ) : null}
-        <div className={className}>{children}</div>
+
+        {shouldShowNoOrg ? (
+          <NotFoundContent
+            heading="Organization not found"
+            subheading="Use the empty dropdown in the header to select an organization to which you have access."
+            includeBackButton={false}
+          />
+        ) : (
+          <div className={className}>{children}</div>
+        )}
       </div>
     </>
   );

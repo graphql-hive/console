@@ -1,6 +1,6 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useRouter } from '@tanstack/react-router';
-import { GraphQLFields, GraphQLTypeCard } from './common';
+import { GraphQLTypeCard } from './common';
+import { GraphQLFields } from './graphql-fields';
 
 const GraphQLInterfaceTypeComponent_TypeFragment = graphql(`
   fragment GraphQLInterfaceTypeComponent_TypeFragment on GraphQLInterfaceType {
@@ -27,14 +27,7 @@ export function GraphQLInterfaceTypeComponent(props: {
   targetSlug: string;
   warnAboutUnusedArguments: boolean;
   warnAboutDeprecatedArguments: boolean;
-  styleDeprecated: boolean;
 }) {
-  const router = useRouter();
-  const searchObj = router.latestLocation.search;
-  const search =
-    'search' in searchObj && typeof searchObj.search === 'string'
-      ? searchObj.search.toLowerCase()
-      : undefined;
   const ttype = useFragment(GraphQLInterfaceTypeComponent_TypeFragment, props.type);
   return (
     <GraphQLTypeCard
@@ -50,14 +43,12 @@ export function GraphQLInterfaceTypeComponent(props: {
       <GraphQLFields
         typeName={ttype.name}
         fields={ttype.fields}
-        filterValue={search}
         totalRequests={props.totalRequests}
         targetSlug={props.targetSlug}
         projectSlug={props.projectSlug}
         organizationSlug={props.organizationSlug}
         warnAboutDeprecatedArguments={props.warnAboutDeprecatedArguments}
         warnAboutUnusedArguments={props.warnAboutUnusedArguments}
-        styleDeprecated={props.styleDeprecated}
       />
     </GraphQLTypeCard>
   );

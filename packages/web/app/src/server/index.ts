@@ -62,6 +62,7 @@ async function main() {
       dev: true,
       spa: true,
     });
+
     await server.vite.ready();
   } else {
     server.log.info('Running in production mode');

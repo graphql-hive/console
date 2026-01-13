@@ -40,7 +40,6 @@ const TargetAppsVersionQuery = graphql(`
     $appName: String!
     $appVersion: String!
     $first: Int
-    $after: String
     $documentsFilter: AppDeploymentDocumentsFilterInput
   ) {
     target(
@@ -58,6 +57,48 @@ const TargetAppsVersionQuery = graphql(`
         id
         name
         version
+        documents(first: $first, filter: $documentsFilter) {
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          edges {
+            node {
+              hash
+              body
+              operationName
+              insightsHash
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const TargetAppsVersionFetchMoreQuery = graphql(`
+  query TargetAppsVersionFetchMore(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $appName: String!
+    $appVersion: String!
+    $first: Int
+    $after: String
+    $documentsFilter: AppDeploymentDocumentsFilterInput
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      id
+      appDeployment(appName: $appName, appVersion: $appVersion) {
+        id
         documents(first: $first, after: $after, filter: $documentsFilter) {
           pageInfo {
             hasNextPage
@@ -108,7 +149,6 @@ function TargetAppVersionContent(props: {
       appName: props.appName,
       appVersion: props.appVersion,
       first: 20,
-      after: null,
       documentsFilter: {
         operationName: debouncedSearch,
       },
@@ -335,7 +375,7 @@ function TargetAppVersionContent(props: {
                   ) {
                     setIsLoadingMore(true);
                     void client
-                      .query(TargetAppsVersionQuery, {
+                      .query(TargetAppsVersionFetchMoreQuery, {
                         organizationSlug: props.organizationSlug,
                         projectSlug: props.projectSlug,
                         targetSlug: props.targetSlug,
@@ -343,6 +383,9 @@ function TargetAppVersionContent(props: {
                         appVersion: props.appVersion,
                         first: 20,
                         after: data?.data?.target?.appDeployment?.documents.pageInfo?.endCursor,
+                        documentsFilter: {
+                          operationName: debouncedSearch,
+                        },
                       })
                       .toPromise()
                       .finally(() => {

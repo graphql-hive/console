@@ -20,6 +20,8 @@ const LOCAL_SERVICES = {
   schema: 6500,
   external_composition: 3012,
   mock_server: 3042,
+  'otel-collector': 4318,
+  workflows: 3014,
 } as const;
 
 export type KnownServices = keyof typeof LOCAL_SERVICES;
@@ -105,6 +107,15 @@ export function generateUnique() {
 
 export function assertNonNull<T>(
   value: T | null,
+  message = 'Expected non-null value.',
+): asserts value is T {
+  if (value === null) {
+    throw new Error(message);
+  }
+}
+
+export function assertNonNullish<T>(
+  value: T | null | undefined,
   message = 'Expected non-null value.',
 ): asserts value is T {
   if (value === null) {

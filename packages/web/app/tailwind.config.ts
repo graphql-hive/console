@@ -1,11 +1,13 @@
 import svgToDataUri from 'mini-svg-data-uri';
+import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 import tailwindcssRadix from 'tailwindcss-radix';
 import colors from 'tailwindcss/colors';
 import { fontFamily } from 'tailwindcss/defaultTheme';
-import { default as flattenColorPalette } from 'tailwindcss/lib/util/flattenColorPalette';
+import flattenColorPalette from 'tailwindcss/lib/util/flattenColorPalette';
+import plugin from 'tailwindcss/plugin';
 
-module.exports = {
+const config: Config = {
   darkMode: 'class',
   content: ['./index.html', './src/**/*.ts{,x}'],
   important: true,
@@ -77,6 +79,12 @@ module.exports = {
       cyan: '#0acccc',
       blue: colors.sky,
       gray: colors.stone,
+      rose: colors.rose,
+      pink: colors.pink,
+      teal: colors.teal,
+      indigo: colors.indigo,
+      amber: colors.amber,
+      lime: colors.lime,
       magenta: '#f11197',
       orange: {
         50: '#fefbf5',
@@ -145,78 +153,78 @@ module.exports = {
         sm: 'calc(var(--radius) - 4px)',
         xs: 'calc(var(--radius) - 6px)',
       },
-      ringColor: theme => ({
+      ringColor: ({ theme }) => ({
         DEFAULT: theme('colors.orange.500/75'),
         ...theme('colors'),
       }),
       keyframes: {
         // Dropdown menu
         'scale-in': {
-          '0%': { opacity: 0, transform: 'scale(0)' },
-          '100%': { opacity: 1, transform: 'scale(1)' },
+          '0%': { opacity: '0', transform: 'scale(0)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
         'slide-down': {
-          '0%': { opacity: 0, transform: 'translateY(-10px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'slide-up': {
-          '0%': { opacity: 0, transform: 'translateY(10px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         // Tooltip
         'slide-up-fade': {
-          '0%': { opacity: 0, transform: 'translateY(2px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+          '0%': { opacity: '0', transform: 'translateY(2px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'slide-right-fade': {
-          '0%': { opacity: 0, transform: 'translateX(-2px)' },
-          '100%': { opacity: 1, transform: 'translateX(0)' },
+          '0%': { opacity: '0', transform: 'translateX(-2px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         'slide-down-fade': {
-          '0%': { opacity: 0, transform: 'translateY(-2px)' },
-          '100%': { opacity: 1, transform: 'translateY(0)' },
+          '0%': { opacity: '0', transform: 'translateY(-2px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'slide-left-fade': {
-          '0%': { opacity: 0, transform: 'translateX(2px)' },
-          '100%': { opacity: 1, transform: 'translateX(0)' },
+          '0%': { opacity: '0', transform: 'translateX(2px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
         },
         // Navigation menu
         'enter-from-right': {
-          '0%': { transform: 'translateX(200px)', opacity: 0 },
-          '100%': { transform: 'translateX(0)', opacity: 1 },
+          '0%': { transform: 'translateX(200px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         'enter-from-left': {
-          '0%': { transform: 'translateX(-200px)', opacity: 0 },
-          '100%': { transform: 'translateX(0)', opacity: 1 },
+          '0%': { transform: 'translateX(-200px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         'exit-to-right': {
-          '0%': { transform: 'translateX(0)', opacity: 1 },
-          '100%': { transform: 'translateX(200px)', opacity: 0 },
+          '0%': { transform: 'translateX(0)', opacity: '1' },
+          '100%': { transform: 'translateX(200px)', opacity: '0' },
         },
         'exit-to-left': {
-          '0%': { transform: 'translateX(0)', opacity: 1 },
-          '100%': { transform: 'translateX(-200px)', opacity: 0 },
+          '0%': { transform: 'translateX(0)', opacity: '1' },
+          '100%': { transform: 'translateX(-200px)', opacity: '0' },
         },
         'scale-in-content': {
-          '0%': { transform: 'rotateX(-30deg) scale(0.9)', opacity: 0 },
-          '100%': { transform: 'rotateX(0deg) scale(1)', opacity: 1 },
+          '0%': { transform: 'rotateX(-30deg) scale(0.9)', opacity: '0' },
+          '100%': { transform: 'rotateX(0deg) scale(1)', opacity: '1' },
         },
         'scale-out-content': {
-          '0%': { transform: 'rotateX(0deg) scale(1)', opacity: 1 },
-          '100%': { transform: 'rotateX(-10deg) scale(0.95)', opacity: 0 },
+          '0%': { transform: 'rotateX(0deg) scale(1)', opacity: '1' },
+          '100%': { transform: 'rotateX(-10deg) scale(0.95)', opacity: '0' },
         },
         'fade-in': {
-          '0%': { opacity: 0 },
-          '100%': { opacity: 1 },
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
         'fade-out': {
-          '0%': { opacity: 1 },
-          '100%': { opacity: 0 },
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
         },
         // Toast
         'toast-hide': {
-          '0%': { opacity: 1 },
-          '100%': { opacity: 0 },
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
         },
         'toast-slide-in-right': {
           '0%': { transform: 'translateX(calc(100% + 1rem))' },
@@ -235,12 +243,12 @@ module.exports = {
           '100%': { transform: 'translateY(calc(100% + 1rem))' },
         },
         'accordion-down': {
-          from: { height: 0 },
+          from: { height: '0' },
           to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
           from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: 0 },
+          to: { height: '0' },
         },
         shimmer: {
           from: {
@@ -293,7 +301,6 @@ module.exports = {
         'toast-swipe-out-y': 'toast-swipe-out-y 100ms ease-out forwards',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        //
         shimmer: 'shimmer 1.5s linear infinite',
         /** @source https://gist.github.com/krishaantechnology/245b29cfbb25eb456c09fce63673decc */
         shake: 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
@@ -307,43 +314,38 @@ module.exports = {
     // Utilities and variants for styling Radix state
     tailwindcssRadix({}),
     tailwindcssAnimate,
-    addVariablesForColors,
-    asd(),
+    plugin(({ addBase, theme }) => {
+      const allColors = flattenColorPalette(theme('colors'));
+      const newVars = Object.fromEntries(
+        Object.entries(allColors).map(([key, val]) => [`--${key}`, val]),
+      );
+      addBase({
+        ':root': newVars,
+      });
+    }),
+    plugin(({ matchUtilities, theme }) => {
+      matchUtilities(
+        {
+          'bg-grid': value => ({
+            backgroundImage: `url("${svgToDataUri(
+              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`,
+            )}")`,
+          }),
+          'bg-grid-small': value => ({
+            backgroundImage: `url("${svgToDataUri(
+              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="8" height="8" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`,
+            )}")`,
+          }),
+          'bg-dot': value => ({
+            backgroundImage: `url("${svgToDataUri(
+              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" fill="none"><circle fill="${value}" id="pattern-circle" cx="10" cy="10" r="1.6257413380501518"></circle></svg>`,
+            )}")`,
+          }),
+        },
+        { values: flattenColorPalette(theme('backgroundColor')), type: 'color' },
+      );
+    }),
   ],
 };
 
-function asd() {
-  return function ({ matchUtilities, theme }) {
-    matchUtilities(
-      {
-        'bg-grid': value => ({
-          backgroundImage: `url("${svgToDataUri(
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`,
-          )}")`,
-        }),
-        'bg-grid-small': value => ({
-          backgroundImage: `url("${svgToDataUri(
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="8" height="8" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`,
-          )}")`,
-        }),
-        'bg-dot': value => ({
-          backgroundImage: `url("${svgToDataUri(
-            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" fill="none"><circle fill="${value}" id="pattern-circle" cx="10" cy="10" r="1.6257413380501518"></circle></svg>`,
-          )}")`,
-        }),
-      },
-      { values: flattenColorPalette(theme('backgroundColor')), type: 'color' },
-    );
-  };
-}
-
-function addVariablesForColors({ addBase, theme }) {
-  const allColors = flattenColorPalette(theme('colors'));
-  const newVars = Object.fromEntries(
-    Object.entries(allColors).map(([key, val]) => [`--${key}`, val]),
-  );
-
-  addBase({
-    ':root': newVars,
-  });
-}
+export default config;

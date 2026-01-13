@@ -48,6 +48,9 @@ function prepareBatch(amount: number, operation: CollectedOperation) {
 
 test.concurrent(
   'collect operation and publish schema using WRITE access but read operations and check schema using READ access',
+  {
+    timeout: 15_000,
+  },
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -128,9 +131,6 @@ test.concurrent(
     expect(op.kind).toEqual('query');
     expect(op.name).toMatch('ping');
     expect(op.percentage).toBeGreaterThan(99);
-  },
-  {
-    timeout: 15_000,
   },
 );
 
@@ -1620,7 +1620,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(operationCollectionRow.expires_at),
       parseClickHouseDate(operationCollectionRow.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   // operations
   const operationsResult = await clickHouseQuery<{
@@ -1663,7 +1663,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(operationWithClient.expires_at),
       parseClickHouseDate(operationWithClient.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   const operationWithoutClient = operationsResult.data.find(o => o.client_name.length === 0)!;
   expect(operationWithoutClient).toBeDefined();
@@ -1678,7 +1678,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(operationWithoutClient.expires_at),
       parseClickHouseDate(operationWithoutClient.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   // operations_hourly
   const operationsHourlyResult = await clickHouseQuery<{
@@ -1746,7 +1746,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(dailyAgg.expires_at),
       parseClickHouseDate(dailyAgg.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   // coordinates_daily
   const coordinatesDailyResult = await clickHouseQuery<{
@@ -1781,7 +1781,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(rootCoordinate.expires_at),
       parseClickHouseDate(rootCoordinate.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   const fieldCoordinate = coordinatesDailyResult.data.find(c => c.coordinate === 'Query.ping')!;
   expect(fieldCoordinate).toBeDefined();
@@ -1793,7 +1793,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(fieldCoordinate.expires_at),
       parseClickHouseDate(fieldCoordinate.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   // clients_daily
   const clientsDailyResult = await clickHouseQuery<{
@@ -1831,7 +1831,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(dailyAggOfKnownClient.expires_at),
       parseClickHouseDate(dailyAggOfKnownClient.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 
   const dailyAggOfUnknownClient = clientsDailyResult.data.find(c => c.client_name !== 'test-name')!;
   expect(dailyAggOfUnknownClient).toBeDefined();
@@ -1844,7 +1844,7 @@ test.concurrent('ensure correct data', async ({ expect }) => {
       parseClickHouseDate(dailyAggOfUnknownClient.expires_at),
       parseClickHouseDate(dailyAggOfUnknownClient.timestamp),
     ),
-  ).toBe(organization.rateLimit.retentionInDays);
+  ).toBe(organization.usageRetentionInDays);
 });
 
 test.concurrent(

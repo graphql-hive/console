@@ -1,0 +1,15 @@
+<clickhouse>
+  <compression>
+    <!-- Use ZSTD for large parts to save space. -->
+    <case>
+      <min_part_size>1073741824</min_part_size> <!-- 1GB -->
+      <min_part_size_ratio>0.01</min_part_size_ratio>
+      <method>zstd</method>
+      <level>1</level>
+    </case>
+    <!-- Use LZ4 compression for better performance -->
+    <case>
+      <method>lz4</method>
+    </case>
+  </compression>
+</clickhouse>

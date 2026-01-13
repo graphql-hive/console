@@ -16,7 +16,6 @@ import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import {
   createRegistry,
-  createTaskRunner,
   CryptoProvider,
   LogFn,
   Logger,
@@ -39,10 +38,10 @@ import {
   registerTRPC,
   reportReadiness,
   startMetrics,
-  traceInline,
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
+import { TaskScheduler } from '@hive/workflows/kit';
 import {
   contextLinesIntegration,
   dedupeIntegration,
@@ -71,19 +70,25 @@ import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
 
+class CorsError extends Error {
+  constructor() {
+    super('CORS origin not allowed.');
+  }
+}
+
 export async function main() {
   let tracing: TracingInstance | undefined;
 
-  if (env.tracing.enabled && env.tracing.collectorEndpoint) {
+  if (env.tracing.enabled) {
     tracing = configureTracing({
       collectorEndpoint: env.tracing.collectorEndpoint,
       serviceName: 'graphql-api',
       enableConsoleExporter: env.tracing.enableConsoleExporter,
+      hiveTracing: env.tracing.hive,
     });
 
     tracing.instrumentNodeFetch();
-    tracing.build();
-    tracing.start();
+    tracing.setup();
   }
 
   init({
@@ -146,28 +151,41 @@ export async function main() {
     },
   );
 
-  server.setErrorHandler(supertokensErrorHandler());
+  server.setErrorHandler((err, req, res) => {
+    if (err instanceof CorsError) {
+      return res.status(403).send(err.message);
+    }
+
+    return supertokensErrorHandler()(err, req, res);
+  });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
-      if (req.headers.origin?.startsWith(env.hiveServices.webApp.url)) {
-        // We need to treat requests from the web app a bit differently than others.
-        // The web app requires to define the `Access-Control-Allow-Origin` header (not *).
-        callback(null, {
-          origin: env.hiveServices.webApp.url,
-          credentials: true,
-          methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-          allowedHeaders: [
-            'Content-Type',
-            'graphql-client-version',
-            'graphql-client-name',
-            'x-request-id',
-            ...supertokens.getAllCORSHeaders(),
-          ],
+      // For CLI user we do not have a origin
+      if (req.headers.origin == null) {
+        // this is the easiest way to omit all cors headers for our version of the cors plugin.
+        return callback(null, {
+          origin: [],
         });
-        return;
       }
 
-      callback(null, {});
+      if (req.headers.origin !== env.hiveServices.webApp.url) {
+        return callback(new CorsError());
+      }
+
+      // We need to treat requests from the web app a bit differently than others.
+      // The web app requires to define the `Access-Control-Allow-Origin` header (not *).
+      callback(null, {
+        origin: env.hiveServices.webApp.url,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: [
+          'Content-Type',
+          'graphql-client-version',
+          'graphql-client-name',
+          'x-request-id',
+          ...supertokens.getAllCORSHeaders(),
+        ],
+      });
     };
   });
 
@@ -176,6 +194,7 @@ export async function main() {
     10,
     tracing ? [tracing.instrumentSlonik()] : [],
   );
+  const taskScheduler = new TaskScheduler(storage.pool.pool);
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
@@ -190,50 +209,6 @@ export async function main() {
     }),
   }) as HivePubSub;
 
-  let dbPurgeTaskRunner: null | ReturnType<typeof createTaskRunner> = null;
-
-  if (!env.hiveServices.commerce) {
-    server.log.debug('Commerce service is disabled. Skip scheduling purge tasks.');
-  } else {
-    server.log.debug(
-      `Commerce service is enabled. Start scheduling purge tasks every ${env.hiveServices.commerce.dateRetentionPurgeIntervalMinutes} minutes.`,
-    );
-    dbPurgeTaskRunner = createTaskRunner({
-      run: traceInline(
-        'Purge Task',
-        {
-          resultAttributes: result => ({
-            'purge.schema.check.count': result.deletedSchemaCheckCount,
-            'purge.sdl.store.count': result.deletedSdlStoreCount,
-            'purge.change.approval.count': result.deletedSchemaChangeApprovalCount,
-            'purge.contract.approval.count': result.deletedContractSchemaChangeApprovalCount,
-          }),
-        },
-        async () => {
-          try {
-            const result = await storage.purgeExpiredSchemaChecks({
-              expiresAt: new Date(),
-            });
-            server.log.debug(
-              'Finished running schema check purge task. (deletedSchemaCheckCount=%s deletedSdlStoreCount=%s)',
-              result.deletedSchemaCheckCount,
-              result.deletedSdlStoreCount,
-            );
-
-            return result;
-          } catch (error) {
-            captureException(error);
-            throw error;
-          }
-        },
-      ),
-      interval: env.hiveServices.commerce.dateRetentionPurgeIntervalMinutes * 60 * 1000,
-      logger: server.log,
-    });
-
-    dbPurgeTaskRunner.start();
-  }
-
   registerShutdown({
     logger: server.log,
     async onShutdown() {
@@ -243,10 +218,6 @@ export async function main() {
       await server.close();
       server.log.info('Stopping Storage handler...');
       await storage.destroy();
-      if (dbPurgeTaskRunner) {
-        server.log.info('Stopping expired schema check purge task...');
-        await dbPurgeTaskRunner.stop();
-      }
       server.log.info('Shutdown complete.');
     },
   });
@@ -327,10 +298,6 @@ export async function main() {
       commerce: {
         endpoint: env.hiveServices.commerce ? env.hiveServices.commerce.endpoint : null,
       },
-      emailsEndpoint: env.hiveServices.emails ? env.hiveServices.emails.endpoint : undefined,
-      webhooks: {
-        endpoint: env.hiveServices.webhooks.endpoint,
-      },
       schemaService: {
         endpoint: env.hiveServices.schema.endpoint,
       },
@@ -403,7 +370,10 @@ export async function main() {
       supportConfig: env.zendeskSupport,
       pubSub,
       appDeploymentsEnabled: env.featureFlags.appDeploymentsEnabled,
+      schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
+      otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       prometheus: env.prometheus,
+      taskScheduler,
     });
 
     const organizationAccessTokenStrategy = (logger: Logger) =>
@@ -497,6 +467,8 @@ export async function main() {
       storage,
       crypto,
       logger: server.log,
+      redis,
+      taskScheduler,
       broadcastLog(id, message) {
         pubSub.publish('oidcIntegrationLogs', id, {
           timestamp: new Date().toISOString(),
@@ -539,6 +511,7 @@ export async function main() {
                 'Content-Type': 'application/json',
                 Accept: 'application/json',
                 'x-signature': signature,
+                'x-hive-tracing': 'ignore',
               },
             }),
             storage.isReady(),
@@ -567,6 +540,7 @@ export async function main() {
         required_error: 'Slug is required',
       }),
     });
+
     server.post('/auth-api/oidc-id-lookup', async (req, res) => {
       const inputResult = oidcIdLookupSchema.safeParse(req.body);
 
@@ -604,6 +578,15 @@ export async function main() {
       targetsByIdCache: registry.injector.get(TargetsByIdCache),
     });
 
+    server.post('/cache/organization-access-token-cache/delete/:id', async (req, res) => {
+      void res.status(200).send({
+        deleted: await registry.injector
+          .get(OrganizationAccessTokensCache)
+          .purge({ id: (req.params as any).id }),
+      });
+      return;
+    });
+
     if (env.cdn.providers.api !== null) {
       const s3 = {
         client: new AwsClient({
@@ -631,6 +614,7 @@ export async function main() {
 
       const artifactHandler = createArtifactRequestHandler({
         isKeyValid: createIsKeyValid({
+          kvStorageBaseUrl: env.cdn.providers.api.kv?.baseUrl,
           artifactStorageReader,
           analytics: null,
           breadcrumb(message: string) {

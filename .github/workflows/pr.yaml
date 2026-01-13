@@ -2,6 +2,10 @@ name: pr
 on:
   pull_request: {}
 
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 env:
   HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
 
@@ -60,6 +64,11 @@ jobs:
     uses: ./.github/workflows/tests-e2e.yaml
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
+
+  # Changeset Validation
+  # Validates that changesets reference valid packages that exist in the monorepo
+  changeset-validation:
+    uses: ./.github/workflows/changeset-validation.yaml
 
   # ESLint and Prettier
   code-style:

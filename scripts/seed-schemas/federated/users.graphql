@@ -1,20 +1,125 @@
 extend schema
   @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@tag", "@shareable"])
+  @link(url: "https://specs.graphql-hive.com/hive/v1.0", import: ["@meta"])
+  @meta(name: "owner", content: "users-team")
+  @meta(name: "contact", content: "#users-channel")
+
 directive @tag(name: String!) repeatable on FIELD_DEFINITION | OBJECT
 
-type User @key(fields: "id") @key(fields: "email") {
+directive @meta(
+  name: String!
+  content: String!
+) repeatable on SCHEMA | OBJECT | INTERFACE | FIELD_DEFINITION
+
+"""
+## User Account
+
+Represents a **registered user** in the system. User data is subject to *strict privacy controls*.
+
+### Key Features
+- Unique identification via `id` and `username`
+- Personal information (tagged as PII)
+- Account creation tracking
+
+> **Important**: Email and name fields contain Personally Identifiable Information (PII) and must be handled according to data privacy regulations.
+
+**Authentication**: Users authenticate via email or username
+**Federation**: Extended by other subgraphs for additional user data
+"""
+type User
+  @key(fields: "id")
+  @key(fields: "email")
+  @meta(name: "domain", content: "users")
+  @meta(name: "priority", content: "tier1") {
+  """
+  Unique identifier for the user
+  """
   id: ID!
-  email: String! @tag(name: "pii")
-  name: String
+  """
+  User's email address (tagged as PII for data privacy compliance)
+  """
+  email: String! @tag(name: "pii") @meta(name: "sensitivity", content: "pii")
+  """
+  User's full name
+  """
+  name: String @meta(name: "sensitivity", content: "pii")
+  """
+  User's display alias or username
+  """
   alias: String
+  """
+  Total number of products created by this user
+  """
   totalProductsCreated: Int @shareable
+  """
+  Timestamp when the user account was created
+  """
   createdAt: DateTime
 }
 
+"""
+ISO-8601 formatted date and time string
+"""
 scalar DateTime
+
+"""
+Input for creating a new user account
+"""
+input CreateUserInput {
+  """
+  User's email address (required)
+  """
+  email: String!
+  """
+  User's full name (required)
+  """
+  name: String!
+  """
+  Optional display alias or username
+  """
+  alias: String
+}
+
+"""
+Input for updating an existing user account
+"""
+input UpdateUserInput {
+  """
+  Updated full name
+  """
+  name: String
+  """
+  Updated display alias or username
+  """
+  alias: String
+}
 
 extend type Query {
   me: User
-  user(id: ID!): User
+  user(
+    """
+    Unique identifier of the user to retrieve
+    """
+    id: ID!
+  ): User
   users: [User]
+}
+
+extend type Mutation {
+  createUser(
+    """
+    User creation data including email, name, and optional alias
+    """
+    input: CreateUserInput!
+  ): User!
+  updateUser(
+    """
+    Unique identifier of the user to update
+    """
+    id: ID!
+    """
+    User update data including optional name and alias changes
+    """
+    input: UpdateUserInput!
+  ): User
 }

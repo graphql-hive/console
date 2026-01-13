@@ -122,8 +122,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      emails:
-        condition: service_healthy
     environment:
       NODE_ENV: production
       LOG_LEVEL: debug
@@ -138,7 +136,6 @@ services:
       CLICKHOUSE_PORT: '8123'
       CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
       CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
-      EMAILS_ENDPOINT: http://emails:3011
       STRIPE_SECRET_KEY: empty
       PORT: 3009
 
@@ -239,12 +236,12 @@ services:
       tokens:
         condition: service_healthy
 
-  emails:
+  workflows:
     environment:
       EMAIL_PROVIDER: '${EMAIL_PROVIDER}'
       LOG_LEVEL: debug
     ports:
-      - '3011:3011'
+      - '3014:3014'
 
   schema:
     environment:
@@ -254,6 +251,37 @@ services:
       REQUEST_BROKER_ENDPOINT: 'http://local_broker:3013'
     ports:
       - '3002:3002'
+
+  otel-collector:
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+    build:
+      context: ${PWD}/docker/configs/otel-collector
+      dockerfile: ${PWD}/docker/otel-collector.dockerfile
+    environment:
+      HIVE_OTEL_AUTH_ENDPOINT: 'http://server:3001/otel-auth'
+      CLICKHOUSE_PROTOCOL: 'http'
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USERNAME: '${CLICKHOUSE_USER}'
+      CLICKHOUSE_PASSWORD: '${CLICKHOUSE_PASSWORD}'
+    volumes:
+      - '${PWD}/docker/configs/otel-collector/builder-config.yaml:/builder-config.yaml'
+      - '${PWD}/docker/configs/otel-collector/config.yaml:/etc/otel-config.yaml'
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+    networks:
+      - 'stack'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'localhost:13133']
+      interval: 5s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
   #
   # Awkwardly, we need to override some services for different reasons

@@ -2,15 +2,11 @@
 
 import { format } from 'date-fns';
 import { Anchor, cn, useConfig } from '@theguild/components';
-import { Author, AuthorId, authors } from '../../../authors';
+import { AuthorId, authors } from '../../../authors';
 import { SocialAvatar } from '../../../components/social-avatar';
+import { BlogFrontmatter } from '../../blog/blog-types';
 
-type Meta = {
-  authors: (AuthorId | Author)[];
-  date: string;
-  title: string;
-  description: string;
-};
+type Meta = Pick<BlogFrontmatter, 'authors' | 'date' | 'title' | 'description'>;
 
 export const ProductUpdateAuthors = ({
   meta,
@@ -21,7 +17,7 @@ export const ProductUpdateAuthors = ({
 }) => {
   const date = meta.date ? new Date(meta.date) : new Date();
 
-  const metaAuthors = meta.authors.map(author => {
+  const metaAuthors = (Array.isArray(meta.authors) ? meta.authors : [meta.authors]).map(author => {
     return typeof author === 'string' ? authors[author as AuthorId] : author;
   });
 
@@ -29,7 +25,7 @@ export const ProductUpdateAuthors = ({
     const author = metaAuthors[0];
 
     if (!author) {
-      throw new Error(`Author ${meta.authors[0]} not found`);
+      throw new Error(`Author ${metaAuthors[0]} not found`);
     }
 
     return (

@@ -3,7 +3,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
-  DescriptionInline,
+  Description,
   GraphQLTypeCard,
   GraphQLTypeCardListItem,
   LinkToCoordinatePage,
@@ -46,7 +46,6 @@ export function GraphQLEnumTypeComponent(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
-  styleDeprecated: boolean;
 }) {
   const router = useRouter();
   const searchObj = router.latestLocation.search;
@@ -86,10 +85,7 @@ export function GraphQLEnumTypeComponent(props: {
         {values.map((value, i) => (
           <GraphQLTypeCardListItem key={value.name} index={i}>
             <div className="flex flex-col">
-              <DeprecationNote
-                styleDeprecated={props.styleDeprecated}
-                deprecationReason={value.deprecationReason}
-              >
+              <DeprecationNote deprecationReason={value.deprecationReason}>
                 <LinkToCoordinatePage
                   organizationSlug={props.organizationSlug}
                   projectSlug={props.projectSlug}
@@ -99,16 +95,16 @@ export function GraphQLEnumTypeComponent(props: {
                   {value.name}
                 </LinkToCoordinatePage>
               </DeprecationNote>
-              {value.description ? <DescriptionInline description={value.description} /> : null}
+              {value.description && <Description description={value.description} />}
             </div>
-            {value.supergraphMetadata ? (
+            {value.supergraphMetadata && (
               <SupergraphMetadataList
                 targetSlug={props.targetSlug}
                 projectSlug={props.projectSlug}
                 organizationSlug={props.organizationSlug}
                 supergraphMetadata={value.supergraphMetadata}
               />
-            ) : null}
+            )}
           </GraphQLTypeCardListItem>
         ))}
       </div>

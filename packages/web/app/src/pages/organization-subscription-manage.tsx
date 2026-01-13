@@ -25,6 +25,7 @@ import { Link } from '@tanstack/react-router';
 const ManageSubscriptionInner_OrganizationFragment = graphql(`
   fragment ManageSubscriptionInner_OrganizationFragment on Organization {
     slug
+    viewerCanModifyBilling
     billingConfiguration {
       hasPaymentIssues
       canUpdateSubscription
@@ -33,9 +34,7 @@ const ManageSubscriptionInner_OrganizationFragment = graphql(`
       }
     }
     plan
-    rateLimit {
-      operations
-    }
+    monthlyOperationsLimit
     ...BillingPaymentMethod_OrganizationFragment
   }
 `);
@@ -155,7 +154,7 @@ function Inner(props: {
   );
   const [couponCode, setCouponCode] = useState('');
   const [operationsRateLimit, setOperationsRateLimit] = useState(
-    Math.floor((organization.rateLimit.operations || 1_000_000) / 1_000_000),
+    Math.floor((organization.monthlyOperationsLimit || 1_000_000) / 1_000_000),
   );
 
   const onOperationsRateLimitChange = useCallback(
@@ -178,7 +177,7 @@ function Inner(props: {
   useEffect(() => {
     if (query.data?.billingPlans?.length) {
       if (organization.plan === plan) {
-        setOperationsRateLimit(Math.floor((organization.rateLimit.operations || 0) / 1_000_000));
+        setOperationsRateLimit(Math.floor((organization.monthlyOperationsLimit || 0) / 1_000_000));
       } else {
         const actualPlan = query.data.billingPlans.find(v => v.planType === plan);
 
@@ -187,7 +186,7 @@ function Inner(props: {
         );
       }
     }
-  }, [organization.plan, organization.rateLimit.operations, plan, query.data?.billingPlans]);
+  }, [organization.plan, organization.monthlyOperationsLimit, plan, query.data?.billingPlans]);
 
   const upgrade = useCallback(async () => {
     if (isFetching) {
@@ -315,6 +314,12 @@ function Inner(props: {
     return null;
   };
 
+  // Only show the permission warning if not on the enterprise plan. Since enterprise plans must be manually updated through us.
+  const missingBillingUpdatePermissions =
+    plan !== 'ENTERPRISE' &&
+    !organization.billingConfiguration.canUpdateSubscription &&
+    !organization.viewerCanModifyBilling;
+
   const error =
     upgradeToProMutationState.error ||
     downgradeToHobbyMutationState.error ||
@@ -327,11 +332,13 @@ function Inner(props: {
     <div className="flex w-full flex-col gap-5">
       <Card className="w-full">
         <Heading className="mb-4">Choose Your Plan</Heading>
+        {missingBillingUpdatePermissions ? (
+          <div className="mb-3 text-sm text-orange-500">
+            You lack the necessary permission 'billing:update' to update the subscription plan.
+          </div>
+        ) : null}
         <BillingPlanPicker
-          disabled={
-            organization.plan === BillingPlanType.Enterprise ||
-            !organization.billingConfiguration.canUpdateSubscription
-          }
+          disabled={!organization.billingConfiguration.canUpdateSubscription}
           activePlan={organization.plan}
           value={plan}
           plans={billingPlans}
@@ -392,7 +399,7 @@ function Inner(props: {
                         onClick={updateLimits}
                         disabled={
                           isFetching ||
-                          organization.rateLimit.operations === operationsRateLimit * 1_000_000
+                          organization.monthlyOperationsLimit === operationsRateLimit * 1_000_000
                         }
                       >
                         Update Limits

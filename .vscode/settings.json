@@ -10,13 +10,18 @@
   "commands.commands": [
     {
       "command": "terminals.runTerminals",
-      "color": "#eab308",
-      "text": "$(rocket) Start Hive $(rocket)",
+      "text": "$(rocket) Start Hive",
       "tooltip": "Start dev environment"
+    },
+    {
+      "command": "terminals.kill",
+      "text": "$(stop)",
+      "tooltip": "Stop dev environment"
     }
   ],
   "files.associations": {
-    "*.env.template": "dotenv"
+    "*.env.template": "dotenv",
+    "*.css": "tailwindcss"
   },
   "editor.codeActionsOnSave": {
     "source.organizeImports": "never"
@@ -39,5 +44,11 @@
   ],
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
   }
 }

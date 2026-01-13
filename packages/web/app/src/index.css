@@ -101,6 +101,12 @@
     --chart-1: 220 70% 50%;
     --chart-2: 340 75% 55%;
   }
+
+  .hive-laboratory {
+    --primary: 40 89% 60%;
+    --background: 223 70% 4%;
+    --card: 220 21.43% 5.49%;
+  }
 }
 
 @layer base {
@@ -226,6 +232,13 @@
   input::-webkit-inner-spin-button {
     -webkit-appearance: none;
   }
+
+  .schema-doc-row-old::before {
+    content: counter(olddoc);
+  }
+  .schema-doc-row-new::before {
+    content: counter(newdoc);
+  }
 }
 
 .hive-badge-is-changed:after {
@@ -238,4 +251,14 @@
 
 #root > * {
   background-color: rgb(3 7 17 / var(--tw-bg-opacity, 1)) !important;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

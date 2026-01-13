@@ -3,6 +3,7 @@ import * as pulumi from '@pulumi/pulumi';
 import * as random from '@pulumi/random';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
+import { createService } from '../utils/service-deployment';
 import { Environment } from './environment';
 import { Postgres } from './postgres';
 
@@ -95,7 +96,7 @@ export function deploySuperTokens(
     },
   );
 
-  const service = deployment.createService({});
+  const service = createService('supertokens', deployment);
 
   return {
     deployment,

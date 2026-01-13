@@ -109,27 +109,6 @@ target "target-publish" {
   cache-to = ["type=gha,mode=max,ignore-error=true"]
 }
 
-target "emails" {
-  inherits = ["service-base", get_target()]
-  contexts = {
-    dist = "${PWD}/packages/services/emails/dist"
-    shared = "${PWD}/docker/shared"
-  }
-  args = {
-    SERVICE_DIR_NAME = "@hive/emails"
-    IMAGE_TITLE = "graphql-hive/emails"
-    IMAGE_DESCRIPTION = "The emails service of the GraphQL Hive project."
-    PORT = "3006"
-    HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
-  }
-  tags = [
-    local_image_tag("emails"),
-    stable_image_tag("emails"),
-    image_tag("emails", COMMIT_SHA),
-    image_tag("emails", BRANCH_NAME)
-  ]
-}
-
 target "schema" {
   inherits = ["service-base", get_target()]
   contexts = {
@@ -295,24 +274,24 @@ target "usage" {
   ]
 }
 
-target "webhooks" {
+target "workflows" {
   inherits = ["service-base", get_target()]
   contexts = {
-    dist = "${PWD}/packages/services/webhooks/dist"
+    dist = "${PWD}/packages/services/workflows/dist"
     shared = "${PWD}/docker/shared"
   }
   args = {
-    SERVICE_DIR_NAME = "@hive/webhooks"
-    IMAGE_TITLE = "graphql-hive/webhooks"
-    IMAGE_DESCRIPTION = "The webhooks ingestor service of the GraphQL Hive project."
-    PORT = "3005"
+    SERVICE_DIR_NAME = "@hive/workflows"
+    IMAGE_TITLE = "graphql-hive/workflows"
+    IMAGE_DESCRIPTION = "The workflow service of the GraphQL Hive project."
+    PORT = "3013"
     HEALTHCHECK_CMD = "wget --spider -q http://127.0.0.1:$${PORT}/_readiness"
   }
   tags = [
-    local_image_tag("webhooks"),
-    stable_image_tag("webhooks"),
-    image_tag("webhooks", COMMIT_SHA),
-    image_tag("webhooks", BRANCH_NAME)
+    local_image_tag("workflows"),
+    stable_image_tag("workflows"),
+    image_tag("workflows", COMMIT_SHA),
+    image_tag("workflows", BRANCH_NAME)
   ]
 }
 
@@ -361,7 +340,9 @@ target "app" {
 target "apollo-router" {
   inherits = ["router-base", get_target()]
   contexts = {
-    pkg = "${PWD}/packages/libraries/router"
+    router_pkg = "${PWD}/packages/libraries/router"
+    sdk_rs_pkg = "${PWD}/packages/libraries/sdk-rs"
+    usage_service = "${PWD}/packages/services/usage"
     config = "${PWD}/configs/cargo"
   }
   args = {
@@ -411,18 +392,17 @@ target "cli" {
 
 group "build" {
   targets = [
-    "emails",
     "schema",
     "policy",
     "storage",
     "tokens",
     "usage-ingestor",
     "usage",
-    "webhooks",
     "server",
     "commerce",
     "composition-federation-2",
     "app",
+    "workflows",
     "otel-collector"
   ]
 }
@@ -430,16 +410,15 @@ group "build" {
 group "integration-tests" {
   targets = [
     "commerce",
-    "emails",
     "schema",
     "policy",
     "storage",
     "tokens",
     "usage-ingestor",
     "usage",
-    "webhooks",
     "server",
     "composition-federation-2",
+    "workflows",
     "otel-collector"
   ]
 }

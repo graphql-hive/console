@@ -554,6 +554,10 @@ export default gql`
     """
     approvedBy: User
     """
+    CLI approval metadata when approved via CLI (mutually exclusive with approvedBy).
+    """
+    cliApprovalMetadata: CLIApprovalMetadata
+    """
     Date of the schema change approval.
     """
     approvedAt: DateTime!
@@ -561,6 +565,24 @@ export default gql`
     ID of the schema check in which this change was first approved.
     """
     schemaCheckId: ID!
+  }
+
+  """
+  Metadata for approvals made via CLI.
+  """
+  type CLIApprovalMetadata {
+    """
+    Raw author string from the CLI.
+    """
+    author: String!
+    """
+    Parsed display name from the author string.
+    """
+    displayName: String!
+    """
+    Parsed email from the author string (if available).
+    """
+    email: String
   }
 
   type SchemaError {
@@ -713,6 +735,11 @@ export default gql`
     Optional url if wanting to show subgraph url changes inside checks.
     """
     url: String
+
+    """
+    Optional. Attaches the check to a schema proposal.
+    """
+    schemaProposalId: ID
   }
 
   input SchemaDeleteInput {
@@ -1418,6 +1445,10 @@ export default gql`
     """
     approvedBy: User
     """
+    CLI approval metadata when approved via CLI (mutually exclusive with approvedBy).
+    """
+    cliApprovalMetadata: CLIApprovalMetadata
+    """
     Comment given when the schema check was approved.
     """
     approvalComment: String
@@ -1536,6 +1567,7 @@ export default gql`
     Give a reason why the schema check was approved.
     """
     comment: String
+    author: String
   }
 
   type ApproveFailedSchemaCheckResult {

@@ -1,19 +1,15 @@
 ---
-title: 'Hive Client Configuration Reference'
+title: 'Hive JavaScript Client Reference'
 ---
 
 import { Cards } from 'nextra/components'
 import { Tabs } from '@theguild/components'
 
-# Hive Client Configuration Reference
+# Hive JavaScript Client Reference
 
-**Hive Client** is a set of libraries and utilities for interacting with Hive, for both
-[Schema Registry](/docs/schema-registry) and
-[Usage Reporting](../schema-registry/usage-reporting.mdx).
-
-## Available Clients
-
-### JavaScript / NodeJS Clients
+The JavaScript SDK is a set of libraries and utilities for interacting with Hive, for
+[Usage Reporting](../schema-registry/usage-reporting.mdx), supergraph polling and persisted
+documents.
 
 Here's a list of official libraries for JavaScript and NodeJS:
 
@@ -42,19 +38,22 @@ page for configuring the client to your needs.
   <Cards.Card arrow title="Apollo Gateway" href="/docs/other-integrations/apollo-gateway" />
 </Cards>
 
-#### Configuration
+### Configuration
 
 Refer to the
 [`HivePluginOptions` interface](https://github.com/graphql-hive/platform/blob/main/packages/libraries/core/src/client/types.ts)
 for complete list of options and configurations you can pass to the Hive JavaScript Client of
 choice.
 
+### Usage reporting
+
 #### Client Information
 
-By default, the client information is retrieved by looking up the `x-graphql-client-name` and
-`x-graphql-client-version` headers in the HTTP request. For operations executed via the
-`GraphQL over WebSocket` protocol, the client information is retrieved by looking for the `client`
-key within the `connectionParams`.
+By default, the client information is retrieved by looking up the client information headers in the
+HTTP request. Those are `x-graphql-client-name` or `graphql-client-name` for the client name and
+`x-graphql-client-version` or `graphql-client-version` for the client version.For operations
+executed via the `GraphQL over WebSocket` protocol, the client information is retrieved by looking
+for the `client` key within the `connectionParams`.
 
 You can fully customize how to retrieve the client information by passing a custom `clientInfo`
 implementation.
@@ -66,8 +65,11 @@ information.
 useHive({
   usage: {
     clientInfo(context /* Your GraphQL execution context */) {
-      const name = context?.headers?.['x-graphql-client-name']
-      const version = context?.headers?.['x-graphql-client-version']
+      const name =
+        context?.headers?.['x-graphql-client-name'] || context?.headers?.['graphql-client-name']
+      const version =
+        context?.headers?.['x-graphql-client-version'] ||
+        context?.headers?.['graphql-client-version']
 
       if (name && version && typeof name === 'string' && typeof version === 'string') {
         return { name, version }
@@ -82,7 +84,7 @@ useHive({
 The context object is the context object as used within the GraphQL execution. Depending on your
 server framework and GraphQL protocol, the context object may contain different properties.
 
-We recommend to always try to safely decode the context.
+We recommend to safely decode the context in order to avoid runtime errors.
 
 #### Excluding Operations
 
@@ -186,7 +188,9 @@ const hive = createHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -224,7 +228,9 @@ useHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -262,7 +268,9 @@ useHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -300,7 +308,9 @@ useHive({
       },
       sampler(samplingContext) {
         // Use the context to decide if the operation should be sent to Hive.
-        if (samplingContext.contextValue.headers.get('x-graphql-client-name') === 'WebApp') {
+        const clientName = samplingContext.contextValue.request.headers.get('x-graphql-client-name')
+         || samplingContext.contextValue.request.headers.get('graphql-client-name');
+        if (clientName === 'WebApp') {
           return 1; // 100% of the operations from WebApp will be sent to Hive
         }
 
@@ -321,12 +331,74 @@ useHive({
 
 </Tabs>
 
-#### Persisted Documents
+#### Agent
+
+The agent collects and schedules usage reporting call to the Hive Console usage reporting service.
+The configuration can be customized.
+
+##### `maxRetries`
+
+- Type: `number`
+- Default: `3`
+
+Configure the maximum amount of retries per usage reporting batch before dropping the reporting
+attempts.
+
+##### `maxSize`
+
+- Type: `number`
+- Default: `25`
+
+The maximum batch size of usage reports before sending the batch.
+
+##### `sendInterval`
+
+- Type: `number`
+- Default: `10_000`
+
+The amount of time after which a pending usage reporting batch should be sent in case before the
+`maxSize` amount is reached.
+
+##### `fetch`
+
+- Type: [`Fetch`](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch)
+- Default: `fetch`
+
+Provide a custom WHATWG `fetch` implementation
+
+##### `circuitBreaker`
+
+- Type: `CircuitBreakerConfiguration`
+- Default:
+  ```js
+  {
+    /**
+     * Percentage after what the circuit breaker should kick in.
+     * Default: 50
+     */
+    errorThresholdPercentage: 50,
+    /**
+     * Count of requests before starting evaluating.
+     * Default: 10
+     */
+    volumeThreshold: 10,
+    /**
+     * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+     * Default: 30_000
+     */
+    resetTimeout: 30_000,
+  }
+  ```
+
+Configure the circuit breaker for temporarily suspending sending usage reports in case of network
+issues or outages to avoid exhausting the service resources with accumulating failing HTTP requests.
+
+### Persisted Documents
 
 Hive client supports resolving persisted documents. For getting started please refer to our
 [App Deployments (Persisted Documents) documentation](/docs/schema-registry/app-deployments).
 
-##### Basic Configuration
+#### Basic Configuration
 
 For enabling you need to provide the `experimental__persistedDocuments` as follows.
 
@@ -335,14 +407,17 @@ useHive({
   experimental__persistedDocuments: {
     cdn: {
       // replace <target_id> and <cdn_access_token> with your values
-      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      endpoint: [
+        'https://cdn.graphql-hive.com/<target_id>',
+        'https://cdn-mirror.graphql-hive.com/<target_id>'
+      ],
       accessToken: '<cdn_access_token>'
     }
   }
 })
 ```
 
-##### Allow arbitrary documents
+#### Allow arbitrary documents
 
 By default, Hive client plugins will only allow executing documents that are registered in the
 Schema Registry. If you want to allow arbitrary documents to be executed, you can set the
@@ -353,7 +428,10 @@ useHive({
   experimental__persistedDocuments: {
     cdn: {
       // replace <target_id> and <cdn_access_token> with your values
-      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      endpoint: [
+        'https://cdn.graphql-hive.com/<target_id>',
+        'https://cdn-mirror.graphql-hive.com/<target_id>'
+      ],
       accessToken: '<cdn_access_token>'
     },
     allowArbitraryDocuments: true
@@ -368,7 +446,10 @@ useHive({
   experimental__persistedDocuments: {
     cdn: {
       // replace <target_id> and <cdn_access_token> with your values
-      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      endpoint: [
+        'https://cdn.graphql-hive.com/<target_id>',
+        'https://cdn-mirror.graphql-hive.com/<target_id>'
+      ],
       accessToken: '<cdn_access_token>'
     },
     allowArbitraryDocuments: context =>
@@ -377,7 +458,7 @@ useHive({
 })
 ```
 
-##### Cache size
+#### Cache size
 
 By default, the client will cache up to 10.000 documents loaded from the CDN in memory to avoid
 redundant lookups and speedup reoccuring document executions. You can change this value by setting
@@ -388,7 +469,10 @@ useHive({
   experimental__persistedDocuments: {
     cdn: {
       // replace <target_id> and <cdn_access_token> with your values
-      endpoint: 'https://cdn.graphql-hive.com/<target_id>',
+      endpoint: [
+        'https://cdn.graphql-hive.com/<target_id>',
+        'https://cdn-mirror.graphql-hive.com/<target_id>'
+      ],
       accessToken: '<cdn_access_token>'
     },
     // Cache up to 50.000 documents
@@ -397,7 +481,62 @@ useHive({
 })
 ```
 
-#### Custom Integration
+##### Circuit Breaker
+
+- Type: `CircuitBreakerConfiguration`
+- Default:
+  ```js
+  {
+    /**
+     * Percentage after what the circuit breaker should kick in.
+     * Default: 50
+     */
+    errorThresholdPercentage: 50,
+    /**
+     * Count of requests before starting evaluating.
+     * Default: 10
+     */
+    volumeThreshold: 10,
+    /**
+     * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+     * Default: 30_000
+     */
+    resetTimeout: 30_000,
+  }
+  ```
+
+Configure the circuit breaker for temporarily suspending using a CDN endpoint in case of network
+issues or outages to avoid exhausting the service from with failing HTTP requests.
+
+### Logging
+
+You can customize the logging level or provide your own (JSON) logger implementation.
+
+#### `logger`
+
+- Type: [`Logger`](/docs/logger) or log level string
+- Default: `info`
+
+It is possible to provide the following options:
+
+- `'trace'`
+- `'debug'`
+- `'info'` default
+- `'warn'`
+- `'error'`
+
+```ts filename="Example: Set debug level based on environment variable"
+import { createHive } from '@graphql-hive/core'
+
+const client = createHive({
+  logger: process.env.DEBUG === '1' ? 'debug' : 'info'
+})
+```
+
+Alternatively, you can also provide your own [`Logger`](/docs/logger) (or any API-compatible
+implementation) to integrate Hive logs with your web server or logging solution.
+
+### Custom Integration
 
 If your GraphQL server is not listed above, you can implement a custom integration. Start by
 importing and creating a Hive instance using the `createHive` function.
@@ -428,31 +567,3 @@ export async function executeWithHive(args: ExecutionArgs): Promise<ExecutionRes
   return result
 }
 ```
-
-### Ruby Client
-
-The [`graphql-hive` gem](https://github.com/charlypoly/graphql-ruby-hive) allows
-[GraphQL-Ruby](https://graphql-ruby.org/) users to use Hive for usage reporting.
-
-Refer to the following guides for integration with your project:
-
-<Cards>
-  <Cards.Card arrow title="GraphQL-Ruby" href="/docs/other-integrations/graphql-ruby" />
-</Cards>
-
-### PHP Client
-
-The [Lighthouse Hive](https://github.com/stayallive/lighthouse-graphql-hive) is third-party
-integration can be used to measure and collect data against all your GraphQL operations.
-
-<Cards>
-  <Cards.Card arrow title="Lighthouse (Laravel)" href="/docs/other-integrations/lighthouse" />
-</Cards>
-
-### Rust Client
-
-Refer to the following guides for integration with your Rust project:
-
-<Cards>
-  <Cards.Card arrow title="Apollo Router" href="/docs/other-integrations/apollo-router" />
-</Cards>

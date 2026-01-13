@@ -9,7 +9,9 @@ import {
   isAsyncIterable,
   isHiveClient,
 } from '@graphql-hive/core';
+import { Logger } from '@graphql-hive/logger';
 import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
+import { version } from './version.js';
 
 export {
   atLeastOnceSampler,
@@ -33,6 +35,7 @@ export function createHive(clientOrOptions: HivePluginOptions) {
     ...clientOrOptions,
     agent: {
       name: 'hive-client-yoga',
+      version,
       ...clientOrOptions.agent,
     },
   });
@@ -47,9 +50,19 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
 
   let hive: HiveClient;
   let yoga: YogaServer<any, any>;
+  let onYogaInit: () => void;
+  let onYogaInitDefered: Promise<void> | null = new Promise<void>(
+    res =>
+      (onYogaInit = () => {
+        res();
+        onYogaInitDefered = null;
+      }),
+  );
+
   return {
     onYogaInit(payload) {
       yoga = payload.yoga;
+      onYogaInit();
     },
     onSchemaChange({ schema }) {
       hive.reportSchema({ schema });
@@ -177,13 +190,30 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
         ? clientOrOptions
         : createHive({
             ...clientOrOptions,
+            logger:
+              clientOrOptions.logger ??
+              new Logger({
+                writers: [
+                  {
+                    write(level, attrs, msg) {
+                      level = level === 'trace' ? 'debug' : level;
+                      if (!onYogaInitDefered) {
+                        yoga.logger[level](msg, attrs);
+
+                        return;
+                      }
+                      // Defer logs until yoga instance is initialized
+                      // Ideally, onPluginInit would provide us access to the logger instance
+                      // See https://github.com/graphql-hive/graphql-yoga/issues/4048#issuecomment-3576258603
+                      void onYogaInitDefered.then(() => {
+                        yoga?.logger[level](msg, attrs);
+                      });
+                    },
+                  },
+                ],
+              }),
             agent: clientOrOptions.agent
               ? {
-                  logger: {
-                    // Hive Plugin should respect the given Yoga logger
-                    error: (...args) => yoga.logger.error(...args),
-                    info: (...args) => yoga.logger.info(...args),
-                  },
                   // Hive Plugin should respect the given FetchAPI, note that this is not `yoga.fetch`
                   fetch: (...args) => yoga.fetchAPI.fetch(...args),
                   ...clientOrOptions.agent,
@@ -209,7 +239,9 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               return null;
             },
             async getPersistedOperation(key, _request, context) {
-              const document = await experimentalPersistedDocs.resolve(key);
+              const document = await experimentalPersistedDocs.resolve(key, {
+                waitUntil: context.waitUntil,
+              });
               // after we resolve the document we need to update the cache record to contain the resolved document
               if (document) {
                 const record = contextualCache.get(context);

@@ -31,11 +31,10 @@ import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 
 export function labelize(message: string) {
-  // Turn " into '
-  // Replace '...' with <Label>...</Label>
-  return reactStringReplace(message.replace(/"/g, "'"), /'([^']+)'/gim, (match, i) => {
-    return <Label key={i}>{match}</Label>;
-  });
+  // Replace '...' and "..." with <Label>...</Label>
+  return reactStringReplace(message.replace(/"/g, "'"), /'((?:[^'\\]|\\.)+?)'/g, (match, i) => (
+    <Label key={i}>{match.replace(/\\'/g, "'")}</Label>
+  ));
 }
 
 const severityLevelMapping = {
@@ -63,6 +62,10 @@ const ChangesBlock_SchemaChangeApprovalFragment = graphql(`
     approvedBy {
       id
       displayName
+    }
+    cliApprovalMetadata {
+      displayName
+      email
     }
     approvedAt
     schemaCheckId
@@ -95,7 +98,7 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
   }
 `);
 
-const ChangesBlock_SchemaChangeFragment = graphql(`
+export const ChangesBlock_SchemaChangeFragment = graphql(`
   fragment ChangesBlock_SchemaChangeFragment on SchemaChange {
     path
     message(withSafeBasedOnUsageNote: false)
@@ -389,7 +392,8 @@ function ApprovedByBadge(props: {
   approval: FragmentType<typeof ChangesBlock_SchemaChangeApprovalFragment>;
 }) {
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
-  const approvalName = approval.approvedBy?.displayName ?? '<unknown>';
+  const approvalName =
+    approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
     <span className="cursor-pointer text-green-500">
@@ -406,7 +410,8 @@ function SchemaChangeApproval(props: {
   schemaCheckId: string;
 }) {
   const approval = useFragment(ChangesBlock_SchemaChangeApprovalFragment, props.approval);
-  const approvalName = approval.approvedBy?.displayName ?? '<unknown>';
+  const approvalName =
+    approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
   const approvalDate = format(new Date(approval.approvedAt), 'do MMMM yyyy');
   const schemaCheckPath =
     '/' +
@@ -435,7 +440,7 @@ function SchemaChangeApproval(props: {
   );
 }
 
-const CompositionErrorsSection_SchemaErrorConnection = graphql(`
+export const CompositionErrorsSection_SchemaErrorConnection = graphql(`
   fragment CompositionErrorsSection_SchemaErrorConnection on SchemaErrorConnection {
     edges {
       node {

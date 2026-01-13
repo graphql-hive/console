@@ -1,5 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import { deployApp } from './services/app';
+import { deployAWSArtifactsLambdaFunction } from './services/aws-artifacts-lambda-function';
 import { deployCFBroker } from './services/cf-broker';
 import { deployCFCDN } from './services/cf-cdn';
 import { deployClickhouse } from './services/clickhouse';
@@ -8,7 +9,6 @@ import { deployCommerce } from './services/commerce';
 import { deployDatabaseCleanupJob } from './services/database-cleanup';
 import { deployDbMigrations } from './services/db-migrations';
 import { configureDocker } from './services/docker';
-import { deployEmails } from './services/emails';
 import { prepareEnvironment } from './services/environment';
 import { configureGithubApp } from './services/github';
 import { deployGraphQL } from './services/graphql';
@@ -28,7 +28,7 @@ import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
-import { deployWebhooks } from './services/webhooks';
+import { deployWorkflows, PostmarkSecret } from './services/workflows';
 import { configureZendesk } from './services/zendesk';
 import { optimizeAzureCluster } from './utils/azure-helpers';
 import { isDefined } from './utils/helpers';
@@ -67,6 +67,13 @@ const docker = configureDocker();
 const envName = pulumi.getStack();
 const heartbeatsConfig = new pulumi.Config('heartbeats');
 
+const emailConfig = new pulumi.Config('email');
+const postmarkSecret = new PostmarkSecret('postmark', {
+  token: emailConfig.requireSecret('token'),
+  from: emailConfig.require('from'),
+  messageStream: emailConfig.require('messageStream'),
+});
+
 const sentry = configureSentry();
 const environment = prepareEnvironment({
   release: imagesTag,
@@ -86,6 +93,11 @@ const cdn = deployCFCDN({
   s3,
   s3Mirror,
   sentry,
+  environment,
+});
+
+const lambdaFunction = deployAWSArtifactsLambdaFunction({
+  s3Mirror,
   environment,
 });
 
@@ -124,24 +136,15 @@ const tokens = deployTokens({
   observability,
 });
 
-const webhooks = deployWebhooks({
-  image: docker.factory.getImageId('webhooks', imagesTag),
+deployWorkflows({
+  image: docker.factory.getImageId('workflows', imagesTag),
+  docker,
   environment,
+  postgres,
+  postmarkSecret,
+  observability,
+  sentry,
   heartbeat: heartbeatsConfig.get('webhooks'),
-  broker,
-  docker,
-  redis,
-  sentry,
-  observability,
-});
-
-const emails = deployEmails({
-  image: docker.factory.getImageId('emails', imagesTag),
-  docker,
-  environment,
-  redis,
-  sentry,
-  observability,
 });
 
 const commerce = deployCommerce({
@@ -152,7 +155,6 @@ const commerce = deployCommerce({
   dbMigrations,
   sentry,
   observability,
-  emails,
   postgres,
 });
 
@@ -211,7 +213,6 @@ const graphql = deployGraphQL({
   image: docker.factory.getImageId('server', imagesTag),
   docker,
   tokens,
-  webhooks,
   schema,
   schemaPolicy,
   dbMigrations,
@@ -219,7 +220,6 @@ const graphql = deployGraphQL({
   usage,
   cdn,
   commerce,
-  emails,
   supertokens,
   s3,
   s3Mirror,
@@ -237,7 +237,8 @@ const hiveConfigSecret = new ServiceSecret('hive-config-secret', {
 
 // You can change this to `false` in cases when you don't want to publish commands.
 // For example, if the entire env is down or if you are having SSL issues.
-const RUN_PUBLISH_COMMANDS: boolean = true;
+// eslint-disable-next-line no-process-env
+const RUN_PUBLISH_COMMANDS: boolean = process.env.SKIP_PUBLISH_COMMANDS !== '1';
 
 const publishGraphQLSchemaCommand = RUN_PUBLISH_COMMANDS
   ? publishGraphQLSchema({
@@ -341,8 +342,8 @@ export const usageApiServiceId = usage.service.id;
 export const usageIngestorApiServiceId = usageIngestor.service.id;
 export const tokensApiServiceId = tokens.service.id;
 export const schemaApiServiceId = schema.service.id;
-export const webhooksApiServiceId = webhooks.service.id;
 
 export const appId = app.deployment.id;
 export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
+export const awsLambdaArtifactsFunctionUrl = lambdaFunction;

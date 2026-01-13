@@ -1,28 +1,68 @@
-import { fastify } from 'fastify';
+import { fastify, type FastifyBaseLogger } from 'fastify';
 import cors from '@fastify/cors';
+import { Logger } from '@graphql-hive/logger';
 import * as Sentry from '@sentry/node';
+import { useHTTPErrorHandler } from './http-error-handler';
 import { useRequestLogging } from './request-logs';
-import { useSentryErrorHandler } from './sentry';
 
 export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
+
+/* eslint-disable prefer-spread */
+
+// Using spread causes typescript errors
+// I prefer to disable eslint over having to use ts-ignore and ts not catching other errors.
+function bridgeHiveLoggerToFastifyLogger(logger: Logger): FastifyBaseLogger {
+  return {
+    debug(...args: Array<any>) {
+      logger.debug.apply(logger, args as any);
+    },
+    error(...args: Array<any>) {
+      logger.error.apply(logger, args as any);
+    },
+    fatal(...args: Array<any>) {
+      logger.error.apply(logger, args as any);
+    },
+    trace(...args: Array<any>) {
+      logger.trace.apply(logger, args as any);
+    },
+    info(...args: Array<any>) {
+      logger.info.apply(logger, args as any);
+    },
+    warn(...args: Array<any>) {
+      logger.warn.apply(logger, args as any);
+    },
+    child() {
+      return this;
+    },
+    level: logger.level === false ? 'silent' : logger.level,
+    silent() {},
+  };
+}
+
+/* eslint-enable prefer-spread */
 
 export async function createServer(options: {
   sentryErrorHandler: boolean;
   name: string;
-  log: {
-    requests: boolean;
-    level: string;
-  };
+  log:
+    | {
+        requests: boolean;
+        level: string;
+      }
+    | Logger;
   cors?: boolean;
   bodyLimit?: number;
 }) {
   const server = fastify({
     disableRequestLogging: true,
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
-    logger: {
-      level: options.log.level,
-      redact: ['request.options', 'options', 'request.headers.authorization'],
-    },
+    logger:
+      options.log instanceof Logger
+        ? bridgeHiveLoggerToFastifyLogger(options.log)
+        : {
+            level: options.log.level,
+            redact: ['request.options', 'options', 'request.headers.authorization'],
+          },
     maxParamLength: 5000,
     requestIdHeader: 'x-request-id',
     trustProxy: true,
@@ -42,11 +82,9 @@ export async function createServer(options: {
       server.log.error(err as any, 'Uncaught Exception thrown');
     });
 
-  if (options.sentryErrorHandler) {
-    await useSentryErrorHandler(server);
-  }
+  await useHTTPErrorHandler(server, options.sentryErrorHandler);
 
-  if (options.log.requests) {
+  if (options.log instanceof Logger === false && options.log.requests) {
     await useRequestLogging(server);
   }
 

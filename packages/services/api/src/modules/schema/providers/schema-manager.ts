@@ -21,6 +21,7 @@ import {
   Project,
   ProjectType,
   Target,
+  User,
 } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
@@ -321,9 +322,21 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersion(selector: TargetSelector & { versionId: string }) {
+  async getSchemaVersion(
+    selector: TargetSelector & { versionId: string },
+  ): Promise<SchemaVersion | null> {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
-    const result = await this.storage.getVersion(selector);
+
+    if (isUUID(selector.versionId) === false) {
+      this.logger.debug('Invalid UUID provided. (versionId=%s)', selector.versionId);
+      return null;
+    }
+
+    const result = await this.storage.getMaybeVersion(selector);
+
+    if (!result) {
+      return null;
+    }
 
     return {
       projectId: selector.projectId,
@@ -356,6 +369,19 @@ export class SchemaManager {
     };
   }
 
+  async getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(args: {
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    proposalId: string;
+    first: number | null;
+    cursor: string | null;
+    latest?: boolean;
+  }) {
+    const connection = await this.storage.getPaginatedSchemaChecksForSchemaProposal(args);
+    return connection;
+  }
+
   async getSchemaLog(selector: { commit: string } & TargetSelector) {
     this.logger.debug('Fetching schema log (selector=%o)', selector);
     return this.storage.getSchemaLog({
@@ -386,7 +412,7 @@ export class SchemaManager {
       base_schema: string | null;
       metadata: string | null;
       projectType: ProjectType;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       coordinatesDiff: SchemaCoordinatesDiffResult | null;
       previousSchemaVersion: string | null;
@@ -860,15 +886,22 @@ export class SchemaManager {
     organizationId: string;
     schemaCheckId: string;
     comment: string | null | undefined;
+    author?: string | null;
   }) {
     this.logger.debug('Manually approve failed schema check (args=%o)', args);
 
-    let [schemaCheck, viewer, target] = await Promise.all([
+    let viewer: User | null = null;
+    try {
+      viewer = await this.session.getViewer();
+    } catch (error) {
+      this.logger.debug('No viewer available (likely using CLI) (args=%o)', args);
+    }
+
+    let [schemaCheck, target] = await Promise.all([
       this.storage.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
       }),
-      this.session.getViewer(),
       this.storage.getTarget({
         organizationId: args.organizationId,
         projectId: args.projectId,
@@ -950,8 +983,9 @@ export class SchemaManager {
       targetId: target.id,
       contracts: this.contracts,
       schemaCheckId: args.schemaCheckId,
-      userId: viewer.id,
+      userId: viewer?.id ?? null,
       comment: args.comment,
+      author: args.author ?? null,
     });
 
     if (!schemaCheck) {

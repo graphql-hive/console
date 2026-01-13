@@ -17,8 +17,10 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
+    additionalScopes: [String!]!
     oidcUserAccessOnly: Boolean!
     defaultMemberRole: MemberRole!
+    defaultResourceAssignment: ResourceAssignment
   }
 
   extend type Mutation {
@@ -29,6 +31,30 @@ export default gql`
     updateOIDCDefaultMemberRole(
       input: UpdateOIDCDefaultMemberRoleInput!
     ): UpdateOIDCDefaultMemberRoleResult!
+    updateOIDCDefaultResourceAssignment(
+      input: UpdateOIDCDefaultResourceAssignmentInput!
+    ): UpdateOIDCDefaultResourceAssignmentResult!
+  }
+
+  """
+  @oneOf
+  """
+  type UpdateOIDCDefaultResourceAssignmentResult {
+    ok: UpdateOIDCDefaultResourceAssignmentOk
+    error: UpdateOIDCDefaultResourceAssignmentError
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentOk {
+    updatedOIDCIntegration: OIDCIntegration!
+  }
+
+  type UpdateOIDCDefaultResourceAssignmentError implements Error {
+    message: String!
+  }
+
+  input UpdateOIDCDefaultResourceAssignmentInput {
+    oidcIntegrationId: ID!
+    resources: ResourceAssignmentInput!
   }
 
   extend type Subscription {
@@ -55,6 +81,7 @@ export default gql`
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
+    additionalScopes: [String!]!
   }
 
   type CreateOIDCIntegrationResult {
@@ -73,6 +100,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: String
   }
 
   type CreateOIDCIntegrationError implements Error {
@@ -87,6 +115,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: [String!]
   }
 
   type UpdateOIDCIntegrationResult {
@@ -104,6 +133,7 @@ export default gql`
     tokenEndpoint: String
     userinfoEndpoint: String
     authorizationEndpoint: String
+    additionalScopes: String
   }
 
   type UpdateOIDCIntegrationError implements Error {

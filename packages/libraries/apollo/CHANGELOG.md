@@ -1,5 +1,382 @@
 # @graphql-hive/apollo
 
+## 0.47.0
+
+### Minor Changes
+
+- [#7462](https://github.com/graphql-hive/console/pull/7462)
+  [`60133a4`](https://github.com/graphql-hive/console/commit/60133a41a684a0c1b1a45d47cf3cd30cc804c19d)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add Layer 2 (L2) cache support for
+  persisted documents.
+
+  This feature adds a second layer of caching between the in-memory cache (L1) and the CDN for
+  persisted documents. This is particularly useful for:
+
+  - **Serverless environments**: Where in-memory cache is lost between invocations
+  - **Multi-instance deployments**: To share cached documents across server instances
+  - **Reducing CDN calls**: By caching documents in Redis or similar external caches
+
+  The lookup flow is: L1 (memory) -> L2 (Redis/external) -> CDN
+
+  **Example with GraphQL Yoga:**
+
+  ```typescript
+  import { createYoga } from 'graphql-yoga'
+  import { createClient } from 'redis'
+  import { useHive } from '@graphql-hive/yoga'
+
+  const redis = createClient({ url: 'redis://localhost:6379' })
+  await redis.connect()
+
+  const yoga = createYoga({
+    plugins: [
+      useHive({
+        experimental__persistedDocuments: {
+          cdn: {
+            endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+            accessToken: '<cdn_access_token>'
+          },
+          layer2Cache: {
+            cache: {
+              get: key => redis.get(`hive:pd:${key}`),
+              set: (key, value, opts) =>
+                redis.set(`hive:pd:${key}`, value, opts?.ttl ? { EX: opts.ttl } : {})
+            },
+            ttlSeconds: 3600, // 1 hour for found documents
+            notFoundTtlSeconds: 60 // 1 minute for not-found (negative caching)
+          }
+        }
+      })
+    ]
+  })
+  ```
+
+  **Features:**
+
+  - Configurable TTL for found documents (`ttlSeconds`)
+  - Configurable TTL for negative caching (`notFoundTtlSeconds`)
+  - Graceful fallback to CDN if L2 cache fails
+  - Support for `waitUntil` in serverless environments
+  - Apollo Server integration auto-uses context cache if available
+
+### Patch Changes
+
+- Updated dependencies
+  [[`60133a4`](https://github.com/graphql-hive/console/commit/60133a41a684a0c1b1a45d47cf3cd30cc804c19d)]:
+  - @graphql-hive/core@0.20.0
+
+## 0.46.0
+
+### Minor Changes
+
+- [#7422](https://github.com/graphql-hive/console/pull/7422)
+  [`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf)
+  Thanks [@santino](https://github.com/santino)! - Introduce validation for Persisted Document ID
+
+### Patch Changes
+
+- Updated dependencies
+  [[`711f4e6`](https://github.com/graphql-hive/console/commit/711f4e6a25ea7806d871554f2949a9ff300a0dbf),
+  [`4f9f988`](https://github.com/graphql-hive/console/commit/4f9f988d62c54f6e7a6820eba1fa9913146dcf9e)]:
+  - @graphql-hive/core@0.19.0
+
+## 0.45.0
+
+### Minor Changes
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add support for providing a logger object via
+  `HivePluginOptions`.
+
+  It is possible to provide the following options:
+
+  - **'trace'**
+  - **'debug'**
+  - **'info'** default
+  - **'warn'**
+  - **'error'**
+
+  ```ts
+  import { createHive } from '@graphql-hive/core'
+
+  const client = createHive({
+    logger: 'info'
+  })
+  ```
+
+  In addition to that, it is also possible to provide a Hive Logger instance, that allows more
+  control over how you want to log and forward logs.
+
+  ```ts
+  import { createHive } from '@graphql-hive/core'
+  import { Logger } from '@graphql-hive/logger'
+
+  const client = createHive({
+    logger: new Logger()
+  })
+  ```
+
+  Head to our [Hive Logger documentation](https://the-guild.dev/graphql/hive/docs/logger) to learn
+  more.
+
+  ***
+
+  **The `HivePluginOptions.debug` option is now deprecated.** Instead, please use the `logger`
+  option to control logging levels.
+
+  ```diff
+   import { createHive } from '@graphql-hive/core'
+
+   const client = createHive({
+  -  debug: process.env.DEBUG === "1",
+  +  logger: process.env.DEBUG === "1" ? "debug" : "info",
+   })
+  ```
+
+  **Note**: If the `logger` property is provided, the `debug` option is ignored.
+
+  ***
+
+  **The `HivePluginOptions.agent.logger` option is now deprecated.** Instead, please provide
+  `HivePluginOptions.logger`.
+
+  ```diff
+   import { createHive } from '@graphql-hive/core'
+
+   const logger = new Logger()
+
+   const client = createHive({
+     agent: {
+  -    logger,
+     },
+  +  logger,
+   })
+  ```
+
+  **Note**: If both options are provided, the `agent` option is ignored.
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Persisted Documents Improvements**
+
+  Persisted documents now support specifying a mirror endpoint that will be used in case the main
+  CDN is unreachable. Provide an array of endpoints to the client configuration.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    experimental__persistedDocuments: {
+      cdn: {
+        endpoint: [
+          'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+          'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+        ],
+        accessToken: ''
+      }
+    }
+  })
+  ```
+
+  In addition to that, the underlying logic for looking up documents now uses a circuit breaker. If
+  a single endpoint is unreachable, further lookups on that endpoint are skipped.
+
+  The behaviour of the circuit breaker can be customized via the `circuitBreaker` configuration.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    experimental__persistedDocuments: {
+      cdn: {
+        endpoint: [
+          'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+          'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+        ],
+        accessToken: ''
+      },
+      circuitBreaker: {
+        // open circuit if 50 percent of request result in an error
+        errorThresholdPercentage: 50,
+        // start monitoring the circuit after 10 requests
+        volumeThreshold: 10,
+        // time before the backend is tried again after the circuit is open
+        resetTimeout: 30_000
+      }
+    }
+  })
+  ```
+
+- [#7346](https://github.com/graphql-hive/console/pull/7346)
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **Supergraph Manager Improvements**
+
+  Persisted documents now support specifying a mirror endpoint that will be used in case the main
+  CDN is unreachable. Provide an array of endpoints to the supergraph manager configuration.
+
+  ```ts
+  import { createSupergraphManager } from '@graphql-hive/apollo'
+
+  const supergraphManager = createSupergraphManager({
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+    ],
+    key: ''
+  })
+  ```
+
+  In addition to that, the underlying logic for looking up documents now uses a circuit breaker. If
+  a single endpoint is unreachable, further lookups on that endpoint are skipped.
+
+  ```ts
+  import { createSupergraphManager } from '@graphql-hive/apollo'
+
+  const supergraphManager = createSupergraphManager({
+    endpoint: [
+      'https://cdn.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688',
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/9fb37bc4-e520-4019-843a-0c8698c25688'
+    ],
+    key: '',
+    circuitBreaker: {
+      // open circuit if 50 percent of request result in an error
+      errorThresholdPercentage: 50,
+      // start monitoring the circuit after 10 requests
+      volumeThreshold: 10,
+      // time before the backend is tried again after the circuit is open
+      resetTimeout: 30_000
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d),
+  [`f266368`](https://github.com/graphql-hive/console/commit/f26636891b8b7e00b9a7823e9d584cedd9dd0f2d)]:
+  - @graphql-hive/core@0.18.0
+
+## 0.42.1
+
+### Patch Changes
+
+- Updated dependencies
+  [[`64c8368`](https://github.com/graphql-hive/console/commit/64c8368c4b94b4ad2178d341442f0a0ffb4013f1)]:
+  - @graphql-hive/core@0.15.1
+
+## 0.42.0
+
+### Minor Changes
+
+- [#7280](https://github.com/graphql-hive/console/pull/7280)
+  [`2cc443c`](https://github.com/graphql-hive/console/commit/2cc443c160e11313c905424b63a7c1362121d8d8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support circuit breaking for usage reporting.
+
+  Circuit breaking is a fault-tolerance pattern that prevents a system from repeatedly calling a
+  failing service. When errors or timeouts exceed a set threshold, the circuit “opens,” blocking
+  further requests until the service recovers.
+
+  This ensures that during a network issue or outage, the service using the Hive SDK remains healthy
+  and is not overwhelmed by failed usage reports or repeated retries.
+
+  ```ts
+  import { createClient } from '@graphql-hive/core'
+
+  const client = createClient({
+    agent: {
+      circuitBreaker: {
+        /**
+         * Count of requests before starting evaluating.
+         * Default: 5
+         */
+        volumeThreshold: 5,
+        /**
+         * Percentage of requests failing before the circuit breaker kicks in.
+         * Default: 50
+         */
+        errorThresholdPercentage: 1,
+        /**
+         * After what time the circuit breaker is attempting to retry sending requests in milliseconds
+         * Default: 30_000
+         */
+        resetTimeout: 10_000
+      }
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`2cc443c`](https://github.com/graphql-hive/console/commit/2cc443c160e11313c905424b63a7c1362121d8d8)]:
+  - @graphql-hive/core@0.15.0
+
+## 0.41.0
+
+### Minor Changes
+
+- [#7264](https://github.com/graphql-hive/console/pull/7264)
+  [`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce debug log level. HTTP retry log pollute
+  the error log. The retries are now logged to the debug level. In order to see debug logs set the
+  `debug` option to true.
+
+  ```ts
+  const hive = createHive({
+    debug: true
+  })
+  ```
+
+  If you are using a custom logger, make sure to provide a `debug` logging method implementation.
+
+  ```ts
+  const hive = createHive({
+    debug: true,
+    agent: {
+      logger: {
+        info() {},
+        error() {},
+        debug() {}
+      }
+    }
+  })
+  ```
+
+### Patch Changes
+
+- Updated dependencies
+  [[`582bc0e`](https://github.com/graphql-hive/console/commit/582bc0e2a4a95d0023d1cdbe627bc6147f82af8e)]:
+  - @graphql-hive/core@0.14.0
+
+## 0.40.2
+
+### Patch Changes
+
+- [#7253](https://github.com/graphql-hive/console/pull/7253)
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)
+  Thanks [@ardatan](https://github.com/ardatan)! - Send correct version of the client packages,
+  previously they were sending the version of `@graphql-hive/core` package.
+
+- Updated dependencies
+  [[`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee),
+  [`43920cd`](https://github.com/graphql-hive/console/commit/43920cdb3d56a54c66c61bbc6ca1cc6af4a7b5ee)]:
+  - @graphql-hive/core@0.13.2
+
+## 0.40.1
+
+### Patch Changes
+
+- [#7248](https://github.com/graphql-hive/console/pull/7248)
+  [`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support project and personal access tokens (`hvp1/`
+  and `hvu1/`).
+
+- Updated dependencies
+  [[`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)]:
+  - @graphql-hive/core@0.13.1
+
 ## 0.40.0
 
 ### Minor Changes

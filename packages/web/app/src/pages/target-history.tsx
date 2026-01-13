@@ -49,7 +49,6 @@ const HistoryPage_VersionsPageQuery = graphql(`
                 deletedService
               }
             }
-            baseSchema
             githubMetadata {
               repository
               commit

@@ -4,14 +4,14 @@ import { Anchor, cn, Heading } from '@theguild/components';
 import { ArrowIcon } from '../../../../components/arrow-icon';
 import { useFrontmatter } from '../../../../components/use-frontmatter';
 import { ProductUpdateAuthors } from '../../../product-updates/(posts)/product-update-header';
-import type { BlogFrontmatter } from '../../blog-types';
+import { BlogFrontmatter } from '../../blog-types';
 import { BlogTagChip } from '../blog-tag-chip';
 import { BlogPostPicture } from './blog-post-picture';
 
 export function BlogPostHeader({ className }: { className?: string }) {
   const {
     frontmatter: { image, tags, authors, title, date },
-  } = useFrontmatter<BlogFrontmatter>();
+  } = useFrontmatter(BlogFrontmatter);
 
   const tag = tags[0];
 

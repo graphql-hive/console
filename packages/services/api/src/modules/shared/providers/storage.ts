@@ -40,6 +40,7 @@ import type {
   ProjectAccessScope,
   TargetAccessScope,
 } from '../../auth/providers/scopes';
+import type { ResourceAssignmentGroup } from '../../organization/lib/resource-assignment-model';
 import type { Contracts } from '../../schema/providers/contracts';
 import type { SchemaCoordinatesDiffResult } from '../../schema/providers/inspector';
 
@@ -139,7 +140,11 @@ export interface Storage {
   ): Promise<Organization | never>;
 
   createOrganizationInvitation(
-    _: OrganizationSelector & { email: string; roleId: string },
+    _: OrganizationSelector & {
+      email: string;
+      roleId: string;
+      resourceAssignments: ResourceAssignmentGroup | null;
+    },
   ): Promise<OrganizationInvitation | never>;
 
   deleteOrganizationInvitationByEmail(
@@ -400,12 +405,37 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
-  getVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | never>;
+  // @todo consider moving to proposals provider
+  getPaginatedSchemaChecksForSchemaProposal<
+    TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
+  >(_: {
+    proposalId: string;
+    first: number | null;
+    cursor: null | string;
+    transformNode?: (check: SchemaCheck) => TransformedSchemaCheck;
+    latest?: boolean;
+  }): Promise<
+    Readonly<{
+      edges: ReadonlyArray<{
+        // @todo consider conditionally excluding this from the query for performance
+        // Omit<TransformedSchemaCheck, 'supergraphSDL' | 'compositeSchemaSDL' | 'schemaSDL'>;
+        node: TransformedSchemaCheck;
+        cursor: string;
+      }>;
+      pageInfo: Readonly<{
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+        startCursor: string;
+        endCursor: string;
+      }>;
+    }>
+  >;
+  getMaybeVersion(_: TargetSelector & { versionId: string }): Promise<SchemaVersion | null>;
   deleteSchema(
     _: {
       serviceName: string;
       composable: boolean;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
@@ -446,7 +476,7 @@ export interface Storage {
       commit: string;
       logIds: string[];
       base_schema: string | null;
-      actionFn(): Promise<void>;
+      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       diffSchemaVersionId: null | string;
@@ -600,6 +630,7 @@ export interface Storage {
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
+    additionalScopes: readonly string[];
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
@@ -609,6 +640,7 @@ export interface Storage {
     tokenEndpoint: string | null;
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
+    additionalScopes: readonly string[] | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
@@ -621,6 +653,11 @@ export interface Storage {
   updateOIDCDefaultMemberRole(_: {
     oidcIntegrationId: string;
     roleId: string;
+  }): Promise<OIDCIntegration>;
+
+  updateOIDCDefaultAssignedResources(_: {
+    oidcIntegrationId: string;
+    assignedResources: ResourceAssignmentGroup;
   }): Promise<OIDCIntegration>;
 
   createCDNAccessToken(_: {
@@ -738,7 +775,9 @@ export interface Storage {
   /**
    * Persist a schema check record in the database.
    */
-  createSchemaCheck(_: SchemaCheckInput & { expiresAt: Date | null }): Promise<SchemaCheck>;
+  createSchemaCheck(
+    _: SchemaCheckInput & { expiresAt: Date | null; schemaProposalId?: string | null },
+  ): Promise<SchemaCheck>;
   /**
    * Delete the expired schema checks from the database.
    */
@@ -789,8 +828,9 @@ export interface Storage {
     /** We inject this here as a dirty way to avoid chicken egg issues :) */
     contracts: Contracts;
     schemaCheckId: string;
-    userId: string;
+    userId: string | null;
     comment: string | null | undefined;
+    author: string | null | undefined;
   }): Promise<SchemaCheck | null>;
 
   /**

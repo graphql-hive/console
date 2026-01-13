@@ -50,15 +50,16 @@ override_subgraph_urls:
 
 #### Dynamic URL with `expression`
 
-When an `object` is provided, it must contain a VRL `expression` that returns a URL string. The
-expression is evaluated for each request, allowing for request-time routing decisions.
+When an `object` is provided, it must contain an `expression` that returns a URL string. The
+[expression](./expressions) is evaluated for each request, allowing for request-time routing
+decisions.
 
-- `expression`: **(string, required)** A VRL expression that computes the new URL.
+- `expression`: **(string, required)** An [expression](./expressions) that computes the new URL.
 
 Within the `expression`, you have access to two key variables:
 
 - `.request`: The incoming HTTP request object, including its headers.
-- `.original_url`: The original subgraph URL from the supergraph schema, which should be used as a
+- `.default`: The original subgraph URL from the supergraph schema, which should be used as a
   fallback.
 
 ```yaml
@@ -69,6 +70,6 @@ override_subgraph_urls:
         if .request.headers."x-region" == "eu" {
           "https://reviews.eu.api/graphql"
         } else {
-          .original_url
+          .default
         }
 ```

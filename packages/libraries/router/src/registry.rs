@@ -1,24 +1,23 @@
 use crate::consts::PLUGIN_VERSION;
 use crate::registry_logger::Logger;
 use anyhow::{anyhow, Result};
+use hive_console_sdk::supergraph_fetcher::sync::SupergraphFetcherSyncState;
+use hive_console_sdk::supergraph_fetcher::SupergraphFetcher;
 use sha2::Digest;
 use sha2::Sha256;
 use std::env;
 use std::io::Write;
 use std::thread;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HiveRegistry {
-    endpoint: String,
-    key: String,
     file_name: String,
-    etag: Option<String>,
-    accept_invalid_certs: bool,
+    fetcher: SupergraphFetcher<SupergraphFetcherSyncState>,
     pub logger: Logger,
 }
 
 pub struct HiveRegistryConfig {
-    endpoint: Option<String>,
+    endpoints: Vec<String>,
     key: Option<String>,
     poll_interval: Option<u64>,
     accept_invalid_certs: Option<bool>,
@@ -29,7 +28,7 @@ impl HiveRegistry {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(user_config: Option<HiveRegistryConfig>) -> Result<()> {
         let mut config = HiveRegistryConfig {
-            endpoint: None,
+            endpoints: vec![],
             key: None,
             poll_interval: None,
             accept_invalid_certs: Some(true),
@@ -38,7 +37,7 @@ impl HiveRegistry {
 
         // Pass values from user's config
         if let Some(user_config) = user_config {
-            config.endpoint = user_config.endpoint;
+            config.endpoints = user_config.endpoints;
             config.key = user_config.key;
             config.poll_interval = user_config.poll_interval;
             config.accept_invalid_certs = user_config.accept_invalid_certs;
@@ -47,9 +46,9 @@ impl HiveRegistry {
 
         // Pass values from environment variables if they are not set in the user's config
 
-        if config.endpoint.is_none() {
+        if config.endpoints.is_empty() {
             if let Ok(endpoint) = env::var("HIVE_CDN_ENDPOINT") {
-                config.endpoint = Some(endpoint);
+                config.endpoints.push(endpoint);
             }
         }
 
@@ -86,7 +85,7 @@ impl HiveRegistry {
         }
 
         // Resolve values
-        let mut endpoint = config.endpoint.unwrap_or_default();
+        let endpoint = config.endpoints;
         let key = config.key.unwrap_or_default();
         let poll_interval: u64 = config.poll_interval.unwrap_or(10);
         let accept_invalid_certs = config.accept_invalid_certs.unwrap_or(false);
@@ -106,14 +105,6 @@ impl HiveRegistry {
             return Err(anyhow!("environment variable HIVE_CDN_ENDPOINT not found",));
         }
 
-        if !endpoint.ends_with("/supergraph") {
-            if endpoint.ends_with("/") {
-                endpoint.push_str("supergraph")
-            } else {
-                endpoint.push_str("/supergraph")
-            }
-        }
-
         // Throw if key is empty
         if key.is_empty() {
             return Err(anyhow!("environment variable HIVE_CDN_KEY not found"));
@@ -128,15 +119,27 @@ impl HiveRegistry {
                 .to_string_lossy()
                 .to_string(),
         );
-        env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
-        env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
+        unsafe {
+            env::set_var("APOLLO_ROUTER_SUPERGRAPH_PATH", file_name.clone());
+            env::set_var("APOLLO_ROUTER_HOT_RELOAD", "true");
+        }
 
-        let mut registry = HiveRegistry {
-            endpoint,
-            key,
+        let mut fetcher = SupergraphFetcher::builder()
+            .key(key)
+            .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION))
+            .accept_invalid_certs(accept_invalid_certs);
+
+        for ep in endpoint {
+            fetcher = fetcher.add_endpoint(ep);
+        }
+
+        let fetcher = fetcher
+            .build_sync()
+            .map_err(|e| anyhow!("Failed to create SupergraphFetcher: {}", e))?;
+
+        let registry = HiveRegistry {
+            fetcher,
             file_name,
-            etag: None,
-            accept_invalid_certs,
             logger,
         };
 
@@ -160,52 +163,12 @@ impl HiveRegistry {
         Ok(())
     }
 
-    fn fetch_supergraph(&mut self, etag: Option<String>) -> Result<Option<String>, String> {
-        let client = reqwest::blocking::Client::builder()
-            .danger_accept_invalid_certs(self.accept_invalid_certs)
-            .build()
-            .map_err(|err| err.to_string())?;
-        let mut headers = reqwest::header::HeaderMap::new();
-
-        headers.insert(
-            reqwest::header::USER_AGENT,
-            reqwest::header::HeaderValue::from_str(
-                format!("hive-apollo-router/{}", PLUGIN_VERSION).as_str(),
-            )
-            .unwrap(),
-        );
-        headers.insert("X-Hive-CDN-Key", self.key.parse().unwrap());
-
-        if let Some(checksum) = etag {
-            headers.insert("If-None-Match", checksum.parse().unwrap());
-        }
-
-        let resp = client
-            .get(self.endpoint.as_str())
-            .headers(headers)
-            .send()
-            .map_err(|e| e.to_string())?;
-
-        match resp.headers().get("etag") {
-            Some(checksum) => {
-                let etag = checksum.to_str().map_err(|e| e.to_string())?;
-                self.update_latest_etag(Some(etag.to_string()));
-            }
-            None => {
-                self.update_latest_etag(None);
-            }
-        }
-
-        if resp.status().as_u16() == 304 {
-            return Ok(None);
-        }
-
-        Ok(Some(resp.text().map_err(|e| e.to_string())?))
-    }
-
-    fn initial_supergraph(&mut self) -> Result<(), String> {
+    fn initial_supergraph(&self) -> Result<(), String> {
         let mut file = std::fs::File::create(self.file_name.clone()).map_err(|e| e.to_string())?;
-        let resp = self.fetch_supergraph(None)?;
+        let resp = self
+            .fetcher
+            .fetch_supergraph()
+            .map_err(|err| err.to_string())?;
 
         match resp {
             Some(supergraph) => {
@@ -220,12 +183,8 @@ impl HiveRegistry {
         Ok(())
     }
 
-    fn update_latest_etag(&mut self, etag: Option<String>) {
-        self.etag = etag;
-    }
-
-    fn poll(&mut self) {
-        match self.fetch_supergraph(self.etag.clone()) {
+    fn poll(&self) {
+        match self.fetcher.fetch_supergraph() {
             Ok(new_supergraph) => {
                 if let Some(new_supergraph) = new_supergraph {
                     let current_file = std::fs::read_to_string(self.file_name.clone())

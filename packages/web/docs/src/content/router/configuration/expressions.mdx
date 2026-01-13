@@ -1,0 +1,199 @@
+---
+title: Expressions
+---
+
+import { Callout } from '@theguild/components'
+
+# Expressions
+
+The Hive Router uses **expressions** written in
+[VRL (Vector Remap Language)](https://vector.dev/docs/reference/vrl/) to make dynamic decisions at
+runtime. VRL is a small, declarative language originally created by DataDog for the
+[Vector observability pipeline](https://vector.dev/) and is well‑suited for parsing and transforming
+structured data. In Hive Router, expressions let you:
+
+- [Route requests to different subgraph URLs](../guides/dynamic-subgraph-routing) based on HTTP
+  headers, geographic region or other request metadata.
+- [Insert, modify or remove HTTP headers](../guides/header-manipulation) before forwarding a request
+  to a subgraph or before sending a response back to the client.
+
+Although the concept of "expressions" appears in several parts of the configuration, the syntax and
+available APIs are consistent. This page explains **what variables and functions are available, when
+different variables can be used**, and links you to the official VRL documentation for the full
+language reference.
+
+## Syntax overview
+
+Every expression evaluates to a value, and you can build more complex logic using functions and
+control‑flow. For example:
+
+```
+if .request.headers."x-feature-toggle" == "beta" {
+  "https://beta.example.com/graphql"
+} else {
+  .default
+}
+```
+
+<Callout type="info">
+  You can break long expressions across multiple lines using the `|` indentation in YAML.
+</Callout>
+
+VRL supports [variables](#available-variables) (prefixed with a dot), built‑in
+[functions](#available-functions), simple arithmetic and comparisons, and control structures such as
+`if … else`.
+
+Multi‑line expressions are especially useful for readability and complex routing logic.
+
+## Available values
+
+Within an expression you interact with a few top‑level values. The most important ones are:
+
+### `.request`
+
+Represents the incoming HTTP request. It exposes nested fields such as:
+
+- `.request.headers` - a case‑insensitive map of request headers. For example,
+  `.request.headers.authorization` gives you the value of the `Authorization` header.
+- `.request.method` - the HTTP method as a lowercase string (e.g. `"post"`).
+- `.request.url.host` - the request host (e.g. `api.example.com`).
+- `.request.url.port` - the request port (e.g. `443`).
+- `.request.url.path` - the request path (e.g. `/graphql`).
+- `.request.operation.name` - the name of the GraphQL operation being executed, if provided.
+- `.request.operation.type` - the type of GraphQL operation being executed (e.g. `"query"`,
+  `"mutation"`, or `"subscription"`).
+- `.request.operation.query` - the full GraphQL query string being executed.
+
+These values allow you to branch logic based on who is calling your API and what data they send.
+
+### `.response`
+
+Available only in **response** header rules. It represents the HTTP response from a subgraph call.
+You can inspect `.response.url` or `.response.headers` and then set or override additional headers.
+For example, you could conditionally add a cache header based on the subgraph’s status code. This
+variable is not present when computing request headers or dynamic URLs, because the response does
+not yet exist.
+
+- `.response.headers` - a case‑insensitive map of response headers.
+
+### `.subgraph`
+
+Available in both **request** and **response** header rules. It provides metadata about the subgraph
+handling the current request, including:
+
+- `.subgraph.name` - the name of the subgraph as defined in your supergraph schema.
+
+### `.timestamp`
+
+While not a full object, the special variable `.timestamp` yields the current UNIX timestamp. The
+header manipulation guide demonstrates using `.timestamp` to add a `X‑Request‑Time` header. This is
+useful for debugging and tracing requests.
+
+### `.default`
+
+This variable is only available in [dynamic routing expressions](./override_subgraph_urls). It holds
+the default URL for the current subgraph, as declared in your supergraph schema. Because the
+expression must return a URL, you should always provide a fallback using `.default` so that requests
+are routed somewhere when no condition matches. The configuration reference emphasises this by
+showing a pattern where the expression returns `.default` in the `else` branch.
+
+### `.default`
+
+This variable is available in [dynamic routing expressions](./override_subgraph_urls) and
+[traffic shaping expressions](./traffic_shaping). It holds the default value for the context in
+which it is used:
+
+- In **dynamic routing**, it holds the default URL for the current subgraph, as declared in your
+  supergraph schema.
+- In **traffic shaping**, it holds the default timeout value set at the global level (available for
+  subgraph overrides).
+
+When writing expressions with conditional logic (like `if` statements), you must ensure a value is
+returned for all paths. You may return any valid value, but `.default` is commonly used as a
+fallback. This allows you to override the configuration for specific conditions while maintaining
+the originally assigned value for all other cases.
+
+## Available functions
+
+The Hive Router exposes the full set of
+[VRL built‑in functions](https://vector.dev/docs/reference/vrl/functions/). Additionally, the router
+provides custom functions alongside the standard VRL functions:
+
+### `env()`
+
+Reads the value of an environment variable. This function allows you to dynamically configure
+routing rules, headers, and other behavior based on environment variables set on your router
+instance.
+
+**Parameters:**
+
+- `name` (required, string) - The name of the environment variable to read.
+- `default` (optional, string) - A fallback value if the environment variable is not set. If not
+  provided and the variable is unset, the function returns `null`.
+- `treat_empty_as_unset` (optional, boolean, default: `false`) - If `true`, an empty string value is
+  treated the same as an unset variable. This is useful when you want to distinguish between "not
+  set" and "set to empty string".
+
+```js
+// Read an environment variable directly
+env('OTEL_EXPORTER_OTLP_ENDPOINT')
+
+// Provide a fallback value
+env('CUSTOM_SUBGRAPH_URL', 'https://default.example.com/graphql')
+
+// Treat empty values as unset
+env('FEATURE_FLAG', 'disabled', true)
+```
+
+### Standard VRL functions
+
+The configuration guides use a few of the standard VRL functions in examples:
+
+- `replace(value, pattern, replacement)` - returns a new string with all matches of pattern
+  replaced. In the header manipulation guide it's used to normalise an `Authorization` header by
+  stripping existing prefixes.
+- `contains(value, substring)` - tests whether a string contains a substring.
+- `random_int(min, max)` - produces a random integer in the inclusive range. Combined with `if` to
+  create percentage‑based canary routing of subgraphs.
+- `lowercase(value)`, `uppercase(value)`, `split(value, delimiter)`, `to_int(value)` - helpful for
+  normalising and parsing header values.
+
+For a complete list of functions - including string manipulation, number conversion, JSON parsing,
+and more - see the [VRL function reference](https://vector.dev/docs/reference/vrl/functions/). When
+writing expressions, you can call any of these functions directly.
+
+<Callout type="warning">
+  Functions that could perform network I/O (e.g. HTTP requests) are intentionally not available, so
+  expressions remain side‑effect‑free and deterministic.
+</Callout>
+
+## Troubleshooting
+
+When an expression doesn't work as expected, it can be due to a compilation error (syntax) or a
+runtime error (evaluation). The Hive Router provides detailed logs to help you diagnose the issue.
+
+### Compilation Errors
+
+Compilation errors occur if your expression has invalid VRL syntax. The router will fail to start
+and log an error message pointing to the problematic expression. Common syntax errors include
+mismatched parentheses, missing commas, or incorrect function names.
+
+### Runtime Errors
+
+Runtime errors happen when a syntactically correct expression fails during execution. These are
+logged by the router during a request. The router will also return an error response to the client.
+
+Here are some frequent causes of runtime errors in expressions:
+
+1. **Accessing an unavailable variable**: Expressions run in specific contexts. For example, trying
+   to access `.response` in a request header rule will fail because the response from the subgraph
+   doesn't exist yet.
+1. **Type Mismatches**: VRL is strongly typed. If you try to perform an operation on incompatible
+   types, like comparing a string with an integer, you'll get a runtime error.
+1. **Handling `null` values**: Accessing a non-existent header or field returns `null`. Operations
+   on `null` values can lead to errors. Always check for the existence of a value or provide a
+   fallback. You can use the `||` operator to provide a default value (e.g.,
+   `.request.headers."x-custom-header" || "default-value"`).
+
+For a full list of error codes and their meanings, refer to the
+[VRL error reference](https://vector.dev/docs/reference/vrl/errors).

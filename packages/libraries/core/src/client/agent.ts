@@ -1,12 +1,19 @@
+import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { version } from '../version.js';
+import {
+  CircuitBreakerConfiguration,
+  defaultCircuitBreakerConfiguration,
+} from './circuit-breaker.js';
 import { http } from './http-client.js';
-import type { Logger } from './types.js';
+import type { LegacyLogger } from './types.js';
+import { chooseLogger } from './utils.js';
 
 type ReadOnlyResponse = Pick<Response, 'status' | 'text' | 'json' | 'statusText'>;
 
 export interface AgentOptions {
   enabled?: boolean;
   name?: string;
+  version?: string;
   /**
    * Hive endpoint or proxy
    */
@@ -28,10 +35,6 @@ export interface AgentOptions {
    */
   maxRetries?: number;
   /**
-   * 200 by default
-   */
-  minTimeout?: number;
-  /**
    * Send reports in interval (defaults to 10_000ms)
    */
   sendInterval?: number;
@@ -40,14 +43,27 @@ export interface AgentOptions {
    */
   maxSize?: number;
   /**
-   * Custom logger (defaults to console)
+   * Custom logger.
+   *
+   * Default: console based logger
+   *
+   * @deprecated Instead, provide a logger for the root Hive SDK. If a logger is provided on the root Hive SDK, this one is ignored.
    */
-  logger?: Logger;
+  logger?: LegacyLogger;
+  /**
+   * Circuit Breaker Configuration.
+   * true -> Use default configuration
+   * false -> Disable
+   * object -> use custom configuration see {AgentCircuitBreakerConfiguration}
+   */
+  circuitBreaker?: boolean | CircuitBreakerConfiguration;
   /**
    * WHATWG Compatible fetch implementation
    * used by the agent to send reports
    */
   fetch?: typeof fetch;
+  /** @deprecated This is no longer used. */
+  minTimeout?: number;
 }
 
 export function createAgent<TEvent>(
@@ -66,22 +82,34 @@ export function createAgent<TEvent>(
     headers?(): Record<string, string>;
   },
 ) {
-  const options: Required<Omit<AgentOptions, 'fetch'>> = {
+  const options: Required<Omit<AgentOptions, 'fetch' | 'debug' | 'logger' | 'circuitBreaker'>> & {
+    circuitBreaker: CircuitBreakerConfiguration | null;
+  } = {
     timeout: 30_000,
-    debug: false,
     enabled: true,
     minTimeout: 200,
     maxRetries: 3,
     sendInterval: 10_000,
     maxSize: 25,
-    logger: console,
     name: 'hive-client',
+    version,
     ...pluginOptions,
+    circuitBreaker:
+      pluginOptions.circuitBreaker == null || pluginOptions.circuitBreaker === true
+        ? defaultCircuitBreakerConfiguration
+        : pluginOptions.circuitBreaker === false
+          ? null
+          : pluginOptions.circuitBreaker,
   };
+  const logger = chooseLogger(pluginOptions.logger).child({ module: 'hive-agent' });
+
+  let circuitBreaker: CircuitBreakerInterface<
+    Parameters<typeof sendHTTPCall>,
+    ReturnType<typeof sendHTTPCall>
+  >;
 
   const enabled = options.enabled !== false;
-
-  let timeoutID: any = null;
+  let timeoutID: ReturnType<typeof setTimeout> | null = null;
 
   function schedule() {
     if (timeoutID) {
@@ -89,16 +117,6 @@ export function createAgent<TEvent>(
     }
 
     timeoutID = setTimeout(send, options.sendInterval);
-  }
-
-  function debugLog(msg: string) {
-    if (options.debug) {
-      options.logger.info(msg);
-    }
-  }
-
-  function errorLog(msg: string) {
-    options.logger.error(msg);
   }
 
   let scheduled = false;
@@ -130,15 +148,36 @@ export function createAgent<TEvent>(
     data.set(event);
 
     if (data.size() >= options.maxSize) {
-      debugLog('Sending immediately');
+      logger.debug('Sending immediately');
       setImmediate(() => send({ throwOnError: false, skipSchedule: true }));
     }
   }
 
   function sendImmediately(event: TEvent): Promise<ReadOnlyResponse | null> {
     data.set(event);
-    debugLog('Sending immediately');
+    logger.debug('Sending immediately');
     return send({ throwOnError: true, skipSchedule: true });
+  }
+
+  async function sendHTTPCall(buffer: string | Buffer<ArrayBufferLike>): Promise<Response> {
+    const signal = circuitBreaker.getSignal();
+    return await http.post(options.endpoint, buffer, {
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        Authorization: `Bearer ${options.token}`,
+        'User-Agent': `${options.name}/${options.version}`,
+        ...headers(),
+      },
+      timeout: options.timeout,
+      retry: {
+        retries: options.maxRetries,
+        factor: 2,
+      },
+      logger,
+      fetchImplementation: pluginOptions.fetch,
+      signal,
+    });
   }
 
   async function send(sendOptions?: {
@@ -157,30 +196,14 @@ export function createAgent<TEvent>(
 
     data.clear();
 
-    debugLog(`Sending report (queue ${dataToSend})`);
-    const response = await http
-      .post(options.endpoint, buffer, {
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          Authorization: `Bearer ${options.token}`,
-          'User-Agent': `${options.name}/${version}`,
-          ...headers(),
-        },
-        timeout: options.timeout,
-        retry: {
-          retries: options.maxRetries,
-          factor: 2,
-        },
-        logger: options.logger,
-        fetchImplementation: pluginOptions.fetch,
-      })
+    logger.debug(`Sending report (queue ${dataToSend})`);
+    const response = sendFromBreaker(buffer)
       .then(res => {
-        debugLog(`Report sent!`);
+        logger.debug(`Report sent!`);
         return res;
       })
       .catch(error => {
-        errorLog(`Failed to send report.`);
+        logger.debug(`Failed to send report.`);
 
         if (sendOptions?.throwOnError) {
           throw error;
@@ -198,7 +221,7 @@ export function createAgent<TEvent>(
   }
 
   async function dispose() {
-    debugLog('Disposing');
+    logger.debug('Disposing');
     if (timeoutID) {
       clearTimeout(timeoutID);
     }
@@ -211,6 +234,46 @@ export function createAgent<TEvent>(
       skipSchedule: true,
       throwOnError: false,
     });
+
+    circuitBreaker.shutdown();
+  }
+
+  if (options.circuitBreaker) {
+    const circuitBreakerInstance = new CircuitBreaker(sendHTTPCall, {
+      ...options.circuitBreaker,
+      timeout: false,
+      autoRenewAbortController: true,
+    });
+    circuitBreaker = circuitBreakerInstance;
+
+    circuitBreakerInstance.on('open', () =>
+      logger.error('circuit opened - backend seems unreachable.'),
+    );
+    circuitBreakerInstance.on('halfOpen', () =>
+      logger.info('circuit half open - testing backend connectivity'),
+    );
+    circuitBreakerInstance.on('close', () => logger.info('circuit closed - backend recovered '));
+  } else {
+    circuitBreaker = {
+      getSignal() {
+        return undefined;
+      },
+      fire: sendHTTPCall,
+      shutdown() {},
+    };
+  }
+
+  async function sendFromBreaker(...args: Parameters<typeof circuitBreaker.fire>) {
+    try {
+      return await circuitBreaker.fire(...args);
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && err.code === 'EOPENBREAKER') {
+        logger.info('circuit open - sending report skipped');
+        return null;
+      }
+
+      throw err;
+    }
   }
 
   return {
@@ -219,3 +282,9 @@ export function createAgent<TEvent>(
     dispose,
   };
 }
+
+type CircuitBreakerInterface<TI extends unknown[] = unknown[], TR = unknown> = {
+  fire(...args: TI): TR;
+  getSignal(): AbortSignal | undefined;
+  shutdown(): void;
+};

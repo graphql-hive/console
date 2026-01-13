@@ -1,38 +1,55 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import RSS from 'rss';
 import { getPageMap } from '@theguild/components/server';
 import { AuthorId, authors } from '../../../authors';
-import { BlogFrontmatter, isBlogPost } from '../blog-types';
+import { parseSchema } from '../../../lib/parse-schema';
+import { pagesDepthFirst } from '../../../mdx-types';
+import { CaseStudyFile } from '../../case-studies/case-study-types';
+import { coerceCaseStudyToBlog } from '../../case-studies/coerce-case-studies-to-blogs';
+import { BlogFrontmatter, BlogPostFile } from '../blog-types';
 
-function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string {
+function getAuthor(frontmatterAuthors: BlogFrontmatter['authors']): string | undefined {
   const first = Array.isArray(frontmatterAuthors) ? frontmatterAuthors[0] : frontmatterAuthors;
 
-  if (typeof first === 'string') {
+  if (first && typeof first === 'string') {
     const author = authors[first as AuthorId];
-    return author ? author.name : 'Unknown Author';
+    return author?.name;
   }
 
-  return first.name;
+  // authors can be empty array
+  return first?.name;
 }
 
+export const dynamic = 'force-static';
+export const config = { runtime: 'edge' };
+
 export async function GET() {
-  const [_meta, _indexPage, ...pageMap] = await getPageMap('/blog');
-  const allPosts = pageMap
-    .filter(isBlogPost)
-    .map(
-      item =>
-        ({
-          title: item.frontMatter.title,
-          date: new Date(item.frontMatter.date),
-          url: `https://the-guild.dev/graphql/hive${item.route}`,
-          description: (item.frontMatter as any).description ?? '',
-          author: getAuthor(item.frontMatter.authors),
-          categories: Array.isArray(item.frontMatter.tags)
-            ? item.frontMatter.tags
-            : [item.frontMatter.tags],
-        }) satisfies RSS.ItemOptions,
-    )
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+  let allPosts: RSS.ItemOptions[] = [];
+
+  const [_meta, _indexPage, ...pages] = await getPageMap('/');
+  for (const page of pagesDepthFirst(pages)) {
+    const route = (page && 'route' in page && page.route) || '';
+    const [dir, name] = route.split('/').filter(Boolean);
+    if (!name) continue;
+    switch (dir) {
+      case 'product-updates':
+        if ('frontMatter' in page && page.frontMatter) {
+          page.frontMatter.tags ||= ['Product Update'];
+        }
+      // eslint-disable-next-line no-fallthrough
+      case 'blog':
+        allPosts.push(toRssItem(parseSchema(page, BlogPostFile)));
+        break;
+      case 'case-studies':
+        allPosts.push(toRssItem(coerceCaseStudyToBlog(parseSchema(page, CaseStudyFile))));
+        break;
+    }
+  }
+
+  if (allPosts.length === 0) {
+    throw new Error('No blog posts found for RSS feed');
+  }
+
+  allPosts = allPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const feed = new RSS({
     title: 'Hive Blog',
@@ -51,5 +68,16 @@ export async function GET() {
   });
 }
 
-export const dynamic = 'force-static';
-export const config = { runtime: 'edge' };
+function toRssItem(blogPost: BlogPostFile): RSS.ItemOptions {
+  const author = getAuthor(blogPost.frontMatter.authors);
+  return {
+    title: blogPost.frontMatter.title,
+    date: new Date(blogPost.frontMatter.date),
+    url: `https://the-guild.dev/graphql/hive${blogPost.route}`,
+    description: blogPost.frontMatter.description ?? '',
+    categories: Array.isArray(blogPost.frontMatter.tags)
+      ? blogPost.frontMatter.tags
+      : [blogPost.frontMatter.tags],
+    ...(author ? { author } : {}),
+  };
+}

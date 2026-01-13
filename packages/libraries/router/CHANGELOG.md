@@ -1,5 +1,127 @@
 # 16.10.2024
 
+## 3.0.0
+
+### Major Changes
+
+- [#7379](https://github.com/graphql-hive/console/pull/7379)
+  [`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37)
+  Thanks [@ardatan](https://github.com/ardatan)! - - Multiple endpoints support for `HiveRegistry`
+  and `PersistedOperationsPlugin`
+
+  Breaking Changes:
+
+  - Now there is no `endpoint` field in the configuration, it has been replaced with `endpoints`,
+    which is an array of strings. You are not affected if you use environment variables to set the
+    endpoint.
+
+  ```diff
+  HiveRegistry::new(
+      Some(
+          HiveRegistryConfig {
+  -            endpoint: String::from("CDN_ENDPOINT"),
+  +            endpoints: vec![String::from("CDN_ENDPOINT1"), String::from("CDN_ENDPOINT2")],
+      )
+  )
+  ```
+
+### Patch Changes
+
+- [#7479](https://github.com/graphql-hive/console/pull/7479)
+  [`382b481`](https://github.com/graphql-hive/console/commit/382b481e980e588e3e6cf7831558b2d0811253f5)
+  Thanks [@ardatan](https://github.com/ardatan)! - Update dependencies
+
+- Updated dependencies
+  [[`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37),
+  [`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37)]:
+  - hive-console-sdk-rs@0.3.0
+
+## 2.3.6
+
+### Patch Changes
+
+- Updated dependencies
+  [[`0ac2e06`](https://github.com/graphql-hive/console/commit/0ac2e06fd6eb94c9d9817f78faf6337118f945eb),
+  [`4b796f9`](https://github.com/graphql-hive/console/commit/4b796f95bbc0fc37aac2c3a108a6165858b42b49),
+  [`a9905ec`](https://github.com/graphql-hive/console/commit/a9905ec7198cf1bec977a281c5021e0ef93c2c34)]:
+  - hive-console-sdk-rs@0.2.3
+
+## 2.3.5
+
+### Patch Changes
+
+- Updated dependencies
+  [[`24c0998`](https://github.com/graphql-hive/console/commit/24c099818e4dfec43feea7775e8189d0f305a10c)]:
+  - hive-console-sdk-rs@0.2.2
+
+## 2.3.4
+
+### Patch Changes
+
+- Updated dependencies
+  [[`69e2f74`](https://github.com/graphql-hive/console/commit/69e2f74ab867ee5e97bbcfcf6a1b69bb23ccc7b2)]:
+  - hive-console-sdk-rs@0.2.1
+
+## 2.3.3
+
+### Patch Changes
+
+- Updated dependencies
+  [[`cc6cd28`](https://github.com/graphql-hive/console/commit/cc6cd28eb52d774683c088ce456812d3541d977d)]:
+  - hive-console-sdk-rs@0.2.0
+
+## 2.3.2
+
+### Patch Changes
+
+- Updated dependencies
+  [[`d8f6e25`](https://github.com/graphql-hive/console/commit/d8f6e252ee3cd22948eb0d64b9d25c9b04dba47c)]:
+  - hive-console-sdk-rs@0.1.1
+
+## 2.3.1
+
+### Patch Changes
+
+- [#7196](https://github.com/graphql-hive/console/pull/7196)
+  [`7878736`](https://github.com/graphql-hive/console/commit/7878736643578ab23d95412b893c091e32691e60)
+  Thanks [@ardatan](https://github.com/ardatan)! - Breaking;
+
+  - `UsageAgent` now accepts `Duration` for `connect_timeout` and `request_timeout` instead of
+    `u64`.
+  - `SupergraphFetcher` now accepts `Duration` for `connect_timeout` and `request_timeout` instead
+    of `u64`.
+  - `PersistedDocumentsManager` now accepts `Duration` for `connect_timeout` and `request_timeout`
+    instead of `u64`.
+  - Use original `graphql-parser` and `graphql-tools` crates instead of forked versions.
+
+- Updated dependencies
+  [[`7878736`](https://github.com/graphql-hive/console/commit/7878736643578ab23d95412b893c091e32691e60)]:
+  - hive-console-sdk-rs@0.1.0
+
+## 2.3.0
+
+### Minor Changes
+
+- [#7143](https://github.com/graphql-hive/console/pull/7143)
+  [`b80e896`](https://github.com/graphql-hive/console/commit/b80e8960f492e3bcfe1012caab294d9066d86fe3)
+  Thanks [@ardatan](https://github.com/ardatan)! - Extract Hive Console integration implementation
+  into a new package `hive-console-sdk` which can be used by any Rust library for Hive Console
+  integration
+
+  It also includes a refactor to use less Mutexes like replacing `lru` + `Mutex` with the
+  thread-safe `moka` package. Only one place that handles queueing uses `Mutex` now.
+
+### Patch Changes
+
+- [#7143](https://github.com/graphql-hive/console/pull/7143)
+  [`b80e896`](https://github.com/graphql-hive/console/commit/b80e8960f492e3bcfe1012caab294d9066d86fe3)
+  Thanks [@ardatan](https://github.com/ardatan)! - Fixes a bug when Persisted Operations are enabled
+  by default which should be explicitly enabled
+
+- Updated dependencies
+  [[`b80e896`](https://github.com/graphql-hive/console/commit/b80e8960f492e3bcfe1012caab294d9066d86fe3)]:
+  - hive-console-sdk-rs@0.0.1
+
 ## 2.2.0
 
 ### Minor Changes

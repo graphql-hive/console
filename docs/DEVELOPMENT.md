@@ -4,8 +4,8 @@
 
 Developing Hive locally requires you to have the following software installed locally:
 
-- Node.js 21 (or `nvm` or `fnm`)
-- pnpm v9
+- Node.js >=22 (or `nvm` or `fnm`)
+- pnpm >=10.16.0
 - Docker version 26.1.1 or later(previous versions will not work correctly on arm64)
 - make sure these ports are free: 5432, 6379, 9000, 9001, 8123, 9092, 8081, 8082, 9644, 3567, 7043
 
@@ -13,7 +13,7 @@ Developing Hive locally requires you to have the following software installed lo
 
 - Clone the repository locally
 - Make sure to install the recommended VSCode extensions (defined in `.vscode/extensions.json`)
-- In the root of the repo, run `nvm use` to use the same version of node as mentioned
+- In the root of the repo, run `nvm use` to use the same version of node as mentioned above
 - Create `.env` file in the root, and use the following:
 
 ```dotenv
@@ -30,7 +30,7 @@ export UID=$(id -u)
 export GID=$(id -g)
 ```
 
-Add "user" field to docker-compose.dev.yml
+Add "user" field to ./docker/docker-compose.dev.yml
 
 ```
   clickhouse:
@@ -110,14 +110,17 @@ We have a script to feed your local instance of Hive with initial seed data. Thi
 
 1. Use `Start Hive` to run your local Hive instance
 2. Make sure `usage` and `usage-ingestor` are running as well (with `pnpm dev`)
-3. Open Hive app, create a project and a target, then create a token
-4. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
-5. This should report a dummy schema
-6. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
+3. (Optional) Seed a organization with many projects and users `pnpm seed:org`
+4. Open Hive app, create a project and a target, then create a token (or use the previously created
+   one)
+5. Run the seed script: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:schemas`
+6. This should report a dummy schema
+7. Run the usage seed to generate some dummy usage data to your local instance of Hive, allowing you
    to test features e2e: `FEDERATION=<0|1> TOKEN=<access_token> TARGET=<target_id> pnpm seed:usage`
 
 > Note: You can set `STAGE=<dev|staging|local>` in order to target a specific Hive environment and
-> seed a target there.
+> seed a target there. `TARGET=<target_id>` can be obtained via target's Settings page → General →
+> Resource ID. `TOKEN=<access_token>` is created on organization's Setting's page → Access Tokens
 
 > To send more operations with `seed:usage`, and test heavy load on Hive instance, you can also set
 > `OPERATIONS` (amount of operations in each interval round, default is `10`) and `INTERVAL`

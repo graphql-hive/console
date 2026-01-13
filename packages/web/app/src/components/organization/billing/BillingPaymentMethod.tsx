@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement, useState } from 'react';
 import clsx from 'clsx';
 import { useMutation } from 'urql';
 import { Section } from '@/components/common';
@@ -40,6 +40,13 @@ export const ManagePaymentMethod = (props: {
   const organization = useFragment(BillingPaymentMethod_OrganizationFragment, props.organization);
   const info = organization.billingConfiguration.paymentMethod;
 
+  /**
+   * The mutation loads only the url, then the page tries to redirect. If the user has a slow connection,
+   * then the button shows that the page is loading and then it resets to normal. Tracking "loading" as a
+   * state lets us show that the page is loading during the entire duration of the url generation + redirect.
+   */
+  const [loadingDashboard, setLoadingDashboard] = useState(false);
+
   if (!info) {
     return null;
   }
@@ -60,19 +67,25 @@ export const ManagePaymentMethod = (props: {
           <br />
           <Button
             variant="primary"
+            disabled={mutation.fetching || loadingDashboard}
             onClick={() => {
+              setLoadingDashboard(true);
               void mutate({
                 selector: {
                   organizationSlug: organization.slug,
                 },
-              }).then(result => {
-                if (result.data?.generateStripePortalLink) {
-                  window.location.href = result.data.generateStripePortalLink;
-                }
-              });
+              })
+                .then(result => {
+                  if (result.data?.generateStripePortalLink) {
+                    window.location.href = result.data.generateStripePortalLink;
+                  }
+                })
+                .catch(() => {
+                  setLoadingDashboard(false);
+                });
             }}
           >
-            {mutation.fetching ? (
+            {mutation.fetching || loadingDashboard ? (
               'Loading...'
             ) : (
               <div className="flex items-center">

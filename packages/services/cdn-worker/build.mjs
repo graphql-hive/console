@@ -7,6 +7,7 @@ console.log('🚀 Building CDN Worker...');
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const nodeOutputPath = `${__dirname}/dist/index.nodejs.js`;
 const workerOutputPath = `${__dirname}/dist/index.worker.mjs`;
+const lambdaOutputPath = `${__dirname}/dist/index.lambda.mjs`;
 
 await Promise.all([
   // Build for integration tests, and expect it to run on NodeJS
@@ -36,6 +37,23 @@ await Promise.all([
     treeShaking: true,
   }).then(result => {
     console.log(`✅ Built for CloudFlare Worker: "${workerOutputPath}"`);
+    return result;
+  }),
+  build({
+    entryPoints: [`${__dirname}/src/index-lambda.ts`],
+    bundle: true,
+    platform: 'node',
+    target: 'node22',
+    format: 'esm',
+    minify: false,
+    sourcemap: true,
+    outfile: lambdaOutputPath,
+    treeShaking: true,
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
+  }).then(result => {
+    console.log(`✅ Built for AWS Lambda: "${lambdaOutputPath}"`);
     return result;
   }),
 ]);

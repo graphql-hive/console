@@ -1,7 +1,5 @@
 // Specify the modules our binary should include -- https://twitter.com/YassinEldeeb7/status/1468680104243077128
-mod agent;
 mod consts;
-mod graphql;
 mod persisted_documents;
 mod registry;
 mod registry_logger;
@@ -23,6 +21,7 @@ fn main() {
     register_plugins();
 
     // Initialize the Hive Registry and start the Apollo Router
+    // TODO: Look at builder pattern in Executable::builder().start()
     match HiveRegistry::new(None).and(apollo_router::main()) {
         Ok(_) => {}
         Err(e) => {

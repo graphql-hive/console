@@ -116,7 +116,9 @@ export function UserMenu(props: {
       ) : null}
       <div className="flex flex-row items-center gap-8">
         <Changelog changes={latestChangelog} />
-        {currentOrganization ? <GetStartedProgress tasks={currentOrganization.getStarted} /> : null}
+        {currentOrganization ? (
+          <GetStartedProgress className="hidden md:block" tasks={currentOrganization.getStarted} />
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div

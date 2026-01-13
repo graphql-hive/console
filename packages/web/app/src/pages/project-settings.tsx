@@ -5,6 +5,7 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
 import { PolicySettings } from '@/components/policy/policy-settings';
+import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -476,6 +477,7 @@ const ProjectSettingsPage_ProjectFragment = graphql(`
     isProjectNameInGitHubCheckEnabled
     viewerCanDelete
     viewerCanModifySettings
+    viewerCanManageProjectAccessTokens
     ...CompositionSettings_ProjectFragment
     ...ProjectPolicySettings_ProjectFragment
   }
@@ -517,7 +519,9 @@ function ProjectSettingsContent(props: {
   // Verify wether user is allowed to access the settings
   // Otherwise redirect to the project overview.
   useRedirect({
-    canAccess: project?.viewerCanModifySettings === true,
+    canAccess:
+      project?.viewerCanModifySettings === true ||
+      project?.viewerCanManageProjectAccessTokens === true,
     redirectTo: router => {
       void router.navigate({
         to: '/$organizationSlug/$projectSlug',
@@ -552,6 +556,13 @@ function ProjectSettingsContent(props: {
       pages.push({
         key: 'composition',
         title: 'Composition',
+      });
+    }
+
+    if (project?.viewerCanManageProjectAccessTokens) {
+      pages.push({
+        key: 'access-tokens',
+        title: 'Access Tokens',
       });
     }
 
@@ -603,7 +614,7 @@ function ProjectSettingsContent(props: {
         <div className="space-y-12">
           {resolvedPage.key === 'general' ? (
             <>
-              <ResourceDetails id={project.id} />
+              <ResourceDetails id={project.id} label="Project ID" />
               <ProjectSettingsPage_SlugForm
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
@@ -627,13 +638,24 @@ function ProjectSettingsContent(props: {
           {resolvedPage.key === 'composition' ? (
             <CompositionSettings project={project} organization={organization} />
           ) : null}
+          {resolvedPage.key === 'access-tokens' ? (
+            <ProjectAccessTokensSubPage
+              organizationSlug={organization.slug}
+              projectSlug={project.slug}
+            />
+          ) : null}
         </div>
       </PageLayoutContent>
     </PageLayout>
   );
 }
 
-export const ProjectSettingsPageEnum = z.enum(['general', 'policy', 'composition']);
+export const ProjectSettingsPageEnum = z.enum([
+  'general',
+  'policy',
+  'composition',
+  'access-tokens',
+]);
 
 export type ProjectSettingsSubPage = z.TypeOf<typeof ProjectSettingsPageEnum>;
 

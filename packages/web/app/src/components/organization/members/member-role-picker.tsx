@@ -5,9 +5,9 @@ import { Heading } from '@/components/ui/heading';
 import * as Sheet from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import * as GraphQLSchema from '@/gql/graphql';
 import { MemberRoleSelector } from './member-role-selector';
 import {
+  createResourceSelectionFromResourceAssignment,
   ResourceSelection,
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
@@ -46,30 +46,7 @@ const MemberRolePicker_MemberFragment = graphql(`
       id
     }
     resourceAssignment {
-      mode
-      projects {
-        project {
-          id
-          slug
-        }
-        targets {
-          mode
-          targets {
-            target {
-              id
-              slug
-            }
-            services {
-              mode
-              services
-            }
-            appDeployments {
-              mode
-              appDeployments
-            }
-          }
-        }
-      }
+      ...createResourceSelectionFromResourceAssignment_ResourceAssignmentFragment
     }
     ...MemberRoleSelector_MemberFragment
   }
@@ -112,36 +89,9 @@ export function MemberRolePicker(props: {
   const organization = useFragment(MemberRolePicker_OrganizationFragment, props.organization);
   const member = useFragment(MemberRolePicker_MemberFragment, props.member);
   const [selectedRoleId, setSelectedRoleId] = useState(member.role.id);
-  const [selection, setSelection] = useState<ResourceSelection>(() => ({
-    mode: member.resourceAssignment.mode,
-    projects: (member.resourceAssignment.projects ?? []).map(record => ({
-      projectId: record.project.id,
-      projectSlug: record.project.slug,
-      targets: {
-        mode: record.targets.mode,
-        targets: (record.targets.targets ?? []).map(target => ({
-          targetId: target.target.id,
-          targetSlug: target.target.slug,
-          services: {
-            mode: target.services.mode,
-            services: target.services.services?.map(
-              (service): GraphQLSchema.ServiceResourceAssignmentInput => ({
-                serviceName: service,
-              }),
-            ),
-          },
-          appDeployments: {
-            mode: target.appDeployments.mode,
-            appDeployments: target.appDeployments.appDeployments?.map(
-              (appDeploymentName): GraphQLSchema.AppDeploymentResourceAssignmentInput => ({
-                appDeployment: appDeploymentName,
-              }),
-            ),
-          },
-        })),
-      },
-    })),
-  }));
+  const [selection, setSelection] = useState<ResourceSelection>(() =>
+    createResourceSelectionFromResourceAssignment(member.resourceAssignment),
+  );
 
   const [assignRoleState, assignRole] = useMutation(MemberRolePicker_AssignRoleMutation);
   const { toast } = useToast();

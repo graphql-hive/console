@@ -11,7 +11,34 @@ These settings are crucial for ensuring the router operates efficiently under lo
 protecting your downstream subgraphs from being overwhelmed. For a detailed guide on how to tune
 these settings, see the [Performance Tuning & Traffic Shaping Guide](../guides/performance-tuning).
 
-## Options
+## `max_connections_per_host`
+
+- **Type:** `integer`
+- **Default:** `100`
+
+Limits the maximum number of concurrent HTTP connections the router will open to a single subgraph
+host. This acts as a safeguard to prevent overwhelming a subgraph with too many simultaneous
+requests.
+
+## Subgraph Specific Options
+
+The following options (`dedupe_enabled`, `pool_idle_timeout`, and `request_timeout`) can be set
+globally for all subgraphs or overridden on a per-subgraph basis by nesting them under the
+subgraph's name within the `traffic_shaping` map.
+
+For example, the following example shows how to set global defaults and override them for a specific
+subgraph named `products`:
+
+```yaml
+traffic_shaping:
+  max_connections_per_host: 150
+  all:
+    pool_idle_timeout: 60s
+  subgraphs:
+    products:
+      dedupe_enabled: false
+      pool_idle_timeout: 120s
+```
 
 ### `dedupe_enabled`
 
@@ -21,31 +48,83 @@ these settings, see the [Performance Tuning & Traffic Shaping Guide](../guides/p
 Enables or disables in-flight request deduplication. When `true`, identical, concurrent requests to
 a subgraph are coalesced into a single request, with the response being shared among all clients.
 
-### `max_connections_per_host`
+### `pool_idle_timeout`
 
-- **Type:** `integer`
-- **Default:** `100`
+- **Type:** `string`
+- **Default:** `50s`
 
-Limits the maximum number of concurrent HTTP connections the router will open to a single subgraph
-host. This acts as a safeguard to prevent overwhelming a subgraph with too many simultaneous
-requests.
-
-### `pool_idle_timeout_seconds`
-
-- **Type:** `integer`
-- **Default:** `50`
-
-Controls the timeout (in seconds) for idle keep-alive connections in the router's connection pool.
-Connections that are unused for this duration will be closed.
-
-## Example
+Controls the timeout in duration string format (e.g. `1m` for 1 minute, `30s` for 30 seconds) for
+idle keep-alive connections in the router's connection pool. Connections that are unused for this
+duration will be closed.
 
 This example configuration increases the connection limit for a high-capacity subgraph and sets a
 longer idle timeout.
 
 ```yaml filename="router.config.yaml"
 traffic_shaping:
-  dedupe_enabled: true
-  max_connections_per_host: 250
-  pool_idle_timeout_seconds: 90
+  subgraphs:
+    high_capacity_subgraph:
+      pool_idle_timeout: 90s
 ```
+
+### `request_timeout`
+
+- **Default:** `30s`
+
+Request timeout in duration string format (e.g. `30s` for 30 seconds, `1m` for 1 minute). This
+setting specifies the maximum time the router will wait for a response from a subgraph before timing
+out the request. By default, the router will wait up to 30 seconds for a subgraph to respond.
+
+The value for `request_timeout` must be a valid duration string or a VRL expression that evaluates
+to a duration string.
+
+#### Static
+
+- **Type:** `string`
+
+When a static duration string is provided, it sets a fixed timeout for all requests to subgraphs.
+
+```yaml
+traffic_shaping:
+  all:
+    request_timeout: 30s
+```
+
+#### Dynamic
+
+- **Type:** `object`
+
+When an `object` is provided, it must contain a VRL `expression` that evaluates to a duration
+string. The expression is evaluated for each request, allowing for dynamic timeout values based on
+request characteristics.
+
+- `expression`: **(string, required)** A VRL expression that computes the request timeout duration.
+
+Within the `expression`, you have access to the following context:
+
+- `.request`: The incoming HTTP request object, including its headers.
+- .default`: The default timeout value set at the global level (available for subgraph overrides).
+
+```yaml
+traffic_shaping:
+  all:
+    request_timeout:
+      expression: |
+        if .request.headers."X-Priority" == "high" {
+          "10s"
+        } else {
+          "60s"
+        }
+  subgraphs:
+    product:
+      request_timeout:
+        expression: |
+          if .request.headers."X-Region" == "Europe" {
+            "10s"
+          } else {
+            .default
+          }
+```
+
+This example sets a shorter timeout for high-priority requests based on a custom header, and
+configures the `product` subgraph to have a different timeout for requests originating from Europe.

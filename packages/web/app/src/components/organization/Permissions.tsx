@@ -9,7 +9,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { NoAccess, Scope } from '@/lib/access/common';
-import { truthy } from '@/utils';
+import { truthy } from '@/lib/utils';
 
 function isLowerThen<T>(targetScope: T, sourceScope: T, scopesInLowerToHigherOrder: readonly T[]) {
   const sourceIndex = scopesInLowerToHigherOrder.indexOf(sourceScope);

@@ -28,17 +28,7 @@ Hive Gateway has built in support for fetching supergraphs from the Hive Schema 
 either choose to provide the configuration via CLI parameters, environment variables or a
 configuration file.
 
-<Tabs items={['CLI', 'Configuration File']}>
-
-{/* CLI */}
-
-<Tabs.Tab>
-
-```sh
-hive-gateway supergraph <endpoint> --hive-cdn-key <api_key>
-```
-
-</Tabs.Tab>
+<Tabs items={['Configuration File', 'CLI']}>
 
 {/* Configuration File */}
 
@@ -50,12 +40,28 @@ import { defineConfig } from '@graphql-hive/gateway'
 export const gatewayConfig = defineConfig({
   supergraph: {
     type: 'hive',
-    // The endpoint of Hive's CDN
-    endpoint: '<supergraph endpoint>',
+    // The endpoints of Hive's CDN
+    endpoint: [
+      // Main CDN
+      'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+      // Mirror CDN
+      'https://cdn-mirror.graphql-hive.com/artifacts/v1/<target_id>'
+    ],
     // The CDN token provided by Hive Registry
     key: '<cdn access token>'
   }
 })
+```
+
+</Tabs.Tab>
+
+{/* CLI */}
+
+<Tabs.Tab>
+
+```sh
+hive-gateway supergraph "https://cdn.graphql-hive.com/artifacts/v1/<target_id>" \
+  --hive-cdn-key <cdn access token>
 ```
 
 </Tabs.Tab>
@@ -233,6 +239,16 @@ Instead of serving a supergraph, you can also use Hive Gateway to proxy any exis
 This allows you to add features such as [usage reporting](/docs/gateway/usage-reporting) or
 [persisted documents](/docs/gateway/persisted-documents) without modifying your existing GraphQL
 API.
+
+<Callout>
+
+When using the Gateway in `proxy` mode with introspection of the source schema, schema directives
+are not supported because they are not part of the introspection response.
+
+This means proxy mode with introspection is not compatible with directive driven cache, auth, demand
+and control, or any other feature relying on directives.
+
+</Callout>
 
 <Tabs items={['CLI', 'Configuration File']}>
 

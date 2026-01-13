@@ -100,6 +100,7 @@ export default gql`
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     type: ProjectType! @tag(name: "public")
+    createdAt: DateTime! @tag(name: "public")
     buildUrl: String
     validationUrl: String
     experimental_nativeCompositionPerTarget: Boolean!

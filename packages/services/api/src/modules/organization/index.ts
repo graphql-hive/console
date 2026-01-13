@@ -5,6 +5,7 @@ import { OrganizationManager } from './providers/organization-manager';
 import { OrganizationMemberRoles } from './providers/organization-member-roles';
 import { OrganizationMembers } from './providers/organization-members';
 import { ResourceAssignments } from './providers/resource-assignments';
+import { ResourceSelector } from './providers/resource-selector';
 import { resolvers } from './resolvers.generated';
 import typeDefs from './module.graphql';
 
@@ -20,5 +21,6 @@ export const organizationModule = createModule({
     OrganizationAccessTokens,
     ResourceAssignments,
     OrganizationAccessTokensCache,
+    ResourceSelector,
   ],
 });

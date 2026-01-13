@@ -44,11 +44,16 @@ export class SchemaCheckManager {
   }
 
   getAllSchemaChanges(schemaCheck: SchemaCheck) {
-    if (!schemaCheck.safeSchemaChanges?.length || !schemaCheck.breakingSchemaChanges?.length) {
+    if (!schemaCheck.safeSchemaChanges?.length && !schemaCheck.breakingSchemaChanges?.length) {
       return null;
     }
 
-    return [...(schemaCheck.breakingSchemaChanges ?? []), ...(schemaCheck.safeSchemaChanges ?? [])];
+    const changes = [
+      ...(schemaCheck.breakingSchemaChanges ?? []),
+      ...(schemaCheck.safeSchemaChanges ?? []),
+    ];
+
+    return changes;
   }
 
   getBreakingSchemaChanges(schemaCheck: SchemaCheck) {

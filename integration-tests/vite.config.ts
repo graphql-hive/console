@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defaultExclude, defineConfig } from 'vitest/config';
 
 const setupFiles = ['../scripts/serializer.ts', './expect.ts'];
 
@@ -13,7 +13,15 @@ export default defineConfig({
     globals: true,
     alias: {
       'testkit/gql/graphql': new URL('./testkit/gql/graphql.ts', import.meta.url).pathname,
+      'testkit/graphql': new URL('./testkit/graphql.ts', import.meta.url).pathname,
       'testkit/gql': new URL('./testkit/gql/index.ts', import.meta.url).pathname,
+      'testkit/flow': new URL('./testkit/flow.ts', import.meta.url).pathname,
+      'testkit/utils': new URL('./testkit/utils.ts', import.meta.url).pathname,
+      'testkit/seed': new URL('./testkit/seed.ts', import.meta.url).pathname,
+      'testkit/auth': new URL('./testkit/auth.ts', import.meta.url).pathname,
+      'testkit/usage': new URL('./testkit/usage.ts', import.meta.url).pathname,
+      'testkit/registry-models': new URL('./testkit/registry-models.ts', import.meta.url).pathname,
+      'testkit/mock-server': new URL('./testkit/mock-server.ts', import.meta.url).pathname,
       '@hive/service-common': new URL(
         '../packages/services/service-common/src/index.ts',
         import.meta.url,
@@ -21,5 +29,8 @@ export default defineConfig({
     },
     setupFiles,
     testTimeout: 90_000,
+    exclude: process.env.TEST_APOLLO_ROUTER
+      ? defaultExclude
+      : [...defaultExclude, 'tests/apollo-router/**'],
   },
 });

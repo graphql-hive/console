@@ -3,7 +3,6 @@ import { CaseStudiesArchDecoration, CaseStudiesGradientDefs } from './case-studi
 import { CaseStudyCard } from './case-study-card';
 import { CaseStudyFile } from './case-study-types';
 import { getCompanyLogo } from './company-logos';
-import { isCaseStudy } from './isCaseStudyFile';
 
 export function FeaturedCaseStudiesGrid({
   caseStudies,
@@ -55,18 +54,15 @@ export function FeaturedCaseStudiesGrid({
           }
         />
       </header>
-      {caseStudies
-        .filter(isCaseStudy)
-        .slice(0, 6)
-        .map((caseStudy, i) => (
-          <CaseStudyCard
-            key={i}
-            excerpt={caseStudy.frontMatter.excerpt}
-            href={caseStudy.route}
-            logo={getCompanyLogo(caseStudy.name)}
-            style={{ gridArea: `a${i + 1}` }}
-          />
-        ))}
+      {caseStudies.slice(0, 6).map((caseStudy, i) => (
+        <CaseStudyCard
+          key={i}
+          excerpt={caseStudy.frontMatter.excerpt}
+          href={caseStudy.route}
+          logo={getCompanyLogo(caseStudy.name)}
+          style={{ gridArea: `a${i + 1}` }}
+        />
+      ))}
     </section>
   );
 }

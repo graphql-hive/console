@@ -1,5 +1,6 @@
 export default {
   index: 'Overview',
+  'rust-query-planner': 'Rust Query Planner',
   'upstream-reliability': 'Upstream Reliability',
   performance: 'Performance & Cache',
   security: 'Security',

@@ -1,6 +1,6 @@
 import { lazy, useCallback, useEffect, useMemo } from 'react';
 import { parse as jsUrlParse, stringify as jsUrlStringify } from 'jsurl2';
-import { Helmet, HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider } from 'react-helmet-async';
 import { ToastContainer } from 'react-toastify';
 import SuperTokens, { SuperTokensWrapper } from 'supertokens-auth-react';
 import Session from 'supertokens-auth-react/recipe/session';
@@ -10,7 +10,6 @@ import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
 import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
-import * as gtag from '@/lib/gtag';
 import { urqlClient } from '@/lib/urql';
 import { configureScope, init } from '@sentry/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -23,12 +22,15 @@ import {
   parseSearchWith,
   stringifySearchWith,
   useNavigate,
+  useParams,
 } from '@tanstack/react-router';
 import { ErrorComponent } from './components/error';
 import { NotFound } from './components/not-found';
 import 'react-toastify/dist/ReactToastify.css';
+import { useLocalStorage } from '@/lib/hooks';
 import { zodValidator } from '@tanstack/zod-adapter';
 import { authenticated } from './components/authenticated-container';
+import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
 import { AuthOIDCPage } from './pages/auth-oidc';
@@ -74,6 +76,10 @@ import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
+import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-laboratory-new';
+import { ProposalTab, TargetProposalsSinglePage } from './pages/target-proposal';
+import { TargetProposalsPage } from './pages/target-proposals';
+import { TargetProposalsNewPage } from './pages/target-proposals-new';
 import { TargetSettingsPage, TargetSettingsPageEnum } from './pages/target-settings';
 import { TargetTracePage } from './pages/target-trace';
 import {
@@ -121,24 +127,6 @@ function RootComponent() {
 
   return (
     <HelmetProvider>
-      {env.analytics.googleAnalyticsTrackingId && (
-        <Helmet>
-          <script id="gtag-init" key="gtag-init" type="text/javascript">{`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${env.analytics.googleAnalyticsTrackingId}', {
-              page_path: window.location.pathname,
-            });
-          `}</script>
-          <script
-            key="gtag-script"
-            async
-            src={`https://www.googletagmanager.com/gtag/js?id=${env.analytics.googleAnalyticsTrackingId}`}
-            type="text/javascript"
-          />
-        </Helmet>
-      )}
       <Toaster />
       <SuperTokensWrapper>
         <QueryClientProvider client={queryClient}>
@@ -450,9 +438,10 @@ const organizationSettingsRoute = createRoute({
 
 const OrganizationMembersRouteSearch = z.object({
   page: z.enum(['list', 'roles', 'invitations']).catch('list').default('list'),
+  search: z.string().optional(),
 });
 
-const organizationMembersRoute = createRoute({
+export const organizationMembersRoute = createRoute({
   getParentRoute: () => organizationRoute,
   path: 'view/members',
   validateSearch(search) {
@@ -464,7 +453,7 @@ const organizationMembersRoute = createRoute({
     const navigate = useNavigate({ from: organizationMembersRoute.fullPath });
     const onPageChange = useCallback(
       (newPage: z.infer<typeof OrganizationMembersRouteSearch>['page']) => {
-        void navigate({ search: { page: newPage } });
+        void navigate({ search: { page: newPage, search: undefined } });
       },
       [navigate],
     );
@@ -590,14 +579,35 @@ const targetLaboratoryRoute = createRoute({
   path: 'laboratory',
   validateSearch: () => ({}) as { operation?: string; operationString?: string },
   component: function TargetLaboratoryRoute() {
+    const [laboratoryTab, setLaboratoryTab] = useLocalStorage(
+      'hive:laboratory:type',
+      'hive-laboratory',
+    );
+
     const { organizationSlug, projectSlug, targetSlug } = targetLaboratoryRoute.useParams();
     const { operation } = targetLaboratoryRoute.useSearch();
+
+    if (laboratoryTab === 'hive-laboratory') {
+      return (
+        <TargetLaboratoryPageNew
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          selectedOperationId={operation}
+          defaultLaboratoryTab={laboratoryTab as 'graphiql' | 'hive-laboratory'}
+          onLaboratoryTabChange={setLaboratoryTab}
+        />
+      );
+    }
+
     return (
       <TargetLaboratoryPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         selectedOperationId={operation}
+        defaultLaboratoryTab={laboratoryTab as 'graphiql' | 'hive-laboratory'}
+        onLaboratoryTabChange={setLaboratoryTab}
       />
     );
   },
@@ -914,6 +924,80 @@ const targetChecksSingleRoute = createRoute({
   },
 });
 
+const targetProposalsRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals',
+  validateSearch: z.object({
+    stage: z
+      .enum(Object.values(SchemaProposalStage).map(s => s.toLowerCase()) as [string, ...string[]])
+      .array()
+      .optional()
+      .catch(() => void 0),
+    user: z.string().array().optional(),
+  }),
+  component: function TargetProposalsRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetProposalsRoute.useParams();
+    // select proposalId from child route
+    const proposalId = useParams({
+      strict: false,
+      select: p => p.proposalId,
+    });
+    const { stage, user } = targetProposalsRoute.useSearch();
+    return (
+      <TargetProposalsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        filterStages={stage}
+        filterUserIds={user}
+        selectedProposalId={proposalId}
+      />
+    );
+  },
+});
+
+const targetProposalsNewRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals/new',
+  component: function TargetProposalRoute() {
+    const { organizationSlug, projectSlug, targetSlug } = targetProposalsNewRoute.useParams();
+    return (
+      <TargetProposalsNewPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
+const targetProposalsSingleRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'proposals/$proposalId',
+  validateSearch: z.object({
+    page: z
+      .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
+      .optional()
+      .catch(() => void 0),
+    version: z.string().optional(),
+  }),
+  component: function TargetProposalRoute() {
+    const { organizationSlug, projectSlug, targetSlug, proposalId } =
+      targetProposalsSingleRoute.useParams();
+    const { page, version } = targetProposalsSingleRoute.useSearch();
+    return (
+      <TargetProposalsSinglePage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        proposalId={proposalId}
+        tab={page ?? (ProposalTab.DETAILS as string)}
+        version={version}
+      />
+    );
+  },
+});
+
 const routeTree = root.addChildren([
   notFoundRoute,
   anonymousRoute.addChildren([
@@ -966,6 +1050,7 @@ const routeTree = root.addChildren([
       targetChecksRoute.addChildren([targetChecksSingleRoute]),
       targetAppVersionRoute,
       targetAppsRoute,
+      targetProposalsRoute.addChildren([targetProposalsNewRoute, targetProposalsSingleRoute]),
     ]),
   ]),
 ]);
@@ -984,8 +1069,4 @@ export const router = createRouter({
     }
     return JSON.stringify(search);
   }),
-});
-
-router.history.subscribe(() => {
-  gtag.pageview(router.history.location.href);
 });

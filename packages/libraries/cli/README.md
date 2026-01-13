@@ -81,7 +81,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -108,7 +108,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -135,7 +135,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -159,7 +159,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -202,7 +202,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -246,7 +246,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -305,7 +305,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -316,7 +316,7 @@ USAGE
   $ hive schema:check FILE [--debug] [--service <value>] [--registry.endpoint <value>] [--registry <value>]
     [--registry.accessToken <value>] [--token <value>] [--experimentalJsonFile <value>] [--forceSafe] [--github]
     [--require <value>...] [--author <value>] [--commit <value>] [--contextId <value>] [--target <value>] [--url
-    <value>]
+    <value>] [--schemaProposalId <value>]
 
 ARGUMENTS
   FILE  Path to the schema file(s)
@@ -335,6 +335,7 @@ FLAGS
   --registry.endpoint=<value>     registry endpoint
   --require=<value>...            [default: ] Loads specific require.extensions before running the codegen and reading
                                   the configuration
+  --schemaProposalId=<value>      Attach the schema check to a schema proposal.
   --service=<value>               service name (only for distributed schemas)
   --target=<value>                The target against which to check the schema (slug or ID). This can either be a slug
                                   following the format "$organizationSlug/$projectSlug/$targetSlug" (e.g
@@ -349,7 +350,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -381,7 +382,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -414,7 +415,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/fetch.ts)_
 
 ## `hive schema:publish FILE`
 
@@ -458,7 +459,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/publish.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -505,9 +506,10 @@ shows information about the current token
 ```
 USAGE
   $ hive whoami [--debug] [--registry.endpoint <value>] [--registry <value>] [--registry.accessToken
-    <value>] [--token <value>]
+    <value>] [--token <value>] [--all]
 
 FLAGS
+  --all                           Also show non-granted permissions.
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
   --registry=<value>              registry address
   --registry.accessToken=<value>  registry access token
@@ -519,7 +521,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.52.0/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 
