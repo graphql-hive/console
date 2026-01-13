@@ -97,6 +97,14 @@ subgraph.
 Please note that WebSocket for communications between Hive Gateway and subgraphs are suboptimal
 compared to other possible transports. We recommend using either SSE or HTTP Callbacks instead.
 
+To configure WebSocket subscriptions, you can use either a configuration file or runtime
+programmatic configuration. This allows for flexibility in dynamically configuring the WebSocket
+settings or integrating with other parts of your application.
+
+<Tabs items={["Config", "Programmatic"]}>
+
+<Tabs.Tab>
+
 ```ts filename="gateway.config.ts"
 import { defineConfig, type WSTransportOptions } from '@graphql-hive/gateway'
 
@@ -116,6 +124,51 @@ export const gatewayConfig = defineConfig({
   }
 })
 ```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```ts filename="gateway.runtime.ts"
+// When using the gateway programmatically at runtime, you can configure WebSocket subscriptions
+// directly in your code using the `createGatewayRuntime` function.
+
+import { startNodeHttpServer } from '@graphql-hive/gateway'
+import { createGatewayRuntime } from '@graphql-hive/gateway-runtime'
+
+const runtime = createGatewayRuntime({
+  supergraph: 'supergraph.graphql',
+  transportEntries: {
+    '*.http': {
+      options: {
+        subscriptions: {
+          kind: 'ws',
+          location: '/subscriptions', // WebSocket endpoint path on the subgraph
+          connectionParams: {
+            token: '{context.headers.authorization}' // Propagate auth headers as connection params
+          },
+          // Optional: Customize WebSocket client options
+          getGraphQLWSOptions: options => ({
+            ...options,
+            keepAlive: 10000, // Send keep-alive pings every 10 seconds
+            connectionTimeout: 5000 // Timeout for initial connection
+          })
+        }
+      }
+    }
+  }
+})
+
+// Start the server with WebSocket support enabled by default
+await startNodeHttpServer(runtime, {
+  // WebSocket server is automatically set up
+  // To disable WebSockets entirely, add: disableWebsockets: true
+})
+```
+
+</Tabs.Tab>
+
+</Tabs>
 
 ### Subscriptions using HTTP Callback
 
