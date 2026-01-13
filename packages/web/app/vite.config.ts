@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import type { Plugin, UserConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import monacoEditor from 'vite-plugin-monaco-editor';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import react from '@vitejs/plugin-react';
@@ -26,6 +27,7 @@ export default {
   plugins: [
     tsconfigPaths(),
     react(),
+    tailwindcss(),
     reactScanPlugin,
     // @ts-expect-error temp
     monacoEditor.default({
