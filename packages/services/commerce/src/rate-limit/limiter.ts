@@ -2,6 +2,7 @@ import { endOfMonth, startOfMonth } from 'date-fns';
 import type { Storage } from '@hive/api';
 import type { ServiceLogger } from '@hive/service-common';
 import { traceInline } from '@hive/service-common';
+import { TaskScheduler } from '@hive/workflows/kit';
 import * as Sentry from '@sentry/node';
 import { UsageEstimator } from '../usage-estimator/estimator';
 import { createEmailScheduler } from './emails';
@@ -52,13 +53,11 @@ export function createRateLimiter(config: {
   rateLimitConfig: {
     interval: number;
   };
-  emails?: {
-    endpoint: string;
-  };
+  taskScheduler: TaskScheduler;
   usageEstimator: UsageEstimator;
   storage: Storage;
 }) {
-  const emails = createEmailScheduler(config.emails);
+  const emails = createEmailScheduler(config.taskScheduler);
 
   const { logger, usageEstimator, storage } = config;
   let intervalHandle: ReturnType<typeof setInterval> | null = null;
@@ -184,6 +183,7 @@ export function createRateLimiter(config: {
 
   function getOrganizationFromCache(targetId: string) {
     const orgId = targetIdToOrgLookup.get(targetId);
+
     return orgId ? cachedResult.get(orgId) : undefined;
   }
 
