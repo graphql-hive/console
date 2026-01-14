@@ -10,6 +10,8 @@ use persisted_documents::PersistedDocumentsPlugin;
 use registry::HiveRegistry;
 use usage::UsagePlugin;
 
+// test1
+
 // Register the Hive plugin
 pub fn register_plugins() {
     register_plugin!("hive", "usage", UsagePlugin);
