@@ -113,7 +113,7 @@ export function ChangeRow(props: {
   type?: 'removal' | 'addition' | 'mutual';
   severityLevel?: SeverityLevelType;
   indent?: boolean | number;
-  coordinate?: string;
+  coordinates?: string[];
   annotations?: (coordinate: string) => ReactElement | null;
 }) {
   const ctx = useContext(AnnotatedContext);
@@ -123,11 +123,16 @@ export function ChangeRow(props: {
       : props.type === 'removal'
         ? 'olddoc'
         : 'newdoc';
-  const annotation = !!props.coordinate && props.annotations?.(props.coordinate);
-
-  if (annotation) {
-    ctx.annotatedCoordinates?.add(props.coordinate!);
-  }
+  const annotations =
+    props.coordinates
+      ?.map(c => {
+        const annotation = props.annotations?.(c);
+        if (annotation) {
+          ctx.annotatedCoordinates?.add(c);
+        }
+        return annotation;
+      })
+      .filter(a => a !== undefined) ?? [];
 
   // if the children include any additions or subtractions
   const [added, setAdded] = useState(false);
@@ -169,7 +174,7 @@ export function ChangeRow(props: {
               props.type === 'addition' && 'bg-[#11362b]',
             )}
           >
-            {props.indent &&
+            {!!props.indent &&
               Array.from({ length: Number(props.indent) }).map((_, i) => (
                 <Fragment key={i}>{TAB}</Fragment>
               ))}
@@ -192,11 +197,11 @@ export function ChangeRow(props: {
           </span>
         </td>
       </tr>
-      {annotation && (
-        <tr>
+      {annotations.map((annotation, i) => (
+        <tr key={`annotation-${i}`}>
           <td colSpan={3}>{annotation}</td>
         </tr>
-      )}
+      ))}
     </ChangeRowContext.Provider>
   );
 }
@@ -228,6 +233,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
   const { setAdded, change } = useContext(ChangeRowContext);
   useEffect(() => {
+    // @todo adjust this to make it work with the new array format
     if (!change.addition) {
       setAdded(true);
     }
@@ -366,7 +372,7 @@ export function DiffInputField({
   return (
     <>
       <DiffDescription newNode={newField!} oldNode={oldField!} indent />
-      <ChangeRow type={changeType} indent coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow type={changeType} indent coordinates={[path.join('.')]} annotations={annotations}>
         <Change type={changeType}>
           <FieldName name={name} />
         </Change>
@@ -381,7 +387,7 @@ export function DiffInputField({
   );
 }
 
-function Change({
+export function Change({
   type,
   children,
 }: {
@@ -436,7 +442,7 @@ export function DiffField({
   return (
     <>
       <DiffDescription newNode={newField!} oldNode={oldField!} indent />
-      <ChangeRow type={changeType} indent coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow type={changeType} indent coordinates={[path.join('.')]} annotations={annotations}>
         <Change type={changeType}>
           <FieldName name={name} />
         </Change>
@@ -486,7 +492,7 @@ export function DiffArguments(props: {
           <ChangeRow
             type="removal"
             indent={props.indent}
-            coordinate={[...props.parentPath, a.name].join('.')}
+            coordinates={[[...props.parentPath, a.name].join('.')]}
             annotations={props.annotations}
           >
             <Change type="removal">
@@ -504,7 +510,7 @@ export function DiffArguments(props: {
           <ChangeRow
             type="addition"
             indent={props.indent}
-            coordinate={[...props.parentPath, a.name].join('.')}
+            coordinates={[[...props.parentPath, a.name].join('.')]}
             annotations={props.annotations}
           >
             <Change type="addition">
@@ -521,7 +527,7 @@ export function DiffArguments(props: {
           <DiffDescription newNode={a.newVersion} oldNode={a.oldVersion} indent={props.indent} />
           <ChangeRow
             indent={props.indent}
-            coordinate={[...props.parentPath, a.newVersion.name].join('.')}
+            coordinates={[[...props.parentPath, a.newVersion.name].join('.')]}
             annotations={props.annotations}
           >
             <Change>
@@ -667,7 +673,7 @@ export function DiffDirective(
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={props.newDirective!} oldNode={props.oldDirective!} />
-      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={props.annotations}>
+      <ChangeRow type={changeType} coordinates={[path.join('.')]} annotations={props.annotations}>
         <Change type={changeType}>
           <Keyword term="directive" />
           &nbsp;
@@ -865,7 +871,7 @@ export function SchemaDefinitionDiff({
   return (
     <>
       <ChangeSpacing type={changeType} />
-      <ChangeRow coordinate={path.join('.')} annotations={annotations} type={schemaDefType}>
+      <ChangeRow coordinates={[path.join('.')]} annotations={annotations} type={schemaDefType}>
         <Keyword term="schema" />
         {' {'}
       </ChangeRow>
@@ -970,7 +976,7 @@ export function DiffInputObject({
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newInput!} oldNode={oldInput!} />
-      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow type={changeType} coordinates={[path.join('.')]} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="input" />
           &nbsp;
@@ -1042,7 +1048,7 @@ export function DiffObject({
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newObject!} oldNode={oldObject!} />
-      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow type={changeType} coordinates={[path.join('.')]} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term={isInterfaceType(newObject) ? 'interface' : 'type'} />
           &nbsp;
@@ -1111,7 +1117,7 @@ export function DiffEnumValue({
       <ChangeRow
         type={changeType}
         indent
-        coordinate={[...parentPath, name].join('.')}
+        coordinates={[[...parentPath, name].join('.')]}
         annotations={annotations}
       >
         <Change type={changeType}>
@@ -1147,7 +1153,7 @@ export function DiffEnum({
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newEnum!} oldNode={oldEnum!} />
-      <ChangeRow type={changeType} coordinate={name} annotations={annotations}>
+      <ChangeRow type={changeType} coordinates={[name]} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="enum" />
           &nbsp;
@@ -1210,7 +1216,7 @@ export function DiffUnion({
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription newNode={newUnion!} oldNode={oldUnion!} />
-      <ChangeRow type={changeType} coordinate={path.join('.')} annotations={annotations}>
+      <ChangeRow type={changeType} coordinates={[path.join('.')]} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="union" />
           &nbsp;
@@ -1228,7 +1234,7 @@ export function DiffUnion({
           <ChangeRow
             type="removal"
             indent
-            coordinate={[...path, a.name].join('.')}
+            coordinates={[[...path, a.name].join('.')]}
             annotations={annotations}
           >
             <Change type="removal">
@@ -1242,7 +1248,7 @@ export function DiffUnion({
           <ChangeRow
             type="addition"
             indent
-            coordinate={[...path, a.name].join('.')}
+            coordinates={[[...path, a.name].join('.')]}
             annotations={annotations}
           >
             <Change type="addition">
@@ -1255,7 +1261,7 @@ export function DiffUnion({
         <Fragment key={a.newVersion.name}>
           <ChangeRow
             indent
-            coordinate={[...path, a.newVersion.name].join('.')}
+            coordinates={[[...path, a.newVersion.name].join('.')]}
             annotations={annotations}
           >
             <Change>
@@ -1289,7 +1295,7 @@ export function DiffScalar({
     <>
       <ChangeSpacing type={changeType} />
       <DiffDescription oldNode={oldScalar!} newNode={newScalar!} />
-      <ChangeRow type={changeType} coordinate={name} annotations={annotations}>
+      <ChangeRow type={changeType} coordinates={[name]} annotations={annotations}>
         <Change type={changeType}>
           <Keyword term="scalar" />
           &nbsp;
