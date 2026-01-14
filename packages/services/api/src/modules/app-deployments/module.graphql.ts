@@ -11,7 +11,7 @@ export default gql`
       filter: AppDeploymentDocumentsFilterInput
     ): GraphQLDocumentConnection
     totalDocumentCount: Int!
-    status: AppDeploymentStatus! @tag(name: "public")
+    status: AppDeploymentStatus!
     """
     The timestamp when the app deployment was created.
     """
@@ -27,9 +27,9 @@ export default gql`
   }
 
   enum AppDeploymentStatus {
-    pending @tag(name: "public")
-    active @tag(name: "public")
-    retired @tag(name: "public")
+    pending
+    active
+    retired
   }
 
   type GraphQLDocumentConnection {
