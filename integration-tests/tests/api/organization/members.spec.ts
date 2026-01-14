@@ -190,7 +190,7 @@ test.concurrent(
 
     // Join
     const extra = seed.generateEmail();
-    const { access_token: member_access_token } = await seed.authenticate(extra);
+    const { accessToken: member_access_token } = await seed.authenticate(extra);
     const joinResult = await (
       await joinMemberUsingCode(inviteCode, member_access_token)
     ).expectNoGraphQLErrors();
@@ -202,7 +202,7 @@ test.concurrent(
     }
 
     const other = seed.generateEmail();
-    const { access_token: other_access_token } = await seed.authenticate(other);
+    const { accessToken: other_access_token } = await seed.authenticate(other);
     const otherJoinResult = await (
       await joinMemberUsingCode(inviteCode, other_access_token)
     ).expectNoGraphQLErrors();
