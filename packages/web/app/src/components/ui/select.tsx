@@ -67,7 +67,7 @@ const SelectContent = React.forwardRef<
         className={cn(
           'p-1',
           position === 'popper' &&
-            'max-h-(--radix-select-content-available-height) w-full min-w-(--radix-select-trigger-width)',
+            'max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) w-full',
         )}
       >
         {children}

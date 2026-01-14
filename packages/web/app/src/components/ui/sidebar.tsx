@@ -167,7 +167,7 @@ const Sidebar = React.forwardRef<
       return (
         <div
           className={cn(
-            'bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col',
+            'bg-sidebar text-sidebar-foreground w-(--sidebar-width) flex h-full flex-col',
             className,
           )}
           ref={ref}
@@ -210,7 +210,7 @@ const Sidebar = React.forwardRef<
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            'relative h-svh w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
+            'w-(--sidebar-width) relative h-svh bg-transparent transition-[width] duration-200 ease-linear',
             'group-data-[collapsible=offcanvas]:w-0',
             'group-data-[side=right]:rotate-180',
             variant === 'floating' || variant === 'inset'
@@ -220,7 +220,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
+            'w-(--sidebar-width) fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width] duration-200 ease-linear md:flex',
             side === 'left'
               ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
               : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
@@ -640,7 +640,7 @@ const SidebarMenuSkeleton = React.forwardRef<
     >
       {showIcon && <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
       <Skeleton
-        className="h-4 max-w-(--skeleton-width) flex-1"
+        className="max-w-(--skeleton-width) h-4 flex-1"
         data-sidebar="menu-skeleton-text"
         style={
           {

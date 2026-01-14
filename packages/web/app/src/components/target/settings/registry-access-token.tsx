@@ -165,10 +165,7 @@ export function CreatedTokenContent(props: {
   toggleModalOpen: () => void;
 }) {
   return (
-    <DialogContent
-      className="w-4/5 max-w-[600px] md:w-3/5"
-      data-cy="registry-token-created"
-    >
+    <DialogContent className="w-4/5 max-w-[600px] md:w-3/5" data-cy="registry-token-created">
       <DialogHeader className="flex flex-col gap-5">
         <DialogTitle>Token successfully created!</DialogTitle>
         <DialogDescription className="flex flex-col gap-5">
