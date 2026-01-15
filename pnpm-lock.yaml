@@ -71,7 +71,7 @@ patchedDependencies:
     hash: 38956679ac61493f4dbc6862445316e9909dd989c221357f4b21ce70d8c8fd5b
     path: patches/nextra-theme-docs.patch
   oclif:
-    hash: 0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6
+    hash: 14bfe62909a48d0f0115f257cc517dbaa3caac858fc059ddeaa614af424b626b
     path: patches/oclif.patch
   p-cancelable@4.0.1:
     hash: 195ae63d47810ca4c987421948f15869356e598dccde9e8c9a4ff4efd3e88322
@@ -516,7 +516,7 @@ importers:
         version: 3.1.4
       oclif:
         specifier: 4.22.65
-        version: 4.22.65(patch_hash=0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6)(@types/node@25.0.2)
+        version: 4.22.65(patch_hash=14bfe62909a48d0f0115f257cc517dbaa3caac858fc059ddeaa614af424b626b)(@types/node@25.0.2)
       rimraf:
         specifier: 4.4.1
         version: 4.4.1
@@ -38761,7 +38761,7 @@ snapshots:
 
   obuf@1.1.2: {}
 
-  oclif@4.22.65(patch_hash=0aac7abfb9211ffbd102f85b840f7fc41d8f64bcb6e71e197f2ad539e58ba9a6)(@types/node@25.0.2):
+  oclif@4.22.65(patch_hash=14bfe62909a48d0f0115f257cc517dbaa3caac858fc059ddeaa614af424b626b)(@types/node@25.0.2):
     dependencies:
       '@aws-sdk/client-cloudfront': 3.969.0
       '@aws-sdk/client-s3': 3.969.0
