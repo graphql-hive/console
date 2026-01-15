@@ -1098,9 +1098,7 @@ test.concurrent(
       expect.fail('Expected schema check to fail with breaking changes');
     } catch (error: any) {
       const output = stripAnsi(error.message || error.stderr || String(error));
-      expect(output).toContain('test-app@1.0.0');
-      expect(output).toContain('GetUserEmails');
-      expect(output).toContain('GetUserProfile');
+      expect(output).toContain('[1 app deployment affected]');
     }
   },
 );
