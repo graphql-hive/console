@@ -18,9 +18,8 @@ export type WordProps = {
 };
 
 export function Word(props: WordProps) {
-  const type = !!props.change || props.change === 'no change' ? 'mutual' : props.change;
   return (
-    <Change type={type}>
+    <Change type={props.change}>
       <span
         className={cn(
           props.kind === 'description' && 'text-gray-500',

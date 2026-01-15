@@ -36,7 +36,7 @@ import { isPrimitive } from '@graphql-inspector/core/utils/graphql';
 import { Builder, createBuilder } from './builder';
 import { compareLists, diffArrays, matchArrays } from './compare-lists';
 import { ChangeDocument } from './components';
-import { Line } from './lines';
+import { Line, LineGroup, LineProps } from './lines';
 import { determineChangeType, lineToWordChange, printDefault } from './util';
 import {
   description,
@@ -105,11 +105,11 @@ export function SchemaDiff({
         builder,
       }),
     );
-    // schemaDefinitionDiff({
-    //   oldSchema: before,
-    //   newSchema: after,
-    //   builder,
-    // });
+    schemaDefinitionDiff({
+      oldSchema: before,
+      newSchema: after,
+      builder,
+    });
     removedTypes.map(a => {
       diffType({
         oldType: a,
@@ -131,16 +131,191 @@ export function SchemaDiff({
         builder,
       });
     });
-    return builder.getLines();
+
+    const isSameChange = (
+      a: 'removal' | 'addition' | 'mutual' | 'no change' | undefined,
+      b: 'removal' | 'addition' | 'mutual' | 'no change' | undefined,
+    ) => (a ?? 'no change') === (b ?? 'no change');
+    return builder.getLines().reduce((groups, line) => {
+      const lastGroup = groups.at(-1);
+      if (!lastGroup) {
+        groups.push([line]);
+      } else if (isSameChange(lastGroup.at(-1)?.change, line.change)) {
+        // if this is the same change type, then add it to the last group
+        lastGroup?.push(line);
+      } else {
+        // if this is a different change type, then create a new group
+        groups.push([line]);
+      }
+      return groups;
+    }, [] as LineProps[][]);
   }, [before, after]);
+
+  let beforeLine = 0;
+  let afterLine = 0;
 
   return (
     <ChangeDocument className={className}>
-      {lines.map((line, i) => (
-        <Line {...line} key={`line-${i}`} />
+      {lines.map((group, i) => (
+        <LineGroup key={`group-${i}`} collapsible={group[0]?.change === 'no change'}>
+          {group.map((line, j) => {
+            if (line.change !== 'addition') {
+              beforeLine += 1;
+            }
+            if (line.change !== 'removal') {
+              afterLine += 1;
+            }
+            return (
+              <Line
+                beforeLine={beforeLine}
+                afterLine={afterLine}
+                {...line}
+                key={`line-${i}-${j}`}
+              />
+            );
+          })}
+        </LineGroup>
       ))}
     </ChangeDocument>
   );
+}
+
+type RootFieldsType = {
+  query: GraphQLField<any, any> | null;
+  mutation: GraphQLField<any, any> | null;
+  subscription: GraphQLField<any, any> | null;
+};
+
+function schemaDefinitionDiff({
+  oldSchema,
+  newSchema,
+  builder,
+}: {
+  oldSchema: GraphQLSchema | undefined | null;
+  newSchema: GraphQLSchema | undefined | null;
+  builder: Builder;
+}) {
+  const oldQuery = oldSchema?.getQueryType();
+  const oldMutation = oldSchema?.getMutationType();
+  const oldSubscription = oldSchema?.getSubscriptionType();
+  const oldRoot: RootFieldsType = {
+    query: oldQuery
+      ? {
+          args: [],
+          name: 'query',
+          type: oldQuery,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    mutation: oldMutation
+      ? {
+          args: [],
+          name: 'mutation',
+          type: oldMutation,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    subscription: oldSubscription
+      ? {
+          args: [],
+          name: 'subscription',
+          type: oldSubscription,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+  };
+
+  const newQuery = newSchema?.getQueryType();
+  const newMutation = newSchema?.getMutationType();
+  const newSubscription = newSchema?.getSubscriptionType();
+  const newRoot: RootFieldsType = {
+    query: newQuery
+      ? {
+          args: [],
+          name: 'query',
+          type: newQuery,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    mutation: newMutation
+      ? {
+          args: [],
+          name: 'mutation',
+          type: newMutation,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+    subscription: newSubscription
+      ? {
+          args: [],
+          name: 'subscription',
+          type: newSubscription,
+          astNode: null,
+          deprecationReason: null,
+          description: null,
+          extensions: {},
+        }
+      : null,
+  };
+  const path = [''];
+  const changeType = determineChangeType(oldSchema, newSchema);
+
+  const newSchemaDef = [oldRoot.mutation, oldRoot.query, oldRoot.subscription].every(
+    field => field === null,
+  );
+  const removedSchemaDef = [newRoot.mutation, newRoot.query, newRoot.subscription].every(
+    field => field === null,
+  );
+  const schemaDefType = newSchemaDef ? 'addition' : removedSchemaDef ? 'removal' : 'mutual';
+
+  // add an additional line for spacing
+  builder.newLine({ type: changeType });
+  builder.newLine({ type: changeType });
+  builder.write(keyword('schema'), SPACE, literal('{'));
+
+  if (oldRoot.query || newRoot.query) {
+    diffField({
+      oldField: oldRoot.query,
+      newField: newRoot.query!,
+      parentPath: path,
+      builder,
+    });
+  }
+  if (oldRoot.mutation || newRoot.mutation) {
+    diffField({
+      oldField: oldRoot.mutation,
+      newField: newRoot.mutation!,
+      parentPath: path,
+      builder,
+    });
+  }
+  if (oldRoot.subscription || newRoot.subscription) {
+    diffField({
+      oldField: oldRoot.subscription,
+      newField: newRoot.subscription!,
+      parentPath: path,
+      builder,
+    });
+  }
+  builder.newLine({
+    type: schemaDefType,
+  });
+  builder.write(literal('}'));
 }
 
 function directiveName(props: {
@@ -514,9 +689,6 @@ function diffField({
   builder.write(field(name, path.join('.')));
   if (hasArgs) {
     builder.write(literal('(', lineToWordChange(argsChangeType)));
-    // builder.newLine({
-    //   type: 'mutual',
-    // });
     diffArguments({
       newArgs: newField?.args ?? [],
       oldArgs: oldField?.args ?? [],
@@ -630,6 +802,7 @@ function diffScalar({
     }) {
   const changeType = determineChangeType(oldScalar, newScalar);
   const name = newScalar?.name ?? oldScalar?.name ?? '';
+  builder.newLine({ type: changeType });
   diffDescription({
     oldNode: oldScalar!,
     newNode: newScalar,
@@ -801,7 +974,6 @@ export function diffDirective(
       : 'mutual';
 
   const path = [`@${name}`];
-  newLine();
   diffDescription({
     newNode: props.newDirective!,
     oldNode: props.oldDirective!,
@@ -858,6 +1030,9 @@ function diffTypeStr({
     builder.write(typeName(oldType, 'removal'));
   }
   if (newType) {
+    if (oldType) {
+      builder.write(SPACE); // add some spacing between the changes
+    }
     builder.write(typeName(newType, 'addition'));
   }
 }
@@ -876,8 +1051,9 @@ function diffArgumentAST({
   const name = oldArg?.name.value ?? newArg?.name.value ?? '';
   const oldType = oldArg && print(oldArg.value);
   const newType = newArg && print(newArg.value);
+  const changeType = lineToWordChange(determineChangeType(oldType, newType));
 
-  builder.write(field(name, [...path, name].join('.')), literal(':'), SPACE);
+  builder.write(field(name, [...path, name].join('.'), changeType), literal(': ', changeType));
 
   diffTypeStr({
     oldType,
@@ -925,31 +1101,41 @@ function diffDirectiveUsage(
 
   const directivePath = [...props.path, name];
 
-  for (const r of removed) {
+  for (let i = 0; i < removed.length; i++) {
+    if (i !== 0) {
+      props.builder.write(literal(', ', 'removal'));
+    }
     diffArgumentAST({
-      oldArg: r,
+      oldArg: removed[i],
       newArg: null,
       builder: props.builder,
       path: directivePath,
     });
   }
 
-  for (const r of added) {
+  for (let i = 0; i < added.length; i++) {
     diffArgumentAST({
       oldArg: null,
-      newArg: r,
+      newArg: added[i],
       builder: props.builder,
       path: directivePath,
     });
+    if (i < removed.length - 1 || added.length || mutual.length) {
+      props.builder.write(literal(', ', 'addition'));
+    }
   }
 
-  for (const r of mutual) {
+  for (let i = 0; i < mutual.length; i++) {
+    const r = mutual[i];
     diffArgumentAST({
       oldArg: r.oldVersion,
       newArg: r.newVersion,
       builder: props.builder,
       path: directivePath,
     });
+    if (i < added.length - 1 || mutual.length) {
+      props.builder.write(literal(', '));
+    }
   }
 
   props.builder.write(...(hasArgs ? [keyword(')', lineToWordChange(argsChangeType))] : []));
@@ -1133,7 +1319,7 @@ function diffArguments(props: {
       builder: props.builder,
     });
     props.builder.newLine({
-      type: 'no change',
+      type: 'mutual',
       indent: props.indent,
     });
     props.builder.write(
@@ -1200,7 +1386,7 @@ export function diffDescription(
       content: printDescription(props.newNode!)!,
       indent: props.indent ?? 0,
       builder: props.builder,
-      type: 'no change',
+      type: 'mutual',
     });
   }
 }
@@ -1208,7 +1394,7 @@ export function diffDescription(
 function _description(props: {
   content: string;
   indent: number;
-  type: 'removal' | 'addition' | 'no change' | 'mutual';
+  type: 'removal' | 'addition' | 'mutual';
   builder: Builder;
 }) {
   const lines = props.content.split('\n');

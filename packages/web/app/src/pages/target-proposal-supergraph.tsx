@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 import { useQuery } from 'urql';
 import { ProposalOverview_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
-import { SchemaDiff } from '@/components/target/proposals/schema-diff/schema-diff';
+import { SchemaDiff } from '@/components/target/proposals/schema-diff/core';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Change } from '@graphql-inspector/core';
