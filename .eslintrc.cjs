@@ -162,6 +162,8 @@ module.exports = {
         'better-tailwindcss/enforce-consistent-class-order': 'off',
         // set more strict to highlight in editor
         'better-tailwindcss/enforce-canonical-classes': 'warn',
+        // keeping classes in one line helps prettier-plugin-tailwindcss
+        // enable wrapping in text editors to make classes human readable
         'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
         'better-tailwindcss/enforce-shorthand-classes': 'off',
         'react/display-name': 'off',
