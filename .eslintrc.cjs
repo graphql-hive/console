@@ -160,7 +160,6 @@ module.exports = {
       rules: {
         // conflicts with official prettier-plugin-tailwindcss and tailwind v3
         'better-tailwindcss/enforce-consistent-class-order': 'off',
-        // set more strict to highlight in editor
         'better-tailwindcss/enforce-canonical-classes': 'warn',
         // keeping classes in one line helps prettier-plugin-tailwindcss
         // enable wrapping in text editors to make classes human readable
