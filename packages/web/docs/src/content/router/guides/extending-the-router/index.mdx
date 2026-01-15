@@ -598,10 +598,10 @@ impl RouterPlugin for ContextDataPlugin {
             response_count: 0,
         };
 
-        payload.proceedext.insert(context_data);
+        payload.context.insert(context_data);
 
         payload.on_end(|payload| {
-            let context_data = payload.proceedext.get_mut::<ContextData>();
+            let context_data = payload.context.get_mut::<ContextData>();
             if let Some(mut context_data) = context_data {
                 context_data.response_count += 1;
                 tracing::info!("subrequest count {}", context_data.response_count);
@@ -613,7 +613,8 @@ impl RouterPlugin for ContextDataPlugin {
         &'exec self,
         mut payload: OnSubgraphExecuteStartHookPayload<'exec>,
     ) -> OnSubgraphExecuteStartHookResult<'exec> {
-        let context_data_entry = payload.proceedext.get_ref::<ContextData>();
+        // Get immutable reference from the context
+        let context_data_entry = payload.context.get_ref::<ContextData>();
         if let Some(ref context_data_entry) = context_data_entry {
             tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
             let new_header_value = format!("Hello {}", context_data_entry.incoming_data);
@@ -623,7 +624,7 @@ impl RouterPlugin for ContextDataPlugin {
             );
         }
         payload.on_end(|payload: OnSubgraphExecuteEndHookPayload<'exec>| {
-            let context_data = payload.proceedext.get_mut::<ContextData>();
+            let context_data = payload.context.get_mut::<ContextData>();
             if let Some(mut context_data) = context_data {
                 context_data.response_count += 1;
                 tracing::info!("subrequest count {}", context_data.response_count);
