@@ -7,8 +7,17 @@ import {
   type GraphQLArgument,
   type GraphQLField,
 } from 'graphql';
-import { BoxIcon, ChevronDownIcon, CopyMinusIcon, CuboidIcon, FolderIcon } from 'lucide-react';
+import { throttle } from 'lodash';
+import {
+  BoxIcon,
+  ChevronDownIcon,
+  CopyMinusIcon,
+  CuboidIcon,
+  FolderIcon,
+  RotateCcwIcon,
+} from 'lucide-react';
 import { GraphQLType } from '@/laboratory/components/graphql-type';
+import { GraphQLIcon } from '@/laboratory/components/icons';
 import { useLaboratory } from '@/laboratory/components/laboratory/context';
 import { Button } from '@/laboratory/components/ui/button';
 import { Checkbox } from '@/laboratory/components/ui/checkbox';
@@ -24,6 +33,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/laboratory/components/ui/empty';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/laboratory/components/ui/input-group';
 import { ScrollArea, ScrollBar } from '@/laboratory/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/laboratory/components/ui/tooltip';
@@ -459,7 +474,9 @@ export const Builder = (props: {
   operation?: LaboratoryOperation | null;
   isReadOnly?: boolean;
 }) => {
-  const { schema, activeOperation } = useLaboratory();
+  const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } = useLaboratory();
+
+  const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
   const [openPaths, setOpenPaths] = useState<string[]>([]);
 
   const operation = useMemo(() => {
@@ -494,6 +511,23 @@ export const Builder = (props: {
 
   const [tabValue, setTabValue] = useState<string>('query');
 
+  const throttleSetEndpoint = useMemo(
+    () =>
+      throttle((endpoint: string) => {
+        setEndpoint(endpoint);
+      }, 1000),
+    [setEndpoint],
+  );
+
+  useEffect(() => {
+    throttleSetEndpoint(endpointValue);
+  }, [endpointValue, throttleSetEndpoint]);
+
+  const restoreEndpoint = useCallback(() => {
+    setEndpointValue(endpoint ?? '');
+    setEndpoint(defaultEndpoint ?? '');
+  }, [defaultEndpoint, setEndpointValue]);
+
   return (
     <div className="bg-card flex size-full flex-col overflow-hidden">
       <div className="flex items-center px-3 pt-3">
@@ -514,6 +548,30 @@ export const Builder = (props: {
             <TooltipContent>Collapse all</TooltipContent>
           </Tooltip>
         </div>
+      </div>
+      <div className="px-3 pt-3">
+        <InputGroup>
+          <InputGroupInput
+            placeholder="Enter endpoint"
+            value={endpointValue}
+            onChange={e => setEndpointValue(e.currentTarget.value)}
+          />
+          <InputGroupAddon>
+            <GraphQLIcon />
+          </InputGroupAddon>
+          {defaultEndpoint && (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton className="rounded-full" size="icon-xs" onClick={restoreEndpoint}>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <RotateCcwIcon className="size-4" />
+                  </TooltipTrigger>
+                  <TooltipContent>Restore default endpoint</TooltipContent>
+                </Tooltip>
+              </InputGroupButton>
+            </InputGroupAddon>
+          )}
+        </InputGroup>
       </div>
       <div className="flex-1 overflow-hidden">
         {schema ? (
