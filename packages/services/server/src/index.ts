@@ -182,6 +182,7 @@ export async function main() {
           'Content-Type',
           'graphql-client-version',
           'graphql-client-name',
+          'ignore-session',
           'x-request-id',
           ...supertokens.getAllCORSHeaders(),
         ],
@@ -413,6 +414,9 @@ export async function main() {
                 new OrganizationMemberRoles(storage.pool, logger),
                 logger,
               ),
+              config: {
+                requireEmailVerification: env.auth.requireEmailVerification,
+              },
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>

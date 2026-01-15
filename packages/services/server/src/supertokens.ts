@@ -3,7 +3,6 @@ import type Redis from 'ioredis';
 import { CryptoProvider } from 'packages/services/api/src/modules/shared/providers/crypto';
 import { OverrideableBuilder } from 'supertokens-js-override/lib/build/index.js';
 import supertokens from 'supertokens-node';
-import EmailVerification from 'supertokens-node/recipe/emailverification/index.js';
 import SessionNode from 'supertokens-node/recipe/session/index.js';
 import type { ProviderInput } from 'supertokens-node/recipe/thirdparty/types';
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword/index.js';
@@ -12,7 +11,6 @@ import type { TypeInput } from 'supertokens-node/types';
 import zod from 'zod';
 import { type Storage } from '@hive/api';
 import { TaskScheduler } from '@hive/workflows/kit';
-import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { createInternalApiCaller } from './api';
 import { env } from './environment';
@@ -153,26 +151,6 @@ export const backendConfig = (requirements: {
           getEnsureUserOverrides(internalApi, requirements.redis),
           env.auth.organizationOIDC ? getOIDCSuperTokensOverrides() : null,
         ]),
-      }),
-      EmailVerification.init({
-        mode: env.auth.requireEmailVerification ? 'REQUIRED' : 'OPTIONAL',
-        emailDelivery: {
-          override: originalImplementation => ({
-            ...originalImplementation,
-            async sendEmail(input) {
-              if (input.type === 'EMAIL_VERIFICATION') {
-                await requirements.taskScheduler.scheduleTask(EmailVerificationTask, {
-                  user: {
-                    id: input.user.id,
-                    email: input.user.email,
-                  },
-                  emailVerifyLink: input.emailVerifyLink,
-                });
-                return Promise.resolve();
-              }
-            },
-          }),
-        },
       }),
       SessionNode.init({
         override: {
