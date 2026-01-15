@@ -541,11 +541,11 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
   await waitUntil(() => logger.getLogs().includes('Report sent!'));
   http.done();
 
-  expect(logger.getLogs()).toMatch('[DBG] Disposing');
-  expect(logger.getLogs()).toMatch('[DBG] Sending report (queue 2)');
-  expect(logger.getLogs()).toMatch('[DBG] POST http://localhost/200');
-  expect(logger.getLogs()).toMatch('succeeded with status 200');
-  expect(logger.getLogs()).toMatch('[DBG] Report sent!');
+  expect(logger.getLogs()).toMatch(/\[DBG\] Disposing/);
+  expect(logger.getLogs()).toMatch(/\[DBG\] Sending report \(queue 2\)/);
+  expect(logger.getLogs()).toMatch(/\[DBG\] POST http:\/\/localhost\/200/);
+  expect(logger.getLogs()).toMatch(/succeeded with status 200/);
+  expect(logger.getLogs()).toMatch(/\[DBG\] Report sent!/);
 
   // Map
   expect(report.size).toEqual(2);
