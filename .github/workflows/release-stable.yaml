@@ -67,6 +67,7 @@ jobs:
           title: 'Upcoming Release Changes'
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          HIVE_VERSION_TAG: skip
 
       - name: extract published cli version
         if:
