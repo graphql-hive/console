@@ -1102,15 +1102,15 @@ function diffDirectiveUsage(
   const directivePath = [...props.path, name];
 
   for (let i = 0; i < removed.length; i++) {
-    if (i !== 0) {
-      props.builder.write(literal(', ', 'removal'));
-    }
     diffArgumentAST({
       oldArg: removed[i],
       newArg: null,
       builder: props.builder,
       path: directivePath,
     });
+    if (i !== removed.length || added.length || mutual.length) {
+      props.builder.write(literal(', ', 'removal'));
+    }
   }
 
   for (let i = 0; i < added.length; i++) {
@@ -1120,7 +1120,7 @@ function diffDirectiveUsage(
       builder: props.builder,
       path: directivePath,
     });
-    if (i < removed.length - 1 || added.length || mutual.length) {
+    if (i !== added.length - 1 || mutual.length) {
       props.builder.write(literal(', ', 'addition'));
     }
   }
@@ -1133,7 +1133,7 @@ function diffDirectiveUsage(
       builder: props.builder,
       path: directivePath,
     });
-    if (i < added.length - 1 || mutual.length) {
+    if (i !== mutual.length - 1) {
       props.builder.write(literal(', '));
     }
   }
