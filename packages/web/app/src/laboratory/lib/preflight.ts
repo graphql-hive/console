@@ -15,7 +15,10 @@ export interface LaboratoryPreflightResult {
   logs: LaboratoryPreflightLog[];
   env: LaboratoryEnv;
   headers: Record<string, string>;
+<<<<<<< HEAD
   pluginsState: Record<string, any>;
+=======
+>>>>>>> 44548f4c8b0ce99a52df3aa36b8c0f4c914dfdcc
 }
 
 export interface LaboratoryPreflight {

@@ -13,7 +13,10 @@ export function reportReadiness(isReady: boolean) {
   readiness.set(isReady ? 1 : 0);
 }
 
-export async function startMetrics(instanceLabel: string | undefined, port = 10_254) {
+export async function startMetrics(
+  instanceLabel: string | undefined,
+  port = 10_254,
+): Promise<() => Promise<void>> {
   promClient.collectDefaultMetrics({
     labels: { instance: instanceLabel },
   });
@@ -26,7 +29,7 @@ export async function startMetrics(instanceLabel: string | undefined, port = 10_
   server.route({
     method: 'GET',
     url: '/metrics',
-    async handler(req, res) {
+    async handler(_req, res) {
       try {
         void res.header('Content-Type', promClient.register.contentType);
         const result = await promClient.register.metrics();
@@ -40,8 +43,10 @@ export async function startMetrics(instanceLabel: string | undefined, port = 10_
 
   await server.register(cors);
 
-  return await server.listen({
+  await server.listen({
     port,
     host: '::',
   });
+
+  return () => server.close();
 }

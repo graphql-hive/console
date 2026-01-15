@@ -191,7 +191,7 @@ export function TargetProposalEditPage(props: {
 
   return (
     <div className="relative min-h-[500px] w-full">
-      <div className="absolute right-1 top-1 flex items-center">
+      <div className="absolute -top-10 right-1 flex items-center">
         <Button
           disabled={saveChangesResponse.fetching}
           variant="outline"

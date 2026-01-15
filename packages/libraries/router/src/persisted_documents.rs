@@ -6,6 +6,7 @@ use apollo_router::plugin::PluginInit;
 use apollo_router::services::router;
 use apollo_router::services::router::Body;
 use apollo_router::Context;
+use bytes::Bytes;
 use core::ops::Drop;
 use futures::FutureExt;
 use hive_console_sdk::persisted_documents::PersistedDocumentsError;
@@ -14,7 +15,6 @@ use http::StatusCode;
 use http_body_util::combinators::UnsyncBoxBody;
 use http_body_util::BodyExt;
 use http_body_util::Full;
-use hyper::body::Bytes;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -32,7 +32,7 @@ pub static PERSISTED_DOCUMENT_HASH_KEY: &str = "hive::persisted_document_hash";
 pub struct Config {
     pub enabled: Option<bool>,
     /// GraphQL Hive persisted documents CDN endpoint URL.
-    pub endpoint: Option<String>,
+    pub endpoint: Option<EndpointConfig>,
     /// GraphQL Hive persisted documents CDN access token.
     pub key: Option<String>,
     /// Whether arbitrary documents should be allowed along-side persisted documents.
@@ -57,6 +57,25 @@ pub struct Config {
     pub cache_size: Option<u64>,
 }
 
+#[derive(Clone, Debug, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum EndpointConfig {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
+impl From<&str> for EndpointConfig {
+    fn from(value: &str) -> Self {
+        EndpointConfig::Single(value.into())
+    }
+}
+
+impl From<&[&str]> for EndpointConfig {
+    fn from(value: &[&str]) -> Self {
+        EndpointConfig::Multiple(value.iter().map(|s| s.to_string()).collect())
+    }
+}
+
 pub struct PersistedDocumentsPlugin {
     persisted_documents_manager: Option<Arc<PersistedDocumentsManager>>,
     allow_arbitrary_documents: bool,
@@ -72,11 +91,14 @@ impl PersistedDocumentsPlugin {
                 allow_arbitrary_documents,
             });
         }
-        let endpoint = match &config.endpoint {
-            Some(ep) => ep.clone(),
+        let endpoints = match &config.endpoint {
+            Some(ep) => match ep {
+                EndpointConfig::Single(url) => vec![url.clone()],
+                EndpointConfig::Multiple(urls) => urls.clone(),
+            },
             None => {
                 if let Ok(ep) = env::var("HIVE_CDN_ENDPOINT") {
-                    ep
+                    vec![ep]
                 } else {
                     return Err(
                         "Endpoint for persisted documents CDN is not configured. Please set it via the plugin configuration or HIVE_CDN_ENDPOINT environment variable."
@@ -100,17 +122,41 @@ impl PersistedDocumentsPlugin {
             }
         };
 
+        let mut persisted_documents_manager = PersistedDocumentsManager::builder()
+            .key(key)
+            .user_agent(format!("hive-apollo-router/{}", PLUGIN_VERSION));
+
+        for endpoint in endpoints {
+            persisted_documents_manager = persisted_documents_manager.add_endpoint(endpoint);
+        }
+
+        if let Some(connect_timeout) = config.connect_timeout {
+            persisted_documents_manager =
+                persisted_documents_manager.connect_timeout(Duration::from_secs(connect_timeout));
+        }
+
+        if let Some(request_timeout) = config.request_timeout {
+            persisted_documents_manager =
+                persisted_documents_manager.request_timeout(Duration::from_secs(request_timeout));
+        }
+
+        if let Some(retry_count) = config.retry_count {
+            persisted_documents_manager = persisted_documents_manager.max_retries(retry_count);
+        }
+
+        if let Some(accept_invalid_certs) = config.accept_invalid_certs {
+            persisted_documents_manager =
+                persisted_documents_manager.accept_invalid_certs(accept_invalid_certs);
+        }
+
+        if let Some(cache_size) = config.cache_size {
+            persisted_documents_manager = persisted_documents_manager.cache_size(cache_size);
+        }
+
+        let persisted_documents_manager = persisted_documents_manager.build()?;
+
         Ok(PersistedDocumentsPlugin {
-            persisted_documents_manager: Some(Arc::new(PersistedDocumentsManager::new(
-                key,
-                endpoint,
-                config.accept_invalid_certs.unwrap_or(false),
-                Duration::from_secs(config.connect_timeout.unwrap_or(5)),
-                Duration::from_secs(config.request_timeout.unwrap_or(15)),
-                config.retry_count.unwrap_or(3),
-                config.cache_size.unwrap_or(1000),
-                format!("hive-apollo-router/{}", PLUGIN_VERSION),
-            ))),
+            persisted_documents_manager: Some(Arc::new(persisted_documents_manager)),
             allow_arbitrary_documents,
         })
     }
@@ -133,7 +179,7 @@ impl Plugin for PersistedDocumentsPlugin {
                     let mgr = mgr.clone();
                     async move {
                         let (parts, body) = req.router_request.into_parts();
-                        let bytes: hyper::body::Bytes = body
+                        let bytes = body
                             .collect()
                             .await
                             .map_err(|err| PersistedDocumentsError::FailedToReadBody(err.to_string()))?
@@ -266,7 +312,7 @@ struct ExpectedBodyStructure {
 }
 
 fn extract_document_id(
-    body: &hyper::body::Bytes,
+    body: &bytes::Bytes,
 ) -> Result<ExpectedBodyStructure, PersistedDocumentsError> {
     serde_json::from_slice::<ExpectedBodyStructure>(body)
         .map_err(PersistedDocumentsError::FailedToParseBody)
@@ -344,8 +390,8 @@ mod hive_persisted_documents_tests {
             Self { server }
         }
 
-        fn endpoint(&self) -> String {
-            self.server.url("")
+        fn endpoint(&self) -> EndpointConfig {
+            EndpointConfig::Single(self.server.url(""))
         }
 
         /// Registers a valid artifact URL with an actual GraphQL document

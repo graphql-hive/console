@@ -1,5 +1,67 @@
 # hive
 
+## 8.14.1
+
+### Patch Changes
+
+- [#7477](https://github.com/graphql-hive/console/pull/7477)
+  [`b90f215`](https://github.com/graphql-hive/console/commit/b90f215213996ac755caca853a91816350936303)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Show correct error message for insufficient GitHub
+  App installation permissions when attempting to create a check run as part of a schema check.
+
+- [#7459](https://github.com/graphql-hive/console/pull/7459)
+  [`0ce9c82`](https://github.com/graphql-hive/console/commit/0ce9c82b810fef311f3856bb90b2e2a1823a7101)
+  Thanks [@jdolle](https://github.com/jdolle)! - Set usageEstimation year validation range at
+  runtime to avoid issues during the new year. This fixes an issue where the organization settings
+  usage data was not loading for January until the service was deployed again.
+
+- [#7451](https://github.com/graphql-hive/console/pull/7451)
+  [`bd4e36d`](https://github.com/graphql-hive/console/commit/bd4e36d4860c2ae0c2671fa713d0f445b47447d4)
+  Thanks [@jdolle](https://github.com/jdolle)! - Show diff on proposals editor
+
+## 8.14.0
+
+### Minor Changes
+
+- [#6836](https://github.com/graphql-hive/console/pull/6836)
+  [`128ce1b`](https://github.com/graphql-hive/console/commit/128ce1bdf26c07f7bfe7a598951562df6471bb73)
+  Thanks [@jdolle](https://github.com/jdolle)! - adjust change capture and resolvers to optionally
+  provide a full list or the simplified list of changes
+
+- [#7423](https://github.com/graphql-hive/console/pull/7423)
+  [`a71cd2b`](https://github.com/graphql-hive/console/commit/a71cd2bbb9c35203aa6b25bbb3dbef7c4b0c8b68)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump minio docker images to latest stable version.
+
+- [#6836](https://github.com/graphql-hive/console/pull/6836)
+  [`128ce1b`](https://github.com/graphql-hive/console/commit/128ce1bdf26c07f7bfe7a598951562df6471bb73)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade graphql-inspector/core to v7 and update the
+  models to be able to handle the new change objects. GraphQL Inspector now supports directive
+  changes and improves the accuracy of the severity level for several change types. This will
+  improve schema checks to make them more accurate and more complete. See graphql-inspector's
+  changelog for details.
+
+- [#7418](https://github.com/graphql-hive/console/pull/7418)
+  [`444c0cc`](https://github.com/graphql-hive/console/commit/444c0cc10dfb90f697aa79b66d4f46da3000913f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add usage info to public API. This usage data can
+  be requested using the operation:
+
+  ```
+  query OrgUsage($orgReference: OrganizationReferenceInput!, $year: Int!, $month: Int!) {
+      organization(reference: $orgReference) {
+          isMonthlyOperationsLimitExceeded
+          monthlyOperationsLimit
+          usageRetentionInDays
+          usageEstimation(input: { year: $year , month: $month }) {
+              operations
+          }
+      }
+  }
+  ```
+
+- [#7441](https://github.com/graphql-hive/console/pull/7441)
+  [`0d35406`](https://github.com/graphql-hive/console/commit/0d354066b68d4cc414b5ec18f51bd6887c4cbd93)
+  Thanks [@XiNiHa](https://github.com/XiNiHa)! - Add support for specifying additional OIDC scopes
+
 ## 8.13.0
 
 ### Minor Changes
