@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
@@ -43,7 +43,7 @@ function AuthVerifyEmail() {
   const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
 
-  const sendEmail = async () => {
+  const sendEmail = useCallback(async () => {
     if (session.loading) return;
 
     const result = await sendEmailImpl(
@@ -75,9 +75,11 @@ function AuthVerifyEmail() {
           'An unknown error occurred.',
       });
     }
-  };
+  }, [session.loading, sendEmailImpl, toast]);
 
   useEffect(() => {
+    if (session.loading) return;
+
     if (search.superTokensUserId) {
       void verify(
         {
@@ -97,7 +99,7 @@ function AuthVerifyEmail() {
     } else {
       void sendEmail();
     }
-  }, [search.superTokensUserId]);
+  }, [session.loading, search.superTokensUserId, verify, sendEmail]);
 
   if (search.superTokensUserId) {
     if (verifyMutation.error) {
