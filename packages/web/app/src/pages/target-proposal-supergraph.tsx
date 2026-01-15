@@ -120,7 +120,7 @@ function SupergraphDiff(props: {
       }
     }
     const after = patchSchema(before, changes, { onError: errors.looseErrorHandler });
-    return <SchemaDiff before={before} after={after} annotations={() => null} />;
+    return <SchemaDiff before={before} after={after} />;
   } catch (e: unknown) {
     return (
       <>
