@@ -355,13 +355,13 @@ function diffEnumValue({
     type: changeType,
     indent: 1,
   });
-  // coordinate = [...parentPath, name].join('.');
-  builder.write(type(name, name));
+  const coordinate = [...parentPath, name];
+  builder.write(type(name, coordinate.join('.')));
   diffDirectiveUsages({
     newDirectives: newValue?.astNode?.directives ?? [],
     oldDirectives: oldValue?.astNode?.directives ?? [],
     builder,
-    path: [...parentPath, name],
+    path: coordinate,
   });
 }
 
