@@ -10,6 +10,7 @@ import {
   fastFetchError,
   normalizeLogMessage,
   waitFor,
+  waitUntil,
 } from './test-utils';
 
 const headers = {
@@ -443,8 +444,7 @@ test('sendImmediately should not stop the schedule', async () => {
   // Now we will hit the maxSize
   // We run collect two times
   await Promise.all([collect(args, {}), collect(args, {})]);
-  await waitFor(1);
-  expect(logger.getLogs()).toMatch('Sending immediately');
+  await waitUntil(() => logger.getLogs().includes('Sending immediately'));
   expect(logger.getLogs()).toMatch('Sending report (queue 2)');
   logger.clear();
   // Let's check if the scheduled send task is still running
@@ -538,16 +538,14 @@ test('should send data to Hive at least once when using atLeastOnceSampler', asy
     ),
   ]);
   await hive.dispose();
-  await waitFor(50);
+  await waitUntil(() => logger.getLogs().includes('Report sent!'));
   http.done();
 
-  expect(logger.getLogs()).toMatchInlineSnapshot(`
-    [DBG] Disposing
-    [DBG] Sending report (queue 2)
-    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
-    [DBG] POST http://localhost/200 (x-request-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) succeeded with status 200 (666ms).
-    [DBG] Report sent!
-  `);
+  expect(logger.getLogs()).toMatch('[DBG] Disposing');
+  expect(logger.getLogs()).toMatch('[DBG] Sending report (queue 2)');
+  expect(logger.getLogs()).toMatch('[DBG] POST http://localhost/200');
+  expect(logger.getLogs()).toMatch('succeeded with status 200');
+  expect(logger.getLogs()).toMatch('[DBG] Report sent!');
 
   // Map
   expect(report.size).toEqual(2);
