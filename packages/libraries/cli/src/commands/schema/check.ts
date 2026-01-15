@@ -308,7 +308,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
-          this.log(`View full report:\n\t${result.schemaCheck.schemaCheck.webUrl}`);
+          this.log(`View full report:\n${result.schemaCheck.schemaCheck.webUrl}`);
         }
       } else if (result.schemaCheck.__typename === 'SchemaCheckError') {
         const changes = result.schemaCheck.changes;
@@ -325,7 +325,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
         }
 
         if (result.schemaCheck.schemaCheck?.webUrl) {
-          this.log(`View full report:\n\t${result.schemaCheck.schemaCheck.webUrl}`);
+          this.log(`View full report:\n${result.schemaCheck.schemaCheck.webUrl}`);
         }
 
         this.log('');
