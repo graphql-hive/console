@@ -5,11 +5,11 @@ export function waitFor(ms: number) {
 }
 
 export async function waitUntil(
-  condition: () => boolean,
+  condition: () => boolean | Promise<boolean>,
   { timeout = 1000, interval = 5 } = {},
 ): Promise<void> {
   const start = Date.now();
-  while (!condition()) {
+  while (!(await condition())) {
     if (Date.now() - start > timeout) {
       throw new Error(`waitUntil timed out after ${timeout}ms`);
     }
