@@ -6,7 +6,7 @@ import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { SchemaVariantFilter, ServiceNameFilter } from '@/components/target/explorer/filter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -139,7 +139,7 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
 
           <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
           <p className="text-muted-foreground mb-4 mt-2 text-sm">
-            It looks like you are using all typea in your schema, congratulations!
+            It looks like you are using all types in your schema, congratulations!
           </p>
         </div>
       </div>
@@ -316,6 +316,13 @@ function UnusedSchemaExplorer({
             startDate={dateRangeController.startDate}
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+          />
+          <ServiceNameFilter
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
+            period={dateRangeController.resolvedRange}
+            metadataAttributes={[]}
           />
           <SchemaVariantFilter
             organizationSlug={organizationSlug}
