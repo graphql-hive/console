@@ -13,6 +13,7 @@ jobs:
       npmTag: alpha
       buildScript: build:libraries
       packageManager: pnpm
+      nodeVersion: '24.13'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}
