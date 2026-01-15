@@ -214,7 +214,8 @@ const LaboratoryContent = () => {
             activeTab as LaboratoryTabCustom,
             laboratory,
             pluginsState[pluginId] ?? {},
-            (state: Record<string, unknown>) => setPluginsState({ ...pluginsState, [pluginId]: state }),
+            (state: Record<string, unknown>) =>
+              setPluginsState({ ...pluginsState, [pluginId]: state }),
           );
         }
 

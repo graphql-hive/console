@@ -18,7 +18,7 @@ export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) 
     openAddCollectionDialog,
     addOperation,
     runActiveOperation,
-    fetchSchema,
+    // fetchSchema,
     addTab,
     setActiveTab,
     tabs,
@@ -105,9 +105,9 @@ export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) 
               <span>Add collection</span>
             </CommandItem>
           </CommandGroup>
-          <CommandSeparator />
+          {/* <CommandSeparator />
           <CommandGroup heading="Schema">
-            {/* <CommandItem
+            <CommandItem
               onSelect={() => {
                 openUpdateEndpointDialog?.();
                 setOpen(false);
@@ -115,17 +115,17 @@ export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) 
             >
               <ServerIcon />
               <span>Update endpoint</span>
-            </CommandItem> */}
+            </CommandItem>
             <CommandItem
               onSelect={() => {
-                fetchSchema();
+                // fetchSchema();
                 setOpen(false);
               }}
             >
               <RefreshCcwIcon />
               <span>Refetch schema</span>
             </CommandItem>
-          </CommandGroup>
+          </CommandGroup> */}
           <CommandSeparator />
           <CommandGroup heading="Settings">
             <CommandItem

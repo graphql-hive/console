@@ -15,10 +15,7 @@ export interface LaboratoryPreflightResult {
   logs: LaboratoryPreflightLog[];
   env: LaboratoryEnv;
   headers: Record<string, string>;
-<<<<<<< HEAD
   pluginsState: Record<string, any>;
-=======
->>>>>>> 44548f4c8b0ce99a52df3aa36b8c0f4c914dfdcc
 }
 
 export interface LaboratoryPreflight {
@@ -191,6 +188,7 @@ export async function runIsolatedLabScript(
     );
 
     const logs: LaboratoryPreflightLog[] = [];
+    const headers: Record<string, string> = {};
 
     const worker = new Worker(URL.createObjectURL(blob), { type: 'module' });
 
@@ -234,6 +232,14 @@ export async function runIsolatedLabScript(
         } else if (data.level === 'info') {
           logs.push({ level: 'info', message: data.message, createdAt: new Date().toISOString() });
         }
+      } else if (data.type === 'header') {
+        headers[data.name] = data.value;
+
+        logs.push({
+          level: 'system',
+          message: [`Header ${data.name} set to ${data.value}`],
+          createdAt: new Date().toISOString(),
+        });
       } else if (data.type === 'prompt') {
         void prompt?.(data.placeholder, data.defaultValue).then(value => {
           worker.postMessage({ type: 'prompt:result', value });
