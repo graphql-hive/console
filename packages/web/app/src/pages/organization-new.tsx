@@ -146,7 +146,7 @@ export const CreateOrganizationFormContent = ({
   onSubmit,
 }: CreateOrganizationFormContentProps): JSX.Element => {
   return (
-    <div className="w-4/5 max-w-[520px] md:w-3/5">
+    <div className="container w-4/5 max-w-[520px] md:w-3/5">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="bg-black">
           <Card className="w-full">

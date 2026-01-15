@@ -601,10 +601,9 @@
   background-color: rgb(3 7 17 / var(--tw-bg-opacity, 1)) !important;
 }
 
-@layer utilities {
-  /* Container utility matching v3 config */
+@layer components {
+  /* Container component - max-width in components layer so utilities can override */
   .container {
-    width: 100%;
     margin-left: auto;
     margin-right: auto;
     padding-left: 2rem;
@@ -616,7 +615,9 @@
       max-width: 1800px;
     }
   }
+}
 
+@layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
