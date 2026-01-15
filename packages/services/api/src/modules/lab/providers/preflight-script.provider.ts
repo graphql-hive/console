@@ -2,6 +2,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
 import { getLocalLang, getTokenSync } from '@nodesecure/i18n';
+// @ts-expect-error Reason: Can not find result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
 import * as jsxray from '@nodesecure/js-x-ray';
 import type { Target } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
@@ -142,7 +143,7 @@ export class PreflightScriptProvider {
         , ${targetId}
         , ${currentUser.id}
       )
-      ON CONFLICT ("target_id") 
+      ON CONFLICT ("target_id")
       DO UPDATE
         SET
           "source_code" = EXCLUDED."source_code"
