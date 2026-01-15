@@ -422,6 +422,7 @@ export interface targets {
   project_id: string;
   validation_breaking_change_formula: breaking_change_formula;
   validation_enabled: boolean;
+  validation_excluded_app_deployments: Array<string> | null;
   validation_excluded_clients: Array<string> | null;
   validation_percentage: number;
   validation_period: number;

@@ -220,6 +220,9 @@ export class SchemaPublisher {
             excludedClientNames: settings.validation.excludedClients?.length
               ? settings.validation.excludedClients
               : null,
+            excludedAppDeploymentNames: settings.validation.excludedAppDeployments?.length
+              ? settings.validation.excludedAppDeployments
+              : null,
             requestCountThreshold:
               settings.validation.breakingChangeFormula === 'PERCENTAGE'
                 ? Math.ceil(totalRequestCount * (settings.validation.percentage / 100))
@@ -262,6 +265,7 @@ export class SchemaPublisher {
       settings: {
         retentionInDays: args.conditionalBreakingChangeConfiguration.retentionInDays,
         excludedClientNames: conditionalBreakingChangeDiffConfig.excludedClientNames,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig.excludedAppDeploymentNames,
         percentage: args.conditionalBreakingChangeConfiguration.percentage,
         requestCount: args.conditionalBreakingChangeConfiguration.requestCount,
         breakingChangeFormula: args.conditionalBreakingChangeConfiguration.breakingChangeFormula,
