@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CHART_PRIMARY_COLOR } from '@/constants';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { createAdaptiveTimeFormatter } from '@/lib/date-time';
 import {
   formatDuration,
   formatNumber,
@@ -317,6 +318,13 @@ function OverTimeStats({
                 {
                   type: 'time',
                   boundaryGap: false,
+                  axisLabel: {
+                    formatter: (value: number) =>
+                      createAdaptiveTimeFormatter(
+                        requests[0][0],
+                        requests[requests.length - 1][0],
+                      )(value),
+                  },
                 },
               ],
               yAxis: [
@@ -889,6 +897,10 @@ function LatencyOverTimeStats({
                       type: 'dashed',
                     },
                   },
+                  axisLabel: {
+                    formatter: (value: number) =>
+                      createAdaptiveTimeFormatter(p75[0][0], p75[p75.length - 1][0])(value),
+                  },
                 },
               ],
               yAxis: [
@@ -982,6 +994,13 @@ function RpmOverTimeStats({
                       color: '#595959',
                       type: 'dashed',
                     },
+                  },
+                  axisLabel: {
+                    formatter: (value: number) =>
+                      createAdaptiveTimeFormatter(
+                        rpmOverTime[0][0],
+                        rpmOverTime[rpmOverTime.length - 1][0],
+                      )(value),
                   },
                 },
               ],
