@@ -28,6 +28,7 @@
         "@hive/policy#dev",
         "@hive/commerce#dev",
         "@hive/cdn-script#dev",
+        "@hive/workflows#dev",
         "@hive/usage#dev",
         "@hive/usage-ingestor#dev",
         "@graphql-hive/external-composition#example",

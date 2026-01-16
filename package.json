@@ -14,7 +14,7 @@
   "private": true,
   "packageManager": "pnpm@10.18.3+sha512.bbd16e6d7286fd7e01f6b3c0b3c932cda2965c06a908328f74663f10a9aea51f1129eea615134bf992831b009eabe167ecb7008b597f40ff9bc75946aadfb08d",
   "engines": {
-    "node": ">=22.13",
+    "node": ">=24.13",
     "pnpm": ">=10.16.0"
   },
   "scripts": {
@@ -42,7 +42,8 @@
     "prerelease": "pnpm build:libraries",
     "prettier": "prettier --cache --write --list-different --ignore-unknown \"**/*\"",
     "release": "pnpm build:libraries && changeset publish",
-    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin --filter hive-console-sdk-rs sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme",
+    "release:docs:update-version": "tsx scripts/sync-docker-image-tag-docs.ts",
+    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin --filter hive-console-sdk-rs sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme && pnpm run release:docs:update-version",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",

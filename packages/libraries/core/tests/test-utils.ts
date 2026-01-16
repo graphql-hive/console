@@ -4,6 +4,19 @@ export function waitFor(ms: number) {
   });
 }
 
+export async function waitUntil(
+  condition: () => boolean | Promise<boolean>,
+  { timeout = 1000, interval = 5 } = {},
+): Promise<void> {
+  const start = Date.now();
+  while (!(await condition())) {
+    if (Date.now() - start > timeout) {
+      throw new Error(`waitUntil timed out after ${timeout}ms`);
+    }
+    await waitFor(interval);
+  }
+}
+
 /** helper function to get log lines and replace milliseconds with static value. */
 function getLogLines(calls: Array<Array<unknown>>) {
   return calls.map(log => {
