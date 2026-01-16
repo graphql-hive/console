@@ -5,6 +5,8 @@
   /* Typography */
   --font-sans: 'Inter var', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', 'Monaco', monospace;
+  --default-font-feature-settings: normal;
+  --default-font-variation-settings: 'opsz' 32;
 
   /* Custom Colors */
   --color-white: #fcfcfc;
@@ -619,19 +621,13 @@
   background-color: rgb(3 7 17 / var(--tw-bg-opacity, 1)) !important;
 }
 
-@layer components {
-  /* Container component - max-width in components layer so utilities can override */
-  .container {
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-
-  @media (min-width: 1536px) {
-    .container {
-      max-width: 1800px;
-    }
+/* Custom container - matches v3 config: full-width until 2xl, then 1800px max */
+@utility container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= 96rem) {
+    max-width: 1800px;
   }
 }
 
