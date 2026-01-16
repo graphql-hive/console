@@ -1,4 +1,4 @@
-import { AuthManager } from '../../providers/auth-manager';
+import { EmailVerification } from '../../providers/email-verification';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const verifyEmail: NonNullable<MutationResolvers['verifyEmail']> = async (
@@ -6,7 +6,7 @@ export const verifyEmail: NonNullable<MutationResolvers['verifyEmail']> = async 
   { input },
   { injector },
 ) => {
-  const result = await injector.get(AuthManager).verifyEmail({
+  const result = await injector.get(EmailVerification).verifyEmail({
     superTokensUserId: input.superTokensUserId,
     token: input.token,
   });
