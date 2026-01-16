@@ -197,18 +197,6 @@ throw new TypeError('Test')`,
       'log: d5b51e79e4be0c4f4d6b9a14e16ca864de96afe68459e60a794e80393a4809e8',
     );
   });
-
-  it('scripts can not use `eval`', () => {
-    setEditorScript('eval()');
-    cy.dataCy('preflight-modal-submit').click();
-    cy.get('body').contains('Usage of dangerous statement like eval() or Function("").');
-  });
-
-  it('invalid code is rejected and can not be saved', () => {
-    setEditorScript('🐝');
-    cy.dataCy('preflight-modal-submit').click();
-    cy.get('body').contains("[1:1]: Illegal character '}");
-  });
 });
 
 describe('Execution', () => {

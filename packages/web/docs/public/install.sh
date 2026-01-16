@@ -73,18 +73,10 @@
           ARCH=x64
         elif [ "\$ARCH" = "amd64" ]; then
           ARCH=x64
-        elif [ "\$ARCH" = "arm64" ]; then
-          if [ "\$OS" = "darwin" ]; then
-            ARCH=arm64
-          else
-            ARCH=arm
-          fi
-        elif starts_with "aarch" "\$ARCH"; then
-          if [ "\$ARCH" = "aarch64" ]; then
-            ARCH=arm64
-          else
-            ARCH=arm
-          fi
+        elif [ "\$OS" = "darwin" ]; then
+          ARCH=arm64
+        elif [ "\$ARCH" = "aarch64" ]; then
+          ARCH=arm64
         else
          unsupported_arch "\$OS / \$ARCH"
         fi
