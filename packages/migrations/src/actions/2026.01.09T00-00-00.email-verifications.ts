@@ -25,7 +25,13 @@ export default {
         INSERT INTO "email_verifications" ("user_id", "provider", "email", "token", "verified_at")
         SELECT
           "u"."id" "user_id"
-          , coalesce("stu"."third_party_id", 'emailpassword') "provider"
+          , CASE WHEN "stu"."third_party_id" = 'google' THEN 'GOOGLE'
+              ELSE CASE WHEN "stu"."third_party_id" = 'github' THEN 'GITHUB'
+                ELSE CASE WHEN "stu"."third_party_id" = 'oidc' THEN 'OIDC'
+                  ELSE 'EMAILPASSWORD'
+                END
+              END
+            END "provider"
           , "u"."email" "email"
           , uuid_generate_v4() "token"
           , now() "verified_at"
