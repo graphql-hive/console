@@ -1,9 +1,9 @@
 import { randomBytes } from 'node:crypto';
-import { Inject, Injectable, Scope } from 'graphql-modules';
+import { Inject, Injectable } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
-import { HiveError } from '@hive/api/shared/errors';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
+import { HiveError } from '../../../shared/errors';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
