@@ -86,30 +86,6 @@ export interface Storage {
 
   updateUser(_: { id: string; fullName: string; displayName: string }): Promise<User | never>;
 
-  checkUserEmailVerified(_: { superTokensUserId: string }): Promise<{ verified: boolean }>;
-  getOrCreateEmailVerification(_: { superTokensUserId: string }): Promise<
-    | {
-        ok: true;
-        userId: string;
-        token: string;
-        expiresAt: Date;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-  verifyEmail(_: { superTokensUserId: string; token: string }): Promise<
-    | {
-        ok: true;
-        verified: boolean;
-      }
-    | {
-        ok: false;
-        message: string;
-      }
-  >;
-
   getOrganizationId(_: { organizationSlug: string }): Promise<string | null>;
   getOrganizationByInviteCode(_: { inviteCode: string }): Promise<Organization | null>;
   getOrganizationBySlug(_: { slug: string }): Promise<Organization | null>;

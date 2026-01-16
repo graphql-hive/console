@@ -7,6 +7,7 @@ import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
+import { EmailVerification } from '../providers/email-verification';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
 
 export class SuperTokensCookieBasedSession extends Session {
@@ -132,23 +133,19 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
-  private config: {
-    requireEmailVerification: boolean;
-  };
+  private emailVerification: EmailVerification | null;
 
   constructor(deps: {
     logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
-    config: {
-      requireEmailVerification: boolean;
-    };
+    emailVerification: EmailVerification | null;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
-    this.config = deps.config;
+    this.emailVerification = deps.emailVerification;
   }
 
   private async verifySuperTokensSession(args: { req: FastifyRequest; reply: FastifyReply }) {
@@ -195,10 +192,10 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    if (this.config.requireEmailVerification) {
+    if (this.emailVerification) {
       // Check whether the email is already verified.
       // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
-      const { verified } = await this.storage.checkUserEmailVerified({
+      const { verified } = await this.emailVerification.checkUserEmailVerified({
         superTokensUserId: session.getUserId(),
       });
       if (!verified) {

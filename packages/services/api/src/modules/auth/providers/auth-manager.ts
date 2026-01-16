@@ -1,11 +1,8 @@
 import DataLoader from 'dataloader';
-import { Inject, Injectable, Scope } from 'graphql-modules';
-import { TaskScheduler } from '@hive/workflows/kit';
-import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
+import { Injectable, Scope } from 'graphql-modules';
 import type { User } from '../../../shared/entities';
 import { AccessError } from '../../../shared/errors';
 import { Storage } from '../../shared/providers/storage';
-import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { Session } from '../lib/authz';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from './scopes';
 import { UserManager } from './user-manager';
@@ -49,8 +46,6 @@ export class AuthManager {
     private userManager: UserManager,
     private session: Session,
     private storage: Storage,
-    private taskScheduler: TaskScheduler,
-    @Inject(WEB_APP_URL) private appBaseUrl: string,
   ) {
     this.ownership = new DataLoader(
       async selectors => {
@@ -107,28 +102,6 @@ export class AuthManager {
     return this.userManager.updateUser({
       id: actor.user.id,
       ...input,
-    });
-  }
-
-  async sendVerificationEmail(input: { superTokensUserId: string; email: string }) {
-    const result = await this.storage.getOrCreateEmailVerification({
-      superTokensUserId: input.superTokensUserId,
-    });
-
-    if (result.ok) {
-      await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-        user: { id: result.userId, email: input.email },
-        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${result.token}`,
-      });
-    }
-
-    return result;
-  }
-
-  async verifyEmail(input: { superTokensUserId: string; token: string }) {
-    return this.storage.verifyEmail({
-      superTokensUserId: input.superTokensUserId,
-      token: input.token,
     });
   }
 }

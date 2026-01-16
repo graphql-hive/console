@@ -1,5 +1,5 @@
 import zod from 'zod';
-import { AuthManager } from '../../providers/auth-manager';
+import { EmailVerification } from '../../providers/email-verification';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const sendVerificationEmail: NonNullable<
@@ -14,7 +14,7 @@ export const sendVerificationEmail: NonNullable<
     };
   }
 
-  const result = await injector.get(AuthManager).sendVerificationEmail({
+  const result = await injector.get(EmailVerification).sendVerificationEmail({
     superTokensUserId: input.superTokensUserId,
     email: parseResult.data,
   });
