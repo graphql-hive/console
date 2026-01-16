@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import { IntrospectionQuery } from 'graphql';
 import {
   type LaboratoryCollection,
   type LaboratoryCollectionOperation,
@@ -100,6 +101,7 @@ export interface LaboratoryPermissions {
 export interface LaboratoryApi {
   defaultEndpoint?: string | null;
   onEndpointChange?: (endpoint: string | null) => void;
+  defaultSchemaIntrospection?: IntrospectionQuery | null;
   defaultCollections?: LaboratoryCollection[];
   onCollectionsChange?: (collections: LaboratoryCollection[]) => void;
   onCollectionCreate?: (collection: LaboratoryCollection) => void;
