@@ -472,6 +472,24 @@
       'rlig' 1,
       'calt' 1;
   }
+
+  /* Tailwind v4 compatibility - restore v3 Preflight behavior */
+
+  /* Buttons use pointer cursor */
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  /* Disabled elements use default cursor */
+  :disabled {
+    cursor: default;
+  }
+
+  /* Placeholder color matches v3 (gray-400) */
+  ::placeholder {
+    color: #9ca3af;
+  }
 }
 
 /* shadcdn> */
