@@ -207,7 +207,7 @@ throw new TypeError('Test')`,
   it('invalid code is rejected and can not be saved', () => {
     setEditorScript('🐝');
     cy.dataCy('preflight-modal-submit').click();
-    cy.get('body').contains("[1:1]: Illegal character '}");
+    cy.get('body').contains("[1:0-1:0]: Illegal character '🐝'");
   });
 });
 
