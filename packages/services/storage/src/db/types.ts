@@ -142,7 +142,7 @@ export interface email_verifications {
   expires_at: Date | null;
   id: string;
   provider: string;
-  token: string;
+  token: string | null;
   user_id: string;
   verified_at: Date | null;
 }
