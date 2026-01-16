@@ -624,6 +624,7 @@
 /* Custom container - matches v3 config: full-width until 2xl, then 1800px max */
 @utility container {
   width: 100%;
+  max-width: none;
   margin-inline: auto;
   padding-inline: 2rem;
   @media (width >= 96rem) {
