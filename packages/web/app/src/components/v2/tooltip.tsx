@@ -18,11 +18,11 @@ function Wrapper({
       sideOffset={4}
       {...contentProps}
       className={clsx(
-        'radix-side-top:animate-slide-down-fade',
-        'radix-side-right:animate-slide-left-fade',
-        'radix-side-bottom:animate-slide-up-fade',
-        'radix-side-left:animate-slide-right-fade',
-        'rounded-lg bg-gray-800 p-4 text-xs font-normal text-white shadow',
+        'data-[side=top]:animate-slide-down-fade',
+        'data-[side=right]:animate-slide-left-fade',
+        'data-[side=bottom]:animate-slide-up-fade',
+        'data-[side=left]:animate-slide-right-fade',
+        'rounded-lg bg-gray-800 p-4 text-xs font-normal text-white shadow-sm',
         contentProps.className,
       )}
     >

@@ -87,7 +87,7 @@ export function ProjectLayout({
   return (
     <>
       <header>
-        <div className="container flex h-[--header-height] items-center justify-between">
+        <div className="h-(--header-height) container flex items-center justify-between">
           <div className="flex flex-row items-center gap-4">
             <HiveLink className="size-8" />
             <ProjectSelector
@@ -111,7 +111,7 @@ export function ProjectLayout({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
+          <div className="h-(--tabs-navbar-height) relative border-b border-gray-800">
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject ? (
                 <Tabs value={page}>
@@ -298,7 +298,7 @@ export function CreateTargetModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[520px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
         <Form {...props.form}>
           <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
             <DialogHeader>

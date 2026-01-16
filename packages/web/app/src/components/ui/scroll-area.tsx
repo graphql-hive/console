@@ -12,7 +12,7 @@ const ScrollArea = React.forwardRef<
     {...props}
   >
     {/** LOL https://github.com/radix-ui/primitives/issues/2722 */}
-    <ScrollAreaPrimitive.Viewport className="size-full rounded-[inherit] [&>div]:!block">
+    <ScrollAreaPrimitive.Viewport className="[&>div]:block! size-full rounded-[inherit]">
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />

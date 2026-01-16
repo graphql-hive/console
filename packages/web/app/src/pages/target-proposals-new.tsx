@@ -106,7 +106,7 @@ export function TargetProposalsNewPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Proposals}
-        className="flex h-[--content-height] min-h-[300px] flex-col pb-0"
+        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
       >
         <ProposalsNewHeading {...props} />
         <ProposalsNewContent {...props} />
@@ -552,7 +552,7 @@ function ProposalsNewContent(
           variant="content"
           className={cn(
             'flex h-full w-[20vw] min-w-[160px] flex-col items-start border-0',
-            '[&>*]:flex [&>*]:w-full [&>*]:justify-start [&>*]:p-3',
+            '*:flex *:w-full *:justify-start *:p-3',
           )}
         >
           <TabsTrigger variant="menu" value="overview" asChild>

@@ -169,7 +169,7 @@ export function TargetProposalsSinglePage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Proposals}
-        className="flex h-[--content-height] min-h-[300px] flex-col pb-0"
+        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
       >
         <ProposalsContent {...props} />
       </TargetLayout>
@@ -416,7 +416,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded bg-gray-900/50 p-4">
+      <div className="flex w-full grow flex-col rounded-sm bg-gray-900/50 p-4">
         {query.fetching ? (
           <Spinner />
         ) : (

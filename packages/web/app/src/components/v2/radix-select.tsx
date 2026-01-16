@@ -67,7 +67,7 @@ export function RadixSelect<T extends string>({
                 value={value}
                 className={clsx(
                   'relative flex items-center rounded-md px-8 py-2 text-sm font-medium text-gray-700 focus:bg-gray-100 dark:text-gray-300 dark:focus:bg-gray-900',
-                  'radix-disabled:opacity-50',
+                  'data-disabled:opacity-50',
                   'cursor-pointer select-none focus:outline-none',
                 )}
               >

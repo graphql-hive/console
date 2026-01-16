@@ -391,7 +391,7 @@ export function ProposalEditor(props: {
                     ? `new-${idx}`
                     : `tab-${service.id}`
                 }
-                className="relative mt-0 rounded border py-0"
+                className="relative mt-0 rounded-sm border py-0"
               >
                 <DiffEditor
                   before={existing?.source ?? ''}

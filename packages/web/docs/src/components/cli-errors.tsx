@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 import { ReactElement } from 'react';
 import { Callout, Code } from '@theguild/components';
 

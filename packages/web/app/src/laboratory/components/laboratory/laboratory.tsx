@@ -184,7 +184,7 @@ const LaboratoryContent = () => {
         return <Settings />;
       default:
         return (
-          <Empty className="w-full !px-0">
+          <Empty className="px-0! w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <FileIcon className="text-muted-foreground size-6" />

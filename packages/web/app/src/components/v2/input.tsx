@@ -58,7 +58,7 @@ export const Input = forwardRef<
           <button
             aria-label="Reset"
             onClick={onClear}
-            className="rounded p-0.5 transition-colors hover:bg-gray-700/50"
+            className="rounded-sm p-0.5 transition-colors hover:bg-gray-700/50"
           >
             <svg
               stroke="currentColor"

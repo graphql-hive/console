@@ -403,7 +403,7 @@ const listVariants = cva('flex gap-2', {
 const classForSeparator = cva(
   [
     'bg-muted',
-    'data-[state=completed]:bg-primary data-[disabled]:opacity-50',
+    'data-[state=completed]:bg-primary data-disabled:opacity-50',
     'transition-all duration-300 ease-in-out',
   ],
   {

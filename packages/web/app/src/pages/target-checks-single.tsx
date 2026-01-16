@@ -197,7 +197,7 @@ const PolicyBlock = (props: {
   return (
     <div>
       <h2 className="mb-2 text-sm font-medium text-gray-900 dark:text-white">{props.title}</h2>
-      <ul className="list-inside list-disc pl-3 text-sm leading-relaxed">
+      <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
             key={key}

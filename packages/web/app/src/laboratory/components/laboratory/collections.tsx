@@ -80,7 +80,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="link"
-                      className="text-muted-foreground hover:text-destructive ml-auto !p-1 !pr-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={e => {
                         e.stopPropagation();
                       }}
@@ -156,7 +156,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="link"
-                            className="text-muted-foreground hover:text-destructive ml-auto !p-1 !pr-0 opacity-0 transition-opacity group-hover:opacity-100"
+                            className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
                             onClick={e => {
                               e.stopPropagation();
                             }}
@@ -279,7 +279,7 @@ export const Collections = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-6 rounded-sm !p-1"
+                    className="p-1! size-6 rounded-sm"
                     onClick={openAddCollectionDialog}
                   >
                     <FolderPlusIcon className="text-primary size-4" />
@@ -303,7 +303,7 @@ export const Collections = () => {
             <Button
               variant="ghost"
               size="icon-sm"
-              className="absolute right-5 top-1/2 size-6 -translate-y-1/2 rounded-sm !p-1"
+              className="p-1! absolute right-5 top-1/2 size-6 -translate-y-1/2 rounded-sm"
               onClick={() => setSearch('')}
             >
               <XIcon className="text-muted-foreground size-4" />
@@ -318,7 +318,7 @@ export const Collections = () => {
               searchResults.length > 0 ? (
                 <CollectionsSearchResult items={searchResults} />
               ) : (
-                <Empty className="w-full !px-0">
+                <Empty className="px-0! w-full">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <SearchIcon className="text-muted-foreground size-6" />
@@ -333,7 +333,7 @@ export const Collections = () => {
             ) : collections.length > 0 ? (
               collections.map(item => <CollectionItem key={item.id} collection={item} />)
             ) : (
-              <Empty className="w-full !px-0">
+              <Empty className="px-0! w-full">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <FolderIcon className="text-muted-foreground size-6" />
