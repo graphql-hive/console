@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useLaboratory } from '@/laboratory/components/laboratory/context';
 import { Operation } from '@/laboratory/components/laboratory/operation';
+import { LaboratoryHistoryRequest } from '@/laboratory/lib/history';
 
 export const HistoryItem = () => {
   const { activeTab, history } = useLaboratory();
@@ -10,7 +11,7 @@ export const HistoryItem = () => {
       return null;
     }
 
-    return history.find(h => h.id === activeTab.data.id) ?? null;
+    return history.find(h => h.id === (activeTab.data as LaboratoryHistoryRequest).id) ?? null;
   }, [history, activeTab]);
 
   if (!historyItem) {

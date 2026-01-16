@@ -20,12 +20,21 @@ import {
   handleTemplate,
   removeArgFromField,
 } from '@/laboratory/lib/operations.utils';
+import {
+  LaboratoryPlugin,
+  LaboratoryPluginsActions,
+  LaboratoryPluginsState,
+} from '@/laboratory/lib/plugins';
 import type {
   LaboratoryPreflightActions,
   LaboratoryPreflightState,
 } from '@/laboratory/lib/preflight';
 import type { LaboratorySettingsActions, LaboratorySettingsState } from '@/laboratory/lib/settings';
-import type { LaboratoryTabsActions, LaboratoryTabsState } from '@/laboratory/lib/tabs';
+import type {
+  LaboratoryTabOperation,
+  LaboratoryTabsActions,
+  LaboratoryTabsState,
+} from '@/laboratory/lib/tabs';
 
 export interface LaboratoryOperation {
   id: string;
@@ -88,6 +97,7 @@ export const useOperations = (
     envApi?: LaboratoryEnvState & LaboratoryEnvActions;
     preflightApi?: LaboratoryPreflightState & LaboratoryPreflightActions;
     settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
+    pluginsApi?: LaboratoryPluginsState & LaboratoryPluginsActions;
   } & LaboratoryOperationsCallbacks,
 ): LaboratoryOperationsState & LaboratoryOperationsActions => {
   // eslint-disable-next-line react/hook-use-state
@@ -103,7 +113,7 @@ export const useOperations = (
     }
 
     if (tab.type === 'operation') {
-      return operations.find(o => o.id === tab.data.id) ?? null;
+      return operations.find(o => o.id === (tab.data as LaboratoryTabOperation).id) ?? null;
     }
 
     return null;
@@ -112,7 +122,9 @@ export const useOperations = (
   const setActiveOperation = useCallback(
     (operationId: string) => {
       const tab =
-        props.tabsApi?.tabs.find(t => t.type === 'operation' && t.data.id === operationId) ?? null;
+        props.tabsApi?.tabs.find(
+          t => t.type === 'operation' && (t.data as LaboratoryTabOperation).id === operationId,
+        ) ?? null;
 
       if (!tab) {
         return;
@@ -326,6 +338,8 @@ export const useOperations = (
         headers?: Record<string, string>;
         onResponse?: (response: string) => void;
       },
+      plugins: LaboratoryPlugin[] = props.pluginsApi?.plugins ?? [],
+      pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {},
     ) => {
       if (!activeOperation?.query) {
         return null;
@@ -338,19 +352,26 @@ export const useOperations = (
         env = options.env;
         headers = options.headers ?? {};
       } else {
-        const preflightResult = await props.preflightApi?.runPreflight?.();
+        const preflightResult = await props.preflightApi?.runPreflight?.(plugins, pluginsState);
         env = preflightResult?.env ?? { variables: {} };
         headers = preflightResult?.headers ?? {};
+        pluginsState = preflightResult?.pluginsState ?? {};
+        props.pluginsApi?.setPluginsState(pluginsState);
       }
 
-      if (env && Object.keys(env.variables).length > 0) {
+      if (env && Object.keys(env?.variables ?? {}).length > 0) {
         props.envApi?.setEnv(env);
       } else {
         env = props.envApi?.env ?? { variables: {} };
       }
 
       const parsedHeaders = activeOperation.headers
-        ? JSON.parse(handleTemplate(activeOperation.headers, env))
+        ? JSON.parse(
+            handleTemplate(activeOperation.headers, {
+              ...env.variables,
+              plugins: pluginsState,
+            }),
+          )
         : {};
 
       const mergedHeaders = {
@@ -359,10 +380,20 @@ export const useOperations = (
       };
 
       const variables = activeOperation.variables
-        ? JSON.parse(handleTemplate(activeOperation.variables, env))
+        ? JSON.parse(
+            handleTemplate(activeOperation.variables, {
+              ...env.variables,
+              plugins: pluginsState,
+            }),
+          )
         : {};
       const extensions = activeOperation.extensions
-        ? JSON.parse(handleTemplate(activeOperation.extensions, env))
+        ? JSON.parse(
+            handleTemplate(activeOperation.extensions, {
+              ...env.variables,
+              plugins: pluginsState,
+            }),
+          )
         : {};
 
       if (activeOperation.query.startsWith('subscription')) {
@@ -454,7 +485,7 @@ export const useOperations = (
 
       return response;
     },
-    [activeOperation, props.preflightApi, props.envApi],
+    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi],
   );
 
   const isOperationSubscription = useCallback((operation: LaboratoryOperation) => {
