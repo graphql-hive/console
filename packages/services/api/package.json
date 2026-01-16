@@ -27,8 +27,6 @@
     "@hive/usage-common": "workspace:*",
     "@hive/usage-ingestor": "workspace:*",
     "@hive/workflows": "workspace:*",
-    "@nodesecure/i18n": "4.0.3",
-    "@nodesecure/js-x-ray": "11.3.0",
     "@octokit/app": "15.1.4",
     "@octokit/core": "6.1.4",
     "@octokit/plugin-retry": "7.1.4",
