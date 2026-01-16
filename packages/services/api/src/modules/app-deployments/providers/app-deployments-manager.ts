@@ -43,6 +43,12 @@ export class AppDeploymentsManager {
     return appDeployment;
   }
 
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
+    return await this.appDeployments.getAppDeploymentById(args);
+  }
+
   getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
     if (appDeployment.retiredAt) {
       return 'retired';
@@ -199,6 +205,7 @@ export class AppDeploymentsManager {
       cursor: string | null;
       first: number | null;
       operationName: string;
+      schemaCoordinates: string[] | null;
     },
   ) {
     return await this.appDeployments.getPaginatedGraphQLDocuments({
@@ -206,6 +213,7 @@ export class AppDeploymentsManager {
       cursor: args.cursor,
       first: args.first,
       operationName: args.operationName,
+      schemaCoordinates: args.schemaCoordinates,
     });
   }
 

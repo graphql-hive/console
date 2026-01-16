@@ -205,6 +205,10 @@ export default gql`
     List of client names that are excluded from the breaking change detection.
     """
     excludedClients: [String!] @tag(name: "public")
+    """
+    List of app deployment names that are excluded from the breaking change detection.
+    """
+    excludedAppDeployments: [String!] @tag(name: "public")
   }
 
   input UpdateTargetConditionalBreakingChangeConfigurationInput {
@@ -323,6 +327,10 @@ export default gql`
     List of client names that are be excluded from the breaking change detection.
     """
     excludedClients: [String!]! @tag(name: "public")
+    """
+    List of app deployment names that are excluded from the breaking change detection.
+    """
+    excludedAppDeployments: [String!]! @tag(name: "public")
   }
 
   enum BreakingChangeFormulaType {

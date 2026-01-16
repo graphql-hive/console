@@ -382,6 +382,7 @@ export interface TargetSettings {
     breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
+    excludedAppDeployments: string[];
   };
   failDiffOnDangerousChange: boolean;
 }
