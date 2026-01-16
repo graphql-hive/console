@@ -13,7 +13,7 @@ export default {
         , "user_id" uuid NOT NULL REFERENCES "users" ("id") ON DELETE CASCADE
         , "provider" text NOT NULL
         , "email" text NOT NULL
-        , "token" text NOT NULL
+        , "token" text
         , "created_at" timestamptz NOT NULL DEFAULT now()
         , "expires_at" timestamptz
         , "verified_at" timestamptz
@@ -22,7 +22,7 @@ export default {
 
       IF (SELECT to_regclass('supertokens_emailverification_verified_emails') IS NOT null)
       THEN
-        INSERT INTO "email_verifications" ("user_id", "provider", "email", "token", "verified_at")
+        INSERT INTO "email_verifications" ("user_id", "provider", "email", "verified_at")
         SELECT
           "u"."id" "user_id"
           , CASE WHEN "stu"."third_party_id" = 'google' THEN 'GOOGLE'
@@ -33,7 +33,6 @@ export default {
               END
             END "provider"
           , "u"."email" "email"
-          , uuid_generate_v4() "token"
           , now() "verified_at"
         FROM "users" "u"
         INNER JOIN "supertokens_emailverification_verified_emails" "seve"

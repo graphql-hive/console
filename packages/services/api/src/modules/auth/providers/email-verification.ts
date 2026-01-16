@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
+import { HiveError } from '@hive/api/shared/errors';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -62,7 +63,7 @@ export class EmailVerification {
     }
 
     let emailVerification = await this.pool.maybeOne<{
-      token: string;
+      token: string | null;
       expiresAt: number | null;
       verifiedAt?: number | null;
     }>(sql`
@@ -82,6 +83,10 @@ export class EmailVerification {
         ok: false,
         message: 'Your email address has already been verified.',
       };
+    }
+
+    if (emailVerification && emailVerification.token == null) {
+      throw new HiveError('Database is in invalid state');
     }
 
     if (!emailVerification) {

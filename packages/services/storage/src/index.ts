@@ -643,6 +643,18 @@ export async function createStorage(
           action = 'created';
         }
 
+        if (internalUser.provider === 'GOOGLE' || internalUser.provider === 'GITHUB') {
+          await t.query(sql`/* ensureUserExists */
+					  INSERT INTO "email_verifications" ("user_id", "provider", "email", "verified_at")
+					  VALUES (
+							${internalUser.id}
+							, ${internalUser.provider}
+							, ${internalUser.email}
+							, now()
+						);
+          `);
+        }
+
         if (oidcIntegration !== null) {
           // Add user to OIDC linked integration
           await shared.addOrganizationMemberViaOIDCIntegrationId(
