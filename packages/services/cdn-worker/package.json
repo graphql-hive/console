@@ -28,7 +28,7 @@
     "itty-router": "4.2.2",
     "itty-router-extras": "0.4.6",
     "toucan-js": "4.1.0",
-    "undici": "6.21.3",
+    "undici": "6.23.0",
     "zod": "3.25.76"
   }
 }
