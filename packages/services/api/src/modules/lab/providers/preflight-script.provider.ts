@@ -1,8 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { getLocalLang, getTokenSync } from '@nodesecure/i18n';
-import * as jsxray from '@nodesecure/js-x-ray';
 import type { Target } from '../../../shared/entities';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
@@ -15,20 +13,7 @@ const SourceCodeModel = z.string().max(5_000);
 
 const UpdatePreflightScriptModel = z.strictObject({
   // Use validation only on insertion
-  sourceCode: SourceCodeModel.superRefine((val, ctx) => {
-    try {
-      const { warnings } = scanner.analyse(val);
-      for (const warning of warnings) {
-        const message = getTokenSync(jsxray.warnings[warning.kind].i18n);
-        throw new Error(message);
-      }
-    } catch (error) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }),
+  sourceCode: SourceCodeModel,
 });
 
 const PreflightScriptModel = z.strictObject({
@@ -41,9 +26,6 @@ const PreflightScriptModel = z.strictObject({
 });
 
 type PreflightScript = z.TypeOf<typeof PreflightScriptModel>;
-
-const scanner = new jsxray.AstAnalyser();
-await getLocalLang();
 
 @Injectable({
   global: true,
@@ -142,7 +124,7 @@ export class PreflightScriptProvider {
         , ${targetId}
         , ${currentUser.id}
       )
-      ON CONFLICT ("target_id") 
+      ON CONFLICT ("target_id")
       DO UPDATE
         SET
           "source_code" = EXCLUDED."source_code"

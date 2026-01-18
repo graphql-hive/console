@@ -32,8 +32,6 @@ const EnvironmentModel = zod.object({
     .url(),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
   TOKENS_ENDPOINT: zod.string().url(),
-  EMAILS_ENDPOINT: emptyString(zod.string().url().optional()),
-  WEBHOOKS_ENDPOINT: zod.string().url(),
   SCHEMA_ENDPOINT: zod.string().url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -405,8 +403,6 @@ export const env = {
           endpoint: base.SCHEMA_POLICY_ENDPOINT,
         }
       : null,
-    emails: base.EMAILS_ENDPOINT ? { endpoint: base.EMAILS_ENDPOINT } : null,
-    webhooks: { endpoint: base.WEBHOOKS_ENDPOINT },
     schema: { endpoint: base.SCHEMA_ENDPOINT },
   },
   http: {

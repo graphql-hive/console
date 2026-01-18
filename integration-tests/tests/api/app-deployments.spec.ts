@@ -43,6 +43,37 @@ const GetAppDeployment = graphql(`
   }
 `);
 
+const GetActiveAppDeployments = graphql(`
+  query GetActiveAppDeployments(
+    $targetSelector: TargetSelectorInput!
+    $filter: ActiveAppDeploymentsFilter!
+    $first: Int
+    $after: String
+  ) {
+    target(reference: { bySelector: $targetSelector }) {
+      activeAppDeployments(filter: $filter, first: $first, after: $after) {
+        edges {
+          cursor
+          node {
+            id
+            name
+            version
+            status
+            createdAt
+            lastUsed
+          }
+        }
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          endCursor
+          startCursor
+        }
+      }
+    }
+  }
+`);
+
 const AddDocumentsToAppDeployment = graphql(`
   mutation AddDocumentsToAppDeployment($input: AddDocumentsToAppDeploymentInput!) {
     addDocumentsToAppDeployment(input: $input) {
@@ -1834,4 +1865,878 @@ test('app deployment usage reporting', async () => {
     authToken: ownerToken,
   }).then(res => res.expectNoGraphQLErrors());
   expect(data.target?.appDeployment?.lastUsed).toEqual(expect.any(String));
+});
+
+test('activeAppDeployments returns empty list when no active deployments exist', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target } = await createProject();
+
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: new Date().toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments).toEqual({
+    edges: [],
+    pageInfo: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      endCursor: '',
+      startCursor: '',
+    },
+  });
+});
+
+test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Create and activate an app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'unused-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'unused-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Query for deployments never used and created before tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result.target?.activeAppDeployments.edges[0].node).toMatchObject({
+    name: 'unused-app',
+    version: '1.0.0',
+    status: 'active',
+    lastUsed: null,
+  });
+  expect(result.target?.activeAppDeployments.edges[0].node.createdAt).toBeTruthy();
+});
+
+test('activeAppDeployments filters by name', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Create and activate multiple app deployments
+  for (const appName of ['frontend-app', 'backend-app', 'mobile-app']) {
+    await execute({
+      document: CreateAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion: '1.0.0',
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: ActivateAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion: '1.0.0',
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+  }
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Query for deployments with 'front' in the name
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        name: 'front',
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result.target?.activeAppDeployments.edges[0].node.name).toBe('frontend-app');
+});
+
+test('activeAppDeployments does not return pending or retired deployments', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Create a pending deployment (not activated)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'pending-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate, then retire a deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate an active deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'active-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'active-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Query should only return the active deployment
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result.target?.activeAppDeployments.edges[0].node.name).toBe('active-app');
+  expect(result.target?.activeAppDeployments.edges[0].node.status).toBe('active');
+});
+
+test('activeAppDeployments filters by lastUsedBefore', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  // Create and activate an app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'used-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'used-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'hash',
+            body: 'query { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'used-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Report usage for this deployment
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
+
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'used-app',
+      'x-graphql-client-version': '1.0.0',
+    },
+  });
+
+  await client.collectUsage()(
+    {
+      document: parse(`query { hello }`),
+      schema: buildASTSchema(parse(sdl)),
+      contextValue: { request },
+    },
+    {},
+    'used-app~1.0.0~hash',
+  );
+
+  await waitForOperationsCollected(1);
+
+  // Query for deployments last used before tomorrow (should include our deployment)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        lastUsedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result.target?.activeAppDeployments.edges[0].node).toMatchObject({
+    name: 'used-app',
+    version: '1.0.0',
+    status: 'active',
+  });
+  expect(result.target?.activeAppDeployments.edges[0].node.lastUsed).toBeTruthy();
+
+  // Query for deployments last used before yesterday (should NOT include our deployment)
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const result2 = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        lastUsedBefore: yesterday.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result2.target?.activeAppDeployments.edges).toHaveLength(0);
+});
+
+test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsedAndCreatedBefore', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  // Create deployment 1: will be used (matches lastUsedBefore)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'used-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'used-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'hash1', body: 'query { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'used-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create deployment 2: will never be used (matches neverUsedAndCreatedBefore)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'unused-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'unused-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Report usage for 'used-app' only
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
+
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'used-app',
+      'x-graphql-client-version': '1.0.0',
+    },
+  });
+
+  await client.collectUsage()(
+    {
+      document: parse(`query { hello }`),
+      schema: buildASTSchema(parse(sdl)),
+      contextValue: { request },
+    },
+    {},
+    'used-app~1.0.0~hash1',
+  );
+
+  await waitForOperationsCollected(1);
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        lastUsedBefore: tomorrow.toISOString(),
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Both deployments should match via OR logic
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(2);
+  const names = result.target?.activeAppDeployments.edges.map(e => e.node.name).sort();
+  expect(names).toEqual(['unused-app', 'used-app']);
+
+  // Verify one has lastUsed and one doesn't
+  const usedApp = result.target?.activeAppDeployments.edges.find(e => e.node.name === 'used-app');
+  const unusedApp = result.target?.activeAppDeployments.edges.find(
+    e => e.node.name === 'unused-app',
+  );
+  expect(usedApp?.node.lastUsed).toBeTruthy();
+  expect(unusedApp?.node.lastUsed).toBeNull();
+});
+
+test('activeAppDeployments pagination with first and after', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Create 5 active deployments
+  for (let i = 1; i <= 5; i++) {
+    await execute({
+      document: CreateAppDeployment,
+      variables: {
+        input: {
+          appName: `app-${i}`,
+          appVersion: '1.0.0',
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: ActivateAppDeployment,
+      variables: {
+        input: {
+          appName: `app-${i}`,
+          appVersion: '1.0.0',
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+  }
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Query with first: 2
+  const result1 = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+      first: 2,
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result1.target?.activeAppDeployments.edges).toHaveLength(2);
+  expect(result1.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(true);
+  expect(result1.target?.activeAppDeployments.pageInfo.endCursor).toBeTruthy();
+
+  // Query with after cursor to get next page
+  const endCursor = result1.target?.activeAppDeployments.pageInfo.endCursor;
+
+  const result2 = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+      first: 2,
+      after: endCursor,
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result2.target?.activeAppDeployments.edges).toHaveLength(2);
+  expect(result2.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(true);
+  expect(result2.target?.activeAppDeployments.pageInfo.hasPreviousPage).toBe(true);
+
+  // Get the last page
+  const endCursor2 = result2.target?.activeAppDeployments.pageInfo.endCursor;
+
+  const result3 = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+      first: 2,
+      after: endCursor2,
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result3.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result3.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(false);
+
+  // Verify we got all 5 unique apps across all pages
+  const allNames = [
+    ...result1.target!.activeAppDeployments.edges.map(e => e.node.name),
+    ...result2.target!.activeAppDeployments.edges.map(e => e.node.name),
+    ...result3.target!.activeAppDeployments.edges.map(e => e.node.name),
+  ];
+  expect(allNames).toHaveLength(5);
+  expect(new Set(allNames).size).toBe(5);
+});
+
+test('activeAppDeployments returns error for invalid date filter', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization, setFeatureFlag } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { target, project } = await createProject();
+
+  // DateTime scalar rejects invalid date strings at the GraphQL level
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        lastUsedBefore: 'not-a-valid-date',
+      },
+    },
+    authToken: ownerToken,
+  });
+
+  expect(result.rawBody.errors).toBeDefined();
+  expect(result.rawBody.errors?.[0]?.message).toMatch(/DateTime|Invalid|date/i);
+});
+
+test('activeAppDeployments filters by name combined with lastUsedBefore', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  // Create frontend-app
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'frontend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'frontend-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'hash1', body: 'query { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'frontend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create backend-app
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'backend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'backend-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'hash2', body: 'query { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'backend-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Report usage for frontend-app only
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
+
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'frontend-app',
+      'x-graphql-client-version': '1.0.0',
+    },
+  });
+
+  await client.collectUsage()(
+    {
+      document: parse(`query { hello }`),
+      schema: buildASTSchema(parse(sdl)),
+      contextValue: { request },
+    },
+    {},
+    'frontend-app~1.0.0~hash1',
+  );
+
+  await waitForOperationsCollected(1);
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Filter by name "frontend" AND lastUsedBefore tomorrow should get frontend-app
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        name: 'frontend',
+        lastUsedBefore: tomorrow.toISOString(),
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(1);
+  expect(result.target?.activeAppDeployments.edges[0]?.node.name).toBe('frontend-app');
+});
+
+test('activeAppDeployments check pagination clamp', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await token.publishSchema({
+    sdl: /* GraphQL */ `
+      type Query {
+        hello: String
+      }
+    `,
+  });
+
+  // Create 25 active app deployments
+  for (let i = 0; i < 25; i++) {
+    const appName = `app-${i.toString().padStart(2, '0')}`;
+    await execute({
+      document: CreateAppDeployment,
+      variables: { input: { appName, appVersion: '1.0.0' } },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: AddDocumentsToAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion: '1.0.0',
+          documents: [{ hash: `hash-${i}`, body: 'query { hello }' }],
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: ActivateAppDeployment,
+      variables: { input: { appName, appVersion: '1.0.0' } },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+  }
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Request 100 items, should only get 20 (max limit)
+  const result = await execute({
+    document: GetActiveAppDeployments,
+    variables: {
+      targetSelector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      filter: {
+        neverUsedAndCreatedBefore: tomorrow.toISOString(),
+      },
+      first: 100,
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Should be clamped to 20
+  expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
+  expect(result.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(true);
 });

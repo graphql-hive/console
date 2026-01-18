@@ -1,5 +1,93 @@
 # hive-console-sdk-rs
 
+## 0.3.0
+
+### Minor Changes
+
+- [#7379](https://github.com/graphql-hive/console/pull/7379)
+  [`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37)
+  Thanks [@ardatan](https://github.com/ardatan)! - Breaking Changes to avoid future breaking
+  changes;
+
+  Switch to [Builder](https://rust-unofficial.github.io/patterns/patterns/creational/builder.html)
+  pattern for `SupergraphFetcher`, `PersistedDocumentsManager` and `UsageAgent` structs.
+
+  No more `try_new` or `try_new_async` or `try_new_sync` functions, instead use
+  `SupergraphFetcherBuilder`, `PersistedDocumentsManagerBuilder` and `UsageAgentBuilder` structs to
+  create instances.
+
+  Benefits;
+
+  - No need to provide all parameters at once when creating an instance even for default values.
+
+  Example;
+
+  ```rust
+  // Before
+  let fetcher = SupergraphFetcher::try_new_async(
+          "SOME_ENDPOINT", // endpoint
+           "SOME_KEY",
+          "MyUserAgent/1.0".to_string(),
+          Duration::from_secs(5), // connect_timeout
+          Duration::from_secs(10), // request_timeout
+          false, // accept_invalid_certs
+          3, // retry_count
+      )?;
+
+  // After
+  // No need to provide all parameters at once, can use default values
+  let fetcher = SupergraphFetcherBuilder::new()
+      .endpoint("SOME_ENDPOINT".to_string())
+      .key("SOME_KEY".to_string())
+      .build_async()?;
+  ```
+
+  - Easier to add new configuration options in the future without breaking existing code.
+
+  Example;
+
+  ```rust
+  let fetcher = SupergraphFetcher::try_new_async(
+          "SOME_ENDPOINT", // endpoint
+           "SOME_KEY",
+          "MyUserAgent/1.0".to_string(),
+          Duration::from_secs(5), // connect_timeout
+          Duration::from_secs(10), // request_timeout
+          false, // accept_invalid_certs
+          3, // retry_count
+          circuit_breaker_config, // Breaking Change -> new parameter added
+      )?;
+
+  let fetcher = SupergraphFetcherBuilder::new()
+      .endpoint("SOME_ENDPOINT".to_string())
+      .key("SOME_KEY".to_string())
+      .build_async()?; // No breaking change, circuit_breaker_config can be added later if needed
+  ```
+
+### Patch Changes
+
+- [#7379](https://github.com/graphql-hive/console/pull/7379)
+  [`b134461`](https://github.com/graphql-hive/console/commit/b13446109d9663ccabef07995eb25cf9dff34f37)
+  Thanks [@ardatan](https://github.com/ardatan)! - Circuit Breaker Implementation and Multiple
+  Endpoints Support
+
+  Implementation of Circuit Breakers in Hive Console Rust SDK, you can learn more
+  [here](https://the-guild.dev/graphql/hive/product-updates/2025-12-04-cdn-mirror-and-circuit-breaker)
+
+  Breaking Changes:
+
+  Now `endpoint` configuration accepts multiple endpoints as an array for `SupergraphFetcherBuilder`
+  and `PersistedDocumentsManager`.
+
+  ```diff
+  SupergraphFetcherBuilder::default()
+  -    .endpoint(endpoint)
+  +    .add_endpoint(endpoint1)
+  +    .add_endpoint(endpoint2)
+  ```
+
+  This change requires updating the configuration structure to accommodate multiple endpoints.
+
 ## 0.2.3
 
 ### Patch Changes
