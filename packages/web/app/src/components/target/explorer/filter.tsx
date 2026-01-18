@@ -33,6 +33,40 @@ import {
   useSchemaExplorerContext,
 } from './provider';
 
+const ServiceNameFilter_ServiceNames = graphql(`
+  query ServiceNameFilter_ServiceNames(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $period: DateRangeInput!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      __typename
+      id
+      latestValidSchemaVersion {
+        __typename
+        id
+        explorer(usage: { period: $period }) {
+          types {
+            __typename
+            supergraphMetadata {
+              ownedByServiceNames
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
     $organizationSlug: String!
@@ -54,7 +88,6 @@ const TypeFilter_AllTypes = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        isValid
         explorer(usage: { period: $period }) {
           types {
             __typename
@@ -196,6 +229,89 @@ export function DateRangeFilter() {
       startDate={periodSelector.startDate}
       align="end"
     />
+  );
+}
+
+export function ServiceNameFilter(props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+  period: {
+    to: string;
+    from: string;
+  };
+  metadataAttributes?: Array<{ name: string; values: string[] }> | null;
+}) {
+  const { setMetadataFilter, unsetMetadataFilter, hasMetadataFilter, clearMetadataFilter } =
+    useSchemaExplorerContext();
+
+  // Query to get service names from types
+  const [query] = useQuery({
+    query: ServiceNameFilter_ServiceNames,
+    variables: {
+      organizationSlug: props.organizationSlug,
+      projectSlug: props.projectSlug,
+      targetSlug: props.targetSlug,
+      period: props.period,
+    },
+    requestPolicy: 'cache-first',
+  });
+
+  const serviceNames = useMemo(() => {
+    const allTypes = query.data?.target?.latestValidSchemaVersion?.explorer?.types;
+    if (!allTypes) return [];
+
+    const serviceNameSet = new Set<string>();
+
+    allTypes.forEach(type => {
+      type.supergraphMetadata?.ownedByServiceNames?.forEach((serviceName: string) => {
+        serviceNameSet.add(serviceName);
+      });
+    });
+
+    const extracted = Array.from(serviceNameSet).sort();
+
+    return extracted;
+  }, [query.data]);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" className="data-[state=open]:bg-muted">
+          <FilterIcon className="size-4" />
+          &nbsp;Service
+          <span className="sr-only">Open menu to filter by service name.</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="max-h-[300px] min-w-[160px] max-w-[300px] flex-wrap overflow-y-auto"
+      >
+        <DropdownMenuSeparator />
+        {serviceNames.length > 0 ? (
+          serviceNames.map(serviceName => (
+            <DropdownMenuCheckboxItem
+              key={serviceName}
+              className="w-full"
+              checked={hasMetadataFilter('service', serviceName)}
+              onCheckedChange={isChecked => {
+                if (isChecked) {
+                  setMetadataFilter('service', serviceName);
+                } else {
+                  unsetMetadataFilter('service', serviceName);
+                }
+              }}
+            >
+              {serviceName}
+            </DropdownMenuCheckboxItem>
+          ))
+        ) : (
+          <DropdownMenuCheckboxItem disabled>
+            No services found in metadata
+          </DropdownMenuCheckboxItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
