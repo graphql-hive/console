@@ -15,7 +15,7 @@ overrides:
   cookie@<0.7.0: 0.7.2
   tar-fs: 2.1.4
   ip: npm:neoip@2.1.0
-  miniflare@3>undici: 5.29.0
+  miniflare@3>undici: ^7.18.2
   tailwindcss: 3.4.17
   estree-util-value-to-estree: ^3.3.3
   nodemailer@^6.0.0: ^7.0.11
@@ -912,8 +912,8 @@ importers:
         specifier: 2.8.1
         version: 2.8.1
       undici:
-        specifier: 6.21.3
-        version: 6.21.3
+        specifier: 7.18.2
+        version: 7.18.2
       vitest:
         specifier: 4.0.9
         version: 4.0.9(@types/debug@4.1.12)(@types/node@25.0.2)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.30.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -945,8 +945,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       undici:
-        specifier: 6.21.3
-        version: 6.21.3
+        specifier: 7.18.2
+        version: 7.18.2
       vitest:
         specifier: 4.0.9
         version: 4.0.9(@types/debug@4.1.12)(@types/node@25.0.2)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.30.2)(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
@@ -993,8 +993,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0
       undici:
-        specifier: 6.21.3
-        version: 6.21.3
+        specifier: 7.18.2
+        version: 7.18.2
       zod:
         specifier: 3.25.76
         version: 3.25.76
@@ -3979,10 +3979,6 @@ packages:
 
   '@fastify/ajv-compiler@3.6.0':
     resolution: {integrity: sha512-LwdXQJjmMD+GwLOkP7TVC68qa+pSSogeWWmznRJ/coyTcfe9qA05AHFSe1eZFwK6q+xVRpChnvFUkf1iYaSZsQ==}
-
-  '@fastify/busboy@2.1.1':
-    resolution: {integrity: sha512-vBZP4NlzfOlerQTnba4aqZoMhE/a9HY7HRqoOPaETQcSQuWEIyZMHGfVu6w9wGtGK5fED5qRs2DteVCjOH60sA==}
-    engines: {node: '>=14'}
 
   '@fastify/busboy@3.1.1':
     resolution: {integrity: sha512-5DGmA8FTdB2XbDeEwc/5ZXBl6UbBAyBOOLlPuBnZ/N1SwdH9Ii+cOX3tBROlDgcTXxjOYnLMVoKk9+FXAw0CJw==}
@@ -18119,13 +18115,9 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
-  undici@5.29.0:
-    resolution: {integrity: sha512-raqeBD6NQK4SkWhQzeYKd1KmIG6dllBOTt55Rmkt4HtI9mwdWtJljnrXjAFUBLTSN67HWrOIZ3EPF4kjUw80Bg==}
-    engines: {node: '>=14.0'}
-
-  undici@6.21.3:
-    resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
-    engines: {node: '>=18.17'}
+  undici@7.18.2:
+    resolution: {integrity: sha512-y+8YjDFzWdQlSE9N5nzKMT3g4a5UBX1HKowfdXh0uvAnTaqqwqB92Jt4UXBAeKekDs5IaDKyJFR4X1gYVCgXcw==}
+    engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.1:
     resolution: {integrity: sha512-PU5fb40H8X149s117aB4ytbORcCvlASdtF97tfls4BPIyj4PeVxvpSuy1jAptqYHqB0vb2w2sHvzM0XWcp2OKg==}
@@ -21901,8 +21893,6 @@ snapshots:
       ajv: 8.17.1
       ajv-formats: 2.1.1(ajv@8.17.1)
       fast-uri: 2.3.0
-
-  '@fastify/busboy@2.1.1': {}
 
   '@fastify/busboy@3.1.1': {}
 
@@ -37607,7 +37597,7 @@ snapshots:
       exit-hook: 2.2.1
       glob-to-regexp: 0.4.1
       stoppable: 1.1.0
-      undici: 5.29.0
+      undici: 7.18.2
       workerd: 1.20250129.0
       ws: 8.18.0
       youch: 3.3.3
@@ -41427,11 +41417,7 @@ snapshots:
 
   undici-types@7.16.0: {}
 
-  undici@5.29.0:
-    dependencies:
-      '@fastify/busboy': 2.1.1
-
-  undici@6.21.3: {}
+  undici@7.18.2: {}
 
   unenv@2.0.0-rc.1:
     dependencies:
