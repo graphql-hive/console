@@ -1,5 +1,5 @@
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import { Logger } from '@graphql-hive/logger';
 import CircuitBreaker from '../circuit-breaker/circuit.js';
 import { defaultCircuitBreakerConfiguration } from './circuit-breaker.js';
@@ -108,7 +108,7 @@ export function createPersistedDocuments(
   },
 ): PersistedDocuments {
   // L1
-  const persistedDocumentsCache = LRU<string | null>(config.cache ?? 10_000);
+  const persistedDocumentsCache = lru<string | null>(config.cache ?? 10_000);
 
   // L2
   const layer2Cache: PersistedDocumentsCache | undefined = config.layer2Cache?.cache;
