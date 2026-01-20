@@ -14,7 +14,7 @@ Instantiate your Gateway or client to point to the self-hosting endpoints.
 <Tabs.Tab>
 
 ```ts filename="gateway.config.ts"
-import { defineConfig } from '@graphql-hive/gateway';
+import { defineConfig } from '@graphql-hive/gateway'
 
 const config = defineConfig({
   reporting: {
@@ -22,10 +22,10 @@ const config = defineConfig({
     selfHosting: {
       graphqlEndpoint: 'http://localhost:8082/graphql',
       usageEndpoint: 'http://localhost:8081',
-      applicationUrl: 'http://localhost:8080/',
-    },
-  },
-});
+      applicationUrl: 'http://localhost:8080/'
+    }
+  }
+})
 ```
 
 </Tabs.Tab>
