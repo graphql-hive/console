@@ -120,7 +120,7 @@
     "overrides.nodemailer@^6.0.0": "supertokens-node override for vulnerable version",
     "overrides.@types/nodemailer>@aws-sdk/client-sesv2": "@types/nodemailer depends on some AWS stuff that causes the 3.x.x version to stick around. We don't need that dependency. (https://github.com/graphql-hive/console/security/dependabot/436)",
     "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
-    "overrides.diff<8.0.3": "address https://github.com/graphql-hive/console/security/dependabot/438",
+    "overrides.diff": "address https://github.com/graphql-hive/console/security/dependabot/438",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
