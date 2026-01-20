@@ -1,10 +1,13 @@
 /* eslint-disable no-process-env */
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import stripAnsi from 'strip-ansi';
 import { ProjectType, RuleInstanceSeverityLevel } from 'testkit/gql/graphql';
 import * as GraphQLSchema from 'testkit/gql/graphql';
 import type { CompositeSchema } from '@hive/api/__generated__/types';
-import { createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
+import { appCreate, appPublish, createCLI, schemaCheck, schemaPublish } from '../../testkit/cli';
 import { cliOutputSnapshotSerializer } from '../../testkit/cli-snapshot-serializer';
 import { initSeed } from '../../testkit/seed';
 import { createPolicy } from '../api/policy/policy-check.spec';
@@ -1040,5 +1043,62 @@ test.concurrent(
       View full report:
       http://__URL__
     `);
+  },
+);
+
+test.concurrent(
+  'schema:check displays affected app deployments for breaking changes',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, setFeatureFlag } = await createOrg();
+    await setFeatureFlag('appDeployments', true);
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret } = await createTargetAccessToken({});
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Test',
+      '--commit',
+      'init',
+      'fixtures/init-schema.graphql',
+    ]);
+
+    const operationsFile = join(tmpdir(), `operations-${randomUUID()}.json`);
+    await writeFile(
+      operationsFile,
+      JSON.stringify({
+        'op-hash-1': 'query GetUserEmails { users { id email } }',
+        'op-hash-2': 'query GetUserProfile { users { id name email } }',
+      }),
+    );
+
+    await appCreate([
+      '--registry.accessToken',
+      secret,
+      '--name',
+      'test-app',
+      '--version',
+      '1.0.0',
+      operationsFile,
+    ]);
+
+    await appPublish([
+      '--registry.accessToken',
+      secret,
+      '--name',
+      'test-app',
+      '--version',
+      '1.0.0',
+    ]);
+
+    try {
+      await schemaCheck(['--registry.accessToken', secret, 'fixtures/breaking-schema.graphql']);
+      expect.fail('Expected schema check to fail with breaking changes');
+    } catch (error: any) {
+      const output = stripAnsi(error.message || error.stderr || String(error));
+      expect(output).toContain('[1 app deployment affected]');
+    }
   },
 );

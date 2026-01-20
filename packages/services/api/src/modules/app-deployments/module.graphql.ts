@@ -64,6 +64,10 @@ export default gql`
 
   input AppDeploymentDocumentsFilterInput {
     operationName: String
+    """
+    Filter documents that use any of the specified schema coordinates.
+    """
+    schemaCoordinates: [String!]
   }
 
   """

@@ -381,6 +381,79 @@ function ClientExclusion(
   );
 }
 
+const AppDeploymentExclusion_AvailableAppDeploymentNamesQuery = graphql(`
+  query AppDeploymentExclusion_AvailableAppDeploymentNamesQuery($selector: TargetSelectorInput!) {
+    target(reference: { bySelector: $selector }) {
+      id
+      appDeployments(first: 100) {
+        edges {
+          node {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+`);
+
+function AppDeploymentExclusion(
+  props: PropsWithoutRef<
+    {
+      organizationSlug: string;
+      projectSlug: string;
+      targetSlug: string;
+      appDeploymentsFromSettings: string[];
+      value: string[];
+    } & Pick<ComponentProps<typeof Combobox>, 'name' | 'disabled' | 'onBlur' | 'onChange'>
+  >,
+) {
+  const [availableAppDeploymentNamesQuery] = useQuery({
+    query: AppDeploymentExclusion_AvailableAppDeploymentNamesQuery,
+    variables: {
+      selector: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: props.targetSlug,
+      },
+    },
+  });
+
+  if (availableAppDeploymentNamesQuery.error) {
+    return (
+      <div className="text-sm text-red-500">Failed to load app deployments. Please try again.</div>
+    );
+  }
+
+  const appDeploymentNamesFromQuery = [
+    ...new Set(
+      availableAppDeploymentNamesQuery.data?.target?.appDeployments?.edges.map(e => e.node.name) ??
+        [],
+    ),
+  ];
+  const allAppDeploymentNames = appDeploymentNamesFromQuery.concat(
+    props.appDeploymentsFromSettings.filter(name => !appDeploymentNamesFromQuery.includes(name)),
+  );
+
+  return (
+    <Combobox
+      name={props.name}
+      placeholder="Select..."
+      value={props.value.map(name => ({ label: name, value: name }))}
+      options={
+        allAppDeploymentNames.map(name => ({
+          value: name,
+          label: name,
+        })) ?? []
+      }
+      onBlur={props.onBlur}
+      onChange={props.onChange}
+      disabled={props.disabled}
+      loading={availableAppDeploymentNamesQuery.fetching}
+    />
+  );
+}
+
 const TargetSettings_ConditionalBreakingChangeConfigurationFragment = graphql(`
   fragment TargetSettings_ConditionalBreakingChangeConfigurationFragment on ConditionalBreakingChangeConfiguration {
     isEnabled
@@ -393,6 +466,7 @@ const TargetSettings_ConditionalBreakingChangeConfigurationFragment = graphql(`
       slug
     }
     excludedClients
+    excludedAppDeployments
   }
 `);
 
@@ -533,6 +607,7 @@ const BreakingChanges = (props: {
         configuration?.breakingChangeFormula ?? BreakingChangeFormulaType.Percentage,
       targetIds: configuration?.targets.map(t => t.id) || [],
       excludedClients: configuration?.excludedClients ?? [],
+      excludedAppDeployments: configuration?.excludedAppDeployments ?? [],
     },
     validationSchema: Yup.object().shape({
       percentage: Yup.number().when('breakingChangeFormula', {
@@ -564,6 +639,7 @@ const BreakingChanges = (props: {
       ]),
       targetIds: Yup.array().of(Yup.string()).min(1),
       excludedClients: Yup.array().of(Yup.string()),
+      excludedAppDeployments: Yup.array().of(Yup.string()),
     }),
     onSubmit: values =>
       updateValidation({
@@ -870,6 +946,40 @@ const BreakingChanges = (props: {
                   </div>
                   {touched.excludedClients && errors.excludedClients && (
                     <div className="text-red-500">{errors.excludedClients}</div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="space-y-2">
+                  <div>
+                    <div className="font-semibold">
+                      Allow breaking change for these app deployments:
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Marks a breaking change as safe when it only affects the following app
+                      deployments.
+                    </div>
+                  </div>
+                  <div className="max-w-[420px]">
+                    <AppDeploymentExclusion
+                      organizationSlug={props.organizationSlug}
+                      projectSlug={props.projectSlug}
+                      targetSlug={props.targetSlug}
+                      appDeploymentsFromSettings={configuration?.excludedAppDeployments ?? []}
+                      name="excludedAppDeployments"
+                      value={values.excludedAppDeployments}
+                      onBlur={() => setFieldTouched('excludedAppDeployments')}
+                      onChange={async options => {
+                        await setFieldValue(
+                          'excludedAppDeployments',
+                          options.map(o => o.value),
+                        );
+                      }}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {touched.excludedAppDeployments && errors.excludedAppDeployments && (
+                    <div className="text-red-500">{errors.excludedAppDeployments}</div>
                   )}
                 </div>
               </div>
