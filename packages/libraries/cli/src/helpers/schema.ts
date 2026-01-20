@@ -49,6 +49,9 @@ const RenderChanges_SchemaChanges = graphql(`
             displayName
           }
         }
+        affectedAppDeployments(first: 0) {
+          totalCount
+        }
       }
     }
   }
@@ -74,6 +77,12 @@ export const renderChanges = (maskedChanges: FragmentType<typeof RenderChanges_S
           Texture.colors.green(
             `(Approved by ${change.approval.approvedBy?.displayName ?? '<unknown>'} ✓)`,
           ),
+        );
+      }
+      if (change.affectedAppDeployments?.totalCount) {
+        const count = change.affectedAppDeployments.totalCount;
+        messageParts.push(
+          Texture.colors.yellow(`[${count} app deployment${count !== 1 ? 's' : ''} affected]`),
         );
       }
 

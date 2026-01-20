@@ -244,6 +244,7 @@ export class SchemaVersionHelper {
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
       filterNestedChanges: true,
+      getAffectedAppDeployments: null,
     });
 
     if (diffCheck.status === 'skipped') {
