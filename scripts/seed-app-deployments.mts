@@ -162,7 +162,9 @@ async function createAppDeploymentWithDocuments(
   const createResult = await executeGraphQL<{
     createAppDeployment: {
       error: { message: string } | null;
-      ok: { createdAppDeployment: { id: string; name: string; version: string; status: string } } | null;
+      ok: {
+        createdAppDeployment: { id: string; name: string; version: string; status: string };
+      } | null;
     };
   }>(CreateAppDeployment, { input: { appName, appVersion } });
 
@@ -256,7 +258,13 @@ for (const app of appDeployments) {
     const shouldActivate = true;
     const shouldRetire = !isLatest && isOldest;
 
-    await createAppDeploymentWithDocuments(app.name, version, docsToUse, shouldActivate, shouldRetire);
+    await createAppDeploymentWithDocuments(
+      app.name,
+      version,
+      docsToUse,
+      shouldActivate,
+      shouldRetire,
+    );
   }
   console.log('');
 }
