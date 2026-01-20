@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 import ms from 'ms';
 import 'reflect-metadata';
 import { hostname } from 'os';
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import {
   configureTracing,
   createErrorHandler,
@@ -132,7 +132,7 @@ export async function main() {
 
     // Cache failures for 1 minute
     const errorCachingInterval = ms('1m');
-    const tokenReadFailuresCache = LRU<string>(1000, errorCachingInterval);
+    const tokenReadFailuresCache = lru<string>(1000, errorCachingInterval);
 
     registerShutdown({
       logger: server.log,

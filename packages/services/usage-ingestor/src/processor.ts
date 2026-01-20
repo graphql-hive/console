@@ -1,5 +1,5 @@
 import { parse, type DocumentNode, type OperationTypeNode } from 'graphql';
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import { preprocessOperation } from '@graphql-hive/core';
 import type { ServiceLogger } from '@hive/service-common';
 import type {
@@ -67,7 +67,7 @@ export function createProcessor(config: { logger: ServiceLogger }) {
       });
     },
     op => op.key,
-    LRU<NormalizationResult>(10_000, 1_800_000 /* 30 minutes */),
+    lru<NormalizationResult>(10_000, 1_800_000 /* 30 minutes */),
   );
 
   return {
