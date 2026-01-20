@@ -120,6 +120,7 @@
     "overrides.tar-fs": "https://github.com/graphql-hive/console/security/dependabot/290",
     "overrides.nodemailer@^6.0.0": "supertokens-node override for vulnerable version",
     "overrides.@types/nodemailer>@aws-sdk/client-sesv2": "@types/nodemailer depends on some AWS stuff that causes the 3.x.x version to stick around. We don't need that dependency. (https://github.com/graphql-hive/console/security/dependabot/436)",
+    "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -135,7 +136,8 @@
       "tailwindcss": "3.4.17",
       "estree-util-value-to-estree": "^3.3.3",
       "nodemailer@^6.0.0": "^7.0.11",
-      "@types/nodemailer>@aws-sdk/client-sesv2": "-"
+      "@types/nodemailer>@aws-sdk/client-sesv2": "-",
+      "tar@6.x.x": "^7.5.3"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
