@@ -640,19 +640,20 @@ export async function createStorage(
             }),
             t,
           );
-          action = 'created';
-        }
 
-        if (internalUser.provider === 'GOOGLE' || internalUser.provider === 'GITHUB') {
-          await t.query(sql`/* ensureUserExists */
-					  INSERT INTO "email_verifications" ("user_id", "provider", "email", "verified_at")
-					  VALUES (
-							${internalUser.id}
-							, ${internalUser.provider}
-							, ${internalUser.email}
-							, now()
-						);
-          `);
+          if (internalUser.provider === 'GOOGLE' || internalUser.provider === 'GITHUB') {
+            await t.query(sql`/* ensureUserExists */
+              INSERT INTO "email_verifications" ("user_id", "provider", "email", "verified_at")
+              VALUES (
+                ${internalUser.id}
+                , ${internalUser.provider}
+                , ${internalUser.email}
+                , now()
+              );
+            `);
+          }
+
+          action = 'created';
         }
 
         if (oidcIntegration !== null) {
