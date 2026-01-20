@@ -136,6 +136,12 @@ export interface document_preflight_scripts {
   updated_at: Date;
 }
 
+export interface graphile_worker_deduplication {
+  dedupe_key: string;
+  expires_at: Date;
+  task_name: string;
+}
+
 export interface migration {
   date: Date;
   hash: string;
@@ -416,6 +422,7 @@ export interface targets {
   project_id: string;
   validation_breaking_change_formula: breaking_change_formula;
   validation_enabled: boolean;
+  validation_excluded_app_deployments: Array<string> | null;
   validation_excluded_clients: Array<string> | null;
   validation_percentage: number;
   validation_period: number;
@@ -477,6 +484,7 @@ export interface DBTables {
   document_collection_documents: document_collection_documents;
   document_collections: document_collections;
   document_preflight_scripts: document_preflight_scripts;
+  graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
   oidc_integrations: oidc_integrations;
   organization_access_tokens: organization_access_tokens;
