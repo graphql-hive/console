@@ -256,7 +256,7 @@ function TargetAppVersionContent(props: {
           <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="rounded bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
+              <code className="rounded-sm bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
                 {coordinates}
               </code>
             </span>
