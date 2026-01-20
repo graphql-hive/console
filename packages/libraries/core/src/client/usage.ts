@@ -6,7 +6,7 @@ import {
   TypeInfo,
   type ExecutionArgs,
 } from 'graphql';
-import LRU from 'tiny-lru';
+import { lru } from 'tiny-lru';
 import { normalizeOperation } from '../normalize/operation.js';
 import { version } from '../version.js';
 import { createAgent } from './agent.js';
@@ -386,7 +386,7 @@ export function createCollector({
     function cacheKey(doc, variables) {
       return cacheDocumentKey(doc, processVariables === true ? variables : null);
     },
-    LRU<CacheResult>(max, ttl),
+    lru<CacheResult>(max, ttl),
   );
 }
 
