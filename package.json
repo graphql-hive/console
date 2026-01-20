@@ -44,6 +44,7 @@
     "release": "pnpm build:libraries && changeset publish",
     "release:docs:update-version": "tsx scripts/sync-docker-image-tag-docs.ts",
     "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme && pnpm run release:docs:update-version",
+    "seed:app-deployments": "tsx scripts/seed-app-deployments.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",
