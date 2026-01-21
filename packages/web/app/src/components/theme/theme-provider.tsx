@@ -31,9 +31,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [storedTheme, setStoredTheme] = useLocalStorage(STORAGE_KEY, 'system');
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
-  const theme = (storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
-    ? storedTheme
-    : 'system') as Theme;
+  const theme = (
+    storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+      ? storedTheme
+      : 'system'
+  ) as Theme;
 
   const resolvedTheme: ResolvedTheme = theme === 'system' ? systemTheme : theme;
 
@@ -58,10 +60,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
 
-  const value = useMemo(
-    () => ({ theme, setTheme, resolvedTheme }),
-    [theme, resolvedTheme],
-  );
+  const value = useMemo(() => ({ theme, setTheme, resolvedTheme }), [theme, resolvedTheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

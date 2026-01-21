@@ -7,7 +7,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
-import { type Theme, useTheme } from './theme-provider';
+import { useTheme, type Theme } from './theme-provider';
 
 const themes: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
   { value: 'light', label: 'Light', icon: Sun },
