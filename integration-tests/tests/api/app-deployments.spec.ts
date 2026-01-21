@@ -4855,6 +4855,8 @@ test('update app deployment protection configuration', async () => {
           isEnabled: true,
           minDaysInactive: 7,
           maxTrafficPercentage: 5.0,
+          trafficPeriodDays: 30,
+          ruleLogic: 'AND',
         },
       },
     },
