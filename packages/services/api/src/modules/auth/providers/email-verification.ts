@@ -27,6 +27,24 @@ export class EmailVerification {
   ) {}
 
   async checkUserEmailVerified(input: { superTokensUserId: string }) {
+    const { provider } = await this.pool
+      .one(
+        sql`
+          SELECT COALESCE("stu"."third_party_id", 'emailpassword') "provider"
+          FROM "supertokens_all_auth_recipe_users" "saaru"
+          LEFT JOIN "supertokens_thirdparty_users" "stu"
+          ON "saaru"."user_id" = "stu"."user_id"
+          WHERE "saaru"."user_id" = ${input.superTokensUserId}
+        `,
+      )
+      .then(v =>
+        zod.object({ provider: zod.enum(['emailpassword', 'google', 'github', 'oidc']) }).parse(v),
+      );
+
+    if (provider === 'google' || provider === 'github') {
+      return { verified: true };
+    }
+    
     const user = await this.storage.getUserBySuperTokenId({
       superTokensUserId: input.superTokensUserId,
     });
