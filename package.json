@@ -43,7 +43,7 @@
     "prettier": "prettier --cache --write --list-different --ignore-unknown \"**/*\"",
     "release": "pnpm build:libraries && changeset publish",
     "release:docs:update-version": "tsx scripts/sync-docker-image-tag-docs.ts",
-    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin --filter hive-console-sdk-rs sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme && pnpm run release:docs:update-version",
+    "release:version": "changeset version && pnpm --filter hive-apollo-router-plugin sync-cargo-file && pnpm build:libraries && pnpm --filter @graphql-hive/cli oclif:readme && pnpm run release:docs:update-version",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",
@@ -103,7 +103,6 @@
     "pretty-quick": "4.0.0",
     "rimraf": "4.4.1",
     "tailwindcss": "3.4.17",
-    "ts-node": "10.9.2",
     "tsup": "8.4.0",
     "tsx": "4.19.2",
     "turbo": "2.5.8",
@@ -121,6 +120,7 @@
     "overrides.nodemailer@^6.0.0": "supertokens-node override for vulnerable version",
     "overrides.@types/nodemailer>@aws-sdk/client-sesv2": "@types/nodemailer depends on some AWS stuff that causes the 3.x.x version to stick around. We don't need that dependency. (https://github.com/graphql-hive/console/security/dependabot/436)",
     "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
+    "overrides.diff@<8.0.3": "address https://github.com/graphql-hive/console/security/dependabot/438",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -137,7 +137,8 @@
       "estree-util-value-to-estree": "^3.3.3",
       "nodemailer@^6.0.0": "^7.0.11",
       "@types/nodemailer>@aws-sdk/client-sesv2": "-",
-      "tar@6.x.x": "^7.5.3"
+      "tar@6.x.x": "^7.5.3",
+      "diff@<8.0.3": "^8.0.3"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",

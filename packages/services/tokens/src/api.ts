@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyRequest } from 'fastify';
-import { Lru as LruType } from 'tiny-lru';
+import { LRU as LruType } from 'tiny-lru';
 import { z } from 'zod';
 import { createErrorHandler, handleTRPCError, maskToken, metrics } from '@hive/service-common';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
