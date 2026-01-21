@@ -34,7 +34,7 @@ import {
 import { isPrintableAsBlockString } from 'graphql/language/blockString';
 import { isPrimitive } from '@graphql-inspector/core/utils/graphql';
 import { Builder, createBuilder } from './builder';
-import { compareLists, diffArrays, matchArrays } from './compare-lists';
+import { compareDirectiveLists, compareLists, diffArrays, matchArrays } from './compare-lists';
 import { ChangeDocument } from './components';
 import { Line, LineGroup, LineProps } from './lines';
 import { determineChangeType, lineToWordChange, printDefault } from './util';
@@ -1147,7 +1147,10 @@ function diffDirectiveUsages(props: {
   builder: Builder;
   path: string[];
 }) {
-  const { added, mutual, removed } = compareLists(props.oldDirectives, props.newDirectives);
+  const { added, mutual, removed } = compareDirectiveLists(
+    props.oldDirectives,
+    props.newDirectives,
+  );
 
   for (const d of removed) {
     diffDirectiveUsage({
