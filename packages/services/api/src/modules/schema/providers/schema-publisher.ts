@@ -605,18 +605,22 @@ export class SchemaPublisher {
         this.logger.debug('Using SINGLE registry model');
 
         if (input.schemaProposalId) {
-          const diffSchema = await this.models[project.type].diffSchema({
-            input: {
-              sdl,
-            },
-            latest: latestVersion
-              ? {
-                  schemas: [ensureSingleSchema(latestVersion.schemas)],
-                }
-              : null,
-          });
-          if ('result' in diffSchema) {
-            proposalChanges = diffSchema.result ?? null;
+          try {
+            const diffSchema = await this.models[project.type].diffSchema({
+              input: {
+                sdl,
+              },
+              latest: latestVersion
+                ? {
+                    schemas: [ensureSingleSchema(latestVersion.schemas)],
+                  }
+                : null,
+            });
+            if ('result' in diffSchema) {
+              proposalChanges = diffSchema.result ?? null;
+            }
+          } catch (e: any) {
+            this.logger.error('Could not calculate schema proposal diff: ', e.message ?? e);
           }
         }
 
@@ -656,20 +660,24 @@ export class SchemaPublisher {
         }
 
         if (input.schemaProposalId) {
-          const diffSchema = await this.models[project.type].diffSchema({
-            input: {
-              sdl,
-              serviceName: input.service,
-              url: input.url ?? null,
-            },
-            latest: latestVersion
-              ? {
-                  schemas: ensureCompositeSchemas(latestVersion.schemas),
-                }
-              : null,
-          });
-          if ('result' in diffSchema) {
-            proposalChanges = diffSchema.result ?? null;
+          try {
+            const diffSchema = await this.models[project.type].diffSchema({
+              input: {
+                sdl,
+                serviceName: input.service,
+                url: input.url ?? null,
+              },
+              latest: latestVersion
+                ? {
+                    schemas: ensureCompositeSchemas(latestVersion.schemas),
+                  }
+                : null,
+            });
+            if ('result' in diffSchema) {
+              proposalChanges = diffSchema.result ?? null;
+            }
+          } catch (e: any) {
+            this.logger.error('Could not calculate schema proposal diff: ', e.message ?? e);
           }
         }
 

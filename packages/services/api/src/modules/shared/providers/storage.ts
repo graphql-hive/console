@@ -1,10 +1,8 @@
 import { Injectable } from 'graphql-modules';
 import type { DatabasePool } from 'slonik';
-import z from 'zod';
 import type { PolicyConfigurationObject } from '@hive/policy';
 import type {
   ConditionalBreakingChangeMetadata,
-  HiveSchemaChangeModel,
   PaginatedOrganizationInvitationConnection,
   PaginatedSchemaVersionConnection,
   SchemaChangeType,
