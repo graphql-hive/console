@@ -139,7 +139,7 @@ export function TargetProposalDetailsPage(props: {
           );
         },
       )}
-      {mappedServices.filter(s => s.hasChanges).length === 0 ? (
+      {!mappedServices.some(s => s.hasChanges) ? (
         <div className="px-4">No changes found</div>
       ) : null}
     </div>
