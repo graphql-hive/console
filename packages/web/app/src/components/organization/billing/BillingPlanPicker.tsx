@@ -138,13 +138,13 @@ export function BillingPlanPicker({
 }): ReactElement {
   const plans = useFragment(BillingPlanPicker_PlanFragment, props.plans);
   return (
-    <RadioGroup value={value} onValueChange={onPlanChange} className="flex gap-4 md:!flex-row">
+    <RadioGroup value={value} onValueChange={onPlanChange} className="md:flex-row! flex gap-4">
       {plans.map(plan => (
         <Radio
           disabled={disabled}
           value={plan.planType}
           key={plan.id}
-          className="!rounded-md border p-4 md:w-1/3"
+          className="rounded-md! border p-4 md:w-1/3"
         >
           <Plan
             key={plan.id}

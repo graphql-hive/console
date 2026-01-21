@@ -1,5 +1,16 @@
 # hive
 
+## 9.1.0
+
+### Minor Changes
+
+- [#7388](https://github.com/graphql-hive/console/pull/7388)
+  [`53f9d5e`](https://github.com/graphql-hive/console/commit/53f9d5e30337b10ea0fdc954b56687d495556c77)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Show affected app deployments for
+  breaking schema changes. When a schema check detects breaking changes, it now shows which active
+  app deployments would be affected, including the specific operations within each deployment that
+  use the affected schema coordinates.
+
 ## 9.0.0
 
 ### Major Changes
