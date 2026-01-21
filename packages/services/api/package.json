@@ -17,7 +17,7 @@
     "@date-fns/utc": "2.1.1",
     "@graphql-hive/core": "workspace:*",
     "@graphql-hive/signal": "1.0.0",
-    "@graphql-inspector/core": "7.1.0",
+    "@graphql-inspector/core": "7.1.1-alpha-20260121180707-eb09941cd292b5c7c0a7526b9ceee77d69591952",
     "@graphql-tools/merge": "9.1.1",
     "@hive/cdn-script": "workspace:*",
     "@hive/schema": "workspace:*",

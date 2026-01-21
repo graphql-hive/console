@@ -599,9 +599,27 @@ export class SchemaPublisher {
         })
       : null;
 
+    let proposalChanges: Array<SchemaChangeType> | null = null;
     switch (project.type) {
       case ProjectType.SINGLE:
         this.logger.debug('Using SINGLE registry model');
+
+        if (input.schemaProposalId) {
+          const diffSchema = await this.models[project.type].diffSchema({
+            input: {
+              sdl,
+            },
+            latest: latestVersion
+              ? {
+                  schemas: [ensureSingleSchema(latestVersion.schemas)],
+                }
+              : null,
+          });
+          if ('result' in diffSchema) {
+            proposalChanges = diffSchema.result ?? null;
+          }
+        }
+
         checkResult = await this.models[ProjectType.SINGLE].check({
           input,
           selector,
@@ -626,7 +644,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
-          filterNestedChanges: !input.schemaProposalId,
+          filterNestedChanges: true,
         });
         break;
       case ProjectType.FEDERATION:
@@ -635,6 +653,24 @@ export class SchemaPublisher {
 
         if (!input.service) {
           throw new Error('Guard for TypeScript limitations on inferring types. :)');
+        }
+
+        if (input.schemaProposalId) {
+          const diffSchema = await this.models[project.type].diffSchema({
+            input: {
+              sdl,
+              serviceName: input.service,
+              url: input.url ?? null,
+            },
+            latest: latestVersion
+              ? {
+                  schemas: ensureCompositeSchemas(latestVersion.schemas),
+                }
+              : null,
+          });
+          if ('result' in diffSchema) {
+            proposalChanges = diffSchema.result ?? null;
+          }
         }
 
         checkResult = await this.models[project.type].check({
@@ -672,7 +708,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
-          filterNestedChanges: !input.schemaProposalId,
+          filterNestedChanges: true,
         });
         break;
       default:
@@ -738,6 +774,7 @@ export class SchemaPublisher {
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
         schemaProposalId: input.schemaProposalId ?? null,
+        schemaProposalChanges: proposalChanges,
       });
       this.logger.info('created failed schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Success) {
@@ -785,6 +822,7 @@ export class SchemaPublisher {
             safeSchemaChanges: contract.schemaChanges?.safe ?? null,
           })) ?? null,
         schemaProposalId: input.schemaProposalId ?? null,
+        schemaProposalChanges: proposalChanges,
       });
       this.logger.info('created successful schema check. (schemaCheckId=%s)', schemaCheck.id);
     } else if (checkResult.conclusion === SchemaCheckConclusion.Skip) {
@@ -864,6 +902,7 @@ export class SchemaPublisher {
             )
           : null,
         schemaProposalId: input.schemaProposalId ?? null,
+        schemaProposalChanges: proposalChanges,
       });
       this.logger.info('created skipped schema check. (schemaCheckId=%s)', schemaCheck.id);
     }
@@ -975,6 +1014,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckSuccess',
         valid: true,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [
           ...(checkResult.state?.schemaChanges?.all ?? []),
           ...(checkResult.state?.contracts?.flatMap(contract => [

@@ -426,6 +426,63 @@ export class RegistryChecks {
     } satisfies CheckResult;
   }
 
+  @traceFn('RegistryChecks.serviceDiff')
+  /**
+   * Intended to be used for subgraph/service schemas only. This does not check conditional breaking changes
+   * or policy logic. This function strictly calculates the diff between two SDL and returns the list of changes.
+   */
+  async serviceDiff(args: {
+    /** The existing SDL */
+    existingSdl: string | null;
+    /** The incoming SDL */
+    incomingSdl: string | null;
+  }) {
+    let existingSchema: GraphQLSchema | null;
+    let incomingSchema: GraphQLSchema | null;
+
+    try {
+      existingSchema = args.existingSdl
+        ? buildSortedSchemaFromSchemaObject(
+            this.helper.createSchemaObject({
+              sdl: args.existingSdl,
+            }),
+          )
+        : null;
+
+      incomingSchema = args.incomingSdl
+        ? buildSortedSchemaFromSchemaObject(
+            this.helper.createSchemaObject({
+              sdl: args.incomingSdl,
+            }),
+          )
+        : null;
+    } catch (error) {
+      this.logger.error('Failed to build schema for diff. Skip diff check.');
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
+    }
+
+    if (!existingSchema || !incomingSchema) {
+      this.logger.debug('Skip diff check due to either existing or incoming SDL being absent.');
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
+    }
+    if (!incomingSchema) {
+      return {
+        status: 'failed',
+        reason: 'Incoming schema is invalid.',
+      } satisfies CheckResult;
+    }
+    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
+
+    return {
+      status: 'completed',
+      result: inspectorChanges,
+    } satisfies CheckResult;
+  }
+
   /**
    * Diff incoming and existing SDL and generate a list of changes.
    * Uses usage stats to determine whether a change is safe or not (if available).

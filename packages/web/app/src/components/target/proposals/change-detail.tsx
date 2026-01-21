@@ -54,7 +54,7 @@ export function ChangeBlock(props: {
           {props.info && <ChangesBlockTooltip info={props.info} />}
         </h2>
         <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
-          {props.changes.map(({ change, error, mergeStatus }) => {
+          {props.changes.map(({ change, error, mergeStatus }, i) => {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
@@ -74,7 +74,7 @@ export function ChangeBlock(props: {
               <ProposalChangeDetail
                 icon={icon}
                 change={change}
-                key={`${change.type}-${change.path}`}
+                key={`${change.type}-${change.path}-${i}`}
                 error={error}
               />
             );

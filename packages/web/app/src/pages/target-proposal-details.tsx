@@ -1,6 +1,6 @@
 import { Fragment, useMemo } from 'react';
 import { CompositionErrorsSection } from '@/components/target/history/errors-and-changes';
-import { ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
+import { Proposal_ReviewsFragment } from '@/components/target/proposals';
 import { ChangeBlock } from '@/components/target/proposals/change-detail';
 import { ServiceHeading, ServiceHeadingType } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
@@ -24,7 +24,7 @@ export function TargetProposalDetailsPage(props: {
   targetSlug: string;
   proposalId: string;
   services: ServiceProposalDetails[];
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  reviews: FragmentType<typeof Proposal_ReviewsFragment>;
 }) {
   const mappedServices = useMemo(() => {
     return props.services?.map(

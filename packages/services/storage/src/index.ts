@@ -3970,6 +3970,7 @@ export async function createStorage(
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
             , "schema_proposal_id"
+            , "schema_proposal_changes"
           )
           VALUES (
               ${schemaSDLHash}
@@ -4000,6 +4001,7 @@ export async function createStorage(
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
             , ${args.schemaProposalId ?? null}
+            , ${jsonify(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
           )
           RETURNING
             "id"
@@ -5382,6 +5384,7 @@ const schemaCheckSQLFields = sql`
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
   , c."schema_proposal_id" as "schemaProposalId"
+  , c."schema_proposal_changes" as "schemaProposalChanges"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`

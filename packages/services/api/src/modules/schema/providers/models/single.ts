@@ -31,6 +31,24 @@ export class SingleModel {
     private appDeployments: AppDeployments,
   ) {}
 
+  @traceFn('Single modern: diffSchema')
+  async diffSchema({
+    input,
+    latest,
+  }: {
+    input: {
+      sdl: string;
+    };
+    latest: {
+      schemas: [SingleSchema];
+    } | null;
+  }) {
+    return this.checks.serviceDiff({
+      existingSdl: latest?.schemas[0]?.sdl ?? null,
+      incomingSdl: input.sdl,
+    });
+  }
+
   @traceFn('Single modern: check', {
     initAttributes: args => ({
       'hive.project.id': args.selector.projectId,
