@@ -577,6 +577,7 @@ const TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutatio
         inputErrors {
           minDaysInactive
           maxTrafficPercentage
+          trafficPeriodDays
         }
       }
     }
