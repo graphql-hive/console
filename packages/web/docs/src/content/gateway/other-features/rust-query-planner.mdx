@@ -118,7 +118,7 @@ The following table provides a comprehensive comparison between the two query pl
 | Additional resolvers         | ✅         | ❌                    | Additional type resolvers not supported                                                                 |
 | Schema transforms            | ✅         | ✅                    | Schema transformation pipeline is available in router runtime                                           |
 | Progressive Override         | ✅         | ❌                    | Apollo Federation's `@override` directive not supported at the moment                                   |
-| Rate limiting                | ✅         | ❌                    | Field-level and global rate limiting not supported                                                      |
+| Rate limiting                | ✅         | ✅                    | Field-level and global rate limiting is supported                                                       |
 | EDFS                         | ✅         | ❌                    | Event-Driven Federation Subscriptions are not supported because it uses additional resolvers            |
 | Subscriptions                | ✅         | ⚠️ Limited support    | Cannot populate fields from other subgraphs when resolving the subscription                             |
 | Schema extensions            | ✅         | ⚠️ Limited support    | Schema-level modifications may be limited because hive router does not use an executable schema         |
