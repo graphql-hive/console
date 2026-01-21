@@ -763,7 +763,7 @@ export const Operation = (props: {
               <Query operation={operation} isReadOnly={isReadOnly} />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={30} className="!overflow-visible">
+            <ResizablePanel minSize={10} defaultSize={30} className="overflow-visible!">
               <Tabs className="grid size-full grid-rows-[auto_1fr]" defaultValue="variables">
                 <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
                   <TabsTrigger value="variables" className="grow-0 rounded-sm">

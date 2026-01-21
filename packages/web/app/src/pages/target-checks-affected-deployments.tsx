@@ -243,7 +243,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="rounded bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
+                <code className="rounded-sm bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
                   {props.coordinate}
                 </code>
               </>
@@ -364,7 +364,7 @@ export function TargetChecksAffectedDeploymentsPage(props: {
       projectSlug={props.projectSlug}
       organizationSlug={props.organizationSlug}
       page={Page.Checks}
-      className="min-h-content"
+      className="min-h-(--min-h-content)"
     >
       <TargetChecksAffectedDeploymentsContent {...props} />
     </TargetLayout>
