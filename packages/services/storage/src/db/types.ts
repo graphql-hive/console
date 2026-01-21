@@ -138,12 +138,10 @@ export interface document_preflight_scripts {
 
 export interface email_verifications {
   created_at: Date;
-  email: string;
   expires_at: Date | null;
   id: string;
-  provider: string;
+  supertokens_user_id: string;
   token: string | null;
-  user_id: string;
   verified_at: Date | null;
 }
 

@@ -1,14 +1,44 @@
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from 'graphql-modules';
-import { sql, type DatabasePool } from 'slonik';
+import { sql, TaggedTemplateLiteralInvocation, type DatabasePool } from 'slonik';
 import zod from 'zod';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
-import { HiveError } from '../../../shared/errors';
 import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
-import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
+
+const EmailVerificationModelBase = zod.object({
+  id: zod.string().uuid(),
+  superTokensUserId: zod.string(),
+  createdAt: zod.number().transform(value => new Date(value)),
+});
+
+const UnverifiedEmailVerificationModel = EmailVerificationModelBase.extend({
+  token: zod.string(),
+  expiresAt: zod.number().transform(v => new Date(v)),
+  verifiedAt: zod.null(),
+});
+
+const VerifiedEmailVerificationModel = EmailVerificationModelBase.extend({
+  token: zod.string().nullable(),
+  expiresAt: zod.null(),
+  verifiedAt: zod.number().transform(v => new Date(v)),
+});
+
+const EmailVerificationModel = zod.union([
+  UnverifiedEmailVerificationModel,
+  VerifiedEmailVerificationModel,
+]);
+
+const emailVerificationFields = (r: TaggedTemplateLiteralInvocation) => sql`
+  ${r}"id"
+  , ${r}"supertokens_user_id" AS "superTokensUserId"
+  , ${r}"token" AS "token"
+  , ${r}"created_at" AS "createdAt"
+  , ${r}"expires_at" AS "expiresAt"
+  , ${r}"verified_at" AS "verifiedAt"
+`;
 
 /**
  * Responsible for email verification.
@@ -19,7 +49,6 @@ import { WEB_APP_URL } from '../../shared/providers/tokens';
 })
 export class EmailVerification {
   constructor(
-    private storage: Storage,
     private taskScheduler: TaskScheduler,
     private rateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
@@ -44,24 +73,16 @@ export class EmailVerification {
     if (provider === 'google' || provider === 'github') {
       return { verified: true };
     }
-    
-    const user = await this.storage.getUserBySuperTokenId({
-      superTokensUserId: input.superTokensUserId,
-    });
-    if (!user) {
-      throw new Error('User not found.');
-    }
 
-    const emailVerification = await this.pool.maybeOne<{
-      verifiedAt: number | null;
-    }>(sql`
-      SELECT "verified_at" "verifiedAt"
-      FROM "email_verifications"
-      WHERE
-        "user_id" = ${user.id}
-        AND "provider" = ${user.provider}
-        AND "email" = ${user.email}
-    `);
+    const emailVerification = await this.pool
+      .maybeOne(
+        sql`
+          SELECT ${emailVerificationFields(sql`"ev".`)}
+          FROM "email_verifications" "ev"
+          WHERE "ev"."supertokens_user_id" = ${input.superTokensUserId}
+        `,
+      )
+      .then(v => EmailVerificationModel.nullable().parse(v));
 
     return {
       verified: emailVerification?.verifiedAt != null,
@@ -93,77 +114,53 @@ export class EmailVerification {
       };
     }
 
-    const user = await this.storage.getUserBySuperTokenId({
-      superTokensUserId: input.superTokensUserId,
-    });
+    const existingVerification = await this.pool
+      .maybeOne(
+        sql`
+          SELECT ${emailVerificationFields(sql`"ev".`)}
+          FROM "email_verifications" "ev"
+          WHERE "ev"."supertokens_user_id" = ${input.superTokensUserId}
+        `,
+      )
+      .then(v => EmailVerificationModel.nullable().parse(v));
 
-    if (!user) {
-      return {
-        ok: false,
-        message: 'User not found.',
-      };
-    }
-
-    let emailVerification = await this.pool.maybeOne<{
-      token: string | null;
-      expiresAt: number | null;
-      verifiedAt?: number | null;
-    }>(sql`
-      SELECT
-        "token"
-        , "expires_at" "expiresAt"
-        , "verified_at" "verifiedAt"
-      FROM "email_verifications"
-      WHERE
-        "user_id" = ${user.id}
-        AND "provider" = ${user.provider}
-        AND "email" = ${user.email}
-    `);
-
-    if (emailVerification?.verifiedAt) {
+    if (existingVerification?.verifiedAt) {
       return {
         ok: false,
         message: 'Your email address has already been verified.',
       };
     }
 
-    if (emailVerification && emailVerification.token == null) {
-      throw new HiveError('Database is in invalid state');
-    }
-
-    if (!emailVerification) {
-      emailVerification = await this.pool.one<{
-        token: string;
-        expiresAt: number;
-      }>(sql`
-        INSERT INTO "email_verifications" (
-          "user_id"
-          , "provider"
-          , "email"
-          , "token"
-          , "expires_at"
+    const emailVerification =
+      existingVerification ??
+      (await this.pool
+        .one(
+          sql`
+            INSERT INTO "email_verifications" AS "ev" (
+              "supertokens_user_id"
+              , "token"
+              , "expires_at"
+            )
+            VALUES (
+              ${input.superTokensUserId}
+              , ${randomBytes(16).toString('hex')}
+              , now() + INTERVAL '30 minutes'
+            )
+            RETURNING ${emailVerificationFields(sql`"ev".`)}
+          `,
         )
-        VALUES (
-          ${user.id}
-          , ${user.provider}
-          , ${user.email}
-          , ${randomBytes(16).toString('hex')}
-          , now() + INTERVAL '30 minutes'
-        )
-        RETURNING
-          "token"
-          , "expires_at" "expiresAt"
-      `);
-    }
+        .then<zod.output<typeof UnverifiedEmailVerificationModel>>(v =>
+          UnverifiedEmailVerificationModel.parse(v),
+        ));
 
     await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-      user: { id: user.id, email: parsedEmail.data },
-      emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
+      email: parsedEmail.data,
+      verificationLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
     });
 
     return {
       ok: true,
-      expiresAt: new Date(emailVerification.expiresAt!),
+      expiresAt: new Date(emailVerification.expiresAt),
     };
   }
 
@@ -171,31 +168,19 @@ export class EmailVerification {
     superTokensUserId: string;
     token: string;
   }): Promise<{ ok: true; verified: boolean } | { ok: false; message: string }> {
-    const user = await this.storage.getUserBySuperTokenId({
-      superTokensUserId: input.superTokensUserId,
-    });
-
-    if (!user) {
-      return {
-        ok: false,
-        message: 'User not found.',
-      };
-    }
-
-    const emailVerification = await this.pool.maybeOne<{
-      id: string;
-      expiresAt: number;
-    }>(sql`
-      SELECT "id", "expires_at" "expiresAt"
-      FROM "email_verifications"
-      WHERE
-        "user_id" = ${user.id}
-        AND "provider" = ${user.provider}
-        AND "email" = ${user.email}
-        AND "token" = ${input.token}
-        AND "expires_at" IS NOT NULL
-        AND "verified_at" IS NULL
-    `);
+    const emailVerification = await this.pool
+      .maybeOne(
+        sql`
+          SELECT ${emailVerificationFields(sql`"ev".`)}
+          FROM "email_verifications" "ev"
+          WHERE
+            "supertokens_user_id" = ${input.superTokensUserId}
+            AND "token" = ${input.token}
+            AND "expires_at" IS NOT NULL
+            AND "verified_at" IS NULL
+        `,
+      )
+      .then(v => UnverifiedEmailVerificationModel.nullable().parse(v));
 
     if (!emailVerification) {
       return {
@@ -204,7 +189,7 @@ export class EmailVerification {
       };
     }
 
-    if (emailVerification.expiresAt <= Date.now()) {
+    if (emailVerification.expiresAt.getTime() <= Date.now()) {
       await this.pool.query(sql`
         DELETE FROM "email_verifications"
         WHERE "id" = ${emailVerification.id}
