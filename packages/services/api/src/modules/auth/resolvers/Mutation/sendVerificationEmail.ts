@@ -1,22 +1,12 @@
-import zod from 'zod';
 import { EmailVerification } from '../../providers/email-verification';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const sendVerificationEmail: NonNullable<
   MutationResolvers['sendVerificationEmail']
 > = async (_, { input }, { injector }) => {
-  const parseResult = zod.string().email().safeParse(input.email);
-  if (!parseResult.success) {
-    return {
-      error: {
-        message: parseResult.error.errors[0].message,
-      },
-    };
-  }
-
   const result = await injector.get(EmailVerification).sendVerificationEmail({
     superTokensUserId: input.superTokensUserId,
-    email: parseResult.data,
+    email: input.email,
   });
 
   if (!result.ok) {

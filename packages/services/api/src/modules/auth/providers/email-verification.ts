@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
+import zod from 'zod';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { HiveError } from '../../../shared/errors';
@@ -51,6 +52,14 @@ export class EmailVerification {
     superTokensUserId: string;
     email: string;
   }): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
+    const parsedEmail = zod.string().email().safeParse(input.email);
+    if (!parsedEmail.success) {
+      return {
+        ok: false,
+        message: parsedEmail.error.errors[0].message,
+      };
+    }
+
     const user = await this.storage.getUserBySuperTokenId({
       superTokensUserId: input.superTokensUserId,
     });
@@ -115,7 +124,7 @@ export class EmailVerification {
     }
 
     await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-      user: { id: user.id, email: input.email },
+      user: { id: user.id, email: parsedEmail.data },
       emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
     });
 
