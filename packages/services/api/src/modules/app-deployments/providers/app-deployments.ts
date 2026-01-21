@@ -611,38 +611,46 @@ export class AppDeployments {
           daysSinceLastUsed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         }
 
-        // Get traffic percentage (use 30 days as period)
+        // Get traffic percentage using configured period
         const trafficData = await this.getAppDeploymentTrafficPercentage({
           targetId: args.targetId,
           appName: args.appDeployment.name,
           appVersion: args.appDeployment.version,
-          periodDays: 30,
+          periodDays: protectionConfig.trafficPeriodDays,
         });
         const trafficPercentage = trafficData?.trafficPercentage ?? null;
 
         // Check protection rules
         // If no usage data (lastUsed is null), we allow retirement per requirement
-        // If usage data exists, check both criteria:
-        // 1. Must be inactive for at least minDaysInactive
-        // 2. Traffic must be below maxTrafficPercentage
+        // If usage data exists, check criteria based on ruleLogic:
+        // AND: Both conditions must pass (inactive enough AND low traffic)
+        // OR: Either condition can pass (inactive enough OR low traffic)
 
         let isBlocked = false;
         let blockReason = '';
 
         if (lastUsed !== null) {
-          // Check inactivity threshold
-          if (daysSinceLastUsed !== null && daysSinceLastUsed < protectionConfig.minDaysInactive) {
-            isBlocked = true;
-            blockReason = `App deployment was used ${daysSinceLastUsed} days ago, but requires ${protectionConfig.minDaysInactive} days of inactivity`;
-          }
+          const inactiveEnough =
+            daysSinceLastUsed === null || daysSinceLastUsed >= protectionConfig.minDaysInactive;
+          const lowTraffic =
+            trafficPercentage === null ||
+            trafficPercentage <= protectionConfig.maxTrafficPercentage;
 
-          // Check traffic threshold
-          if (
-            trafficPercentage !== null &&
-            trafficPercentage > protectionConfig.maxTrafficPercentage
-          ) {
-            isBlocked = true;
-            blockReason = `App deployment has ${trafficPercentage.toFixed(2)}% of traffic, but maximum allowed is ${protectionConfig.maxTrafficPercentage}%`;
+          if (protectionConfig.ruleLogic === 'OR') {
+            // OR logic: retirement allowed if EITHER condition is met
+            isBlocked = !inactiveEnough && !lowTraffic;
+            if (isBlocked) {
+              blockReason = `App deployment was used ${daysSinceLastUsed} days ago (requires ${protectionConfig.minDaysInactive}) and has ${trafficPercentage?.toFixed(2)}% traffic (max ${protectionConfig.maxTrafficPercentage}%)`;
+            }
+          } else {
+            // AND logic (default): retirement allowed only if BOTH conditions are met
+            if (!inactiveEnough) {
+              isBlocked = true;
+              blockReason = `App deployment was used ${daysSinceLastUsed} days ago, but requires ${protectionConfig.minDaysInactive} days of inactivity`;
+            } else if (!lowTraffic) {
+              isBlocked = true;
+              blockReason = `App deployment has ${trafficPercentage?.toFixed(2)}% of traffic, but maximum allowed is ${protectionConfig.maxTrafficPercentage}%`;
+            }
           }
         }
 
@@ -1494,16 +1502,6 @@ export class AppDeployments {
 
     const periodTo = new Date();
 
-    const formatClickHouseDate = (date: Date) => {
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const hours = String(date.getUTCHours()).padStart(2, '0');
-      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-      const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    };
-
     const result = await this.clickhouse.query({
       query: cSql`
         SELECT
@@ -1512,8 +1510,8 @@ export class AppDeployments {
         FROM "operations_daily"
         WHERE
           "target" = ${args.targetId}
-          AND "timestamp" >= toDateTime(${formatClickHouseDate(periodFrom)}, 'UTC')
-          AND "timestamp" <= toDateTime(${formatClickHouseDate(periodTo)}, 'UTC')
+          AND "timestamp" >= parseDateTimeBestEffort(${periodFrom.toISOString()})
+          AND "timestamp" <= parseDateTimeBestEffort(${periodTo.toISOString()})
       `,
       queryId: 'get-app-deployment-traffic-percentage',
       timeout: 20_000,

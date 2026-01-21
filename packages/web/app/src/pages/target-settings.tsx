@@ -45,7 +45,11 @@ import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
-import { BreakingChangeFormulaType, ProjectType } from '@/gql/graphql';
+import {
+  AppDeploymentProtectionRuleLogicType,
+  BreakingChangeFormulaType,
+  ProjectType,
+} from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
@@ -475,6 +479,8 @@ const TargetSettings_AppDeploymentProtectionConfigurationFragment = graphql(`
     isEnabled
     minDaysInactive
     maxTrafficPercentage
+    trafficPeriodDays
+    ruleLogic
   }
 `);
 
@@ -1119,56 +1125,75 @@ const AppDeploymentProtection = (props: {
   const isEnabled = configuration?.isEnabled || false;
   const { toast } = useToast();
 
-  const { handleSubmit, isSubmitting, errors, touched, values, handleBlur, handleChange } =
-    useFormik({
-      enableReinitialize: true,
-      initialValues: {
-        minDaysInactive: configuration?.minDaysInactive ?? 30,
-        maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
-      },
-      validationSchema: Yup.object().shape({
-        minDaysInactive: Yup.number()
-          .min(0, 'Must be at least 0')
-          .integer('Must be a whole number')
-          .required('Required'),
-        maxTrafficPercentage: Yup.number()
-          .min(0, 'Must be at least 0')
-          .max(100, 'Must be at most 100')
-          .required('Required'),
-      }),
-      onSubmit: values =>
-        updateProtection({
-          input: {
-            target: {
-              bySelector: {
-                organizationSlug: props.organizationSlug,
-                projectSlug: props.projectSlug,
-                targetSlug: props.targetSlug,
-              },
-            },
-            appDeploymentProtectionConfiguration: {
-              minDaysInactive: values.minDaysInactive,
-              maxTrafficPercentage: values.maxTrafficPercentage,
+  const {
+    handleSubmit,
+    isSubmitting,
+    errors,
+    touched,
+    values,
+    handleBlur,
+    handleChange,
+    setFieldValue,
+  } = useFormik({
+    enableReinitialize: true,
+    initialValues: {
+      minDaysInactive: configuration?.minDaysInactive ?? 30,
+      maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
+      trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
+      ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
+    },
+    validationSchema: Yup.object().shape({
+      minDaysInactive: Yup.number()
+        .min(0, 'Must be at least 0')
+        .integer('Must be a whole number')
+        .required('Required'),
+      maxTrafficPercentage: Yup.number()
+        .min(0, 'Must be at least 0')
+        .max(100, 'Must be at most 100')
+        .required('Required'),
+      trafficPeriodDays: Yup.number()
+        .min(1, 'Must be at least 1')
+        .integer('Must be a whole number')
+        .required('Required'),
+      ruleLogic: Yup.string()
+        .oneOf([AppDeploymentProtectionRuleLogicType.And, AppDeploymentProtectionRuleLogicType.Or])
+        .required('Required'),
+    }),
+    onSubmit: values =>
+      updateProtection({
+        input: {
+          target: {
+            bySelector: {
+              organizationSlug: props.organizationSlug,
+              projectSlug: props.projectSlug,
+              targetSlug: props.targetSlug,
             },
           },
-        }).then(result => {
-          if (result.error || result.data?.updateTargetAppDeploymentProtectionConfiguration.error) {
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description:
-                result.error?.message ||
-                result.data?.updateTargetAppDeploymentProtectionConfiguration.error?.message,
-            });
-          } else {
-            toast({
-              variant: 'default',
-              title: 'Success',
-              description: 'App deployment protection settings updated successfully',
-            });
-          }
-        }),
-    });
+          appDeploymentProtectionConfiguration: {
+            minDaysInactive: values.minDaysInactive,
+            maxTrafficPercentage: values.maxTrafficPercentage,
+            trafficPeriodDays: values.trafficPeriodDays,
+            ruleLogic: values.ruleLogic,
+          },
+        },
+      }).then(result => {
+        if (result.error || result.data?.updateTargetAppDeploymentProtectionConfiguration.error) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description:
+              result.error?.message ||
+              result.data?.updateTargetAppDeploymentProtectionConfiguration.error?.message,
+          });
+        } else {
+          toast({
+            variant: 'default',
+            title: 'Success',
+            description: 'App deployment protection settings updated successfully',
+          });
+        }
+      }),
+  });
 
   return (
     <form onSubmit={handleSubmit}>
@@ -1246,7 +1271,18 @@ const AppDeploymentProtection = (props: {
                   <span>days</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span>and has less than</span>
+                  <select
+                    name="ruleLogic"
+                    value={values.ruleLogic}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    disabled={isSubmitting}
+                    className="border-input bg-background h-10 w-20 rounded-md border px-2 text-center text-sm"
+                  >
+                    <option value={AppDeploymentProtectionRuleLogicType.And}>AND</option>
+                    <option value={AppDeploymentProtectionRuleLogicType.Or}>OR</option>
+                  </select>
+                  <span>has less than</span>
                   <Input
                     name="maxTrafficPercentage"
                     onChange={handleChange}
@@ -1259,7 +1295,18 @@ const AppDeploymentProtection = (props: {
                     step="0.01"
                     className="!inline-flex w-20 text-center"
                   />
-                  <span>percent of traffic</span>
+                  <span>percent of traffic over the last</span>
+                  <Input
+                    name="trafficPeriodDays"
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    value={values.trafficPeriodDays}
+                    disabled={isSubmitting}
+                    type="number"
+                    min="1"
+                    className="!inline-flex w-20 text-center"
+                  />
+                  <span>days</span>
                 </div>
               </div>
             </div>
@@ -1289,6 +1336,18 @@ const AppDeploymentProtection = (props: {
                 {
                   mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
                     .maxTrafficPercentage
+                }
+              </div>
+            )}
+            {touched.trafficPeriodDays && errors.trafficPeriodDays && (
+              <div className="text-red-500">{errors.trafficPeriodDays}</div>
+            )}
+            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
+              .trafficPeriodDays && (
+              <div className="text-red-500">
+                {
+                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
+                    .trafficPeriodDays
                 }
               </div>
             )}

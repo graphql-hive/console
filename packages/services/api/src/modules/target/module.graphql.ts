@@ -359,6 +359,28 @@ export default gql`
     Maximum traffic percentage threshold. App deployments with traffic above this percentage cannot be retired.
     """
     maxTrafficPercentage: Float! @tag(name: "public")
+    """
+    Number of days to look back when calculating traffic percentage.
+    """
+    trafficPeriodDays: Int! @tag(name: "public")
+    """
+    Logic to apply between the inactivity and traffic rules. AND requires both conditions, OR requires either.
+    """
+    ruleLogic: AppDeploymentProtectionRuleLogicType! @tag(name: "public")
+  }
+
+  """
+  Logic type for combining app deployment protection rules.
+  """
+  enum AppDeploymentProtectionRuleLogicType {
+    """
+    Both conditions must be met (inactive days AND low traffic).
+    """
+    AND @tag(name: "public")
+    """
+    Either condition can be met (inactive days OR low traffic).
+    """
+    OR @tag(name: "public")
   }
 
   """
@@ -378,6 +400,14 @@ export default gql`
     Maximum traffic percentage allowed for retirement (0-100).
     """
     maxTrafficPercentage: Float @tag(name: "public")
+    """
+    Number of days to look back when calculating traffic percentage (must be >= 1).
+    """
+    trafficPeriodDays: Int @tag(name: "public")
+    """
+    Logic to apply between the inactivity and traffic rules.
+    """
+    ruleLogic: AppDeploymentProtectionRuleLogicType @tag(name: "public")
   }
 
   input UpdateTargetAppDeploymentProtectionConfigurationInput {
@@ -400,6 +430,7 @@ export default gql`
   type UpdateTargetAppDeploymentProtectionConfigurationInputErrors {
     minDaysInactive: String
     maxTrafficPercentage: String
+    trafficPeriodDays: String
   }
 
   type UpdateTargetAppDeploymentProtectionConfigurationResultError {

@@ -416,6 +416,8 @@ export interface targets {
   app_deployment_protection_enabled: boolean;
   app_deployment_protection_max_traffic_percentage: number;
   app_deployment_protection_min_days_inactive: number;
+  app_deployment_protection_traffic_period_days: number;
+  app_deployment_protection_rule_logic: string;
   base_schema: string | null;
   clean_id: string;
   created_at: Date;

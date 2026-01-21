@@ -620,6 +620,7 @@ export class TargetManager {
           inputErrors: {
             minDaysInactive?: string;
             maxTrafficPercentage?: string;
+            trafficPeriodDays?: string;
           };
         };
       }
@@ -658,6 +659,7 @@ export class TargetManager {
             minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
             maxTrafficPercentage:
               validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
+            trafficPeriodDays: validationResult.error.formErrors.fieldErrors.trafficPeriodDays?.[0],
           },
         },
       };
@@ -669,6 +671,8 @@ export class TargetManager {
       isEnabled: args.configuration.isEnabled ?? undefined,
       minDaysInactive: validationResult.data.minDaysInactive ?? undefined,
       maxTrafficPercentage: validationResult.data.maxTrafficPercentage ?? undefined,
+      trafficPeriodDays: validationResult.data.trafficPeriodDays ?? undefined,
+      ruleLogic: args.configuration.ruleLogic ?? undefined,
     });
 
     return {
@@ -688,6 +692,11 @@ const AppDeploymentProtectionConfigurationModel = z.object({
     .number()
     .min(0, 'Maximum traffic percentage must be at least 0.')
     .max(100, 'Maximum traffic percentage must be at most 100.')
+    .nullable()
+    .optional(),
+  trafficPeriodDays: z
+    .number()
+    .min(1, 'Traffic period days must be at least 1.')
     .nullable()
     .optional(),
 });

@@ -387,6 +387,8 @@ export interface TargetSettings {
     isEnabled: boolean;
     minDaysInactive: number;
     maxTrafficPercentage: number;
+    trafficPeriodDays: number;
+    ruleLogic: 'AND' | 'OR';
   };
 }
 
