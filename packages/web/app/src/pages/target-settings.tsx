@@ -1125,75 +1125,70 @@ const AppDeploymentProtection = (props: {
   const isEnabled = configuration?.isEnabled || false;
   const { toast } = useToast();
 
-  const {
-    handleSubmit,
-    isSubmitting,
-    errors,
-    touched,
-    values,
-    handleBlur,
-    handleChange,
-    setFieldValue,
-  } = useFormik({
-    enableReinitialize: true,
-    initialValues: {
-      minDaysInactive: configuration?.minDaysInactive ?? 30,
-      maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
-      trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
-      ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
-    },
-    validationSchema: Yup.object().shape({
-      minDaysInactive: Yup.number()
-        .min(0, 'Must be at least 0')
-        .integer('Must be a whole number')
-        .required('Required'),
-      maxTrafficPercentage: Yup.number()
-        .min(0, 'Must be at least 0')
-        .max(100, 'Must be at most 100')
-        .required('Required'),
-      trafficPeriodDays: Yup.number()
-        .min(1, 'Must be at least 1')
-        .integer('Must be a whole number')
-        .required('Required'),
-      ruleLogic: Yup.string()
-        .oneOf([AppDeploymentProtectionRuleLogicType.And, AppDeploymentProtectionRuleLogicType.Or])
-        .required('Required'),
-    }),
-    onSubmit: values =>
-      updateProtection({
-        input: {
-          target: {
-            bySelector: {
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
+  const { handleSubmit, isSubmitting, errors, touched, values, handleBlur, handleChange } =
+    useFormik({
+      enableReinitialize: true,
+      initialValues: {
+        minDaysInactive: configuration?.minDaysInactive ?? 30,
+        maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
+        trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
+        ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
+      },
+      validationSchema: Yup.object().shape({
+        minDaysInactive: Yup.number()
+          .min(0, 'Must be at least 0')
+          .integer('Must be a whole number')
+          .required('Required'),
+        maxTrafficPercentage: Yup.number()
+          .min(0, 'Must be at least 0')
+          .max(100, 'Must be at most 100')
+          .required('Required'),
+        trafficPeriodDays: Yup.number()
+          .min(1, 'Must be at least 1')
+          .integer('Must be a whole number')
+          .required('Required'),
+        ruleLogic: Yup.string()
+          .oneOf([
+            AppDeploymentProtectionRuleLogicType.And,
+            AppDeploymentProtectionRuleLogicType.Or,
+          ])
+          .required('Required'),
+      }),
+      onSubmit: values =>
+        updateProtection({
+          input: {
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
+            appDeploymentProtectionConfiguration: {
+              minDaysInactive: values.minDaysInactive,
+              maxTrafficPercentage: values.maxTrafficPercentage,
+              trafficPeriodDays: values.trafficPeriodDays,
+              ruleLogic: values.ruleLogic,
             },
           },
-          appDeploymentProtectionConfiguration: {
-            minDaysInactive: values.minDaysInactive,
-            maxTrafficPercentage: values.maxTrafficPercentage,
-            trafficPeriodDays: values.trafficPeriodDays,
-            ruleLogic: values.ruleLogic,
-          },
-        },
-      }).then(result => {
-        if (result.error || result.data?.updateTargetAppDeploymentProtectionConfiguration.error) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description:
-              result.error?.message ||
-              result.data?.updateTargetAppDeploymentProtectionConfiguration.error?.message,
-          });
-        } else {
-          toast({
-            variant: 'default',
-            title: 'Success',
-            description: 'App deployment protection settings updated successfully',
-          });
-        }
-      }),
-  });
+        }).then(result => {
+          if (result.error || result.data?.updateTargetAppDeploymentProtectionConfiguration.error) {
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description:
+                result.error?.message ||
+                result.data?.updateTargetAppDeploymentProtectionConfiguration.error?.message,
+            });
+          } else {
+            toast({
+              variant: 'default',
+              title: 'Success',
+              description: 'App deployment protection settings updated successfully',
+            });
+          }
+        }),
+    });
 
   return (
     <form onSubmit={handleSubmit}>
@@ -1209,7 +1204,7 @@ const AppDeploymentProtection = (props: {
               </CardDescription>
               <CardDescription>
                 Use{' '}
-                <code className="rounded bg-gray-800 px-1 py-0.5 text-xs">
+                <code className="rounded-sm bg-gray-800 px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
