@@ -44,6 +44,7 @@ export default gql`
   input SendVerificationEmailInput {
     superTokensUserId: ID!
     email: String!
+    resend: Boolean
   }
 
   type SendVerificationEmailOk {

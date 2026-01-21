@@ -93,19 +93,10 @@ export class EmailVerification {
     input: {
       superTokensUserId: string;
       email: string;
+      resend?: boolean;
     },
     actorId?: string,
   ): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
-    if (actorId) {
-      await this.rateLimiter.check(
-        'sendVerificationEmail',
-        actorId,
-        60_000,
-        2,
-        `Exceeded rate limit for sending verification emails.`,
-      );
-    }
-
     const parsedEmail = zod.string().email().safeParse(input.email);
     if (!parsedEmail.success) {
       return {
@@ -153,10 +144,22 @@ export class EmailVerification {
           UnverifiedEmailVerificationModel.parse(v),
         ));
 
-    await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-      email: parsedEmail.data,
-      verificationLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
-    });
+    if (!existingVerification || input.resend) {
+      if (actorId) {
+        await this.rateLimiter.check(
+          'sendVerificationEmail',
+          actorId,
+          60_000,
+          2,
+          `Exceeded rate limit for sending verification emails.`,
+        );
+      }
+
+      await this.taskScheduler.scheduleTask(EmailVerificationTask, {
+        email: parsedEmail.data,
+        verificationLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
+      });
+    }
 
     return {
       ok: true,

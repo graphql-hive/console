@@ -8,6 +8,7 @@ export const sendVerificationEmail: NonNullable<
     {
       superTokensUserId: input.superTokensUserId,
       email: input.email,
+      resend: input.resend ?? undefined,
     },
     req.ip,
   );

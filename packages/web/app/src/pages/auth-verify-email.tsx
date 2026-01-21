@@ -43,7 +43,7 @@ function AuthVerifyEmail() {
   const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
 
-  const sendEmail = useCallback(async () => {
+  const sendEmail = useCallback(async (resend?: boolean) => {
     if (session.loading) return;
 
     const result = await sendEmailImpl(
@@ -51,6 +51,7 @@ function AuthVerifyEmail() {
         input: {
           superTokensUserId: session.userId,
           email: session.accessTokenPayload.email,
+          resend,
         },
       },
       {
@@ -112,7 +113,7 @@ function AuthVerifyEmail() {
               <Button
                 className="w-full"
                 disabled={sendEmailMutation.fetching}
-                onClick={() => sendEmail()}
+                onClick={() => sendEmail(true)}
               >
                 Resend verification email
               </Button>
