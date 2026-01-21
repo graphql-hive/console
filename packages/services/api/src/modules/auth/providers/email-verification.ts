@@ -5,6 +5,7 @@ import zod from 'zod';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { HiveError } from '../../../shared/errors';
+import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
@@ -20,6 +21,7 @@ export class EmailVerification {
   constructor(
     private storage: Storage,
     private taskScheduler: TaskScheduler,
+    private rateLimiter: InMemoryRateLimiter,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
   ) {}
@@ -48,10 +50,23 @@ export class EmailVerification {
     };
   }
 
-  async sendVerificationEmail(input: {
-    superTokensUserId: string;
-    email: string;
-  }): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
+  async sendVerificationEmail(
+    input: {
+      superTokensUserId: string;
+      email: string;
+    },
+    actorId?: string,
+  ): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
+    if (actorId) {
+      await this.rateLimiter.check(
+        'sendVerificationEmail',
+        actorId,
+        60_000,
+        2,
+        `Exceeded rate limit for sending verification emails.`,
+      );
+    }
+
     const parsedEmail = zod.string().email().safeParse(input.email);
     if (!parsedEmail.success) {
       return {
