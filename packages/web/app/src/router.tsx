@@ -294,7 +294,7 @@ export const authVerifyEmailRoute = createRoute({
   validateSearch(search) {
     return AuthVerifyEmailSearch.parse(search);
   },
-  component: AuthVerifyEmailPage,
+  component: authenticated(AuthVerifyEmailPage),
 });
 
 const indexRoute = createRoute({
