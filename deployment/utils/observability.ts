@@ -199,7 +199,7 @@ export class Observability {
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_health"',
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["http.url"], ".*/_health") == true',
                 // Ignore Contour/Envoy traces for /usage requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage" and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*") == true) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
                 // Ignore metrics scraping
                 'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                 // Ignore webapp HTTP calls
