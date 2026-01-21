@@ -187,26 +187,34 @@ export class Observability {
             spike_limit_mib: 128,
           },
           // Filter OpenTelemetry traces that are not needed for debugging.
-          'filter/traces': {
-            error_mode: 'ignore',
-            traces: {
-              span: [
-                // Ignore all HEAD/OPTIONS requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "HEAD"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "OPTIONS"',
-                // Ignore health checks
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_readiness"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_health"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["http.url"], ".*/_health") == true',
-                // Ignore Contour/Envoy traces for /usage requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*") == true) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
-                // Ignore metrics scraping
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
-                // Ignore webapp HTTP calls
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
-              ],
-            },
+          tail_sampling: {
+            decision_wait: '10s',
+            num_traces: 10000,
+            policies: [
+              {
+                name: 'drop-proxy-noise',
+                type: 'ottl_condition',
+                ottl_condition: {
+                  error_mode: 'ignore',
+                  span: [
+                    // Ignore HEAD/OPTIONS
+                    'attributes["component"] == "proxy" and (attributes["http.method"] == "HEAD" or attributes["http.method"] == "OPTIONS")',
+                    //Ignore health checks
+                    'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or IsMatch(attributes["http.url"], ".*/_health"))',
+                    //Ignore /usage requests (200 or 429)
+                    'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                    // Ignore metrics scraping
+                    'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
+                    // Ignore webapp HTTP calls via upstream cluster name
+                    'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
+                  ],
+                },
+              },
+              {
+                name: 'keep-all-others',
+                type: 'always_sample',
+              },
+            ],
           },
           // Remove raw trace information that we don't really need and exposed by default.
           'attributes/trace_filter': {
@@ -364,7 +372,7 @@ export class Observability {
                 'resource/trace_cleanup',
                 'attributes/trace_filter',
                 'transform/patch_envoy_spans',
-                'filter/traces',
+                'tail_sampling',
                 'batch',
               ],
               exporters:
