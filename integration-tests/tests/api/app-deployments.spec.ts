@@ -173,6 +173,8 @@ const UpdateTargetAppDeploymentProtectionConfiguration = graphql(`
             isEnabled
             minDaysInactive
             maxTrafficPercentage
+            trafficPeriodDays
+            ruleLogic
           }
         }
       }
@@ -195,6 +197,8 @@ const GetTargetAppDeploymentProtectionConfiguration = graphql(`
         isEnabled
         minDaysInactive
         maxTrafficPercentage
+        trafficPeriodDays
+        ruleLogic
       }
     }
   }
@@ -4815,8 +4819,10 @@ test('update app deployment protection configuration', async () => {
 
   expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
     isEnabled: false,
-    minDaysInactive: 30,
+    minDaysInactive: 7,
     maxTrafficPercentage: 1.0,
+    trafficPeriodDays: 30,
+    ruleLogic: 'AND',
   });
 
   // Enable protection with custom settings
@@ -4872,6 +4878,8 @@ test('update app deployment protection configuration', async () => {
     isEnabled: true,
     minDaysInactive: 7,
     maxTrafficPercentage: 5.0,
+    trafficPeriodDays: 30,
+    ruleLogic: 'AND',
   });
 });
 
