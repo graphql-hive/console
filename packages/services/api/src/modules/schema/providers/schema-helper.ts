@@ -4,6 +4,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import objectHash from 'object-hash';
 import type {
   CompositeSchema,
+  CreateSchemaObjectInput,
   PushedCompositeSchema,
   Schema,
   SchemaObject,
@@ -101,8 +102,6 @@ export function removeDescriptions(documentNode: DocumentNode): DocumentNode {
     },
   });
 }
-
-type CreateSchemaObjectInput = Parameters<typeof createSchemaObject>[0];
 
 @Injectable({
   scope: Scope.Operation,

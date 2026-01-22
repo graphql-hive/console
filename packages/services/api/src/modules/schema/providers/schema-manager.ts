@@ -1228,8 +1228,8 @@ export class SchemaManager {
           ensureCompositeSchemas(schemas).map(s =>
             this.schemaHelper.createSchemaObject({
               sdl: s.sdl,
-              service_name: s.service_name,
-              service_url: s.service_url,
+              serviceName: s.service_name,
+              serviceUrl: s.service_url,
             }),
           ),
           {
