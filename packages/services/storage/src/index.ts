@@ -2125,33 +2125,23 @@ export async function createStorage(
 
       return SchemaVersionModel.parse(version);
     },
-    async getLatestSchemas({ projectId: project, targetId: target, onlyComposable }) {
-      const latest = await pool.maybeOne<
-        Pick<schema_versions, 'id' | 'is_composable'>
-      >(sql`/* getLatestSchemas */
-        SELECT sv.id, sv.is_composable
-        FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
-        WHERE t.id = ${target} AND t.project_id = ${project} AND ${
-          onlyComposable ? sql`sv.is_composable IS TRUE` : true
-        }
-        ORDER BY sv.created_at DESC
-        LIMIT 1
-      `);
+    async getLatestSchemas({ organizationId, projectId, targetId, onlyComposable }) {
+      const schemaVersion = await (onlyComposable
+        ? this.getMaybeLatestValidVersion({ targetId })
+        : this.getMaybeLatestVersion({ organizationId, projectId, targetId }));
 
-      if (!latest) {
+      if (!schemaVersion) {
         return null;
       }
 
-      const schemas = await storage.getSchemasOfVersion({
-        versionId: latest.id,
+      const schemas = await this.getSchemasOfVersion({
+        versionId: schemaVersion.id,
         includeMetadata: true,
       });
 
       return {
-        versionId: latest.id,
-        valid: latest.is_composable,
+        versionId: schemaVersion.id,
+        valid: schemaVersion.isComposable,
         schemas,
       };
     },
