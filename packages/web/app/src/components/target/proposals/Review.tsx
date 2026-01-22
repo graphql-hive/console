@@ -6,7 +6,7 @@ import { CheckIcon, PlusIcon } from '../../ui/icon';
 import { TimeAgo } from '../../v2';
 import { AnnotatedContext } from './schema-diff/components';
 
-const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
+export const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewCommentsFragment on SchemaProposalReview {
     id
     comments {

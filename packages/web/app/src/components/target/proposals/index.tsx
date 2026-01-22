@@ -3,7 +3,7 @@ import { GraphQLSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DetachedAnnotations, ReviewComments } from './Review';
 import { AnnotatedProvider } from './schema-diff/components';
-import { SchemaDiff } from './schema-diff/schema-diff';
+import { SchemaDiff } from './schema-diff/core';
 
 /**
  * Fragment containing a list of reviews. Each review is tied to a coordinate
@@ -484,18 +484,6 @@ export function Proposal(props: {
   }, [props.reviews, props.serviceName]);
 
   try {
-    // THIS IS IMPORTANT!! <SchemaDiff/> must be rendered first so that it sets up the state in the
-    // AnnotatedContext for <DetachedAnnotations/>. Otherwise, the DetachedAnnotations will be empty.
-    const diff = (
-      <SchemaDiff
-        className={props.className}
-        before={props.beforeSchema}
-        after={props.afterSchema}
-        annotations={annotations}
-      />
-    );
-
-    // @todo AnnotatedProvider doesnt work 100% of the time... A different solution must be found
     return (
       <AnnotatedProvider>
         <DetachedAnnotations
@@ -509,7 +497,11 @@ export function Proposal(props: {
             </>
           )}
         />
-        {diff}
+        <SchemaDiff
+          className={props.className}
+          before={props.beforeSchema}
+          after={props.afterSchema}
+        />
       </AnnotatedProvider>
     );
   } catch (e: unknown) {
