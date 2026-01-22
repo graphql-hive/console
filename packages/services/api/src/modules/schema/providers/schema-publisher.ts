@@ -351,12 +351,12 @@ export class SchemaPublisher {
         this.storage.getOrganization({
           organizationId: selector.organizationId,
         }),
-        this.schemaManager.getLatestSchemas({
+        this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
           organizationId: selector.organizationId,
           projectId: selector.projectId,
           targetId: selector.targetId,
         }),
-        this.schemaManager.getLatestSchemas({
+        this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
           organizationId: selector.organizationId,
           projectId: selector.projectId,
           targetId: selector.targetId,
@@ -1212,7 +1212,7 @@ export class SchemaPublisher {
 
     const [contracts, latestVersion] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
-      this.schemaManager.getLatestSchemas({
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
@@ -1392,12 +1392,12 @@ export class SchemaPublisher {
         }
 
         const [latestVersion, latestComposableVersion, baseSchema] = await Promise.all([
-          this.schemaManager.getLatestSchemas({
+          this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
             organizationId: selector.organizationId,
             projectId: selector.projectId,
             targetId: selector.targetId,
           }),
-          this.schemaManager.getLatestSchemas({
+          this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
             organizationId: selector.organizationId,
             projectId: selector.projectId,
             targetId: selector.targetId,
@@ -1672,12 +1672,12 @@ export class SchemaPublisher {
           projectId: projectId,
           targetId: targetId,
         }),
-        this.schemaManager.getLatestSchemas({
+        this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
           organizationId: organizationId,
           projectId: projectId,
           targetId: targetId,
         }),
-        this.schemaManager.getLatestSchemas({
+        this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
           organizationId: organizationId,
           projectId: projectId,
           targetId: targetId,

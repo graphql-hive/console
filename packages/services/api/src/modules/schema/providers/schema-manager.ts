@@ -346,7 +346,7 @@ export class SchemaManager {
     };
   }
 
-  async getLatestSchemas(
+  async getLatestSchemaVersionWithSchemaLogs(
     args: {
       onlyComposable?: boolean;
     } & TargetSelector,
