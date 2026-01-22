@@ -137,7 +137,12 @@ export class SingleModel {
       contracts: null,
     });
 
-    const previousVersionSdl = comparedVersion?.sdl ?? null;
+    const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
+      version: comparedVersion,
+      organization,
+      project,
+      targetId: selector.targetId,
+    });
 
     const getAffectedAppDeployments: GetAffectedAppDeployments = (
       schemaCoordinates,

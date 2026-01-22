@@ -358,8 +358,7 @@ export interface Storage {
     } & TargetSelector,
   ): Promise<{
     schemas: Schema[];
-    versionId: string;
-    valid: boolean;
+    version: SchemaVersion;
   } | null>;
 
   getLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | never>;
