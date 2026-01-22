@@ -69,7 +69,13 @@ export class SchemaVersionHelper {
 
     const validation = await this.compositionOrchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
-      schemas.map(s => this.schemaHelper.createSchemaObject(s)),
+      schemas.map(s =>
+        this.schemaHelper.createSchemaObject({
+          sdl: s.sdl,
+          serviceName: s.kind === 'composite' ? s.service_name : null,
+          serviceUrl: s.kind === 'composite' ? s.service_url : null,
+        }),
+      ),
       {
         external: project.externalComposition,
         native: this.schemaManager.checkProjectNativeFederationSupport({
