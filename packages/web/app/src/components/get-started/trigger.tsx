@@ -41,7 +41,7 @@ export function GetStartedProgress(props: {
       <button
         onClick={toggle}
         className={cn(
-          'cursor-pointer rounded px-4 py-2 text-left hover:opacity-80',
+          'cursor-pointer rounded-sm px-4 py-2 text-left hover:opacity-80',
           props.className,
         )}
       >
@@ -50,7 +50,7 @@ export function GetStartedProgress(props: {
           {remaining} remaining task{remaining > 1 ? 's' : ''}
         </div>
         <div>
-          <div className="relative mt-1 h-[5px] w-full overflow-hidden rounded bg-gray-800">
+          <div className="relative mt-1 h-[5px] w-full overflow-hidden rounded-sm bg-gray-800">
             <div
               className="h-full bg-orange-500"
               style={{ width: `${(completed / total) * 100}%` }}

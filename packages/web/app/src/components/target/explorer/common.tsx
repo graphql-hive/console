@@ -62,7 +62,7 @@ export function SchemaExplorerUsageStats(props: {
           </div>
           <div
             title={`${toDecimal(percentage)}% of all requests`}
-            className="relative z-0 mt-1 w-full min-w-[25px] overflow-hidden rounded bg-orange-500/20"
+            className="relative z-0 mt-1 w-full min-w-[25px] overflow-hidden rounded-sm bg-orange-500/20"
             style={{ width: 50, height: 5 }}
           >
             <div className="z-0 h-full bg-orange-500" style={{ width: `${percentage}%` }} />

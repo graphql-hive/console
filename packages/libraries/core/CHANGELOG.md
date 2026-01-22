@@ -1,5 +1,13 @@
 # @graphql-hive/core
 
+## 0.20.1
+
+### Patch Changes
+
+- [#7507](https://github.com/graphql-hive/console/pull/7507)
+  [`8bbbfb8`](https://github.com/graphql-hive/console/commit/8bbbfb8aa6aa4c59b9ad515dfbbe12616931f82d)
+  Thanks [@doronrosenberg](https://github.com/doronrosenberg)! - Update the tiny-lru dependency
+
 ## 0.20.0
 
 ### Minor Changes

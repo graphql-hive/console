@@ -827,7 +827,7 @@ const BreakingChanges = (props: {
                     disabled={isSubmitting}
                     type="number"
                     step="0.01"
-                    className="mx-2 !inline-flex w-16 text-center"
+                    className="inline-flex! mx-2 w-16 text-center"
                   />
                   <label htmlFor="percentage">Percent of Traffic</label>
                 </div>
@@ -854,7 +854,7 @@ const BreakingChanges = (props: {
                     disabled={isSubmitting}
                     type="number"
                     step="1"
-                    className="mx-2 !inline-flex w-16 text-center"
+                    className="inline-flex! mx-2 w-16 text-center"
                   />
                   <label htmlFor="requestCount">Total Operations</label>
                 </div>
@@ -871,7 +871,7 @@ const BreakingChanges = (props: {
                 type="number"
                 min="1"
                 max={targetSettings.data?.organization?.usageRetentionInDays ?? 30}
-                className="mx-2 !inline-flex w-16"
+                className="inline-flex! mx-2 w-16"
               />
               days.
             </div>
@@ -1015,7 +1015,7 @@ const BreakingChanges = (props: {
             {touched.targetIds && errors.targetIds && (
               <div className="text-red-500">{errors.targetIds}</div>
             )}
-            <div className="mb-3 mt-5 space-y-2 rounded border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
+            <div className="mb-3 mt-5 space-y-2 rounded-sm border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
               <div>
                 <div className="font-semibold">Example settings</div>
                 <div className="text-sm">Removal of a field is considered breaking if</div>

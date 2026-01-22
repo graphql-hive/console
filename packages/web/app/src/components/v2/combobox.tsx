@@ -49,17 +49,18 @@ export function Combobox(
         ),
       }}
       classNames={{
-        control: () => clsx('bg-gray-800 border-gray-800 hover:border-orange-800 shadow-none'),
-        valueContainer: () => clsx('bg-gray-800 rounded-xl'),
-        indicatorsContainer: () => clsx('bg-gray-800 rounded-xl'),
-        container: () => clsx('bg-gray-800 rounded-xl shadow-lg text-sm'),
-        menu: () => clsx('bg-gray-800 rounded-xl shadow-lg text-xs'),
-        menuList: () => clsx('bg-gray-800 rounded-lg text-xs'),
-        option: () => clsx('bg-gray-800 hover:bg-gray-700 text-xs cursor-pointer'),
-        placeholder: () => clsx('text-gray-500 text-xs'),
-        input: () => clsx('text-gray-500 text-xs'),
-        multiValue: () => clsx('text-gray-500 text-xs bg-gray-200 font-bold'),
-        multiValueRemove: () => clsx('text-gray-500 text-xs hover:bg-gray-300 hover:text-gray-700'),
+        control: () => clsx('bg-gray-800! border-gray-800! hover:border-orange-800! shadow-none!'),
+        valueContainer: () => clsx('bg-gray-800! rounded-xl!'),
+        indicatorsContainer: () => clsx('bg-gray-800! rounded-xl!'),
+        container: () => clsx('bg-gray-800! rounded-xl! shadow-lg! text-sm!'),
+        menu: () => clsx('bg-gray-800! rounded-xl! shadow-lg! text-xs!'),
+        menuList: () => clsx('bg-gray-800! rounded-lg! text-xs!'),
+        option: () => clsx('bg-gray-800! hover:bg-gray-700! text-xs! cursor-pointer!'),
+        placeholder: () => clsx('text-gray-500! text-xs!'),
+        input: () => clsx('text-gray-500! text-xs!'),
+        multiValue: () => clsx('text-gray-500! text-xs! bg-gray-200! font-bold!'),
+        multiValueRemove: () =>
+          clsx('text-gray-500! text-xs! hover:bg-gray-300! hover:text-gray-700!'),
       }}
       closeMenuOnSelect={false}
       value={props.value}
