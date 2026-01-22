@@ -194,7 +194,7 @@ function AuthVerifyEmail() {
             type="button"
             className="w-full"
             disabled={sendEmailMutation.fetching}
-            onClick={() => sendEmail()}
+            onClick={() => sendEmail(true)}
           >
             Resend verification email
           </Button>
