@@ -212,13 +212,13 @@ export class Observability {
                           // Ignore HEAD/OPTIONS
                           'attributes["component"] == "proxy" and (attributes["http.method"] == "HEAD" or attributes["http.method"] == "OPTIONS")',
                           //Ignore health checks
-                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or is_match(attributes["http.url"], ".*/_health"))',
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or IsMatch(attributes["http.url"], ".*/_health"))',
                           //Ignore /usage requests (200 or 429)
-                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or is_match(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
                           // Ignore metrics scraping
                           'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                           // Ignore webapp HTTP calls via upstream cluster name
-                          'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and is_match(attributes["upstream_cluster.name"], "default_app-.*")',
+                          'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
                         ],
                       },
                     },
