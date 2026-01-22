@@ -346,6 +346,28 @@ export class SchemaManager {
     };
   }
 
+  async getLatestSchemas(
+    args: {
+      onlyComposable?: boolean;
+    } & TargetSelector,
+  ) {
+    const result = await this.storage.getLatestSchemas(args);
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      version: {
+        projectId: args.projectId,
+        targetId: args.targetId,
+        organizationId: args.organizationId,
+        ...result.version,
+      },
+      schemas: result.schemas,
+    };
+  }
+
   async getPaginatedSchemaVersionsForTargetId(args: {
     targetId: string;
     organizationId: string;

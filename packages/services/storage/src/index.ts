@@ -2140,8 +2140,7 @@ export async function createStorage(
       });
 
       return {
-        versionId: schemaVersion.id,
-        valid: schemaVersion.isComposable,
+        version: schemaVersion,
         schemas,
       };
     },
