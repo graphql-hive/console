@@ -53,7 +53,6 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
   return <tbody>{props.children}</tbody>;
 }
 
-// @todo annotations
 export function Line(props: LineProps & { beforeLine: number; afterLine: number }) {
   return (
     <ChangeRow

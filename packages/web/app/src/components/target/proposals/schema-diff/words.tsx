@@ -1,6 +1,3 @@
-// @TODO but how to know where the comment should land within that coordinate?
-// e.g. on the description, field, what???... Currently thinking that this additional attribute will need tracked as part of the coordinate or as a separate field.
-
 import { DirectiveLocation } from 'graphql';
 import { cn } from '@/lib/utils';
 import { Change } from './components';

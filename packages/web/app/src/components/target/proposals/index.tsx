@@ -501,7 +501,6 @@ export function Proposal(props: {
           className={props.className}
           before={props.beforeSchema}
           after={props.afterSchema}
-          // annotations={annotations}
         />
       </AnnotatedProvider>
     );
