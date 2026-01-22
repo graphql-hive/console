@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback, useMemo } from 'react';
+import React, { ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
@@ -94,6 +94,7 @@ export function TypeFilter(props: {
   };
 }) {
   const router = useRouter();
+  const [inputValue, setInputValue] = useState('');
   const [query] = useQuery({
     query: TypeFilter_AllTypes,
     variables: {
@@ -114,6 +115,29 @@ export function TypeFilter(props: {
       })) || [],
     [allNamedTypes],
   );
+
+  const sortedTypes = useMemo(() => {
+    if (!inputValue) return types;
+
+    const search = inputValue.toLowerCase();
+    return [...types].sort((a, b) => {
+      const aName = a.label.toLowerCase();
+      const bName = b.label.toLowerCase();
+
+      // Exact match gets highest priority
+      const aExact = aName === search;
+      const bExact = bName === search;
+      if (aExact !== bExact) return aExact ? -1 : 1;
+
+      // Prefix match gets second priority
+      const aPrefix = aName.startsWith(search);
+      const bPrefix = bName.startsWith(search);
+      if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
+
+      // Alphabetical within same relevance
+      return aName.localeCompare(bName);
+    });
+  }, [types, inputValue]);
 
   const onChange = useCallback(
     (option: SelectOption | null) => {
@@ -140,8 +164,9 @@ export function TypeFilter(props: {
       className="min-w-[200px] grow cursor-text"
       placeholder="Search for a type"
       defaultValue={defaultValue}
-      options={types}
+      options={sortedTypes}
       onChange={onChange}
+      onInputChange={setInputValue}
       loading={query.fetching}
     />
   );
