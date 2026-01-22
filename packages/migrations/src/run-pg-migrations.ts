@@ -177,5 +177,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2025.12.17T00-00-00.custom-oidc-scopes'),
       await import('./actions/2025.12.12T00-00-00.workflows-deduplication'),
       await import('./actions/2026.01.09T10.00.00.target-validation-app-deployment-exclusion'),
+      await import('./actions/2026.01.20T10.00.00.graph-variant-versions'),
     ],
   });
