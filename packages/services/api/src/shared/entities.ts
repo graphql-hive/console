@@ -118,8 +118,8 @@ export function createSDLHash(sdl: string): string {
 
 export type CreateSchemaObjectInput = {
   sdl: string;
-  serviceName?: string | null;
-  serviceUrl?: string | null;
+  serviceName: string | null;
+  serviceUrl: string | null;
 };
 
 export function createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {

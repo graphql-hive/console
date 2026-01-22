@@ -190,16 +190,16 @@ export class SchemaManager {
       // remove provided services from the list
       .filter(service => !input.services.some(s => s.name === service.service_name))
       .map(service => ({
-        service_name: service.service_name,
+        serviceName: service.service_name,
         sdl: service.sdl,
-        service_url: service.service_url,
+        serviceUrl: service.service_url,
       }))
       // add provided services to the list
       .concat(
         input.services.map(service => ({
-          service_name: service.name,
+          serviceName: service.name,
           sdl: service.sdl,
-          service_url: service.url ?? null,
+          serviceUrl: service.url ?? null,
         })),
       )
       .map(service => this.schemaHelper.createSchemaObject(service));

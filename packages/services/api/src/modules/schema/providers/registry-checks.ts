@@ -518,6 +518,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.existingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -526,6 +528,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.incomingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;

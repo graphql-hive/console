@@ -1375,39 +1375,50 @@ export class SchemaPublisher {
         signal,
       },
       async () => {
-        const [organization, project, target, latestVersion, latestComposableVersion, baseSchema] =
-          await Promise.all([
-            this.storage.getOrganization({
-              organizationId: selector.organizationId,
-            }),
-            this.storage.getProject({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-            }),
-            this.storage.getTarget({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-              targetId: selector.targetId,
-            }),
-            this.storage.getLatestSchemas({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-              targetId: selector.targetId,
-            }),
-            this.storage.getLatestSchemas({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-              targetId: selector.targetId,
-              onlyComposable: true,
-            }),
-            this.storage.getBaseSchema({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-              targetId: selector.targetId,
-            }),
-          ]);
+        const [organization, project, target] = await Promise.all([
+          this.storage.getOrganization({
+            organizationId: selector.organizationId,
+          }),
+          this.storage.getProject({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+          }),
+          this.storage.getTarget({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          }),
+        ]);
 
-        const [latestSchemaVersion, latestComposableSchemaVersion] = await Promise.all([
+        schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
+
+        if (project.type !== ProjectType.FEDERATION && project.type !== ProjectType.STITCHING) {
+          throw new HiveError(`${project.type} project not supported`);
+        }
+
+        const [
+          latestVersion,
+          latestComposableVersion,
+          baseSchema,
+          latestSchemaVersion,
+          latestComposableSchemaVersion,
+        ] = await Promise.all([
+          this.storage.getLatestSchemas({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          }),
+          this.storage.getLatestSchemas({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+            onlyComposable: true,
+          }),
+          this.storage.getBaseSchema({
+            organizationId: selector.organizationId,
+            projectId: selector.projectId,
+            targetId: selector.targetId,
+          }),
           this.schemaManager.getMaybeLatestVersion(target),
           this.schemaManager.getMaybeLatestValidVersion(target),
         ]);
@@ -1417,12 +1428,6 @@ export class SchemaPublisher {
           project,
           organization,
         );
-
-        schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
-
-        if (project.type !== ProjectType.FEDERATION && project.type !== ProjectType.STITCHING) {
-          throw new HiveError(`${project.type} project not supported`);
-        }
 
         if (!latestVersion || latestVersion.schemas.length === 0) {
           throw new HiveError('Registry is empty');
@@ -1441,7 +1446,7 @@ export class SchemaPublisher {
         if (!serviceExists) {
           return {
             __typename: 'SchemaDeleteError',
-            valid: latestVersion.valid,
+            valid: false,
             errors: [
               {
                 message: `Service "${input.serviceName}" not found`,
