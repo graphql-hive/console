@@ -834,15 +834,21 @@ export class RegistryChecks {
         } satisfies CheckResult;
       }
 
-      this.logger.debug('No service url');
-
       return {
         status: 'failed',
         reason: 'Service url is required',
       } satisfies CheckResult;
     }
 
-    this.logger.debug('Service url is defined');
+    if (newServiceUrl === existingServiceUrl) {
+      return {
+        status: 'completed',
+        result: {
+          status: 'unchanged' as const,
+          serviceUrl: existingServiceUrl,
+        },
+      } satisfies CheckResult;
+    }
 
     if (!this.isValidURL(newServiceUrl)) {
       return {
