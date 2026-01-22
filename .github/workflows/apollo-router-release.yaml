@@ -1,4 +1,4 @@
-name: apollo-router-release (Simplified)
+name: apollo-router-release
 on:
   # For PRs, this pipeline will use the commit ID as Docker image tag and R2 artifact prefix.
   pull_request:
@@ -25,7 +25,6 @@ on:
       - 'Cargo.toml'
     branches:
       - main
-  workflow_dispatch: {}
 
 jobs:
   # This script is doing the following:
@@ -60,36 +59,30 @@ jobs:
           echo "Running on push event, looking for changes in Rust crates or plugin versioning"
 
           image_name="apollo-router"
-          echo "image name: $image_name"
-          
+          github_org="graphql-hive"
           router_version=$(cargo tree -i apollo-router --quiet | head -n 1 | awk -F" v" '{print $2}')
-          echo "router version: $router_version"
-          
           plugin_version=$(jq -r '.version' packages/libraries/router/package.json)
-          echo "plugin version: $plugin_version"
-          
           has_changes=$(git diff HEAD~ HEAD --name-only -- 'packages/libraries/router/Cargo.toml' 'packages/libraries/router/package.json' 'packages/libraries/sdk-rs/Cargo.toml' 'packages/libraries/sdk-rs/package.json' 'Cargo.lock' 'configs/cargo/Cargo.lock')
 
-          image_tag_version="router${router_version}-plugin${plugin_version}"
+          if [ "$has_changes" ]; then
+            image_tag_version="router${router_version}-plugin${plugin_version}"
 
-          response=$(curl -L \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -s \
-            https://api.github.com/orgs/${{ github.repository }}/packages/container/${image_name}/versions)
-          
-          echo "github response: $response"
-          
-          tag_exists=$(echo "$response" | jq -r ".[] | .metadata.container.tags[] | select(. | contains(\"${image_tag_version}\"))")
+            response=$(curl -L \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -s \
+              https://api.github.com/orgs/${github_org}/packages/container/${image_name}/versions)
+            tag_exists=$(echo "$response" | jq -r ".[] | .metadata.container.tags[] | select(. | contains(\"${image_tag_version}\"))")
 
-          if [ ! "$tag_exists" ]; then
-            echo "Found changes in version $version_to_publish"
-            echo "release_version=$image_tag_version" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "release_latest=true" >> $GITHUB_OUTPUT
-          else 
-            echo "No changes found in version $image_tag_version"
+            if [ ! "$tag_exists" ]; then
+              echo "Found changes in version $version_to_publish"
+              echo "release_version=$image_tag_version" >> $GITHUB_OUTPUT
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "release_latest=true" >> $GITHUB_OUTPUT
+            else 
+              echo "No changes found in version $image_tag_version"
+            fi
           fi
 
   # Builds Rust crates, and creates Docker images
