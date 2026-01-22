@@ -14,7 +14,7 @@ import type {
 } from '@hive/storage';
 import * as Sentry from '@sentry/node';
 import * as Types from '../../../__generated__/types';
-import { Organization, Project, ProjectType, Schema, Target } from '../../../shared/entities';
+import { Organization, Project, ProjectType, Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
@@ -54,7 +54,13 @@ import {
 } from './models/shared';
 import { SingleModel } from './models/single';
 import type { ConditionalBreakingChangeDiffConfig } from './registry-checks';
-import { ensureCompositeSchemas, ensureSingleSchema } from './schema-helper';
+import {
+  ensureCompositeSchemas,
+  ensureSingleSchema,
+  SchemaInput,
+  toCompositeSchemaInput,
+  toSingleSchemaInput,
+} from './schema-helper';
 import { SchemaManager, shouldUseLatestComposableVersion } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
 
@@ -102,6 +108,10 @@ type BreakPromise<T> = T extends Promise<infer U> ? U : never;
 
 type PublishResult =
   | BreakPromise<ReturnType<SchemaPublisher['internalPublish']>>
+  | {
+      readonly __typename: 'SchemaPublishMissingServiceError';
+      message: 'Missing service name';
+    }
   | {
       readonly __typename: 'SchemaPublishRetry';
       readonly reason: string;
@@ -631,14 +641,14 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestVersion.valid,
                 sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestVersion.schemas)],
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))],
               }
             : null,
           latestComposable: latestComposableVersion
             ? {
                 isComposable: latestComposableVersion.valid,
                 sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestComposableVersion.schemas)],
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestComposableVersion.schemas))],
               }
             : null,
           baseSchema,
@@ -692,7 +702,7 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestVersion.valid,
                 sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestVersion.schemas),
+                schemas: ensureCompositeSchemas(latestVersion.schemas).map(toCompositeSchemaInput),
                 contractNames:
                   latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ?? null,
               }
@@ -701,7 +711,9 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposableVersion.valid,
                 sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestComposableVersion.schemas),
+                schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
+                  toCompositeSchemaInput,
+                ),
               }
             : null,
           baseSchema,
@@ -1184,26 +1196,38 @@ export class SchemaPublisher {
       selector.targetId,
     );
 
-    const target = await this.storage.getTarget({
-      organizationId: selector.organizationId,
-      projectId: selector.projectId,
-      targetId: selector.targetId,
-    });
+    const [target, project] = await Promise.all([
+      this.storage.getTarget({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      }),
+      this.storage.getProject({
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      }),
+    ]);
 
     const [contracts, latestVersion, latestSchemas] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
       this.schemaManager.getMaybeLatestVersion(target),
-      input.service
+      project.type !== Types.ProjectType.SINGLE
         ? this.storage.getLatestSchemas({
             organizationId: selector.organizationId,
             projectId: selector.projectId,
             targetId: selector.targetId,
           })
-        : Promise.resolve(),
+        : null,
     ]);
 
-    // If trying to push with a service name and there are existing services
-    if (input.service) {
+    if (project.type !== Types.ProjectType.SINGLE) {
+      if (!input.service) {
+        return {
+          __typename: 'SchemaPublishMissingServiceError' as const,
+          message: 'Missing service name',
+        } as const;
+      }
+
       let serviceExists = false;
       if (latestSchemas?.schemas) {
         serviceExists = !!ensureCompositeSchemas(latestSchemas.schemas).find(
@@ -1444,13 +1468,15 @@ export class SchemaPublisher {
           latest: {
             isComposable: latestVersion.valid,
             sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-            schemas,
+            schemas: schemas.map(toCompositeSchemaInput),
           },
           latestComposable: latestComposableVersion
             ? {
                 isComposable: latestComposableVersion.valid,
                 sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestComposableVersion.schemas),
+                schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
+                  toCompositeSchemaInput,
+                ),
               }
             : null,
           baseSchema,
@@ -1598,12 +1624,6 @@ export class SchemaPublisher {
           deleteResult.reasons,
           DeleteFailureReasonCode.CompositionFailure,
         )?.compositionErrors;
-
-        if (getReasonByCode(deleteResult.reasons, DeleteFailureReasonCode.MissingServiceName)) {
-          errors.push({
-            message: 'Service name is required',
-          });
-        }
 
         if (compositionErrors?.length) {
           errors.push(...compositionErrors);
@@ -1795,19 +1815,21 @@ export class SchemaPublisher {
           organization.featureFlags,
         );
         publishResult = await this.models[ProjectType.SINGLE].publish({
-          input,
+          input: {
+            sdl: input.sdl,
+          },
           latest: latestVersion
             ? {
                 isComposable: latestVersion.valid,
                 sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestVersion.schemas)],
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))],
               }
             : null,
           latestComposable: latestComposable
             ? {
                 isComposable: latestComposable.valid,
                 sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: [ensureSingleSchema(latestComposable.schemas)],
+                schemas: [toSingleSchemaInput(ensureSingleSchema(latestComposable.schemas))],
               }
             : null,
           organization,
@@ -1826,13 +1848,24 @@ export class SchemaPublisher {
           project.type,
           organization.featureFlags,
         );
+
+        const serviceName = input.service;
+        if (!serviceName) {
+          throw new Error('Invalid state. serviceName should have been validated by now.');
+        }
+
         publishResult = await this.models[project.type].publish({
-          input,
+          input: {
+            sdl: input.sdl,
+            service: serviceName,
+            metadata: input.metadata ?? null,
+            url: input.url ?? null,
+          },
           latest: latestVersion
             ? {
                 isComposable: latestVersion.valid,
                 sdl: latestSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestVersion.schemas),
+                schemas: ensureCompositeSchemas(latestVersion.schemas).map(toCompositeSchemaInput),
                 contractNames:
                   latestSchemaVersionContracts?.edges.map(edge => edge.node.contractName) ?? null,
               }
@@ -1841,7 +1874,9 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposable.valid,
                 sdl: latestComposableSchemaVersion?.compositeSchemaSDL ?? null,
-                schemas: ensureCompositeSchemas(latestComposable.schemas),
+                schemas: ensureCompositeSchemas(latestComposable.schemas).map(
+                  toCompositeSchemaInput,
+                ),
               }
             : null,
           organization,
@@ -1911,13 +1946,6 @@ export class SchemaPublisher {
       );
 
       increaseSchemaPublishCountMetric('rejected');
-
-      if (getReasonByCode(publishResult.reasons, PublishFailureReasonCode.MissingServiceName)) {
-        return {
-          __typename: 'SchemaPublishMissingServiceError' as const,
-          message: 'Missing service name',
-        } as const;
-      }
 
       if (getReasonByCode(publishResult.reasons, PublishFailureReasonCode.MissingServiceUrl)) {
         return {
@@ -2010,9 +2038,9 @@ export class SchemaPublisher {
     if (
       (project.type === ProjectType.FEDERATION || project.type === ProjectType.STITCHING) &&
       serviceUrl == null &&
-      pushedSchema.kind === 'composite'
+      pushedSchema.serviceName
     ) {
-      serviceUrl = pushedSchema.service_url;
+      serviceUrl = pushedSchema.serviceUrl;
     }
 
     const schemaVersion = await this.schemaManager.createVersion({
@@ -2336,7 +2364,7 @@ export class SchemaPublisher {
     project: Project;
     supergraph: string | null;
     fullSchemaSdl: string;
-    schemas: readonly Schema[];
+    schemas: readonly SchemaInput[];
     contracts: null | Array<{ name: string; supergraph: string; sdl: string }>;
     versionId: string;
   }) {
@@ -2362,16 +2390,14 @@ export class SchemaPublisher {
     };
 
     const publishCompositeSchema = async () => {
-      const compositeSchema = ensureCompositeSchemas(schemas);
-
       await Promise.all([
         await this.artifactStorageWriter.writeArtifact({
           targetId: target.id,
           artifactType: 'services',
-          artifact: compositeSchema.map(s => ({
-            name: s.service_name,
+          artifact: schemas.map(s => ({
+            name: s.serviceName,
             sdl: s.sdl,
-            url: s.service_url,
+            url: s.serviceUrl,
           })),
           contractName: null,
           versionId,
