@@ -2125,25 +2125,6 @@ export async function createStorage(
 
       return SchemaVersionModel.parse(version);
     },
-    async getLatestSchemas({ organizationId, projectId, targetId, onlyComposable }) {
-      const schemaVersion = await (onlyComposable
-        ? this.getMaybeLatestValidVersion({ targetId })
-        : this.getMaybeLatestVersion({ organizationId, projectId, targetId }));
-
-      if (!schemaVersion) {
-        return null;
-      }
-
-      const schemas = await this.getSchemasOfVersion({
-        versionId: schemaVersion.id,
-        includeMetadata: true,
-      });
-
-      return {
-        version: schemaVersion,
-        schemas,
-      };
-    },
     async getSchemaByNameOfVersion(args) {
       const result = await pool.maybeOne<
         Pick<

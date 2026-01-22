@@ -352,15 +352,6 @@ export interface Storage {
 
   hasSchema(_: TargetSelector): Promise<boolean>;
 
-  getLatestSchemas(
-    _: {
-      onlyComposable?: boolean;
-    } & TargetSelector,
-  ): Promise<{
-    schemas: Schema[];
-    version: SchemaVersion;
-  } | null>;
-
   getLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | never>;
 
   getMaybeLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | null | never>;

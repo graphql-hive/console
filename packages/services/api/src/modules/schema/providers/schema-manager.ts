@@ -162,7 +162,7 @@ export class SchemaManager {
       },
     });
 
-    const [organization, project, latestSchemas] = await Promise.all([
+    const [organization, project, target] = await Promise.all([
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
@@ -170,11 +170,10 @@ export class SchemaManager {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.storage.getLatestSchemas({
+      this.storage.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
-        onlyComposable: input.onlyComposable,
       }),
     ]);
 
@@ -184,6 +183,11 @@ export class SchemaManager {
         message: 'Only Federation projects are supported',
       };
     }
+
+    const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogs({
+      target,
+      onlyComposable: input.onlyComposable,
+    });
 
     const existingServices = ensureCompositeSchemas(latestSchemas ? latestSchemas.schemas : []);
     const services = existingServices
@@ -346,25 +350,26 @@ export class SchemaManager {
     };
   }
 
-  async getLatestSchemaVersionWithSchemaLogs(
-    args: {
-      onlyComposable?: boolean;
-    } & TargetSelector,
-  ) {
-    const result = await this.storage.getLatestSchemas(args);
+  /**
+   * Retrieve the latest schema version including the schema logs.
+   */
+  async getLatestSchemaVersionWithSchemaLogs(args: { target: Target; onlyComposable?: boolean }) {
+    const schemaVersion = await (args.onlyComposable
+      ? this.getMaybeLatestValidVersion(args.target)
+      : this.getMaybeLatestValidVersion(args.target));
 
-    if (!result) {
+    if (!schemaVersion) {
       return null;
     }
 
+    const schemas = await this.storage.getSchemasOfVersion({
+      versionId: schemaVersion.id,
+      includeMetadata: true,
+    });
+
     return {
-      version: {
-        projectId: args.projectId,
-        targetId: args.targetId,
-        organizationId: args.organizationId,
-        ...result.version,
-      },
-      schemas: result.schemas,
+      version: schemaVersion,
+      schemas,
     };
   }
 
