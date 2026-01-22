@@ -86,7 +86,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
               <AlertDialogTrigger asChild>
                 <Button
                   variant="link"
-                  className="text-muted-foreground hover:text-destructive ml-auto !p-1 !pr-0 opacity-0 transition-opacity group-hover:opacity-100"
+                  className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={e => {
                     e.stopPropagation();
                   }}
@@ -149,7 +149,7 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="link"
-                    className="text-muted-foreground hover:text-destructive ml-auto !p-1 !pr-0 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={e => {
                       e.stopPropagation();
                     }}
@@ -246,7 +246,7 @@ export const History = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="text-muted-foreground hover:text-destructive size-6 rounded-sm !p-1"
+                    className="text-muted-foreground hover:text-destructive p-1! size-6 rounded-sm"
                     disabled={history.length === 0}
                   >
                     <TrashIcon className="size-4" />
@@ -290,7 +290,7 @@ export const History = () => {
                 return <HistoryGroup key={group.date} group={group} />;
               })
             ) : (
-              <Empty className="w-full !px-0">
+              <Empty className="px-0! w-full">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <ClockIcon className="text-muted-foreground size-6" />
