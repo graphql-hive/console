@@ -8,7 +8,6 @@ import {
   type ConditionalBreakingChangeDiffConfig,
 } from '../registry-checks';
 import { CompositeSchemaInput, swapServices } from '../schema-helper';
-import { shouldUseLatestComposableVersion } from '../schema-manager';
 import type { Organization, Project, Target } from './../../../../shared/entities';
 import { ProjectType } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
@@ -125,6 +124,7 @@ export class CompositeModel {
     contracts,
     failDiffOnDangerousChange,
     filterNestedChanges,
+    compareToLatestComposableVersion,
   }: {
     input: {
       sdl: string;
@@ -153,6 +153,7 @@ export class CompositeModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    compareToLatestComposableVersion: boolean;
     contracts: Array<
       ContractInput & {
         approvedChanges: Map<string, SchemaChangeType> | null;
@@ -174,13 +175,7 @@ export class CompositeModel {
     const schemaSwapResult = latest ? swapServices(latest.schemas, incoming) : null;
     const schemas = schemaSwapResult ? schemaSwapResult.schemas : [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
-
-    const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
-      selector.targetId,
-      project,
-      organization,
-    );
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
+    const comparedVersion = compareToLatestComposableVersion ? latestComposable : latest;
 
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
@@ -332,6 +327,7 @@ export class CompositeModel {
     contracts,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
+    compareToLatestComposableVersion,
   }: {
     input: {
       sdl: string;
@@ -357,6 +353,7 @@ export class CompositeModel {
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    compareToLatestComposableVersion: boolean;
   }): Promise<SchemaPublishResult> {
     const latestSchemaVersion = latest;
     const latestServiceVersion = latest?.schemas?.find(
@@ -394,12 +391,9 @@ export class CompositeModel {
 
     const schemas = schemaSwapResult?.schemas ?? [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
-    const compareToLatestComposable = shouldUseLatestComposableVersion(
-      target.id,
-      project,
-      organization,
-    );
-    const schemaVersionToCompareAgainst = compareToLatestComposable ? latestComposable : latest;
+    const schemaVersionToCompareAgainst = compareToLatestComposableVersion
+      ? latestComposable
+      : latest;
 
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
@@ -470,7 +464,7 @@ export class CompositeModel {
     if (
       compositionCheck.status === 'failed' &&
       compositionCheck.reason.errorsBySource.graphql.length > 0 &&
-      !compareToLatestComposable
+      !compareToLatestComposableVersion
     ) {
       return {
         conclusion: SchemaPublishConclusion.Reject,
@@ -586,6 +580,7 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
+    compareToLatestComposableVersion,
   }: {
     input: {
       serviceName: string;
@@ -611,13 +606,9 @@ export class CompositeModel {
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    compareToLatestComposableVersion: boolean;
   }): Promise<SchemaDeleteResult> {
     const latestVersion = latest;
-    const compareToLatestComposable = shouldUseLatestComposableVersion(
-      selector.target,
-      project,
-      organization,
-    );
 
     const schemas = latestVersion.schemas.filter(s => s.serviceName !== input.serviceName);
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
@@ -641,7 +632,7 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: compareToLatestComposable ? latestComposable : latest,
+      version: compareToLatestComposableVersion ? latestComposable : latest,
       organization,
       project,
       targetId: selector.target,
@@ -687,7 +678,7 @@ export class CompositeModel {
       compositionCheck.status === 'failed' &&
       compositionCheck.reason.errorsBySource.graphql.length > 0
     ) {
-      if (!compareToLatestComposable) {
+      if (!compareToLatestComposableVersion) {
         return {
           conclusion: SchemaDeleteConclusion.Reject,
           reasons: [

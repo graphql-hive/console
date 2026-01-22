@@ -728,7 +728,12 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
-          filterNestedChanges: true,
+          compareToLatestComposableVersion: shouldUseLatestComposableVersion(
+            selector.targetId,
+            project,
+            organization,
+          ),
+          filterNestedChanges: !input.schemaProposalId,
         });
         break;
       default:
@@ -1407,7 +1412,7 @@ export class SchemaPublisher {
           this.schemaManager.getMaybeLatestValidVersion(target),
         ]);
 
-        const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
+        const compareToLatestComposableVersion = shouldUseLatestComposableVersion(
           selector.targetId,
           project,
           organization,
@@ -1491,14 +1496,15 @@ export class SchemaPublisher {
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
           failDiffOnDangerousChange,
+          compareToLatestComposableVersion,
         });
 
         let diffSchemaVersionId: string | null = null;
-        if (compareToPreviousComposableVersion && latestComposableSchemaVersion) {
+        if (compareToLatestComposableVersion && latestComposableSchemaVersion) {
           diffSchemaVersionId = latestComposableSchemaVersion.id;
         }
 
-        if (!compareToPreviousComposableVersion && latestSchemaVersion) {
+        if (!compareToLatestComposableVersion && latestSchemaVersion) {
           diffSchemaVersionId = latestSchemaVersion.id;
         }
 
@@ -1791,12 +1797,12 @@ export class SchemaPublisher {
           })
         : null;
 
-    const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
+    const compareToLatestComposableVersion = shouldUseLatestComposableVersion(
       target.id,
       project,
       organization,
     );
-    const comparedSchemaVersion = compareToPreviousComposableVersion
+    const comparedSchemaVersion = compareToLatestComposableVersion
       ? latestComposableSchemaVersion
       : latestSchemaVersion;
 
@@ -1886,6 +1892,7 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
+          compareToLatestComposableVersion: compareToLatestComposableVersion,
         });
         break;
       default: {
