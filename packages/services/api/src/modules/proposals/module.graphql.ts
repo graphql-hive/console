@@ -453,6 +453,8 @@ export default gql`
     | DirectiveUsageArgumentDefinitionAdded
     | DirectiveUsageArgumentAdded
     | DirectiveUsageArgumentRemoved
+    | DirectiveRepeatableAdded
+    | DirectiveRepeatableRemoved
 
   # Directive
 
@@ -662,12 +664,14 @@ export default gql`
     addedUnionMemberTypeName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageUnionMemberRemoved {
     unionName: String!
     removedUnionMemberTypeName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type FieldArgumentAdded {
@@ -820,11 +824,13 @@ export default gql`
     enumName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageEnumRemoved {
     enumName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageEnumValueAdded {
@@ -832,12 +838,14 @@ export default gql`
     enumValueName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageEnumValueRemoved {
     enumName: String!
     enumValueName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageInputObjectRemoved {
@@ -846,6 +854,7 @@ export default gql`
     isRemovedInputFieldTypeNullable: Boolean
     removedInputFieldType: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageInputObjectAdded {
@@ -855,6 +864,7 @@ export default gql`
     addedInputFieldType: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageInputFieldDefinitionAdded {
@@ -863,63 +873,74 @@ export default gql`
     inputFieldType: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageInputFieldDefinitionRemoved {
     inputObjectName: String!
     inputFieldName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageFieldAdded {
     typeName: String!
     fieldName: String!
     addedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageFieldRemoved {
     typeName: String!
     fieldName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageScalarAdded {
     scalarName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageScalarRemoved {
     scalarName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageObjectAdded {
     objectName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageObjectRemoved {
     objectName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageInterfaceAdded {
     interfaceName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageSchemaAdded {
     addedDirectiveName: String!
     schemaTypeName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageSchemaRemoved {
     removedDirectiveName: String!
     schemaTypeName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageFieldDefinitionAdded {
@@ -927,12 +948,14 @@ export default gql`
     fieldName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageFieldDefinitionRemoved {
     typeName: String!
     fieldName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageArgumentDefinitionRemoved {
@@ -940,11 +963,13 @@ export default gql`
     fieldName: String!
     argumentName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageInterfaceRemoved {
     interfaceName: String!
     removedDirectiveName: String!
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageArgumentDefinitionAdded {
@@ -953,6 +978,7 @@ export default gql`
     argumentName: String!
     addedDirectiveName: String!
     addedToNewType: Boolean
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageArgumentAdded {
@@ -964,6 +990,7 @@ export default gql`
     parentFieldName: String
     parentArgumentName: String
     parentEnumValueName: String
+    directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageArgumentRemoved {
@@ -973,5 +1000,14 @@ export default gql`
     parentFieldName: String
     parentArgumentName: String
     parentEnumValueName: String
+    directiveRepeatedTimes: Int!
+  }
+
+  type DirectiveRepeatableAdded {
+    directiveName: String!
+  }
+
+  type DirectiveRepeatableRemoved {
+    directiveName: String!
   }
 `;

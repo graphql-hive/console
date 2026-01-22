@@ -1807,7 +1807,7 @@ describe('schema publishing changes are persisted', () => {
     `,
     schemaAfter: /* GraphQL */ `
       type Query {
-        a(a: String): String!
+        a(a: String): String
       }
     `,
     equalsObject: {

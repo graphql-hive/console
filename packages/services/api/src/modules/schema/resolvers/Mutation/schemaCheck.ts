@@ -16,6 +16,7 @@ export const schemaCheck: NonNullable<MutationResolvers['schemaCheck']> = async 
   if ('changes' in result && result.changes) {
     return {
       ...result,
+      schemaProposalChanges: result.schemaProposalChanges,
       changes: result.changes,
       errors:
         result.errors?.map(error => ({

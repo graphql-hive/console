@@ -776,7 +776,11 @@ export interface Storage {
    * Persist a schema check record in the database.
    */
   createSchemaCheck(
-    _: SchemaCheckInput & { expiresAt: Date | null; schemaProposalId?: string | null },
+    _: SchemaCheckInput & {
+      expiresAt: Date | null;
+      schemaProposalId?: string | null;
+      schemaProposalChanges: null | Array<SchemaChangeType>;
+    },
   ): Promise<SchemaCheck>;
   /**
    * Delete the expired schema checks from the database.

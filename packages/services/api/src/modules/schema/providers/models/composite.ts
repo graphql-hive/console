@@ -93,6 +93,26 @@ export class CompositeModel {
     );
   }
 
+  @traceFn('Composite modern: diffSchema')
+  async diffSchema({
+    input,
+    latest,
+  }: {
+    input: {
+      sdl: string;
+      serviceName: string;
+      url: string | null;
+    };
+    latest: {
+      schemas: Pick<PushedCompositeSchema, 'service_name' | 'sdl'>[];
+    } | null;
+  }) {
+    return this.checks.serviceDiff({
+      existingSdl: latest?.schemas?.find(s => s.service_name === input.serviceName)?.sdl ?? null,
+      incomingSdl: input.sdl,
+    });
+  }
+
   @traceFn('Composite modern: check', {
     initAttributes: args => ({
       'hive.project.id': args.selector.projectId,

@@ -168,6 +168,8 @@ export const urqlClient = createClient({
         DirectiveUsageArgumentDefinitionAdded: noKey,
         DirectiveUsageArgumentAdded: noKey,
         DirectiveUsageArgumentRemoved: noKey,
+        DirectiveRepeatableAdded: noKey,
+        DirectiveRepeatableRemoved: noKey,
       },
       globalIDs: ['SuccessfulSchemaCheck', 'FailedSchemaCheck'],
     }),

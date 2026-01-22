@@ -1,6 +1,6 @@
 import type { GraphQLSchema } from 'graphql';
 import type { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
-import type { ProposalOverview_ChangeFragment } from '@/components/target/proposals';
+import type { Proposal_ChangeFragment } from '@/components/target/proposals';
 import { FragmentType } from '@/gql';
 import type { Change } from '@graphql-inspector/core';
 
@@ -11,7 +11,7 @@ export type ServiceProposalDetails = {
   buildError: Error | null;
   allChanges: Change<any>[];
   // Required because the component ChangesBlock uses this fragment.
-  rawChanges: FragmentType<typeof ProposalOverview_ChangeFragment>[];
+  rawChanges: FragmentType<typeof Proposal_ChangeFragment>[];
   ignoredChanges: Array<{
     change: Change;
     error: Error;
