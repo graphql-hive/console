@@ -1849,15 +1849,14 @@ export class SchemaPublisher {
           organization.featureFlags,
         );
 
-        const serviceName = input.service;
-        if (!serviceName) {
-          throw new Error('Invalid state. serviceName should have been validated by now.');
+        if (!input.service) {
+          throw new Error('Invalid state. input.service should have been validated by now.');
         }
 
         publishResult = await this.models[project.type].publish({
           input: {
             sdl: input.sdl,
-            service: serviceName,
+            service: input.service,
             metadata: input.metadata ?? null,
             url: input.url ?? null,
           },

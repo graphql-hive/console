@@ -27,14 +27,7 @@ import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import {
-  CompositeSchemaInput,
-  extendWithBase,
-  isCompositeSchema,
-  SchemaHelper,
-  SchemaInput,
-  SingleSchemaInput,
-} from './schema-helper';
+import { CompositeSchemaInput, extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
@@ -81,8 +74,6 @@ export type CheckResult<C = unknown, F = unknown, S = unknown> =
       status: 'skipped';
       data?: S;
     };
-
-type Schemas = [SingleSchema] | PushedCompositeSchema[];
 
 type CompositionValidationError = {
   message: string;

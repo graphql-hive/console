@@ -617,15 +617,6 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaDeleteResult> {
-    const incoming: DeletedCompositeSchema = {
-      kind: 'composite',
-      id: temp,
-      target: selector.target,
-      date: Date.now(),
-      service_name: input.serviceName,
-      action: 'DELETE',
-    };
-
     const latestVersion = latest;
     const compareToLatestComposable = shouldUseLatestComposableVersion(
       selector.target,
