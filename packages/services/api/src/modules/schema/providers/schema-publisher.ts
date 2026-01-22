@@ -635,7 +635,9 @@ export class SchemaPublisher {
         }
 
         checkResult = await this.models[ProjectType.SINGLE].check({
-          input,
+          input: {
+            sdl: input.sdl,
+          },
           selector,
           latest: latestVersion
             ? {
@@ -1828,6 +1830,7 @@ export class SchemaPublisher {
         publishResult = await this.models[ProjectType.SINGLE].publish({
           input: {
             sdl: input.sdl,
+            metadata: input.metadata ?? null,
           },
           latest: latestVersion
             ? {

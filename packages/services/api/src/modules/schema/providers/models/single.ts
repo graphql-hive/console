@@ -104,9 +104,9 @@ export class SingleModel {
     };
 
     const schemas = [incoming] as [SingleSchemaInput];
-    const compareToPreviousComposableVersion =
-      organization.featureFlags.compareToPreviousComposableVersion;
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
+    const comparedVersion = organization.featureFlags.compareToPreviousComposableVersion
+      ? latestComposable
+      : latest;
 
     const checksumResult = await this.checks.checksum({
       existing: latest
@@ -214,6 +214,7 @@ export class SingleModel {
   }: {
     input: {
       sdl: string;
+      metadata: string | null;
     };
     organization: Organization;
     project: Project;
@@ -235,7 +236,7 @@ export class SingleModel {
     const incoming: SingleSchemaInput = {
       id: temp,
       sdl: input.sdl,
-      metadata: null,
+      metadata: input.metadata,
       serviceName: null,
       serviceUrl: null,
     };
