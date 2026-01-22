@@ -219,6 +219,10 @@ export class Observability {
                           'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                           // Ignore webapp HTTP calls via upstream cluster name
                           'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
+                          // Hive Tracing is using these endpoints and they don't have any added value for us when monitored
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/otel/v1/traces"',
+                          // Internal /usage calls can also be filtered out
+                          'resource.attributes["service.name"] == "usage" and attributes["http.status_code"] == 200 and IsRootSpan() == true',
                         ],
                       },
                     },
