@@ -20,8 +20,6 @@ import type {
   DateRange,
   Organization,
   Project,
-  PushedCompositeSchema,
-  SingleSchema,
 } from './../../../shared/entities';
 import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';

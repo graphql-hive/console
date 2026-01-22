@@ -9,12 +9,7 @@ import {
 } from '../registry-checks';
 import { CompositeSchemaInput, swapServices } from '../schema-helper';
 import { shouldUseLatestComposableVersion } from '../schema-manager';
-import type {
-  DeletedCompositeSchema,
-  Organization,
-  Project,
-  Target,
-} from './../../../../shared/entities';
+import type { Organization, Project, Target } from './../../../../shared/entities';
 import { ProjectType } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
 import {
