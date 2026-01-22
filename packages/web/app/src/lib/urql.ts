@@ -73,6 +73,7 @@ export const urqlClient = createClient({
         SchemaCoordinateUsage: noKey,
         SuccessfulSchemaCheck: ({ id }) => `SchemaCheck:${id}`,
         FailedSchemaCheck: ({ id }) => `SchemaCheck:${id}`,
+        SchemaChangeApproval: ({ schemaCheckId }) => `SchemaChangeApproval:${schemaCheckId}`,
         SchemaMetadata: noKey,
         SupergraphMetadata: noKey,
         MetadataAttribute: noKey,
