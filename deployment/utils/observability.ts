@@ -13,7 +13,7 @@ export type ObservabilityConfig =
         username: Output<string> | string;
         password: Output<string>;
       };
-      prom: {
+      otlpMetrics: {
         endpoint: Output<string> | string;
         username: Output<string> | string;
         password: Output<string>;
@@ -26,7 +26,7 @@ export type ObservabilityConfig =
     };
 
 // prettier-ignore
-export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.111.2');
+export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.143.1');
 // prettier-ignore
 export const VECTOR_HELM_CHART = helmChart('https://helm.vector.dev', 'vector', '0.35.0');
 
@@ -53,6 +53,12 @@ export class Observability {
                 username: this.config.tempo.username,
                 password: this.config.tempo.password,
               },
+              'basicauth/grafana_cloud_metrics': {
+                client_auth: {
+                  username: this.config.otlpMetrics.username,
+                  password: this.config.otlpMetrics.password,
+                },
+              },
             },
           };
 
@@ -60,14 +66,15 @@ export class Observability {
       this.config === 'local'
         ? {}
         : {
-            prometheusremotewrite: {
-              endpoint: interpolate`https://${this.config.prom.username}:${this.config.prom.password}@${this.config.prom.endpoint}`,
-            },
             'otlp/grafana_cloud_traces': {
               endpoint: this.config.tempo.endpoint,
               auth: {
                 authenticator: 'basicauth/grafana_cloud_traces',
               },
+            },
+            'otlphttp/grafana_cloud_metrics': {
+              endpoint: this.config.otlpMetrics.endpoint,
+              auth: { authenticator: 'basicauth/grafana_cloud_metrics' },
             },
           };
 
@@ -205,13 +212,13 @@ export class Observability {
                           // Ignore HEAD/OPTIONS
                           'attributes["component"] == "proxy" and (attributes["http.method"] == "HEAD" or attributes["http.method"] == "OPTIONS")',
                           //Ignore health checks
-                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or IsMatch(attributes["http.url"], ".*/_health"))',
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or is_match(attributes["http.url"], ".*/_health"))',
                           //Ignore /usage requests (200 or 429)
-                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or is_match(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
                           // Ignore metrics scraping
                           'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
                           // Ignore webapp HTTP calls via upstream cluster name
-                          'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
+                          'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and is_match(attributes["upstream_cluster.name"], "default_app-.*")',
                         ],
                       },
                     },
@@ -272,7 +279,7 @@ export class Observability {
                   // By defualt, Envoy reports this as full URL, but we only want the path
                   'replace_pattern(attributes["http.url"], "https?://[^/]+(/[^?#]*)", "$$1") where attributes["component"] == "proxy"',
                   // Replace Envoy default span name with a more human-readable one (e.g. "METHOD /path")
-                  'set(name, Concat([attributes["http.method"], attributes["http.url"]], " ")) where attributes["component"] == "proxy" and attributes["http.method"] != nil',
+                  'set(name, concat([attributes["http.method"], attributes["http.url"]], " ")) where attributes["component"] == "proxy" and attributes["http.method"] != nil',
                 ],
               },
             ],
@@ -372,7 +379,11 @@ export class Observability {
           extensions:
             this.config === 'local'
               ? ['health_check']
-              : ['health_check', 'basicauth/grafana_cloud_traces'],
+              : [
+                  'health_check',
+                  'basicauth/grafana_cloud_traces',
+                  'basicauth/grafana_cloud_metrics',
+                ],
           pipelines: {
             traces: {
               receivers: ['otlp'],
@@ -387,7 +398,8 @@ export class Observability {
                 this.config === 'local' ? ['debug'] : ['debug', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters: this.config === 'local' ? ['debug'] : ['debug', 'prometheusremotewrite'],
+              exporters:
+                this.config === 'local' ? ['debug'] : ['debug', 'otlphttp/grafana_cloud_metrics'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },
