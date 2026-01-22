@@ -7,6 +7,7 @@ import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
+import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
@@ -127,20 +128,22 @@ function RootComponent() {
   }, []);
 
   return (
-    <HelmetProvider>
-      <Toaster />
-      <SuperTokensWrapper>
-        <QueryClientProvider client={queryClient}>
-          <UrqlProvider value={urqlClient}>
-            <LoadingAPIIndicator />
-            <Outlet />
-          </UrqlProvider>
-        </QueryClientProvider>
-      </SuperTokensWrapper>
-      <ToastContainer hideProgressBar />
-      {/* eslint-disable-next-line no-process-env */}
-      {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
-    </HelmetProvider>
+    <ThemeProvider>
+      <HelmetProvider>
+        <Toaster />
+        <SuperTokensWrapper>
+          <QueryClientProvider client={queryClient}>
+            <UrqlProvider value={urqlClient}>
+              <LoadingAPIIndicator />
+              <Outlet />
+            </UrqlProvider>
+          </QueryClientProvider>
+        </SuperTokensWrapper>
+        <ToastContainer hideProgressBar />
+        {/* eslint-disable-next-line no-process-env */}
+        {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
+      </HelmetProvider>
+    </ThemeProvider>
   );
 }
 
