@@ -178,8 +178,8 @@ export const TargetLayout = ({
       </header>
 
       {query.fetching === false &&
-      query.stale === false &&
-      (currentProject === null || currentOrganization === null || currentTarget === null) ? (
+        query.stale === false &&
+        (currentProject === null || currentOrganization === null || currentTarget === null) ? (
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
@@ -645,7 +645,7 @@ function FederationModalContent(props: {
         {authenticateSection}
         <InputCopy
           multiline
-value={`docker run --name hive-router --rm -p 4000:4000 \\
+          value={`docker run --name hive-router --rm -p 4000:4000 \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
   ghcr.io/graphql-hive/router`}
@@ -697,7 +697,7 @@ value={`docker run --name hive-router --rm -p 4000:4000 \\
         {authenticateSection}
         <InputCopy
           multiline
-          value={`docker run --name grafbase-gateway --rm \\
+          value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/grafbase/gateway`}
