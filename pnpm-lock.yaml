@@ -1209,8 +1209,8 @@ importers:
         specifier: 8.0.3
         version: 8.0.3(@envelop/core@5.0.2)(graphql@16.9.0)
       '@envelop/graphql-modules':
-        specifier: 7.0.1
-        version: 7.0.1(@envelop/core@5.0.2)(graphql-modules@3.1.1(graphql@16.9.0))(graphql@16.9.0)
+        specifier: 9.1.0
+        version: 9.1.0(@envelop/core@5.0.2)(graphql-modules@3.1.1(graphql@16.9.0))(graphql@16.9.0)
       '@envelop/opentelemetry':
         specifier: 6.3.1
         version: 6.3.1(@envelop/core@5.0.2)(graphql@16.9.0)
@@ -3632,11 +3632,11 @@ packages:
       '@envelop/core': ^5.0.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
 
-  '@envelop/graphql-modules@7.0.1':
-    resolution: {integrity: sha512-l5RRREZrzibgZCuInE4+fyBLnZWn1w/oKbB5EGlSeE1CWa59lrI9SLgBMIZqHwF7JT3X2oCAYur5TJUYEVJdJg==}
+  '@envelop/graphql-modules@9.1.0':
+    resolution: {integrity: sha512-3YZhPa+lOR7RBQbxBvF7iKZvDAtFvYha000Lwl4f4HU4cnyzr0MTqDaGJfHr6skBP7oNGbYbBPHfyfLLPZ1jUA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      '@envelop/core': ^5.1.0
+      '@envelop/core': ^5.5.0
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       graphql-modules: ^1 || ^2.0.0 || ^3.0.0
 
@@ -21672,7 +21672,7 @@ snapshots:
       tslib: 2.8.1
       value-or-promise: 1.0.12
 
-  '@envelop/graphql-modules@7.0.1(@envelop/core@5.0.2)(graphql-modules@3.1.1(graphql@16.9.0))(graphql@16.9.0)':
+  '@envelop/graphql-modules@9.1.0(@envelop/core@5.0.2)(graphql-modules@3.1.1(graphql@16.9.0))(graphql@16.9.0)':
     dependencies:
       '@envelop/core': 5.0.2
       graphql: 16.9.0
