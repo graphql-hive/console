@@ -153,3 +153,58 @@ You need to tweak the maximum depth an operation selection set is allowed to hav
 schema and needs, as it could vary between users.
 
 {/* TODO: Rate Limiting here */}
+
+## Why both `max_depth` and `max_tokens`?
+
+Both `max_depth` and `max_tokens` serve different purposes in protecting your GraphQL API from
+abusive queries.
+
+- `max_depth` specifically targets the structure of the query, preventing excessively nested
+  selection sets that can lead to performance issues. This is particularly important in GraphQL,
+  where deeply nested queries can be constructed even without a large number of tokens.
+- `max_tokens`, on the other hand, provides a broader safeguard by limiting the overall size of the
+  query. This helps to prevent attacks that exploit the complexity of queries through a large number
+  of fields, arguments, and other GraphQL constructs, regardless of their nesting level.
+
+The following operation has 20 tokens and a depth of 5 which will be rejected by both limits if set
+to 10 and 15 respectively:
+
+```graphql
+query {
+  author(id: 1) {
+    id
+    posts {
+      id
+      author {
+        id
+        posts {
+          id
+        }
+      }
+    }
+  }
+}
+```
+
+So you might think `max_depth` is sufficient enough, however consider the below operation. The
+following operation has 20 tokens but only a depth of 2:
+
+```graphql
+query {
+  me {
+    id
+    name
+    email
+  }
+  post(id: 1) {
+    id
+    title
+    content
+  }
+}
+```
+
+This operation passes a `max_depth` of 2 but would be rejected by a `max_tokens` limit of 10.
+
+By implementing both `max_depth` and `max_tokens`, you create a more robust defense against a wider
+range of potential query abuses, ensuring better performance and reliability for your GraphQL API.
