@@ -686,7 +686,7 @@ function diffField({
     builder,
   });
   builder.newLine({ type: changeType, indent: 1 });
-  builder.write(field(name, path.join('.')));
+  builder.write(field(name, path.join('.'), lineToWordChange(changeType)));
   if (hasArgs) {
     builder.write(literal('(', lineToWordChange(argsChangeType)));
     diffArguments({
@@ -699,7 +699,7 @@ function diffField({
     builder.newLine({ type: argsChangeType, indent: 1 });
     builder.write(keyword(')', lineToWordChange(argsChangeType)));
   }
-  builder.write(SPACE);
+  builder.write(keyword(':'), SPACE);
   diffReturnType({
     newType: newField?.type,
     oldType: oldField?.type!, // eslint-disable-line
@@ -809,7 +809,7 @@ function diffScalar({
     builder,
   });
   builder.newLine({ type: changeType });
-  builder.write(keyword('scalar'), SPACE, typeName(name));
+  builder.write(keyword('scalar'), SPACE, typeName(name, lineToWordChange(changeType)));
   diffDirectiveUsages({
     newDirectives: newScalar?.astNode?.directives ?? [],
     oldDirectives: oldScalar?.astNode?.directives ?? [],
@@ -912,10 +912,10 @@ function diffRepeatable(
     }
   } else {
     if (oldRepeatable) {
-      write(keyword('repeatable', 'removal'));
+      write(keyword('repeatable', 'removal'), ...(newRepeatable ? [] : [SPACE]));
     }
     if (newRepeatable) {
-      write(keyword('repeatable', 'addition'));
+      write(keyword('repeatable', 'addition'), SPACE);
     }
   }
 }
@@ -974,6 +974,7 @@ export function diffDirective(
       : 'mutual';
 
   const path = [`@${name}`];
+  newLine();
   diffDescription({
     newNode: props.newDirective!,
     oldNode: props.oldDirective!,
@@ -981,7 +982,7 @@ export function diffDirective(
   });
   newLine();
   write(
-    keyword('directive', lineToWordChange(changeType)),
+    keyword('directive'),
     SPACE,
     directiveName({ name, path, changeType: lineToWordChange(changeType) }),
     ...(hasArgs ? [literal('(', lineToWordChange(argsChangeType))] : []),
@@ -1095,7 +1096,7 @@ function diffDirectiveUsage(
 
   props.builder.write(
     SPACE,
-    type(name, lineToWordChange(changeType)),
+    typeName(name, lineToWordChange(changeType)),
     ...(hasArgs ? [literal('(', lineToWordChange(argsChangeType))] : []),
   );
 
@@ -1231,10 +1232,10 @@ function diffReturnType(
   }
 
   if (oldStr) {
-    props.builder.write(type(oldStr, 'removal'));
+    props.builder.write(typeName(oldStr, 'removal'));
   }
   if (newStr) {
-    props.builder.write(type(newStr, 'addition'));
+    props.builder.write(typeName(newStr, 'addition'));
   }
 }
 
