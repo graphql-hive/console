@@ -66,7 +66,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Apply theme to document
   useEffect(() => {
-    applyTheme(resolvedTheme);
+    // TODO: we're forcing dark mode here, remove when color palette work is complete
+    // applyTheme(resolvedTheme);
+    applyTheme('dark');
   }, [resolvedTheme]);
 
   const value = useMemo(() => ({ theme, setTheme, resolvedTheme }), [theme, resolvedTheme]);
