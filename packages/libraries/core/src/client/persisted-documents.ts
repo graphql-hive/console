@@ -344,6 +344,8 @@ export function createPersistedDocuments(
     resolve: loadPersistedDocument,
     dispose() {
       circuitBreakers.map(breaker => breaker.shutdown());
+      persistedDocumentsCache.clear();
+      fetchCache.clear();
     },
   };
 }
