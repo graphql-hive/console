@@ -178,8 +178,8 @@ export const TargetLayout = ({
       </header>
 
       {query.fetching === false &&
-        query.stale === false &&
-        (currentProject === null || currentOrganization === null || currentTarget === null) ? (
+      query.stale === false &&
+      (currentProject === null || currentOrganization === null || currentTarget === null) ? (
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
@@ -626,7 +626,12 @@ function FederationModalContent(props: {
         </div>
         <p>
           For more information please refer to our{' '}
-          <UiLink variant="primary" target="_blank" rel="noreferrer" to={getDocsUrl('/gateway/usage-reporting')}>
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/gateway/usage-reporting')}
+          >
             Hive Gateway documentation
           </UiLink>
           .
@@ -738,6 +743,6 @@ value={`docker run --name hive-router --rm -p 4000:4000 \\
           .
         </p>
       </TabsContent>
-    </Tabs >
+    </Tabs>
   );
 }
