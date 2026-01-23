@@ -83,6 +83,7 @@ const ProjectCard = (props: {
     <Card className="h-full self-start bg-gray-900/50 p-5 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50">
       <Link
         to="/$organizationSlug/$projectSlug"
+        disabled={props.cleanOrganizationId == null || project?.slug == null}
         params={{
           organizationSlug: props.cleanOrganizationId ?? 'unknown-yet',
           projectSlug: project?.slug ?? 'unknown-yet',
