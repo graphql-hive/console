@@ -43,39 +43,42 @@ function AuthVerifyEmail() {
   const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
 
-  const sendEmail = useCallback(async (resend?: boolean) => {
-    if (session.loading) return;
+  const sendEmail = useCallback(
+    async (resend?: boolean) => {
+      if (session.loading) return;
 
-    const result = await sendEmailImpl(
-      {
-        input: {
-          superTokensUserId: session.userId,
-          resend,
-        },
-      },
-      {
-        fetchOptions: {
-          headers: {
-            'ignore-session': 'true',
+      const result = await sendEmailImpl(
+        {
+          input: {
+            superTokensUserId: session.userId,
+            resend,
           },
         },
-      },
-    );
-    if (result.data?.sendVerificationEmail.ok) {
-      toast({
-        title: 'Verification email sent',
-        description: 'Please check your email inbox.',
-      });
-    } else {
-      toast({
-        title: 'Failed to send verification email',
-        description:
-          result.data?.sendVerificationEmail.error?.message ??
-          result.error?.message ??
-          'An unknown error occurred.',
-      });
-    }
-  }, [session.loading, sendEmailImpl, toast]);
+        {
+          fetchOptions: {
+            headers: {
+              'ignore-session': 'true',
+            },
+          },
+        },
+      );
+      if (result.data?.sendVerificationEmail.ok) {
+        toast({
+          title: 'Verification email sent',
+          description: 'Please check your email inbox.',
+        });
+      } else {
+        toast({
+          title: 'Failed to send verification email',
+          description:
+            result.data?.sendVerificationEmail.error?.message ??
+            result.error?.message ??
+            'An unknown error occurred.',
+        });
+      }
+    },
+    [session.loading, sendEmailImpl, toast],
+  );
 
   useEffect(() => {
     if (session.loading) return;
