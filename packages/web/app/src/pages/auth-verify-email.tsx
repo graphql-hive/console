@@ -50,7 +50,6 @@ function AuthVerifyEmail() {
       {
         input: {
           superTokensUserId: session.userId,
-          email: session.accessTokenPayload.email,
           resend,
         },
       },

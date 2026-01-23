@@ -4,6 +4,7 @@ import { sql, TaggedTemplateLiteralInvocation, type DatabasePool } from 'slonik'
 import zod from 'zod';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
+import { HiveError } from '../../../shared/errors';
 import { InMemoryRateLimiter } from '../../shared/providers/in-memory-rate-limiter';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
@@ -92,17 +93,26 @@ export class EmailVerification {
   async sendVerificationEmail(
     input: {
       superTokensUserId: string;
-      email: string;
       resend?: boolean;
     },
     actorId?: string,
   ): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
-    const parsedEmail = zod.string().email().safeParse(input.email);
-    if (!parsedEmail.success) {
-      return {
-        ok: false,
-        message: parsedEmail.error.errors[0].message,
-      };
+    const superTokensUser = await this.pool
+      .maybeOne(
+        sql`
+          SELECT COALESCE("seu"."email", "stu"."email") "email"
+          FROM "supertokens_all_auth_recipe_users" "saaru"
+          LEFT JOIN "supertokens_emailpassword_users" "seu"
+          ON "saaru"."user_id" = "seu"."user_id"
+          LEFT JOIN "supertokens_thirdparty_users" "stu"
+          ON "saaru"."user_id" = "stu"."user_id"
+          WHERE "saaru"."user_id" = ${input.superTokensUserId}
+        `,
+      )
+      .then(v => zod.object({ email: zod.string().email() }).nullable().parse(v));
+
+    if (!superTokensUser) {
+      throw new HiveError('User not found.');
     }
 
     const existingVerification = await this.pool
@@ -156,7 +166,7 @@ export class EmailVerification {
       }
 
       await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-        email: parsedEmail.data,
+        email: superTokensUser.email,
         verificationLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
       });
     }
