@@ -96,10 +96,6 @@ const MigrationsSchema = protectedObject({
   ),
 });
 
-const FeatureFlagsSchema = protectedObject({
-  FEATURE_FLAGS_THEME_SWITCHER_ENABLED: enabledOrDisabled,
-});
-
 const envValues = getAllEnv();
 
 function buildConfig() {
@@ -112,7 +108,6 @@ function buildConfig() {
     authOkta: AuthOktaConfigSchema.safeParse(envValues),
     authOktaMultiTenant: AuthOktaMultiTenantSchema.safeParse(envValues),
     migrations: MigrationsSchema.safeParse(envValues),
-    featureFlags: FeatureFlagsSchema.safeParse(envValues),
   };
 
   const environmentErrors: Array<string> = [];
@@ -144,7 +139,6 @@ function buildConfig() {
   const authOkta = extractConfig(configs.authOkta);
   const authOktaMultiTenant = extractConfig(configs.authOktaMultiTenant);
   const migrations = extractConfig(configs.migrations);
-  const featureFlags = extractConfig(configs.featureFlags);
 
   return {
     appBaseUrl: base.APP_BASE_URL.replace(/\/$/, ''),
@@ -174,9 +168,6 @@ function buildConfig() {
     zendeskSupport: base.ZENDESK_SUPPORT === '1',
     migrations: {
       member_roles_deadline: migrations.MEMBER_ROLES_DEADLINE ?? null,
-    },
-    featureFlags: {
-      themeSwitcher: featureFlags.FEATURE_FLAGS_THEME_SWITCHER_ENABLED === '1',
     },
   } as const;
 }
