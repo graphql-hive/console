@@ -80,6 +80,10 @@ export class Redis {
         name: 'REDIS_EXPORTER_LOG_FORMAT',
         value: 'json',
       },
+      {
+        name: 'REDIS_EXPORTER_STREAMS_EXCLUDE_CONSUMER_METRICS',
+        value: 'true',
+      },
     ];
 
     const memoryInBytes = memoryParser(input.limits.memory) * 0.9; // Redis recommends 80%
