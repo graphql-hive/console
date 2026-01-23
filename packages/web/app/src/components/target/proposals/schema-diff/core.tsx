@@ -912,7 +912,7 @@ function diffRepeatable(
     }
   } else {
     if (oldRepeatable) {
-      write(keyword('repeatable', 'removal'), ...(newRepeatable ? [] : [SPACE]));
+      write(keyword('repeatable', 'removal'), SPACE);
     }
     if (newRepeatable) {
       write(keyword('repeatable', 'addition'), SPACE);
@@ -1232,7 +1232,7 @@ function diffReturnType(
   }
 
   if (oldStr) {
-    props.builder.write(typeName(oldStr, 'removal'));
+    props.builder.write(typeName(oldStr, 'removal'), ...(newStr ? [SPACE] : []));
   }
   if (newStr) {
     props.builder.write(typeName(newStr, 'addition'));
