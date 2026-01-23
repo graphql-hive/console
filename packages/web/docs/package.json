@@ -37,6 +37,7 @@
   "devDependencies": {
     "@mdx-js/typescript-plugin": "^0.0.8",
     "@next/bundle-analyzer": "^16.0.0",
+    "@playwright/test": "^1.58.0",
     "@tailwindcss/typography": "0.5.16",
     "@theguild/tailwind-config": "0.6.3",
     "@types/react": "18.3.18",
