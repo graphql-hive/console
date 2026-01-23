@@ -121,9 +121,8 @@ In that example, any incoming GraphQL query that exceeds 1000 tokens will be rej
 
 ## Prevent deeply nested queries
 
-Sometimes you cannot use persisted operations, and you build an API that is available to the 3rd
-party users. In that case, it is recommended to limit the maximum depth of incoming GraphQL queries
-to prevent overly complex queries.
+If you build an API that is available to the 3rd party users, it is recommended to limit the maximum
+depth of incoming GraphQL queries to prevent overly complex queries.
 
 ```yaml filename="router.config.yaml"
 limits:
