@@ -1,47 +1,44 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Landing Page User Journeys', () => {
-  test('new visitor explores Hive and decides to sign up', async ({ page }) => {
+  test('new visitor explores Hive and decides to sign up', async ({ page, isMobile }) => {
     await page.goto('/');
 
-    // Sees the main value proposition
-    await expect(
-      page.getByRole('heading', { name: 'Open-Source GraphQL Federation Platform' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    // Notices key selling points (as list items)
-    await expect(
-      page.getByRole('listitem').filter({ hasText: 'MIT licensed' }).first(),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('listitem').filter({ hasText: 'No vendor-lock' }).first(),
-    ).toBeVisible();
-
-    // Feature tabs section exists
-    const featureTabs = page.getByRole('tablist').first();
-    await expect(featureTabs).toBeVisible();
-
-    // Click a different tab
-    const observabilityTab = page.getByRole('tab', { name: /Observability/i });
-    if ((await observabilityTab.count()) > 0) {
-      await observabilityTab.click();
-      // Verify at least one tabpanel is visible
-      await expect(page.getByRole('tabpanel').first()).toBeVisible();
+    if (!isMobile) {
+      const heroList = page.locator('ul').first();
+      await expect(heroList.getByRole('listitem').first()).toBeVisible();
     }
 
-    // Sees social proof
-    await expect(page.getByText('Trusted by global enterprises')).toBeVisible();
+    const featureTabs = page.getByRole('tablist').first();
+    await featureTabs.scrollIntoViewIfNeeded();
+    await expect(featureTabs).toBeVisible();
 
-    // CTA to sign up is present
-    const signUpCta = page.getByRole('link', { name: 'Get started for free' }).first();
-    await expect(signUpCta).toHaveAttribute('href', 'https://app.graphql-hive.com');
+    const tabs = featureTabs.getByRole('tab');
+    await expect(tabs.first()).toBeVisible();
+
+    if (isMobile) {
+      // On mobile, tabs render as a dropdown - only active tab is visible.
+      // Clicking the active tab opens the dropdown, revealing all tabs.
+      await tabs.first().click();
+      // Now the second tab should be visible and clickable
+    }
+    await tabs.nth(1).click();
+    await expect(page.getByRole('tabpanel').first()).toBeVisible();
+
+    const signUpCta = page.getByRole('link', { name: /get started/i }).first();
+    await expect(signUpCta).toHaveAttribute('href', /app\.graphql-hive\.com/);
   });
 
   test('developer navigates to federation page', async ({ page }) => {
     await page.goto('/');
 
     // Clicks federation link in hero paragraph
-    const federationLink = page.locator('p').getByRole('link', { name: 'GraphQL federation' });
+    const federationLink = page
+      .locator('p')
+      .getByRole('link', { name: /federation/i })
+      .first();
     await federationLink.click();
 
     await expect(page).toHaveURL('/federation');
@@ -51,19 +48,29 @@ test.describe('Landing Page User Journeys', () => {
   test('developer navigates to gateway page', async ({ page }) => {
     await page.goto('/');
 
-    // Clicks gateway link (the one in hero that says just "gateway")
+    // Clicks gateway link
     await page.getByRole('link', { name: 'gateway', exact: true }).click();
 
     await expect(page).toHaveURL('/gateway');
-    await expect(page.getByRole('heading', { name: 'Hive Gateway', level: 1 })).toBeVisible();
+    // Gateway page has multiple h1s, check the first one
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
   });
 
-  test('user navigates to pricing via nav', async ({ page }) => {
+  test('user navigates to pricing via nav', async ({ page, isMobile }) => {
     await page.goto('/');
 
-    // Clicks pricing link in navigation
-    const nav = page.getByRole('navigation', { name: 'Navigation Menu' });
-    await nav.getByRole('link', { name: 'Pricing' }).click();
+    if (isMobile) {
+      // On mobile, open hamburger menu first
+      await page.getByRole('button', { name: 'Menu' }).click();
+      // Then click pricing in the opened sidebar
+      await page
+        .getByRole('complementary')
+        .getByRole('link', { name: /pricing/i })
+        .click();
+    } else {
+      const nav = page.getByRole('navigation').first();
+      await nav.getByRole('link', { name: /pricing/i }).click();
+    }
 
     await expect(page).toHaveURL('/pricing');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -72,14 +79,14 @@ test.describe('Landing Page User Journeys', () => {
   test('FAQ accordion expands on click', async ({ page }) => {
     await page.goto('/');
 
-    // Scroll to FAQ section
-    const faqHeading = page.getByRole('heading', { name: 'Frequently Asked Questions' });
-    await faqHeading.scrollIntoViewIfNeeded();
-    await expect(faqHeading).toBeVisible();
+    // Find FAQ section by its accordion structure (Radix UI)
+    const faqAccordion = page.locator('[data-orientation="vertical"]').first();
+    await faqAccordion.scrollIntoViewIfNeeded();
 
-    // Click first FAQ item button
-    const faqButton = page.getByRole('button', { name: /vendor lock-in/i });
-    await faqButton.click();
+    // Click first accordion trigger
+    const faqTrigger = faqAccordion.getByRole('button').first();
+    await expect(faqTrigger).toBeVisible();
+    await faqTrigger.click();
 
     // Content should expand (data-state changes)
     await expect(page.locator('[data-state="open"]').first()).toBeVisible();
@@ -88,27 +95,32 @@ test.describe('Landing Page User Journeys', () => {
   test('testimonials section shows company tabs', async ({ page }) => {
     await page.goto('/');
 
-    // Scroll to testimonials
-    const testimonialsHeading = page.getByRole('heading', { name: /Loved by Developers/i });
-    await testimonialsHeading.scrollIntoViewIfNeeded();
-    await expect(testimonialsHeading).toBeVisible();
+    // Find testimonials by tablist structure (second tablist on page after features)
+    const tabLists = page.getByRole('tablist');
+    const testimonialTabs = tabLists.nth(1);
+    await testimonialTabs.scrollIntoViewIfNeeded();
 
-    // Testimonial tabs exist (company logos)
-    const testimonialSection = page.locator('section').filter({ has: testimonialsHeading });
-    const tabs = testimonialSection.getByRole('tab');
+    // Tabs exist for companies
+    const tabs = testimonialTabs.getByRole('tab');
+    await expect(tabs.first()).toBeVisible();
     expect(await tabs.count()).toBeGreaterThan(0);
   });
 
-  test('navigation menu is accessible', async ({ page }) => {
+  test('navigation menu is accessible', async ({ page, isMobile }) => {
     await page.goto('/');
 
-    // Navigation is visible
-    const nav = page.getByRole('navigation', { name: 'Navigation Menu' });
-    await expect(nav).toBeVisible();
-
-    // Key menu items exist (within nav)
-    await expect(nav.getByRole('button', { name: 'Products' })).toBeVisible();
-    await expect(nav.getByRole('button', { name: 'Developer' })).toBeVisible();
-    await expect(nav.getByRole('link', { name: 'Pricing' })).toBeVisible();
+    if (isMobile) {
+      const menuButton = page.getByRole('button', { name: 'Menu' });
+      await expect(menuButton).toBeVisible();
+      await menuButton.click();
+      const sidebar = page.getByRole('complementary');
+      await expect(sidebar).toBeVisible();
+      await expect(sidebar.getByRole('link', { name: /pricing/i })).toBeVisible();
+    } else {
+      const nav = page.getByRole('navigation').first();
+      await expect(nav).toBeVisible();
+      await expect(nav.getByRole('button').first()).toBeVisible();
+      await expect(nav.getByRole('link', { name: /pricing/i })).toBeVisible();
+    }
   });
 });

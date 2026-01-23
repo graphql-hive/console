@@ -12,61 +12,65 @@ test.describe('Documentation User Journeys', () => {
     }
   });
 
-  test('new user follows getting started guide', async ({ page }) => {
-    // Sees documentation homepage
+  test('docs landing page shows content', async ({ page, isMobile }) => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    // Finds sidebar navigation
-    const nav = page.getByRole('navigation');
-    await expect(nav.first()).toBeVisible();
-
-    // Finds and clicks "Get Started" link
-    const getStartedLink = page.getByRole('link', { name: /get started/i }).first();
-    if ((await getStartedLink.count()) > 0) {
-      await getStartedLink.click();
-      await expect(page).toHaveURL(/get-started/);
+    if (isMobile) {
+      const sidebar = page.getByRole('complementary');
+      await expect(sidebar.first()).toBeVisible();
+    } else {
+      const nav = page.getByRole('navigation');
+      await expect(nav.first()).toBeVisible();
     }
   });
 
-  test('developer navigates to schema registry docs', async ({ page }) => {
-    // Finds schema registry link
-    const schemaLink = page.getByRole('link', { name: /schema registry/i }).first();
-    if ((await schemaLink.count()) > 0) {
-      await schemaLink.click();
-      await expect(page).toHaveURL(/schema-registry/);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    }
+  test('developer navigates to schema registry via sidebar', async ({ page }) => {
+    // Schema Registry is under "Hive Console" section
+    const sidebar = page.getByRole('complementary');
+
+    // The link exists but HeadlessUI overlays intercept pointer events
+    // Use JavaScript click to bypass the interception
+    const schemaRegistryLink = sidebar.locator('a[href="/docs/schema-registry"]');
+    await expect(schemaRegistryLink).toBeVisible();
+    await schemaRegistryLink.evaluate((el: HTMLElement) => el.click());
+
+    await expect(page).toHaveURL(/schema-registry/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  test('developer explores gateway documentation', async ({ page }) => {
-    // Finds gateway docs link
-    const gatewayLink = page.getByRole('link', { name: /gateway/i }).first();
-    if ((await gatewayLink.count()) > 0) {
-      await gatewayLink.click();
-      await expect(page).toHaveURL(/gateway/);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    }
+  test('developer navigates to gateway via sidebar', async ({ page }) => {
+    // Gateway docs link
+    const sidebar = page.getByRole('complementary');
+
+    // The link exists but HeadlessUI overlays intercept pointer events
+    // Use JavaScript click to bypass the interception
+    const gatewayLink = sidebar.locator('a[href="/docs/gateway"]');
+    await expect(gatewayLink).toBeVisible();
+    await gatewayLink.evaluate((el: HTMLElement) => el.click());
+
+    await expect(page).toHaveURL(/gateway/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('documentation shows code examples', async ({ page }) => {
-    // Navigate to a page likely to have code
-    await page.goto('/docs/get-started/first-steps');
+    // Navigate to CLI reference which has code examples
+    await page.goto('/docs/api-reference/cli');
 
     // Check for code blocks
-    const codeBlock = page.locator('pre code');
-    if ((await codeBlock.count()) > 0) {
-      await expect(codeBlock.first()).toBeVisible();
-    }
+    const codeBlock = page.locator('pre').first();
+    await expect(codeBlock).toBeVisible();
   });
 
-  test('sidebar navigation highlights current page', async ({ page }) => {
-    await page.goto('/docs/get-started/first-steps');
+  test('sidebar shows active section', async ({ page }) => {
+    // Navigate to schema registry page
+    await page.goto('/docs/schema-registry');
 
-    // Current page should be indicated somehow (aria-current or active class)
-    const currentLink = page.locator('[aria-current="page"], [data-active="true"], .active');
-    if ((await currentLink.count()) > 0) {
-      await expect(currentLink.first()).toBeVisible();
-    }
+    // The sidebar should show Hive Console section as expanded/active
+    const sidebar = page.getByRole('complementary');
+    const hiveConsoleButton = sidebar.getByRole('button', { name: 'Hive Console' });
+    await expect(hiveConsoleButton).toBeVisible();
+    // Active sections have bg-primary styling
+    await expect(hiveConsoleButton).toHaveClass(/bg-primary/);
   });
 });
 

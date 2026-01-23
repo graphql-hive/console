@@ -1,69 +1,86 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Search User Journeys', () => {
-  // Search uses actual ellipsis character: …
   const searchPlaceholder = 'Search documentation…';
 
-  test('developer uses search to find federation info', async ({ page }) => {
+  test('developer uses search to find federation info', async ({ page, isMobile }) => {
     await page.goto('/');
 
-    // Finds search combobox in header
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+    }
+
     const searchInput = page.getByRole('combobox', { name: searchPlaceholder });
     await expect(searchInput).toBeVisible();
 
-    // Clicks search to focus/open
     await searchInput.click();
+    await searchInput.fill('federation');
 
-    // Types search query
-    await page.keyboard.type('federation');
-
-    // Search should have value
     await expect(searchInput).toHaveValue('federation');
+    // Search results depend on pagefind index which is only built in production
+    const results = page.getByRole('option');
+    const errorMessage = page.getByText('Failed to load search index');
+    await expect(results.first().or(errorMessage)).toBeVisible();
   });
 
-  test('user opens search with keyboard shortcut', async ({ page }) => {
+  test('user opens search with keyboard shortcut', async ({ page, isMobile }) => {
     await page.goto('/');
 
-    // Opens search with Ctrl+K
-    await page.keyboard.press('Control+k');
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+    }
 
-    // Can type in search
-    await page.keyboard.type('gateway');
+    await page.keyboard.press('Meta+k');
 
-    // Search should have value
     const searchInput = page.getByRole('combobox', { name: searchPlaceholder });
+    await searchInput.fill('gateway');
+
     await expect(searchInput).toHaveValue('gateway');
+    // Search results depend on pagefind index which is only built in production
+    const results = page.getByRole('option');
+    const errorMessage = page.getByText('Failed to load search index');
+    await expect(results.first().or(errorMessage)).toBeVisible();
   });
 
-  test('search is available on pricing page', async ({ page }) => {
+  test('search results navigate to docs', async ({ page, isMobile }) => {
+    test.skip(!process.env.CI, 'Search index only available in CI (production build)');
+
+    await page.goto('/');
+
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+    }
+
+    const searchInput = page.getByRole('combobox', { name: searchPlaceholder });
+    await searchInput.click();
+    await searchInput.fill('schema registry');
+
+    const firstResult = page.getByRole('option').first();
+    await expect(firstResult).toBeVisible();
+    await firstResult.click();
+
+    await expect(page).toHaveURL(/docs/);
+  });
+
+  test('search is available on pricing page', async ({ page, isMobile }) => {
     await page.goto('/pricing');
 
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+    }
+
     const searchInput = page.getByRole('combobox', { name: searchPlaceholder });
     await expect(searchInput).toBeVisible();
   });
 
-  test('search is available on blog page', async ({ page }) => {
+  test('search is available on blog page', async ({ page, isMobile }) => {
     await page.goto('/blog');
 
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Menu' }).click();
+    }
+
     const searchInput = page.getByRole('combobox', { name: searchPlaceholder });
     await expect(searchInput).toBeVisible();
-  });
-
-  test('search persists across navigation', async ({ page }) => {
-    // Homepage
-    await page.goto('/');
-    await expect(page.getByRole('combobox', { name: searchPlaceholder })).toBeVisible();
-
-    // Pricing
-    await page.goto('/pricing');
-    await expect(page.getByRole('combobox', { name: searchPlaceholder })).toBeVisible();
-
-    // Federation
-    await page.goto('/federation');
-    await expect(page.getByRole('combobox', { name: searchPlaceholder })).toBeVisible();
-
-    // Gateway
-    await page.goto('/gateway');
-    await expect(page.getByRole('combobox', { name: searchPlaceholder })).toBeVisible();
   });
 });

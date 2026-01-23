@@ -23,12 +23,12 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      use: { ...devices['iPhone 13'] },
+      use: { ...devices['iPhone 13'], defaultBrowserType: 'webkit' },
     },
   ],
   webServer: process.env.CI
     ? {
-        command: 'pnpm dlx serve out -l 3000',
+        command: 'pnpm exec serve out -l 3000',
         url: baseURL,
         reuseExistingServer: false,
         cwd: '..',

@@ -6,6 +6,7 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: packages/web/docs
@@ -25,11 +26,11 @@ jobs:
         working-directory: packages/web/docs
 
       - name: install playwright browsers
-        run: pnpm exec playwright install chromium
+        run: pnpm exec playwright install chromium webkit
         working-directory: packages/web/docs
 
       - name: run playwright tests
-        run: pnpm test:e2e --project=chromium
+        run: pnpm test:e2e
         working-directory: packages/web/docs
         env:
           CI: true
