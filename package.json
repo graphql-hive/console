@@ -144,7 +144,8 @@
       "@types/nodemailer>@aws-sdk/client-sesv2": "-",
       "tar@6.x.x": "^7.5.3",
       "diff@<8.0.3": "^8.0.3",
-      "lodash-es@4.x.x": "^4.17.23"
+      "lodash-es@4.x.x": "^4.17.23",
+      "seroval@<1.4.1": "^1.4.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
