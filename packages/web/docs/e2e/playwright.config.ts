@@ -4,6 +4,7 @@ const baseURL = process.env.BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
   testDir: '.',
+  testMatch: '**/*.e2e.ts',
   outputDir: '../.playwright/test-results',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
