@@ -356,7 +356,7 @@ export class SchemaManager {
   async getLatestSchemaVersionWithSchemaLogs(args: { target: Target; onlyComposable?: boolean }) {
     const schemaVersion = await (args.onlyComposable
       ? this.getMaybeLatestValidVersion(args.target)
-      : this.getMaybeLatestValidVersion(args.target));
+      : this.getMaybeLatestVersion(args.target));
 
     if (!schemaVersion) {
       return null;
