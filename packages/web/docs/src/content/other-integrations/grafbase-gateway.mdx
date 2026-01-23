@@ -1,0 +1,51 @@
+import { Callout, Tabs } from '@theguild/components'
+
+# Grafbase Gateway
+
+[Grafbase Gateway](https://grafbase.com/docs/gateway/installation) is a Rust-based GraphQL gateway
+implementation for Apollo Federation.
+
+Grafbase Gateway has a built-in integration with Hive Console, allowing you to fetch your supergraph
+schema directly from Hive CDN and report usage metrics. Also you can use
+[Persisted Documents](https://grafbase.com/docs/gateway/persisted-documents) feature to store and
+manage your GraphQL operations in Hive.
+
+## Configuration
+
+- `HIVE_CDN_ENDPOINT`: The
+  [_Hive CDN Endpoint_](../../schema-registry/get-started/apollo-federation#cdn-access) of your
+  target.
+- `HIVE_CDN_KEY`: The
+  [_Hive CDN key/token_](../../schema-registry/management/targets#creating-a-cdn-access-token) of
+  your target.
+- `HIVE_CDN_POLL_INTERVAL`: An optional human-readable string representing the interval at which the
+  gateway should poll Hive CDN for changes. Default is `10s`.
+
+- `HIVE_ACCESS_TOKEN`: Your
+  [Registry Access Token](https://the-guild.dev/graphql/hive/docs/management/targets#registry-access-tokens)
+  with write permission.
+- `HIVE_TARGET`: A target ID, this can either be a slug following the format
+  `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`) or an UUID
+  (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`). To be used when the token is configured with an
+  organization access token.
+
+Setting the environment variables mentioned above will enable Grafbase Gateway to fetch the
+supergraph schema from Hive CDN and report usage metrics to Hive Console.
+
+## Persisted Operations / App Deployments
+
+In Grafbase Gateway, it is called
+[Trusted Documents](https://grafbase.com/docs/gateway/security/trusted-documents). With Hive Console
+support, you can store and manage your GraphQL operations in Hive and have Grafbase Gateway fetch
+them dynamically. To enable this feature, you need to set the CDN variables above.
+
+- [Learn more how to use this feature in Grafbase Gateway](https://grafbase.com/docs/gateway/security/trusted-documents#trusted-documents-in-the-client-runtime-components).
+- [Learn more about Persisted Documents in Hive Console](/docs/schema-registry/app-deployments).
+
+## Client Information on Hive Console
+
+Grafbase Gateway uses `x-grafbase-client-name` and `x-grafbase-client-version` HTTP headers to get
+the client information. Hive Console integration also uses these headers.
+
+So if you want to differentiate the GraphQL clients in Hive Console, you can set custom values for
+these headers in your GraphQL clients.
