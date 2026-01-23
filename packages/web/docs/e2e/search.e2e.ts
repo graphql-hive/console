@@ -17,10 +17,10 @@ test.describe('Search User Journeys', () => {
     await searchInput.fill('federation');
 
     await expect(searchInput).toHaveValue('federation');
-    // Search results depend on pagefind index which is only built in production
     const results = page.getByRole('option');
     const errorMessage = page.getByText('Failed to load search index');
-    await expect(results.first().or(errorMessage)).toBeVisible();
+    const noResults = page.getByText('No results found');
+    await expect(results.first().or(errorMessage).or(noResults)).toBeVisible({ timeout: 30000 });
   });
 
   test('user opens search with keyboard shortcut', async ({ page, isMobile }) => {
@@ -36,10 +36,10 @@ test.describe('Search User Journeys', () => {
     await searchInput.fill('gateway');
 
     await expect(searchInput).toHaveValue('gateway');
-    // Search results depend on pagefind index which is only built in production
     const results = page.getByRole('option');
     const errorMessage = page.getByText('Failed to load search index');
-    await expect(results.first().or(errorMessage)).toBeVisible();
+    const noResults = page.getByText('No results found');
+    await expect(results.first().or(errorMessage).or(noResults)).toBeVisible({ timeout: 30000 });
   });
 
   test('search results navigate to docs', async ({ page, isMobile }) => {

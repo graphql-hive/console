@@ -38,5 +38,6 @@ export default defineConfig({
         command: 'pnpm dev',
         url: baseURL,
         reuseExistingServer: true,
+        timeout: 120_000,
       },
 });

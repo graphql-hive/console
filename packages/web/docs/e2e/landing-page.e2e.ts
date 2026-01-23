@@ -34,12 +34,13 @@ test.describe('Landing Page User Journeys', () => {
   test('developer navigates to federation page', async ({ page }) => {
     await page.goto('/');
 
-    // Clicks federation link in hero paragraph
     const federationLink = page
       .locator('p')
       .getByRole('link', { name: /federation/i })
       .first();
-    await federationLink.click();
+    /* JS click bypasses Next.js prefetch event handlers that can intercept navigation */
+    await federationLink.evaluate(el => (el as HTMLElement).click());
+    await page.waitForLoadState('networkidle');
 
     await expect(page).toHaveURL('/federation');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -48,11 +49,11 @@ test.describe('Landing Page User Journeys', () => {
   test('developer navigates to gateway page', async ({ page }) => {
     await page.goto('/');
 
-    // Clicks gateway link
     await page.getByRole('link', { name: 'gateway', exact: true }).click();
+    /* Prevents navigation race with Next.js prefetch */
+    await page.waitForLoadState('networkidle');
 
     await expect(page).toHaveURL('/gateway');
-    // Gateway page has multiple h1s, check the first one
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
   });
 
@@ -60,9 +61,7 @@ test.describe('Landing Page User Journeys', () => {
     await page.goto('/');
 
     if (isMobile) {
-      // On mobile, open hamburger menu first
       await page.getByRole('button', { name: 'Menu' }).click();
-      // Then click pricing in the opened sidebar
       await page
         .getByRole('complementary')
         .getByRole('link', { name: /pricing/i })
@@ -71,6 +70,8 @@ test.describe('Landing Page User Journeys', () => {
       const nav = page.getByRole('navigation').first();
       await nav.getByRole('link', { name: /pricing/i }).click();
     }
+    /* Prevents navigation race with Next.js prefetch */
+    await page.waitForLoadState('networkidle');
 
     await expect(page).toHaveURL('/pricing');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

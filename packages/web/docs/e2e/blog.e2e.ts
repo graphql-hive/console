@@ -23,6 +23,8 @@ test.describe('Blog & Content User Journeys', () => {
     await docsLink.scrollIntoViewIfNeeded();
     await expect(docsLink).toBeVisible();
     await docsLink.click();
+    await page.waitForURL(/docs/);
+    await page.waitForLoadState('networkidle');
 
     await expect(page).toHaveURL(/docs/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -76,10 +78,12 @@ test.describe('Blog & Content User Journeys', () => {
     await expect(firstPostLink).toBeVisible();
     const firstHref = await firstPostLink.getAttribute('href');
     await firstPostLink.click();
+    /* Next.js prefetch can interrupt navigation without this wait */
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     await page.goto('/blog');
+    /* Prevents navigation race with Next.js prefetch on mobile */
     await page.waitForLoadState('domcontentloaded');
     await expect(page.getByRole('heading', { name: 'Blog' })).toBeVisible();
 

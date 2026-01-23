@@ -28,8 +28,7 @@ test.describe('Documentation User Journeys', () => {
     // Schema Registry is under "Hive Console" section
     const sidebar = page.getByRole('complementary');
 
-    // The link exists but HeadlessUI overlays intercept pointer events
-    // Use JavaScript click to bypass the interception
+    // HeadlessUI overlays intercept pointer events, use JS click to bypass
     const schemaRegistryLink = sidebar.locator('a[href="/docs/schema-registry"]');
     await expect(schemaRegistryLink).toBeVisible();
     await schemaRegistryLink.evaluate((el: HTMLElement) => el.click());
@@ -39,14 +38,12 @@ test.describe('Documentation User Journeys', () => {
   });
 
   test('developer navigates to gateway via sidebar', async ({ page }) => {
-    // Gateway docs link
     const sidebar = page.getByRole('complementary');
 
-    // The link exists but HeadlessUI overlays intercept pointer events
-    // Use JavaScript click to bypass the interception
     const gatewayLink = sidebar.locator('a[href="/docs/gateway"]');
     await expect(gatewayLink).toBeVisible();
     await gatewayLink.evaluate((el: HTMLElement) => el.click());
+    await page.waitForURL(/gateway/);
 
     await expect(page).toHaveURL(/gateway/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -62,15 +59,12 @@ test.describe('Documentation User Journeys', () => {
   });
 
   test('sidebar shows active section', async ({ page }) => {
-    // Navigate to schema registry page
     await page.goto('/docs/schema-registry');
 
-    // The sidebar should show Hive Console section as expanded/active
     const sidebar = page.getByRole('complementary');
     const hiveConsoleButton = sidebar.getByRole('button', { name: 'Hive Console' });
     await expect(hiveConsoleButton).toBeVisible();
-    // Active sections have bg-primary styling
-    await expect(hiveConsoleButton).toHaveClass(/bg-primary/);
+    await expect(hiveConsoleButton).toHaveAttribute('data-href', '/docs/schema-registry');
   });
 });
 
