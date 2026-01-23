@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { BadgeCheck, ChevronDown, GitCompareIcon, Loader2 } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ChevronUp, GitCompareIcon, Loader2 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { SchemaEditor } from '@/components/schema-editor';
 import {
@@ -113,7 +113,9 @@ function ApproveFailedSchemaCheckModal(props: {
     <div className="space-y-2">
       <h4 className="font-medium leading-none">Finish your approval</h4>
       <div>
-        <p className="text-muted-foreground text-sm">Acknowledge and accept breaking changes.</p>
+        <p className="text-muted-foreground pb-1 text-sm">
+          Acknowledge and accept breaking changes.
+        </p>
         {props?.contextId ? (
           <p className="text-muted-foreground text-sm">
             Approval applies to all future changes within the context of a pull request or branch
@@ -126,31 +128,35 @@ function ApproveFailedSchemaCheckModal(props: {
           value={approvalComment}
           onChange={onApprovalCommentChange}
           className="w-full"
-          placeholder="Leave a comment"
+          placeholder="(Optional)  Add a comment..."
         />
         <div className="text-right">
-          {mutation.fetching ? (
-            <Button disabled>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Please wait
-            </Button>
-          ) : (
-            <Button
-              onClick={() =>
-                approve({
-                  input: {
-                    organizationSlug: props.organizationSlug,
-                    projectSlug: props.projectSlug,
-                    targetSlug: props.targetSlug,
-                    schemaCheckId: props.schemaCheckId,
-                    comment: approvalComment,
-                  },
-                })
-              }
-            >
-              Submit approval
-            </Button>
-          )}
+          <Button
+            variant="destructive"
+            disabled={mutation.fetching}
+            onClick={async e => {
+              e.preventDefault();
+              await approve({
+                input: {
+                  organizationSlug: props.organizationSlug,
+                  projectSlug: props.projectSlug,
+                  targetSlug: props.targetSlug,
+                  schemaCheckId: props.schemaCheckId,
+                  comment: approvalComment,
+                },
+              });
+              props.onClose();
+            }}
+          >
+            {mutation.fetching ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Please wait
+              </>
+            ) : (
+              'Approve Changes'
+            )}
+          </Button>
         </div>
       </div>
     </div>
@@ -1154,11 +1160,16 @@ const ActiveSchemaCheck = (props: {
               {schemaCheck.canBeApprovedByViewer ? (
                 <Popover open={approvalOpen} onOpenChange={setApprovalOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="destructive">
-                      Approve <ChevronDown className="ml-2 size-4" />
+                    <Button variant="destructive" disabled={approvalOpen}>
+                      Approve{' '}
+                      {approvalOpen ? (
+                        <ChevronUp className="ml-2 size-4" />
+                      ) : (
+                        <ChevronDown className="ml-2 size-4" />
+                      )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[450px]">
+                  <PopoverContent className="w-[450px]" align="end">
                     <PopoverArrow />
                     <ApproveFailedSchemaCheckModal
                       onClose={() => setApprovalOpen(false)}
