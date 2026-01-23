@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { env } from '@/env/frontend';
 import { useLocalStorage } from '@/lib/hooks';
 
 const STORAGE_KEY = 'hive-theme';
+const isThemeSwitcherEnabled = env.featureFlags.themeSwitcher;
 
 export type Theme = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -28,14 +30,15 @@ function applyTheme(resolvedTheme: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [storedTheme, setStoredTheme] = useLocalStorage(STORAGE_KEY, 'system');
+  const [storedTheme, setStoredTheme] = useLocalStorage(STORAGE_KEY, 'dark');
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
-  const theme = (
-    storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
-      ? storedTheme
-      : 'system'
-  ) as Theme;
+  // When feature flag is disabled, always use dark mode regardless of stored value
+  const theme: Theme = isThemeSwitcherEnabled
+    ? ((storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+        ? storedTheme
+        : 'system') as Theme)
+    : 'dark';
 
   const resolvedTheme: ResolvedTheme = theme === 'system' ? systemTheme : theme;
 
@@ -43,8 +46,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setStoredTheme(newTheme);
   };
 
-  // Listen for system theme changes
+  // Listen for system theme changes (only when feature is enabled)
   useEffect(() => {
+    if (!isThemeSwitcherEnabled) return;
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleChange = (e: MediaQueryListEvent) => {
