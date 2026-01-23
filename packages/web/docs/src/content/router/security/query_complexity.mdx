@@ -1,0 +1,156 @@
+---
+title: 'Query Complexity'
+---
+
+# Query Complexity
+
+GraphQL by design allows clients to request exactly the data they need. However, this flexibility
+can be exploited to create overly complex queries that can strain server resources, leading to
+performance degradation or denial of service. To mitigate these risks, it's essential to implement
+query complexity limits in your GraphQL router configuration.
+
+This guide explains how to configure the GraphQL router to enforce query complexity limits to
+prevent abusive queries. For the complete configuration options,
+[see `limits` in the configuration reference](../configuration/limits).
+
+## Protection against malicious complex queries
+
+One of the main benefits of GraphQL is that data can be requested individually. However, this also
+introduces the possibility for attackers to send operations with deeply nested selection sets that
+could block other requests being processed. Fortunately, infinite loops are not possible by design
+as a fragment cannot self-reference itself. Unfortunately, that still does not prevent possible
+attackers from sending selection sets that are hundreds of levels deep.
+
+The following schema:
+
+```graphql
+type Query {
+  author(id: ID!): Author!
+}
+type Author {
+  id: ID!
+  posts: [Post!]!
+}
+type Post {
+  id: ID!
+  author: Author!
+}
+```
+
+Would allow sending and executing queries such as:
+
+```graphql
+query {
+  author(id: 42) {
+    posts {
+      author {
+        posts {
+          author {
+            posts {
+              author {
+                posts {
+                  author {
+                    posts {
+                      author {
+                        posts {
+                          author {
+                            id
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+There are a few ways to mitigate this risk which is covered by this documentation.
+
+{/* TODO: Persisted Operations */}
+
+## Reject operations based on the size / tokens
+
+Parsing a GraphQL operation document is not a cheap operation, but expensive and compute
+intensitive. If an attacker sends a very complex operation document with slight variations over and
+over again, they can easily degrade the performance of your GraphQL API server.
+
+Unfortunately because of the possibility of variations, caching parsed documents is not a reliable
+way to mitigate this risk. Instead, you can limit the size of incoming operations.
+
+A potential solution is to limit the maximum number of tokens in a GraphQL document.
+
+In computer science, lexical analysis, lexing or tokenization is the process of converting a
+sequence of characters into a sequence of lexical tokens.
+
+For example, the given GraphQL operation;
+
+```graphql
+query {
+  me {
+    id
+    user
+  }
+}
+```
+
+The tokens are `query`, `{`, `me`, `{`, `id`, `user`, `}`, `}` which gives a total of 8 tokens.
+
+The optimal maximum token count for your application depends on the complexity of the GraphQL
+operations and documents. Usually 800-2000 tokens seems like a sane default.
+
+You can use tools like
+[GraphQL Inspector](https://the-guild.dev/graphql/inspector/docs/essentials/audit) to analyse and
+find the best defaults for your use cases.
+
+But on the API side, you can configure the maximum amount of like below;
+
+```yaml filename="router.config.yaml"
+limits:
+  max_tokens:
+    n: 1000
+```
+
+In that example, any incoming GraphQL query that exceeds 1000 tokens will be rejected with an error.
+
+## Prevent deeply nested queries
+
+Sometimes you cannot use persisted operations, and you build an API that is available to the 3rd
+party users. In that case, it is recommended to limit the maximum depth of incoming GraphQL queries
+to prevent overly complex queries.
+
+```yaml filename="router.config.yaml"
+limits:
+  max_depth:
+    n: 10
+```
+
+In that example, any incoming GraphQL query that exceeds a depth of 10 will be rejected with an
+error.
+
+```graphql
+query {
+  user {
+    posts {
+      comments {
+        text
+      }
+    }
+  }
+}
+```
+
+The above query has a depth of 3 (`user` -> `posts` -> `comments`), so it would be accepted. If a
+query exceeded a depth of 10, it would be rejected.
+
+This can prevent malicious API users executing GraphQL operations with deeply nested selection sets.
+You need to tweak the maximum depth an operation selection set is allowed to have based on your
+schema and needs, as it could vary between users.
+
+{/* TODO: Rate Limiting here */}
