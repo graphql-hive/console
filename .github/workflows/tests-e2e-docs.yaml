@@ -22,12 +22,15 @@ jobs:
 
       - name: build docs
         run: pnpm build
+        working-directory: packages/web/docs
 
       - name: install playwright browsers
         run: pnpm exec playwright install chromium
+        working-directory: packages/web/docs
 
       - name: run playwright tests
-        run: pnpm exec playwright test --config=e2e/playwright.config.ts --project=chromium
+        run: pnpm test:e2e --project=chromium
+        working-directory: packages/web/docs
         env:
           CI: true
           BASE_URL: http://localhost:3000
