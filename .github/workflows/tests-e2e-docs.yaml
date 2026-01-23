@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  e2e:
+  docs-e2e:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     defaults:
@@ -26,7 +26,7 @@ jobs:
         working-directory: packages/web/docs
 
       - name: install playwright browsers
-        run: pnpm exec playwright install chromium webkit
+        run: pnpm exec playwright install chromium webkit --with-deps
         working-directory: packages/web/docs
 
       - name: run playwright tests
