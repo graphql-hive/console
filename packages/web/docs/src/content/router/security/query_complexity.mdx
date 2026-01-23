@@ -77,9 +77,9 @@ There are a few ways to mitigate this risk which is covered by this documentatio
 
 ## Reject operations based on the size / tokens
 
-Parsing a GraphQL operation document is not a cheap operation, but expensive and compute
-intensitive. If an attacker sends a very complex operation document with slight variations over and
-over again, they can easily degrade the performance of your GraphQL API server.
+Parsing a GraphQL operation document is not a cheap operation, but expensive and compute-intensive.
+If an attacker sends a very complex operation document with slight variations over and over again,
+they can easily degrade the performance of your GraphQL API server.
 
 Unfortunately because of the possibility of variations, caching parsed documents is not a reliable
 way to mitigate this risk. Instead, you can limit the size of incoming operations.
@@ -109,7 +109,7 @@ You can use tools like
 [GraphQL Inspector](https://the-guild.dev/graphql/inspector/docs/essentials/audit) to analyse and
 find the best defaults for your use cases.
 
-But on the API side, you can configure the maximum amount of like below;
+But on the API side, you can configure the maximum amount as shown below;
 
 ```yaml filename="router.config.yaml"
 limits:
@@ -121,7 +121,7 @@ In that example, any incoming GraphQL query that exceeds 1000 tokens will be rej
 
 ## Prevent deeply nested queries
 
-If you build an API that is available to the 3rd party users, it is recommended to limit the maximum
+If you build an API that is available to the 3rd-party users, it is recommended to limit the maximum
 depth of incoming GraphQL queries to prevent overly complex queries.
 
 ```yaml filename="router.config.yaml"

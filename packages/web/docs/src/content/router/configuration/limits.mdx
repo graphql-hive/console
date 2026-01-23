@@ -13,8 +13,9 @@ too large queries that could lead to overfetching or DOS attacks.
 
 ### `max_depth`
 
-This configures allows you to set a maximum depth for incoming GraphQL queries. Queries that exceed
-this depth will be rejected with an error. If not specificied, there is no limit on query depth.
+This configuration allows you to set a maximum depth for incoming GraphQL queries. Queries that
+exceed this depth will be rejected with an error. If not specified, there is no limit on query
+depth.
 
 #### `n`
 
@@ -68,7 +69,7 @@ The maximum allowed number of tokens in incoming GraphQL queries.
 
 ## Examples
 
-### Limit Query Depth to 10
+### Limit Query Depth to 2
 
 ```yaml filename="router.config.yaml"
 limits:
@@ -139,5 +140,5 @@ query {
 }
 ```
 
-The above query contains 9 tokens, so it would be accepted. If a query contained more than 10
+The above query contains 8 tokens, so it would be accepted. If a query contained more than 10
 tokens, it would be rejected.
