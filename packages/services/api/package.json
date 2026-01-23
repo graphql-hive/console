@@ -57,7 +57,7 @@
     "graphql-yoga": "5.13.3",
     "ioredis": "5.8.2",
     "ioredis-mock": "8.9.0",
-    "lodash": "4.17.21",
+    "lodash": "4.17.23",
     "lru-cache": "7.18.3",
     "ms": "2.1.3",
     "object-hash": "3.0.0",
