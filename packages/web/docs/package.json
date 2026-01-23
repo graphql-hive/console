@@ -11,8 +11,8 @@
     "dev": "next --turbopack",
     "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
     "prettier": "prettier --cache --write --list-different --ignore-unknown src",
-    "validate-mdx-links": "pnpx validate-mdx-links@1.1.0 --files 'src/**/*.mdx'",
-    "test:e2e": "playwright test --config e2e/playwright.config.ts"
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "validate-mdx-links": "pnpx validate-mdx-links@1.1.0 --files 'src/**/*.mdx'"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.2",
