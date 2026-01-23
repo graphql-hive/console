@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies -- test config
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.BASE_URL || 'http://localhost:3000';

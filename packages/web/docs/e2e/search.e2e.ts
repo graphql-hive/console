@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies -- test file
 import { expect, test } from '@playwright/test';
 
 test.describe('Search User Journeys', () => {
@@ -20,7 +21,7 @@ test.describe('Search User Journeys', () => {
     const results = page.getByRole('option');
     const errorMessage = page.getByText('Failed to load search index');
     const noResults = page.getByText('No results found');
-    await expect(results.first().or(errorMessage).or(noResults)).toBeVisible({ timeout: 30000 });
+    await expect(results.first().or(errorMessage).or(noResults)).toBeVisible({ timeout: 30_000 });
   });
 
   test('user opens search with keyboard shortcut', async ({ page, isMobile }) => {
@@ -39,7 +40,7 @@ test.describe('Search User Journeys', () => {
     const results = page.getByRole('option');
     const errorMessage = page.getByText('Failed to load search index');
     const noResults = page.getByText('No results found');
-    await expect(results.first().or(errorMessage).or(noResults)).toBeVisible({ timeout: 30000 });
+    await expect(results.first().or(errorMessage).or(noResults)).toBeVisible({ timeout: 30_000 });
   });
 
   test('search results navigate to docs', async ({ page, isMobile }) => {
