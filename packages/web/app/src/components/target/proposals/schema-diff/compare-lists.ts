@@ -158,9 +158,9 @@ export function compareDirectiveLists(
   for (const itemName of Object.keys(oldMap).sort()) {
     const newItems = newMap[itemName];
     const oldItems = oldMap[itemName];
-    for (let i = 0; i < oldItems.length; i++) {
+    for (let i = 0; i < oldItems?.length; i++) {
       const oldItem = oldItems[i];
-      const newItem = newItems[i];
+      const newItem = newItems?.[i];
       if (newItem === undefined) {
         removed.push(oldItem);
       } else {
@@ -175,7 +175,7 @@ export function compareDirectiveLists(
   for (const itemName of Object.keys(newMap).sort()) {
     const newItems = newMap[itemName];
     const oldItems = oldMap[itemName];
-    for (let i = 0; i < oldItems.length; i++) {
+    for (let i = (oldItems ?? []).length; i < (newItems ?? []).length; i++) {
       const oldItem = oldItems[i];
       const newItem = newItems[i];
       if (oldItem === undefined) {
