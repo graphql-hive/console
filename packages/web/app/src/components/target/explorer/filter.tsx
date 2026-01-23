@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback, useMemo, useState } from 'react';
+import React, { ChangeEvent, useCallback, useMemo, useState, useDeferredValue } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
@@ -95,6 +95,7 @@ export function TypeFilter(props: {
 }) {
   const router = useRouter();
   const [inputValue, setInputValue] = useState('');
+  const deferredInputValue = useDeferredValue(inputValue);
   const [query] = useQuery({
     query: TypeFilter_AllTypes,
     variables: {
@@ -117,9 +118,9 @@ export function TypeFilter(props: {
   );
 
   const sortedTypes = useMemo(() => {
-    if (!inputValue) return types;
+    if (!deferredInputValue) return types;
 
-    const search = inputValue.toLowerCase();
+    const search = deferredInputValue.toLowerCase();
     return [...types].sort((a, b) => {
       const aName = a.label.toLowerCase();
       const bName = b.label.toLowerCase();
@@ -137,7 +138,7 @@ export function TypeFilter(props: {
       // Alphabetical within same relevance
       return aName.localeCompare(bName);
     });
-  }, [types, inputValue]);
+  }, [types, deferredInputValue]);
 
   const onChange = useCallback(
     (option: SelectOption | null) => {
