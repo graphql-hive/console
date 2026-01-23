@@ -17,9 +17,9 @@ prevent abusive queries. For the complete configuration options,
 
 One of the main benefits of GraphQL is that data can be requested individually. However, this also
 introduces the possibility for attackers to send operations with deeply nested selection sets that
-could block other requests being processed. Fortunately, infinite loops are not possible by design
-as a fragment cannot self-reference itself. Unfortunately, that still does not prevent possible
-attackers from sending selection sets that are hundreds of levels deep.
+could block other requests being processed. Even if infinite loops are not possible by design as a
+fragment cannot self-reference itself; but that still does not prevent possible attackers from
+sending selection sets that are hundreds of levels deep.
 
 The following schema:
 
