@@ -3,6 +3,6 @@
   "version": "3.0.1",
   "private": true,
   "scripts": {
-    "sync-cargo-file": "./sync-cargo-file.sh"
+    "sync-cargo-file": "sh ./sync-cargo-file.sh"
   }
 }
