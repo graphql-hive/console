@@ -620,7 +620,7 @@ export class SchemaPublisher {
               proposalChanges = diffSchema.result ?? null;
             }
           } catch (e: any) {
-            this.logger.error('Could not calculate schema proposal diff: ', e.message ?? e);
+            this.logger.error('Could not calculate schema proposal diff: %s', e.message ?? e);
           }
         }
 
@@ -677,7 +677,7 @@ export class SchemaPublisher {
               proposalChanges = diffSchema.result ?? null;
             }
           } catch (e: any) {
-            this.logger.error('Could not calculate schema proposal diff: ', e.message ?? e);
+            this.logger.error('Could not calculate schema proposal diff: %s', e.message ?? e);
           }
         }
 

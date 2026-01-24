@@ -377,12 +377,10 @@ export const Proposal_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on DirectiveUsageSchemaAdded {
         addedDirectiveName
-        schemaTypeName
         directiveRepeatedTimes
       }
       ... on DirectiveUsageSchemaRemoved {
         removedDirectiveName
-        schemaTypeName
         directiveRepeatedTimes
       }
       ... on DirectiveUsageFieldDefinitionAdded {

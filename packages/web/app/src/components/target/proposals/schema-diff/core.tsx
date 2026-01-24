@@ -286,8 +286,16 @@ function schemaDefinitionDiff({
   // add an additional line for spacing
   builder.newLine({ type: changeType });
   builder.newLine({ type: changeType });
-  builder.write(keyword('schema'), SPACE, literal('{'));
+  builder.write(keyword('schema'));
 
+  diffDirectiveUsages({
+    oldDirectives: oldSchema?.astNode?.directives ?? [],
+    newDirectives: newSchema?.astNode?.directives ?? [],
+    builder,
+    path: ['.'],
+  });
+
+  builder.write(SPACE, literal('{'));
   if (oldRoot.query || newRoot.query) {
     diffField({
       oldField: oldRoot.query,
