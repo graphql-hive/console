@@ -83,7 +83,7 @@ that stores the parsed documents by their string representation.
 
 However, due to the flexibility of GraphQL, an attacker could send a very complex operation document
 with slight variations over and over again, which would bypass the parsing cache and degrade the
-performance of your GraphQL API server.
+performance of your GraphQL router.
 
 In that case, parsing cache by itself is not sufficient to protect your API server from abusive
 GraphQL operations. In addition to the caching, you can limit the size of incoming operations.
