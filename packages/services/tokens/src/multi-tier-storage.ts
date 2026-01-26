@@ -56,7 +56,7 @@ export async function createStorage(
     try {
       await db.touchTokens({ tokens });
     } catch (error) {
-      serverLogger.error('Failed to touch tokens %o', error as Error);
+      serverLogger.error('Failed to touch tokens (error=%s)', error);
     }
   });
   const cache = new LRUCache<
