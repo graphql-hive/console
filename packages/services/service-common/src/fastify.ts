@@ -64,9 +64,7 @@ export async function createServer(options: {
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
     ...(options.log instanceof Logger
       ? {
-          // Incompatibility in HiveLogger with Fastify 5.x
-          // The types do not match
-          loggerInstance: options.log as unknown as FastifyBaseLogger,
+          loggerInstance: bridgeHiveLoggerToFastifyLogger(options.log),
         }
       : {
           logger: {
