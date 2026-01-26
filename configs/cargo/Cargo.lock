@@ -2405,9 +2405,9 @@ dependencies = [
 
 [[package]]
 name = "graphql-tools"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9513662272317e955f5d72b13b4015ba31c84d68225f4b5d0a2ad6ffceec1258"
+checksum = "9a378ccbe227983c1f4aeaafd088d0de9c5e3d5b6cd8e7aa9b0c682582a6c067"
 dependencies = [
  "combine",
  "itoa",
@@ -2594,7 +2594,7 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "anyhow",
  "apollo-router",
@@ -2622,9 +2622,9 @@ dependencies = [
 
 [[package]]
 name = "hive-console-sdk"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f450613f002f14d421378aa8dde956b55c91db4a7b66d41b8c18bc8d1d51e671"
+checksum = "39bc4630173c318cbc11ab8cc507ecdb50d0bb8afaba820e6101adee715c2569"
 dependencies = [
  "anyhow",
  "async-dropper-simple",
@@ -2634,7 +2634,6 @@ dependencies = [
  "lazy_static",
  "md5",
  "moka",
- "once_cell",
  "recloser",
  "regex-automata",
  "regress",
