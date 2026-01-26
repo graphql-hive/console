@@ -65,6 +65,11 @@ jobs:
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
 
+  # e2e tests for docs site using Playwright
+  docs-e2e:
+    name: test
+    uses: ./.github/workflows/tests-e2e-docs.yaml
+
   # Changeset Validation
   # Validates that changesets reference valid packages that exist in the monorepo
   changeset-validation:

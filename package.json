@@ -123,6 +123,7 @@
     "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
     "overrides.diff@<8.0.3": "address https://github.com/graphql-hive/console/security/dependabot/438",
     "overrides.lodash-es@4.x.x": "address https://github.com/graphql-hive/console/security/dependabot/453",
+    "overrides.lodash@4.x.x": "address https://github.com/graphql-hive/console/security/dependabot/455",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -145,6 +146,7 @@
       "tar@6.x.x": "^7.5.3",
       "diff@<8.0.3": "^8.0.3",
       "lodash-es@4.x.x": "^4.17.23",
+      "lodash@4.x.x": "^4.17.23",
       "seroval@<1.4.1": "^1.4.1"
     },
     "patchedDependencies": {
@@ -161,7 +163,6 @@
       "@graphiql/react": "patches/@graphiql__react.patch",
       "countup.js": "patches/countup.js.patch",
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
-      "@fastify/vite": "patches/@fastify__vite.patch",
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "bentocache": "patches/bentocache.patch",
       "nextra": "patches/nextra.patch",

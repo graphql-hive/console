@@ -110,6 +110,7 @@ module.exports = {
               'packages/web/app/**',
               '**/*.spec.ts',
               '**/*.test.ts',
+              '**/*.e2e.ts',
             ],
             optionalDependencies: false,
           },

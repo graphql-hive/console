@@ -59,7 +59,7 @@ export function createTokens(config: { endpoint: string; logger: ServiceLogger }
         }
         return TokenStatus.NotFound;
       } catch (error) {
-        config.logger.error('Failed to fetch fresh token', error);
+        config.logger.error('Failed to fetch fresh token (error=%s)', error);
         return TokenStatus.NotFound;
       }
     },

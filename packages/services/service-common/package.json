@@ -9,7 +9,7 @@
     "@trpc/server": "10.45.3"
   },
   "devDependencies": {
-    "@fastify/cors": "9.0.1",
+    "@fastify/cors": "11.2.0",
     "@graphql-hive/logger": "1.0.9",
     "@graphql-hive/plugin-opentelemetry": "1.3.0",
     "@opentelemetry/api": "1.9.0",
@@ -25,8 +25,8 @@
     "@sentry/node": "7.120.2",
     "@sentry/types": "7.120.2",
     "@sentry/utils": "7.120.2",
-    "fastify": "4.29.1",
-    "fastify-plugin": "4.5.1",
+    "fastify": "5.7.1",
+    "fastify-plugin": "5.1.0",
     "opentelemetry-instrumentation-fetch-node": "1.2.3",
     "p-retry": "6.2.1",
     "prom-client": "15.1.3",
