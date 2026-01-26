@@ -43,6 +43,7 @@ export default {
     }),
   ],
   build: {
+    outDir: 'dist',
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),

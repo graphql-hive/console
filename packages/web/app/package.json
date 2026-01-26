@@ -3,7 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "tsx ../../../scripts/runify.ts src/server/index.ts && vite build --outDir dist/client",
+    "build": "tsx ../../../scripts/runify.ts src/server/index.ts && vite build",
     "build-storybook": "storybook build",
     "dev": "tsx watch --clear-screen=false --exclude \"./**/*.mjs\" src/server/dev.ts",
     "generate-changelog": "node ../../../scripts/generate-changelog.js",
