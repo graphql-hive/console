@@ -53,12 +53,6 @@ export async function createServer(options: {
   cors?: boolean;
   bodyLimit?: number;
 }) {
-  // Incompatibility in HiveLogger with Fastify 5.x
-  // Fastify throws a runtime exception if that method is missing.
-  if ('fatal' in options.log === false) {
-    (options.log as any).fatal = () => {};
-  }
-
   const server = fastify({
     disableRequestLogging: true,
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
