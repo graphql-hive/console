@@ -155,7 +155,7 @@ export async function main() {
     if (err instanceof CorsError) {
       return res.status(403).send(err.message);
     }
-
+    // @ts-expect-error: we cannot upgrade supertokens-node
     return supertokensErrorHandler()(err, req, res);
   });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
