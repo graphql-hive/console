@@ -151,8 +151,7 @@ query {
 }
 ```
 
-The above operation has a depth of 3 (`user` -> `posts` -> `comments`), so it would be accepted. If
-an operation exceeded a depth of 10, it would be rejected.
+The above operation has a depth of 3 (`user` -> `posts` -> `comments`), so it would be accepted.
 
 This can prevent malicious API users executing GraphQL operations with deeply nested selection sets.
 You need to tweak the maximum depth an operation selection set is allowed to have based on your
