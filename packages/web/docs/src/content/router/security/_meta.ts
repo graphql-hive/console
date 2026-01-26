@@ -3,5 +3,5 @@ export default {
   cors: 'Configuring CORS',
   csrf: 'CSRF Prevention',
   'jwt-authentication': 'JWT Authentication',
-  operation_complexity: 'Operation Complexity',
+  'operation-cost-analysis': 'Operation Cost Analysis',
 };
