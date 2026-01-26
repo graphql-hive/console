@@ -26,6 +26,7 @@ overrides:
   tar@6.x.x: ^7.5.3
   diff@<8.0.3: ^8.0.3
   lodash-es@4.x.x: ^4.17.23
+  lodash@4.x.x: ^4.17.23
   seroval@<1.4.1: ^1.4.1
 
 patchedDependencies:
@@ -877,7 +878,7 @@ importers:
         specifier: 8.9.0
         version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.8.2)
       lodash:
-        specifier: 4.17.23
+        specifier: ^4.17.23
         version: 4.17.23
       lru-cache:
         specifier: 7.18.3
@@ -1998,7 +1999,7 @@ importers:
         specifier: 2.2.0
         version: 2.2.0
       lodash:
-        specifier: 4.17.23
+        specifier: ^4.17.23
         version: 4.17.23
       lodash.debounce:
         specifier: 4.0.8
@@ -14584,9 +14585,6 @@ packages:
 
   lodash.xorby@4.7.0:
     resolution: {integrity: sha512-gYiD6nvuQy0AEkMoUju+t4f4Rn18fjsLB/7x7YZFqtFT9kmegRLrj/uGEQVyVDy7otTmSrIMXNOk2wwuLcfHCQ==}
-
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
   lodash@4.17.23:
     resolution: {integrity: sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==}
@@ -36774,7 +36772,7 @@ snapshots:
       '@types/lodash': 4.17.13
       is-glob: 4.0.3
       js-yaml: 4.1.1
-      lodash: 4.17.21
+      lodash: 4.17.23
       minimist: 1.2.8
       prettier: 3.4.2
       tinyglobby: 0.2.10
@@ -36788,7 +36786,7 @@ snapshots:
   json-schema-yup-transformer@1.6.12:
     dependencies:
       is-relative-url: 3.0.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       stringify-object: 3.3.0
       yup: 0.29.3
 
@@ -37166,8 +37164,6 @@ snapshots:
   lodash.topath@4.5.2: {}
 
   lodash.xorby@4.7.0: {}
-
-  lodash@4.17.21: {}
 
   lodash@4.17.23: {}
 
@@ -38809,7 +38805,7 @@ snapshots:
       fs-extra: 8.1.0
       github-slugger: 2.0.0
       got: 13.0.0
-      lodash: 4.17.21
+      lodash: 4.17.23
       normalize-package-data: 6.0.0
       semver: 7.7.3
       sort-package-json: 2.15.1
