@@ -5,62 +5,63 @@
 
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
+    open-pull-requests-limit: 10
     schedule:
-      interval: "daily"
+      interval: 'daily'
     groups:
-     graphiql:
+      graphiql:
         patterns:
-          - "graphiql"
-          - "@graphiql/*"
-     yoga:
+          - 'graphiql'
+          - '@graphiql/*'
+      yoga:
         patterns:
-          - "envelop"
-          - "graphql-yoga"
-          - "@envelop/*"
-          - "@graphql-yoga/*"
-      graphql-armor:
+          - 'envelop'
+          - 'graphql-yoga'
+          - '@envelop/*'
+          - '@graphql-yoga/*'
+      graphql_armor:
         patterns:
-          - "@escape.tech/graphql-armor-*"
+          - '@escape.tech/graphql-armor-*'
       radix:
         patterns:
-          - "@radix-ui/*"
-          - "@radix/*"
+          - '@radix-ui/*'
+          - '@radix/*'
       stripe:
         patterns:
-          - "@stripe/"
-          - "stripe"
+          - '@stripe/'
+          - 'stripe'
       urql:
         patterns:
-          - "@urql/"
-          - "urql"
+          - '@urql/'
+          - 'urql'
       sentry:
         patterns:
-          - "@sentry/"
-          - "sentry"
+          - '@sentry/'
+          - 'sentry'
       trpc:
         patterns:
-          - "@trpc/"
-          - "trpc"
+          - '@trpc/'
+          - 'trpc'
       supertokens:
         patterns:
-          - "supertokens"
-          - "@supertokens/*"
-          - "supertokens-*"
-  - package-ecosystem: "docker"
-    directory: "/docker"
+          - 'supertokens'
+          - '@supertokens/*'
+          - 'supertokens-*'
+  - package-ecosystem: 'docker'
+    directory: '/docker'
     schedule:
-      interval: "daily"
-  - package-ecosystem: "cargo"
-    directory: "/"
+      interval: 'daily'
+  - package-ecosystem: 'cargo'
+    directory: '/'
     schedule:
-      interval: "daily"
-  - package-ecosystem: "github-actions"
-    directory: "/"
+      interval: 'daily'
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "daily"
-  - package-ecosystem: "rust-toolchain"
-    directory: "/"
+      interval: 'daily'
+  - package-ecosystem: 'rust-toolchain'
+    directory: '/'
     schedule:
-      interval: "daily"
+      interval: 'daily'
