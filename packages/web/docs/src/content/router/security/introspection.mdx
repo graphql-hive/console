@@ -23,7 +23,12 @@ information can pose security risks, as it may reveal sensitive details about yo
 and capabilities to potential attackers. By disabling introspection, you can reduce the attack
 surface of your GraphQL API and help protect against unauthorized access.
 
-{/* Later we'll mention persisted operations here */}
+{/* TODO: Later we'll mention persisted operations here */}
+
+However, there are a lot of valid use cases for keeping introspection enabled even in production
+environments, especially if your GraphQL API is public or consumed by 3rd-party clients. In those
+cases, you might want to consider alternative security measures, such as applying some limitations
+on the complexity of the operations, rate-limiting etc.
 
 ## Disabling introspection
 
