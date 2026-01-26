@@ -2594,7 +2594,7 @@ dependencies = [
 
 [[package]]
 name = "hive-apollo-router-plugin"
-version = "3.0.1"
+version = "3.0.0"
 dependencies = [
  "anyhow",
  "apollo-router",
