@@ -52,6 +52,7 @@ const BaseSchema = zod.object({
   PORT: emptyString(NumberFromString().optional()),
   APP_BASE_URL: zod.string().url(),
   GRAPHQL_PUBLIC_ENDPOINT: zod.string().url(),
+  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.string().url(),
   GRAPHQL_PUBLIC_ORIGIN: zod.string().url(),
   INTEGRATION_GITHUB_APP_NAME: emptyString(zod.string().optional()),
   GA_TRACKING_ID: emptyString(zod.string().optional()),
