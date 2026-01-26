@@ -7,7 +7,8 @@ title: 'Operation Complexity'
 GraphQL by design allows clients to request exactly the data they need. However, this flexibility
 can be exploited to create overly complex GraphQL operations that can strain server resources,
 leading to performance degradation or denial of service. To mitigate these risks, it's essential to
-implement operation complexity limits in your GraphQL router configuration.
+implement operation complexity limits in your GraphQL router configuration, especially in production
+environments.
 
 This guide explains how to configure the GraphQL router to enforce operation complexity limits to
 prevent abusive GraphQL operations. For the complete configuration options,
