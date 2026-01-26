@@ -9,6 +9,45 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+     graphiql:
+        patterns:
+          - "graphiql"
+          - "@graphiql/*"
+     yoga:
+        patterns:
+          - "envelop"
+          - "graphql-yoga"
+          - "@envelop/*"
+          - "@graphql-yoga/*"
+      graphql-armor:
+        patterns:
+          - "@escape.tech/graphql-armor-*"
+      radix:
+        patterns:
+          - "@radix-ui/*"
+          - "@radix/*"
+      stripe:
+        patterns:
+          - "@stripe/"
+          - "stripe"
+      urql:
+        patterns:
+          - "@urql/"
+          - "urql"
+      sentry:
+        patterns:
+          - "@sentry/"
+          - "sentry"
+      trpc:
+        patterns:
+          - "@trpc/"
+          - "trpc"
+      supertokens:
+        patterns:
+          - "supertokens"
+          - "@supertokens/*"
+          - "supertokens-*"
   - package-ecosystem: "docker"
     directory: "/docker"
     schedule:
