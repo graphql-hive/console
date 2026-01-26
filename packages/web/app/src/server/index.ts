@@ -73,7 +73,7 @@ async function main() {
       // ├── /client
       // │   └── index.html
       // └── index.js
-      root: resolve(__dirname, 'client'),
+      root: resolve(__dirname, 'client', 'client'),
       // Prevent fastify/static from creating '*' route.
       // We want to define our own '*' route to handle all requests.
       wildcard: false,
