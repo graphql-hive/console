@@ -53,16 +53,27 @@ export async function createServer(options: {
   cors?: boolean;
   bodyLimit?: number;
 }) {
+  // Incompatibility in HiveLogger with Fastify 5.x
+  // Fastify throws a runtime exception if that method is missing.
+  if ('fatal' in options.log === false) {
+    (options.log as any).fatal = () => {};
+  }
+
   const server = fastify({
     disableRequestLogging: true,
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
-    logger:
-      options.log instanceof Logger
-        ? bridgeHiveLoggerToFastifyLogger(options.log)
-        : {
+    ...(options.log instanceof Logger
+      ? {
+          // Incompatibility in HiveLogger with Fastify 5.x
+          // The types do not match
+          loggerInstance: options.log as unknown as FastifyBaseLogger,
+        }
+      : {
+          logger: {
             level: options.log.level,
             redact: ['request.options', 'options', 'request.headers.authorization'],
           },
+        }),
     maxParamLength: 5000,
     requestIdHeader: 'x-request-id',
     trustProxy: true,
