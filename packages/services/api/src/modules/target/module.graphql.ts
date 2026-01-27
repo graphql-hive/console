@@ -44,8 +44,8 @@ export default gql`
     Update the app deployment protection configuration of a target.
     """
     updateTargetAppDeploymentProtectionConfiguration(
-      input: UpdateTargetAppDeploymentProtectionConfigurationInput! @tag(name: "public")
-    ): UpdateTargetAppDeploymentProtectionConfigurationResult! @tag(name: "public")
+      input: UpdateTargetAppDeploymentProtectionConfigurationInput!
+    ): UpdateTargetAppDeploymentProtectionConfigurationResult!
     """
     Overwrites project's schema composition library.
     Works only for Federation projects with native composition enabled.
@@ -294,7 +294,7 @@ export default gql`
     """
     Configuration for app deployment retirement protection.
     """
-    appDeploymentProtectionConfiguration: AppDeploymentProtectionConfiguration! @tag(name: "public")
+    appDeploymentProtectionConfiguration: AppDeploymentProtectionConfiguration!
     experimental_forcedLegacySchemaComposition: Boolean!
     viewerCanAccessSettings: Boolean!
     viewerCanModifySettings: Boolean!
@@ -350,23 +350,23 @@ export default gql`
     """
     Whether app deployment protection is enabled.
     """
-    isEnabled: Boolean! @tag(name: "public")
+    isEnabled: Boolean!
     """
     Minimum number of days an app deployment must be inactive before it can be retired.
     """
-    minDaysInactive: Int! @tag(name: "public")
+    minDaysInactive: Int!
     """
     Maximum traffic percentage threshold. App deployments with traffic above this percentage cannot be retired.
     """
-    maxTrafficPercentage: Float! @tag(name: "public")
+    maxTrafficPercentage: Float!
     """
     Number of days to look back when calculating traffic percentage.
     """
-    trafficPeriodDays: Int! @tag(name: "public")
+    trafficPeriodDays: Int!
     """
     Logic to apply between the inactivity and traffic rules. AND requires both conditions, OR requires either.
     """
-    ruleLogic: AppDeploymentProtectionRuleLogicType! @tag(name: "public")
+    ruleLogic: AppDeploymentProtectionRuleLogicType!
   }
 
   """
@@ -376,11 +376,11 @@ export default gql`
     """
     Both conditions must be met (inactive days AND low traffic).
     """
-    AND @tag(name: "public")
+    AND
     """
     Either condition can be met (inactive days OR low traffic).
     """
-    OR @tag(name: "public")
+    OR
   }
 
   """
@@ -391,40 +391,39 @@ export default gql`
     """
     Enable or disable app deployment protection.
     """
-    isEnabled: Boolean @tag(name: "public")
+    isEnabled: Boolean
     """
     Minimum days of inactivity required before retirement (must be >= 0).
     """
-    minDaysInactive: Int @tag(name: "public")
+    minDaysInactive: Int
     """
     Maximum traffic percentage allowed for retirement (0-100).
     """
-    maxTrafficPercentage: Float @tag(name: "public")
+    maxTrafficPercentage: Float
     """
     Number of days to look back when calculating traffic percentage (must be >= 1).
     """
-    trafficPeriodDays: Int @tag(name: "public")
+    trafficPeriodDays: Int
     """
     Logic to apply between the inactivity and traffic rules.
     """
-    ruleLogic: AppDeploymentProtectionRuleLogicType @tag(name: "public")
+    ruleLogic: AppDeploymentProtectionRuleLogicType
   }
 
   input UpdateTargetAppDeploymentProtectionConfigurationInput {
     """
     The target on which the settings are adjusted.
     """
-    target: TargetReferenceInput! @tag(name: "public")
+    target: TargetReferenceInput!
     """
     Updates to the app deployment protection configuration.
     """
     appDeploymentProtectionConfiguration: AppDeploymentProtectionConfigurationInput!
-      @tag(name: "public")
   }
 
   type UpdateTargetAppDeploymentProtectionConfigurationResult {
-    ok: UpdateTargetAppDeploymentProtectionConfigurationResultOk @tag(name: "public")
-    error: UpdateTargetAppDeploymentProtectionConfigurationResultError @tag(name: "public")
+    ok: UpdateTargetAppDeploymentProtectionConfigurationResultOk
+    error: UpdateTargetAppDeploymentProtectionConfigurationResultError
   }
 
   type UpdateTargetAppDeploymentProtectionConfigurationInputErrors {
@@ -434,12 +433,12 @@ export default gql`
   }
 
   type UpdateTargetAppDeploymentProtectionConfigurationResultError {
-    message: String! @tag(name: "public")
+    message: String!
     inputErrors: UpdateTargetAppDeploymentProtectionConfigurationInputErrors!
   }
 
   type UpdateTargetAppDeploymentProtectionConfigurationResultOk {
-    target: Target! @tag(name: "public")
+    target: Target!
   }
 
   enum BreakingChangeFormulaType {
