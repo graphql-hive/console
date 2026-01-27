@@ -92,9 +92,6 @@ export class SingleModel {
     };
 
     const schemas = [incoming] as [SingleSchemaInput];
-    const comparedVersion = organization.featureFlags.compareToPreviousComposableVersion
-      ? latestComposable
-      : latest;
 
     const checksumResult = await this.checks.checksum({
       existing: latest
@@ -126,7 +123,7 @@ export class SingleModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: comparedVersion,
+      version: latestComposable,
       organization,
       project,
       targetId: selector.targetId,
@@ -236,9 +233,6 @@ export class SingleModel {
 
     const latestVersion = latest;
     const schemas = [incoming] as [SingleSchemaInput];
-    const compareToPreviousComposableVersion =
-      organization.featureFlags.compareToPreviousComposableVersion;
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
 
     const checksumCheck = await this.checks.checksum({
       existing: latest
@@ -277,7 +271,7 @@ export class SingleModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: comparedVersion,
+      version: latestComposable,
       organization,
       project,
       targetId: target.id,
@@ -329,23 +323,6 @@ export class SingleModel {
 
     if (hasNewMetadata) {
       messages.push('Metadata has been updated');
-    }
-
-    if (
-      compositionCheck.status === 'failed' &&
-      compositionCheck.reason.errorsBySource.graphql.length > 0
-    ) {
-      if (organization.featureFlags.compareToPreviousComposableVersion === false) {
-        return {
-          conclusion: SchemaPublishConclusion.Reject,
-          reasons: [
-            {
-              code: PublishFailureReasonCode.CompositionFailure,
-              compositionErrors: compositionCheck.reason.errorsBySource.graphql,
-            },
-          ],
-        };
-      }
     }
 
     return {

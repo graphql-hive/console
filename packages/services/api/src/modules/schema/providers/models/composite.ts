@@ -15,7 +15,6 @@ import {
   buildSchemaCheckFailureState,
   ContractCheckInput,
   ContractInput,
-  DeleteFailureReasonCode,
   isContractChecksSuccessful,
   PublishFailureReasonCode,
   PublishIgnoreReasonCode /* Check */,
@@ -116,7 +115,6 @@ export class CompositeModel {
     contracts,
     failDiffOnDangerousChange,
     filterNestedChanges,
-    compareToLatestComposableVersion,
   }: {
     input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
       // for a schema check the service url is optional
@@ -144,7 +142,6 @@ export class CompositeModel {
     approvedChanges: Map<string, SchemaChangeType>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
-    compareToLatestComposableVersion: boolean;
     contracts: Array<
       ContractInput & {
         approvedChanges: Map<string, SchemaChangeType> | null;
@@ -166,7 +163,6 @@ export class CompositeModel {
     const schemaSwapResult = latest ? swapServices(latest.schemas, incoming) : null;
     const schemas = schemaSwapResult ? schemaSwapResult.schemas : [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
-    const comparedVersion = compareToLatestComposableVersion ? latestComposable : latest;
 
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
@@ -207,7 +203,7 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: comparedVersion,
+      version: latestComposable,
       organization,
       project,
       targetId: selector.targetId,
@@ -318,7 +314,6 @@ export class CompositeModel {
     contracts,
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
-    compareToLatestComposableVersion,
   }: {
     input: {
       sdl: string;
@@ -344,7 +339,6 @@ export class CompositeModel {
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
-    compareToLatestComposableVersion: boolean;
   }): Promise<SchemaPublishResult> {
     const latestSchemaVersion = latest;
     const latestServiceVersion = latest?.schemas?.find(
@@ -382,9 +376,6 @@ export class CompositeModel {
 
     const schemas = schemaSwapResult?.schemas ?? [incoming];
     schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
-    const schemaVersionToCompareAgainst = compareToLatestComposableVersion
-      ? latestComposable
-      : latest;
 
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
@@ -452,24 +443,8 @@ export class CompositeModel {
       };
     }
 
-    if (
-      compositionCheck.status === 'failed' &&
-      compositionCheck.reason.errorsBySource.graphql.length > 0 &&
-      !compareToLatestComposableVersion
-    ) {
-      return {
-        conclusion: SchemaPublishConclusion.Reject,
-        reasons: [
-          {
-            code: PublishFailureReasonCode.CompositionFailure,
-            compositionErrors: compositionCheck.reason.errorsBySource.graphql,
-          },
-        ],
-      };
-    }
-
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: schemaVersionToCompareAgainst,
+      version: latestComposable,
       organization,
       project,
       targetId: target.id,
@@ -491,7 +466,7 @@ export class CompositeModel {
     const diffCheck = await this.checks.diff({
       conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
       includeUrlChanges: {
-        schemasBefore: schemaVersionToCompareAgainst?.schemas ?? [],
+        schemasBefore: latestComposable?.schemas ?? [],
         schemasAfter: schemas,
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
@@ -571,7 +546,6 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     contracts,
     failDiffOnDangerousChange,
-    compareToLatestComposableVersion,
   }: {
     input: {
       serviceName: string;
@@ -597,7 +571,6 @@ export class CompositeModel {
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
-    compareToLatestComposableVersion: boolean;
   }): Promise<SchemaDeleteResult> {
     const latestVersion = latest;
 
@@ -623,7 +596,7 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: compareToLatestComposableVersion ? latestComposable : latest,
+      version: latestComposable,
       organization,
       project,
       targetId: selector.target,
@@ -664,23 +637,6 @@ export class CompositeModel {
       failDiffOnDangerousChange,
       getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
     });
-
-    if (
-      compositionCheck.status === 'failed' &&
-      compositionCheck.reason.errorsBySource.graphql.length > 0
-    ) {
-      if (!compareToLatestComposableVersion) {
-        return {
-          conclusion: SchemaDeleteConclusion.Reject,
-          reasons: [
-            {
-              code: DeleteFailureReasonCode.CompositionFailure,
-              compositionErrors: compositionCheck.reason.errorsBySource.graphql,
-            },
-          ],
-        };
-      }
-    }
 
     const { changes, breakingChanges } =
       diffCheck.status === 'failed'
