@@ -231,11 +231,11 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   targetSlug: props.targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
-                className="text-orange-500 hover:underline"
+                className="text-accent hover:underline"
               >
                 Schema Check
               </Link>
-              <span className="mx-2 text-gray-500">/</span>
+              <span className="text-neutral-10 mx-2">/</span>
               <span>Affected App Deployments</span>
             </span>
           }
@@ -243,7 +243,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="rounded-sm bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
+                <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
                   {props.coordinate}
                 </code>
               </>
@@ -296,14 +296,14 @@ function TargetChecksAffectedDeploymentsContent(props: {
                           search={{
                             coordinates: props.coordinate,
                           }}
-                          className="text-orange-500 hover:underline"
+                          className="text-accent hover:underline"
                         >
                           {deployment.name}
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="link" className="h-auto p-0 text-orange-500" asChild>
+                        <Button variant="link" className="text-accent h-auto p-0" asChild>
                           <Link
                             to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
                             params={{
@@ -327,7 +327,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                 </TableBody>
               </Table>
             </div>
-            <div className="flex items-center justify-between text-sm text-gray-500">
+            <div className="text-neutral-10 flex items-center justify-between text-sm">
               <span>
                 Showing {allDeployments.length} of {totalCount} affected deployments
               </span>

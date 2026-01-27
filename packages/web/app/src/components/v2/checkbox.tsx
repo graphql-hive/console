@@ -8,7 +8,7 @@ export const Checkbox = (props: CheckboxProps): ReactElement => {
     <Root
       {...props}
       className={cn(
-        'flex size-5 shrink-0 items-center justify-center rounded-sm border border-orange-500 bg-gray-800 text-orange-500 hover:border-orange-700 disabled:cursor-not-allowed disabled:border-gray-900',
+        'bg-neutral-5 border-accent text-accent flex size-5 shrink-0 items-center justify-center rounded-sm border hover:border-orange-700 disabled:cursor-not-allowed disabled:border-gray-900',
         props.className,
       )}
     >

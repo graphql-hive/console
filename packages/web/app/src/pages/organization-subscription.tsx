@@ -160,7 +160,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
           </Card>
           <Card className="mt-8">
             <Heading>Current Usage</Heading>
-            <p className="text-sm text-gray-500">
+            <p className="text-neutral-10 text-sm">
               {DateFormatter.format(start)} — {DateFormatter.format(end)}
             </p>
             <div className="mt-4">

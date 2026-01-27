@@ -60,7 +60,7 @@ export const FilterInput = forwardRef<HTMLInputElement, FilterInputProps>(
       <input
         type={type}
         className={cn(
-          'border-input placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50',
+          'border-neutral-5 placeholder:text-neutral-10 focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         ref={ref}
@@ -100,7 +100,7 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
           <Button
             variant="secondary"
             size="sm"
-            className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
+            className="hover:bg-secondary text-neutral-10 group ml-auto h-6 w-8 px-1 py-0 text-xs"
             onClick={e => {
               e.preventDefault();
               props.onReset();
@@ -338,13 +338,13 @@ const DoubleSlider = forwardRef<
     className={cn('relative flex w-full touch-none select-none items-center', className)}
     {...props}
   >
-    <SliderPrimitive.Track className="relative h-1 w-full grow overflow-hidden rounded-full bg-gray-800">
+    <SliderPrimitive.Track className="bg-neutral-5 relative h-1 w-full grow overflow-hidden rounded-full">
       <SliderPrimitive.Range className="absolute h-full bg-gray-400" />
     </SliderPrimitive.Track>
     {props.value?.map((_, index) => (
       <SliderPrimitive.Thumb
         key={index}
-        className="block size-4 rounded-full border border-gray-700 bg-gray-800 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+        className="bg-neutral-5 block size-4 rounded-full border border-gray-700 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
       />
     ))}
   </SliderPrimitive.Root>
@@ -419,7 +419,7 @@ export const DurationFilter = memo(
                     type="number"
                     value={values[0]}
                     onChange={handleMinInputChange}
-                    className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
+                    className="text-neutral-12 h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
                     ms
@@ -433,7 +433,7 @@ export const DurationFilter = memo(
                     type="number"
                     value={values[1]}
                     onChange={handleMaxInputChange}
-                    className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
+                    className="border-neutral-5 text-neutral-12 h-7 bg-transparent px-2 pr-8 font-mono"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
                     ms
@@ -549,7 +549,7 @@ export const TimelineFilter = memo(
                 }
               }}
             >
-              <SelectTrigger className="bg-background w-full">
+              <SelectTrigger className="bg-neutral-3 w-full">
                 <SelectValue placeholder="Select time period" />
               </SelectTrigger>
               <SelectContent>
@@ -587,7 +587,7 @@ export const TimelineFilter = memo(
                     />
                     <div className="border-border mt-4 space-y-2 border-t p-2">
                       <div>
-                        <Label className="text-sm font-normal text-gray-500">Start</Label>
+                        <Label className="text-neutral-10 text-sm font-normal">Start</Label>
                         <div className="flex items-center gap-x-2">
                           <Input
                             className="h-8 w-[152px] py-0"
@@ -619,7 +619,7 @@ export const TimelineFilter = memo(
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-normal text-gray-500">End</Label>
+                        <Label className="text-neutral-10 text-sm font-normal">End</Label>
                         <div className="flex items-center gap-x-2">
                           <Input
                             className="h-8 w-[152px] py-0"

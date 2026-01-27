@@ -33,7 +33,7 @@ export function InputCopy(props: { value: string; className?: string; multiline?
           readOnly
           autoSize
           onFocus={ev => ev.target.select()}
-          className={`bg-secondary w-full resize-none font-mono text-xs text-white ${props.className}`}
+          className={`bg-secondary text-neutral-12 w-full resize-none font-mono text-xs ${props.className}`}
         />
       ) : (
         <div className="relative grow">
@@ -41,7 +41,7 @@ export function InputCopy(props: { value: string; className?: string; multiline?
             type="text"
             value={props.value}
             readOnly
-            className={`bg-secondary truncate text-white ${props.className}`}
+            className={`bg-secondary text-neutral-12 truncate ${props.className}`}
             onFocus={ev => ev.target.select()}
           />
         </div>

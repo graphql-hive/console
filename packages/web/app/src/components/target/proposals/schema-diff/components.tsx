@@ -78,7 +78,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       <table
         aria-label="change-document"
         className={cn(
-          'min-w-full cursor-default whitespace-pre font-mono text-sm text-white',
+          'text-neutral-12 min-w-full cursor-default whitespace-pre font-mono text-sm',
           props.className,
         )}
         style={{ counterReset: 'olddoc newdoc' }}
@@ -270,7 +270,7 @@ function Description(props: {
           annotations={props.annotations}
         >
           <Change type={props.type}>
-            <span className="text-gray-500">{line}</span>
+            <span className="text-neutral-10">{line}</span>
           </Change>
         </ChangeRow>
       ))}

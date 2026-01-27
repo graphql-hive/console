@@ -264,7 +264,7 @@ function MemberRole(props: {
       {organization.viewerCanAssignUserRoles && (
         <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
           <Sheet.SheetTrigger asChild>
-            <button className="font-medium text-orange-500 transition-colors hover:underline">
+            <button className="text-accent font-medium transition-colors hover:underline">
               change
             </button>
           </Sheet.SheetTrigger>
@@ -377,7 +377,7 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
-      <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
+      <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
         <thead>
           <tr>
             <th colSpan={2} className="relative select-none py-3 text-left text-sm font-semibold">
@@ -389,7 +389,7 @@ export function OrganizationMembers(props: {
             <th className="w-12 py-3 text-right text-sm font-semibold" />
           </tr>
         </thead>
-        <tbody className="divide-y-[1px] divide-gray-500/20">
+        <tbody className="divide-neutral-10/20 divide-y-[1px]">
           {members.length === 0 ? (
             <tr>
               <td colSpan={4} className="py-16">
@@ -415,7 +415,7 @@ export function OrganizationMembers(props: {
       </table>
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-gray-500">
+        <div className="text-neutral-10 text-sm">
           Page {currentPage + 1}
           {searchValue && members.length > 0 && ` - showing results for "${searchValue}"`}
         </div>

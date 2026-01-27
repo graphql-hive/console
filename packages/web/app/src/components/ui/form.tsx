@@ -84,7 +84,9 @@ const FormLabel = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const { formItemId } = useFormField();
 
-  return <Label ref={ref} className={className} htmlFor={formItemId} {...props} />;
+  return (
+    <Label ref={ref} className={cn('text-neutral-11', className)} htmlFor={formItemId} {...props} />
+  );
 });
 FormLabel.displayName = 'FormLabel';
 
@@ -117,7 +119,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn('text-neutral-10 text-sm', className)}
       {...props}
     />
   );

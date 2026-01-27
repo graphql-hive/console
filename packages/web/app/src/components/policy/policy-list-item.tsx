@@ -80,7 +80,7 @@ export function PolicyListItem(props: {
                     </>
                   }
                 >
-                  <InfoIcon className="ml-2 inline-block size-4 text-orange-500" />
+                  <InfoIcon className="text-accent ml-2 inline-block size-4" />
                 </Tooltip>
               </label>
             </div>
@@ -89,7 +89,7 @@ export function PolicyListItem(props: {
                 <div>
                   <SeverityLevelToggle canTurnOff={props.overridingParentRule} rule={ruleInfo.id} />
                 </div>
-                <div className="grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px] [&>*]:border-l-gray-800">
+                <div className="[&>*]:border-l-neutral-5 grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px]">
                   {shouldShowRuleConfig && (
                     <PolicyRuleConfig
                       rule={ruleInfo.id}
@@ -102,7 +102,7 @@ export function PolicyListItem(props: {
             ) : null}
             {props.overridingParentRule && enabled ? (
               <div className="mt-4 text-xs font-medium text-gray-400">
-                <p className="mr-2 inline-block text-sm font-medium text-orange-500">!</p>
+                <p className="text-accent mr-2 inline-block text-sm font-medium">!</p>
                 You are {severity === RuleInstanceSeverityLevel.Off ? 'disabling' : 'overriding'} a
                 rule configured at the organization level
               </div>

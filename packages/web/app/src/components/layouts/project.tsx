@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -86,32 +88,30 @@ export function ProjectLayout({
 
   return (
     <>
-      <header>
-        <div className="h-(--header-height) container flex items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <ProjectSelector
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <ProjectSelector
+            currentOrganizationSlug={props.organizationSlug}
+            currentProjectSlug={props.projectSlug}
+            organizations={query.data?.organizations ?? null}
+          />
         </div>
-      </header>
+        <div>
+          <UserMenu
+            me={me ?? null}
+            currentOrganizationSlug={props.organizationSlug}
+            organizations={query.data?.organizations ?? null}
+          />
+        </div>
+      </Header>
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null) ? (
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <div className="h-(--tabs-navbar-height) relative border-b border-gray-800">
+          <SecondaryNavigation>
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject ? (
                 <Tabs value={page}>
@@ -155,13 +155,13 @@ export function ProjectLayout({
                 </Tabs>
               ) : (
                 <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
                 </div>
               )}
               {currentProject?.viewerCanCreateTarget ? (
-                <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
+                <Button onClick={toggleModalOpen} variant="link" className="text-accent">
                   <PlusIcon size={16} className="mr-2" />
                   New target
                 </Button>
@@ -173,7 +173,7 @@ export function ProjectLayout({
                 toggleModalOpen={toggleModalOpen}
               />
             </div>
-          </div>
+          </SecondaryNavigation>
           <div className="container min-h-[var(--content-height)] pb-7">
             <div className={className}>{children}</div>
           </div>

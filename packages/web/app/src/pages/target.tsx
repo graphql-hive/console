@@ -50,7 +50,7 @@ function SchemaBlock({ schema }: { schema: CompositeSchema }) {
           <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
             {schema.service ?? 'SDL'}
           </div>
-          {schema.url ? <div className="text-xs text-gray-500">{schema.url}</div> : null}
+          {schema.url ? <div className="text-neutral-10 text-xs">{schema.url}</div> : null}
         </div>
       </Accordion.Header>
       <Accordion.Content>
@@ -237,7 +237,7 @@ function SchemaView(props: {
                         >
                           <div>
                             <div>{schema.service}</div>
-                            <div className="text-muted-foreground text-xs">{schema.url}</div>
+                            <div className="text-neutral-10 text-xs">{schema.url}</div>
                           </div>
                         </CommandItem>
                       ))}

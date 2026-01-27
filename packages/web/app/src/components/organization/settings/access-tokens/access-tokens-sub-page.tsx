@@ -64,7 +64,7 @@ export function AccessTokensSubPage(props: AccessTokensSubPageProps): React.Reac
             <CardDescription>
               <DocsLink
                 href="/management/access-tokens"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-gray-300"
               >
                 Learn more about Access Tokens
               </DocsLink>

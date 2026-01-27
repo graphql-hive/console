@@ -1,6 +1,7 @@
+import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 
 const OrganizationSelector_OrganizationConnectionFragment = graphql(`
   fragment OrganizationSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -27,18 +28,18 @@ export function OrganizationSelector(props: {
   );
 
   if (!organizations) {
-    return <div className="h-5 w-48 animate-pulse rounded-full bg-gray-800" />;
+    return <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />;
   }
 
   if (props.isOIDCUser) {
     return (
-      <Link
-        to="/$organizationSlug"
-        params={{ organizationSlug: props.currentOrganizationSlug }}
-        className="max-w-[200px] shrink-0 truncate font-medium"
-      >
-        {props.currentOrganizationSlug}
-      </Link>
+      <PrimaryNavigationLink
+        linkProps={{
+          to: '/$organizationSlug',
+          params: { organizationSlug: props.currentOrganizationSlug },
+        }}
+        linkText={props.currentOrganizationSlug}
+      />
     );
   }
 

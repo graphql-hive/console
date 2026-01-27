@@ -124,8 +124,8 @@ const Navigation = (
         <div
           key={edge.node.id}
           className={cn(
-            'flex flex-col rounded-md p-2.5 hover:bg-gray-800/40',
-            edge.node.id === props.schemaCheckId ? 'bg-gray-800/40' : null,
+            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
+            edge.node.id === props.schemaCheckId ? 'bg-neutral-5/40' : null,
           )}
         >
           <RouterLink
@@ -143,7 +143,7 @@ const Navigation = (
               {edge.node.meta?.commit ?? edge.node.id}
             </h3>
             {edge.node.meta?.author ? (
-              <div className="truncate text-xs font-medium text-gray-500">
+              <div className="text-neutral-10 truncate text-xs font-medium">
                 <span className="overflow-hidden truncate">{edge.node.meta.author}</span>
               </div>
             ) : null}
@@ -169,7 +169,7 @@ const Navigation = (
           </RouterLink>
           {edge.node.githubRepository && edge.node.meta ? (
             <a
-              className="-ml-px text-xs font-medium text-gray-500 hover:text-gray-400"
+              className="text-neutral-10 -ml-px text-xs font-medium hover:text-gray-400"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
@@ -314,7 +314,7 @@ function ChecksPageContent(props: {
             targetSlug={props.targetSlug}
           >
             {hasFilteredSchemaChecks ? (
-              <div className="flex w-[300px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 p-2.5">
+              <div className="border-neutral-5/50 flex w-[300px] grow flex-col gap-2.5 overflow-y-auto rounded-md border p-2.5">
                 {paginationVariables.map((cursor, index) => (
                   <Navigation
                     organizationSlug={props.organizationSlug}

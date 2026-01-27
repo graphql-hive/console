@@ -79,11 +79,11 @@ function RequestsStats({
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Requests</CardTitle>
-        <GlobeIcon className="text-muted-foreground size-4" />
+        <GlobeIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        <p className="text-muted-foreground text-xs">Total requests served</p>
+        <p className="text-neutral-10 text-xs">Total requests served</p>
       </CardContent>
     </Card>
   );
@@ -102,13 +102,11 @@ function UniqueOperationsStats({
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Operations</CardTitle>
-        <BookIcon className="text-muted-foreground size-4" />
+        <BookIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        <p className="text-muted-foreground text-xs">
-          Distinct GraphQL operations in {dateRangeText}
-        </p>
+        <p className="text-neutral-10 text-xs">Distinct GraphQL operations in {dateRangeText}</p>
       </CardContent>
     </Card>
   );
@@ -130,11 +128,11 @@ function OperationRelativeFrequency({
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Relative Request Frequency</CardTitle>
-        <PercentIcon className="text-muted-foreground size-4" />
+        <PercentIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{rate}</div>
-        <p className="text-muted-foreground text-xs">The impact on the overall API traffic</p>
+        <p className="text-neutral-10 text-xs">The impact on the overall API traffic</p>
       </CardContent>
     </Card>
   );
@@ -155,11 +153,11 @@ function PercentileStats({
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">p{percentile}</CardTitle>
-        <GaugeIcon className="text-muted-foreground size-4" />
+        <GaugeIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{formatted}</div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-neutral-10 text-xs">
           Latency p{percentile} in {dateRangeText}
         </p>
       </CardContent>
@@ -188,11 +186,11 @@ function RPM({
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-        <ActivityIcon className="text-muted-foreground size-4" />
+        <ActivityIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{throughput}</div>
-        <p className="text-muted-foreground text-xs">Throughput in {dateRangeText}</p>
+        <p className="text-neutral-10 text-xs">Throughput in {dateRangeText}</p>
       </CardContent>
     </Card>
   );
@@ -218,11 +216,11 @@ function SuccessRateStats({
         <CardTitle className="text-sm font-medium text-emerald-500 dark:text-emerald-500">
           Success rate
         </CardTitle>
-        <SmileIcon className="text-muted-foreground size-4" />
+        <SmileIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{rate}</div>
-        <p className="text-muted-foreground text-xs">Successful requests in {dateRangeText}</p>
+        <p className="text-neutral-10 text-xs">Successful requests in {dateRangeText}</p>
       </CardContent>
     </Card>
   );
@@ -245,11 +243,11 @@ function FailureRateStats({
         <CardTitle className="text-sm font-medium text-red-500 dark:text-red-500">
           Failure rate
         </CardTitle>
-        <FrownIcon className="text-muted-foreground size-4" />
+        <FrownIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{rate}</div>
-        <p className="text-muted-foreground text-xs">Failed requests in {dateRangeText}</p>
+        <p className="text-neutral-10 text-xs">Failed requests in {dateRangeText}</p>
       </CardContent>
     </Card>
   );
@@ -295,7 +293,7 @@ function OverTimeStats({
   }, [failuresOverTime]);
 
   return (
-    <div className="rounded-md border border-gray-800 bg-gray-900/50 p-5">
+    <div className="border-neutral-5 rounded-md border bg-gray-900/50 p-5">
       <Section.Title>Operations over time</Section.Title>
       <Section.Subtitle>Timeline of GraphQL requests and failures</Section.Subtitle>
       <AutoSizer disableHeight>
@@ -593,7 +591,7 @@ function ClientsStats(props: {
   );
 
   return (
-    <div className="w-full rounded-md border border-gray-800 bg-gray-900/50 p-5">
+    <div className="border-neutral-5 w-full rounded-md border bg-gray-900/50 p-5">
       <Section.Title>Clients</Section.Title>
       <Section.Subtitle>Top 5 - GraphQL API consumers</Section.Subtitle>
       <AutoSizer disableHeight className="mt-5 flex w-full flex-row gap-x-4">
@@ -865,7 +863,7 @@ function LatencyOverTimeStats({
   ];
 
   return (
-    <div className="rounded-md border border-gray-800 bg-gray-900/50 p-5">
+    <div className="border-neutral-5 rounded-md border bg-gray-900/50 p-5">
       <Section.Title>Latency over time</Section.Title>
       <Section.Subtitle>Timeline of latency of GraphQL requests</Section.Subtitle>
       <AutoSizer disableHeight>
@@ -966,7 +964,7 @@ function RpmOverTimeStats({
   }, [requests, windowInM]);
 
   return (
-    <div className="rounded-md border border-gray-800 bg-gray-900/50 p-5">
+    <div className="border-neutral-5 rounded-md border bg-gray-900/50 p-5">
       <Section.Title>RPM over time</Section.Title>
       <Section.Subtitle>Requests per minute</Section.Subtitle>
       <AutoSizer disableHeight>

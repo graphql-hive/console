@@ -155,7 +155,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      <h2 className="mb-3 font-bold text-gray-900 dark:text-white">{props.title}</h2>
+      <h2 className="dark:text-neutral-12 mb-3 font-bold text-gray-900">{props.title}</h2>
       <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -228,12 +228,14 @@ function ChangeItem(
             <div
               className={clsx(
                 'text-left',
-                (change.approval && 'text-orange-500') ||
+                (change.approval && 'text-accent') ||
                   (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
               <div>
-                <span className="text-gray-600 dark:text-white">{labelize(change.message)}</span>
+                <span className="dark:text-neutral-12 text-gray-600">
+                  {labelize(change.message)}
+                </span>
                 {change.isSafeBasedOnUsage && (
                   <span className="cursor-pointer text-yellow-500">
                     {' '}
@@ -243,7 +245,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="inline-flex items-center space-x-1 rounded-sm bg-gray-800 px-2 py-1 align-middle font-bold">
+                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <PulseIcon className="h-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -297,10 +299,10 @@ function ChangeItem(
           )}
           {'usageStatistics' in change && change.usageStatistics && metadata ? (
             <div>
-              <h4 className="mb-1 text-sm font-medium text-white">
+              <h4 className="text-neutral-12 mb-1 text-sm font-medium">
                 Affected Operations (based on usage)
               </h4>
-              <div className="mb-2 flex justify-between text-sm text-gray-500">
+              <div className="text-neutral-10 mb-2 flex justify-between text-sm">
                 <span>
                   Top 10 operations and clients affected by this change based on usage data.
                 </span>
@@ -319,7 +321,7 @@ function ChangeItem(
                         ) : (
                           <Link
                             key={index}
-                            className="text-orange-500 hover:text-orange-500"
+                            className="text-accent hover:text-accent"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                             params={{
                               organizationSlug: props.organizationSlug,
@@ -358,7 +360,7 @@ function ChangeItem(
                         <TableRow key={hash}>
                           <TableCell className="font-medium">
                             <Popover>
-                              <PopoverTrigger className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-4">
+                              <PopoverTrigger className="text-accent hover:text-accent hover:underline hover:underline-offset-4">
                                 {hash.substring(0, 4)}_{name}
                               </PopoverTrigger>
                               <PopoverContent side="right">
@@ -368,7 +370,7 @@ function ChangeItem(
                                     target.target ? (
                                       <p key={i}>
                                         <Link
-                                          className="text-orange-500 hover:text-orange-500"
+                                          className="text-accent hover:text-accent"
                                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                                           params={{
                                             organizationSlug: props.organizationSlug,
@@ -381,7 +383,7 @@ function ChangeItem(
                                         >
                                           {target.slug}
                                         </Link>{' '}
-                                        <span className="text-white">target</span>
+                                        <span className="text-neutral-12">target</span>
                                       </p>
                                     ) : null,
                                   )}
@@ -421,8 +423,10 @@ function ChangeItem(
               {'affectedAppDeployments' in change &&
               change.affectedAppDeployments?.edges?.length ? (
                 <div className="mt-6">
-                  <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
-                  <p className="mb-2 text-sm text-gray-500">
+                  <h4 className="text-neutral-12 mb-1 text-sm font-medium">
+                    Affected App Deployments
+                  </h4>
+                  <p className="text-neutral-10 mb-2 text-sm">
                     Top 5 active app deployments that have operations using this schema coordinate.
                   </p>
                   <Table>
@@ -447,7 +451,7 @@ function ChangeItem(
                                 appVersion: deployment.version,
                               }}
                               search={{ coordinates: change.path?.join('.') }}
-                              className="text-orange-500 hover:text-orange-500 hover:underline"
+                              className="text-accent hover:text-accent hover:underline"
                             >
                               {deployment.name}
                             </Link>
@@ -456,7 +460,7 @@ function ChangeItem(
                           <TableCell className="text-right">
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="link" className="h-auto p-0 text-orange-500">
+                                <Button variant="link" className="text-accent h-auto p-0">
                                   {deployment.totalAffectedOperations}{' '}
                                   {deployment.totalAffectedOperations === 1
                                     ? 'operation'
@@ -465,7 +469,9 @@ function ChangeItem(
                               </PopoverTrigger>
                               <PopoverContent side="left" className="w-80">
                                 <div className="space-y-2">
-                                  <h5 className="font-medium text-white">Affected Operations</h5>
+                                  <h5 className="text-neutral-12 font-medium">
+                                    Affected Operations
+                                  </h5>
                                   <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
                                     {deployment.affectedOperations.edges.map(({ node: op }) => (
                                       <li key={op.hash} className="text-gray-300">
@@ -483,7 +489,7 @@ function ChangeItem(
                                       appVersion: deployment.version,
                                     }}
                                     search={{ coordinates: change.path?.join('.') }}
-                                    className="block pt-2 text-sm text-orange-500 hover:underline"
+                                    className="text-accent block pt-2 text-sm hover:underline"
                                   >
                                     Show all ({deployment.totalAffectedOperations}) affected
                                     operations
@@ -507,7 +513,7 @@ function ChangeItem(
                         schemaCheckId: props.schemaCheckId,
                       }}
                       search={{ coordinate: change.path?.join('.') }}
-                      className="mt-2 block text-sm text-orange-500 hover:underline"
+                      className="text-accent mt-2 block text-sm hover:underline"
                     >
                       View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                     </Link>
@@ -517,8 +523,8 @@ function ChangeItem(
             </div>
           ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.edges?.length ? (
             <div>
-              <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
-              <p className="mb-2 text-sm text-gray-500">
+              <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
+              <p className="text-neutral-10 mb-2 text-sm">
                 Top 5 active app deployments that have operations using this schema coordinate.
               </p>
               <Table>
@@ -543,7 +549,7 @@ function ChangeItem(
                             appVersion: deployment.version,
                           }}
                           search={{ coordinates: change.path?.join('.') }}
-                          className="text-orange-500 hover:text-orange-500 hover:underline"
+                          className="text-accent hover:text-accent hover:underline"
                         >
                           {deployment.name}
                         </Link>
@@ -552,7 +558,7 @@ function ChangeItem(
                       <TableCell className="text-right">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="link" className="h-auto p-0 text-orange-500">
+                            <Button variant="link" className="text-accent h-auto p-0">
                               {deployment.totalAffectedOperations}{' '}
                               {deployment.totalAffectedOperations === 1
                                 ? 'operation'
@@ -561,7 +567,7 @@ function ChangeItem(
                           </PopoverTrigger>
                           <PopoverContent side="left" className="w-80">
                             <div className="space-y-2">
-                              <h5 className="font-medium text-white">Affected Operations</h5>
+                              <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
                               <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
                                 {deployment.affectedOperations.edges.map(({ node: op }) => (
                                   <li key={op.hash} className="text-gray-300">
@@ -579,7 +585,7 @@ function ChangeItem(
                                   appVersion: deployment.version,
                                 }}
                                 search={{ coordinates: change.path?.join('.') }}
-                                className="block pt-2 text-sm text-orange-500 hover:underline"
+                                className="text-accent block pt-2 text-sm hover:underline"
                               >
                                 Show all ({deployment.totalAffectedOperations}) affected operations
                               </Link>
@@ -602,7 +608,7 @@ function ChangeItem(
                     schemaCheckId: props.schemaCheckId,
                   }}
                   search={{ coordinate: change.path?.join('.') }}
-                  className="mt-2 block text-sm text-orange-500 hover:underline"
+                  className="text-accent mt-2 block text-sm hover:underline"
                 >
                   View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                 </Link>
@@ -659,7 +665,7 @@ function SchemaChangeApproval(props: {
           approved by {approvalName} in this schema check on {approvalDate}.
         </>
       ) : (
-        <a href={schemaCheckPath} className="text-orange-500 hover:underline">
+        <a href={schemaCheckPath} className="text-accent hover:underline">
           approved by {approvalName} on {approvalDate}.
         </a>
       )}
@@ -747,11 +753,9 @@ export function NoGraphChanges() {
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
         <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
-        <h2 className="text-base font-medium text-white">No Graph Changes</h2>
+        <h2 className="text-neutral-12 text-base font-medium">No Graph Changes</h2>
       </div>
-      <p className="text-muted-foreground text-xs">
-        There are no changes in this graph for this graph.
-      </p>
+      <p className="text-neutral-10 text-xs">There are no changes in this graph for this graph.</p>
     </div>
   );
 }

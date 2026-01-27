@@ -143,7 +143,7 @@ function OperationView({
           </AlertDescription>
         </Alert>
       )}
-      <div className="mt-12 w-full rounded-md border border-gray-800 bg-gray-900/50 p-5">
+      <div className="border-neutral-5 mt-12 w-full rounded-md border bg-gray-900/50 p-5">
         <Section.Title>Operation body</Section.Title>
         {result.fetching ? (
           <div>Loading...</div>

@@ -172,7 +172,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="min-h-full gap-2.5 rounded-md border border-gray-800/50 bg-gray-900/50 p-2.5">
+      <div className="border-neutral-5/50 min-h-full gap-2.5 rounded-md border bg-gray-900/50 p-2.5">
         {pageVariables.map(({ after }, i) => (
           <ProposalsListPage
             key={after ?? i}
@@ -248,8 +248,8 @@ const ProposalsListPage = (props: {
           <div
             key={proposal.id}
             className={cn(
-              'flex w-full flex-col rounded-md p-2.5 hover:bg-gray-800/40',
-              props.selectedProposalId === proposal.id && 'bg-gray-800/40',
+              'hover:bg-neutral-5/40 flex w-full flex-col rounded-md p-2.5',
+              props.selectedProposalId === proposal.id && 'bg-neutral-5/40',
             )}
           >
             <Link
@@ -287,7 +287,7 @@ const ProposalsListPage = (props: {
                 </div>
                 {/* <div
                   className={cn(
-                    'hidden items-center justify-end gap-1 text-right text-gray-500 sm:flex',
+                    'hidden items-center justify-end gap-1 text-right text-neutral-10 sm:flex',
                   )}
                 >
                   <span>{proposal.commentsCount}</span>

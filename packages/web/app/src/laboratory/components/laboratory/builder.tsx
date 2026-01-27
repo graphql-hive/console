@@ -61,8 +61,8 @@ export const BuilderArgument = (props: {
     <Button
       key={props.field.name}
       variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
+      className={cn('text-neutral-10 p-1! w-full justify-start text-xs', {
+        'text-neutral-11-primary': isInQuery,
       })}
       size="sm"
     >
@@ -142,9 +142,9 @@ export const BuilderScalarField = (props: {
           <Button
             variant="ghost"
             className={cn(
-              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+              'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
               {
-                'text-foreground-primary': isInQuery,
+                'text-neutral-11-primary': isInQuery,
               },
             )}
             style={{
@@ -155,7 +155,7 @@ export const BuilderScalarField = (props: {
             <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
             <div className="group-hover:bg-accent dark:group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
             <ChevronDownIcon
-              className={cn('text-muted-foreground size-4 transition-all', {
+              className={cn('text-neutral-10 size-4 transition-all', {
                 '-rotate-90': !isOpen,
               })}
             />
@@ -185,9 +185,9 @@ export const BuilderScalarField = (props: {
                     <Button
                       variant="ghost"
                       className={cn(
-                        'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+                        'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                         {
-                          'text-foreground-primary': hasArgs,
+                          'text-neutral-11-primary': hasArgs,
                         },
                       )}
                       style={{
@@ -196,7 +196,7 @@ export const BuilderScalarField = (props: {
                       size="sm"
                     >
                       <ChevronDownIcon
-                        className={cn('text-muted-foreground size-4 transition-all', {
+                        className={cn('text-neutral-10 size-4 transition-all', {
                           '-rotate-90': !isOpen,
                         })}
                       />
@@ -229,8 +229,8 @@ export const BuilderScalarField = (props: {
     <Button
       key={props.field.name}
       variant="ghost"
-      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
-        'text-foreground-primary': isInQuery,
+      className={cn('text-neutral-10 p-1! w-full justify-start text-xs', {
+        'text-neutral-11-primary': isInQuery,
       })}
       size="sm"
     >
@@ -320,9 +320,9 @@ export const BuilderObjectField = (props: {
         <Button
           variant="ghost"
           className={cn(
-            'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+            'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
             {
-              'text-foreground-primary': isInQuery,
+              'text-neutral-11-primary': isInQuery,
             },
           )}
           style={{
@@ -333,7 +333,7 @@ export const BuilderObjectField = (props: {
           <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
           <div className="group-hover:bg-accent dark:group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
           <ChevronDownIcon
-            className={cn('text-muted-foreground size-4 transition-all', {
+            className={cn('text-neutral-10 size-4 transition-all', {
               '-rotate-90': !isOpen,
             })}
           />
@@ -363,9 +363,9 @@ export const BuilderObjectField = (props: {
                   <Button
                     variant="ghost"
                     className={cn(
-                      'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+                      'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                       {
-                        'text-foreground-primary': hasArgs,
+                        'text-neutral-11-primary': hasArgs,
                       },
                     )}
                     style={{
@@ -374,7 +374,7 @@ export const BuilderObjectField = (props: {
                     size="sm"
                   >
                     <ChevronDownIcon
-                      className={cn('text-muted-foreground size-4 transition-all', {
+                      className={cn('text-neutral-10 size-4 transition-all', {
                         '-rotate-90': !isOpen,
                       })}
                     />
@@ -508,7 +508,7 @@ export const Builder = (props: {
                 className="p-1! size-6 rounded-sm"
                 disabled={openPaths.length === 0}
               >
-                <CopyMinusIcon className="text-muted-foreground size-4" />
+                <CopyMinusIcon className="text-neutral-10 size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Collapse all</TooltipContent>
@@ -596,7 +596,7 @@ export const Builder = (props: {
           <Empty className="px-0! h-96 w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <FolderIcon className="text-muted-foreground size-6" />
+                <FolderIcon className="text-neutral-10 size-6" />
               </EmptyMedia>
               <EmptyTitle className="text-base">No endpoint selected</EmptyTitle>
               <EmptyDescription className="text-xs">

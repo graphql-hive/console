@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tool
 export function ResourceDetails(props: { id: string; label: string }): ReactElement {
   return (
     <div className="flex items-center">
-      <div className="border-input text-muted-foreground h-10 whitespace-nowrap rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+      <div className="border-neutral-5 text-neutral-10 h-10 whitespace-nowrap rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
         {props.label}
       </div>
       <InputCopy value={props.id} className="rounded-l-none" />

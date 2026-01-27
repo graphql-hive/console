@@ -468,7 +468,7 @@ export function Proposal(props: {
               <Fragment key={cursor}>
                 {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
                 {withPreview === true && node.lineText && (
-                  <code className="mb-3 block w-full bg-gray-900 p-3 pl-6 text-white">
+                  <code className="text-neutral-12 mb-3 block w-full bg-gray-900 p-3 pl-6">
                     {node.lineText}
                   </code>
                 )}

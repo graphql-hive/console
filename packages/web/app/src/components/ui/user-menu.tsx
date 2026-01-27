@@ -135,7 +135,7 @@ export function UserMenu(props: {
               <DropdownMenuLabel className="flex items-center justify-between">
                 <div className="flex flex-col space-y-1">
                   <div className="truncate text-sm font-medium leading-none">{me?.displayName}</div>
-                  <div className="text-muted-foreground truncate text-xs font-normal leading-none">
+                  <div className="text-neutral-10 truncate text-xs font-normal leading-none">
                     {me?.email}
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export function LeaveOrganizationModalContent(props: {
             Are you sure you want to leave this organization?
             <br />
             You will lose access to{' '}
-            <span className="font-semibold text-white">{props.organizationSlug}</span>.
+            <span className="text-neutral-12 font-semibold">{props.organizationSlug}</span>.
           </DialogDescription>
           <DialogDescription className="font-bold">This action is irreversible!</DialogDescription>
         </DialogHeader>

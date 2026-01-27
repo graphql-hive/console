@@ -35,7 +35,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
         <MinusCircledIcon
-          className={clsx(active ? 'text-white' : 'text-gray-600', 'hover:text-white')}
+          className={clsx(active ? 'text-neutral-12' : 'text-gray-600', 'hover:text-neutral-12')}
         />
       ),
     });
@@ -51,7 +51,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
           }
         }}
         type="single"
-        className="bg-gray-900/50 text-gray-500"
+        className="text-neutral-10 bg-gray-900/50"
       >
         {options.map(
           level =>
@@ -61,8 +61,8 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
                 value={level.value}
                 title={level.label}
                 className={clsx(
-                  'hover:text-white',
-                  config.severity === level.value && 'bg-gray-800 text-white',
+                  'hover:text-neutral-12',
+                  config.severity === level.value && 'bg-neutral-5 text-neutral-12',
                 )}
               >
                 <Tooltip content={level.label}>

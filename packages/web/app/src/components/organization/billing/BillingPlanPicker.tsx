@@ -53,7 +53,7 @@ const planCollection: {
           href="https://the-guild.dev"
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-orange-500 transition-colors hover:underline"
+          className="text-accent font-medium transition-colors hover:underline"
         >
           The Guild
         </a>
@@ -84,16 +84,16 @@ function Plan(plan: {
           ) : (
             <>
               ${plan.price}
-              <span className="text-sm text-gray-500">/mo</span>
+              <span className="text-neutral-10 text-sm">/mo</span>
             </>
           )}
         </div>
-        <div className="text-sm text-gray-500">{plan.description}</div>
+        <div className="text-neutral-10 text-sm">{plan.description}</div>
         <div className="mt-6 flex flex-col gap-2">
           {plan.features.map((feature, i) => (
             <div key={i}>
               <Section.Subtitle className="flex items-center gap-1">
-                <CheckIcon className="h-5 w-auto text-gray-500" />
+                <CheckIcon className="text-neutral-10 h-5 w-auto" />
                 {feature}
               </Section.Subtitle>
             </div>
@@ -102,7 +102,7 @@ function Plan(plan: {
       </div>
       {plan.footer && (
         <div>
-          <div className="mx-auto my-4 w-9/12 border-b border-gray-800" />
+          <div className="border-neutral-5 mx-auto my-4 w-9/12 border-b" />
           <div className="text-xs text-gray-300">{plan.footer}</div>
         </div>
       )}

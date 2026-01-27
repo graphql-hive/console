@@ -165,7 +165,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                           You've been invited to become a member of{' '}
                           <span className="font-semibold">{invitation.name}</span>.
                         </p>
-                        <p className="text-muted-foreground mt-2">
+                        <p className="text-neutral-10 mt-2">
                           By accepting the invitation, you will be able to collaborate with other
                           members of this organization.
                         </p>

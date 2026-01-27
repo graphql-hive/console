@@ -282,7 +282,7 @@ const OrganizationSettingsContent = (props: {
                     </CardDescription>
                     <CardDescription>
                       <DocsLink
-                        className="text-muted-foreground text-sm"
+                        className="text-neutral-10 text-sm"
                         href="/management/organizations#change-slug-of-organization"
                       >
                         You can read more about it in the documentation
@@ -298,7 +298,7 @@ const OrganizationSettingsContent = (props: {
                   <FormItem>
                     <FormControl>
                       <div className="flex items-center">
-                        <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                        <div className="border-neutral-5 text-neutral-10 h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
                           {env.appBaseUrl.replace(/https?:\/\//i, '')}/
                         </div>
                         <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
@@ -328,7 +328,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/sso-oidc-provider"
                   >
                     Instructions for connecting your provider.
@@ -337,7 +337,7 @@ const OrganizationSettingsContent = (props: {
               </>
             }
           />
-          <div className="text-gray-500">
+          <div className="text-neutral-10">
             <OIDCIntegrationSection organization={organization} />
           </div>
         </SubPageLayout>
@@ -354,7 +354,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#slack"
                   >
                     Learn more.
@@ -376,7 +376,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>Link your Hive organization with GitHub.</CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#github"
                   >
                     Learn more.
@@ -401,7 +401,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#transfer-ownership"
                   >
                     Learn more about the process
@@ -433,7 +433,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#delete-an-organization"
                   >
                     <span>
@@ -466,7 +466,7 @@ const OrganizationSettingsContent = (props: {
                   View a history of changes made to the organization settings.
                 </CardDescription>
                 <CardDescription>
-                  <DocsLink className="text-muted-foreground text-sm" href="/management/audit-logs">
+                  <DocsLink className="text-neutral-10 text-sm" href="/management/audit-logs">
                     Learn more.
                   </DocsLink>
                 </CardDescription>
@@ -550,7 +550,7 @@ function OrganizationPolicySettings(props: {
             <br />
             At the project level, policies can be overridden or extended.
             <br />
-            <DocsLink className="text-muted-foreground" href="/features/schema-policy">
+            <DocsLink className="text-neutral-10" href="/features/schema-policy">
               Learn more
             </DocsLink>
           </CardDescription>
@@ -967,7 +967,7 @@ function AuditLogsOrganizationModal(props: {
                 )}
               />
               <div className="mt-2">
-                <ArrowRightIcon className="text-muted-foreground size-6" />
+                <ArrowRightIcon className="text-neutral-10 size-6" />
               </div>
               <FormField
                 control={form.control}

@@ -24,7 +24,7 @@ function THead({ children, ...props }: ComponentProps<'thead'>): ReactElement {
 function TFoot({ children, ...props }: ComponentProps<'tfoot'>): ReactElement {
   return (
     <tfoot {...props}>
-      <tr className="text-gray-500">{children}</tr>
+      <tr className="text-neutral-10">{children}</tr>
     </tfoot>
   );
 }

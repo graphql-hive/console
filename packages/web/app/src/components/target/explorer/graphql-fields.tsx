@@ -73,7 +73,7 @@ export function GraphQLFields(props: {
                             This field is used but the presented arguments are not.
                           </TooltipContent>
                           <TooltipTrigger>
-                            <span className="mr-1 text-sm text-orange-500">*</span>
+                            <span className="text-accent mr-1 text-sm">*</span>
                           </TooltipTrigger>
                         </Tooltip>
                       )}
@@ -83,7 +83,7 @@ export function GraphQLFields(props: {
                           This field is not deprecated but the presented arguments are.
                         </TooltipContent>
                         <TooltipTrigger>
-                          <span className="mr-1 text-sm text-orange-500">*</span>
+                          <span className="text-accent mr-1 text-sm">*</span>
                         </TooltipTrigger>
                       </Tooltip>
                     )}

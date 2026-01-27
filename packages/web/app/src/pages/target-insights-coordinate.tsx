@@ -195,13 +195,13 @@ function SchemaCoordinateView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total calls</CardTitle>
-                  <GlobeIcon className="text-muted-foreground size-4" />
+                  <GlobeIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {isLoading ? '-' : formatNumber(totalRequests)}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -209,7 +209,7 @@ function SchemaCoordinateView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-                  <ActivityIcon className="text-muted-foreground size-4" />
+                  <ActivityIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -223,7 +223,7 @@ function SchemaCoordinateView(props: {
                           ),
                         )}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     RPM in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -231,11 +231,11 @@ function SchemaCoordinateView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Operations</CardTitle>
-                  <BookIcon className="text-muted-foreground size-4" />
+                  <BookIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalOperations}</div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     GraphQL documents with selected coordinate
                   </p>
                 </CardContent>
@@ -243,11 +243,11 @@ function SchemaCoordinateView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Consumers</CardTitle>
-                  <TabletSmartphoneIcon className="text-muted-foreground size-4" />
+                  <TabletSmartphoneIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalClients}</div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     GraphQL clients in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -345,7 +345,7 @@ function SchemaCoordinateView(props: {
                         <div key={operation.id} className="flex items-center">
                           <p className="truncate text-sm font-medium">
                             <Link
-                              className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                              className="text-accent hover:text-accent hover:underline hover:underline-offset-2"
                               to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                               params={{
                                 organizationSlug: props.organizationSlug,
@@ -389,7 +389,7 @@ function SchemaCoordinateView(props: {
                         <div key={client.name} className="flex items-center">
                           <p className="truncate text-sm font-medium">
                             <Link
-                              className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                              className="text-accent hover:text-accent hover:underline hover:underline-offset-2"
                               to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                               params={{
                                 organizationSlug: props.organizationSlug,

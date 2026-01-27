@@ -96,8 +96,8 @@ function ListPage(props: {
         <div
           key={version.id}
           className={cn(
-            'flex flex-col rounded-md p-2.5 hover:bg-gray-800/40',
-            versionId === version.id && 'bg-gray-800/40',
+            'hover:bg-neutral-5/40 flex flex-col rounded-md p-2.5',
+            versionId === version.id && 'bg-neutral-5/40',
           )}
         >
           <Link
@@ -116,7 +116,7 @@ function ListPage(props: {
                 : `Deleted ${version.log.deletedService}`}
             </h3>
             {'author' in version.log ? (
-              <div className="truncate text-xs font-medium text-gray-500">
+              <div className="text-neutral-10 truncate text-xs font-medium">
                 <span className="overflow-hidden truncate">{version.log.author}</span>
               </div>
             ) : null}
@@ -140,7 +140,7 @@ function ListPage(props: {
           </Link>
           {version.githubMetadata ? (
             <a
-              className="-ml-px text-xs font-medium text-gray-500 hover:text-gray-400"
+              className="text-neutral-10 -ml-px text-xs font-medium hover:text-gray-400"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${version.githubMetadata.repository}/commit/${version.githubMetadata.commit}`}
@@ -249,7 +249,7 @@ function HistoryPageContent(props: {
             <Subtitle>Recently published schemas.</Subtitle>
           </div>
           <div className="flex flex-col gap-5">
-            <div className="flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border border-gray-800/50 bg-gray-900/50 p-2.5">
+            <div className="border-neutral-5/50 flex min-w-[420px] grow flex-col gap-2.5 overflow-y-auto rounded-md border bg-gray-900/50 p-2.5">
               {pageVariables.map((variables, i) => (
                 <ListPage
                   key={variables.after || 'initial'}

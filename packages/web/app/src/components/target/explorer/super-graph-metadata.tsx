@@ -31,7 +31,7 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
         </>
       }
     >
-      <MetadataIcon className="my-[5px] cursor-pointer text-white" />
+      <MetadataIcon className="text-neutral-12 my-[5px] cursor-pointer" />
     </Tooltip>
   );
 }
@@ -216,7 +216,7 @@ export function SupergraphMetadataList(props: {
           }
           contentProps={{ className: 'z-10' }}
         >
-          <span className="flex cursor-pointer items-center pl-1 text-xs font-bold text-white">
+          <span className="text-neutral-12 flex cursor-pointer items-center pl-1 text-xs font-bold">
             + {allItems.length - previewItems.length} more
           </span>
         </Tooltip>

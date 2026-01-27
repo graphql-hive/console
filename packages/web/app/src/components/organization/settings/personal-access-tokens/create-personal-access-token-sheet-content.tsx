@@ -293,7 +293,7 @@ export function CreatePersonalAccessTokenSheetContent(
                     'step-4-confirmation': () => (
                       <>
                         <Heading>Confirm and create Access Token</Heading>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-neutral-10 text-sm">
                           Please please review the selected permissions and resources to ensure they
                           align with your intended access needs.
                         </p>

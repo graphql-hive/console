@@ -236,7 +236,7 @@ function OperationsTable({
   return (
     <div
       className={clsx(
-        'overflow-x-scroll rounded-md border border-gray-800 bg-gray-900/50 p-5',
+        'border-neutral-5 overflow-x-scroll rounded-md border bg-gray-900/50 p-5',
         className,
       )}
     >

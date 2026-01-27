@@ -22,7 +22,7 @@ function Wrapper({
         'data-[side=right]:animate-slide-left-fade',
         'data-[side=bottom]:animate-slide-up-fade',
         'data-[side=left]:animate-slide-right-fade',
-        'rounded-lg bg-gray-800 p-4 text-xs font-normal text-white shadow-sm',
+        'bg-neutral-5 text-neutral-12 rounded-lg p-4 text-xs font-normal shadow-sm',
         contentProps.className,
       )}
     >

@@ -494,7 +494,7 @@ export function OrganizationInvitations(props: {
         />
       </SubPageLayoutHeader>
       {organization.invitations.edges.length > 0 ? (
-        <table className="w-full table-fixed divide-y-[1px] divide-gray-500/20">
+        <table className="divide-neutral-10/20 w-full table-fixed divide-y-[1px]">
           <thead>
             <tr>
               <th className="w-[100px] py-3 text-left text-sm font-semibold sm:w-auto">Email</th>
@@ -503,7 +503,7 @@ export function OrganizationInvitations(props: {
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
           </thead>
-          <tbody className="max-w-full divide-y-[1px] divide-gray-500/20">
+          <tbody className="divide-neutral-10/20 max-w-full divide-y-[1px]">
             {organization.invitations.edges.map(edge => (
               <Invitation
                 key={edge.node.id}
@@ -517,10 +517,10 @@ export function OrganizationInvitations(props: {
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="text-muted-foreground size-10" />
+            <MailQuestionIcon className="text-neutral-10 size-10" />
 
             <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="text-muted-foreground mb-4 mt-2 text-sm">
+            <p className="text-neutral-10 mb-4 mt-2 text-sm">
               Invitations to join this organization will appear here.
             </p>
           </div>

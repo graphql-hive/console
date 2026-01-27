@@ -7,7 +7,7 @@ const statusVariants = cva('inline-flex items-center text-sm font-semibold', {
   variants: {
     variant: {
       [SupportTicketStatus.Open]: 'text-yellow-400',
-      [SupportTicketStatus.Solved]: 'text-gray-500',
+      [SupportTicketStatus.Solved]: 'text-neutral-10',
     },
   },
   defaultVariants: {

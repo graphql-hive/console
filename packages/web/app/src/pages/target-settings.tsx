@@ -140,7 +140,7 @@ function RegistryAccessTokens(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#registry-access-tokens"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-gray-300"
               >
                 Learn more about Registry Access Tokens
               </DocsLink>
@@ -249,7 +249,7 @@ const ExtendBaseSchema = (props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#schema-extensions"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-gray-300"
               >
                 You can find more details and examples in the documentation
               </DocsLink>
@@ -706,7 +706,7 @@ const BreakingChanges = (props: {
               <CardDescription>
                 <DocsLink
                   href="/management/targets#dangerous-changes"
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-neutral-10 hover:text-gray-300"
                 >
                   Learn more
                 </DocsLink>
@@ -760,7 +760,7 @@ const BreakingChanges = (props: {
                 <CardDescription>
                   <DocsLink
                     href="/management/targets#conditional-breaking-changes"
-                    className="text-gray-500 hover:text-gray-300"
+                    className="text-neutral-10 hover:text-gray-300"
                   >
                     Learn more
                   </DocsLink>
@@ -941,7 +941,7 @@ const BreakingChanges = (props: {
                         disabled={isSubmitting}
                       />
                     ) : (
-                      <div className="text-gray-500">Select targets first</div>
+                      <div className="text-neutral-10">Select targets first</div>
                     )}
                   </div>
                   {touched.excludedClients && errors.excludedClients && (
@@ -1015,7 +1015,7 @@ const BreakingChanges = (props: {
             {touched.targetIds && errors.targetIds && (
               <div className="text-red-500">{errors.targetIds}</div>
             )}
-            <div className="mb-3 mt-5 space-y-2 rounded-sm border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
+            <div className="border-l-neutral-5 mb-3 mt-5 space-y-2 rounded-sm border-l-2 bg-gray-600/10 py-2 pl-5 text-gray-400">
               <div>
                 <div className="font-semibold">Example settings</div>
                 <div className="text-sm">Removal of a field is considered breaking if</div>
@@ -1137,7 +1137,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
                 target.
                 <br />
                 <DocsLink
-                  className="text-muted-foreground text-sm"
+                  className="text-neutral-10 text-sm"
                   href="/management/targets#change-slug-of-a-target"
                 >
                   You can read more about it in the documentation
@@ -1153,7 +1153,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
                 <FormItem>
                   <FormControl>
                     <div className="flex items-center">
-                      <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                      <div className="border-neutral-5 text-neutral-10 h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
                         {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
                         {props.projectSlug}/
                       </div>
@@ -1339,7 +1339,7 @@ function TargetDelete(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#delete-a-target"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-gray-300"
               >
                 <strong>This action is not reversible!</strong> You can find more information about
                 this process in the documentation

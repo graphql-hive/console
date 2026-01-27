@@ -351,7 +351,7 @@ export function ProposalEditor(props: {
             </TabsList>
             <div className="flex flex-row items-center justify-end">
               <Link
-                className="ml-2 cursor-pointer p-1 hover:text-orange-500"
+                className="hover:text-accent ml-2 cursor-pointer p-1"
                 title="Prettify schema"
                 onClick={e => {
                   e.preventDefault();
@@ -364,8 +364,8 @@ export function ProposalEditor(props: {
               </Link>
               <Link
                 className={cn(
-                  'ml-2 cursor-pointer p-1 hover:text-orange-500',
-                  showSettings && 'border-b-2 border-orange-500',
+                  'hover:text-accent ml-2 cursor-pointer p-1',
+                  showSettings && 'border-accent border-b-2',
                   projectType?.project.type === ProjectType.Single && 'hidden',
                 )}
                 title="Edit schema settings"

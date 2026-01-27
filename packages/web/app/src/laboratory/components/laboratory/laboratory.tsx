@@ -187,7 +187,7 @@ const LaboratoryContent = () => {
           <Empty className="px-0! w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <FileIcon className="text-muted-foreground size-6" />
+                <FileIcon className="text-neutral-10 size-6" />
               </EmptyMedia>
               <EmptyTitle>No operation selected</EmptyTitle>
               <EmptyDescription>
@@ -241,8 +241,8 @@ const LaboratoryContent = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActivePanel(activePanel === 'collections' ? null : 'collections')}
-                className={cn('text-muted-foreground hover:text-foreground', {
-                  'text-foreground': activePanel === 'collections',
+                className={cn('text-neutral-10 hover:text-neutral-11', {
+                  'text-neutral-11': activePanel === 'collections',
                 })}
               >
                 <FoldersIcon className="size-5" />
@@ -265,8 +265,8 @@ const LaboratoryContent = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
-                className={cn('text-muted-foreground hover:text-foreground', {
-                  'text-foreground': activePanel === 'history',
+                className={cn('text-neutral-10 hover:text-neutral-11', {
+                  'text-neutral-11': activePanel === 'history',
                 })}
               >
                 <HistoryIcon className="size-5" />
@@ -291,8 +291,8 @@ const LaboratoryContent = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
-                    className={cn('text-muted-foreground hover:text-foreground', {
-                      'text-foreground': activePanel === 'history',
+                    className={cn('text-neutral-10 hover:text-neutral-11', {
+                      'text-neutral-11': activePanel === 'history',
                     })}
                   >
                     <SettingsIcon className="size-5" />
@@ -561,7 +561,7 @@ export const Laboratory = (
 
   return (
     <div
-      className={cn('hive-laboratory bg-background size-full', {
+      className={cn('hive-laboratory bg-neutral-3 size-full', {
         'fixed inset-0 z-50': isFullScreen,
       })}
       ref={containerRef}

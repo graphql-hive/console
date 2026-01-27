@@ -172,7 +172,7 @@ function OperationsFilter({
           <div className="grow pl-1">
             {clientFilteredOperations && (
               <div className="text-right text-xs text-gray-600">
-                <span className="text-gray-500">selected</span> / all clients
+                <span className="text-neutral-10">selected</span> / all clients
               </div>
             )}
             <AutoSizer>
@@ -338,7 +338,7 @@ function OperationRow({
   const Totals = () => {
     if (hasClientOperation) {
       return (
-        <div className="flex shrink-0 text-right text-gray-500">
+        <div className="text-neutral-10 flex shrink-0 text-right">
           <span>{clientsRequests === '-' ? 0 : clientsRequests}</span>
           <span className="ml-1 truncate text-gray-600">/ {requests}</span>
         </div>
@@ -439,7 +439,7 @@ function ClientRow({
   const Totals = () => {
     if (props.clientOperationStats !== false) {
       return (
-        <div className="flex shrink-0 text-right text-gray-500">
+        <div className="text-neutral-10 flex shrink-0 text-right">
           <span>{clientOperation?.count ?? 0}</span>
           <span className="ml-1 truncate text-gray-600">/ {requests}</span>
         </div>
@@ -612,7 +612,7 @@ function ClientsFilter({
           <div className="grow pl-1">
             {operationStatsConnection && (
               <div className="text-right text-xs text-gray-600">
-                <span className="text-gray-500">selected</span> / all operations
+                <span className="text-neutral-10">selected</span> / all operations
               </div>
             )}
             <AutoSizer>

@@ -44,7 +44,7 @@ export const PermissionScopeItem = <
       data-cy={props.dataCy}
     >
       <div>
-        <div className="font-semibold text-white">{props.scope.name}</div>
+        <div className="text-neutral-12 font-semibold">{props.scope.name}</div>
         <div className="text-xs text-gray-400">{props.scope.description}</div>
       </div>
       <Select

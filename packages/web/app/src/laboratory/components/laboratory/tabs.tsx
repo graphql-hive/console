@@ -196,7 +196,7 @@ export const Tab = (props: {
       return <FlaskConicalIcon className="size-4 text-lime-400" />;
     }
 
-    return <FileIcon className="text-muted-foreground size-4" />;
+    return <FileIcon className="text-neutral-10 size-4" />;
   }, [props.item, isError]);
 
   return (
@@ -207,7 +207,7 @@ export const Tab = (props: {
           asHandle
           className={cn(
             'data-dragging:opacity-0 flex h-12 w-max items-stretch',
-            props.isOverlay && 'bg-background',
+            props.isOverlay && 'bg-neutral-3',
             props.isOverlay && !isActive && 'h-12',
           )}
         >
@@ -235,8 +235,8 @@ export const Tab = (props: {
           >
             <div
               className={cn(
-                'text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
-                props.activeTab?.id === props.item.id && 'border-primary bg-card text-foreground',
+                'text-neutral-10 hover:text-neutral-11 group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
+                props.activeTab?.id === props.item.id && 'border-primary bg-card text-neutral-11',
               )}
               onClick={() => {
                 props.setActiveTab(props.item);
@@ -255,7 +255,7 @@ export const Tab = (props: {
               {props.isOperationLoading(props.item.id) && <Spinner className="size-3" />}
               {props.item.readOnly && <LockIcon className="size-3 text-gray-400" />}
               <XIcon
-                className="text-muted-foreground size-3"
+                className="text-neutral-10 size-3"
                 onMouseDown={e => {
                   e.stopPropagation();
                 }}

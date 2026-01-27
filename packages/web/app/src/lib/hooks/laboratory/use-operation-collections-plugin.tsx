@@ -303,7 +303,7 @@ export function Content() {
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
       <AccordionHeader className="flex items-center justify-between" data-cy="collection-item">
         <AccordionTriggerPrimitive
-          className="group flex w-full items-center gap-x-3 rounded-sm p-2 text-left font-medium text-white hover:bg-gray-100/10"
+          className="text-neutral-12 group flex w-full items-center gap-x-3 rounded-sm p-2 text-left font-medium hover:bg-gray-100/10"
           data-cy="collection-item-trigger"
         >
           <FolderIcon className="size-4 group-data-[state=open]:hidden" />
@@ -366,9 +366,9 @@ export function Content() {
                 search={{ operation: node.id }}
                 data-cy={`operation-${node.name}`}
                 className={cn(
-                  'flex w-full items-center gap-x-3 rounded-sm p-2 font-normal text-white/50 hover:bg-gray-100/10 hover:text-white hover:no-underline',
+                  'text-neutral-12/50 hover:text-neutral-12 flex w-full items-center gap-x-3 rounded-sm p-2 font-normal hover:bg-gray-100/10 hover:no-underline',
                   node.id === queryParamsOperationId && [
-                    'bg-gray-100/10 text-white',
+                    'text-neutral-12 bg-gray-100/10',
                     currentOperation &&
                       node.id === currentOperation.id &&
                       !isSame &&
@@ -380,7 +380,7 @@ export function Content() {
                 {node.name}
               </Link>
               <DropdownMenu modal={false}>
-                <DropdownMenuTrigger className="graphiql-toolbar-button text-white opacity-0 transition-opacity [div:hover>&]:opacity-100">
+                <DropdownMenuTrigger className="graphiql-toolbar-button text-neutral-12 opacity-0 transition-opacity [div:hover>&]:opacity-100">
                   <DotsHorizontalIcon />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

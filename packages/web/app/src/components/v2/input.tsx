@@ -31,8 +31,8 @@ export const Input = forwardRef<
       <div
         ref={forwardedRef}
         className={clsx(
-          'relative flex items-center gap-4 rounded-sm border border-gray-700 bg-gray-800 text-sm font-medium focus-within:ring',
-          isInvalid ? 'text-red-500 caret-white ring-red-500' : 'text-white',
+          'bg-neutral-5 relative flex items-center gap-4 rounded-sm border border-gray-700 text-sm font-medium focus-within:ring',
+          isInvalid ? 'text-red-500 caret-white ring-red-500' : 'text-neutral-12',
           {
             large: 'h-[50px] px-4 py-[18px]',
             medium: 'px-4 py-2.5',
@@ -45,7 +45,7 @@ export const Input = forwardRef<
         {prefix}
 
         <input
-          className="w-full bg-transparent placeholder:text-gray-500 disabled:cursor-not-allowed"
+          className="placeholder:text-neutral-10 w-full bg-transparent disabled:cursor-not-allowed"
           placeholder={placeholder}
           type={type}
           style={{ fontWeight: 'inherit' }}

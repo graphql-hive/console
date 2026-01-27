@@ -145,7 +145,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                           (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
                         )}
                       >
-                        <div className="font-semibold text-white">{permission.title}</div>
+                        <div className="text-neutral-12 font-semibold">{permission.title}</div>
                         <div className="text-xs text-gray-400">{permission.description}</div>
                       </div>
                       {permission.isAssignableByViewer === false ? (

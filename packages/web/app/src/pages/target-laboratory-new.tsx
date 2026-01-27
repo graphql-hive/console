@@ -608,7 +608,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="h-4 w-px bg-gray-800" />
+              <div className="bg-neutral-5 h-4 w-px" />
               <Tabs
                 defaultValue={props.defaultLaboratoryTab}
                 onValueChange={value =>
@@ -621,7 +621,7 @@ function LaboratoryPageContent(props: {
                   </TabsTrigger>
                   <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                     Hive Laboratory
-                    <div className="size-2 rounded-full bg-orange-500" />
+                    <div className="bg-accent size-2 rounded-full" />
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -630,10 +630,7 @@ function LaboratoryPageContent(props: {
               Explore your GraphQL schema and run queries against your GraphQL API.
             </Subtitle>
             <p>
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/schema-registry/laboratory"
-              >
+              <DocsLink className="text-neutral-10 text-sm" href="/schema-registry/laboratory">
                 Learn more about the Laboratory
               </DocsLink>
             </p>
@@ -668,17 +665,17 @@ function LaboratoryPageContent(props: {
                 }}
                 value="mock"
                 type="single"
-                className="bg-gray-900/50 text-gray-500"
+                className="text-neutral-10 bg-gray-900/50"
               >
                 <ToggleGroupItem
                   key="mockApi"
                   value="mockApi"
                   title="Use Mock Schema"
                   className={clsx(
-                    'text-xs hover:text-white',
+                    'hover:text-neutral-12 text-xs',
                     !query.fetching &&
                       actualSelectedApiEndpoint === 'mockApi' &&
-                      'bg-gray-800 text-white',
+                      'bg-neutral-5 text-neutral-12',
                   )}
                   disabled={query.fetching}
                 >
@@ -689,10 +686,10 @@ function LaboratoryPageContent(props: {
                   value="linkedApi"
                   title="Use API endpoint"
                   className={cn(
-                    'text-xs hover:text-white',
+                    'hover:text-neutral-12 text-xs',
                     !query.fetching &&
                       actualSelectedApiEndpoint === 'linkedApi' &&
-                      'bg-gray-800 text-white',
+                      'bg-neutral-5 text-neutral-12',
                   )}
                   disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
                 >

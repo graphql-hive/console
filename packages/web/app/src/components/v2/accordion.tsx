@@ -74,7 +74,7 @@ function Header({
           triggerClassName,
         )}
       >
-        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{children}</span>
+        <span className="text-neutral-11 text-sm font-medium">{children}</span>
         <ChevronDownIcon
           className={clsx(
             'ml-2 size-5 shrink-0 text-gray-700 ease-in-out dark:text-gray-400',

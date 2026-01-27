@@ -294,7 +294,7 @@ const StepperDescription = ({
   const Comp = asChild ? Slot : 'p';
 
   return (
-    <Comp className={cn('text-muted-foreground text-sm', className)} {...props}>
+    <Comp className={cn('text-neutral-10 text-sm', className)} {...props}>
       {children}
     </Comp>
   );
@@ -362,7 +362,7 @@ const CircleStepIndicator = ({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-muted-foreground"
+          className="text-neutral-10"
         />
         <circle
           cx={size / 2}

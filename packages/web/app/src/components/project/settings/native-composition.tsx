@@ -43,7 +43,7 @@ const IncrementalNativeCompositionSwitch = (props: {
   return (
     <div
       className={cn(
-        'flex flex-row items-center gap-x-10 rounded-sm border border-gray-800 bg-gray-800/50 p-4',
+        'border-neutral-5 bg-neutral-5/50 flex flex-row items-center gap-x-10 rounded-sm border p-4',
         mutation.fetching && 'animate-pulse',
       )}
     >
@@ -207,7 +207,7 @@ export function NativeCompositionSettings(props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-neutral-10 text-sm">
           Recommended for most users. Use native GraphQL Federation v2 composition for your project.
         </p>
       </div>
@@ -220,7 +220,7 @@ export function NativeCompositionSettings(props: {
               <div className="font-semibold">Incremental migration</div>
               <Badge variant="outline">experimental</Badge>
             </div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-neutral-10 text-sm">
               Your project is using the experimental incremental migration feature. <br />
               Migrate targets one by one to the native schema composition.
             </div>
@@ -266,7 +266,7 @@ export function NativeCompositionSettings(props: {
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Unknown ? (
-              <FlaskConicalIcon className="size-10 text-orange-500" />
+              <FlaskConicalIcon className="text-accent size-10" />
             ) : null}
           </div>
           <div>
@@ -284,13 +284,13 @@ export function NativeCompositionSettings(props: {
                 ? 'Unclear whether your project is compatible'
                 : null}
             </div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-neutral-10 text-sm">
               {projectQuery.data.project.nativeFederationCompatibility.status ===
               NativeFederationCompatibilityStatusType.Compatible ? (
                 <>
                   Subgraphs of this project are composed and validated correctly by our{' '}
                   <a
-                    className="text-muted-foreground font-semibold underline-offset-4 hover:underline"
+                    className="text-neutral-10 font-semibold underline-offset-4 hover:underline"
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -303,7 +303,7 @@ export function NativeCompositionSettings(props: {
                 <>
                   Our{' '}
                   <a
-                    className="text-muted-foreground font-semibold underline-offset-4 hover:underline"
+                    className="text-neutral-10 font-semibold underline-offset-4 hover:underline"
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -325,7 +325,7 @@ export function NativeCompositionSettings(props: {
                   Your project appears to lack any subgraphs at the moment, making it impossible for
                   us to assess compatibility with our{' '}
                   <a
-                    className="text-muted-foreground font-semibold underline-offset-4 hover:underline"
+                    className="text-neutral-10 font-semibold underline-offset-4 hover:underline"
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -355,7 +355,7 @@ export function NativeCompositionSettings(props: {
           )}
         </Button>
         <div>
-          <Button variant="link" className="text-orange-500" asChild>
+          <Button variant="link" className="text-accent" asChild>
             <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
               Learn more about risks and compatibility with other composition libraries
             </a>

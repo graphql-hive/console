@@ -178,7 +178,7 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
       <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
         {historyItem?.preflightLogs?.map((log, i) => (
           <div className="gap-2 font-mono" key={i}>
-            <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
+            <span className="text-neutral-10 text-xs">{log.createdAt}</span>{' '}
             <span
               className={cn('text-xs font-medium', {
                 'text-blue-400': log.level === 'info',
@@ -640,7 +640,7 @@ export const Query = (props: {
             size="sm"
             variant="default"
             pressed={preflight?.enabled}
-            className="bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
+            className="bg-neutral-3 hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-neutral-5 dark:hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
             onClick={() => {
               setPreflight({
                 ...(preflight ?? { script: '', enabled: true }),
@@ -803,7 +803,7 @@ export const Operation = (props: {
             <Empty className="size-full">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <HistoryIcon className="text-muted-foreground size-6" />
+                  <HistoryIcon className="text-neutral-10 size-6" />
                 </EmptyMedia>
                 <EmptyTitle>No history yet</EmptyTitle>
                 <EmptyDescription>

@@ -109,7 +109,7 @@ function GitHubIntegration(props: {
         }
       />
       <div>
-        <div className="text-muted-foreground text-sm">
+        <div className="text-neutral-10 text-sm">
           <div>Here's how it will look like in your CI pipeline.</div>
           <div className="my-8 flex w-fit flex-col gap-y-1">
             <div className="flex items-center gap-x-2 pl-1">
@@ -121,7 +121,7 @@ function GitHubIntegration(props: {
               <div className="font-semibold text-[#adbac7]">
                 {props.organizationSlug} &gt; schema:check &gt; staging
               </div>
-              <div className="text-gray-500">— No changes</div>
+              <div className="text-neutral-10">— No changes</div>
             </div>
             <ArrowBigDownDashIcon className="size-6 self-center" />
             <div className="flex items-center gap-x-2 pl-1">
@@ -133,7 +133,7 @@ function GitHubIntegration(props: {
               <div className="font-semibold text-[#adbac7]">
                 {props.organizationSlug} &gt; schema:check &gt; {props.projectSlug} &gt; staging
               </div>
-              <div className="text-gray-500">— No changes</div>
+              <div className="text-neutral-10">— No changes</div>
             </div>
           </div>
         </div>
@@ -265,7 +265,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
                 project.
                 <br />
                 <DocsLink
-                  className="text-muted-foreground text-sm"
+                  className="text-neutral-10 text-sm"
                   href="/management/projects#change-slug-of-a-project"
                 >
                   You can read more about it in the documentation
@@ -281,7 +281,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
                 <FormItem>
                   <FormControl>
                     <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
-                      <div className="border-input text-muted-foreground h-10 overflow-auto text-nowrap rounded-md border bg-gray-900 px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
+                      <div className="border-neutral-5 text-neutral-10 h-10 overflow-auto text-nowrap rounded-md border bg-gray-900 px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
                         {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
                       </div>
                       <Input placeholder="slug" className="rounded-l-none" {...field} />
@@ -315,7 +315,7 @@ function ProjectDelete(props: { organizationSlug: string; projectSlug: string })
             </CardDescription>
             <CardDescription>
               <DocsLink
-                className="text-muted-foreground text-sm"
+                className="text-neutral-10 text-sm"
                 href="/management/projects#delete-a-project"
               >
                 <strong>This action is not reversible!</strong> You can find more information about
@@ -404,7 +404,7 @@ function ProjectPolicySettings(props: {
               policy configuration defined at the organization level.
             </CardDescription>
             <CardDescription>
-              <DocsLink href="/features/schema-policy" className="text-muted-foreground text-sm">
+              <DocsLink href="/features/schema-policy" className="text-neutral-10 text-sm">
                 Learn more
               </DocsLink>
             </CardDescription>
@@ -452,7 +452,7 @@ function ProjectPolicySettings(props: {
         />
       ) : (
         <div className="pl-1 text-sm font-bold text-gray-400">
-          <p className="mr-4 inline-block text-orange-500">!</p>
+          <p className="text-accent mr-4 inline-block">!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>

@@ -36,9 +36,9 @@ export function Sortable(props: {
           >
             <div>{props.children}</div>
 
-            {props.sortOrder === 'asc' ? <TriangleUpIcon className="ml-2 text-orange-500" /> : null}
+            {props.sortOrder === 'asc' ? <TriangleUpIcon className="text-accent ml-2" /> : null}
             {props.sortOrder === 'desc' ? (
-              <TriangleUpIcon className="ml-2 rotate-180 text-orange-500" />
+              <TriangleUpIcon className="text-accent ml-2 rotate-180" />
             ) : null}
           </button>
         </TooltipTrigger>

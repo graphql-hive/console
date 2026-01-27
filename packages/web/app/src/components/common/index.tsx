@@ -36,7 +36,7 @@ export const Page = ({
     <div className={cn('relative flex h-full flex-col', className)}>
       <div className="flex shrink-0 flex-row items-center justify-between p-4">
         <div>
-          <h2 className="text-xl font-bold text-black dark:text-white">{title}</h2>
+          <h2 className="dark:text-neutral-12 text-xl font-bold text-black">{title}</h2>
           <span className="mt-2 text-sm text-gray-600 dark:text-gray-300">{subtitle}</span>
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
@@ -46,7 +46,7 @@ export const Page = ({
       ) : (
         <div
           className={cn(
-            'px-4 pb-4 dark:text-white',
+            'dark:text-neutral-12 px-4 pb-4',
             scrollable ? 'grow overflow-y-auto' : 'h-full',
           )}
         >
@@ -59,12 +59,12 @@ export const Page = ({
 
 export const Section = {
   Title: ({ className, children, ...props }: ComponentProps<'h3'>): ReactElement => (
-    <h3 className={cn('text-base font-bold text-black dark:text-white', className)} {...props}>
+    <h3 className={cn('dark:text-neutral-12 text-base font-bold text-black', className)} {...props}>
       {children}
     </h3>
   ),
   BigTitle: ({ className, children, ...props }: ComponentProps<'h2'>): ReactElement => (
-    <h2 className={cn('text-base font-bold text-black dark:text-white', className)} {...props}>
+    <h2 className={cn('dark:text-neutral-12 text-base font-bold text-black', className)} {...props}>
       {children}
     </h2>
   ),

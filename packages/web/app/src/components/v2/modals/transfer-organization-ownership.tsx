@@ -193,14 +193,14 @@ export const TransferOrganizationOwnershipModal = ({
           <div className="relative">
             <div
               className={clsx(
-                'rounded-sm bg-gray-800 p-4 text-sm font-medium text-white ring-1 ring-gray-700 focus-within:ring',
+                'bg-neutral-5 text-neutral-12 rounded-sm p-4 text-sm font-medium ring-1 ring-gray-700 focus-within:ring',
                 touched.newOwner && !!errors.newOwner
                   ? 'text-red-500 caret-white ring-red-500'
                   : null,
               )}
             >
               <Combobox.Input
-                className="w-full bg-transparent placeholder:text-gray-500 disabled:cursor-not-allowed"
+                className="placeholder:text-neutral-10 w-full bg-transparent disabled:cursor-not-allowed"
                 name="newOwner"
                 displayValue={(member: Member | null) => member?.user.displayName}
                 onChange={(event: any) => setSearchPhrase(event.target.value)}
@@ -217,7 +217,7 @@ export const TransferOrganizationOwnershipModal = ({
               leaveTo="opacity-0"
               afterLeave={() => setSearchPhrase('')}
             >
-              <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-gray-800 text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+              <Combobox.Options className="bg-neutral-5 absolute mt-1 max-h-60 w-full overflow-auto rounded-md text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
                 {filteredMembers.length === 0 && searchPhrase !== '' ? (
                   <div className="relative cursor-default select-none px-4 py-2 text-base text-gray-700">
                     Nothing found.
@@ -273,7 +273,7 @@ export const TransferOrganizationOwnershipModal = ({
       <div className="h-0 w-full border-t-2 border-gray-900" />
 
       <div className="font-bold">About the ownership transfer</div>
-      <ul className="list-inside list-disc px-5 text-sm text-white">
+      <ul className="text-neutral-12 list-inside list-disc px-5 text-sm">
         <li>
           The new owner will receive a confirmation email. If the new owner doesn't accept the
           transfer within 24 hours, the invitation will expire.

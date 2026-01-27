@@ -225,7 +225,7 @@ function TargetAppVersionContent(props: {
               >
                 App Deployments
               </Link>{' '}
-              <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
+              <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
               {data.data?.target?.appDeployment ? (
                 `${data.data.target.appDeployment.name}@${data.data.target.appDeployment.version}`
               ) : (
@@ -242,7 +242,7 @@ function TargetAppVersionContent(props: {
               {/* <CardDescription>
                   <DocsLink
                     href="/management/targets#cdn-access-tokens"
-                    className="text-gray-500 hover:text-gray-300"
+                    className="text-neutral-10 hover:text-gray-300"
                   >
                     Learn more about App Deployments
                   </DocsLink>
@@ -253,10 +253,10 @@ function TargetAppVersionContent(props: {
           <AppFilter />
         </SubPageLayoutHeader>
         {coordinates ? (
-          <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
+          <div className="border-accent/50 bg-accent/10 mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="rounded-sm bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
+              <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
                 {coordinates}
               </code>
             </span>
@@ -269,7 +269,7 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-orange-500 hover:underline"
+              className="text-accent hover:underline"
             >
               Clear filter
             </Link>
@@ -317,7 +317,7 @@ function TargetAppVersionContent(props: {
                   {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
                     <TableRow key={i}>
                       <TableCell>
-                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-sm">
+                        <span className="bg-neutral-5 rounded-sm p-1 font-mono text-sm">
                           {edge.node.hash}
                         </span>
                       </TableCell>
@@ -334,13 +334,13 @@ function TargetAppVersionContent(props: {
                             </Tooltip>
                           </TooltipProvider>
                         ) : (
-                          <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
+                          <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                             {edge.node.operationName}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-end">
-                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
+                        <span className="bg-neutral-5 rounded-sm p-1 font-mono text-xs">
                           {edge.node.body.length > 43
                             ? edge.node.body.substring(0, 43).replace(/\n/g, '\\n') + '...'
                             : edge.node.body}

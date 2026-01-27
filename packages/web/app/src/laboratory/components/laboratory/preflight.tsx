@@ -250,7 +250,7 @@ export const Preflight = () => {
               <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
                 {preflight?.lastTestResult?.logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
-                    <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
+                    <span className="text-neutral-10 text-xs">{log.createdAt}</span>{' '}
                     <span
                       className={cn('text-xs font-medium', {
                         'text-blue-400': log.level === 'info',
@@ -273,7 +273,7 @@ export const Preflight = () => {
           <Empty className="size-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <HistoryIcon className="text-muted-foreground size-6" />
+                <HistoryIcon className="text-neutral-10 size-6" />
               </EmptyMedia>
               <EmptyTitle>No logs yet</EmptyTitle>
               <EmptyDescription>

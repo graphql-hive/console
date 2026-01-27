@@ -52,7 +52,7 @@ export function RadixSelect<T extends string>({
         </RadixButton>
       </S.Trigger>
       <S.Content
-        className="z-50 rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800"
+        className="dark:bg-neutral-5 z-50 rounded-lg bg-white p-2 shadow-lg"
         position={position}
       >
         <S.ScrollUpButton className="flex items-center justify-center text-gray-700 dark:text-gray-300">

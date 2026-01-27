@@ -333,10 +333,10 @@ const TracesList = memo(function TracesList(
                   targetSlug: targetRef.targetSlug,
                   traceId,
                 }}
-                className="group block w-[6ch] overflow-hidden whitespace-nowrap text-white"
+                className="text-neutral-12 group block w-[6ch] overflow-hidden whitespace-nowrap"
               >
                 <span>
-                  <span className="underline decoration-gray-800 decoration-2 underline-offset-2 group-hover:decoration-white">
+                  <span className="decoration-neutral-5 underline decoration-2 underline-offset-2 group-hover:decoration-white">
                     {traceId.substring(0, 8)}
                   </span>
                   <span
@@ -360,7 +360,7 @@ const TracesList = memo(function TracesList(
           return (
             <Button
               variant="link"
-              className="text-muted-foreground"
+              className="text-neutral-10"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             >
               Timestamp
@@ -425,14 +425,14 @@ const TracesList = memo(function TracesList(
       {
         accessorKey: 'operationName',
         header: () => {
-          return <div className="text-muted-foreground px-4">Operation Name</div>;
+          return <div className="text-neutral-10 px-4">Operation Name</div>;
         },
         cell: ({ row }) => (
           <TooltipProvider>
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-4 text-xs">
-                  <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                  <span className="bg-muted text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
                     {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                   </span>
                   <span>
@@ -474,7 +474,7 @@ const TracesList = memo(function TracesList(
             <div>
               <Button
                 variant="link"
-                className="text-muted-foreground"
+                className="text-neutral-10"
                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
               >
                 Duration
@@ -926,14 +926,14 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
   const trace = queryResult.data?.target?.trace;
 
   return (
-    <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
-      <SheetHeader className="relative border-b border-gray-800 p-4">
+    <SheetContent className="border-neutral-5 text-neutral-12 border-l bg-black p-0 md:max-w-[50%]">
+      <SheetHeader className="border-neutral-5 relative border-b p-4">
         <div className="flex items-center justify-between">
-          <SheetTitle className="text-lg font-medium text-white">
+          <SheetTitle className="text-neutral-12 text-lg font-medium">
             {trace ? (
               <>
                 {trace.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
-                <span className="text-muted-foreground ml-2 font-mono font-normal">
+                <span className="text-neutral-10 ml-2 font-mono font-normal">
                   {trace.id.substring(0, 4)}
                 </span>
               </>

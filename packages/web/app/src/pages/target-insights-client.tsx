@@ -139,13 +139,13 @@ function ClientView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total calls</CardTitle>
-                  <GlobeIcon className="text-muted-foreground size-4" />
+                  <GlobeIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {isLoading ? '-' : formatNumber(totalRequests)}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     Requests in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -153,7 +153,7 @@ function ClientView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
-                  <ActivityIcon className="text-muted-foreground size-4" />
+                  <ActivityIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -167,7 +167,7 @@ function ClientView(props: {
                           ),
                         )}
                   </div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     RPM in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -175,23 +175,21 @@ function ClientView(props: {
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Operations</CardTitle>
-                  <BookIcon className="text-muted-foreground size-4" />
+                  <BookIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalOperations}</div>
-                  <p className="text-muted-foreground text-xs">
-                    Documents requested by selected client
-                  </p>
+                  <p className="text-neutral-10 text-xs">Documents requested by selected client</p>
                 </CardContent>
               </Card>
               <Card className="bg-gray-900/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Versions</CardTitle>
-                  <HistoryIcon className="text-muted-foreground size-4" />
+                  <HistoryIcon className="text-neutral-10 size-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{isLoading ? '-' : totalVersions}</div>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-neutral-10 text-xs">
                     Versions in {dateRangeController.selectedPreset.label.toLowerCase()}
                   </p>
                 </CardContent>
@@ -288,7 +286,7 @@ function ClientView(props: {
                       <div key={operation.id} className="flex items-center">
                         <p className="truncate text-sm font-medium">
                           <Link
-                            className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                            className="text-accent hover:text-accent hover:underline hover:underline-offset-2"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                             params={{
                               organizationSlug: props.organizationSlug,

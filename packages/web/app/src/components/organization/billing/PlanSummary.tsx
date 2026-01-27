@@ -37,7 +37,7 @@ function PriceEstimationTable(props: {
       <TBody>
         <Tr>
           <Td>
-            Base price <span className="text-gray-500">(unlimited seats)</span>
+            Base price <span className="text-neutral-10">(unlimited seats)</span>
           </Td>
           <Td align="right" />
           <Td align="right">{CurrencyFormatter.format(plan.basePrice ?? 0)}</Td>
@@ -46,7 +46,7 @@ function PriceEstimationTable(props: {
         {includedOperationsInMillions > 0 && (
           <Tr>
             <Td>
-              Included Operations <span className="text-gray-500">(free)</span>
+              Included Operations <span className="text-neutral-10">(free)</span>
             </Td>
             <Td align="right">{includedOperationsInMillions}M</Td>
             <Td align="right">{CurrencyFormatter.format(0)}</Td>
