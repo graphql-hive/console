@@ -270,6 +270,21 @@ export class SingleModel {
       contracts: null,
     });
 
+    if (
+      compositionCheck.status === 'failed' &&
+      compositionCheck.reason.errorsBySource.graphql.length > 0
+    ) {
+      return {
+        conclusion: SchemaPublishConclusion.Reject,
+        reasons: [
+          {
+            code: PublishFailureReasonCode.CompositionFailure,
+            compositionErrors: compositionCheck.reason.errorsBySource.graphql,
+          },
+        ],
+      };
+    }
+
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
       version: latestComposable,
       organization,

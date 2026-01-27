@@ -48,7 +48,7 @@ describe('publish', () => {
           topProduct: Product
         }
       `,
-      expect: 'latest',
+      expect: 'rejected',
     });
   });
 
