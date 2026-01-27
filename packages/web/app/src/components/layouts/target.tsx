@@ -671,7 +671,7 @@ function FederationModalContent(props: {
         {authenticateSection}
         <InputCopy
           multiline
-          value={`docker run --name apollo-router --rm \\
+          value={`docker run --name apollo-router -p 4000:4000 --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
