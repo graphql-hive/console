@@ -664,7 +664,7 @@ export class AppDeployments {
 
           return {
             type: 'error' as const,
-            message: `App deployment retirement blocked by protection settings. ${blockReason}. Use --force to override.`,
+            message: `App deployment retirement blocked by protection settings. ${blockReason}.`,
             protectionDetails: {
               lastUsed,
               daysSinceLastUsed,
