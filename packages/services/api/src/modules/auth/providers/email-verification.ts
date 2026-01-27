@@ -11,7 +11,7 @@ import { WEB_APP_URL } from '../../shared/providers/tokens';
 
 const EmailVerificationModelBase = zod.object({
   id: zod.string().uuid(),
-  superTokensUserId: zod.string(),
+  userIdentityId: zod.string(),
   createdAt: zod.number().transform(value => new Date(value)),
 });
 
@@ -34,7 +34,7 @@ const EmailVerificationModel = zod.union([
 
 const emailVerificationFields = (r: TaggedTemplateLiteralInvocation) => sql`
   ${r}"id"
-  , ${r}"supertokens_user_id" AS "superTokensUserId"
+  , ${r}"user_identity_id" AS "userIdentityId"
   , ${r}"token" AS "token"
   , ${r}"created_at" AS "createdAt"
   , ${r}"expires_at" AS "expiresAt"
@@ -56,7 +56,7 @@ export class EmailVerification {
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
   ) {}
 
-  async checkUserEmailVerified(input: { superTokensUserId: string }) {
+  async checkUserEmailVerified(input: { userIdentityId: string }) {
     const { provider } = await this.pool
       .one(
         sql`
@@ -64,7 +64,7 @@ export class EmailVerification {
           FROM "supertokens_all_auth_recipe_users" "saaru"
           LEFT JOIN "supertokens_thirdparty_users" "stu"
           ON "saaru"."user_id" = "stu"."user_id"
-          WHERE "saaru"."user_id" = ${input.superTokensUserId}
+          WHERE "saaru"."user_id" = ${input.userIdentityId}
         `,
       )
       .then(v =>
@@ -80,7 +80,7 @@ export class EmailVerification {
         sql`
           SELECT ${emailVerificationFields(sql`"ev".`)}
           FROM "email_verifications" "ev"
-          WHERE "ev"."supertokens_user_id" = ${input.superTokensUserId}
+          WHERE "ev"."user_identity_id" = ${input.userIdentityId}
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
@@ -92,7 +92,7 @@ export class EmailVerification {
 
   async sendVerificationEmail(
     input: {
-      superTokensUserId: string;
+      userIdentityId: string;
       resend?: boolean;
     },
     ipAddress: string,
@@ -114,13 +114,13 @@ export class EmailVerification {
           ON "saaru"."user_id" = "seu"."user_id"
           LEFT JOIN "supertokens_thirdparty_users" "stu"
           ON "saaru"."user_id" = "stu"."user_id"
-          WHERE "saaru"."user_id" = ${input.superTokensUserId}
+          WHERE "saaru"."user_id" = ${input.userIdentityId}
         `,
       )
       .then(v => zod.object({ email: zod.string().email() }).nullable().parse(v));
 
     if (!superTokensUser) {
-      throw new HiveError('User not found.');
+      throw new HiveError('User identity not found.');
     }
 
     const existingVerification = await this.pool
@@ -128,7 +128,7 @@ export class EmailVerification {
         sql`
           SELECT ${emailVerificationFields(sql`"ev".`)}
           FROM "email_verifications" "ev"
-          WHERE "ev"."supertokens_user_id" = ${input.superTokensUserId}
+          WHERE "ev"."user_identity_id" = ${input.userIdentityId}
         `,
       )
       .then(v => EmailVerificationModel.nullable().parse(v));
@@ -146,12 +146,12 @@ export class EmailVerification {
         .one(
           sql`
             INSERT INTO "email_verifications" AS "ev" (
-              "supertokens_user_id"
+              "user_identity_id"
               , "token"
               , "expires_at"
             )
             VALUES (
-              ${input.superTokensUserId}
+              ${input.userIdentityId}
               , ${randomBytes(16).toString('hex')}
               , now() + INTERVAL '30 minutes'
             )
@@ -167,7 +167,7 @@ export class EmailVerification {
         user: {
           email: superTokensUser.email,
         },
-        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
+        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?userIdentityId=${emailVerification.userIdentityId}&token=${emailVerification.token}`,
       });
     }
 
@@ -178,7 +178,7 @@ export class EmailVerification {
   }
 
   async verifyEmail(input: {
-    superTokensUserId: string;
+    userIdentityId: string;
     token: string;
   }): Promise<{ ok: true; verified: boolean } | { ok: false; message: string }> {
     const emailVerification = await this.pool
@@ -187,7 +187,7 @@ export class EmailVerification {
           SELECT ${emailVerificationFields(sql`"ev".`)}
           FROM "email_verifications" "ev"
           WHERE
-            "supertokens_user_id" = ${input.superTokensUserId}
+            "user_identity_id" = ${input.userIdentityId}
             AND "token" = ${input.token}
             AND "expires_at" IS NOT NULL
             AND "verified_at" IS NULL

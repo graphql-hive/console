@@ -7,7 +7,7 @@ export const verifyEmail: NonNullable<MutationResolvers['verifyEmail']> = async 
   { injector },
 ) => {
   const result = await injector.get(EmailVerification).verifyEmail({
-    superTokensUserId: input.superTokensUserId,
+    userIdentityId: input.userIdentityId,
     token: input.token,
   });
 

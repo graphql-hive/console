@@ -196,7 +196,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       // Check whether the email is already verified.
       // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
       const { verified } = await this.emailVerification.checkUserEmailVerified({
-        superTokensUserId: session.getUserId(),
+        userIdentityId: session.getUserId(),
       });
       if (!verified) {
         throw new HiveError('Your account is not verified. Please verify your email address.', {

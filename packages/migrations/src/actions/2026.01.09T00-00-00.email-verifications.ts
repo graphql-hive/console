@@ -10,7 +10,7 @@ export default {
     BEGIN
       CREATE TABLE IF NOT EXISTS "email_verifications" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4()
-        , "supertokens_user_id" text NOT NULL UNIQUE
+        , "user_identity_id" text NOT NULL UNIQUE
         , "token" text
         , "created_at" timestamptz NOT NULL DEFAULT now()
         , "expires_at" timestamptz
@@ -19,9 +19,9 @@ export default {
 
       IF (SELECT to_regclass('supertokens_emailverification_verified_emails') IS NOT null)
       THEN
-        INSERT INTO "email_verifications" ("supertokens_user_id", "verified_at")
+        INSERT INTO "email_verifications" ("user_identity_id", "verified_at")
         SELECT
-          "seve"."user_id" "supertokens_user_id"
+          "seve"."user_id" "user_identity_id"
           , now() "verified_at"
         FROM "supertokens_emailverification_verified_emails" "seve";
       END IF;

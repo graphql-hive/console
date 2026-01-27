@@ -6,7 +6,7 @@ export const sendVerificationEmail: NonNullable<
 > = async (_, { input }, { injector, req }) => {
   const result = await injector.get(EmailVerification).sendVerificationEmail(
     {
-      superTokensUserId: input.superTokensUserId,
+      userIdentityId: input.userIdentityId,
       resend: input.resend ?? undefined,
     },
     req.ip,

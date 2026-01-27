@@ -50,7 +50,7 @@ function AuthVerifyEmail() {
       const result = await sendEmailImpl(
         {
           input: {
-            superTokensUserId: session.userId,
+            userIdentityId: session.userId,
             resend,
           },
         },
@@ -83,11 +83,11 @@ function AuthVerifyEmail() {
   useEffect(() => {
     if (session.loading) return;
 
-    if (search.superTokensUserId) {
+    if (search.userIdentityId) {
       void verify(
         {
           input: {
-            superTokensUserId: search.superTokensUserId,
+            userIdentityId: search.userIdentityId,
             token: search.token,
           },
         },
@@ -102,9 +102,9 @@ function AuthVerifyEmail() {
     } else {
       void sendEmail();
     }
-  }, [session.loading, search.superTokensUserId, verify, sendEmail]);
+  }, [session.loading, search.userIdentityId, verify, sendEmail]);
 
-  if (search.superTokensUserId) {
+  if (search.userIdentityId) {
     if (verifyMutation.error) {
       return (
         <AuthCard>

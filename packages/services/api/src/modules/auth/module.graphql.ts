@@ -42,7 +42,7 @@ export default gql`
   }
 
   input SendVerificationEmailInput {
-    superTokensUserId: ID!
+    userIdentityId: ID!
     resend: Boolean
   }
 
@@ -63,7 +63,7 @@ export default gql`
   }
 
   input VerifyEmailInput {
-    superTokensUserId: ID!
+    userIdentityId: ID!
     token: String!
   }
 
