@@ -140,8 +140,8 @@ export interface email_verifications {
   created_at: Date;
   expires_at: Date | null;
   id: string;
-  supertokens_user_id: string;
-  token: string | null;
+  token_hash: string | null;
+  user_identity_id: string;
   verified_at: Date | null;
 }
 
