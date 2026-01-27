@@ -58,7 +58,7 @@ describe('publish', () => {
         `,
         serviceName: 'products',
         serviceUrl: 'http://products:3000/graphql',
-        expect: 'latest-composable',
+        expect: 'latest',
       });
     });
 
