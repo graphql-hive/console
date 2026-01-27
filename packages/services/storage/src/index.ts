@@ -2044,10 +2044,9 @@ export async function createStorage(
       ruleLogic?: 'AND' | 'OR' | null;
     }) {
       return transformTargetSettings(
-        await tracedTransaction('updateTargetAppDeploymentProtectionSettings', pool, async trx => {
-          return trx.one(sql`/* updateTargetAppDeploymentProtectionSettings */
+        await pool.one(sql`/* updateTargetAppDeploymentProtectionSettings */
             UPDATE
-              targets as t
+              targets
             SET
               app_deployment_protection_enabled = COALESCE(${isEnabled ?? null}, app_deployment_protection_enabled)
               , app_deployment_protection_min_days_inactive = COALESCE(${minDaysInactive ?? null}, app_deployment_protection_min_days_inactive)
@@ -2055,39 +2054,26 @@ export async function createStorage(
               , app_deployment_protection_traffic_period_days = COALESCE(${trafficPeriodDays ?? null}, app_deployment_protection_traffic_period_days)
               , app_deployment_protection_min_days_since_creation = COALESCE(${minDaysSinceCreation ?? null}, app_deployment_protection_min_days_since_creation)
               , app_deployment_protection_rule_logic = COALESCE(${ruleLogic ?? null}, app_deployment_protection_rule_logic)
-            FROM (
-              SELECT
-                it.id
-                , array_agg(tv.destination_target_id) as targets
-              FROM targets AS it
-                LEFT JOIN target_validation AS tv ON (tv.target_id = it.id)
-              WHERE
-                it.id = ${target}
-                AND it.project_id = ${project}
-              GROUP BY
-                it.id
-              LIMIT 1
-            ) ret
             WHERE
-              t.id = ret.id
+              id = ${target}
+              AND project_id = ${project}
             RETURNING
-              t.id
-              , t.validation_enabled
-              , t.validation_percentage
-              , t.validation_period
-              , t.validation_excluded_clients
-              , ret.targets
-              , t.validation_request_count
-              , t.validation_breaking_change_formula
-              , t.fail_diff_on_dangerous_change
-              , t.app_deployment_protection_enabled
-              , t.app_deployment_protection_min_days_inactive
-              , t.app_deployment_protection_max_traffic_percentage
-              , t.app_deployment_protection_traffic_period_days
-              , t.app_deployment_protection_rule_logic
-              , t.app_deployment_protection_min_days_since_creation
-          `);
-        }),
+              id
+              , validation_enabled
+              , validation_percentage
+              , validation_period
+              , validation_excluded_clients
+              , null as targets
+              , validation_request_count
+              , validation_breaking_change_formula
+              , fail_diff_on_dangerous_change
+              , app_deployment_protection_enabled
+              , app_deployment_protection_min_days_inactive
+              , app_deployment_protection_max_traffic_percentage
+              , app_deployment_protection_traffic_period_days
+              , app_deployment_protection_rule_logic
+              , app_deployment_protection_min_days_since_creation
+          `),
       ).appDeploymentProtection;
     },
 
