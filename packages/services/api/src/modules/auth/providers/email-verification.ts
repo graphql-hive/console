@@ -95,8 +95,16 @@ export class EmailVerification {
       superTokensUserId: string;
       resend?: boolean;
     },
-    actorId?: string,
+    ipAddress: string,
   ): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
+    await this.rateLimiter.check(
+      'sendVerificationEmail',
+      ipAddress,
+      60_000,
+      2,
+      `Exceeded rate limit for sending verification emails.`,
+    );
+
     const superTokensUser = await this.pool
       .maybeOne(
         sql`
@@ -155,16 +163,6 @@ export class EmailVerification {
         ));
 
     if (!existingVerification || input.resend) {
-      if (actorId) {
-        await this.rateLimiter.check(
-          'sendVerificationEmail',
-          actorId,
-          60_000,
-          2,
-          `Exceeded rate limit for sending verification emails.`,
-        );
-      }
-
       await this.taskScheduler.scheduleTask(EmailVerificationTask, {
         user: {
           email: superTokensUser.email,
