@@ -11,20 +11,7 @@ import { ServiceLogger } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Config } from '../../shared/providers/s3-config';
 
-const parseS3Concurrency = (): number => {
-  const value = process.env.S3_UPLOAD_CONCURRENCY;
-  if (!value) return 100;
-
-  const parsed = parseInt(value, 10);
-  if (isNaN(parsed) || parsed < 1) {
-    throw new Error(
-      `Invalid S3_UPLOAD_CONCURRENCY: "${value}". Must be a positive integer.`,
-    );
-  }
-  return parsed;
-};
-
-const S3_UPLOAD_CONCURRENCY = parseS3Concurrency();
+const DEFAULT_S3_UPLOAD_CONCURRENCY = 100;
 
 type DocumentRecord = {
   appDeploymentId: string;
@@ -129,7 +116,7 @@ export type OnDocumentsPersistedCallback = (
 ) => Promise<void>;
 
 export class PersistedDocumentIngester {
-  private promiseQueue = new PromiseQueue({ concurrency: S3_UPLOAD_CONCURRENCY });
+  private promiseQueue: PromiseQueue;
   private logger: ServiceLogger;
 
   constructor(
@@ -137,8 +124,10 @@ export class PersistedDocumentIngester {
     private s3: S3Config,
     logger: ServiceLogger,
     private onDocumentsPersisted?: OnDocumentsPersistedCallback,
+    s3UploadConcurrency: number = DEFAULT_S3_UPLOAD_CONCURRENCY,
   ) {
     this.logger = logger.child({ source: 'PersistedDocumentIngester' });
+    this.promiseQueue = new PromiseQueue({ concurrency: s3UploadConcurrency });
   }
 
   async processBatch(data: BatchProcessEvent['data']) {
