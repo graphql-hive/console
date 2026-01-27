@@ -166,8 +166,10 @@ export class EmailVerification {
       }
 
       await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-        email: superTokensUser.email,
-        verificationLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
+        user: {
+          email: superTokensUser.email,
+        },
+        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?superTokensUserId=${input.superTokensUserId}&token=${emailVerification.token}`,
       });
     }
 
