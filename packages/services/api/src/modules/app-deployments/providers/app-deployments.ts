@@ -1,3 +1,4 @@
+import { startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 'slonik';
 import { z } from 'zod';
@@ -1496,9 +1497,7 @@ export class AppDeployments {
     totalOperations: number;
     appDeploymentOperations: number;
   } | null> {
-    const periodFrom = new Date();
-    periodFrom.setDate(periodFrom.getDate() - args.periodDays);
-    periodFrom.setHours(0, 0, 0, 0);
+    const periodFrom = startOfDay(subDays(new Date(), args.periodDays));
 
     const periodTo = new Date();
 
