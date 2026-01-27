@@ -152,7 +152,7 @@ using the link below
 <Tabs.Tab>
 
 ```sh
-curl -O https://raw.githubusercontent.com/graphql-hive/console/hive@9.1.0/docker/docker-compose.community.yml
+curl -O https://raw.githubusercontent.com/graphql-hive/console/hive@9.2.0/docker/docker-compose.community.yml
 ```
 
 </Tabs.Tab>
@@ -160,7 +160,7 @@ curl -O https://raw.githubusercontent.com/graphql-hive/console/hive@9.1.0/docker
 <Tabs.Tab>
 
 ```sh
-wget https://raw.githubusercontent.com/graphql-hive/console/hive@9.1.0/docker/docker-compose.community.yml
+wget https://raw.githubusercontent.com/graphql-hive/console/hive@9.2.0/docker/docker-compose.community.yml
 ```
 
 </Tabs.Tab>
@@ -179,7 +179,7 @@ We recommend sticking to a specific version to avoid breaking changes. The `late
 correspons to the latest stable release.
 
 ```sh
-export DOCKER_TAG=":9.1.0"
+export DOCKER_TAG=":9.2.0"
 ```
 
 After picking a version set the `DOCKER_TAG` environment variable to that value.
@@ -188,7 +188,7 @@ After picking a version set the `DOCKER_TAG` environment variable to that value.
 
 ```bash
 export DOCKER_REGISTRY="ghcr.io/graphql-hive/"
-export DOCKER_TAG=":9.1.0" # Pin this to an exact version
+export DOCKER_TAG=":9.2.0" # Pin this to an exact version
 export HIVE_ENCRYPTION_SECRET=$(openssl rand -hex 16)
 export HIVE_APP_BASE_URL="http://localhost:8080"
 export HIVE_EMAIL_FROM="no-reply@graphql-hive.com"
