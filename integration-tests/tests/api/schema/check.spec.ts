@@ -2190,17 +2190,6 @@ test.concurrent(
     });
     await storage.destroy();
 
-    const validSdl = /* GraphQL */ `
-      type Query {
-        a(b: B!): String
-      }
-
-      input B {
-        a: String @deprecated(reason: "This field is deprecated")
-        b: String!
-      }
-    `;
-
     const sdl = /* GraphQL */ `
       type Query {
         a(b: B!): String

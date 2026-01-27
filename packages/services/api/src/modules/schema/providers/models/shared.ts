@@ -1,4 +1,3 @@
-import { PushedCompositeSchema, SingleSchema } from 'packages/services/api/src/shared/entities';
 import type { CheckPolicyResponse } from '@hive/policy';
 import { CompositionFailureError } from '@hive/schema';
 import type { SchemaChangeType, SchemaCompositionError } from '@hive/storage';
@@ -12,6 +11,7 @@ import type {
   SchemaDiffSkip,
   SchemaDiffSuccess,
 } from '../registry-checks';
+import type { CompositeSchemaInput, SingleSchemaInput } from '../schema-helper';
 
 export const SchemaPublishConclusion = {
   /**
@@ -180,7 +180,6 @@ export const PublishIgnoreReasonCode = {
 
 export const PublishFailureReasonCode = {
   MissingServiceUrl: 'MISSING_SERVICE_URL',
-  MissingServiceName: 'MISSING_SERVICE_NAME',
   CompositionFailure: 'COMPOSITION_FAILURE',
   BreakingChanges: 'BREAKING_CHANGES',
   MetadataParsingFailure: 'METADATA_PARSING_FAILURE',
@@ -192,9 +191,6 @@ export type PublishFailureReasonCode =
   (typeof PublishFailureReasonCode)[keyof typeof PublishFailureReasonCode];
 
 export type SchemaPublishFailureReason =
-  | {
-      code: (typeof PublishFailureReasonCode)['MissingServiceName'];
-    }
   | {
       code: (typeof PublishFailureReasonCode)['MissingServiceUrl'];
     }
@@ -235,8 +231,8 @@ type SchemaPublishSuccess = {
       message: string;
     }> | null;
     compositionErrors: Array<SchemaCompositionError> | null;
-    schema: SingleSchema | PushedCompositeSchema;
-    schemas: [SingleSchema] | PushedCompositeSchema[];
+    schema: SingleSchemaInput | CompositeSchemaInput;
+    schemas: [SingleSchemaInput] | CompositeSchemaInput[];
     supergraph: string | null;
     fullSchemaSdl: string | null;
     tags: null | Array<string>;
@@ -285,7 +281,7 @@ export type SchemaDeleteSuccess = {
   conclusion: (typeof SchemaDeleteConclusion)['Accept'];
   state: {
     changes: Array<SchemaChangeType> | null;
-    schemas: PushedCompositeSchema[];
+    schemas: CompositeSchemaInput[];
     breakingChanges: Array<SchemaChangeType> | null;
     compositionErrors: Array<SchemaCompositionError> | null;
     coordinatesDiff: SchemaCoordinatesDiffResult | null;

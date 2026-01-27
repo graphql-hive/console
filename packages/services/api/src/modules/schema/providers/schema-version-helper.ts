@@ -17,7 +17,7 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
-import { ensureCompositeSchemas, SchemaHelper } from './schema-helper';
+import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 
 @Injectable({
@@ -69,7 +69,13 @@ export class SchemaVersionHelper {
 
     const validation = await this.compositionOrchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
-      schemas.map(s => this.schemaHelper.createSchemaObject(s)),
+      schemas.map(s =>
+        this.schemaHelper.createSchemaObject({
+          sdl: s.sdl,
+          serviceName: s.kind === 'composite' ? s.service_name : null,
+          serviceUrl: s.kind === 'composite' ? s.service_url : null,
+        }),
+      ),
       {
         external: project.externalComposition,
         native: this.schemaManager.checkProjectNativeFederationSupport({
@@ -237,8 +243,8 @@ export class SchemaVersionHelper {
       existingSdl,
       incomingSdl,
       includeUrlChanges: {
-        schemasBefore: ensureCompositeSchemas(schemaBefore),
-        schemasAfter: ensureCompositeSchemas(schemasAfter),
+        schemasBefore: ensureCompositeSchemas(schemaBefore).map(toCompositeSchemaInput),
+        schemasAfter: ensureCompositeSchemas(schemasAfter).map(toCompositeSchemaInput),
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,

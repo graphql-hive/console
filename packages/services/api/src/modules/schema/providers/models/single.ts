@@ -7,8 +7,8 @@ import {
   GetAffectedAppDeployments,
   RegistryChecks,
 } from '../registry-checks';
-import type { PublishInput } from '../schema-publisher';
-import type { Organization, Project, SingleSchema, Target } from './../../../../shared/entities';
+import { SingleSchemaInput } from '../schema-helper';
+import type { Organization, Project, Target } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
 import {
   buildSchemaCheckFailureState,
@@ -32,21 +32,11 @@ export class SingleModel {
   ) {}
 
   @traceFn('Single modern: diffSchema')
-  async diffSchema({
-    input,
-    latest,
-  }: {
-    input: {
-      sdl: string;
-    };
-    latest: {
-      schemas: [SingleSchema];
-    } | null;
+  async diffSchema(args: {
+    incoming: Pick<SingleSchemaInput, 'sdl'>;
+    existing: Pick<SingleSchemaInput, 'sdl'> | null;
   }) {
-    return this.checks.serviceDiff({
-      existingSdl: latest?.schemas[0]?.sdl ?? null,
-      incomingSdl: input.sdl,
-    });
+    return this.checks.serviceDiff(args);
   }
 
   @traceFn('Single modern: check', {
@@ -69,9 +59,7 @@ export class SingleModel {
     failDiffOnDangerousChange,
     filterNestedChanges,
   }: {
-    input: {
-      sdl: string;
-    };
+    input: Pick<SingleSchemaInput, 'sdl'>;
     selector: {
       organizationId: string;
       projectId: string;
@@ -80,12 +68,12 @@ export class SingleModel {
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     baseSchema: string | null;
     project: Project;
@@ -95,21 +83,18 @@ export class SingleModel {
     failDiffOnDangerousChange: boolean;
     filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
-    const incoming: SingleSchema = {
-      kind: 'single',
+    const incoming: SingleSchemaInput = {
       id: temp,
-      author: temp,
-      commit: temp,
-      target: selector.targetId,
-      date: Date.now(),
       sdl: input.sdl,
       metadata: null,
+      serviceName: null,
+      serviceUrl: null,
     };
 
-    const schemas = [incoming] as [SingleSchema];
-    const compareToPreviousComposableVersion =
-      organization.featureFlags.compareToPreviousComposableVersion;
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
+    const schemas = [incoming] as [SingleSchemaInput];
+    const comparedVersion = organization.featureFlags.compareToPreviousComposableVersion
+      ? latestComposable
+      : latest;
 
     const checksumResult = await this.checks.checksum({
       existing: latest
@@ -220,37 +205,37 @@ export class SingleModel {
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
   }: {
-    input: PublishInput;
+    input: {
+      sdl: string;
+      metadata: string | null;
+    };
     organization: Organization;
     project: Project;
     target: Target;
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchema];
+      schemas: [SingleSchemaInput];
     } | null;
     baseSchema: string | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: boolean;
   }): Promise<SchemaPublishResult> {
-    const incoming: SingleSchema = {
-      kind: 'single',
+    const incoming: SingleSchemaInput = {
       id: temp,
-      author: input.author,
       sdl: input.sdl,
-      commit: input.commit,
-      target: target.id,
-      date: Date.now(),
-      metadata: input.metadata ?? null,
+      metadata: input.metadata,
+      serviceName: null,
+      serviceUrl: null,
     };
 
     const latestVersion = latest;
-    const schemas = [incoming] as [SingleSchema];
+    const schemas = [incoming] as [SingleSchemaInput];
     const compareToPreviousComposableVersion =
       organization.featureFlags.compareToPreviousComposableVersion;
     const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;

@@ -20,14 +20,12 @@ import type {
   DateRange,
   Organization,
   Project,
-  PushedCompositeSchema,
-  SingleSchema,
 } from './../../../shared/entities';
 import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import { extendWithBase, isCompositeSchema, SchemaHelper } from './schema-helper';
+import { CompositeSchemaInput, extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
@@ -74,8 +72,6 @@ export type CheckResult<C = unknown, F = unknown, S = unknown> =
       status: 'skipped';
       data?: S;
     };
-
-type Schemas = [SingleSchema] | PushedCompositeSchema[];
 
 type CompositionValidationError = {
   message: string;
@@ -205,11 +201,11 @@ export class RegistryChecks {
    */
   async checksum(args: {
     incoming: {
-      schema: SingleSchema | PushedCompositeSchema;
+      schema: SchemaInput;
       contractNames: null | Array<string>;
     };
     existing: null | {
-      schema: SingleSchema | PushedCompositeSchema;
+      schema: SchemaInput;
       contractNames: null | Array<string>;
     };
   }) {
@@ -276,7 +272,7 @@ export class RegistryChecks {
     targetId: string;
     project: Project;
     organization: Organization;
-    schemas: Schemas;
+    schemas: Array<SchemaInput>;
     baseSchema: string | null;
     contracts: null | ContractsInputType;
   }) {
@@ -337,7 +333,7 @@ export class RegistryChecks {
     version: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: Schemas;
+      schemas: Array<SchemaInput>;
     } | null;
     organization: Organization;
     project: Project;
@@ -433,28 +429,20 @@ export class RegistryChecks {
    */
   async serviceDiff(args: {
     /** The existing SDL */
-    existingSdl: string | null;
+    existing: Pick<SchemaInput, 'sdl'> | null;
     /** The incoming SDL */
-    incomingSdl: string | null;
+    incoming: Pick<SchemaInput, 'sdl'> | null;
   }) {
     let existingSchema: GraphQLSchema | null;
     let incomingSchema: GraphQLSchema | null;
 
     try {
-      existingSchema = args.existingSdl
-        ? buildSortedSchemaFromSchemaObject(
-            this.helper.createSchemaObject({
-              sdl: args.existingSdl,
-            }),
-          )
+      existingSchema = args.existing
+        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.existing))
         : null;
 
-      incomingSchema = args.incomingSdl
-        ? buildSortedSchemaFromSchemaObject(
-            this.helper.createSchemaObject({
-              sdl: args.incomingSdl,
-            }),
-          )
+      incomingSchema = args.incoming
+        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.incoming))
         : null;
     } catch (error) {
       this.logger.error('Failed to build schema for diff. Skip diff check.');
@@ -496,8 +484,8 @@ export class RegistryChecks {
     includeUrlChanges:
       | false
       | {
-          schemasBefore: [SingleSchema] | PushedCompositeSchema[];
-          schemasAfter: [SingleSchema] | PushedCompositeSchema[];
+          schemasBefore: CompositeSchemaInput[];
+          schemasAfter: CompositeSchemaInput[];
         };
     /** Whether Federation directive related changes should be filtered out from the list of changes. These would only show up due to an internal bug. */
     filterOutFederationChanges: boolean;
@@ -522,6 +510,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.existingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -530,6 +520,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.incomingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -734,8 +726,8 @@ export class RegistryChecks {
     if (args.includeUrlChanges) {
       inspectorChanges.push(
         ...detectUrlChanges(
-          args.includeUrlChanges.schemasBefore.filter(isCompositeSchema),
-          args.includeUrlChanges.schemasAfter.filter(isCompositeSchema),
+          args.includeUrlChanges.schemasBefore,
+          args.includeUrlChanges.schemasAfter,
         ),
       );
     }
@@ -812,23 +804,6 @@ export class RegistryChecks {
     } satisfies SchemaDiffSuccess;
   }
 
-  async serviceName(service: { name: string | null }) {
-    if (!service.name) {
-      this.logger.debug('No service name');
-      return {
-        status: 'failed',
-        reason: 'Service name is required',
-      } satisfies CheckResult;
-    }
-
-    this.logger.debug('Service name is defined');
-
-    return {
-      status: 'completed',
-      result: null,
-    } satisfies CheckResult;
-  }
-
   private isValidURL(url: string): boolean {
     try {
       new URL(url);
@@ -839,21 +814,35 @@ export class RegistryChecks {
     }
   }
 
-  async serviceUrl(
-    service: { url: string | null },
-    existingService: { url: string | null } | null,
-  ) {
-    if (!service.url) {
-      this.logger.debug('No service url');
+  async serviceUrl(newServiceUrl: string | null, existingServiceUrl: string | null) {
+    if (newServiceUrl === null) {
+      if (existingServiceUrl) {
+        return {
+          status: 'completed',
+          result: {
+            status: 'unchanged' as const,
+            serviceUrl: existingServiceUrl,
+          },
+        } satisfies CheckResult;
+      }
+
       return {
         status: 'failed',
         reason: 'Service url is required',
       } satisfies CheckResult;
     }
 
-    this.logger.debug('Service url is defined');
+    if (newServiceUrl === existingServiceUrl) {
+      return {
+        status: 'completed',
+        result: {
+          status: 'unchanged' as const,
+          serviceUrl: existingServiceUrl,
+        },
+      } satisfies CheckResult;
+    }
 
-    if (!this.isValidURL(service.url)) {
+    if (!this.isValidURL(newServiceUrl)) {
       return {
         status: 'failed',
         reason: 'Invalid service URL provided',
@@ -862,19 +851,13 @@ export class RegistryChecks {
 
     return {
       status: 'completed',
-      result:
-        existingService && service.url !== existingService.url
-          ? {
-              before: existingService.url,
-              after: service.url,
-              message: service.url
-                ? `New service url: ${service.url} (previously: ${existingService.url ?? 'none'})`
-                : `Service url removed (previously: ${existingService.url ?? 'none'})`,
-              status: 'modified' as const,
-            }
-          : {
-              status: 'unchanged' as const,
-            },
+      result: {
+        message: `New service url: ${newServiceUrl} (previously: ${existingServiceUrl ?? 'none'})`,
+        status: 'modified' as const,
+        before: existingServiceUrl,
+        after: newServiceUrl,
+        serviceUrl: newServiceUrl,
+      },
     } satisfies CheckResult;
   }
 
@@ -948,8 +931,8 @@ export class RegistryChecks {
 }
 
 type SubgraphDefinition = {
-  service_name: string;
-  service_url: string | null;
+  serviceName: string;
+  serviceUrl: string | null;
 };
 
 export function detectUrlChanges(
@@ -964,49 +947,49 @@ export function detectUrlChanges(
     return [];
   }
 
-  const nameToCompositeSchemaMap = new Map(subgraphsBefore.map(s => [s.service_name, s]));
+  const nameToCompositeSchemaMap = new Map(subgraphsBefore.map(s => [s.serviceName, s]));
   const changes: Array<RegistryServiceUrlChangeSerializableChange> = [];
 
   for (const schema of subgraphsAfter) {
-    const before = nameToCompositeSchemaMap.get(schema.service_name);
+    const before = nameToCompositeSchemaMap.get(schema.serviceName);
 
-    if (before && before.service_url !== schema.service_url) {
-      if (before.service_url != null && schema.service_url != null) {
+    if (before && before.serviceUrl !== schema.serviceUrl) {
+      if (before.serviceUrl != null && schema.serviceUrl != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
-              old: before.service_url,
-              new: schema.service_url,
+              old: before.serviceUrl,
+              new: schema.serviceUrl,
             },
           },
         });
-      } else if (before.service_url != null && schema.service_url == null) {
+      } else if (before.serviceUrl != null && schema.serviceUrl == null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
-              old: before.service_url,
+              old: before.serviceUrl,
               new: null,
             },
           },
         });
-      } else if (before.service_url == null && schema.service_url != null) {
+      } else if (before.serviceUrl == null && schema.serviceUrl != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
               old: null,
-              new: schema.service_url,
+              new: schema.serviceUrl,
             },
           },
         });
       } else {
         throw new Error(
-          `This shouldn't happen (before.service_url=${JSON.stringify(before.service_url)}, schema.service_url=${JSON.stringify(schema.service_url)}).`,
+          `This shouldn't happen (before.serviceUrl=${JSON.stringify(before.serviceUrl)}, schema.serviceUrl=${JSON.stringify(schema.serviceUrl)}).`,
         );
       }
     }
