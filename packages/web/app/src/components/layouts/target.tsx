@@ -178,8 +178,8 @@ export const TargetLayout = ({
       </header>
 
       {query.fetching === false &&
-        query.stale === false &&
-        (currentProject === null || currentOrganization === null || currentTarget === null) ? (
+      query.stale === false &&
+      (currentProject === null || currentOrganization === null || currentTarget === null) ? (
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
