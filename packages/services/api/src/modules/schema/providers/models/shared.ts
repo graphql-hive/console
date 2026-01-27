@@ -11,7 +11,7 @@ import type {
   SchemaDiffSkip,
   SchemaDiffSuccess,
 } from '../registry-checks';
-import { CompositeSchemaInput, SingleSchemaInput } from '../schema-helper';
+import type { CompositeSchemaInput, SingleSchemaInput } from '../schema-helper';
 
 export const SchemaPublishConclusion = {
   /**
