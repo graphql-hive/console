@@ -149,47 +149,49 @@ export class EmailVerification {
       };
     }
 
+    if (existingVerification && !input.resend) {
+      return {
+        ok: true,
+        expiresAt: new Date(existingVerification.expiresAt),
+      };
+    }
+
     const token = randomBytes(16).toString('hex');
     const tokenHash = await bcrypt.hash(token, await bcrypt.genSalt());
-    const emailVerification =
-      !existingVerification || input.resend
-        ? await this.pool
-            .one(
-              sql`
-                INSERT INTO "email_verifications" AS "ev" (
-                  "user_identity_id"
-                  , "token_hash"
-                  , "expires_at"
-                )
-                VALUES (
-                  ${input.userIdentityId}
-                  , ${tokenHash}
-                  , now() + INTERVAL '30 minutes'
-                )
-                ON CONFLICT ("user_identity_id") DO UPDATE SET
-                  "token_hash" = EXCLUDED.token_hash
-                  , "expires_at" = EXCLUDED.expires_at
-                  , "verified_at" = NULL
-                RETURNING ${emailVerificationFields(sql`"ev".`)}
-              `,
-            )
-            .then<zod.output<typeof UnverifiedEmailVerificationModel>>(v =>
-              UnverifiedEmailVerificationModel.parse(v),
-            )
-        : existingVerification;
+    const newVerification = await this.pool
+      .one(
+        sql`
+          INSERT INTO "email_verifications" AS "ev" (
+            "user_identity_id"
+            , "token_hash"
+            , "expires_at"
+          )
+          VALUES (
+            ${input.userIdentityId}
+            , ${tokenHash}
+            , now() + INTERVAL '30 minutes'
+          )
+          ON CONFLICT ("user_identity_id") DO UPDATE SET
+            "token_hash" = EXCLUDED.token_hash
+            , "expires_at" = EXCLUDED.expires_at
+            , "verified_at" = NULL
+          RETURNING ${emailVerificationFields(sql`"ev".`)}
+        `,
+      )
+      .then<zod.output<typeof UnverifiedEmailVerificationModel>>(v =>
+        UnverifiedEmailVerificationModel.parse(v),
+      );
 
-    if (existingVerification !== emailVerification) {
-      await this.taskScheduler.scheduleTask(EmailVerificationTask, {
-        user: {
-          email: superTokensUser.email,
-        },
-        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?userIdentityId=${emailVerification.userIdentityId}&token=${token}`,
-      });
-    }
+    await this.taskScheduler.scheduleTask(EmailVerificationTask, {
+      user: {
+        email: superTokensUser.email,
+      },
+      emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?userIdentityId=${newVerification.userIdentityId}&token=${token}`,
+    });
 
     return {
       ok: true,
-      expiresAt: new Date(emailVerification.expiresAt),
+      expiresAt: new Date(newVerification.expiresAt),
     };
   }
 
