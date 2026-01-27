@@ -154,16 +154,16 @@ export function toSingleSchemaInput(schema: SingleSchema): SingleSchemaInput {
 }
 
 export type CompositeSchemaInput = {
-  sdl: string;
   id: string;
+  sdl: string;
   serviceName: string;
   serviceUrl: string;
   metadata: string | null;
 };
 
 export type SingleSchemaInput = {
-  sdl: string;
   id: string;
+  sdl: string;
   serviceName: null;
   serviceUrl: null;
   metadata: string | null;

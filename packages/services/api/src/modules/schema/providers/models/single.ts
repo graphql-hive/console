@@ -32,21 +32,11 @@ export class SingleModel {
   ) {}
 
   @traceFn('Single modern: diffSchema')
-  async diffSchema({
-    input,
-    latest,
-  }: {
-    input: {
-      sdl: string;
-    };
-    latest: {
-      schemas: [SingleSchema];
-    } | null;
+  async diffSchema(args: {
+    incoming: Pick<SingleSchemaInput, 'sdl'>;
+    existing: Pick<SingleSchemaInput, 'sdl'> | null;
   }) {
-    return this.checks.serviceDiff({
-      existingSdl: latest?.schemas[0]?.sdl ?? null,
-      incomingSdl: input.sdl,
-    });
+    return this.checks.serviceDiff(args);
   }
 
   @traceFn('Single modern: check', {

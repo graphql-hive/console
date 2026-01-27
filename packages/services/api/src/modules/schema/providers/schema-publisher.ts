@@ -611,14 +611,12 @@ export class SchemaPublisher {
         if (input.schemaProposalId) {
           try {
             const diffSchema = await this.models[project.type].diffSchema({
-              input: {
+              existing: latestVersion
+                ? toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))
+                : null,
+              incoming: {
                 sdl,
               },
-              latest: latestVersion
-                ? {
-                    schemas: [ensureSingleSchema(latestVersion.schemas)],
-                  }
-                : null,
             });
             if ('result' in diffSchema) {
               proposalChanges = diffSchema.result ?? null;
@@ -671,12 +669,9 @@ export class SchemaPublisher {
               input: {
                 sdl,
                 serviceName: input.service,
-                url: input.url ?? null,
               },
-              latest: latestVersion
-                ? {
-                    schemas: ensureCompositeSchemas(latestVersion.schemas),
-                  }
+              existing: latestVersion
+                ? ensureCompositeSchemas(latestVersion.schemas).map(toCompositeSchemaInput)
                 : null,
             });
             if ('result' in diffSchema) {

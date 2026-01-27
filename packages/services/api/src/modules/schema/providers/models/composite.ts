@@ -7,7 +7,7 @@ import {
   RegistryChecks,
   type ConditionalBreakingChangeDiffConfig,
 } from '../registry-checks';
-import { CompositeSchemaInput, swapServices } from '../schema-helper';
+import { CompositeSchemaInput, SingleSchemaInput, swapServices } from '../schema-helper';
 import type { Organization, Project, Target } from './../../../../shared/entities';
 import { ProjectType } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
@@ -85,22 +85,14 @@ export class CompositeModel {
   }
 
   @traceFn('Composite modern: diffSchema')
-  async diffSchema({
-    input,
-    latest,
-  }: {
-    input: {
-      sdl: string;
-      serviceName: string;
-      url: string | null;
-    };
-    latest: {
-      schemas: Pick<PushedCompositeSchema, 'service_name' | 'sdl'>[];
-    } | null;
+  async diffSchema(args: {
+    existing: Array<Pick<CompositeSchemaInput, 'sdl' | 'serviceName'>> | null;
+    input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'>;
   }) {
     return this.checks.serviceDiff({
-      existingSdl: latest?.schemas?.find(s => s.service_name === input.serviceName)?.sdl ?? null,
-      incomingSdl: input.sdl,
+      existing:
+        args.existing?.find(schema => schema.serviceName === args.input.serviceName) ?? null,
+      incoming: args.input,
     });
   }
 

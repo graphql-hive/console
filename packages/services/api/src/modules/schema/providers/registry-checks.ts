@@ -429,28 +429,20 @@ export class RegistryChecks {
    */
   async serviceDiff(args: {
     /** The existing SDL */
-    existingSdl: string | null;
+    existing: Pick<SchemaInput, 'sdl'> | null;
     /** The incoming SDL */
-    incomingSdl: string | null;
+    incoming: Pick<SchemaInput, 'sdl'> | null;
   }) {
     let existingSchema: GraphQLSchema | null;
     let incomingSchema: GraphQLSchema | null;
 
     try {
-      existingSchema = args.existingSdl
-        ? buildSortedSchemaFromSchemaObject(
-            this.helper.createSchemaObject({
-              sdl: args.existingSdl,
-            }),
-          )
+      existingSchema = args.existing
+        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.existing))
         : null;
 
-      incomingSchema = args.incomingSdl
-        ? buildSortedSchemaFromSchemaObject(
-            this.helper.createSchemaObject({
-              sdl: args.incomingSdl,
-            }),
-          )
+      incomingSchema = args.incoming
+        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.incoming))
         : null;
     } catch (error) {
       this.logger.error('Failed to build schema for diff. Skip diff check.');
