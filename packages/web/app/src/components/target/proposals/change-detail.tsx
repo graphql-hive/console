@@ -22,7 +22,7 @@ export function ProposalChangeDetail(props: {
     <Accordion type="single">
       <AccordionItem value="item-1">
         <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 text-gray-600 hover:no-underline dark:text-white">
+          <AccordionTrigger className="py-3 text-white hover:no-underline">
             <div className="flex w-full flex-row items-center text-left">
               <div>{labelize(props.change.message)}</div>
               <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
@@ -49,7 +49,7 @@ export function ChangeBlock(props: {
   return (
     props.changes.length !== 0 && (
       <>
-        <h2 className="mb-2 mt-6 flex items-center font-bold text-gray-900 dark:text-white">
+        <h2 className="mb-2 mt-6 flex items-center font-bold text-white">
           {props.title}
           {props.info && <ChangesBlockTooltip info={props.info} />}
         </h2>

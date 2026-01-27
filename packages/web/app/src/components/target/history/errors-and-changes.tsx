@@ -155,7 +155,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      <h2 className="mb-3 font-bold text-gray-900 dark:text-white">{props.title}</h2>
+      <h2 className="mb-3 font-bold text-white">{props.title}</h2>
       <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -233,7 +233,7 @@ function ChangeItem(
               )}
             >
               <div>
-                <span className="text-gray-600 dark:text-white">{labelize(change.message)}</span>
+                <span className="text-white">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
                   <span className="cursor-pointer text-yellow-500">
                     {' '}

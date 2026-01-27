@@ -202,16 +202,14 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="mb-2 text-sm font-medium text-gray-900 dark:text-white">{props.title}</h2>
+      <h2 className="mb-2 text-sm font-medium text-white">{props.title}</h2>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
             key={key}
             className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-red-400', 'my-1')}
           >
-            <span className="text-left text-gray-600 dark:text-white">
-              {labelize(edge.node.message)}
-            </span>
+            <span className="text-left text-white">{labelize(edge.node.message)}</span>
           </li>
         ))}
       </ul>

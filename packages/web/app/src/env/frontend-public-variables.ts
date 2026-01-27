@@ -23,7 +23,6 @@ export const ALLOWED_ENVIRONMENT_VARIABLES = [
   'SENTRY',
   'SENTRY_DSN',
   'MEMBER_ROLES_DEADLINE',
-  'FEATURE_FLAGS_THEME_SWITCHER_ENABLED',
 ] as const;
 
 export type AllowedEnvironmentVariables = (typeof ALLOWED_ENVIRONMENT_VARIABLES)[number];
