@@ -1,10 +1,12 @@
 # Schema Support
 
-The Laboratory provides comprehensive schema support through automatic introspection and a visual Builder that helps you explore and build GraphQL operations.
+The Laboratory provides comprehensive schema support through automatic introspection and a visual
+Builder that helps you explore and build GraphQL operations.
 
 ## Schema Introspection
 
-The Laboratory automatically introspects your GraphQL schema when you provide an endpoint. This enables:
+The Laboratory automatically introspects your GraphQL schema when you provide an endpoint. This
+enables:
 
 - **Auto-completion** - The editor suggests available fields, types, and arguments
 - **Validation** - Real-time checking of your queries against the schema
@@ -15,7 +17,8 @@ The Laboratory automatically introspects your GraphQL schema when you provide an
 
 ### Default Endpoint
 
-If your Laboratory is configured with a default endpoint, it will be automatically loaded. You can restore the default endpoint at any time using the restore button in the Builder panel.
+If your Laboratory is configured with a default endpoint, it will be automatically loaded. You can
+restore the default endpoint at any time using the restore button in the Builder panel.
 
 ### Custom Endpoint
 
@@ -26,6 +29,7 @@ To use a different endpoint:
 3. The Laboratory will automatically fetch the schema via introspection
 
 The endpoint can be:
+
 - A standard HTTP/HTTPS GraphQL endpoint
 - A GraphQL endpoint with custom path (e.g., `/graphql`, `/api/graphql`)
 - Any endpoint that supports GraphQL introspection
@@ -92,6 +96,7 @@ The operation editor uses your schema to provide:
 ### Auto-completion
 
 As you type, the editor suggests:
+
 - Field names
 - Argument names
 - Type names
@@ -102,6 +107,7 @@ Press `Tab` or `Enter` to accept suggestions.
 ### Validation
 
 The editor validates your query in real-time:
+
 - **Red underlines** - Syntax errors
 - **Yellow underlines** - Schema validation errors
 - **Hover for details** - See specific error messages
@@ -109,6 +115,7 @@ The editor validates your query in real-time:
 ### Type Information
 
 Hover over any field or type to see:
+
 - Field type
 - Description (if available)
 - Required arguments
@@ -123,6 +130,7 @@ If you don't have a schema available, you can still:
 - Execute operations against any endpoint
 
 However, you won't have access to:
+
 - Visual Builder
 - Auto-completion
 - Schema validation
