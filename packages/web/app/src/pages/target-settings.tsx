@@ -478,6 +478,7 @@ const TargetSettings_AppDeploymentProtectionConfigurationFragment = graphql(`
   fragment TargetSettings_AppDeploymentProtectionConfigurationFragment on AppDeploymentProtectionConfiguration {
     isEnabled
     minDaysInactive
+    minDaysSinceCreation
     maxTrafficPercentage
     trafficPeriodDays
     ruleLogic
@@ -576,6 +577,7 @@ const TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutatio
         message
         inputErrors {
           minDaysInactive
+          minDaysSinceCreation
           maxTrafficPercentage
           trafficPeriodDays
         }
@@ -1131,12 +1133,17 @@ const AppDeploymentProtection = (props: {
       enableReinitialize: true,
       initialValues: {
         minDaysInactive: configuration?.minDaysInactive ?? 30,
+        minDaysSinceCreation: configuration?.minDaysSinceCreation ?? 3,
         maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
         trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
         ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
       },
       validationSchema: Yup.object().shape({
         minDaysInactive: Yup.number()
+          .min(0, 'Must be at least 0')
+          .integer('Must be a whole number')
+          .required('Required'),
+        minDaysSinceCreation: Yup.number()
           .min(0, 'Must be at least 0')
           .integer('Must be a whole number')
           .required('Required'),
@@ -1167,6 +1174,7 @@ const AppDeploymentProtection = (props: {
             },
             appDeploymentProtectionConfiguration: {
               minDaysInactive: values.minDaysInactive,
+              minDaysSinceCreation: values.minDaysSinceCreation,
               maxTrafficPercentage: values.maxTrafficPercentage,
               trafficPeriodDays: values.trafficPeriodDays,
               ruleLogic: values.ruleLogic,
@@ -1252,8 +1260,19 @@ const AppDeploymentProtection = (props: {
             <div>
               <div className="mb-2">An app deployment can only be retired if it</div>
               <div className="ml-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span>has not been used for at least</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span>was created at least</span>
+                  <Input
+                    name="minDaysSinceCreation"
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    value={values.minDaysSinceCreation}
+                    disabled={isSubmitting}
+                    type="number"
+                    min="0"
+                    className="!inline-flex w-20 text-center"
+                  />
+                  <span>days ago and has not been used for at least</span>
                   <Input
                     name="minDaysInactive"
                     onChange={handleChange}
@@ -1307,10 +1326,23 @@ const AppDeploymentProtection = (props: {
               </div>
             </div>
             <div className="text-sm text-gray-400">
-              If no usage data exists for an app deployment, it can always be retired.
+              The creation date check always applies. The inactivity and traffic checks only apply if
+              the app deployment has usage data.
             </div>
           </div>
           <div className="mt-4">
+            {touched.minDaysSinceCreation && errors.minDaysSinceCreation && (
+              <div className="text-red-500">{errors.minDaysSinceCreation}</div>
+            )}
+            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
+              .minDaysSinceCreation && (
+              <div className="text-red-500">
+                {
+                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
+                    .minDaysSinceCreation
+                }
+              </div>
+            )}
             {touched.minDaysInactive && errors.minDaysInactive && (
               <div className="text-red-500">{errors.minDaysInactive}</div>
             )}

@@ -375,6 +375,7 @@ export async function createStorage(
       | 'app_deployment_protection_max_traffic_percentage'
       | 'app_deployment_protection_traffic_period_days'
       | 'app_deployment_protection_rule_logic'
+      | 'app_deployment_protection_min_days_since_creation'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -398,6 +399,7 @@ export async function createStorage(
       appDeploymentProtection: {
         isEnabled: row.app_deployment_protection_enabled,
         minDaysInactive: row.app_deployment_protection_min_days_inactive,
+        minDaysSinceCreation: row.app_deployment_protection_min_days_since_creation,
         maxTrafficPercentage: Number(row.app_deployment_protection_max_traffic_percentage),
         trafficPeriodDays: row.app_deployment_protection_traffic_period_days,
         ruleLogic: row.app_deployment_protection_rule_logic as 'AND' | 'OR',
@@ -1873,6 +1875,7 @@ export async function createStorage(
           | 'app_deployment_protection_max_traffic_percentage'
           | 'app_deployment_protection_traffic_period_days'
           | 'app_deployment_protection_rule_logic'
+          | 'app_deployment_protection_min_days_since_creation'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1889,6 +1892,7 @@ export async function createStorage(
           t.fail_diff_on_dangerous_change,
           t.app_deployment_protection_enabled,
           t.app_deployment_protection_min_days_inactive,
+          t.app_deployment_protection_min_days_since_creation,
           t.app_deployment_protection_max_traffic_percentage,
           t.app_deployment_protection_traffic_period_days,
           t.app_deployment_protection_rule_logic
@@ -2025,6 +2029,7 @@ export async function createStorage(
       projectId: project,
       isEnabled,
       minDaysInactive,
+      minDaysSinceCreation,
       maxTrafficPercentage,
       trafficPeriodDays,
       ruleLogic,
@@ -2033,6 +2038,7 @@ export async function createStorage(
       projectId: string;
       isEnabled?: boolean | null;
       minDaysInactive?: number | null;
+      minDaysSinceCreation?: number | null;
       maxTrafficPercentage?: number | null;
       trafficPeriodDays?: number | null;
       ruleLogic?: 'AND' | 'OR' | null;
@@ -2047,6 +2053,7 @@ export async function createStorage(
               , app_deployment_protection_min_days_inactive = COALESCE(${minDaysInactive ?? null}, app_deployment_protection_min_days_inactive)
               , app_deployment_protection_max_traffic_percentage = COALESCE(${maxTrafficPercentage ?? null}, app_deployment_protection_max_traffic_percentage)
               , app_deployment_protection_traffic_period_days = COALESCE(${trafficPeriodDays ?? null}, app_deployment_protection_traffic_period_days)
+              , app_deployment_protection_min_days_since_creation = COALESCE(${minDaysSinceCreation ?? null}, app_deployment_protection_min_days_since_creation)
               , app_deployment_protection_rule_logic = COALESCE(${ruleLogic ?? null}, app_deployment_protection_rule_logic)
             FROM (
               SELECT
@@ -2078,6 +2085,7 @@ export async function createStorage(
               , t.app_deployment_protection_max_traffic_percentage
               , t.app_deployment_protection_traffic_period_days
               , t.app_deployment_protection_rule_logic
+              , t.app_deployment_protection_min_days_since_creation
           `);
         }),
       ).appDeploymentProtection;

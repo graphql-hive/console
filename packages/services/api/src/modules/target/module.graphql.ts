@@ -356,6 +356,10 @@ export default gql`
     """
     minDaysInactive: Int!
     """
+    Minimum number of days since creation before an app deployment can be retired.
+    """
+    minDaysSinceCreation: Int!
+    """
     Maximum traffic percentage threshold. App deployments with traffic above this percentage cannot be retired.
     """
     maxTrafficPercentage: Float!
@@ -397,6 +401,10 @@ export default gql`
     """
     minDaysInactive: Int
     """
+    Minimum days since creation before retirement (must be >= 0).
+    """
+    minDaysSinceCreation: Int
+    """
     Maximum traffic percentage allowed for retirement (0-100).
     """
     maxTrafficPercentage: Float
@@ -428,6 +436,7 @@ export default gql`
 
   type UpdateTargetAppDeploymentProtectionConfigurationInputErrors {
     minDaysInactive: String
+    minDaysSinceCreation: String
     maxTrafficPercentage: String
     trafficPeriodDays: String
   }

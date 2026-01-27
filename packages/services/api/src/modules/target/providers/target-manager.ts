@@ -619,6 +619,7 @@ export class TargetManager {
           message: string;
           inputErrors: {
             minDaysInactive?: string;
+            minDaysSinceCreation?: string;
             maxTrafficPercentage?: string;
             trafficPeriodDays?: string;
           };
@@ -657,6 +658,8 @@ export class TargetManager {
           message: 'Please check your input.',
           inputErrors: {
             minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
+            minDaysSinceCreation:
+              validationResult.error.formErrors.fieldErrors.minDaysSinceCreation?.[0],
             maxTrafficPercentage:
               validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
             trafficPeriodDays: validationResult.error.formErrors.fieldErrors.trafficPeriodDays?.[0],
@@ -670,6 +673,7 @@ export class TargetManager {
       targetId: selector.targetId,
       isEnabled: args.configuration.isEnabled ?? undefined,
       minDaysInactive: validationResult.data.minDaysInactive ?? undefined,
+      minDaysSinceCreation: validationResult.data.minDaysSinceCreation ?? undefined,
       maxTrafficPercentage: validationResult.data.maxTrafficPercentage ?? undefined,
       trafficPeriodDays: validationResult.data.trafficPeriodDays ?? undefined,
       ruleLogic: args.configuration.ruleLogic ?? undefined,
@@ -686,6 +690,11 @@ const AppDeploymentProtectionConfigurationModel = z.object({
   minDaysInactive: z
     .number()
     .min(0, 'Minimum days inactive must be at least 0.')
+    .nullable()
+    .optional(),
+  minDaysSinceCreation: z
+    .number()
+    .min(0, 'Minimum days since creation must be at least 0.')
     .nullable()
     .optional(),
   maxTrafficPercentage: z

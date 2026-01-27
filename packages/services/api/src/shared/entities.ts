@@ -386,6 +386,7 @@ export interface TargetSettings {
   appDeploymentProtection: {
     isEnabled: boolean;
     minDaysInactive: number;
+    minDaysSinceCreation: number;
     maxTrafficPercentage: number;
     trafficPeriodDays: number;
     ruleLogic: 'AND' | 'OR';

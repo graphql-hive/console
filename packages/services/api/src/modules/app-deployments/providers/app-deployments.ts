@@ -1,4 +1,4 @@
-import { startOfDay, subDays } from 'date-fns';
+import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 'slonik';
 import { z } from 'zod';
@@ -621,16 +621,22 @@ export class AppDeployments {
         });
         const trafficPercentage = trafficData?.trafficPercentage ?? null;
 
-        // Check protection rules
-        // If no usage data (lastUsed is null), we allow retirement per requirement
-        // If usage data exists, check criteria based on ruleLogic:
-        // AND: Both conditions must pass (inactive enough AND low traffic)
-        // OR: Either condition can pass (inactive enough OR low traffic)
+        // Check protection rules:
+        // 1. App deployment must have been created at least minDaysSinceCreation days ago
+        // 2. If usage data exists, check inactivity and traffic criteria based on ruleLogic:
+        //    AND: Both conditions must pass (inactive enough AND low traffic)
+        //    OR: Either condition can pass (inactive enough OR low traffic)
 
         let isBlocked = false;
         let blockReason = '';
 
-        if (lastUsed !== null) {
+        const createdAt = new Date(appDeployment.createdAt);
+        const daysSinceCreation = differenceInCalendarDays(new Date(), createdAt);
+
+        if (daysSinceCreation < protectionConfig.minDaysSinceCreation) {
+          isBlocked = true;
+          blockReason = `App deployment was created ${daysSinceCreation} days ago, but requires at least ${protectionConfig.minDaysSinceCreation} days since creation`;
+        } else if (lastUsed !== null) {
           const inactiveEnough =
             daysSinceLastUsed === null || daysSinceLastUsed >= protectionConfig.minDaysInactive;
           const lowTraffic =
