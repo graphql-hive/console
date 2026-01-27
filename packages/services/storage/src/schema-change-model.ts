@@ -671,7 +671,6 @@ export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAdde
   type: DirectiveUsageSchemaAddedLiteral,
   meta: z.object({
     addedDirectiveName: z.string(),
-    schemaTypeName: z.string(),
     addedToNewType: z.boolean().default(false),
     directiveRepeatedTimes: z.number().default(1),
   }),
@@ -682,7 +681,6 @@ export const DirectiveUsageSchemaRemovedModel = implement<DirectiveUsageSchemaRe
     type: DirectiveUsageSchemaRemovedLiteral,
     meta: z.object({
       removedDirectiveName: z.string(),
-      schemaTypeName: z.string(),
       directiveRepeatedTimes: z.number().default(1),
     }),
   },
