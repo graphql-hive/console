@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { Proposal, ProposalOverview_ReviewsFragment } from '@/components/target/proposals';
+import { Proposal, Proposal_ReviewsFragment } from '@/components/target/proposals';
 import { ServiceHeading, ServiceHeadingType } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ export function TargetProposalSchemaPage(props: {
   targetSlug: string;
   proposalId: string; // @todo pass to proposal for commenting etc
   services: ServiceProposalDetails[];
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  reviews: FragmentType<typeof Proposal_ReviewsFragment>;
 }) {
   if (props.services.length) {
     return (
@@ -31,7 +31,7 @@ function Schema({
   reviews,
 }: {
   details: ServiceProposalDetails;
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  reviews: FragmentType<typeof Proposal_ReviewsFragment>;
 }) {
   const [isVisible, setIsVisible] = useState(true);
 

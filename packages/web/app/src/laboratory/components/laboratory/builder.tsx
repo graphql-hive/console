@@ -76,7 +76,7 @@ export const BuilderArgument = (props: {
     <Button
       key={props.field.name}
       variant="ghost"
-      className={cn('text-muted-foreground w-full justify-start !p-1 text-xs', {
+      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
         'text-foreground-primary': isInQuery,
       })}
       size="sm"
@@ -98,7 +98,7 @@ export const BuilderArgument = (props: {
           }
         }}
       />
-      <BoxIcon className="size-4 text-rose-500 dark:text-rose-400" />
+      <BoxIcon className="size-4 text-rose-400" />
       {props.field.name}: <GraphQLType type={props.field.type} />
     </Button>
   );
@@ -157,7 +157,7 @@ export const BuilderScalarField = (props: {
           <Button
             variant="ghost"
             className={cn(
-              'text-muted-foreground bg-card group sticky top-0 z-10 w-full justify-start overflow-hidden !p-1 text-xs',
+              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
               {
                 'text-foreground-primary': isInQuery,
               },
@@ -168,7 +168,7 @@ export const BuilderScalarField = (props: {
             size="sm"
           >
             <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-            <div className="group-hover:bg-accent dark:group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+            <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
             <ChevronDownIcon
               className={cn('text-muted-foreground size-4 transition-all', {
                 '-rotate-90': !isOpen,
@@ -200,7 +200,7 @@ export const BuilderScalarField = (props: {
                     <Button
                       variant="ghost"
                       className={cn(
-                        'text-muted-foreground bg-card group sticky top-0 z-10 w-full justify-start overflow-hidden !p-1 text-xs',
+                        'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                         {
                           'text-foreground-primary': hasArgs,
                         },
@@ -244,7 +244,7 @@ export const BuilderScalarField = (props: {
     <Button
       key={props.field.name}
       variant="ghost"
-      className={cn('text-muted-foreground w-full justify-start !p-1 text-xs', {
+      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
         'text-foreground-primary': isInQuery,
       })}
       size="sm"
@@ -335,7 +335,7 @@ export const BuilderObjectField = (props: {
         <Button
           variant="ghost"
           className={cn(
-            'text-muted-foreground bg-card group sticky top-0 z-10 w-full justify-start overflow-hidden !p-1 text-xs',
+            'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
             {
               'text-foreground-primary': isInQuery,
             },
@@ -346,7 +346,7 @@ export const BuilderObjectField = (props: {
           size="sm"
         >
           <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-          <div className="group-hover:bg-accent dark:group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+          <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
           <ChevronDownIcon
             className={cn('text-muted-foreground size-4 transition-all', {
               '-rotate-90': !isOpen,
@@ -378,7 +378,7 @@ export const BuilderObjectField = (props: {
                   <Button
                     variant="ghost"
                     className={cn(
-                      'text-muted-foreground bg-card group sticky top-0 z-10 w-full justify-start overflow-hidden !p-1 text-xs',
+                      'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                       {
                         'text-foreground-primary': hasArgs,
                       },
@@ -539,7 +539,7 @@ export const Builder = (props: {
                 onClick={() => setOpenPaths([])}
                 variant="ghost"
                 size="icon-sm"
-                className="size-6 rounded-sm !p-1"
+                className="p-1! size-6 rounded-sm"
                 disabled={openPaths.length === 0}
               >
                 <CopyMinusIcon className="text-muted-foreground size-4" />
@@ -651,7 +651,7 @@ export const Builder = (props: {
             </div>
           </Tabs>
         ) : (
-          <Empty className="h-96 w-full !px-0">
+          <Empty className="px-0! h-96 w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
                 <FolderIcon className="text-muted-foreground size-6" />

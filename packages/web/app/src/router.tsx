@@ -7,6 +7,7 @@ import Session from 'supertokens-auth-react/recipe/session';
 import { Provider as UrqlProvider } from 'urql';
 import { z } from 'zod';
 import { LoadingAPIIndicator } from '@/components/common/LoadingAPI';
+import { ThemeProvider } from '@/components/theme/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { frontendConfig } from '@/config/supertokens/frontend';
 import { env } from '@/env/frontend';
@@ -64,6 +65,7 @@ import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
 import { TargetAppsPage } from './pages/target-apps';
 import { TargetChecksPage } from './pages/target-checks';
+import { TargetChecksAffectedDeploymentsPage } from './pages/target-checks-affected-deployments';
 import { TargetChecksSinglePage } from './pages/target-checks-single';
 import { TargetExplorerPage } from './pages/target-explorer';
 import { TargetExplorerDeprecatedPage } from './pages/target-explorer-deprecated';
@@ -126,20 +128,22 @@ function RootComponent() {
   }, []);
 
   return (
-    <HelmetProvider>
-      <Toaster />
-      <SuperTokensWrapper>
-        <QueryClientProvider client={queryClient}>
-          <UrqlProvider value={urqlClient}>
-            <LoadingAPIIndicator />
-            <Outlet />
-          </UrqlProvider>
-        </QueryClientProvider>
-      </SuperTokensWrapper>
-      <ToastContainer hideProgressBar />
-      {/* eslint-disable-next-line no-process-env */}
-      {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
-    </HelmetProvider>
+    <ThemeProvider>
+      <HelmetProvider>
+        <Toaster />
+        <SuperTokensWrapper>
+          <QueryClientProvider client={queryClient}>
+            <UrqlProvider value={urqlClient}>
+              <LoadingAPIIndicator />
+              <Outlet />
+            </UrqlProvider>
+          </QueryClientProvider>
+        </SuperTokensWrapper>
+        <ToastContainer hideProgressBar />
+        {/* eslint-disable-next-line no-process-env */}
+        {process.env.NODE_ENV === 'development' && <LazyTanStackRouterDevtools />}
+      </HelmetProvider>
+    </ThemeProvider>
   );
 }
 
@@ -631,9 +635,11 @@ const targetAppsRoute = createRoute({
 const targetAppVersionRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps/$appName/$appVersion',
+  validateSearch: () => ({}) as { search?: string; coordinates?: string },
   component: function TargetAppVersionRoute() {
     const { organizationSlug, projectSlug, targetSlug, appName, appVersion } =
       targetAppVersionRoute.useParams();
+    const { coordinates } = targetAppVersionRoute.useSearch();
     return (
       <TargetAppVersionPage
         organizationSlug={organizationSlug}
@@ -641,6 +647,7 @@ const targetAppVersionRoute = createRoute({
         targetSlug={targetSlug}
         appName={appName}
         appVersion={appVersion}
+        coordinates={coordinates}
       />
     );
   },
@@ -998,6 +1005,26 @@ const targetProposalsSingleRoute = createRoute({
   },
 });
 
+const targetChecksAffectedDeploymentsRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'checks/$schemaCheckId/affected-deployments',
+  validateSearch: () => ({}) as { coordinate?: string },
+  component: function TargetChecksAffectedDeploymentsRoute() {
+    const { organizationSlug, projectSlug, targetSlug, schemaCheckId } =
+      targetChecksAffectedDeploymentsRoute.useParams();
+    const { coordinate } = targetChecksAffectedDeploymentsRoute.useSearch();
+    return (
+      <TargetChecksAffectedDeploymentsPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+        schemaCheckId={schemaCheckId}
+        coordinate={coordinate}
+      />
+    );
+  },
+});
+
 const routeTree = root.addChildren([
   notFoundRoute,
   anonymousRoute.addChildren([
@@ -1048,6 +1075,7 @@ const routeTree = root.addChildren([
       targetExplorerUnusedRoute,
       targetExplorerTypeRoute,
       targetChecksRoute.addChildren([targetChecksSingleRoute]),
+      targetChecksAffectedDeploymentsRoute,
       targetAppVersionRoute,
       targetAppsRoute,
       targetProposalsRoute.addChildren([targetProposalsNewRoute, targetProposalsSingleRoute]),

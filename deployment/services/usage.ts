@@ -60,6 +60,7 @@ export function deployUsage({
         availabilityOnEveryNode: true,
         env: {
           ...environment.envVars,
+          LOG_LEVEL: 'info',
           SENTRY: sentry.enabled ? '1' : '0',
           REQUEST_LOGGING: '0',
           KAFKA_BUFFER_SIZE: kafka.config.bufferSize,

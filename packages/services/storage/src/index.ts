@@ -366,6 +366,7 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_excluded_app_deployments'
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
       | 'fail_diff_on_dangerous_change'
@@ -384,6 +385,9 @@ export async function createStorage(
         targets: Array.isArray(row.targets) ? row.targets.filter(isDefined) : [],
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
+          : [],
+        excludedAppDeployments: Array.isArray(row.validation_excluded_app_deployments)
+          ? row.validation_excluded_app_deployments.filter(isDefined)
           : [],
       },
     };
@@ -1848,6 +1852,7 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_excluded_app_deployments'
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
           | 'fail_diff_on_dangerous_change'
@@ -1860,6 +1865,7 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
+          t.validation_excluded_app_deployments,
           t.validation_request_count,
           t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets,
@@ -1894,7 +1900,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
           `);
         }),
       );
@@ -1906,6 +1912,7 @@ export async function createStorage(
       period,
       targets,
       excludedClients,
+      excludedAppDeployments,
       breakingChangeFormula,
       requestCount,
       isEnabled,
@@ -1951,6 +1958,7 @@ export async function createStorage(
               validation_percentage = COALESCE(${percentage ?? null}, validation_percentage)
               , validation_period = COALESCE(${period ?? null}, validation_period)
               , validation_excluded_clients = COALESCE(${excludedClients?.length ? sql.array(excludedClients, 'text') : null}, validation_excluded_clients)
+              , validation_excluded_app_deployments = COALESCE(${excludedAppDeployments?.length ? sql.array(excludedAppDeployments, 'text') : null}, validation_excluded_app_deployments)
               , validation_request_count = COALESCE(${requestCount ?? null}, validation_request_count)
               , validation_breaking_change_formula = COALESCE(${breakingChangeFormula ?? null}, validation_breaking_change_formula)
               , validation_enabled = COALESCE(${isEnabled ?? null}, validation_enabled)
@@ -1975,6 +1983,7 @@ export async function createStorage(
               , t.validation_percentage
               , t.validation_period
               , t.validation_excluded_clients
+              , t.validation_excluded_app_deployments
               , ret.targets
               , t.validation_request_count
               , t.validation_breaking_change_formula
@@ -2115,36 +2124,6 @@ export async function createStorage(
       }
 
       return SchemaVersionModel.parse(version);
-    },
-    async getLatestSchemas({ projectId: project, targetId: target, onlyComposable }) {
-      const latest = await pool.maybeOne<
-        Pick<schema_versions, 'id' | 'is_composable'>
-      >(sql`/* getLatestSchemas */
-        SELECT sv.id, sv.is_composable
-        FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
-        WHERE t.id = ${target} AND t.project_id = ${project} AND ${
-          onlyComposable ? sql`sv.is_composable IS TRUE` : true
-        }
-        ORDER BY sv.created_at DESC
-        LIMIT 1
-      `);
-
-      if (!latest) {
-        return null;
-      }
-
-      const schemas = await storage.getSchemasOfVersion({
-        versionId: latest.id,
-        includeMetadata: true,
-      });
-
-      return {
-        versionId: latest.id,
-        valid: latest.is_composable,
-        schemas,
-      };
     },
     async getSchemaByNameOfVersion(args) {
       const result = await pool.maybeOne<
@@ -3961,6 +3940,7 @@ export async function createStorage(
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
             , "schema_proposal_id"
+            , "schema_proposal_changes"
           )
           VALUES (
               ${schemaSDLHash}
@@ -3991,6 +3971,7 @@ export async function createStorage(
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
             , ${args.schemaProposalId ?? null}
+            , ${jsonify(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
           )
           RETURNING
             "id"
@@ -5325,6 +5306,15 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
+  affectedAppDeployments: null | Array<{
+    id: string;
+    name: string;
+    version: string;
+    affectedOperations: Array<{
+      hash: string;
+      name: string | null;
+    }>;
+  }>;
 } {
   return {
     id: change.id,
@@ -5333,6 +5323,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
     isSafeBasedOnUsage: change.isSafeBasedOnUsage,
     approvalMetadata: change.approvalMetadata,
     usageStatistics: change.usageStatistics,
+    affectedAppDeployments: change.affectedAppDeployments,
   };
 }
 
@@ -5363,6 +5354,7 @@ const schemaCheckSQLFields = sql`
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
   , c."schema_proposal_id" as "schemaProposalId"
+  , c."schema_proposal_changes" as "schemaProposalChanges"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`

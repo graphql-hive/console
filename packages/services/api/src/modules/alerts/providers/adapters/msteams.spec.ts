@@ -35,6 +35,7 @@ describe('TeamsCommunicationAdapter', () => {
           reason:
             'Removing a field is a breaking change. It is preferable to deprecate the field before removing it.',
           usageStatistics: null,
+          affectedAppDeployments: null,
           breakingChangeSchemaCoordinate: 'Mutation.addFoo',
         },
         {
@@ -54,6 +55,7 @@ describe('TeamsCommunicationAdapter', () => {
           reason:
             'Removing a field is a breaking change. It is preferable to deprecate the field before removing it.',
           usageStatistics: null,
+          affectedAppDeployments: null,
           breakingChangeSchemaCoordinate: 'Query.foo3',
         },
         {
@@ -71,6 +73,7 @@ describe('TeamsCommunicationAdapter', () => {
           isSafeBasedOnUsage: false,
           reason: null,
           usageStatistics: null,
+          affectedAppDeployments: null,
           breakingChangeSchemaCoordinate: null,
         },
         {
@@ -88,6 +91,7 @@ describe('TeamsCommunicationAdapter', () => {
           isSafeBasedOnUsage: false,
           reason: null,
           usageStatistics: null,
+          affectedAppDeployments: null,
           breakingChangeSchemaCoordinate: null,
         },
       ] as Array<SchemaChangeType>;

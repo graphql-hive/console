@@ -1,5 +1,145 @@
 # hive
 
+## 9.2.0
+
+### Minor Changes
+
+- [#7531](https://github.com/graphql-hive/console/pull/7531)
+  [`f4eb13f`](https://github.com/graphql-hive/console/commit/f4eb13f9edad1bc9f4d98afae55a006094b8a030)
+  Thanks [@jdolle](https://github.com/jdolle)! - Store schema proposal changes on a separate column
+  in the schema check; update graphql inspector
+
+### Patch Changes
+
+- [#7491](https://github.com/graphql-hive/console/pull/7491)
+  [`c4776b8`](https://github.com/graphql-hive/console/commit/c4776b80abf7e71f48d82a8988bc6055d14706b0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support repeat directives in schema proposal diff
+  renderer. This uses an index based approach to identify and render differences in the list of
+  directives used.
+
+- [#7543](https://github.com/graphql-hive/console/pull/7543)
+  [`cf4ff09`](https://github.com/graphql-hive/console/commit/cf4ff0923a85c02a85631e7c2edffd9bb2f83526)
+  Thanks [@jdolle](https://github.com/jdolle)! - Disable project and target cards during loading
+
+- [#7538](https://github.com/graphql-hive/console/pull/7538)
+  [`5a07b98`](https://github.com/graphql-hive/console/commit/5a07b982b1f1617138b9b0e21b12447c8b3ad86b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix schema check approval dropdown submit button
+  style
+
+## 9.1.0
+
+### Minor Changes
+
+- [#7388](https://github.com/graphql-hive/console/pull/7388)
+  [`53f9d5e`](https://github.com/graphql-hive/console/commit/53f9d5e30337b10ea0fdc954b56687d495556c77)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Show affected app deployments for
+  breaking schema changes. When a schema check detects breaking changes, it now shows which active
+  app deployments would be affected, including the specific operations within each deployment that
+  use the affected schema coordinates.
+
+## 9.0.0
+
+### Major Changes
+
+- [#7383](https://github.com/graphql-hive/console/pull/7383)
+  [`ec77725`](https://github.com/graphql-hive/console/commit/ec77725ca16db22e238b4f3ba3d9c881ffb0cd62)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add a new `workflows` service. This service
+  consolidates and replaces the `emails` and `webhooks` services, using a Postgres-backed persistent
+  queue for improved stability and reliability.
+
+  If you are running a self-hosted setup the following docker compose changes are required:
+
+  ```diff
+  services:
+
+  +  workflows:
+  +    image: '${DOCKER_REGISTRY}workflows${DOCKER_TAG}'
+  +    networks:
+  +      - 'stack'
+  +    depends_on:
+  +      db:
+  +        condition: service_healthy
+  +    environment:
+  +      NODE_ENV: production
+  +      PORT: 3014
+  +      POSTGRES_HOST: db
+  +      POSTGRES_PORT: 5432
+  +      POSTGRES_DB: '${POSTGRES_DB}'
+  +      POSTGRES_USER: '${POSTGRES_USER}'
+  +      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+  +      EMAIL_FROM: no-reply@graphql-hive.com
+  +      EMAIL_PROVIDER: sendmail
+  +      LOG_LEVEL: '${LOG_LEVEL:-debug}'
+  +      SENTRY: '${SENTRY:-0}'
+  +      SENTRY_DSN: '${SENTRY_DSN:-}'
+  +      PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
+  +      LOG_JSON: '1'
+  -  emails:
+  -    ...
+  -  webhooks:
+  -    ...
+  ```
+
+  For different setups, we recommend using this as a reference.
+
+  **Note:** The workflows service will attempt to run postgres migrations for seeding the required
+  database tables within the `graphile_worker` namespace. Please make sure the database user has
+  sufficient permissions. For more information please refer to the
+  [Graphile Worker documentation](https://worker.graphile.org/).
+
+- [#7492](https://github.com/graphql-hive/console/pull/7492)
+  [`954e9f3`](https://github.com/graphql-hive/console/commit/954e9f3c37c8518a083b330caa160931779d9a84)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump Node.js version to `v24.13.0`.
+
+### Minor Changes
+
+- [#7377](https://github.com/graphql-hive/console/pull/7377)
+  [`8549f22`](https://github.com/graphql-hive/console/commit/8549f222405a08dec4b2974a28414415c0859cf9)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add `activeAppDeployments` GraphQL
+  query to find app deployments based on usage criteria.
+
+  New filter options:
+
+  - `lastUsedBefore`: Find stale deployments that were used but not recently (OR with
+    neverUsedAndCreatedBefore)
+  - `neverUsedAndCreatedBefore`: Find old deployments that have never been used (OR with
+    lastUsedBefore)
+  - `name`: Filter by app deployment name (case-insensitive partial match, AND with date filters)
+
+  Also adds `createdAt` field to the `AppDeployment` type.
+
+  See
+  [Finding Stale App Deployments](https://the-guild.dev/graphql/hive/docs/schema-registry/app-deployments#finding-stale-app-deployments)
+  for more details.
+
+### Patch Changes
+
+- [#7475](https://github.com/graphql-hive/console/pull/7475)
+  [`e022bb4`](https://github.com/graphql-hive/console/commit/e022bb4805afcc4583db26b16ffd03822d22258f)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix org owner not being able to select a new
+  billing plan after downgrading.
+
+- [#7478](https://github.com/graphql-hive/console/pull/7478)
+  [`8e2e40d`](https://github.com/graphql-hive/console/commit/8e2e40dcf02664b5fe17ed1c7ffbff9e0ec9ffe0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve error message when schema composition
+  exceeds the memory consumption limits.
+
+- [#7485](https://github.com/graphql-hive/console/pull/7485)
+  [`e3006e2`](https://github.com/graphql-hive/console/commit/e3006e22bbe38e673c27b94b080be5f57f3d095d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fixes a bug in Federation composition
+  and validation where an error was incorrectly reported for interfaces implementing another
+  interface with a `@key`. The validation now correctly applies only to object types implementing
+  the interface.
+
+- [#7508](https://github.com/graphql-hive/console/pull/7508)
+  [`8e111ac`](https://github.com/graphql-hive/console/commit/8e111ac4285c5b13196d11908b5afee512dc0e9b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix federation composition access validation on
+  union members when selecting `__typename` in `@requires` directives.
+
+  The `@requires` directive validation rule (`AuthOnRequiresRule`) was not checking authorization
+  requirements for `__typename` selections on union types. When `__typename` on a union type was
+  selected, code would throw an unexpected error.
+
 ## 8.14.1
 
 ### Patch Changes

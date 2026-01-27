@@ -116,11 +116,13 @@ export function createSDLHash(sdl: string): string {
   );
 }
 
-export function createSchemaObject(
-  schema:
-    | Pick<SingleSchema, 'sdl'>
-    | Pick<PushedCompositeSchema, 'sdl' | 'service_name' | 'service_url'>,
-): SchemaObject {
+export type CreateSchemaObjectInput = {
+  sdl: string;
+  serviceName?: string | null;
+  serviceUrl?: string | null;
+};
+
+export function createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {
   let document: DocumentNode;
 
   try {
@@ -135,8 +137,8 @@ export function createSchemaObject(
   return {
     document,
     raw: schema.sdl,
-    source: 'service_name' in schema ? schema.service_name : emptySource,
-    url: 'service_url' in schema ? schema.service_url : null,
+    source: schema.serviceName ?? emptySource,
+    url: schema.serviceUrl ?? null,
   };
 }
 
@@ -382,6 +384,7 @@ export interface TargetSettings {
     breakingChangeFormula: 'PERCENTAGE' | 'REQUEST_COUNT';
     targets: string[];
     excludedClients: string[];
+    excludedAppDeployments: string[];
   };
   failDiffOnDangerousChange: boolean;
 }

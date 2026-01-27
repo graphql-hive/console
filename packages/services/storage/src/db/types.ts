@@ -288,6 +288,7 @@ export interface schema_checks {
   schema_composition_errors: any | null;
   schema_policy_errors: any | null;
   schema_policy_warnings: any | null;
+  schema_proposal_changes: any | null;
   schema_proposal_id: string | null;
   schema_sdl: string | null;
   schema_sdl_store_id: string | null;
@@ -422,6 +423,7 @@ export interface targets {
   project_id: string;
   validation_breaking_change_formula: breaking_change_formula;
   validation_enabled: boolean;
+  validation_excluded_app_deployments: Array<string> | null;
   validation_excluded_clients: Array<string> | null;
   validation_percentage: number;
   validation_period: number;

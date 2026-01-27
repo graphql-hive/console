@@ -1,5 +1,25 @@
 # 16.10.2024
 
+## 3.0.2
+
+### Patch Changes
+
+- [#7585](https://github.com/graphql-hive/console/pull/7585)
+  [`9a6e8a9`](https://github.com/graphql-hive/console/commit/9a6e8a9fe7f337c4a2ee6b7375281f5ae42a38e3)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Upgrade to latest `hive-console-sdk` and
+  drop direct dependency on `graphql-tools`
+
+## 3.0.1
+
+### Patch Changes
+
+- [#7476](https://github.com/graphql-hive/console/pull/7476)
+  [`f4d5f7e`](https://github.com/graphql-hive/console/commit/f4d5f7ee5bf50bc8b621b011696d43757de2e071)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Updated `hive-apollo-router-plugin` to
+  use `hive-console-sdk` from crates.io instead of a local dependency. The plugin now uses
+  `graphql-tools::parser` instead of `graphql-parser` to leverage the parser we now ship in
+  `graphql-tools` crate.
+
 ## 3.0.0
 
 ### Major Changes

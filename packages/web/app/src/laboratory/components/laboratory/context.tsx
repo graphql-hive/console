@@ -21,6 +21,11 @@ import {
   type LaboratoryOperationsActions,
   type LaboratoryOperationsState,
 } from '@/laboratory/lib/operations';
+import {
+  LaboratoryPlugin,
+  LaboratoryPluginsActions,
+  LaboratoryPluginsState,
+} from '@/laboratory/lib/plugins';
 import type {
   LaboratoryPreflight,
   LaboratoryPreflightActions,
@@ -50,6 +55,7 @@ type LaboratoryContextState = LaboratoryCollectionsState &
   LaboratoryPreflightState &
   LaboratoryEnvState &
   LaboratorySettingsState &
+  LaboratoryPluginsState &
   LaboratoryTestState & {
     isFullScreen?: boolean;
   };
@@ -61,6 +67,7 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
   LaboratoryPreflightActions &
   LaboratoryEnvActions &
   LaboratorySettingsActions &
+  LaboratoryPluginsActions &
   LaboratoryTestActions & {
     openAddCollectionDialog?: () => void;
     openUpdateEndpointDialog?: () => void;
@@ -158,6 +165,9 @@ export interface LaboratoryApi {
   checkPermissions?: (
     permission: `${keyof LaboratoryPermissions & string}:${keyof LaboratoryPermission & string}`,
   ) => boolean;
+  plugins?: LaboratoryPlugin<Record<string, any>>[];
+  defaultPluginsState?: Record<string, any>;
+  onPluginsStateChange?: (state: Record<string, any>) => void;
 }
 
 export type LaboratoryContextProps = LaboratoryContextState &

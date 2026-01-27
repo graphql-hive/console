@@ -4,6 +4,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import objectHash from 'object-hash';
 import type {
   CompositeSchema,
+  CreateSchemaObjectInput,
   PushedCompositeSchema,
   Schema,
   SchemaObject,
@@ -46,15 +47,15 @@ export function serviceExists(schemas: CompositeSchema[], serviceName: string) {
 }
 
 export function swapServices(
-  schemas: CompositeSchema[],
-  newSchema: CompositeSchema,
+  schemas: CompositeSchemaInput[],
+  newSchema: CompositeSchemaInput,
 ): {
-  schemas: CompositeSchema[];
-  existing: CompositeSchema | null;
+  schemas: CompositeSchemaInput[];
+  existing: CompositeSchemaInput | null;
 } {
-  let swapped: CompositeSchema | null = null;
+  let swapped: CompositeSchemaInput | null = null;
   const output = schemas.map(existing => {
-    if (existing.service_name === newSchema.service_name) {
+    if (existing.serviceName === newSchema.serviceName) {
       swapped = existing;
       return newSchema;
     }
@@ -72,10 +73,7 @@ export function swapServices(
   };
 }
 
-export function extendWithBase(
-  schemas: CompositeSchema[] | [SingleSchema],
-  baseSchema: string | null,
-) {
+export function extendWithBase(schemas: Array<SchemaInput>, baseSchema: string | null) {
   if (!baseSchema) {
     return schemas;
   }
@@ -105,8 +103,6 @@ export function removeDescriptions(documentNode: DocumentNode): DocumentNode {
   });
 }
 
-type CreateSchemaObjectInput = Parameters<typeof createSchemaObject>[0];
-
 @Injectable({
   scope: Scope.Operation,
   global: true,
@@ -117,31 +113,60 @@ export class SchemaHelper {
     return createSchemaObject(schema);
   }
 
-  createChecksum(schema: SingleSchema | PushedCompositeSchema): string {
+  createChecksum(schema: SchemaInput): string {
     const hasher = createHash('md5');
 
     hasher.update(print(sortDocumentNode(this.createSchemaObject(schema).document)), 'utf-8');
+    hasher.update(`service_name: ${schema.serviceName ?? ''}`, 'utf-8');
+    hasher.update(`service_url: ${schema.serviceUrl ?? ''}`, 'utf-8');
     hasher.update(
-      `service_name: ${
-        'service_name' in schema && typeof schema.service_name === 'string'
-          ? schema.service_name
-          : ''
-      }`,
-      'utf-8',
-    );
-    hasher.update(
-      `service_url: ${
-        'service_url' in schema && typeof schema.service_url === 'string' ? schema.service_url : ''
-      }`,
-      'utf-8',
-    );
-    hasher.update(
-      `metadata: ${
-        'metadata' in schema && schema.metadata ? objectHash(JSON.parse(schema.metadata)) : ''
-      }`,
+      `metadata: ${schema.metadata ? objectHash(JSON.parse(schema.metadata)) : ''}`,
       'utf-8',
     );
 
     return hasher.digest('hex');
   }
 }
+
+export function toCompositeSchemaInput(schema: PushedCompositeSchema): CompositeSchemaInput {
+  return {
+    id: schema.id,
+    metadata: schema.metadata,
+    sdl: schema.sdl,
+    serviceName: schema.service_name,
+    // service_url can be null for very old records from 2023
+    // The default value mapping should happen on the database read level
+    // but right now we are doing that here until we refactor the database read level (Storage class)
+    serviceUrl: schema.service_url ?? '',
+  };
+}
+
+export function toSingleSchemaInput(schema: SingleSchema): SingleSchemaInput {
+  return {
+    id: schema.id,
+    metadata: schema.metadata,
+    sdl: schema.sdl,
+    // Note: due to a "bug" we inserted service_name for single schemas into the schema_log table.
+    // We set it explicitly to null to avoid any confusion in other parts of the business logic
+    serviceName: null,
+    serviceUrl: null,
+  };
+}
+
+export type CompositeSchemaInput = {
+  id: string;
+  sdl: string;
+  serviceName: string;
+  serviceUrl: string;
+  metadata: string | null;
+};
+
+export type SingleSchemaInput = {
+  id: string;
+  sdl: string;
+  serviceName: null;
+  serviceUrl: null;
+  metadata: string | null;
+};
+
+export type SchemaInput = CompositeSchemaInput | SingleSchemaInput;

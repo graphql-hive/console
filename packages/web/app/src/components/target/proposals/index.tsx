@@ -3,7 +3,7 @@ import { GraphQLSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DetachedAnnotations, ReviewComments } from './Review';
 import { AnnotatedProvider } from './schema-diff/components';
-import { SchemaDiff } from './schema-diff/schema-diff';
+import { SchemaDiff } from './schema-diff/core';
 
 /**
  * Fragment containing a list of reviews. Each review is tied to a coordinate
@@ -11,8 +11,8 @@ import { SchemaDiff } from './schema-diff/schema-diff';
  * but this can be done serially because there should not be so many reviews within
  * a single screen's height that it matters.
  * */
-export const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
-  fragment ProposalOverview_ReviewsFragment on SchemaProposalReviewConnection {
+export const Proposal_ReviewsFragment = graphql(/** GraphQL */ `
+  fragment Proposal_ReviewsFragment on SchemaProposalReviewConnection {
     pageInfo {
       startCursor
     }
@@ -31,8 +31,8 @@ export const ProposalOverview_ReviewsFragment = graphql(/** GraphQL */ `
 `);
 
 /** Move to utils? */
-export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
-  fragment ProposalOverview_ChangeFragment on SchemaChange {
+export const Proposal_ChangeFragment = graphql(/* GraphQL */ `
+  fragment Proposal_ChangeFragment on SchemaChange {
     message(withSafeBasedOnUsageNote: false)
     path
     severityLevel
@@ -184,13 +184,14 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on DirectiveUsageUnionMemberAdded {
         addedDirectiveName
         addedUnionMemberTypeName
-        addedUnionMemberTypeName
         unionName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageUnionMemberRemoved {
         removedDirectiveName
         removedUnionMemberTypeName
         unionName
+        directiveRepeatedTimes
       }
       ... on FieldArgumentAdded {
         addedArgumentName
@@ -266,7 +267,6 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       }
       ... on TypeKindChanged {
         newTypeKind
-        oldTypeKind
         typeName
       }
       ... on TypeDescriptionChanged {
@@ -292,117 +292,140 @@ export const ProposalOverview_ChangeFragment = graphql(/* GraphQL */ `
       ... on DirectiveUsageEnumAdded {
         addedDirectiveName
         enumName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageEnumRemoved {
         enumName
         removedDirectiveName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageEnumValueAdded {
         addedDirectiveName
         enumName
         enumValueName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageEnumValueRemoved {
         enumName
         enumValueName
         removedDirectiveName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageInputObjectRemoved {
         inputObjectName
         removedDirectiveName
         removedInputFieldName
         removedInputFieldType
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageInputObjectAdded {
         addedDirectiveName
         addedInputFieldName
         addedInputFieldType
         inputObjectName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageInputFieldDefinitionAdded {
         addedDirectiveName
         inputFieldName
         inputFieldType
         inputObjectName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageInputFieldDefinitionRemoved {
         inputFieldName
         inputObjectName
         removedDirectiveName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageFieldAdded {
         addedDirectiveName
         fieldName
         typeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageFieldRemoved {
         fieldName
         removedDirectiveName
         typeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageScalarAdded {
         addedDirectiveName
         scalarName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageScalarRemoved {
         removedDirectiveName
         scalarName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageObjectAdded {
         addedDirectiveName
         objectName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageObjectRemoved {
         objectName
         removedDirectiveName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageInterfaceAdded {
         addedDirectiveName
         interfaceName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageSchemaAdded {
         addedDirectiveName
         schemaTypeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageSchemaRemoved {
         removedDirectiveName
         schemaTypeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageFieldDefinitionAdded {
         addedDirectiveName
         fieldName
         typeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageFieldDefinitionRemoved {
         fieldName
         removedDirectiveName
         typeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageArgumentDefinitionRemoved {
         argumentName
         fieldName
         removedDirectiveName
         typeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageInterfaceRemoved {
         interfaceName
         removedDirectiveName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageArgumentDefinitionAdded {
         addedDirectiveName
         argumentName
         fieldName
         typeName
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageArgumentAdded {
         addedArgumentName
         addedArgumentValue
         directiveName
-        # oldArgumentValue
+        directiveRepeatedTimes
       }
       ... on DirectiveUsageArgumentRemoved {
         directiveName
         removedArgumentName
+        directiveRepeatedTimes
       }
     }
   }
@@ -428,7 +451,7 @@ export function toUpperSnakeCase(str: string) {
 export function Proposal(props: {
   beforeSchema: GraphQLSchema | null;
   afterSchema: GraphQLSchema | null;
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  reviews: FragmentType<typeof Proposal_ReviewsFragment>;
   serviceName: string;
   className?: string;
 }) {
@@ -439,7 +462,7 @@ export function Proposal(props: {
    *
    * Odds are there will never be so many reviews/comments that this is even a problem.
    */
-  const reviewsConnection = useFragment(ProposalOverview_ReviewsFragment, props.reviews);
+  const reviewsConnection = useFragment(Proposal_ReviewsFragment, props.reviews);
   const [annotations, reviewssByCoordinate] = useMemo(() => {
     const serviceReviews =
       reviewsConnection?.edges?.filter(edge => {
@@ -484,18 +507,6 @@ export function Proposal(props: {
   }, [props.reviews, props.serviceName]);
 
   try {
-    // THIS IS IMPORTANT!! <SchemaDiff/> must be rendered first so that it sets up the state in the
-    // AnnotatedContext for <DetachedAnnotations/>. Otherwise, the DetachedAnnotations will be empty.
-    const diff = (
-      <SchemaDiff
-        className={props.className}
-        before={props.beforeSchema}
-        after={props.afterSchema}
-        annotations={annotations}
-      />
-    );
-
-    // @todo AnnotatedProvider doesnt work 100% of the time... A different solution must be found
     return (
       <AnnotatedProvider>
         <DetachedAnnotations
@@ -509,7 +520,11 @@ export function Proposal(props: {
             </>
           )}
         />
-        {diff}
+        <SchemaDiff
+          className={props.className}
+          before={props.beforeSchema}
+          after={props.afterSchema}
+        />
       </AnnotatedProvider>
     );
   } catch (e: unknown) {

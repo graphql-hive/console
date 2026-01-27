@@ -13,6 +13,7 @@ jobs:
       npmTag: alpha
       buildScript: build:libraries
       packageManager: pnpm
+      nodeVersion: '24.13'
     secrets:
       githubToken: ${{ secrets.GITHUB_TOKEN }}
       npmToken: ${{ secrets.NPM_TOKEN }}
@@ -58,17 +59,11 @@ jobs:
           name: hive-cli-win-x64
           path: ./packages/libraries/cli/dist/*-win32-x64.tar.gz
 
-      - name: upload win x86
+      - name: upload linux arm64
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
         with:
-          name: hive-cli-win-x86
-          path: ./packages/libraries/cli/dist/*-win32-x86.tar.gz
-
-      - name: upload linux arm
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
-        with:
-          name: hive-cli-linux-arm
-          path: ./packages/libraries/cli/dist/*-linux-arm.tar.gz
+          name: hive-cli-linux-arm64
+          path: ./packages/libraries/cli/dist/*-linux-arm64.tar.gz
 
       - name: upload linux x64
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4

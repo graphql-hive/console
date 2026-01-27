@@ -1,7 +1,7 @@
 import { buildSchema } from 'graphql';
 import { useQuery } from 'urql';
-import { ProposalOverview_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
-import { SchemaDiff } from '@/components/target/proposals/schema-diff/schema-diff';
+import { Proposal_ChangeFragment, toUpperSnakeCase } from '@/components/target/proposals';
+import { SchemaDiff } from '@/components/target/proposals/schema-diff/core';
 import { Spinner } from '@/components/ui/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { Change } from '@graphql-inspector/core';
@@ -23,7 +23,7 @@ const ProposalSupergraphChangesQuery = graphql(/* GraphQL  */ `
               edges {
                 node {
                   __typename
-                  ...ProposalOverview_ChangeFragment
+                  ...Proposal_ChangeFragment
                 }
               }
             }
@@ -70,8 +70,7 @@ export function TargetProposalSupergraphPage(props: {
   });
 
   // @todo use pagination to collect all
-  const allChanges: (FragmentType<typeof ProposalOverview_ChangeFragment> | null | undefined)[] =
-    [];
+  const allChanges: (FragmentType<typeof Proposal_ChangeFragment> | null | undefined)[] = [];
   query?.data?.schemaProposal?.checks?.edges?.map(({ node: { schemaChanges } }) => {
     if (schemaChanges) {
       const changes = schemaChanges.edges.map(edge => edge.node);
@@ -92,7 +91,7 @@ export function TargetProposalSupergraphPage(props: {
 
 function SupergraphDiff(props: {
   baseSchemaSDL: string;
-  changes: (FragmentType<typeof ProposalOverview_ChangeFragment> | null | undefined)[] | null;
+  changes: (FragmentType<typeof Proposal_ChangeFragment> | null | undefined)[] | null;
 }) {
   if (props.baseSchemaSDL.length === 0) {
     return null;
@@ -104,7 +103,7 @@ function SupergraphDiff(props: {
     for (const change of props.changes ?? []) {
       // @todo calling inside a loop can cause errors... fix.
       // eslint-disable-next-line react-hooks/rules-of-hooks
-      const c = useFragment(ProposalOverview_ChangeFragment, change);
+      const c = useFragment(Proposal_ChangeFragment, change);
       if (c) {
         changes.push({
           criticality: {
@@ -120,7 +119,7 @@ function SupergraphDiff(props: {
       }
     }
     const after = patchSchema(before, changes, { onError: errors.looseErrorHandler });
-    return <SchemaDiff before={before} after={after} annotations={() => null} />;
+    return <SchemaDiff before={before} after={after} />;
   } catch (e: unknown) {
     return (
       <>

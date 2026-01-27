@@ -54,12 +54,7 @@ declare module 'fastify' {
 
 function defaultFormatSpanName(request: FastifyRequest) {
   const { method } = request;
-  let path;
-  if (request.routeOptions) {
-    path = request.routeOptions.url;
-  } else {
-    path = request.routerPath;
-  }
+  let path = request.routeOptions.url;
   return path ? `${method} ${path}` : method;
 }
 

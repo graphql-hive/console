@@ -124,7 +124,7 @@ export function OrganizationLayout({
   return (
     <>
       <header>
-        <div className="container flex h-[--header-height] items-center justify-between">
+        <div className="h-(--header-height) container flex items-center justify-between">
           <div className="flex flex-row items-center gap-4">
             <HiveLink className="size-8" />
             <OrganizationSelector
@@ -142,7 +142,7 @@ export function OrganizationLayout({
           </div>
         </div>
       </header>
-      <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
+      <div className="h-(--tabs-navbar-height) relative border-b border-gray-800">
         <div className="container flex items-center justify-between">
           {currentOrganization ? (
             <Tabs value={page} className="min-w-[600px]">
@@ -383,7 +383,7 @@ export function CreateProjectModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[600px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[600px] md:w-3/5">
         <Form {...props.form}>
           <form onSubmit={props.form.handleSubmit(props.onSubmit)} data-cy="create-project-form">
             <DialogHeader className="mb-8">

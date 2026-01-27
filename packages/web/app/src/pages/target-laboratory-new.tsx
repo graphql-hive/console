@@ -15,6 +15,7 @@ import {
   Laboratory,
   LaboratoryCollection,
   LaboratoryCollectionOperation,
+  LaboratoryEnv,
   LaboratoryHistory,
   LaboratoryOperation,
   LaboratoryPreflight,
@@ -32,6 +33,7 @@ import {
   DialogTitle,
 } from '@/laboratory/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
@@ -481,6 +483,14 @@ function useLaboratoryState(props: {
           enabled: getLocalStorageState('preflightEnabled', true),
         }
       : null,
+    defaultEnv: getLocalStorageState('env', {}),
+    onEnvChange: (env: LaboratoryEnv | null) => {
+      setLocalStorageState('env', env);
+    },
+    defaultPluginsState: getLocalStorageState('pluginsState', {}),
+    onPluginsStateChange: (pluginsState: Record<string, any>) => {
+      setLocalStorageState('pluginsState', pluginsState);
+    },
     onOperationsChange: (operations: LaboratoryOperation[]) => {
       setLocalStorageState('operations', operations);
     },
@@ -715,6 +725,13 @@ function LaboratoryPageContent(props: {
             defaultEndpoint={url}
             defaultSchemaIntrospection={introspection}
             {...laboratoryState}
+            plugins={[
+              TargetEnvPlugin({
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }),
+            ]}
           />
         </div>
       </div>
@@ -772,7 +789,7 @@ export function TargetLaboratoryPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Laboratory}
-        className="flex h-[--content-height] flex-col pb-0"
+        className="h-(--content-height) flex flex-col pb-0"
       >
         <LaboratoryPageContent {...props} />
       </TargetLayout>
