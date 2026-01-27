@@ -49,6 +49,18 @@ updates:
           - 'supertokens'
           - '@supertokens/*'
           - 'supertokens-*'
+     graphql-codegen:
+        patterns:
+          - "@graphql-codegen/*"
+     the-guild:
+        patterns:
+          - "@theguild/*"
+     changesets:
+        patterns:
+          - "@changesets/*"
+     graphql-inspector:
+        patterns:
+          - "@graphql-inspector/*"
   - package-ecosystem: 'docker'
     directory: '/docker'
     schedule:
