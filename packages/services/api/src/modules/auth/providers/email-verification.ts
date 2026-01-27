@@ -97,7 +97,14 @@ export class EmailVerification {
       resend?: boolean;
     },
     ipAddress: string,
-  ): Promise<{ ok: true; expiresAt: Date } | { ok: false; message: string }> {
+  ): Promise<
+    | { ok: true; expiresAt: Date }
+    | {
+        ok: false;
+        message: string;
+        emailAlreadyVerified: boolean;
+      }
+  > {
     await this.rateLimiter.check(
       'sendVerificationEmail',
       ipAddress,
@@ -138,6 +145,7 @@ export class EmailVerification {
       return {
         ok: false,
         message: 'Your email address has already been verified.',
+        emailAlreadyVerified: true,
       };
     }
 

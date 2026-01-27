@@ -16,6 +16,7 @@ export const sendVerificationEmail: NonNullable<
     return {
       error: {
         message: result.message,
+        emailAlreadyVerified: result.emailAlreadyVerified,
       },
     };
   }

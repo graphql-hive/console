@@ -7,7 +7,7 @@ import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { authVerifyEmailRoute } from '@/router';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 const SendVerificationEmailMutation = graphql(`
   mutation SendVerificationEmailMutation($input: SendVerificationEmailInput!) {
@@ -17,6 +17,7 @@ const SendVerificationEmailMutation = graphql(`
       }
       error {
         message
+        emailAlreadyVerified
       }
     }
   }
@@ -39,6 +40,7 @@ function AuthVerifyEmail() {
   const search = authVerifyEmailRoute.useSearch();
   const { toast } = useToast();
   const session = useSessionContext();
+  const navigate = useNavigate();
 
   const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
@@ -67,6 +69,8 @@ function AuthVerifyEmail() {
           title: 'Verification email sent',
           description: 'Please check your email inbox.',
         });
+      } else if (result.data?.sendVerificationEmail.error?.emailAlreadyVerified) {
+        void navigate({ to: '/' });
       } else {
         toast({
           title: 'Failed to send verification email',

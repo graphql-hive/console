@@ -52,6 +52,7 @@ export default gql`
 
   type SendVerificationEmailError implements Error {
     message: String!
+    emailAlreadyVerified: Boolean!
   }
 
   """
