@@ -118,10 +118,9 @@ export class CompositeModel {
     filterNestedChanges,
     compareToLatestComposableVersion,
   }: {
-    input: {
-      sdl: string;
-      serviceName: string;
-      url: string | null;
+    input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
+      // for a schema check the service url is optional
+      serviceUrl: string | null;
     };
     selector: {
       organizationId: string;
@@ -158,7 +157,7 @@ export class CompositeModel {
       sdl: input.sdl,
       serviceName: input.serviceName,
       serviceUrl:
-        input.url ??
+        input.serviceUrl ??
         latest?.schemas?.find(s => s.serviceName === input.serviceName)?.serviceUrl ??
         temp,
       metadata: null,

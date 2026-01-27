@@ -59,9 +59,7 @@ export class SingleModel {
     failDiffOnDangerousChange,
     filterNestedChanges,
   }: {
-    input: {
-      sdl: string;
-    };
+    input: Pick<SingleSchemaInput, 'sdl'>;
     selector: {
       organizationId: string;
       projectId: string;

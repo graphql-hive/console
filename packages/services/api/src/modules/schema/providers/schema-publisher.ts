@@ -686,7 +686,7 @@ export class SchemaPublisher {
           input: {
             sdl,
             serviceName: input.service,
-            url: input.url ?? null,
+            serviceUrl: input.url ?? null,
           },
           selector,
           latest: latestVersion
