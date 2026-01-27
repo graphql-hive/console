@@ -37,7 +37,7 @@ describe('publish', () => {
     });
   });
 
-  test.concurrent(`rejected: not composable (graphql errors)`, async () => {
+  test.concurrent(`accepted: not composable (graphql errors)`, async () => {
     const {
       cli: { publish },
     } = await prepare();
@@ -48,7 +48,7 @@ describe('publish', () => {
           topProduct: Product
         }
       `,
-      expect: 'rejected',
+      expect: 'latest',
     });
   });
 

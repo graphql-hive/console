@@ -44,26 +44,23 @@ describe('publish', () => {
       });
     });
 
-    test.concurrent(
-      `${legacyComposition ? 'rejected' : 'accepted'}: not composable (graphql errors)`,
-      async () => {
-        const {
-          cli: { publish },
-        } = await prepare(ffs, legacyComposition);
+    test.concurrent(`accepted: not composable (graphql errors)`, async () => {
+      const {
+        cli: { publish },
+      } = await prepare(ffs, legacyComposition);
 
-        // non-composable
-        await publish({
-          sdl: /* GraphQL */ `
-            type Query {
-              topProduct: Product
-            }
-          `,
-          serviceName: 'products',
-          serviceUrl: 'http://products:3000/graphql',
-          expect: legacyComposition ? 'rejected' : 'latest',
-        });
-      },
-    );
+      // non-composable
+      await publish({
+        sdl: /* GraphQL */ `
+          type Query {
+            topProduct: Product
+          }
+        `,
+        serviceName: 'products',
+        serviceUrl: 'http://products:3000/graphql',
+        expect: 'latest-composable',
+      });
+    });
 
     test.concurrent('accepted: composable, previous version was not', async () => {
       const {

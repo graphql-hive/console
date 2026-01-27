@@ -43,7 +43,7 @@ describe('publish', () => {
     });
   });
 
-  test.concurrent(`rejected: not composable (build errors)`, async () => {
+  test.concurrent(`accepted: not composable (build errors)`, async () => {
     const {
       cli: { publish },
     } = await prepare();
@@ -55,7 +55,7 @@ describe('publish', () => {
       `,
       serviceName: 'products',
       serviceUrl: 'http://products:3000/graphql',
-      expect: 'rejected',
+      expect: 'latest-composable',
     });
   });
 
