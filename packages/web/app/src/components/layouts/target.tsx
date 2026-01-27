@@ -178,8 +178,8 @@ export const TargetLayout = ({
       </header>
 
       {query.fetching === false &&
-      query.stale === false &&
-      (currentProject === null || currentOrganization === null || currentTarget === null) ? (
+        query.stale === false &&
+        (currentProject === null || currentOrganization === null || currentTarget === null) ? (
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
@@ -665,13 +665,13 @@ function FederationModalContent(props: {
       </TabsContent>
       <TabsContent value="apollo-router" variant="content">
         <p>
-          Start up a Hive Gateway instance polling the supergraph from the Hive CDN using the
+          Start up a Apollo Router instance polling the supergraph from the Hive CDN using the
           following command.
         </p>
         {authenticateSection}
         <InputCopy
           multiline
-          value={`docker run --name hive-gateway --rm \\
+          value={`docker run --name apollo-router --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
