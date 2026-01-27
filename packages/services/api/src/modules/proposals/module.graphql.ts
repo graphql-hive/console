@@ -932,14 +932,12 @@ export default gql`
 
   type DirectiveUsageSchemaAdded {
     addedDirectiveName: String!
-    schemaTypeName: String!
     addedToNewType: Boolean
     directiveRepeatedTimes: Int!
   }
 
   type DirectiveUsageSchemaRemoved {
     removedDirectiveName: String!
-    schemaTypeName: String!
     directiveRepeatedTimes: Int!
   }
 
