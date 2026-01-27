@@ -1553,10 +1553,7 @@ export class AppDeployments {
     };
   }
 
-  async getExistingDocumentHashes(args: {
-    targetId: string;
-    appName: string;
-  }): Promise<string[]> {
+  async getExistingDocumentHashes(args: { targetId: string; appName: string }): Promise<string[]> {
     this.logger.debug(
       'get existing document hashes (targetId=%s, appName=%s)',
       args.targetId,

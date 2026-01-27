@@ -10,9 +10,7 @@ const ENDPOINT = process.env.REGISTRY_ENDPOINT ?? 'http://localhost:3001/graphql
 const TOKEN = process.env.REGISTRY_TOKEN ?? 'd43544cd1400e177c280afdce6876e7f';
 const TARGET = process.env.TARGET ?? 'the-guild/hive/demo';
 const TIMESTAMP = Math.floor(Date.now() / 1000);
-const DOC_COUNTS = process.env.DOC_COUNT
-  ? [parseInt(process.env.DOC_COUNT, 10)]
-  : [1000];
+const DOC_COUNTS = process.env.DOC_COUNT ? [parseInt(process.env.DOC_COUNT, 10)] : [1000];
 
 const operations = [
   'query GetUsers { users { id name } }',

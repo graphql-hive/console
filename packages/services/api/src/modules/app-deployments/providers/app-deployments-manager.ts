@@ -285,8 +285,7 @@ export class AppDeploymentsManager {
     targetId: string;
     appName: string;
   }): Promise<
-    | { type: 'success'; hashes: string[] }
-    | { type: 'error'; error: { message: string } }
+    { type: 'success'; hashes: string[] } | { type: 'error'; error: { message: string } }
   > {
     await this.session.assertPerformAction({
       action: 'appDeployment:create',

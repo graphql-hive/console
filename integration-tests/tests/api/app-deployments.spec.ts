@@ -5423,15 +5423,12 @@ test('v2 format accepts sha256 hash with sha256: prefix', async () => {
   }).then(res => res.expectNoGraphQLErrors());
 
   // CDN access uses the hash with prefix - stored and looked up with the prefix
-  const response = await fetch(
-    `${cdnAccess.cdnUrl}/apps/my-app/1.0.0/${sha256HashWithPrefix}`,
-    {
-      method: 'GET',
-      headers: {
-        'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
-      },
+  const response = await fetch(`${cdnAccess.cdnUrl}/apps/my-app/1.0.0/${sha256HashWithPrefix}`, {
+    method: 'GET',
+    headers: {
+      'X-Hive-CDN-Key': cdnAccess.secretAccessToken,
     },
-  );
+  });
   expect(response.status).toBe(200);
   expect(await response.text()).toBe('query { hello }');
 });

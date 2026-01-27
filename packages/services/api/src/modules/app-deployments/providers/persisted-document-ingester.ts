@@ -34,7 +34,6 @@ export type ProcessingTiming = {
   documentsProcessed: number;
 };
 
-
 const AppDeploymentOperationHashModel = z
   .string()
   .trim()
@@ -43,7 +42,6 @@ const AppDeploymentOperationHashModel = z
     'Hash must be a sha256 hash (64 hexadecimal characters, optionally prefixed with "sha256:"). ' +
       'This is required for safe cross-version document deduplication.',
   );
-
 
 const AppDeploymentOperationHashModelLegacy = z
   .string()
