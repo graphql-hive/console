@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from 'graphql-modules';
 import { sql, TaggedTemplateLiteralInvocation, type DatabasePool } from 'slonik';
 import zod from 'zod';
@@ -16,13 +17,13 @@ const EmailVerificationModelBase = zod.object({
 });
 
 const UnverifiedEmailVerificationModel = EmailVerificationModelBase.extend({
-  token: zod.string(),
+  tokenHash: zod.string(),
   expiresAt: zod.number().transform(v => new Date(v)),
   verifiedAt: zod.null(),
 });
 
 const VerifiedEmailVerificationModel = EmailVerificationModelBase.extend({
-  token: zod.string().nullable(),
+  tokenHash: zod.string().nullable(),
   expiresAt: zod.null(),
   verifiedAt: zod.number().transform(v => new Date(v)),
 });
@@ -35,7 +36,7 @@ const EmailVerificationModel = zod.union([
 const emailVerificationFields = (r: TaggedTemplateLiteralInvocation) => sql`
   ${r}"id"
   , ${r}"user_identity_id" AS "userIdentityId"
-  , ${r}"token" AS "token"
+  , ${r}"token_hash" AS "tokenHash"
   , ${r}"created_at" AS "createdAt"
   , ${r}"expires_at" AS "expiresAt"
   , ${r}"verified_at" AS "verifiedAt"
@@ -140,34 +141,41 @@ export class EmailVerification {
       };
     }
 
+    const token = randomBytes(16).toString('hex');
+    const tokenHash = await bcrypt.hash(token, await bcrypt.genSalt());
     const emailVerification =
-      existingVerification ??
-      (await this.pool
-        .one(
-          sql`
-            INSERT INTO "email_verifications" AS "ev" (
-              "user_identity_id"
-              , "token"
-              , "expires_at"
+      !existingVerification || input.resend
+        ? await this.pool
+            .one(
+              sql`
+                INSERT INTO "email_verifications" AS "ev" (
+                  "user_identity_id"
+                  , "token_hash"
+                  , "expires_at"
+                )
+                VALUES (
+                  ${input.userIdentityId}
+                  , ${tokenHash}
+                  , now() + INTERVAL '30 minutes'
+                )
+                ON CONFLICT ("user_identity_id") DO UPDATE SET
+                  "token_hash" = EXCLUDED.token_hash
+                  , "expires_at" = EXCLUDED.expires_at
+                  , "verified_at" = NULL
+                RETURNING ${emailVerificationFields(sql`"ev".`)}
+              `,
             )
-            VALUES (
-              ${input.userIdentityId}
-              , ${randomBytes(16).toString('hex')}
-              , now() + INTERVAL '30 minutes'
+            .then<zod.output<typeof UnverifiedEmailVerificationModel>>(v =>
+              UnverifiedEmailVerificationModel.parse(v),
             )
-            RETURNING ${emailVerificationFields(sql`"ev".`)}
-          `,
-        )
-        .then<zod.output<typeof UnverifiedEmailVerificationModel>>(v =>
-          UnverifiedEmailVerificationModel.parse(v),
-        ));
+        : existingVerification;
 
-    if (!existingVerification || input.resend) {
+    if (existingVerification !== emailVerification) {
       await this.taskScheduler.scheduleTask(EmailVerificationTask, {
         user: {
           email: superTokensUser.email,
         },
-        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?userIdentityId=${emailVerification.userIdentityId}&token=${emailVerification.token}`,
+        emailVerifyLink: `${this.appBaseUrl}/auth/verify-email?userIdentityId=${emailVerification.userIdentityId}&token=${token}`,
       });
     }
 
@@ -188,14 +196,17 @@ export class EmailVerification {
           FROM "email_verifications" "ev"
           WHERE
             "user_identity_id" = ${input.userIdentityId}
-            AND "token" = ${input.token}
             AND "expires_at" IS NOT NULL
             AND "verified_at" IS NULL
         `,
       )
       .then(v => UnverifiedEmailVerificationModel.nullable().parse(v));
 
-    if (!emailVerification) {
+    const isTokenValid = emailVerification
+      ? await bcrypt.compare(input.token, emailVerification.tokenHash)
+      : false;
+
+    if (!emailVerification || !isTokenValid) {
       return {
         ok: false,
         message: 'The email verification link is invalid.',

@@ -11,7 +11,7 @@ export default {
       CREATE TABLE IF NOT EXISTS "email_verifications" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4()
         , "user_identity_id" text NOT NULL UNIQUE
-        , "token" text
+        , "token_hash" text
         , "created_at" timestamptz NOT NULL DEFAULT now()
         , "expires_at" timestamptz
         , "verified_at" timestamptz
