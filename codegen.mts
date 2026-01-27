@@ -99,9 +99,8 @@ const config: CodegenConfig = {
       documents: ['./packages/libraries/core/src/client/**/*.ts'],
       config: {
         flattenGeneratedTypes: true,
-        onlyOperationTypes: true,
       },
-      plugins: ['typescript', 'typescript-operations'],
+      plugins: ['typescript-operations'],
     },
     // Integration tests
     './integration-tests/testkit/gql/': {
