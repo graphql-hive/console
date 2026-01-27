@@ -17,6 +17,7 @@
   --color-inherit: inherit;
 
   --color-neutral-1: hsl(var(--neutral-1));
+  --color-neutral-1_01: hsl(var(--neutral-1) / 0.01);
   --color-neutral-2: hsl(var(--neutral-2));
   --color-neutral-3: hsl(var(--neutral-3));
   --color-neutral-4: hsl(var(--neutral-4));
@@ -36,6 +37,8 @@
   --color-accent_30: hsl(var(--accent) / 0.3);
   --color-accent_10: hsl(var(--accent) / 0.1);
   --color-accent_08: hsl(var(--accent) / 0.08);
+
+  --color-destructive: hsl(var(--destructive));
 
   /* Border Radius */
   --radius: 0.5rem;
@@ -91,10 +94,20 @@
 /* <shadcdn */
 
 @layer base {
+  * {
+    /* Tailwind base utility variables */
+    --tw-ring-inset: ;
+    --tw-ring-offset-width: 1px;
+    --tw-ring-offset-color: var(--color-accent_30);
+    --tw-ring-color: rgb(59 130 246 / 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+  }
+
   :root {
     @apply font-sans;
-
-    /* color: red; */
 
     --header-height: 84px;
     --tabs-navbar-height: 47px;
@@ -114,6 +127,7 @@
     --neutral-12: 175 23% 10%;
 
     --accent: 206 96% 35%;
+    --destructive: 0 51% 51%;
 
     /* --background: 0 0% 100%;
     --foreground: 222.2 47.4% 11.2%;
@@ -178,6 +192,8 @@
     --neutral-12: 204 14% 93%;
 
     --accent: 48 100% 83%;
+    --destructive: 0 69% 65%;
+
     /* --background: 220, 21.43%, 5.49%;
     --foreground: 213 31% 91%;
 
@@ -233,6 +249,7 @@
 @layer base {
   #root {
     background-color: var(--color-neutral-2);
+    /* color: var(--color-neutral-11); */
   }
 
   * {
@@ -244,7 +261,7 @@
   }
 
   body {
-    /* @apply text-foreground bg-[#030711]; */
+    /* @apply text-neutral-11 bg-[#030711]; */
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
@@ -278,7 +295,7 @@
   #root {
     /* font-family: inherit !important; */
     /* color: inherit !important; */
-    @apply flex h-full flex-col text-sm antialiased lg:text-base;
+    @apply flex h-full flex-col text-sm antialiased;
   }
 
   /* Remove autocomplete color in Chrome */
@@ -305,12 +322,12 @@
   }
 
   .hive-markdown a {
-    /* text-orange-500  */
+    /* text-accent  */
     @apply hover:no-underline;
   }
 
   .hive-markdown code {
-    /* text-orange-500 */
+    /* text-accent */
     /* bg-white/10  */
     @apply rounded-sm px-2 py-1;
   }
