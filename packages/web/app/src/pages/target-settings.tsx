@@ -1684,6 +1684,7 @@ const TargetSettingsPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
+      isAppDeploymentsEnabled
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
@@ -1901,11 +1902,13 @@ function TargetSettingsContent(props: {
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
               />
-              <AppDeploymentProtection
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-              />
+              {currentOrganization?.isAppDeploymentsEnabled ? (
+                <AppDeploymentProtection
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                />
+              ) : null}
             </>
           ) : null}
           {resolvedPage.key === 'base-schema' ? (
