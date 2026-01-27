@@ -336,7 +336,7 @@ export interface Storage {
   updateTargetAppDeploymentProtectionSettings(
     _: Pick<TargetSelector, 'targetId' | 'projectId'> &
       Partial<TargetSettings['appDeploymentProtection']>,
-  ): Promise<TargetSettings['appDeploymentProtection'] | never>;
+  ): Promise<TargetSettings['appDeploymentProtection']>;
 
   countSchemaVersionsOfProject(
     _: ProjectSelector & {
