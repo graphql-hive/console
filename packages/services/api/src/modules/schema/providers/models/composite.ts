@@ -7,7 +7,7 @@ import {
   RegistryChecks,
   type ConditionalBreakingChangeDiffConfig,
 } from '../registry-checks';
-import { CompositeSchemaInput, SingleSchemaInput, swapServices } from '../schema-helper';
+import { CompositeSchemaInput, swapServices } from '../schema-helper';
 import type { Organization, Project, Target } from './../../../../shared/entities';
 import { ProjectType } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
