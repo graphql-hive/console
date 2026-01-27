@@ -172,6 +172,7 @@ const UpdateTargetAppDeploymentProtectionConfiguration = graphql(`
           appDeploymentProtectionConfiguration {
             isEnabled
             minDaysInactive
+            minDaysSinceCreation
             maxTrafficPercentage
             trafficPeriodDays
             ruleLogic
@@ -4821,6 +4822,7 @@ test('update app deployment protection configuration', async () => {
   expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
     isEnabled: false,
     minDaysInactive: 7,
+    minDaysSinceCreation: 7,
     maxTrafficPercentage: 1.0,
     trafficPeriodDays: 30,
     ruleLogic: 'AND',
@@ -4855,7 +4857,7 @@ test('update app deployment protection configuration', async () => {
         appDeploymentProtectionConfiguration: {
           isEnabled: true,
           minDaysInactive: 7,
-          minDaysSinceCreation: 3,
+          minDaysSinceCreation: 7,
           maxTrafficPercentage: 5.0,
           trafficPeriodDays: 30,
           ruleLogic: 'AND',
@@ -4881,7 +4883,7 @@ test('update app deployment protection configuration', async () => {
   expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
     isEnabled: true,
     minDaysInactive: 7,
-    minDaysSinceCreation: 3,
+    minDaysSinceCreation: 7,
     maxTrafficPercentage: 5.0,
     trafficPeriodDays: 30,
     ruleLogic: 'AND',
