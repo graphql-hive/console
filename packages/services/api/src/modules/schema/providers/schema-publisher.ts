@@ -1667,7 +1667,7 @@ export class SchemaPublisher {
       }),
     ]);
 
-    const [latestComposable, latestVersion] = await Promise.all([
+    const [latestVersion, latestComposable] = await Promise.all([
       this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
         target,
       }),
