@@ -11,16 +11,19 @@ export interface LaboratoryEndpointState {
   endpoint: string | null;
   schema: GraphQLSchema | null;
   introspection: IntrospectionQuery | null;
+  defaultEndpoint: string | null;
 }
 
 export interface LaboratoryEndpointActions {
   setEndpoint: (endpoint: string) => void;
   fetchSchema: () => void;
+  restoreDefaultEndpoint: () => void;
 }
 
 export const useEndpoint = (props: {
   defaultEndpoint?: string | null;
   onEndpointChange?: (endpoint: string | null) => void;
+  defaultSchemaIntrospection?: IntrospectionQuery | null;
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
   // eslint-disable-next-line react/hook-use-state
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
@@ -39,6 +42,11 @@ export const useEndpoint = (props: {
   }, [introspection]);
 
   const fetchSchema = useCallback(async () => {
+    if (endpoint === props.defaultEndpoint && props.defaultSchemaIntrospection) {
+      setIntrospection(props.defaultSchemaIntrospection);
+      return;
+    }
+
     if (!endpoint) {
       setIntrospection(null);
       return;
@@ -63,6 +71,12 @@ export const useEndpoint = (props: {
     }
   }, [endpoint]);
 
+  const restoreDefaultEndpoint = useCallback(() => {
+    if (props.defaultEndpoint) {
+      setEndpoint(props.defaultEndpoint);
+    }
+  }, [props.defaultEndpoint]);
+
   useEffect(() => {
     if (endpoint) {
       void fetchSchema();
@@ -75,5 +89,7 @@ export const useEndpoint = (props: {
     schema,
     introspection,
     fetchSchema,
+    restoreDefaultEndpoint,
+    defaultEndpoint: props.defaultEndpoint ?? null,
   };
 };

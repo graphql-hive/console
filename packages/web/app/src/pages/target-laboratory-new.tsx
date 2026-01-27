@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
+import { buildSchema, introspectionFromSchema } from 'graphql';
 import { throttle } from 'lodash';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -601,6 +602,12 @@ function LaboratoryPageContent(props: {
     entity: query.data?.target,
   });
 
+  const sdl = query.data?.target?.latestSchemaVersion?.sdl;
+  const introspection = useMemo(
+    () => (sdl ? introspectionFromSchema(buildSchema(sdl)) : null),
+    [sdl],
+  );
+
   if (laboratoryState.fetching) {
     return null;
   }
@@ -716,6 +723,7 @@ function LaboratoryPageContent(props: {
           <Laboratory
             key={url}
             defaultEndpoint={url}
+            defaultSchemaIntrospection={introspection}
             {...laboratoryState}
             plugins={[
               TargetEnvPlugin({
