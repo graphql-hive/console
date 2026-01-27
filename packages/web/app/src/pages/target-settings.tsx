@@ -1326,8 +1326,8 @@ const AppDeploymentProtection = (props: {
               </div>
             </div>
             <div className="text-sm text-gray-400">
-              The creation date check always applies. The inactivity and traffic checks only apply if
-              the app deployment has usage data.
+              The creation date check always applies. The inactivity and traffic checks only apply
+              if the app deployment has usage data.
             </div>
           </div>
           <div className="mt-4">
