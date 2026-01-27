@@ -1,0 +1,79 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    open-pull-requests-limit: 1
+    schedule:
+      interval: 'daily'
+    groups:
+      graphiql:
+        patterns:
+          - 'graphiql'
+          - '@graphiql/*'
+      yoga:
+        patterns:
+          - 'envelop'
+          - 'graphql-yoga'
+          - '@envelop/*'
+          - '@graphql-yoga/*'
+      graphql_armor:
+        patterns:
+          - '@escape.tech/graphql-armor-*'
+      radix:
+        patterns:
+          - '@radix-ui/*'
+          - '@radix/*'
+      stripe:
+        patterns:
+          - '@stripe/'
+          - 'stripe'
+      urql:
+        patterns:
+          - '@urql/'
+          - 'urql'
+      sentry:
+        patterns:
+          - '@sentry/'
+          - 'sentry'
+      trpc:
+        patterns:
+          - '@trpc/'
+          - 'trpc'
+      supertokens:
+        patterns:
+          - 'supertokens'
+          - '@supertokens/*'
+          - 'supertokens-*'
+      graphql-codegen:
+        patterns:
+          - '@graphql-codegen/*'
+      the-guild:
+        patterns:
+          - '@theguild/*'
+      changesets:
+        patterns:
+          - '@changesets/*'
+      graphql-inspector:
+        patterns:
+          - '@graphql-inspector/*'
+  - package-ecosystem: 'docker'
+    directory: '/docker'
+    schedule:
+      interval: 'daily'
+  - package-ecosystem: 'cargo'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+  - package-ecosystem: 'rust-toolchain'
+    directory: '/'
+    schedule:
+      interval: 'daily'
