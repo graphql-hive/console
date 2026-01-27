@@ -196,6 +196,7 @@ const GetTargetAppDeploymentProtectionConfiguration = graphql(`
       appDeploymentProtectionConfiguration {
         isEnabled
         minDaysInactive
+        minDaysSinceCreation
         maxTrafficPercentage
         trafficPeriodDays
         ruleLogic
@@ -4854,6 +4855,7 @@ test('update app deployment protection configuration', async () => {
         appDeploymentProtectionConfiguration: {
           isEnabled: true,
           minDaysInactive: 7,
+          minDaysSinceCreation: 3,
           maxTrafficPercentage: 5.0,
           trafficPeriodDays: 30,
           ruleLogic: 'AND',
@@ -4879,6 +4881,7 @@ test('update app deployment protection configuration', async () => {
   expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
     isEnabled: true,
     minDaysInactive: 7,
+    minDaysSinceCreation: 3,
     maxTrafficPercentage: 5.0,
     trafficPeriodDays: 30,
     ruleLogic: 'AND',
@@ -4907,6 +4910,7 @@ test('retire app deployment succeeds when protection is enabled but no usage dat
         appDeploymentProtectionConfiguration: {
           isEnabled: true,
           minDaysInactive: 7,
+          minDaysSinceCreation: 0,
           maxTrafficPercentage: 1.0,
         },
       },
@@ -4937,7 +4941,7 @@ test('retire app deployment succeeds when protection is enabled but no usage dat
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  // Retire should succeed because no usage data = not in use
+  // Retire should succeed because minDaysSinceCreation=0 and no usage data exists
   const { retireAppDeployment } = await execute({
     document: RetireAppDeployment,
     variables: {
@@ -4962,6 +4966,82 @@ test('retire app deployment succeeds when protection is enabled but no usage dat
         version: '1.0.0',
       },
     },
+  });
+});
+
+test('retire app deployment blocked when created less than minDaysSinceCreation days ago', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Enable protection with minDaysSinceCreation=7 (newly created deployments blocked)
+  await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysSinceCreation: 7,
+          minDaysInactive: 0,
+          maxTrafficPercentage: 100,
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment (created just now)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Retire should fail because deployment was created 0 days ago but requires 7
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(retireAppDeployment).toEqual({
+    error: {
+      message: expect.stringContaining('requires at least 7 days since creation'),
+    },
+    ok: null,
   });
 });
 
