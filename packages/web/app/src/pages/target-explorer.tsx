@@ -12,6 +12,7 @@ import {
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
+  ServiceNameFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
@@ -206,6 +207,15 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
+              <ServiceNameFilter
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+                period={resolvedPeriod}
+                metadataAttributes={
+                  latestValidSchemaVersion?.explorer?.metadataAttributes ?? undefined
+                }
+              />
               <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
