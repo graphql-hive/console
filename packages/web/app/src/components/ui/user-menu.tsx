@@ -126,7 +126,7 @@ export function UserMenu(props: {
               className={cn('cursor-pointer', currentOrganization ? '' : 'animate-pulse')}
               data-cy="user-menu-trigger"
             >
-              <Avatar shape="circle" className="border-2 border-orange-900/50" />
+              <Avatar shape="circle" className="border-accent_80 border-2" />
             </div>
           </DropdownMenuTrigger>
 

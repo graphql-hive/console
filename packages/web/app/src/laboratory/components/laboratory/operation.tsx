@@ -640,7 +640,7 @@ export const Query = (props: {
             size="sm"
             variant="default"
             pressed={preflight?.enabled}
-            className="bg-neutral-3 hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-neutral-5 dark:hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
+            className="bg-neutral-3 hover:bg-accent hover:text-neutral-12 dark:bg-input/30 dark:border-neutral-5 dark:hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
             onClick={() => {
               setPreflight({
                 ...(preflight ?? { script: '', enabled: true }),
