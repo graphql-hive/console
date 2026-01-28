@@ -302,6 +302,7 @@ function useLaboratoryState(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  defaultEndpoint: string | null;
 }): Partial<LaboratoryApi> & { fetching: boolean } {
   const [{ data, fetching }] = useQuery({
     query: LaboratoryQuery,
@@ -559,12 +560,6 @@ function LaboratoryPageContent(props: {
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
-  const laboratoryState = useLaboratoryState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
-
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
@@ -573,8 +568,6 @@ function LaboratoryPageContent(props: {
       targetSlug: props.targetSlug,
     },
   });
-
-  const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   const [actualSelectedApiEndpoint, setEndpointType] = useApiTabValueState(
     query.data?.target?.graphqlEndpointUrl ?? null,
@@ -586,6 +579,15 @@ function LaboratoryPageContent(props: {
     (actualSelectedApiEndpoint === 'linkedApi'
       ? query.data?.target?.graphqlEndpointUrl
       : undefined) ?? mockEndpoint;
+
+  const laboratoryState = useLaboratoryState({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+    defaultEndpoint: url ?? null,
+  });
+
+  const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   useRedirect({
     canAccess: query.data?.target?.viewerCanViewLaboratory === true,
