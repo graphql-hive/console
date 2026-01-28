@@ -295,6 +295,7 @@ export async function main() {
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
+            forwardedIPHeaderName: env.supertokens.rateLimitIPHeaderName,
           }
         : null,
       tokens: {
