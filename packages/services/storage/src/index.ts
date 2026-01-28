@@ -22,7 +22,6 @@ import type {
   Target,
   TargetSettings,
 } from '@hive/api';
-import { ResourceAssignmentModel } from '@hive/api/modules/organization/lib/resource-assignment-model';
 import { context, SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import type { SchemaCoordinatesDiffResult } from '../../api/src/modules/schema/providers/inspector';
 import {
@@ -5668,17 +5667,17 @@ const OrganizationInvitationModel = zod
     createdAt: zod.number().transform(v => new Date(v * 1000).toISOString()),
     expiresAt: zod.number().transform(v => new Date(v * 1000).toISOString()),
     roleId: zod.string(),
-    assignedResources: ResourceAssignmentModel.nullable(),
+    assignedResources: zod.object({}).nullable(),
   })
-  .transform(invitation => {
-    const entity = {
-      ...invitation,
-      get id(): string {
-        return getOrganizationInvitationId(this);
-      },
-    };
-    return entity;
-  }) satisfies zod.Schema<OrganizationInvitation, zod.ZodTypeDef, unknown>;
+  .transform(
+    invitation =>
+      ({
+        ...invitation,
+        get id(): string {
+          return getOrganizationInvitationId(this);
+        },
+      }) as OrganizationInvitation,
+  );
 
 export const userFields = (
   user: TaggedTemplateLiteralInvocation,
