@@ -987,7 +987,13 @@ export class AppDeployments {
             any(app_name) AS "appName",
             any(app_version) AS "appVersion"
           FROM app_deployments
-          PREWHERE target_id = ${args.targetId}
+          PREWHERE
+            target_id = ${args.targetId}
+            ${
+              args.excludedAppDeploymentNames?.length
+                ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                : cSql``
+            }
           GROUP BY app_deployment_id
           HAVING min(is_active) = True
         `,
@@ -1011,27 +1017,11 @@ export class AppDeployments {
 
     let activeDeployments = z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
 
-    // Filter out excluded app deployment names
-    if (args.excludedAppDeploymentNames?.length) {
-      const excludedNamesSet = new Set(args.excludedAppDeploymentNames);
-      const originalCount = activeDeployments.length;
-      activeDeployments = activeDeployments.filter(d => !excludedNamesSet.has(d.appName));
-      if (activeDeployments.length !== originalCount) {
-        this.logger.debug(
-          'Filtered out %d app deployments by excluded names (targetId=%s, excludedNames=%o)',
-          originalCount - activeDeployments.length,
-          args.targetId,
-          args.excludedAppDeploymentNames,
-        );
-      }
-    }
-
     if (activeDeployments.length === 0) {
       this.logger.debug('No active app deployments found (targetId=%s)', args.targetId);
       return emptyResult;
     }
 
-    const deploymentIds = activeDeployments.map(d => d.appDeploymentId);
     const deploymentIdToInfo = new Map(
       activeDeployments.map(d => [d.appDeploymentId, { name: d.appName, version: d.appVersion }]),
     );
@@ -1043,7 +1033,19 @@ export class AppDeployments {
         query: cSql`
           SELECT uniq(app_deployment_id) AS "total"
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (${cSql.array(deploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
         `,
         queryId: 'count-affected-app-deployments',
@@ -1078,7 +1080,19 @@ export class AppDeployments {
         query: cSql`
           SELECT DISTINCT app_deployment_id AS "appDeploymentId"
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (${cSql.array(deploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           ${args.afterCursor ? cSql`AND app_deployment_id > ${args.afterCursor}` : cSql``}
           ${limit ? cSql`ORDER BY app_deployment_id LIMIT ${cSql.raw(String(limit + 1))}` : cSql``}
@@ -1132,7 +1146,19 @@ export class AppDeployments {
             count() AS "count"
           FROM app_deployment_documents
           ARRAY JOIN arrayIntersect(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')}) AS coord
-          PREWHERE app_deployment_id IN (${cSql.array(affectedDeploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           GROUP BY app_deployment_id, coord
         `,
@@ -1177,7 +1203,19 @@ export class AppDeployments {
             operation_name AS "operationName",
             arrayIntersect(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')}) AS "matchingCoordinates"
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (${cSql.array(affectedDeploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           ${operationsLimit ? cSql`LIMIT ${cSql.raw(String(operationsLimit))} BY app_deployment_id` : cSql``}
         `,
