@@ -685,6 +685,7 @@ export async function createStorage(
                 WHERE
                   "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
                   AND "oi"."email" = ${email}
+                  AND "oi"."expires_at" > now()
                 RETURNING
                   "oi"."organization_id" "organizationId"
                   , "oi"."code" "code"
