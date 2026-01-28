@@ -32,6 +32,22 @@ export default gql`
     retired
   }
 
+  """
+  Storage format for app deployment documents.
+  """
+  enum AppDeploymentFormatType {
+    """
+    V1 format: version-scoped storage. Each version stores documents separately.
+    Allows any hash format. No cross-version deduplication.
+    """
+    V1
+    """
+    V2 format: content-addressed storage with SHA256 hashes.
+    Enables cross-version deduplication and delta uploads.
+    """
+    V2
+  }
+
   type GraphQLDocumentConnection {
     pageInfo: PageInfo!
     edges: [GraphQLDocumentEdge!]!
@@ -118,6 +134,27 @@ export default gql`
       after: String @tag(name: "public")
       filter: ActiveAppDeploymentsFilter! @tag(name: "public")
     ): AppDeploymentConnection! @tag(name: "public")
+    """
+    Get list of document hashes that already exist for this app (across all versions).
+    Used for delta uploads - CLI can skip uploading documents that already exist.
+    """
+    appDeploymentDocumentHashes(appName: String!): AppDeploymentDocumentHashesResult!
+  }
+
+  type AppDeploymentDocumentHashesResult {
+    ok: AppDeploymentDocumentHashesOk
+    error: AppDeploymentDocumentHashesError
+  }
+
+  type AppDeploymentDocumentHashesOk {
+    """
+    List of document hashes that already exist for this app.
+    """
+    hashes: [String!]!
+  }
+
+  type AppDeploymentDocumentHashesError implements Error {
+    message: String!
   }
 
   extend type Mutation {
@@ -250,6 +287,11 @@ export default gql`
     A list of operations to add to the app deployment. (max 100 per single batch)
     """
     documents: [DocumentInput!]!
+    """
+    Storage format for documents. Defaults to V1 for backwards compatibility.
+    V2 enables cross-version deduplication and delta uploads (requires SHA256 hashes).
+    """
+    format: AppDeploymentFormatType
   }
 
   type AddDocumentsToAppDeploymentErrorDetails {
@@ -271,8 +313,43 @@ export default gql`
     details: AddDocumentsToAppDeploymentErrorDetails
   }
 
+  """
+  Timing breakdown for document upload operations. All time values are in milliseconds.
+  """
+  type DocumentUploadTiming {
+    """
+    Total elapsed time for the entire batch processing.
+    """
+    totalMs: Int!
+    """
+    Time spent parsing GraphQL documents.
+    """
+    parsingMs: Int!
+    """
+    Time spent validating documents against the schema.
+    """
+    validationMs: Int!
+    """
+    Time spent extracting schema coordinates from documents.
+    """
+    coordinateExtractionMs: Int!
+    """
+    Time spent inserting records into ClickHouse.
+    """
+    clickhouseMs: Int!
+    """
+    Time spent uploading documents to S3.
+    """
+    s3Ms: Int!
+    """
+    Number of documents successfully processed.
+    """
+    documentsProcessed: Int!
+  }
+
   type AddDocumentsToAppDeploymentOk {
     appDeployment: AppDeployment!
+    timing: DocumentUploadTiming
   }
 
   type AddDocumentsToAppDeploymentResult {

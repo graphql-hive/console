@@ -26,6 +26,7 @@ export function createWorker(
         readonly secretAccessKey: string;
         readonly sessionToken: string | undefined;
       };
+      readonly uploadConcurrency: number;
     };
     s3Mirror: {
       readonly bucketName: string;
@@ -81,6 +82,8 @@ export function createWorker(
     clickhouse,
     s3Config,
     logger as any,
+    undefined,
+    env.s3.uploadConcurrency,
   );
 
   process.on('unhandledRejection', function (err) {
