@@ -223,9 +223,11 @@ export async function createStorage(
   ): OrganizationInvitation {
     return {
       get id() {
-        return Buffer.from(
-          [invitation.organization_id, invitation.email, invitation.code].join(':'),
-        ).toString('hex');
+        return getOrganizationInvitationId({
+          organizationId: invitation.organization_id,
+          email: invitation.email,
+          code: invitation.code,
+        });
       },
       email: invitation.email,
       organizationId: invitation.organization_id,
@@ -531,6 +533,7 @@ export async function createStorage(
       args: {
         oidcIntegrationId: string;
         userId: string;
+        invitation: OrganizationInvitation | null;
       },
       connection: Connection,
     ) {
@@ -548,7 +551,7 @@ export async function createStorage(
         return;
       }
 
-      // Add user and assign default role (either Viewer or custom default role)
+      // Add user and assign role (either the invited role, custom default role, or Viewer)
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
@@ -559,23 +562,22 @@ export async function createStorage(
               ${args.userId},
               (
                 COALESCE(
+                  ${args.invitation?.roleId ?? null},
                   (SELECT default_role_id FROM oidc_integrations
                     WHERE id = ${args.oidcIntegrationId}),
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
               ),
-              (
-                SELECT
-                  default_assigned_resources
-                FROM
-                  oidc_integrations
-                WHERE
-                  id = ${args.oidcIntegrationId}
-              ),
+              ${
+                args.invitation?.assignedResources
+                  ? sql.jsonb(args.invitation.assignedResources)
+                  : sql`(SELECT default_assigned_resources FROM oidc_integrations
+                      WHERE id = ${args.oidcIntegrationId})`
+              },
               now()
             )
-          ON CONFLICT DO NOTHING
+          ${args.invitation ? sql`` : sql`ON CONFLICT DO NOTHING`}
           RETURNING *
         `,
       );
@@ -694,6 +696,45 @@ export async function createStorage(
           }
         }
 
+        const oidcConfig =
+          oidcIntegration &&
+          (await this.getOIDCIntegrationById({ oidcIntegrationId: oidcIntegration.id }));
+        const invitation =
+          oidcConfig &&
+          (await t
+            .maybeOne<unknown>(
+              sql`
+                DELETE FROM "organization_invitations" AS "oi"
+                WHERE
+                  "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
+                  AND "oi"."email" = ${email}
+                  AND "oi"."expires_at" > now()
+                RETURNING
+                  "oi"."organization_id" "organizationId"
+                  , "oi"."code" "code"
+                  , "oi"."email" "email"
+                  , "oi"."created_at" "createdAt"
+                  , "oi"."expires_at" "expiresAt"
+                  , "oi"."role_id" "roleId"
+                  , "oi"."assigned_resources" "assignedResources"
+              `,
+            )
+            .then(v => OrganizationInvitationModel.nullable().parse(v)));
+
+        // TODO: guard this with a specific setting value
+        if (oidcConfig && !invitation) {
+          const member =
+            internalUser &&
+            (await this.getOrganizationMember({
+              organizationId: oidcConfig.linkedOrganizationId,
+              userId: internalUser.id,
+            }));
+
+          if (!member) {
+            throw new Error('User is not invited to the organization');
+          }
+        }
+
         // either user is brand new or user is not linkable (multiple accounts with the same email exist)
         if (!internalUser) {
           internalUser = await shared.createUser(
@@ -716,6 +757,7 @@ export async function createStorage(
             {
               oidcIntegrationId: oidcIntegration.id,
               userId: internalUser.id,
+              invitation,
             },
             t,
           );
@@ -5640,6 +5682,31 @@ export type PaginatedOrganizationInvitationConnection = Readonly<{
     endCursor: string;
   }>;
 }>;
+
+const getOrganizationInvitationId = (keys: {
+  organizationId: string;
+  email: string;
+  code: string;
+}) => Buffer.from([keys.organizationId, keys.email, keys.code].join(':')).toString('hex');
+const OrganizationInvitationModel = zod
+  .object({
+    organizationId: zod.string(),
+    code: zod.string(),
+    email: zod.string().email(),
+    createdAt: zod.number().transform(v => new Date(v).toISOString()),
+    expiresAt: zod.number().transform(v => new Date(v).toISOString()),
+    roleId: zod.string(),
+    assignedResources: zod.any(),
+  })
+  .transform(
+    invitation =>
+      ({
+        ...invitation,
+        get id(): string {
+          return getOrganizationInvitationId(this);
+        },
+      }) as OrganizationInvitation,
+  );
 
 export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
   ${user}"id"
