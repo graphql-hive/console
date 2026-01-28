@@ -18,7 +18,7 @@ export const Organization: Pick<
   | 'viewerCanModifyBilling'
 > = {
   plan: org => (org.billingPlan || 'HOBBY') as BillingPlanType,
-  billingConfiguration: async (org, _args, { injector }) => {
+  billingConfiguration: async (org, _args, { injector, session }) => {
     if (org.billingPlan === 'ENTERPRISE') {
       return {
         hasActiveSubscription: true,
@@ -71,7 +71,13 @@ export const Organization: Pick<
       logger.info('No active subscription for organization (id=%s)', org.id);
       return {
         hasActiveSubscription: false,
-        canUpdateSubscription: true,
+        canUpdateSubscription: await session.canPerformAction({
+          action: 'billing:update',
+          organizationId: org.id,
+          params: {
+            organizationId: billingRecord.organizationId,
+          },
+        }),
         hasPaymentIssues: false,
         paymentMethod: null,
         billingAddress: null,
@@ -80,12 +86,19 @@ export const Organization: Pick<
       };
     }
 
-    const [invoices, upcomingInvoice] = await Promise.all([
+    const [invoices, upcomingInvoice, canUpdateSubscription] = await Promise.all([
       injector.get(BillingProvider).invoices({
         organizationId: billingRecord.organizationId,
       }),
       injector.get(BillingProvider).upcomingInvoice({
         organizationId: billingRecord.organizationId,
+      }),
+      session.canPerformAction({
+        action: 'billing:update',
+        organizationId: org.id,
+        params: {
+          organizationId: billingRecord.organizationId,
+        },
       }),
     ]);
 
@@ -99,7 +112,7 @@ export const Organization: Pick<
 
     return {
       hasActiveSubscription: subscriptionInfo.subscription !== null,
-      canUpdateSubscription: subscriptionInfo.subscription !== null,
+      canUpdateSubscription: canUpdateSubscription,
       hasPaymentIssues,
       paymentMethod: subscriptionInfo.paymentMethod?.card || null,
       billingAddress: subscriptionInfo.paymentMethod?.billing_details || null,

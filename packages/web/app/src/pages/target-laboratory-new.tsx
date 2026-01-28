@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
+import { buildSchema, introspectionFromSchema } from 'graphql';
 import { throttle } from 'lodash';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -14,6 +15,7 @@ import {
   Laboratory,
   LaboratoryCollection,
   LaboratoryCollectionOperation,
+  LaboratoryEnv,
   LaboratoryHistory,
   LaboratoryOperation,
   LaboratoryPreflight,
@@ -31,6 +33,7 @@ import {
   DialogTitle,
 } from '@/laboratory/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
@@ -480,6 +483,14 @@ function useLaboratoryState(props: {
           enabled: getLocalStorageState('preflightEnabled', true),
         }
       : null,
+    defaultEnv: getLocalStorageState('env', {}),
+    onEnvChange: (env: LaboratoryEnv | null) => {
+      setLocalStorageState('env', env);
+    },
+    defaultPluginsState: getLocalStorageState('pluginsState', {}),
+    onPluginsStateChange: (pluginsState: Record<string, any>) => {
+      setLocalStorageState('pluginsState', pluginsState);
+    },
     onOperationsChange: (operations: LaboratoryOperation[]) => {
       setLocalStorageState('operations', operations);
     },
@@ -590,6 +601,12 @@ function LaboratoryPageContent(props: {
     },
     entity: query.data?.target,
   });
+
+  const sdl = query.data?.target?.latestSchemaVersion?.sdl;
+  const introspection = useMemo(
+    () => (sdl ? introspectionFromSchema(buildSchema(sdl)) : null),
+    [sdl],
+  );
 
   if (laboratoryState.fetching) {
     return null;
@@ -703,7 +720,19 @@ function LaboratoryPageContent(props: {
           </div>
         </div>
         <div className="flex-1 overflow-hidden rounded-lg border">
-          <Laboratory key={url} defaultEndpoint={url} {...laboratoryState} />
+          <Laboratory
+            key={url}
+            defaultEndpoint={url}
+            defaultSchemaIntrospection={introspection}
+            {...laboratoryState}
+            plugins={[
+              TargetEnvPlugin({
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }),
+            ]}
+          />
         </div>
       </div>
     </>
@@ -760,7 +789,7 @@ export function TargetLaboratoryPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Laboratory}
-        className="flex h-[--content-height] flex-col pb-0"
+        className="h-(--content-height) flex flex-col pb-0"
       >
         <LaboratoryPageContent {...props} />
       </TargetLayout>

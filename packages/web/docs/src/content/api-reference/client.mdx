@@ -508,6 +508,35 @@ useHive({
 Configure the circuit breaker for temporarily suspending using a CDN endpoint in case of network
 issues or outages to avoid exhausting the service from with failing HTTP requests.
 
+### GraphQL Variables
+
+By default, the Hive SDK reports all schema coordinates that the input variables **could** represent
+and marks them as used schema coordinates. This is the safest approach, because the SDK cannot
+predict whether a field is provided conditionally. Removing such a field could potentially break the
+client.
+
+Alternatively, you can inspect the `variables` payload and extract the actually used schema
+coordinates for the operation’s input variables.
+
+In **neither case** is any content of the sensitive variables object sent to the usage reporting
+endpoint.
+
+#### `processVariables`
+
+- Type: `boolean`
+- Default: `false`
+
+```ts filename="Example: Opt into processing variables"
+import { createHive } from '@graphql-hive/core'
+
+const client = createHive({
+  processVariables: true
+})
+```
+
+Enabling `processVariables` allows the SDK to more precisely track which input fields are actually
+used.
+
 ### Logging
 
 You can customize the logging level or provide your own (JSON) logger implementation.

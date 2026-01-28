@@ -11,6 +11,7 @@
     "dev": "next --turbopack",
     "postbuild": "pagefind --site .next/server/app --output-path out/_pagefind",
     "prettier": "prettier --cache --write --list-different --ignore-unknown src",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "validate-mdx-links": "pnpx validate-mdx-links@1.1.0 --files 'src/**/*.mdx'"
   },
   "dependencies": {
@@ -24,8 +25,8 @@
     "clsx": "2.1.1",
     "date-fns": "4.1.0",
     "lucide-react": "0.542.0",
-    "next": "15.5.9",
-    "react": "19.2.2",
+    "next": "15.5.10",
+    "react": "19.2.4",
     "react-avatar": "5.0.3",
     "react-countup": "6.5.3",
     "react-dom": "19.2.2",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@mdx-js/typescript-plugin": "^0.0.8",
     "@next/bundle-analyzer": "^16.0.0",
+    "@playwright/test": "^1.58.0",
     "@tailwindcss/typography": "0.5.16",
     "@theguild/tailwind-config": "0.6.3",
     "@types/react": "18.3.18",
@@ -45,6 +47,7 @@
     "postcss": "8.4.49",
     "postcss-nesting": "^13.0.1",
     "rss": "1.2.2",
+    "serve": "^14.2.5",
     "tailwindcss": "3.4.17",
     "tailwindcss-animate": "1.0.7",
     "tailwindcss-radix": "3.0.5"

@@ -23,10 +23,10 @@ export function deployObservability(config: { environment: Environment }) {
     useLocal
       ? 'local'
       : {
-          prom: {
-            endpoint: observabilityConfig.require('promEndpoint'),
-            username: observabilityConfig.require('promUsername'),
-            password: observabilityConfig.requireSecret('promPassword'),
+          otlpMetrics: {
+            endpoint: observabilityConfig.require('otlpMetricsEndpoint'),
+            username: observabilityConfig.require('otlpMetricsUsername'),
+            password: observabilityConfig.requireSecret('otlpMetricsPassword'),
           },
           loki: {
             endpoint: observabilityConfig.require('lokiEndpoint'),

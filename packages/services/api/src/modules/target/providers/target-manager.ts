@@ -387,6 +387,9 @@ export class TargetManager {
       excludedClients: args.configuration.excludedClients?.length
         ? Array.from(args.configuration.excludedClients)
         : undefined,
+      excludedAppDeployments: args.configuration.excludedAppDeployments?.length
+        ? Array.from(args.configuration.excludedAppDeployments)
+        : undefined,
       targets: validationResult.data.targetIds ?? undefined,
       isEnabled: args.configuration.isEnabled ?? undefined,
     });
@@ -601,7 +604,111 @@ export class TargetManager {
 
     return target;
   }
+
+  async updateTargetAppDeploymentProtectionConfiguration(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    configuration: GraphQLSchema.AppDeploymentProtectionConfigurationInput;
+  }): Promise<
+    | {
+        ok: true;
+        target: Target;
+      }
+    | {
+        ok: false;
+        error: {
+          message: string;
+          inputErrors: {
+            minDaysInactive?: string;
+            minDaysSinceCreation?: string;
+            maxTrafficPercentage?: string;
+            trafficPeriodDays?: string;
+          };
+        };
+      }
+  > {
+    this.logger.debug(
+      'Updating target app deployment protection settings (target=%o, configuration=%o)',
+      args.target,
+      args.configuration,
+    );
+
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
+    await this.session.assertPerformAction({
+      action: 'target:modifySettings',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      },
+    });
+
+    const validationResult = AppDeploymentProtectionConfigurationModel.safeParse(
+      args.configuration,
+    );
+
+    if (validationResult.success === false) {
+      return {
+        ok: false,
+        error: {
+          message: 'Please check your input.',
+          inputErrors: {
+            minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
+            minDaysSinceCreation:
+              validationResult.error.formErrors.fieldErrors.minDaysSinceCreation?.[0],
+            maxTrafficPercentage:
+              validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
+            trafficPeriodDays: validationResult.error.formErrors.fieldErrors.trafficPeriodDays?.[0],
+          },
+        },
+      };
+    }
+
+    await this.storage.updateTargetAppDeploymentProtectionSettings({
+      projectId: selector.projectId,
+      targetId: selector.targetId,
+      isEnabled: args.configuration.isEnabled ?? undefined,
+      minDaysInactive: validationResult.data.minDaysInactive ?? undefined,
+      minDaysSinceCreation: validationResult.data.minDaysSinceCreation ?? undefined,
+      maxTrafficPercentage: validationResult.data.maxTrafficPercentage ?? undefined,
+      trafficPeriodDays: validationResult.data.trafficPeriodDays ?? undefined,
+      ruleLogic: args.configuration.ruleLogic ?? undefined,
+    });
+
+    return {
+      ok: true,
+      target: await this.getTargetById({ targetId: selector.targetId }),
+    };
+  }
 }
+
+const AppDeploymentProtectionConfigurationModel = z.object({
+  minDaysInactive: z
+    .number()
+    .min(0, 'Minimum days inactive must be at least 0.')
+    .nullable()
+    .optional(),
+  minDaysSinceCreation: z
+    .number()
+    .min(0, 'Minimum days since creation must be at least 0.')
+    .nullable()
+    .optional(),
+  maxTrafficPercentage: z
+    .number()
+    .min(0, 'Maximum traffic percentage must be at least 0.')
+    .max(100, 'Maximum traffic percentage must be at most 100.')
+    .nullable()
+    .optional(),
+  trafficPeriodDays: z
+    .number()
+    .min(1, 'Traffic period days must be at least 1.')
+    .nullable()
+    .optional(),
+});
 
 const TargetGraphQLEndpointUrlModel = zod
   .string()

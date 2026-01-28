@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/core",
-  "version": "0.20.0",
+  "version": "0.20.2",
   "type": "module",
   "repository": {
     "type": "git",
@@ -54,7 +54,7 @@
     "events": "^3.3.0",
     "js-md5": "0.8.3",
     "lodash.sortby": "^4.7.0",
-    "tiny-lru": "^8.0.2"
+    "tiny-lru": "^11.4.7"
   },
   "devDependencies": {
     "@apollo/federation": "0.38.1",

@@ -101,7 +101,7 @@ export class PersistedDocumentIngester {
 
   async processBatch(data: BatchProcessEvent['data']) {
     this.logger.debug(
-      'Processing batch. (targetId=%s, appDeploymentId=%s, operationCount=%n)',
+      'Processing batch. (targetId=%s, appDeploymentId=%s, operationCount=%d)',
       data.targetId,
       data.appDeployment.id,
       data.documents.length,
@@ -118,7 +118,7 @@ export class PersistedDocumentIngester {
 
       if (hashValidation.success === false || bodyValidation.success === false) {
         this.logger.debug(
-          'Invalid operation provided. Processing failed. (targetId=%s, appDeploymentId=%s, operationIndex=%n)',
+          'Invalid operation provided. Processing failed. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
           data.targetId,
           data.appDeployment.id,
           index,
@@ -146,7 +146,7 @@ export class PersistedDocumentIngester {
         if (err instanceof GraphQLError) {
           console.error(err);
           this.logger.debug(
-            'Failed parsing GraphQL operation. (targetId=%s, appDeploymentId=%s, operationIndex=%n)',
+            'Failed parsing GraphQL operation. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
             data.targetId,
             data.appDeployment.id,
             index,
@@ -171,7 +171,7 @@ export class PersistedDocumentIngester {
 
       if (errors.length > 0) {
         this.logger.debug(
-          'GraphQL operation did not pass validation against latest valid schema version. (targetId=%s, appDeploymentId=%s, operationIndex=%n)',
+          'GraphQL operation did not pass validation against latest valid schema version. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
           data.targetId,
           data.appDeployment.id,
           index,
@@ -234,7 +234,7 @@ export class PersistedDocumentIngester {
 
     if (documents.length) {
       this.logger.debug(
-        'inserting documents into clickhouse and s3. (targetId=%s, appDeployment=%s, documentCount=%n)',
+        'inserting documents into clickhouse and s3. (targetId=%s, appDeployment=%s, documentCount=%d)',
         data.targetId,
         data.appDeployment.id,
         documents.length,
@@ -261,7 +261,7 @@ export class PersistedDocumentIngester {
   }) {
     // 1. Insert into ClickHouse
     this.logger.debug(
-      'Inserting documents into ClickHouse. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into ClickHouse. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -291,7 +291,7 @@ export class PersistedDocumentIngester {
     });
 
     this.logger.debug(
-      'Inserting documents into ClickHouse finished. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into ClickHouse finished. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -308,7 +308,7 @@ export class PersistedDocumentIngester {
     documents: Array<DocumentRecord>;
   }) {
     this.logger.debug(
-      'Inserting documents into S3. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into S3. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -353,7 +353,7 @@ export class PersistedDocumentIngester {
     await Promise.all(tasks);
 
     this.logger.debug(
-      'Inserting documents into S3 finished. (targetId=%s, appDeployment=%s, documentCount=%n)',
+      'Inserting documents into S3 finished. (targetId=%s, appDeployment=%s, documentCount=%d)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
@@ -370,7 +370,7 @@ export class PersistedDocumentIngester {
       try {
         await this.onDocumentsPersisted(docsForCache);
         this.logger.debug(
-          'Cache prefill callback completed. (targetId=%s, appDeployment=%s, documentCount=%n)',
+          'Cache prefill callback completed. (targetId=%s, appDeployment=%s, documentCount=%d)',
           args.targetId,
           args.appDeployment.id,
           docsForCache.length,

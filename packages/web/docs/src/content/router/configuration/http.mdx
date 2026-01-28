@@ -32,12 +32,26 @@ The `port` property specifies the network port that the router will listen on. E
 not already in use by another service on the same host. When running in a container, this is the
 port you will need to expose.
 
+### `graphql_endpoint`
+
+- **Type:** `string`
+- **Default:** `/graphql`
+
+The `graphql_endpoint` property specifies the URL path at which the router will expose its GraphQL
+API.
+
+You may also use `/graphql/{wildcard}` if you wish to capture nested paths within the same request,
+or `/graphql/{tail}*` to capture any remaining path segments.
+
 ## Example
 
-This example configures the router to listen only on the localhost interface on port `8080`.
+This example configures the router to listen only on the localhost interface on port `8080` and on
+path `/my_graphql_router`, so it will accept GraphQL requests on
+`http://127.0.0.1:8080/my_graphql_router`.
 
 ```yaml filename="router.config.yaml"
 http:
   host: '127.0.0.1'
   port: 8080
+  graphql_endpoint: /my_graphql_router
 ```

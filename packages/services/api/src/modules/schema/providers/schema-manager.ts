@@ -162,7 +162,7 @@ export class SchemaManager {
       },
     });
 
-    const [organization, project, latestSchemas] = await Promise.all([
+    const [organization, project, target] = await Promise.all([
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
@@ -170,11 +170,10 @@ export class SchemaManager {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.storage.getLatestSchemas({
+      this.storage.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
         targetId: selector.targetId,
-        onlyComposable: input.onlyComposable,
       }),
     ]);
 
@@ -185,21 +184,26 @@ export class SchemaManager {
       };
     }
 
+    const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogs({
+      target,
+      onlyComposable: input.onlyComposable,
+    });
+
     const existingServices = ensureCompositeSchemas(latestSchemas ? latestSchemas.schemas : []);
     const services = existingServices
       // remove provided services from the list
       .filter(service => !input.services.some(s => s.name === service.service_name))
       .map(service => ({
-        service_name: service.service_name,
+        serviceName: service.service_name,
         sdl: service.sdl,
-        service_url: service.service_url,
+        serviceUrl: service.service_url,
       }))
       // add provided services to the list
       .concat(
         input.services.map(service => ({
-          service_name: service.name,
+          serviceName: service.name,
           sdl: service.sdl,
-          service_url: service.url ?? null,
+          serviceUrl: service.url ?? null,
         })),
       )
       .map(service => this.schemaHelper.createSchemaObject(service));
@@ -343,6 +347,29 @@ export class SchemaManager {
       targetId: selector.targetId,
       organizationId: selector.organizationId,
       ...result,
+    };
+  }
+
+  /**
+   * Retrieve the latest schema version including the schema logs.
+   */
+  async getLatestSchemaVersionWithSchemaLogs(args: { target: Target; onlyComposable?: boolean }) {
+    const schemaVersion = await (args.onlyComposable
+      ? this.getMaybeLatestValidVersion(args.target)
+      : this.getMaybeLatestVersion(args.target));
+
+    if (!schemaVersion) {
+      return null;
+    }
+
+    const schemas = await this.storage.getSchemasOfVersion({
+      versionId: schemaVersion.id,
+      includeMetadata: true,
+    });
+
+    return {
+      version: schemaVersion,
+      schemas,
     };
   }
 
@@ -1069,7 +1096,7 @@ export class SchemaManager {
     };
   }
 
-  async getVersionBeforeVersionId(args: {
+  async getComposableVersionBeforeVersionId(args: {
     organization: string;
     project: string;
     target: string;
@@ -1078,21 +1105,11 @@ export class SchemaManager {
   }) {
     this.logger.debug('Fetch version before version id. (args=%o)', args);
 
-    const [organization, project] = await Promise.all([
-      this.storage.getOrganization({
-        organizationId: args.organization,
-      }),
-      this.storage.getProject({
-        organizationId: args.organization,
-        projectId: args.project,
-      }),
-    ]);
-
     const schemaVersion = await this.storage.getVersionBeforeVersionId({
       targetId: args.target,
       beforeVersionId: args.beforeVersionId,
       beforeVersionCreatedAt: args.beforeVersionCreatedAt,
-      onlyComposable: shouldUseLatestComposableVersion(args.target, project, organization),
+      onlyComposable: true,
     });
 
     if (!schemaVersion) {
@@ -1228,8 +1245,8 @@ export class SchemaManager {
           ensureCompositeSchemas(schemas).map(s =>
             this.schemaHelper.createSchemaObject({
               sdl: s.sdl,
-              service_name: s.service_name,
-              service_url: s.service_url,
+              serviceName: s.service_name,
+              serviceUrl: s.service_url,
             }),
           ),
           {
@@ -1334,18 +1351,4 @@ export class SchemaManager {
     this.logger.info('User not found. (userId=%s)', input.userId);
     return null;
   }
-}
-
-export function shouldUseLatestComposableVersion(
-  targetId: string,
-  project: Project,
-  organization: Organization,
-) {
-  return (
-    organization.featureFlags.compareToPreviousComposableVersion ||
-    // If the project is a native federation project, we should compare to the latest composable version
-    (project.nativeFederation &&
-      // but only if the target is not forced to use the legacy composition
-      !organization.featureFlags.forceLegacyCompositionInTargets.includes(targetId))
-  );
 }

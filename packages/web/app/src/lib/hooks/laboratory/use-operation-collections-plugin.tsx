@@ -303,7 +303,7 @@ export function Content() {
     <AccordionItem key={collection.id} value={collection.id} className="border-b-0">
       <AccordionHeader className="flex items-center justify-between" data-cy="collection-item">
         <AccordionTriggerPrimitive
-          className="group flex w-full items-center gap-x-3 rounded p-2 text-left font-medium text-white hover:bg-gray-100/10"
+          className="group flex w-full items-center gap-x-3 rounded-sm p-2 text-left font-medium text-white hover:bg-gray-100/10"
           data-cy="collection-item-trigger"
         >
           <FolderIcon className="size-4 group-data-[state=open]:hidden" />
@@ -366,7 +366,7 @@ export function Content() {
                 search={{ operation: node.id }}
                 data-cy={`operation-${node.name}`}
                 className={cn(
-                  'flex w-full items-center gap-x-3 rounded p-2 font-normal text-white/50 hover:bg-gray-100/10 hover:text-white hover:no-underline',
+                  'flex w-full items-center gap-x-3 rounded-sm p-2 font-normal text-white/50 hover:bg-gray-100/10 hover:text-white hover:no-underline',
                   node.id === queryParamsOperationId && [
                     'bg-gray-100/10 text-white',
                     currentOperation &&

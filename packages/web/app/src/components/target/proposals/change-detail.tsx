@@ -22,7 +22,7 @@ export function ProposalChangeDetail(props: {
     <Accordion type="single">
       <AccordionItem value="item-1">
         <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 text-gray-600 hover:no-underline dark:text-white">
+          <AccordionTrigger className="py-3 text-white hover:no-underline">
             <div className="flex w-full flex-row items-center text-left">
               <div>{labelize(props.change.message)}</div>
               <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
@@ -49,12 +49,12 @@ export function ChangeBlock(props: {
   return (
     props.changes.length !== 0 && (
       <>
-        <h2 className="mb-2 mt-6 flex items-center font-bold text-gray-900 dark:text-white">
+        <h2 className="mb-2 mt-6 flex items-center font-bold text-white">
           {props.title}
           {props.info && <ChangesBlockTooltip info={props.info} />}
         </h2>
         <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
-          {props.changes.map(({ change, error, mergeStatus }) => {
+          {props.changes.map(({ change, error, mergeStatus }, i) => {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
@@ -74,7 +74,7 @@ export function ChangeBlock(props: {
               <ProposalChangeDetail
                 icon={icon}
                 change={change}
-                key={`${change.type}-${change.path}`}
+                key={`${change.type}-${change.path}-${i}`}
                 error={error}
               />
             );
