@@ -1,7 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import LRU from 'lru-cache';
 import { HiveError } from '../../../shared/errors';
-import { Session } from '../../auth/lib/authz';
 import { Logger } from './logger';
 
 @Injectable({
@@ -42,18 +41,22 @@ export class InMemoryRateLimitStore {
 
 @Injectable({
   global: true,
-  scope: Scope.Operation,
 })
 export class InMemoryRateLimiter {
   constructor(
     private logger: Logger,
     private store: InMemoryRateLimitStore,
-    private session: Session,
   ) {
     this.logger = logger.child({ service: 'InMemoryRateLimiter' });
   }
 
-  async check(action: string, windowSizeInMs: number, maxActions: number, message: string) {
+  async check(
+    action: string,
+    actorId: string,
+    windowSizeInMs: number,
+    maxActions: number,
+    message: string,
+  ) {
     this.logger.debug(
       'Checking rate limit (action:%s, windowsSize: %s, maxActions: %s)',
       action,
@@ -61,12 +64,9 @@ export class InMemoryRateLimiter {
       maxActions,
     );
 
-    const actor = await this.session.getActor();
     const limiter = this.store.ensureLimiter(action, windowSizeInMs, maxActions);
 
-    if (
-      !limiter.isAllowed(actor.type === 'user' ? actor.user.id : actor.organizationAccessToken.id)
-    ) {
+    if (!limiter.isAllowed(actorId)) {
       throw new HiveError(message);
     }
   }

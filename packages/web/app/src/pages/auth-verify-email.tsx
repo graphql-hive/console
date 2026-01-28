@@ -1,69 +1,173 @@
-import {
-  getEmailVerificationTokenFromURL,
-  sendVerificationEmail,
-  verifyEmail,
-} from 'supertokens-auth-react/recipe/emailverification';
+import { useCallback, useEffect } from 'react';
+import { useSessionContext } from 'supertokens-auth-react/recipe/session';
+import { useMutation } from 'urql';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
 import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { graphql } from '@/gql';
+import { authVerifyEmailRoute } from '@/router';
+import { Link, useNavigate } from '@tanstack/react-router';
+
+const SendVerificationEmailMutation = graphql(`
+  mutation SendVerificationEmailMutation($input: SendVerificationEmailInput!) {
+    sendVerificationEmail(input: $input) {
+      ok {
+        expiresAt
+      }
+      error {
+        message
+        emailAlreadyVerified
+      }
+    }
+  }
+`);
+
+const VerifyEmailMutation = graphql(`
+  mutation VerifyEmailMutation($input: VerifyEmailInput!) {
+    verifyEmail(input: $input) {
+      ok {
+        verified
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
 
 function AuthVerifyEmail() {
-  const token = getEmailVerificationTokenFromURL();
-  const enabled = typeof token === 'string' && token.length > 0;
+  const search = authVerifyEmailRoute.useSearch();
   const { toast } = useToast();
+  const session = useSessionContext();
+  const navigate = useNavigate();
 
-  const sendVerificationEmailMutation = useMutation({
-    mutationFn: () => sendVerificationEmail(),
-    onSuccess(data) {
-      if (data.status === 'OK') {
+  const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
+  const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
+
+  const sendEmail = useCallback(
+    async (resend?: boolean) => {
+      if (session.loading) return;
+
+      const result = await sendEmailImpl(
+        {
+          input: {
+            userIdentityId: session.userId,
+            resend,
+          },
+        },
+        {
+          fetchOptions: {
+            headers: {
+              'ignore-session': 'true',
+            },
+          },
+        },
+      );
+      if (result.data?.sendVerificationEmail.ok) {
         toast({
           title: 'Verification email sent',
           description: 'Please check your email inbox.',
         });
-      } else if (data.status === 'EMAIL_ALREADY_VERIFIED_ERROR') {
+      } else if (result.data?.sendVerificationEmail.error?.emailAlreadyVerified) {
+        void navigate({ to: '/' });
+      } else {
         toast({
-          title: 'Email already verified',
-          description: 'Your email address has already been verified.',
+          title: 'Failed to send verification email',
+          description:
+            result.data?.sendVerificationEmail.error?.message ??
+            result.error?.message ??
+            'An unknown error occurred.',
         });
       }
     },
-  });
-  const emailVerification = useQuery({
-    queryFn: () => verifyEmail(),
-    enabled,
-    queryKey: ['email-verification', token],
-  });
+    [session.loading, sendEmailImpl, toast],
+  );
 
-  if (!enabled) {
-    return (
-      <AuthCard>
-        <AuthCardHeader title="Verify your email address" />
-        <AuthCardContent>
-          <AuthCardStack>
-            <p>
-              <span className="font-semibold">Please click on the link</span> in the email we just
-              sent you to confirm your email address.
-            </p>
-            <Button
-              className="w-full"
-              disabled={sendVerificationEmailMutation.isPending}
-              onClick={() => sendVerificationEmailMutation.mutate()}
-            >
-              Resend verification email
-            </Button>
-            <Button asChild className="w-full" variant="outline">
-              <Link to="/logout">Logout</Link>
-            </Button>
-          </AuthCardStack>
-        </AuthCardContent>
-      </AuthCard>
-    );
-  }
+  useEffect(() => {
+    if (session.loading) return;
 
-  if (emailVerification.isPending) {
+    if (search.userIdentityId) {
+      void verify(
+        {
+          input: {
+            userIdentityId: search.userIdentityId,
+            token: search.token,
+          },
+        },
+        {
+          fetchOptions: {
+            headers: {
+              'ignore-session': 'true',
+            },
+          },
+        },
+      );
+    } else {
+      void sendEmail();
+    }
+  }, [session.loading, search.userIdentityId, verify, sendEmail]);
+
+  if (search.userIdentityId) {
+    if (verifyMutation.error) {
+      return (
+        <AuthCard>
+          <AuthCardHeader title="Failed to verify your email" />
+          <AuthCardContent>
+            <AuthCardStack>
+              <p>There was an unexpected error when verifying your email address.</p>
+              <Button
+                className="w-full"
+                disabled={sendEmailMutation.fetching}
+                onClick={() => sendEmail(true)}
+              >
+                Resend verification email
+              </Button>
+              <Button asChild className="w-full" variant="outline">
+                <Link to="/logout">Logout</Link>
+              </Button>
+            </AuthCardStack>
+          </AuthCardContent>
+        </AuthCard>
+      );
+    }
+
+    if (verifyMutation.data?.verifyEmail.ok?.verified) {
+      return (
+        <AuthCard>
+          <AuthCardHeader
+            title="Success!"
+            description="Your email address has been successfully verified."
+          />
+          <AuthCardContent>
+            <AuthCardStack>
+              <Button className="w-full" asChild>
+                <Link to="/">Continue</Link>
+              </Button>
+            </AuthCardStack>
+          </AuthCardContent>
+        </AuthCard>
+      );
+    }
+
+    if (verifyMutation.data?.verifyEmail.error) {
+      return (
+        <AuthCard>
+          <AuthCardHeader title="Email verification" />
+          <AuthCardContent>
+            <AuthCardStack>
+              <p>{verifyMutation.data?.verifyEmail.error.message}</p>
+              <Button asChild className="w-full">
+                <Link to="/auth" search={{ redirectToPath: '/' }}>
+                  Continue
+                </Link>
+              </Button>
+            </AuthCardStack>
+          </AuthCardContent>
+        </AuthCard>
+      );
+    }
+
     return (
       <AuthCard>
         <AuthCardHeader
@@ -81,68 +185,6 @@ function AuthVerifyEmail() {
     );
   }
 
-  if (emailVerification.isError) {
-    return (
-      <AuthCard>
-        <AuthCardHeader title="Failed to verify your email" />
-        <AuthCardContent>
-          <AuthCardStack>
-            <p>There was an unexpected error when verifying your email address.</p>
-            <Button
-              className="w-full"
-              disabled={sendVerificationEmailMutation.isPending}
-              onClick={() => sendVerificationEmailMutation.mutate()}
-            >
-              Resend verification email
-            </Button>
-            <Button asChild className="w-full" variant="outline">
-              <Link to="/logout">Logout</Link>
-            </Button>
-          </AuthCardStack>
-        </AuthCardContent>
-      </AuthCard>
-    );
-  }
-
-  if (emailVerification.isSuccess && emailVerification.data.status === 'OK') {
-    return (
-      <AuthCard>
-        <AuthCardHeader
-          title="Success!"
-          description="Your email address has been successfully verified."
-        />
-        <AuthCardContent>
-          <AuthCardStack>
-            <Button className="w-full" asChild>
-              <Link to="/">Continue</Link>
-            </Button>
-          </AuthCardStack>
-        </AuthCardContent>
-      </AuthCard>
-    );
-  }
-
-  if (
-    emailVerification.isSuccess &&
-    emailVerification.data.status === 'EMAIL_VERIFICATION_INVALID_TOKEN_ERROR'
-  ) {
-    return (
-      <AuthCard>
-        <AuthCardHeader title="Email verification" />
-        <AuthCardContent>
-          <AuthCardStack>
-            <p>The email verification link has expired.</p>
-            <Button asChild className="w-full">
-              <Link to="/auth" search={{ redirectToPath: '/' }}>
-                Continue
-              </Link>
-            </Button>
-          </AuthCardStack>
-        </AuthCardContent>
-      </AuthCard>
-    );
-  }
-
   return (
     <AuthCard>
       <AuthCardHeader title="Verify your email address" />
@@ -153,9 +195,10 @@ function AuthVerifyEmail() {
             sent you to confirm your email address.
           </p>
           <Button
+            type="button"
             className="w-full"
-            disabled={sendVerificationEmailMutation.isPending}
-            onClick={() => sendVerificationEmailMutation.mutate()}
+            disabled={sendEmailMutation.fetching}
+            onClick={() => sendEmail(true)}
           >
             Resend verification email
           </Button>

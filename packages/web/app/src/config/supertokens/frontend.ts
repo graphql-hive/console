@@ -1,6 +1,5 @@
 import Provider from 'supertokens-auth-react/lib/build/recipe/thirdparty/providers';
 import { CustomProviderConfig } from 'supertokens-auth-react/lib/build/recipe/thirdparty/providers/types';
-import EmailVerification from 'supertokens-auth-react/recipe/emailverification';
 import SessionReact from 'supertokens-auth-react/recipe/session';
 import ThirdPartyEmailPasswordReact from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import { env } from '@/env/frontend';
@@ -79,9 +78,6 @@ export const frontendConfig = () => {
           }
         },
         override: env.auth.oidc ? getOIDCOverrides() : undefined,
-      }),
-      EmailVerification.init({
-        mode: env.auth.requireEmailVerification ? 'REQUIRED' : 'OPTIONAL',
       }),
       SessionReact.init(),
     ],

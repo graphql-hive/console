@@ -525,8 +525,10 @@ export class OrganizationManager {
     role: string | null;
     resources: GraphQLSchema.ResourceAssignmentInput | null;
   }) {
+    const actor = await this.session.getActor();
     await this.inMemoryRateLimiter.check(
       'inviteToOrganizationByEmail',
+      actor.type === 'user' ? actor.user.id : actor.organizationAccessToken.id,
       5_000, // 5 seconds
       6, // 6 invites
       `Exceeded rate limit for inviting to organization by email.`,
