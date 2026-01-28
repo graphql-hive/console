@@ -2,8 +2,8 @@ import { ReactNode } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
-import { Header } from '@/components/navigation/header';
-import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
+import { Header } from '@/components/new/header';
+import { SecondaryNavigation } from '@/components/new/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
