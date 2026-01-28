@@ -576,15 +576,15 @@ export const Laboratory = (
       defaultValue?: string;
       onSubmit?: (value: string | null) => void;
     }) => {
-      setIsPreflightPromptModalOpen(true);
-
       setPreflightPromptModalProps({
         placeholder: props.placeholder,
         defaultValue: props.defaultValue,
         onSubmit: props.onSubmit,
       });
 
-      setIsPreflightPromptModalOpen(true);
+      setTimeout(() => {
+        setIsPreflightPromptModalOpen(true);
+      }, 200);
     },
     [],
   );

@@ -4,6 +4,7 @@ export default {
   gateway: 'Hive Gateway',
   router: 'Hive Router',
   logger: 'Hive Logger',
+  'new-laboratory': 'Hive Laboratory',
   'other-integrations': 'Integrations',
   'api-reference': 'API Reference',
   'use-cases': 'Use Cases',
