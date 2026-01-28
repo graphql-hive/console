@@ -109,7 +109,7 @@ export class EmailVerification {
       'sendVerificationEmail',
       ipAddress,
       60_000,
-      2,
+      3,
       `Exceeded rate limit for sending verification emails.`,
     );
 
