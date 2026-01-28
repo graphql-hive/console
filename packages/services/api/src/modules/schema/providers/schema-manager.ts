@@ -1096,7 +1096,7 @@ export class SchemaManager {
     };
   }
 
-  async getVersionBeforeVersionId(args: {
+  async getComposableVersionBeforeVersionId(args: {
     organization: string;
     project: string;
     target: string;
@@ -1105,21 +1105,11 @@ export class SchemaManager {
   }) {
     this.logger.debug('Fetch version before version id. (args=%o)', args);
 
-    const [organization, project] = await Promise.all([
-      this.storage.getOrganization({
-        organizationId: args.organization,
-      }),
-      this.storage.getProject({
-        organizationId: args.organization,
-        projectId: args.project,
-      }),
-    ]);
-
     const schemaVersion = await this.storage.getVersionBeforeVersionId({
       targetId: args.target,
       beforeVersionId: args.beforeVersionId,
       beforeVersionCreatedAt: args.beforeVersionCreatedAt,
-      onlyComposable: shouldUseLatestComposableVersion(args.target, project, organization),
+      onlyComposable: true,
     });
 
     if (!schemaVersion) {
@@ -1361,18 +1351,4 @@ export class SchemaManager {
     this.logger.info('User not found. (userId=%s)', input.userId);
     return null;
   }
-}
-
-export function shouldUseLatestComposableVersion(
-  targetId: string,
-  project: Project,
-  organization: Organization,
-) {
-  return (
-    organization.featureFlags.compareToPreviousComposableVersion ||
-    // If the project is a native federation project, we should compare to the latest composable version
-    (project.nativeFederation &&
-      // but only if the target is not forced to use the legacy composition
-      !organization.featureFlags.forceLegacyCompositionInTargets.includes(targetId))
-  );
 }
