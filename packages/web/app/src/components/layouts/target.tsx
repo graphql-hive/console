@@ -1,8 +1,8 @@
 import { createContext, ReactElement, ReactNode, useContext, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Header } from '@/components/new/header';
-import { SecondaryNavigation } from '@/components/new/secondary-navigation';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

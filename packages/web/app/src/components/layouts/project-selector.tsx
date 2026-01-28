@@ -1,4 +1,4 @@
-import { PrimaryNavigationLink } from '@/components/new/primary-navigation-link';
+import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
