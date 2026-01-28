@@ -7,6 +7,7 @@ export const EmailVerificationTask = defineTask({
   schema: z.object({
     user: z.object({
       email: z.string(),
+      id: z.string(),
     }),
     emailVerifyLink: z.string(),
   }),
