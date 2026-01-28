@@ -595,7 +595,7 @@ describe('delete', () => {
           }
         `);
 
-        const { access_token: memberAccessToken } = await seed.authenticate(
+        const { accessToken: memberAccessToken } = await seed.authenticate(
           seed.generateEmail(),
           oidcIntegrationId,
         );
@@ -835,7 +835,7 @@ describe('restrictions', () => {
     }
 
     const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
-    const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.access_token).then(
+    const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.accessToken).then(
       r => r.expectNoGraphQLErrors(),
     );
 
@@ -902,7 +902,7 @@ describe('restrictions', () => {
     }
 
     const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
-    const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.access_token).then(
+    const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.accessToken).then(
       r => r.expectNoGraphQLErrors(),
     );
 
@@ -924,10 +924,9 @@ describe('restrictions', () => {
       }
 
       const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
-      const joinResult = await joinMemberUsingCode(
-        invitationCode,
-        nonOidcAccount.access_token,
-      ).then(r => r.expectNoGraphQLErrors());
+      const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.accessToken).then(
+        r => r.expectNoGraphQLErrors(),
+      );
 
       expect(joinResult.joinOrganization.__typename).toEqual('OrganizationPayload');
 
