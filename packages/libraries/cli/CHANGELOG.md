@@ -1,5 +1,16 @@
 # @graphql-hive/cli
 
+## 0.58.0
+
+### Minor Changes
+
+- [#7432](https://github.com/graphql-hive/console/pull/7432)
+  [`f8e49ae`](https://github.com/graphql-hive/console/commit/f8e49ae53f743a50e104fba216bd4545fb4abdd6)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add app deployment retirement
+  protection settings. When enabled, prevents retiring app deployments that were recently created or
+  are still actively used, based on configurable inactivity period, creation age, and traffic
+  thresholds.
+
 ## 0.57.4
 
 ### Patch Changes
