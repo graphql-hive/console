@@ -61,7 +61,7 @@ import {
   toCompositeSchemaInput,
   toSingleSchemaInput,
 } from './schema-helper';
-import { SchemaManager, shouldUseLatestComposableVersion } from './schema-manager';
+import { SchemaManager } from './schema-manager';
 import { SchemaVersionHelper } from './schema-version-helper';
 
 const schemaCheckCount = new promClient.Counter({
@@ -622,7 +622,7 @@ export class SchemaPublisher {
               proposalChanges = diffSchema.result ?? null;
             }
           } catch (e: any) {
-            this.logger.error('Could not calculate schema proposal diff: ', e.message ?? e);
+            this.logger.error('Could not calculate schema proposal diff: %s', e.message ?? e);
           }
         }
 
@@ -678,7 +678,7 @@ export class SchemaPublisher {
               proposalChanges = diffSchema.result ?? null;
             }
           } catch (e: any) {
-            this.logger.error('Could not calculate schema proposal diff: ', e.message ?? e);
+            this.logger.error('Could not calculate schema proposal diff: %s', e.message ?? e);
           }
         }
 
@@ -719,11 +719,6 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
-          compareToLatestComposableVersion: shouldUseLatestComposableVersion(
-            selector.targetId,
-            project,
-            organization,
-          ),
           filterNestedChanges: !input.schemaProposalId,
         });
         break;
@@ -1398,12 +1393,6 @@ export class SchemaPublisher {
           }),
         ]);
 
-        const compareToLatestComposableVersion = shouldUseLatestComposableVersion(
-          selector.targetId,
-          project,
-          organization,
-        );
-
         if (!latestVersion || latestVersion.schemas.length === 0) {
           throw new HiveError('Registry is empty');
         }
@@ -1476,17 +1465,7 @@ export class SchemaPublisher {
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           contracts,
           failDiffOnDangerousChange,
-          compareToLatestComposableVersion,
         });
-
-        let diffSchemaVersionId: string | null = null;
-        if (compareToLatestComposableVersion && latestComposableVersion) {
-          diffSchemaVersionId = latestComposableVersion.version.id;
-        }
-
-        if (!compareToLatestComposableVersion && latestVersion) {
-          diffSchemaVersionId = latestVersion.version.id;
-        }
 
         if (deleteResult.conclusion === SchemaDeleteConclusion.Accept) {
           this.logger.debug('Delete accepted');
@@ -1497,7 +1476,7 @@ export class SchemaPublisher {
               targetId: selector.targetId,
               serviceName: input.serviceName,
               composable: deleteResult.state.composable,
-              diffSchemaVersionId,
+              diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
               changes: deleteResult.state.changes,
               coordinatesDiff: deleteResult.state.coordinatesDiff,
               contracts:
@@ -1771,15 +1750,6 @@ export class SchemaPublisher {
           })
         : null;
 
-    const compareToLatestComposableVersion = shouldUseLatestComposableVersion(
-      target.id,
-      project,
-      organization,
-    );
-    const comparedSchemaVersion = compareToLatestComposableVersion
-      ? latestComposable
-      : latestVersion;
-
     const latestSchemaVersionContracts = latestVersion
       ? await this.contracts.getContractVersionsForSchemaVersion({
           schemaVersionId: latestVersion.version.id,
@@ -1867,7 +1837,6 @@ export class SchemaPublisher {
           conditionalBreakingChangeDiffConfig:
             conditionalBreakingChangeConfiguration?.conditionalBreakingChangeDiffConfig ?? null,
           failDiffOnDangerousChange,
-          compareToLatestComposableVersion: compareToLatestComposableVersion,
         });
         break;
       default: {
@@ -2009,8 +1978,6 @@ export class SchemaPublisher {
 
     const supergraph = publishResult.state.supergraph ?? null;
 
-    const diffSchemaVersionId = comparedSchemaVersion?.version.id ?? null;
-
     this.logger.debug(`Assigning ${schemaLogIds.length} schemas to new version`);
 
     const serviceName = input.service;
@@ -2065,7 +2032,7 @@ export class SchemaPublisher {
       },
       changes,
       coordinatesDiff: publishResult.state.coordinatesDiff,
-      diffSchemaVersionId,
+      diffSchemaVersionId: latestComposable?.version.id ?? null,
       previousSchemaVersion: latestVersion?.version.id ?? null,
       conditionalBreakingChangeMetadata: await this.getConditionalBreakingChangeMetadata({
         conditionalBreakingChangeConfiguration,

@@ -177,10 +177,6 @@ export interface Organization {
   getStarted: OrganizationGetStarted;
   featureFlags: {
     /**
-     * @deprecated This feature flag is now a default for newly created organizations and projects.
-     */
-    compareToPreviousComposableVersion: boolean;
-    /**
      * Forces selected targets to use @apollo/federation library
      * when native composition is enabled for a project.
      * This is a temporary solution, requested by one of Hive users.

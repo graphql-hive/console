@@ -275,7 +275,7 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    return await this.schemaManager.getVersionBeforeVersionId({
+    return await this.schemaManager.getComposableVersionBeforeVersionId({
       organization: schemaVersion.organizationId,
       project: schemaVersion.projectId,
       target: schemaVersion.targetId,

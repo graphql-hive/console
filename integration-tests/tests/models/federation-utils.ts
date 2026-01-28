@@ -7,10 +7,6 @@ export type FeatureFlags = [string, FFValue][];
 
 export const cases = [
   ['default' as const, [] as FeatureFlags],
-  [
-    'compareToPreviousComposableVersion' as const,
-    [['compareToPreviousComposableVersion', true]] as FeatureFlags,
-  ],
   ['@apollo/federation' as const, [] as FeatureFlags],
 ] as const;
 
