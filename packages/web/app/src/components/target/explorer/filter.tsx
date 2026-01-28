@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback, useMemo, useState, useDeferredValue } from 'react';
+import React, { ChangeEvent, useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
