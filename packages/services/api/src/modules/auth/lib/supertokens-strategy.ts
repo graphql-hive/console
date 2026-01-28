@@ -7,7 +7,6 @@ import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
-import { EmailVerification } from '../providers/email-verification';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
 
 export class SuperTokensCookieBasedSession extends Session {
@@ -133,29 +132,20 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
-  private emailVerification: EmailVerification | null;
 
   constructor(deps: {
     logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
-    emailVerification: EmailVerification | null;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
-    this.emailVerification = deps.emailVerification;
   }
 
   private async verifySuperTokensSession(args: { req: FastifyRequest; reply: FastifyReply }) {
     this.logger.debug('Attempt verifying SuperTokens session');
-
-    if (args.req.headers['ignore-session']) {
-      this.logger.debug('Ignoring session due to header');
-      return null;
-    }
-
     let session: SessionNode.SessionContainer | undefined;
 
     try {
@@ -168,7 +158,15 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     } catch (error) {
       this.logger.debug('Session resolution failed');
       if (SessionNode.Error.isErrorFromSuperTokens(error)) {
-        if (
+        // Check whether the email is already verified.
+        // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
+        if (error.type === SessionNode.Error.INVALID_CLAIMS) {
+          throw new HiveError('Your account is not verified. Please verify your email address.', {
+            extensions: {
+              code: 'VERIFY_EMAIL',
+            },
+          });
+        } else if (
           error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
           error.type === SessionNode.Error.UNAUTHORISED
         ) {
@@ -190,21 +188,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     if (!session) {
       this.logger.debug('No session found');
       return null;
-    }
-
-    if (this.emailVerification) {
-      // Check whether the email is already verified.
-      // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
-      const { verified } = await this.emailVerification.checkUserEmailVerified({
-        userIdentityId: session.getUserId(),
-      });
-      if (!verified) {
-        throw new HiveError('Your account is not verified. Please verify your email address.', {
-          extensions: {
-            code: 'VERIFY_EMAIL',
-          },
-        });
-      }
     }
 
     const payload = session.getAccessTokenPayload();

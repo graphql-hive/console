@@ -640,7 +640,6 @@ export async function createStorage(
             }),
             t,
           );
-
           action = 'created';
         }
 

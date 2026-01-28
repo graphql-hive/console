@@ -278,23 +278,10 @@ const authSignUpRoute = createRoute({
   component: AuthSignUpPage,
 });
 
-const AuthVerifyEmailSearch = z.union([
-  z.object({
-    userIdentityId: z.string(),
-    token: z.string(),
-  }),
-  z.object({
-    userIdentityId: z.undefined().optional(),
-    token: z.undefined().optional(),
-  }),
-]);
-export const authVerifyEmailRoute = createRoute({
+const authVerifyEmailRoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'verify-email',
-  validateSearch(search) {
-    return AuthVerifyEmailSearch.parse(search);
-  },
-  component: authenticated(AuthVerifyEmailPage),
+  component: AuthVerifyEmailPage,
 });
 
 const indexRoute = createRoute({

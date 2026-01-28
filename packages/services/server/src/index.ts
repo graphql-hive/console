@@ -22,7 +22,6 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
-import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -186,7 +185,6 @@ export async function main() {
           'Content-Type',
           'graphql-client-version',
           'graphql-client-name',
-          'ignore-session',
           'x-request-id',
           ...supertokens.getAllCORSHeaders(),
         ],
@@ -295,7 +293,6 @@ export async function main() {
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
-            forwardedIPHeaderName: env.supertokens.rateLimitIPHeaderName,
           }
         : null,
       tokens: {
@@ -419,9 +416,6 @@ export async function main() {
                 new OrganizationMemberRoles(storage.pool, logger),
                 logger,
               ),
-              emailVerification: env.auth.requireEmailVerification
-                ? registry.injector.get(EmailVerification)
-                : null,
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>
