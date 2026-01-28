@@ -370,6 +370,12 @@ export async function createStorage(
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
       | 'fail_diff_on_dangerous_change'
+      | 'app_deployment_protection_enabled'
+      | 'app_deployment_protection_min_days_inactive'
+      | 'app_deployment_protection_max_traffic_percentage'
+      | 'app_deployment_protection_traffic_period_days'
+      | 'app_deployment_protection_rule_logic'
+      | 'app_deployment_protection_min_days_since_creation'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -389,6 +395,14 @@ export async function createStorage(
         excludedAppDeployments: Array.isArray(row.validation_excluded_app_deployments)
           ? row.validation_excluded_app_deployments.filter(isDefined)
           : [],
+      },
+      appDeploymentProtection: {
+        isEnabled: row.app_deployment_protection_enabled,
+        minDaysInactive: row.app_deployment_protection_min_days_inactive,
+        minDaysSinceCreation: row.app_deployment_protection_min_days_since_creation,
+        maxTrafficPercentage: Number(row.app_deployment_protection_max_traffic_percentage),
+        trafficPeriodDays: row.app_deployment_protection_traffic_period_days,
+        ruleLogic: row.app_deployment_protection_rule_logic as 'AND' | 'OR',
       },
     };
   }
@@ -1856,6 +1870,12 @@ export async function createStorage(
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
           | 'fail_diff_on_dangerous_change'
+          | 'app_deployment_protection_enabled'
+          | 'app_deployment_protection_min_days_inactive'
+          | 'app_deployment_protection_max_traffic_percentage'
+          | 'app_deployment_protection_traffic_period_days'
+          | 'app_deployment_protection_rule_logic'
+          | 'app_deployment_protection_min_days_since_creation'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1869,7 +1889,13 @@ export async function createStorage(
           t.validation_request_count,
           t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets,
-          t.fail_diff_on_dangerous_change
+          t.fail_diff_on_dangerous_change,
+          t.app_deployment_protection_enabled,
+          t.app_deployment_protection_min_days_inactive,
+          t.app_deployment_protection_min_days_since_creation,
+          t.app_deployment_protection_max_traffic_percentage,
+          t.app_deployment_protection_traffic_period_days,
+          t.app_deployment_protection_rule_logic
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1900,7 +1926,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change, t.app_deployment_protection_enabled, t.app_deployment_protection_min_days_inactive, t.app_deployment_protection_max_traffic_percentage, t.app_deployment_protection_traffic_period_days, t.app_deployment_protection_rule_logic;
           `);
         }),
       );
@@ -1988,9 +2014,67 @@ export async function createStorage(
               , t.validation_request_count
               , t.validation_breaking_change_formula
               , t.fail_diff_on_dangerous_change
+              , t.app_deployment_protection_enabled
+              , t.app_deployment_protection_min_days_inactive
+              , t.app_deployment_protection_max_traffic_percentage
+              , t.app_deployment_protection_traffic_period_days
+              , t.app_deployment_protection_rule_logic
           `);
         }),
       ).validation;
+    },
+
+    async updateTargetAppDeploymentProtectionSettings({
+      targetId: target,
+      projectId: project,
+      isEnabled,
+      minDaysInactive,
+      minDaysSinceCreation,
+      maxTrafficPercentage,
+      trafficPeriodDays,
+      ruleLogic,
+    }: {
+      targetId: string;
+      projectId: string;
+      isEnabled?: boolean | null;
+      minDaysInactive?: number | null;
+      minDaysSinceCreation?: number | null;
+      maxTrafficPercentage?: number | null;
+      trafficPeriodDays?: number | null;
+      ruleLogic?: 'AND' | 'OR' | null;
+    }) {
+      return transformTargetSettings(
+        await pool.one(sql`/* updateTargetAppDeploymentProtectionSettings */
+            UPDATE
+              targets
+            SET
+              app_deployment_protection_enabled = COALESCE(${isEnabled ?? null}, app_deployment_protection_enabled)
+              , app_deployment_protection_min_days_inactive = COALESCE(${minDaysInactive ?? null}, app_deployment_protection_min_days_inactive)
+              , app_deployment_protection_max_traffic_percentage = COALESCE(${maxTrafficPercentage ?? null}, app_deployment_protection_max_traffic_percentage)
+              , app_deployment_protection_traffic_period_days = COALESCE(${trafficPeriodDays ?? null}, app_deployment_protection_traffic_period_days)
+              , app_deployment_protection_min_days_since_creation = COALESCE(${minDaysSinceCreation ?? null}, app_deployment_protection_min_days_since_creation)
+              , app_deployment_protection_rule_logic = COALESCE(${ruleLogic ?? null}, app_deployment_protection_rule_logic)
+            WHERE
+              id = ${target}
+              AND project_id = ${project}
+            RETURNING
+              id
+              , validation_enabled
+              , validation_percentage
+              , validation_period
+              , validation_excluded_clients
+              , null as targets
+              , validation_request_count
+              , validation_breaking_change_formula
+              , fail_diff_on_dangerous_change
+              , app_deployment_protection_enabled
+              , app_deployment_protection_min_days_inactive
+              , app_deployment_protection_max_traffic_percentage
+              , app_deployment_protection_traffic_period_days
+              , app_deployment_protection_rule_logic
+              , app_deployment_protection_min_days_since_creation
+          `),
+      ).appDeploymentProtection;
     },
 
     async countSchemaVersionsOfProject({ projectId: project, period }) {

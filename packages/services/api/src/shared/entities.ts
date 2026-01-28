@@ -383,6 +383,14 @@ export interface TargetSettings {
     excludedAppDeployments: string[];
   };
   failDiffOnDangerousChange: boolean;
+  appDeploymentProtection: {
+    isEnabled: boolean;
+    minDaysInactive: number;
+    minDaysSinceCreation: number;
+    maxTrafficPercentage: number;
+    trafficPeriodDays: number;
+    ruleLogic: 'AND' | 'OR';
+  };
 }
 
 export interface ComposeAndValidateResult {

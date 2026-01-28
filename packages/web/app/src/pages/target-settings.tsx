@@ -45,7 +45,11 @@ import { Table, TBody, Td, Tr } from '@/components/v2/table';
 import { Tag } from '@/components/v2/tag';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
-import { BreakingChangeFormulaType, ProjectType } from '@/gql/graphql';
+import {
+  AppDeploymentProtectionRuleLogicType,
+  BreakingChangeFormulaType,
+  ProjectType,
+} from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { subDays } from '@/lib/date-time';
 import { useToggle } from '@/lib/hooks';
@@ -470,6 +474,17 @@ const TargetSettings_ConditionalBreakingChangeConfigurationFragment = graphql(`
   }
 `);
 
+const TargetSettings_AppDeploymentProtectionConfigurationFragment = graphql(`
+  fragment TargetSettings_AppDeploymentProtectionConfigurationFragment on AppDeploymentProtectionConfiguration {
+    isEnabled
+    minDaysInactive
+    minDaysSinceCreation
+    maxTrafficPercentage
+    trafficPeriodDays
+    ruleLogic
+  }
+`);
+
 const TargetSettingsPage_TargetSettingsQuery = graphql(`
   query TargetSettingsPage_TargetSettingsQuery(
     $selector: TargetSelectorInput!
@@ -481,6 +496,9 @@ const TargetSettingsPage_TargetSettingsQuery = graphql(`
       failDiffOnDangerousChange
       conditionalBreakingChangeConfiguration {
         ...TargetSettings_ConditionalBreakingChangeConfigurationFragment
+      }
+      appDeploymentProtectionConfiguration {
+        ...TargetSettings_AppDeploymentProtectionConfigurationFragment
       }
     }
     targets(selector: $targetsSelector) {
@@ -537,6 +555,32 @@ const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = gra
       }
       error {
         message
+      }
+    }
+  }
+`);
+
+const TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutation = graphql(`
+  mutation TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutation(
+    $input: UpdateTargetAppDeploymentProtectionConfigurationInput!
+  ) {
+    updateTargetAppDeploymentProtectionConfiguration(input: $input) {
+      ok {
+        target {
+          id
+          appDeploymentProtectionConfiguration {
+            ...TargetSettings_AppDeploymentProtectionConfigurationFragment
+          }
+        }
+      }
+      error {
+        message
+        inputErrors {
+          minDaysInactive
+          minDaysSinceCreation
+          maxTrafficPercentage
+          trafficPeriodDays
+        }
       }
     }
   }
@@ -1050,6 +1094,306 @@ const BreakingChanges = (props: {
   );
 };
 
+const AppDeploymentProtection = (props: {
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) => {
+  const [mutation, updateProtection] = useMutation(
+    TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutation,
+  );
+  const [targetSettings] = useQuery({
+    query: TargetSettingsPage_TargetSettingsQuery,
+    variables: {
+      selector: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+        targetSlug: props.targetSlug,
+      },
+      targetsSelector: {
+        organizationSlug: props.organizationSlug,
+        projectSlug: props.projectSlug,
+      },
+      organizationSelector: {
+        organizationSlug: props.organizationSlug,
+      },
+    },
+  });
+
+  const configuration = useFragment(
+    TargetSettings_AppDeploymentProtectionConfigurationFragment,
+    targetSettings.data?.target?.appDeploymentProtectionConfiguration,
+  );
+
+  const isEnabled = configuration?.isEnabled || false;
+  const { toast } = useToast();
+
+  const { handleSubmit, isSubmitting, errors, touched, values, handleBlur, handleChange } =
+    useFormik({
+      enableReinitialize: true,
+      initialValues: {
+        minDaysInactive: configuration?.minDaysInactive ?? 30,
+        minDaysSinceCreation: configuration?.minDaysSinceCreation ?? 3,
+        maxTrafficPercentage: configuration?.maxTrafficPercentage ?? 1.0,
+        trafficPeriodDays: configuration?.trafficPeriodDays ?? 30,
+        ruleLogic: configuration?.ruleLogic ?? AppDeploymentProtectionRuleLogicType.And,
+      },
+      validationSchema: Yup.object().shape({
+        minDaysInactive: Yup.number()
+          .min(0, 'Must be at least 0')
+          .integer('Must be a whole number')
+          .required('Required'),
+        minDaysSinceCreation: Yup.number()
+          .min(0, 'Must be at least 0')
+          .integer('Must be a whole number')
+          .required('Required'),
+        maxTrafficPercentage: Yup.number()
+          .min(0, 'Must be at least 0')
+          .max(100, 'Must be at most 100')
+          .required('Required'),
+        trafficPeriodDays: Yup.number()
+          .min(1, 'Must be at least 1')
+          .integer('Must be a whole number')
+          .required('Required'),
+        ruleLogic: Yup.string()
+          .oneOf([
+            AppDeploymentProtectionRuleLogicType.And,
+            AppDeploymentProtectionRuleLogicType.Or,
+          ])
+          .required('Required'),
+      }),
+      onSubmit: values =>
+        updateProtection({
+          input: {
+            target: {
+              bySelector: {
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              },
+            },
+            appDeploymentProtectionConfiguration: {
+              minDaysInactive: values.minDaysInactive,
+              minDaysSinceCreation: values.minDaysSinceCreation,
+              maxTrafficPercentage: values.maxTrafficPercentage,
+              trafficPeriodDays: values.trafficPeriodDays,
+              ruleLogic: values.ruleLogic,
+            },
+          },
+        }).then(result => {
+          if (result.error || result.data?.updateTargetAppDeploymentProtectionConfiguration.error) {
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description:
+                result.error?.message ||
+                result.data?.updateTargetAppDeploymentProtectionConfiguration.error?.message,
+            });
+          } else {
+            toast({
+              variant: 'default',
+              title: 'Success',
+              description: 'App deployment protection settings updated successfully',
+            });
+          }
+        }),
+    });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <SubPageLayout>
+        <SubPageLayoutHeader
+          subPageTitle="App Deployment Protection"
+          description={
+            <>
+              <CardDescription>
+                Protect app deployments from being accidentally retired while still in use. When
+                enabled, the CLI will block retirement if the deployment has been active within the
+                specified period or exceeds the traffic threshold.
+              </CardDescription>
+              <CardDescription>
+                Use{' '}
+                <code className="rounded-sm bg-gray-800 px-1 py-0.5 text-xs">
+                  hive app:retire --force
+                </code>{' '}
+                to bypass protection.
+              </CardDescription>
+              <CardDescription>
+                <DocsLink
+                  href="/schema-registry/app-deployments#protection"
+                  className="text-gray-500 hover:text-gray-300"
+                >
+                  Learn more
+                </DocsLink>
+              </CardDescription>
+            </>
+          }
+        >
+          {targetSettings.fetching ? (
+            <Spinner />
+          ) : (
+            <Switch
+              className="shrink-0"
+              checked={isEnabled}
+              onCheckedChange={async isEnabled => {
+                await updateProtection({
+                  input: {
+                    target: {
+                      bySelector: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    appDeploymentProtectionConfiguration: {
+                      isEnabled,
+                    },
+                  },
+                });
+              }}
+              disabled={mutation.fetching}
+            />
+          )}
+        </SubPageLayoutHeader>
+        <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+          <div className="space-y-4">
+            <div>
+              <div className="mb-2">An app deployment can only be retired if it</div>
+              <div className="ml-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span>was created at least</span>
+                  <Input
+                    name="minDaysSinceCreation"
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    value={values.minDaysSinceCreation}
+                    disabled={isSubmitting}
+                    type="number"
+                    min="0"
+                    className="!inline-flex w-20 text-center"
+                  />
+                  <span>days ago and has not been used for at least</span>
+                  <Input
+                    name="minDaysInactive"
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    value={values.minDaysInactive}
+                    disabled={isSubmitting}
+                    type="number"
+                    min="0"
+                    className="!inline-flex w-20 text-center"
+                  />
+                  <span>days</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    name="ruleLogic"
+                    value={values.ruleLogic}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    disabled={isSubmitting}
+                    className="border-input bg-background h-10 w-20 rounded-md border px-2 text-center text-sm"
+                  >
+                    <option value={AppDeploymentProtectionRuleLogicType.And}>AND</option>
+                    <option value={AppDeploymentProtectionRuleLogicType.Or}>OR</option>
+                  </select>
+                  <span>has less than</span>
+                  <Input
+                    name="maxTrafficPercentage"
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    value={values.maxTrafficPercentage}
+                    disabled={isSubmitting}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="!inline-flex w-20 text-center"
+                  />
+                  <span>percent of traffic over the last</span>
+                  <Input
+                    name="trafficPeriodDays"
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    value={values.trafficPeriodDays}
+                    disabled={isSubmitting}
+                    type="number"
+                    min="1"
+                    className="!inline-flex w-20 text-center"
+                  />
+                  <span>days</span>
+                </div>
+              </div>
+            </div>
+            <div className="text-sm text-gray-400">
+              The creation date check always applies. The inactivity and traffic checks only apply
+              if the app deployment has usage data.
+            </div>
+          </div>
+          <div className="mt-4">
+            {touched.minDaysSinceCreation && errors.minDaysSinceCreation && (
+              <div className="text-red-500">{errors.minDaysSinceCreation}</div>
+            )}
+            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
+              .minDaysSinceCreation && (
+              <div className="text-red-500">
+                {
+                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
+                    .minDaysSinceCreation
+                }
+              </div>
+            )}
+            {touched.minDaysInactive && errors.minDaysInactive && (
+              <div className="text-red-500">{errors.minDaysInactive}</div>
+            )}
+            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
+              .minDaysInactive && (
+              <div className="text-red-500">
+                {
+                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
+                    .minDaysInactive
+                }
+              </div>
+            )}
+            {touched.maxTrafficPercentage && errors.maxTrafficPercentage && (
+              <div className="text-red-500">{errors.maxTrafficPercentage}</div>
+            )}
+            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
+              .maxTrafficPercentage && (
+              <div className="text-red-500">
+                {
+                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
+                    .maxTrafficPercentage
+                }
+              </div>
+            )}
+            {touched.trafficPeriodDays && errors.trafficPeriodDays && (
+              <div className="text-red-500">{errors.trafficPeriodDays}</div>
+            )}
+            {mutation.data?.updateTargetAppDeploymentProtectionConfiguration.error?.inputErrors
+              .trafficPeriodDays && (
+              <div className="text-red-500">
+                {
+                  mutation.data.updateTargetAppDeploymentProtectionConfiguration.error.inputErrors
+                    .trafficPeriodDays
+                }
+              </div>
+            )}
+          </div>
+          <Button type="submit" disabled={isSubmitting} className="mt-4">
+            Save
+          </Button>
+          {mutation.error && (
+            <span className="ml-2 text-red-500">
+              {mutation.error.graphQLErrors[0]?.message ?? mutation.error.message}
+            </span>
+          )}
+        </div>
+      </SubPageLayout>
+    </form>
+  );
+};
+
 const SlugFormSchema = z.object({
   slug: z
     .string({
@@ -1372,6 +1716,7 @@ const TargetSettingsPageQuery = graphql(`
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       slug
+      isAppDeploymentsEnabled
       project: projectBySlug(projectSlug: $projectSlug) {
         id
         slug
@@ -1583,11 +1928,20 @@ function TargetSettingsContent(props: {
             />
           ) : null}
           {resolvedPage.key === 'breaking-changes' ? (
-            <BreakingChanges
-              organizationSlug={props.organizationSlug}
-              projectSlug={props.projectSlug}
-              targetSlug={props.targetSlug}
-            />
+            <>
+              <BreakingChanges
+                organizationSlug={props.organizationSlug}
+                projectSlug={props.projectSlug}
+                targetSlug={props.targetSlug}
+              />
+              {currentOrganization?.isAppDeploymentsEnabled ? (
+                <AppDeploymentProtection
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  targetSlug={props.targetSlug}
+                />
+              ) : null}
+            </>
           ) : null}
           {resolvedPage.key === 'base-schema' ? (
             <ExtendBaseSchema
