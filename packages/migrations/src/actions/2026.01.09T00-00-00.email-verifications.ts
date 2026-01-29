@@ -24,7 +24,8 @@ export default {
           "seve"."user_id" "user_identity_id"
           , now() "verified_at"
         FROM "supertokens_emailverification_verified_emails" "seve"
-        ON CONFLICT DO NOTHING;
+        INNER JOIN "supertokens_emailpassword_users" "seu"
+        ON "seve"."user_id" = "seu"."user_id";
       END IF;
     END $$;
   `,
