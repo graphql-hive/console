@@ -239,9 +239,26 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               return null;
             },
             async getPersistedOperation(key, _request, context) {
-              const document = await experimentalPersistedDocs.resolve(key, {
-                waitUntil: context.waitUntil,
-              });
+              let document: string | null;
+              try {
+                document = await experimentalPersistedDocs.resolve(key, {
+                  waitUntil: context.waitUntil,
+                });
+              } catch (error) {
+                if (
+                  error &&
+                  typeof error === 'object' &&
+                  'code' in error &&
+                  error.code === 'INVALID_DOCUMENT_ID' &&
+                  'message' in error &&
+                  typeof error.message === 'string'
+                ) {
+                  throw new GraphQLError(error.message, {
+                    extensions: { code: 'INVALID_DOCUMENT_ID' },
+                  });
+                }
+                throw error;
+              }
               // after we resolve the document we need to update the cache record to contain the resolved document
               if (document) {
                 const record = contextualCache.get(context);
