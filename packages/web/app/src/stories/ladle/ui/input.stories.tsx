@@ -1,17 +1,19 @@
-import type { Story } from "@ladle/react";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Input',
+};
 
 export const Default: Story = () => <Input placeholder="Enter text..." />;
 
 export const WithValue: Story = () => <Input value="Example value" readOnly />;
 
-export const Disabled: Story = () => (
-  <Input placeholder="Disabled input" disabled />
-);
+export const Disabled: Story = () => <Input placeholder="Disabled input" disabled />;
 
 export const WithTypes: Story = () => (
-  <div className="space-y-4 w-[300px]">
+  <div className="w-[300px] space-y-4">
     <Input type="text" placeholder="Text input" />
     <Input type="email" placeholder="Email input" />
     <Input type="password" placeholder="Password input" />
@@ -22,7 +24,7 @@ export const WithTypes: Story = () => (
 );
 
 export const WithLabels: Story = () => (
-  <div className="space-y-4 w-[300px]">
+  <div className="w-[300px] space-y-4">
     <div className="space-y-2">
       <label className="text-neutral-12 text-sm font-medium">Username</label>
       <Input placeholder="Enter username" />
@@ -39,21 +41,19 @@ export const WithLabels: Story = () => (
 );
 
 export const Interactive: Story = () => {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
 
   return (
-    <div className="space-y-4 w-[300px]">
+    <div className="w-[300px] space-y-4">
       <div className="space-y-2">
-        <label className="text-neutral-12 text-sm font-medium">
-          Try typing
-        </label>
+        <label className="text-neutral-12 text-sm font-medium">Try typing</label>
         <Input
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={e => setValue(e.target.value)}
           placeholder="Type something..."
         />
         <p className="text-neutral-11 text-xs">
-          Value: <span className="text-neutral-12">{value || "(empty)"}</span>
+          Value: <span className="text-neutral-12">{value || '(empty)'}</span>
         </p>
       </div>
     </div>
@@ -61,9 +61,9 @@ export const Interactive: Story = () => {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-2xl">
+  <div className="bg-neutral-2 max-w-2xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Input States</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Input States</h2>
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-neutral-11 text-sm font-medium">
@@ -87,19 +87,15 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
 
         <div className="space-y-2">
-          <label className="text-neutral-11 text-sm font-medium">
-            Disabled (opacity-50)
-          </label>
+          <label className="text-neutral-11 text-sm font-medium">Disabled (opacity-50)</label>
           <Input placeholder="Disabled input" disabled />
         </div>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Focus States
-      </h2>
-      <p className="text-neutral-11 text-sm mb-4">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Focus States</h2>
+      <p className="text-neutral-11 mb-4 text-sm">
         Click on inputs below to see the focus ring (ring-offset-2)
       </p>
       <div className="space-y-3">
@@ -109,34 +105,21 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Complete Form Example
-      </h2>
-      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Complete Form Example</h2>
+      <form className="space-y-4" onSubmit={e => e.preventDefault()}>
         <div className="space-y-2">
-          <label className="text-neutral-12 text-sm font-medium">
-            Project Name
-          </label>
+          <label className="text-neutral-12 text-sm font-medium">Project Name</label>
           <Input placeholder="My GraphQL Project" />
-          <p className="text-neutral-10 text-xs">
-            This will be the display name for your project
-          </p>
+          <p className="text-neutral-10 text-xs">This will be the display name for your project</p>
         </div>
 
         <div className="space-y-2">
-          <label className="text-neutral-12 text-sm font-medium">
-            GraphQL Endpoint
-          </label>
-          <Input
-            type="url"
-            placeholder="https://api.example.com/graphql"
-          />
+          <label className="text-neutral-12 text-sm font-medium">GraphQL Endpoint</label>
+          <Input type="url" placeholder="https://api.example.com/graphql" />
         </div>
 
         <div className="space-y-2">
-          <label className="text-neutral-12 text-sm font-medium">
-            API Key
-          </label>
+          <label className="text-neutral-12 text-sm font-medium">API Key</label>
           <Input type="password" placeholder="••••••••••••" />
         </div>
       </form>

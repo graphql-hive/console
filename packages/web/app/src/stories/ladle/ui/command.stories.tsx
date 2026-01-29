@@ -1,5 +1,4 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
 import {
   CalendarIcon,
   Check,
@@ -22,6 +21,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Command',
+};
 
 export const Default: Story = () => (
   <div className="max-w-md">
@@ -271,7 +275,7 @@ export const UserFilter: Story = () => {
               return (
                 <span
                   key={userId}
-                  className="bg-neutral-3 text-neutral-12 rounded px-2 py-1 text-xs"
+                  className="bg-neutral-3 text-neutral-12 rounded-sm px-2 py-1 text-xs"
                 >
                   {user?.displayName}
                 </span>
@@ -309,9 +313,9 @@ export const FilteringExample: Story = () => {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Command Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Command Component</h2>
       <p className="text-neutral-11 mb-4">
         Fast, composable command menu built with cmdk. Used for searchable lists, command palettes,
         and filterable dropdowns.
@@ -320,7 +324,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Basic Command Menu</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="max-w-md">
               <Command>
                 <CommandInput placeholder="Search..." />
@@ -335,7 +339,7 @@ export const ColorPaletteShowcase: Story = () => (
               </Command>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-neutral-4</code>
             <br />
             Text: <code className="text-neutral-12">text-neutral-11</code>
@@ -346,7 +350,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Selected State</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="max-w-md">
               <Command>
                 <CommandInput placeholder="Arrow down to select..." />
@@ -360,7 +364,7 @@ export const ColorPaletteShowcase: Story = () => (
               </Command>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Selected: <code className="text-neutral-12">aria-selected:bg-accent</code>
             <br />
             Selected text: <code className="text-neutral-12">aria-selected:text-neutral-12</code>
@@ -369,7 +373,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Empty State</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="max-w-md">
               <Command>
                 <CommandInput placeholder="Search for something that doesn't exist..." />
@@ -382,7 +386,7 @@ export const ColorPaletteShowcase: Story = () => (
               </Command>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Empty state shows when no items match the search
           </p>
         </div>
@@ -390,9 +394,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">Command</code>: Root container with search/filter
             logic
@@ -415,8 +419,7 @@ export const ColorPaletteShowcase: Story = () => (
             <code className="text-neutral-12">CommandItem</code>: Individual selectable item
           </li>
           <li>
-            <code className="text-neutral-12">CommandSeparator</code>: Visual divider between
-            groups
+            <code className="text-neutral-12">CommandSeparator</code>: Visual divider between groups
           </li>
           <li>
             <code className="text-neutral-12">CommandShortcut</code>: Keyboard shortcut display
@@ -426,24 +429,24 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Patterns</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Patterns</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Combobox Pattern</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Combobox Pattern</p>
           <p className="text-neutral-10 text-xs">
             Wrap Command in Popover + PopoverTrigger for searchable dropdown. Used in schema
             filters, service selectors, and user pickers.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Multi-Select Pattern</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Multi-Select Pattern</p>
           <p className="text-neutral-10 text-xs">
-            Track selected items in state array. Show check icon for selected items. Allow
-            toggling on select. Used for filtering by multiple users or tags.
+            Track selected items in state array. Show check icon for selected items. Allow toggling
+            on select. Used for filtering by multiple users or tags.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Command Palette Pattern</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Command Palette Pattern</p>
           <p className="text-neutral-10 text-xs">
             Use CommandDialog for full-screen command palette (⌘K). Group actions by category with
             keyboard shortcuts.
@@ -453,9 +456,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Keyboard Navigation</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Keyboard Navigation</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             <code className="text-neutral-12">↑/↓</code> - Navigate items
           </li>

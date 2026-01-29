@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { Link } from '@/components/ui/link';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Link',
+};
 
 export const Primary: Story = () => (
   <Link as="a" href="#" variant="primary">
@@ -44,9 +48,9 @@ export const MultipleLinks: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Link Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Link Component</h2>
       <p className="text-neutral-11 mb-4">
         Styled link component with variants. Wraps TanStack Router Link or renders as anchor tag.
       </p>
@@ -54,12 +58,12 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Primary Variant</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Link as="a" href="#" variant="primary">
               Primary Link Example
             </Link>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Color: <code className="text-neutral-12">text-accent</code>
             <br />
             Hover: <code className="text-neutral-12">hover:underline</code>
@@ -70,12 +74,12 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Secondary Variant</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Link as="a" href="#" variant="secondary">
               Secondary Link Example
             </Link>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Color: <code className="text-neutral-12">text-neutral-10</code>
             <br />
             Hover: <code className="text-neutral-12">hover:text-neutral-11</code>
@@ -86,7 +90,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">In Context</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <p className="text-neutral-11 text-sm">
               Learn more in our{' '}
               <Link as="a" href="#" variant="primary">
@@ -104,9 +108,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">variant</code>: "primary" (default) | "secondary"
           </li>
@@ -131,21 +135,23 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Internal Navigation</p>
-          <code className="text-xs text-neutral-10 block">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Internal Navigation</p>
+          <code className="text-neutral-10 block text-xs">
             {`<Link to="/dashboard">Dashboard</Link>`}
           </code>
-          <p className="text-xs text-neutral-10 mt-2">Uses TanStack Router for client-side navigation</p>
+          <p className="text-neutral-10 mt-2 text-xs">
+            Uses TanStack Router for client-side navigation
+          </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">External Links</p>
-          <code className="text-xs text-neutral-10 block">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">External Links</p>
+          <code className="text-neutral-10 block text-xs">
             {`<Link as="a" href="https://..." target="_blank">Docs</Link>`}
           </code>
-          <p className="text-xs text-neutral-10 mt-2">
+          <p className="text-neutral-10 mt-2 text-xs">
             Use as="a" for external URLs or anchor links
           </p>
         </div>
@@ -153,16 +159,16 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">When to Use</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">When to Use</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Primary Variant</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Primary Variant</p>
           <p className="text-neutral-10 text-xs">
             Main navigation links, CTAs, documentation links, and emphasized actions
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Secondary Variant</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Secondary Variant</p>
           <p className="text-neutral-10 text-xs">
             Less prominent links, footer links, or when you need subtler styling
           </p>
@@ -171,9 +177,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Accessibility</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Accessibility</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>Uses semantic &lt;a&gt; tags</li>
           <li>Supports all standard link attributes (href, target, rel)</li>
           <li>Keyboard accessible (Tab to focus, Enter to activate)</li>

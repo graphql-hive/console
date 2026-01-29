@@ -1,9 +1,13 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
-import { defineStepper } from '@/components/ui/stepper';
+import { CheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckIcon } from 'lucide-react';
+import { defineStepper } from '@/components/ui/stepper';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Stepper',
+};
 
 // Define a simple stepper for examples
 const SimpleStepper = defineStepper(
@@ -21,7 +25,7 @@ const AccessTokenStepper = defineStepper(
 
 export const HorizontalStepper: Story = () => {
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="max-w-3xl p-8">
       <SimpleStepper.StepperProvider variant="horizontal">
         {({ stepper }) => (
           <div className="space-y-6">
@@ -33,7 +37,7 @@ export const HorizontalStepper: Story = () => {
               ))}
             </SimpleStepper.StepperNavigation>
 
-            <div className="border border-neutral-6 rounded-lg p-6">
+            <div className="border-neutral-6 rounded-lg border p-6">
               {stepper.switch({
                 'step-1': () => <div className="text-neutral-12">Step 1: Account setup</div>,
                 'step-2': () => <div className="text-neutral-12">Step 2: Profile information</div>,
@@ -62,7 +66,7 @@ HorizontalStepper.meta = {
 
 export const VerticalStepper: Story = () => {
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="max-w-3xl p-8">
       <SimpleStepper.StepperProvider variant="vertical">
         {({ stepper }) => (
           <div className="flex gap-6">
@@ -74,14 +78,14 @@ export const VerticalStepper: Story = () => {
               ))}
             </SimpleStepper.StepperNavigation>
 
-            <div className="flex-1 border border-neutral-6 rounded-lg p-6">
+            <div className="border-neutral-6 flex-1 rounded-lg border p-6">
               {stepper.switch({
                 'step-1': () => <div className="text-neutral-12">Step 1 content</div>,
                 'step-2': () => <div className="text-neutral-12">Step 2 content</div>,
                 'step-3': () => <div className="text-neutral-12">Step 3 content</div>,
               })}
 
-              <div className="flex gap-2 mt-6">
+              <div className="mt-6 flex gap-2">
                 <Button onClick={() => stepper.prev()} disabled={stepper.isFirst}>
                   Previous
                 </Button>
@@ -103,7 +107,7 @@ VerticalStepper.meta = {
 
 export const CircleStepper: Story = () => {
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="max-w-3xl p-8">
       <SimpleStepper.StepperProvider variant="circle">
         {({ stepper }) => (
           <div className="space-y-6">
@@ -120,7 +124,7 @@ export const CircleStepper: Story = () => {
               ))}
             </SimpleStepper.StepperNavigation>
 
-            <div className="border border-neutral-6 rounded-lg p-6">
+            <div className="border-neutral-6 rounded-lg border p-6">
               {stepper.switch({
                 'step-1': () => <div className="text-neutral-12">Step 1 content</div>,
                 'step-2': () => <div className="text-neutral-12">Step 2 content</div>,
@@ -149,8 +153,8 @@ CircleStepper.meta = {
 
 export const AccessTokenWizard: Story = () => {
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="space-y-4 mb-6">
+    <div className="max-w-4xl p-8">
+      <div className="mb-6 space-y-4">
         <h2 className="text-neutral-12 text-2xl font-bold">Create Access Token</h2>
         <p className="text-neutral-11 text-sm">
           Create a new access token with specified permissions and optionally assigned resources.
@@ -168,7 +172,7 @@ export const AccessTokenWizard: Story = () => {
               ))}
             </AccessTokenStepper.StepperNavigation>
 
-            <div className="border border-neutral-6 rounded-lg p-6 min-h-[300px]">
+            <div className="border-neutral-6 min-h-[300px] rounded-lg border p-6">
               {stepper.switch({
                 'step-1-general': () => (
                   <div className="space-y-4">
@@ -242,11 +246,7 @@ export const AccessTokenWizard: Story = () => {
             </div>
 
             <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => stepper.prev()}
-                disabled={stepper.isFirst}
-              >
+              <Button variant="outline" onClick={() => stepper.prev()} disabled={stepper.isFirst}>
                 Previous
               </Button>
               {stepper.isLast ? (
@@ -269,7 +269,7 @@ AccessTokenWizard.meta = {
 
 export const WithCustomIcons: Story = () => {
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="max-w-3xl p-8">
       <SimpleStepper.StepperProvider variant="horizontal">
         {({ stepper }) => (
           <div className="space-y-6">
@@ -293,7 +293,7 @@ export const WithCustomIcons: Story = () => {
               ))}
             </SimpleStepper.StepperNavigation>
 
-            <div className="border border-neutral-6 rounded-lg p-6">
+            <div className="border-neutral-6 rounded-lg border p-6">
               {stepper.switch({
                 'step-1': () => <div className="text-neutral-12">Step 1 content</div>,
                 'step-2': () => <div className="text-neutral-12">Step 2 content</div>,
@@ -321,9 +321,9 @@ WithCustomIcons.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Stepper Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Stepper Component</h2>
       <p className="text-neutral-11 mb-4">
         Multi-step wizard component built on @stepperize/react. Supports horizontal, vertical, and
         circle variants. Used for complex forms and workflows like access token creation.
@@ -332,7 +332,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Horizontal Variant</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <SimpleStepper.StepperProvider variant="horizontal">
               {({ stepper }) => (
                 <SimpleStepper.StepperNavigation>
@@ -345,7 +345,7 @@ export const ColorPaletteShowcase: Story = () => (
               )}
             </SimpleStepper.StepperProvider>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Active step button: <code className="text-neutral-12">variant="default"</code>
             <br />
             Inactive step button: <code className="text-neutral-12">variant="secondary"</code>
@@ -356,7 +356,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Vertical Variant</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <SimpleStepper.StepperProvider variant="vertical">
               {({ stepper }) => (
                 <SimpleStepper.StepperNavigation className="w-48">
@@ -369,14 +369,14 @@ export const ColorPaletteShowcase: Story = () => (
               )}
             </SimpleStepper.StepperProvider>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Vertical layout with steps stacked, good for sidebar navigation
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Circle Variant</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <SimpleStepper.StepperProvider variant="circle">
               {({ stepper }) => (
                 <SimpleStepper.StepperNavigation>
@@ -394,7 +394,7 @@ export const ColorPaletteShowcase: Story = () => (
               )}
             </SimpleStepper.StepperProvider>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Circular progress indicator showing current step out of total
           </p>
         </div>
@@ -402,9 +402,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Pattern</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <pre className="text-xs text-neutral-10 overflow-x-auto whitespace-pre-wrap">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Pattern</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <pre className="text-neutral-10 overflow-x-auto whitespace-pre-wrap text-xs">
           {`// 1. Define stepper with steps
 const Stepper = defineStepper(
   { id: 'step-1', title: 'General' },
@@ -443,22 +443,21 @@ const Stepper = defineStepper(
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">API Reference</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">API Reference</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">defineStepper(...steps)</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">defineStepper(...steps)</p>
           <p className="text-neutral-10 text-xs">
             Creates a stepper instance with provided steps. Returns StepperProvider,
             StepperNavigation, StepperStep, and other components.
           </p>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">StepperProvider Props</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">StepperProvider Props</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
-              <code className="text-neutral-12">variant</code>: "horizontal" | "vertical" |
-              "circle"
+              <code className="text-neutral-12">variant</code>: "horizontal" | "vertical" | "circle"
             </li>
             <li>
               <code className="text-neutral-12">labelOrientation</code>: "horizontal" | "vertical"
@@ -475,9 +474,9 @@ const Stepper = defineStepper(
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Stepper Instance Methods</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Stepper Instance Methods</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">stepper.next()</code> - Go to next step
             </li>
@@ -506,9 +505,9 @@ const Stepper = defineStepper(
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">StepperStep Props</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">StepperStep Props</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">of</code>: string (required) - Step ID
             </li>
@@ -525,29 +524,29 @@ const Stepper = defineStepper(
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Access Token Creation</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Access Token Creation</p>
           <p className="text-neutral-10 text-xs">
             4-step wizard for creating access tokens with general info, permissions, resource
             selection, and confirmation (create-access-token-sheet-content.tsx).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Multi-Step Forms</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Multi-Step Forms</p>
           <p className="text-neutral-10 text-xs">
             Break complex forms into digestible steps with validation at each stage.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Onboarding Flows</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Onboarding Flows</p>
           <p className="text-neutral-10 text-xs">
             Guide users through setup processes with clear progress indicators.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Configuration Wizards</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Configuration Wizards</p>
           <p className="text-neutral-10 text-xs">
             Complex configuration workflows divided into logical steps.
           </p>
@@ -556,9 +555,9 @@ const Stepper = defineStepper(
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Accessibility</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Accessibility</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>Navigation has role="tablist"</li>
           <li>Step buttons have role="tab"</li>
           <li>Proper aria-controls, aria-current, aria-selected attributes</li>

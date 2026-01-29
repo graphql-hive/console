@@ -20,6 +20,10 @@ import {
 } from '@/components/ui/table';
 import type { Story } from '@ladle/react';
 
+export default {
+  title: 'UI / Table',
+};
+
 export const Default: Story = () => (
   <Table>
     <TableHeader>

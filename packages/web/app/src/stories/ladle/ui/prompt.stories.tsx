@@ -1,9 +1,21 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PromptProvider, PromptManager, usePromptManager } from '@/components/ui/prompt';
+import { PromptManager, PromptProvider, usePromptManager } from '@/components/ui/prompt';
+import type { Story } from '@ladle/react';
 
-function PromptDemo({ title, description, defaultValue }: { title: string; description?: string; defaultValue?: string }) {
+export default {
+  title: 'UI / Prompt',
+};
+
+function PromptDemo({
+  title,
+  description,
+  defaultValue,
+}: {
+  title: string;
+  description?: string;
+  defaultValue?: string;
+}) {
   const { openPrompt } = usePromptManager();
   const [result, setResult] = useState<string | null>(null);
   const [promptId, setPromptId] = useState(1);
@@ -26,9 +38,9 @@ function PromptDemo({ title, description, defaultValue }: { title: string; descr
     <div className="space-y-4">
       <Button onClick={handleOpenPrompt}>Open Prompt</Button>
       {result !== null && (
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm mb-1">Result:</p>
-          <p className="text-neutral-12 text-sm font-mono">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-1 text-sm">Result:</p>
+          <p className="text-neutral-12 font-mono text-sm">
             {result === '' ? '(empty string)' : result || '(cancelled)'}
           </p>
         </div>
@@ -85,11 +97,9 @@ WithDefaultValue.meta = {
 
 export const RenameOperation: Story = () => (
   <PromptProvider>
-    <div className="p-4 max-w-2xl">
+    <div className="max-w-2xl p-4">
       <div className="mb-4">
-        <p className="text-neutral-11 text-sm mb-2">
-          Usage example from GraphQL Laboratory page:
-        </p>
+        <p className="text-neutral-11 mb-2 text-sm">Usage example from GraphQL Laboratory page:</p>
         <p className="text-neutral-10 text-xs">
           When renaming a saved GraphQL operation, the prompt asks for a new name with the current
           name as the default value.
@@ -111,19 +121,14 @@ RenameOperation.meta = {
 
 export const CreateCollection: Story = () => (
   <PromptProvider>
-    <div className="p-4 max-w-2xl">
+    <div className="max-w-2xl p-4">
       <div className="mb-4">
-        <p className="text-neutral-11 text-sm mb-2">
-          Usage example from GraphQL Laboratory page:
-        </p>
+        <p className="text-neutral-11 mb-2 text-sm">Usage example from GraphQL Laboratory page:</p>
         <p className="text-neutral-10 text-xs">
           When creating a new operation collection, the prompt asks for a collection name.
         </p>
       </div>
-      <PromptDemo
-        title="Create collection"
-        description="Enter a name for the new collection"
-      />
+      <PromptDemo title="Create collection" description="Enter a name for the new collection" />
       <PromptManager />
     </div>
   </PromptProvider>
@@ -180,9 +185,9 @@ export const MultiplePrompts: Story = () => {
       <div className="space-y-4">
         <Button onClick={handleOpenMultiple}>Open Multiple Prompts</Button>
         {results.length > 0 && (
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm mb-2">Results:</p>
-            <ul className="text-neutral-12 text-sm font-mono space-y-1">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm">Results:</p>
+            <ul className="text-neutral-12 space-y-1 font-mono text-sm">
               {results.map((result, i) => (
                 <li key={i}>
                   {i + 1}. {result === '' ? '(empty string)' : result}
@@ -199,7 +204,7 @@ export const MultiplePrompts: Story = () => {
     <PromptProvider>
       <div className="p-4">
         <div className="mb-4">
-          <p className="text-neutral-11 text-sm mb-2">
+          <p className="text-neutral-11 mb-2 text-sm">
             Prompts are queued and shown one at a time:
           </p>
           <p className="text-neutral-10 text-xs">
@@ -220,9 +225,9 @@ MultiplePrompts.meta = {
 
 export const ColorPaletteShowcase: Story = () => (
   <PromptProvider>
-    <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+    <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Prompt Component</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Prompt Component</h2>
         <p className="text-neutral-11 mb-4">
           Modal prompt dialog for asking users for text input. Uses a context provider and queue
           system for managing multiple prompts. Commonly used in GraphQL Laboratory for renaming
@@ -232,14 +237,15 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Basic Prompt</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <PromptDemo title="Enter value" />
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Modal: Uses Dialog component with{' '}
               <code className="text-neutral-12">hideCloseButton</code>
               <br />
-              Input: Single text input with <code className="text-neutral-12">className="mt-4"</code>
+              Input: Single text input with{' '}
+              <code className="text-neutral-12">className="mt-4"</code>
               <br />
               Buttons: Cancel (outline variant) + OK (default)
             </p>
@@ -247,8 +253,8 @@ export const ColorPaletteShowcase: Story = () => (
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Prompt Structure</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-              <ul className="text-xs text-neutral-10 space-y-1">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+              <ul className="text-neutral-10 space-y-1 text-xs">
                 <li>
                   1. <strong className="text-neutral-12">DialogHeader:</strong> Title + optional
                   description
@@ -270,18 +276,16 @@ export const ColorPaletteShowcase: Story = () => (
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Queue System</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-              <p className="text-xs text-neutral-10 mb-2">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+              <p className="text-neutral-10 mb-2 text-xs">
                 PromptManager renders all prompts in queue but only shows first one:
               </p>
-              <ul className="text-xs text-neutral-10 space-y-1">
+              <ul className="text-neutral-10 space-y-1 text-xs">
                 <li>
                   • <code className="text-neutral-12">isVisible={'{index === 0}'}</code> shows only
                   first prompt
                 </li>
-                <li>
-                  • When first prompt closes, next prompt becomes visible automatically
-                </li>
+                <li>• When first prompt closes, next prompt becomes visible automatically</li>
                 <li>
                   • Each prompt returns a <code className="text-neutral-12">Promise</code> resolved
                   on close
@@ -292,7 +296,7 @@ export const ColorPaletteShowcase: Story = () => (
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Interactive Example</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <PromptDemo
                 title="Test prompt"
                 description="Try entering a value and clicking OK, or click Cancel to see null result"
@@ -304,11 +308,11 @@ export const ColorPaletteShowcase: Story = () => (
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
         <div className="space-y-4">
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Prompt (internal)</p>
-            <ul className="text-xs space-y-1 text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Prompt (internal)</p>
+            <ul className="text-neutral-10 space-y-1 text-xs">
               <li>
                 <code className="text-neutral-12">id</code>: number - Unique identifier
               </li>
@@ -324,8 +328,8 @@ export const ColorPaletteShowcase: Story = () => (
                 description
               </li>
               <li>
-                <code className="text-neutral-12">defaultValue</code>: string (optional) - Pre-filled
-                input value
+                <code className="text-neutral-12">defaultValue</code>: string (optional) -
+                Pre-filled input value
               </li>
               <li>
                 <code className="text-neutral-12">isVisible</code>: boolean - Whether to render
@@ -334,9 +338,9 @@ export const ColorPaletteShowcase: Story = () => (
             </ul>
           </div>
 
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">openPrompt (from hook)</p>
-            <ul className="text-xs space-y-1 text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">openPrompt (from hook)</p>
+            <ul className="text-neutral-10 space-y-1 text-xs">
               <li>
                 <code className="text-neutral-12">id</code>: number - Unique identifier for this
                 prompt
@@ -349,8 +353,8 @@ export const ColorPaletteShowcase: Story = () => (
                 description
               </li>
               <li>
-                <code className="text-neutral-12">defaultValue</code>: string (optional) - Pre-filled
-                value
+                <code className="text-neutral-12">defaultValue</code>: string (optional) -
+                Pre-filled value
               </li>
               <li>
                 Returns: <code className="text-neutral-12">Promise&lt;string | null&gt;</code> -
@@ -362,10 +366,10 @@ export const ColorPaletteShowcase: Story = () => (
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Pattern</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-xs text-neutral-10 mb-2">Typical usage in components:</p>
-          <pre className="text-xs text-neutral-12 bg-neutral-3 p-3 rounded overflow-x-auto">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Pattern</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-10 mb-2 text-xs">Typical usage in components:</p>
+          <pre className="text-neutral-12 bg-neutral-3 overflow-x-auto rounded-sm p-3 text-xs">
             {`// 1. Wrap app with PromptProvider
 <PromptProvider>
   <YourApp />
@@ -397,9 +401,9 @@ const handleRename = async () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Implementation Details</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Implementation Details</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
               <strong className="text-neutral-12">Context-based:</strong> Uses React Context for
               state management
@@ -433,10 +437,10 @@ const handleRename = async () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
         <div className="space-y-4">
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">
               GraphQL Laboratory Operations
             </p>
             <p className="text-neutral-10 text-xs">
@@ -444,14 +448,14 @@ const handleRename = async () => {
               text input
             </p>
           </div>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Resource Naming</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Resource Naming</p>
             <p className="text-neutral-10 text-xs">
               Quick text input for naming/renaming resources without complex form modals
             </p>
           </div>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Sequential Inputs</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Sequential Inputs</p>
             <p className="text-neutral-10 text-xs">
               Collect multiple text inputs in sequence using the queue system
             </p>

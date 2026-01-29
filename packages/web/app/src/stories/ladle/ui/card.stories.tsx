@@ -1,14 +1,18 @@
-import type { Story } from "@ladle/react";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
   CardContent,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Card',
+};
 
 export const SimpleCard: Story = () => (
   <Card className="w-[350px]">
@@ -54,7 +58,7 @@ export const WithBadges: Story = () => (
       <CardDescription>https://api.example.com/graphql</CardDescription>
     </CardHeader>
     <CardContent>
-      <div className="space-y-2 text-sm text-neutral-11">
+      <div className="text-neutral-11 space-y-2 text-sm">
         <div className="flex justify-between">
           <span>Requests:</span>
           <span className="text-neutral-12">1.2M</span>
@@ -69,7 +73,7 @@ export const WithBadges: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-6 p-8 bg-neutral-1">
+  <div className="bg-neutral-1 space-y-6 p-8">
     <h2 className="text-neutral-12 text-xl font-bold">Card Surface Colors</h2>
 
     <div className="grid grid-cols-2 gap-6">
@@ -79,18 +83,14 @@ export const ColorPaletteShowcase: Story = () => (
           <CardDescription>Using default card styling</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-neutral-11 text-sm">
-            Card background: gray-900/50 with border
-          </p>
+          <p className="text-neutral-11 text-sm">Card background: gray-900/50 with border</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-neutral-12">Title (neutral-12)</CardTitle>
-          <CardDescription className="text-neutral-10">
-            Description (neutral-10)
-          </CardDescription>
+          <CardDescription className="text-neutral-10">Description (neutral-10)</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-neutral-11 text-sm">Content (neutral-11)</p>
@@ -117,9 +117,7 @@ export const ColorPaletteShowcase: Story = () => (
           <CardDescription>With buttons and actions</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-neutral-11 text-sm mb-3">
-            Cards can contain interactive elements
-          </p>
+          <p className="text-neutral-11 mb-3 text-sm">Cards can contain interactive elements</p>
           <div className="flex gap-2">
             <Button size="sm" variant="outline">
               View
@@ -141,16 +139,16 @@ export const ColorPaletteShowcase: Story = () => (
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <div className="p-3 rounded bg-neutral-1 border border-neutral-5">
+          <div className="bg-neutral-1 border-neutral-5 rounded-sm border p-3">
             <span className="text-neutral-12 text-sm">neutral-1 background</span>
           </div>
-          <div className="p-3 rounded bg-neutral-2 border border-neutral-5">
+          <div className="bg-neutral-2 border-neutral-5 rounded-sm border p-3">
             <span className="text-neutral-12 text-sm">neutral-2 background</span>
           </div>
-          <div className="p-3 rounded bg-neutral-3 border border-neutral-5">
+          <div className="bg-neutral-3 border-neutral-5 rounded-sm border p-3">
             <span className="text-neutral-12 text-sm">neutral-3 background</span>
           </div>
-          <div className="p-3 rounded bg-neutral-4 border border-neutral-5">
+          <div className="bg-neutral-4 border-neutral-5 rounded-sm border p-3">
             <span className="text-neutral-12 text-sm">neutral-4 background</span>
           </div>
         </div>

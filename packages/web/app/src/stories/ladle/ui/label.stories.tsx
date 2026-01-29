@@ -1,13 +1,17 @@
-import type { Story } from '@ladle/react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Label',
+};
 
 export const Default: Story = () => <Label>Label Text</Label>;
 
 export const WithInput: Story = () => (
-  <div className="flex flex-col gap-2 max-w-md">
+  <div className="flex max-w-md flex-col gap-2">
     <Label htmlFor="email">Email address</Label>
     <Input id="email" type="email" placeholder="you@example.com" />
   </div>
@@ -37,7 +41,7 @@ export const WithRadioGroup: Story = () => (
 );
 
 export const Required: Story = () => (
-  <div className="flex flex-col gap-2 max-w-md">
+  <div className="flex max-w-md flex-col gap-2">
     <Label htmlFor="required">
       Name <span className="text-red-500">*</span>
     </Label>
@@ -46,17 +50,15 @@ export const Required: Story = () => (
 );
 
 export const WithHelpText: Story = () => (
-  <div className="flex flex-col gap-2 max-w-md">
+  <div className="flex max-w-md flex-col gap-2">
     <Label htmlFor="username">Username</Label>
     <Input id="username" placeholder="johndoe" />
-    <p className="text-xs text-neutral-11">
-      This will be your public display name
-    </p>
+    <p className="text-neutral-11 text-xs">This will be your public display name</p>
   </div>
 );
 
 export const DisabledPeer: Story = () => (
-  <div className="space-y-4 max-w-md">
+  <div className="max-w-md space-y-4">
     <div className="flex flex-col gap-2">
       <Label htmlFor="disabled-input" className="peer">
         Disabled Input
@@ -73,16 +75,16 @@ export const DisabledPeer: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Label Variants</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Label Variants</h2>
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default Label</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Label>Default Label Text</Label>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Font: <code className="text-neutral-12">text-sm font-medium</code>
             <br />
             Color: <code className="text-neutral-12">text-neutral-12 (inherited)</code>
@@ -91,7 +93,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">With Input</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="showcase-input">Email address</Label>
               <Input id="showcase-input" type="email" placeholder="you@example.com" />
@@ -101,19 +103,19 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Required Indicator</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Label>
               Required Field <span className="text-red-500">*</span>
             </Label>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Asterisk: <code className="text-neutral-12">text-red-500</code>
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">With Peer Disabled State</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 space-y-4">
+          <div className="bg-neutral-1 border-neutral-6 space-y-4 rounded-sm border p-4">
             <div className="flex items-center gap-2">
               <Checkbox id="enabled" />
               <Label htmlFor="enabled">Enabled Checkbox</Label>
@@ -123,7 +125,7 @@ export const ColorPaletteShowcase: Story = () => (
               <Label htmlFor="disabled-peer">Disabled Checkbox</Label>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Disabled peer: <code className="text-neutral-12">peer-disabled:opacity-70</code>
           </p>
         </div>
@@ -131,8 +133,8 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Examples</h2>
-      <div className="space-y-6 p-4 bg-neutral-1 rounded border border-neutral-6">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Examples</h2>
+      <div className="bg-neutral-1 border-neutral-6 space-y-6 rounded-sm border p-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="example1">Text Input</Label>
           <Input id="example1" placeholder="Enter text..." />
@@ -162,7 +164,7 @@ export const ColorPaletteShowcase: Story = () => (
             Field with help text <span className="text-neutral-11 font-normal">(optional)</span>
           </Label>
           <Input id="example3" placeholder="Optional field" />
-          <p className="text-xs text-neutral-11">
+          <p className="text-neutral-11 text-xs">
             This field is optional and has additional context
           </p>
         </div>

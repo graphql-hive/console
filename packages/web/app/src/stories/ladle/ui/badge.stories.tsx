@@ -1,15 +1,15 @@
-import type { Story } from "@ladle/react";
-import { Badge, BadgeRounded } from "@/components/ui/badge";
+import { Badge, BadgeRounded } from '@/components/ui/badge';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Badge',
+};
 
 export const Default: Story = () => <Badge>Default Badge</Badge>;
 
-export const Secondary: Story = () => (
-  <Badge variant="secondary">Secondary</Badge>
-);
+export const Secondary: Story = () => <Badge variant="secondary">Secondary</Badge>;
 
-export const Destructive: Story = () => (
-  <Badge variant="destructive">Destructive</Badge>
-);
+export const Destructive: Story = () => <Badge variant="destructive">Destructive</Badge>;
 
 export const Outline: Story = () => <Badge variant="outline">Outline</Badge>;
 
@@ -32,7 +32,7 @@ export const AllVariants: Story = () => (
 );
 
 export const RoundedBadges: Story = () => (
-  <div className="flex gap-3 items-center">
+  <div className="flex items-center gap-3">
     <BadgeRounded color="red" />
     <BadgeRounded color="yellow" />
     <BadgeRounded color="green" />
@@ -42,11 +42,9 @@ export const RoundedBadges: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Badge Color Variants
-      </h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Badge Color Variants</h2>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default</p>
@@ -80,10 +78,8 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Rounded Badge Colors
-      </h2>
-      <div className="flex gap-6 items-center">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Rounded Badge Colors</h2>
+      <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <BadgeRounded color="red" />
           <span className="text-neutral-11 text-sm">Red</span>
@@ -108,7 +104,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Examples</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Examples</h2>
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-neutral-11">Status:</span>

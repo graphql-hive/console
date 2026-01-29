@@ -1,11 +1,15 @@
+import { DocsLink, DocsNote, ProductUpdatesLink } from '@/components/ui/docs-note';
 import type { Story } from '@ladle/react';
-import { DocsNote, DocsLink, ProductUpdatesLink } from '@/components/ui/docs-note';
+
+export default {
+  title: 'UI / Docs Note',
+};
 
 export const BasicNote: Story = () => (
   <div className="p-4">
     <DocsNote>
-      This is a documentation note with helpful information for users. It has a left border to
-      draw attention.
+      This is a documentation note with helpful information for users. It has a left border to draw
+      attention.
     </DocsNote>
   </div>
 );
@@ -29,7 +33,8 @@ WarnNote.meta = {
 export const WithDocsLink: Story = () => (
   <div className="p-4">
     <DocsNote>
-      For more information, check out <DocsLink href="/features/schema-registry">our documentation</DocsLink>.
+      For more information, check out{' '}
+      <DocsLink href="/features/schema-registry">our documentation</DocsLink>.
     </DocsNote>
   </div>
 );
@@ -39,7 +44,7 @@ WithDocsLink.meta = {
 };
 
 export const DocsLinkStandalone: Story = () => (
-  <div className="p-4 space-y-4">
+  <div className="space-y-4 p-4">
     <DocsLink href="/features/schema-registry">Read about Schema Registry</DocsLink>
     <br />
     <DocsLink href="/features/tokens">Learn about Access Tokens</DocsLink>
@@ -53,7 +58,7 @@ DocsLinkStandalone.meta = {
 };
 
 export const ProductUpdatesLinkStandalone: Story = () => (
-  <div className="p-4 space-y-4">
+  <div className="space-y-4 p-4">
     <ProductUpdatesLink href="/2024-01-15-new-feature">
       Check out our latest feature release
     </ProductUpdatesLink>
@@ -69,9 +74,9 @@ ProductUpdatesLinkStandalone.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">DocsNote Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">DocsNote Component</h2>
       <p className="text-neutral-11 mb-4">
         Callout box for documentation notes and helpful information. Has optional warning variant
         with accent border.
@@ -83,7 +88,7 @@ export const ColorPaletteShowcase: Story = () => (
           <DocsNote>
             This is a standard documentation note. Use for helpful tips and information.
           </DocsNote>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-l-2 border-white</code>
             <br />
             Text: <code className="text-neutral-12">text-neutral-12 text-sm</code>
@@ -97,7 +102,7 @@ export const ColorPaletteShowcase: Story = () => (
           <DocsNote warn>
             This is a warning note for important information that needs attention.
           </DocsNote>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-l-2 border-accent</code>
             <br />
             Use <code className="text-neutral-12">warn</code> prop to show accent border
@@ -107,9 +112,10 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">With Documentation Link</p>
           <DocsNote>
-            For more details, see <DocsLink href="/features/schema-registry">Schema Registry documentation</DocsLink>.
+            For more details, see{' '}
+            <DocsLink href="/features/schema-registry">Schema Registry documentation</DocsLink>.
           </DocsNote>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             DocsLink can be embedded within DocsNote for inline documentation references
           </p>
         </div>
@@ -117,7 +123,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">DocsLink Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">DocsLink Component</h2>
       <p className="text-neutral-11 mb-4">
         External link button for documentation pages. Shows book icon and external link indicator.
       </p>
@@ -130,7 +136,7 @@ export const ColorPaletteShowcase: Story = () => (
             <br />
             <DocsLink href="/features/tokens">Access Tokens Guide</DocsLink>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Icon: <code className="text-neutral-12">Book (Lucide, 16px)</code>
             <br />
             Color: <code className="text-neutral-12">text-accent</code>
@@ -144,7 +150,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">ProductUpdatesLink Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">ProductUpdatesLink Component</h2>
       <p className="text-neutral-11 mb-4">
         External link button for product updates and announcements. Shows megaphone icon.
       </p>
@@ -159,7 +165,7 @@ export const ColorPaletteShowcase: Story = () => (
             <br />
             <ProductUpdatesLink href="#updates">Scroll to Updates</ProductUpdatesLink>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Icon: <code className="text-neutral-12">Megaphone (Lucide, 16px)</code>
             <br />
             Color: <code className="text-neutral-12">text-blue-500</code>
@@ -173,11 +179,11 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">DocsNote</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">DocsNote</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">children</code>: React.ReactNode
             </li>
@@ -190,9 +196,9 @@ export const ColorPaletteShowcase: Story = () => (
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">DocsLink</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">DocsLink</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">href</code>: string - URL or path (auto-prefixed
               with docs URL if relative)
@@ -201,8 +207,8 @@ export const ColorPaletteShowcase: Story = () => (
               <code className="text-neutral-12">children</code>: React.ReactNode (optional)
             </li>
             <li>
-              <code className="text-neutral-12">icon</code>: ReactElement (optional) - Custom
-              icon, defaults to Book
+              <code className="text-neutral-12">icon</code>: ReactElement (optional) - Custom icon,
+              defaults to Book
             </li>
             <li>
               <code className="text-neutral-12">className</code>: string (optional)
@@ -210,9 +216,9 @@ export const ColorPaletteShowcase: Story = () => (
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">ProductUpdatesLink</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">ProductUpdatesLink</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">href</code>: string - URL, path, or anchor
             </li>
@@ -220,8 +226,8 @@ export const ColorPaletteShowcase: Story = () => (
               <code className="text-neutral-12">children</code>: React.ReactNode (optional)
             </li>
             <li>
-              <code className="text-neutral-12">icon</code>: ReactElement (optional) - Custom
-              icon, defaults to Megaphone
+              <code className="text-neutral-12">icon</code>: ReactElement (optional) - Custom icon,
+              defaults to Megaphone
             </li>
             <li>
               <code className="text-neutral-12">className</code>: string (optional)
@@ -232,9 +238,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Notes</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Notes</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">DocsLink URL handling:</strong> Relative paths
             auto-prefixed with <code className="text-neutral-12">getDocsUrl()</code>
@@ -245,8 +251,8 @@ export const ColorPaletteShowcase: Story = () => (
             anchor links (#) treated as in-page
           </li>
           <li>
-            <strong className="text-neutral-12">Both links:</strong> Render as Button
-            variant="link" with target="_blank"
+            <strong className="text-neutral-12">Both links:</strong> Render as Button variant="link"
+            with target="_blank"
           </li>
           <li>
             <strong className="text-neutral-12">Whitespace:</strong> DocsLink uses

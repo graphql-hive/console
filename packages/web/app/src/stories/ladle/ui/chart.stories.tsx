@@ -1,13 +1,4 @@
-import type { Story } from '@ladle/react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import {
   ChartConfig,
   ChartContainer,
@@ -16,6 +7,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Chart',
+};
 
 const chartConfig = {
   ok: {
@@ -140,17 +136,15 @@ WithLegend.meta = {
 };
 
 export const TracesTrafficChart: Story = () => (
-  <div className="p-4 max-w-4xl">
+  <div className="max-w-4xl p-4">
     <div className="mb-4">
-      <p className="text-neutral-11 text-sm mb-2">
-        Usage example from Traces page:
-      </p>
+      <p className="text-neutral-11 mb-2 text-sm">Usage example from Traces page:</p>
       <p className="text-neutral-10 text-xs">
         The stacked bar chart shows trace traffic over time, with successful (ok), failed (error),
         and remaining traces stacked in each bar.
       </p>
     </div>
-    <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+    <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
       <ChartContainer config={chartConfig} className="h-[200px] w-full">
         <BarChart data={trafficData}>
           <XAxis dataKey="time" />
@@ -169,9 +163,9 @@ TracesTrafficChart.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-6xl">
+  <div className="bg-neutral-2 max-w-6xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Chart Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Chart Component</h2>
       <p className="text-neutral-11 mb-4">
         Wrapper components for Recharts library with custom styling and theming. Provides
         ChartContainer, ChartTooltip, ChartLegend, and configuration system for building responsive
@@ -181,7 +175,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Basic Bar Chart</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <ChartContainer config={simpleChartConfig} className="h-[200px] w-full">
               <BarChart data={simpleData}>
                 <XAxis dataKey="month" />
@@ -192,7 +186,7 @@ export const ColorPaletteShowcase: Story = () => (
               </BarChart>
             </ChartContainer>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Container: <code className="text-neutral-12">aspect-video flex justify-center</code> by
             default
             <br />
@@ -206,7 +200,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Stacked Bar Chart</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <ChartContainer config={chartConfig} className="h-[200px] w-full">
               <BarChart data={trafficData}>
                 <XAxis dataKey="time" />
@@ -219,7 +213,7 @@ export const ColorPaletteShowcase: Story = () => (
               </BarChart>
             </ChartContainer>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Stacking: Use same <code className="text-neutral-12">stackId</code> on multiple Bar
             components
             <br />
@@ -230,7 +224,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Line Chart</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <ChartContainer config={simpleChartConfig} className="h-[200px] w-full">
               <LineChart data={simpleData}>
                 <XAxis dataKey="month" />
@@ -246,7 +240,7 @@ export const ColorPaletteShowcase: Story = () => (
               </LineChart>
             </ChartContainer>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Type: <code className="text-neutral-12">monotone</code> for smooth curves
             <br />
             Stroke width: <code className="text-neutral-12">strokeWidth={'{2}'}</code> for
@@ -256,7 +250,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Chart with Legend</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <ChartContainer config={chartConfig} className="h-[250px] w-full">
               <BarChart data={trafficData}>
                 <XAxis dataKey="time" />
@@ -268,7 +262,7 @@ export const ColorPaletteShowcase: Story = () => (
               </BarChart>
             </ChartContainer>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Legend: <code className="text-neutral-12">ChartLegend + ChartLegendContent</code>
             <br />
             Position: <code className="text-neutral-12">verticalAlign="bottom"</code> (default)
@@ -279,26 +273,26 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Tooltip</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <div className="bg-neutral-3 border-border/50 rounded-lg border px-2.5 py-1.5 shadow-xl max-w-xs">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <div className="bg-neutral-3 border-border/50 max-w-xs rounded-lg border px-2.5 py-1.5 shadow-xl">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="size-2.5 rounded-sm bg-emerald-500" />
-                  <div className="flex-1 flex justify-between">
+                  <div className="flex flex-1 justify-between">
                     <span className="text-neutral-10 text-xs">Successful</span>
-                    <span className="text-neutral-11 text-xs font-mono font-medium">450</span>
+                    <span className="text-neutral-11 font-mono text-xs font-medium">450</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="size-2.5 rounded-sm bg-red-500" />
-                  <div className="flex-1 flex justify-between">
+                  <div className="flex flex-1 justify-between">
                     <span className="text-neutral-10 text-xs">Failed</span>
-                    <span className="text-neutral-11 text-xs font-mono font-medium">25</span>
+                    <span className="text-neutral-11 font-mono text-xs font-medium">25</span>
                   </div>
                 </div>
               </div>
             </div>
-            <p className="text-xs text-neutral-10 mt-3">
+            <p className="text-neutral-10 mt-3 text-xs">
               Background: <code className="text-neutral-12">bg-neutral-3</code>
               <br />
               Border: <code className="text-neutral-12">border-border/50</code>
@@ -316,9 +310,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">ChartConfig Type</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <pre className="text-xs text-neutral-12 bg-neutral-3 p-3 rounded overflow-x-auto">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">ChartConfig Type</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <pre className="text-neutral-12 bg-neutral-3 overflow-x-auto rounded-sm p-3 text-xs">
           {`type ChartConfig = {
   [key: string]: {
     label?: React.ReactNode;
@@ -345,11 +339,11 @@ const chartConfig = {
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Components</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Components</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">ChartContainer</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">ChartContainer</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">config</code>: ChartConfig (required) - Chart
               configuration object
@@ -367,9 +361,9 @@ const chartConfig = {
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">ChartTooltipContent</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">ChartTooltipContent</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">hideLabel</code>: boolean (optional) - Hide tooltip
               label
@@ -397,9 +391,9 @@ const chartConfig = {
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">ChartLegendContent</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">ChartLegendContent</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">hideIcon</code>: boolean (optional) - Hide legend
               icons
@@ -422,10 +416,10 @@ const chartConfig = {
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Color Variables</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10 mb-2">CSS custom properties generated from config:</p>
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Color Variables</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 mb-2 text-xs">CSS custom properties generated from config:</p>
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             Config key <code className="text-neutral-12">"ok"</code> → CSS variable{' '}
             <code className="text-neutral-12">--color-ok</code>
@@ -439,15 +433,17 @@ const chartConfig = {
               --chart-1, --chart-2, --chart-3, --chart-4, --chart-5
             </code>
           </li>
-          <li>Reference with HSL: <code className="text-neutral-12">hsl(var(--chart-1))</code></li>
+          <li>
+            Reference with HSL: <code className="text-neutral-12">hsl(var(--chart-1))</code>
+          </li>
         </ul>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Styling Details</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Styling Details</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">Axis ticks:</strong>{' '}
             <code className="text-neutral-12">fill-muted-foreground</code>
@@ -477,9 +473,9 @@ const chartConfig = {
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Pattern</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <pre className="text-xs text-neutral-12 bg-neutral-3 p-3 rounded overflow-x-auto">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Pattern</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <pre className="text-neutral-12 bg-neutral-3 overflow-x-auto rounded-sm p-3 text-xs">
           {`// 1. Define chart config
 const chartConfig = {
   operations: {
@@ -510,12 +506,12 @@ const data = [
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Recharts Integration</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10 mb-2">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Recharts Integration</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 mb-2 text-xs">
           These components wrap and re-export Recharts components:
         </p>
-        <ul className="text-xs space-y-1 text-neutral-10">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             <code className="text-neutral-12">ChartTooltip</code> = Recharts.Tooltip
           </li>
@@ -530,23 +526,23 @@ const data = [
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Traces Traffic</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Traces Traffic</p>
           <p className="text-neutral-10 text-xs">
             Stacked bar charts showing trace status breakdown over time (successful, failed,
             remaining)
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Usage Analytics</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Usage Analytics</p>
           <p className="text-neutral-10 text-xs">
             Line charts showing operation usage trends, request counts, and performance metrics
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Schema Changes</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Schema Changes</p>
           <p className="text-neutral-10 text-xs">
             Bar charts visualizing schema change frequency and types over time periods
           </p>

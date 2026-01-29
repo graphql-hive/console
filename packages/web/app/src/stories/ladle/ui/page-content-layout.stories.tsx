@@ -1,4 +1,3 @@
-import type { Story} from '@ladle/react';
 import { Button } from '@/components/ui/button';
 import {
   NavLayout,
@@ -7,6 +6,11 @@ import {
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Page Content Layout',
+};
 
 export const BasicLayout: Story = () => (
   <PageLayout>
@@ -110,10 +114,7 @@ export const MultipleSubPages: Story = () => (
         </SubPageLayout>
 
         <SubPageLayout>
-          <SubPageLayoutHeader
-            subPageTitle="Password"
-            description="Change your account password"
-          />
+          <SubPageLayoutHeader subPageTitle="Password" description="Change your account password" />
           <div className="space-y-2">
             <Button variant="outline">Change Password</Button>
           </div>
@@ -124,9 +125,9 @@ export const MultipleSubPages: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-6xl">
+  <div className="bg-neutral-2 max-w-6xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Page Content Layout Components</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Page Content Layout Components</h2>
       <p className="text-neutral-11 mb-4">
         Layout system for pages with side navigation and content areas. Creates consistent
         two-column layouts.
@@ -135,7 +136,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Complete Layout</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <PageLayout>
               <NavLayout>
                 <Button variant="ghost" size="sm" className="justify-start">
@@ -150,14 +151,14 @@ export const ColorPaletteShowcase: Story = () => (
               </PageLayoutContent>
             </PageLayout>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Typical pattern: PageLayout &gt; NavLayout + PageLayoutContent
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">NavLayout (Side Navigation)</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <NavLayout>
               <Button variant="ghost" size="sm" className="justify-start">
                 Navigation Item 1
@@ -170,7 +171,7 @@ export const ColorPaletteShowcase: Story = () => (
               </Button>
             </NavLayout>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Width: <code className="text-neutral-12">w-48</code>
             <br />
             Layout: <code className="text-neutral-12">flex flex-col</code>
@@ -181,7 +182,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">SubPageLayoutHeader</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <SubPageLayoutHeader
               subPageTitle="Section Title"
               description="Section description text"
@@ -189,7 +190,7 @@ export const ColorPaletteShowcase: Story = () => (
               <Button size="sm">Action</Button>
             </SubPageLayoutHeader>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Renders CardTitle and CardDescription
             <br />
             Optional children (actions) on the right
@@ -201,9 +202,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Components</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-2 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Components</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-2 text-sm">
           <li>
             <code className="text-neutral-12">PageLayout</code>: Root container with flex layout and
             padding
@@ -215,7 +216,7 @@ export const ColorPaletteShowcase: Story = () => (
             <code className="text-neutral-12">PageLayoutContent</code>: Main content area (grows to
             fill space)
             <br />
-            <span className="text-xs text-neutral-10">
+            <span className="text-neutral-10 text-xs">
               Optional mainTitlePage prop for page title with divider
             </span>
           </li>
@@ -232,9 +233,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Pattern</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <pre className="text-xs text-neutral-10 overflow-x-auto">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Pattern</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <pre className="text-neutral-10 overflow-x-auto text-xs">
           {`<PageLayout>
   <NavLayout>
     <Button>Nav Item 1</Button>
@@ -257,22 +258,22 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Settings Pages</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Settings Pages</p>
           <p className="text-neutral-10 text-xs">
             Left navigation for settings categories, right content for settings forms and options.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Documentation</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Documentation</p>
           <p className="text-neutral-10 text-xs">
             Table of contents in NavLayout, article content in PageLayoutContent.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Multi-Section Pages</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Multi-Section Pages</p>
           <p className="text-neutral-10 text-xs">
             Each SubPageLayout represents a distinct section with its own header and content.
           </p>
@@ -281,9 +282,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage in Codebase</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage in Codebase</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>pages/target-proposals.tsx - Proposals with side navigation</li>
           <li>pages/target-traces.tsx - Traces with filters</li>
           <li>components/target/proposals/editor.tsx - Proposal editor layout</li>

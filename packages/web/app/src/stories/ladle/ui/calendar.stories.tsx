@@ -1,7 +1,11 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
-import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Calendar',
+};
 
 export const Default: Story = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -41,10 +45,9 @@ export const RangeSelection: Story = () => {
     <div className="p-4">
       <Calendar mode="range" selected={range} onSelect={setRange} numberOfMonths={2} />
       {range?.from && (
-        <div className="mt-4 p-4 bg-neutral-1 rounded border border-neutral-6">
+        <div className="bg-neutral-1 border-neutral-6 mt-4 rounded-sm border p-4">
           <p className="text-neutral-11 text-sm">
-            Selected range:{' '}
-            {range.from.toLocaleDateString()}
+            Selected range: {range.from.toLocaleDateString()}
             {range.to ? ` - ${range.to.toLocaleDateString()}` : ''}
           </p>
         </div>
@@ -80,11 +83,11 @@ export const WithDisabledDates: Story = () => {
         mode="single"
         selected={date}
         onSelect={setDate}
-        disabled={(date) =>
+        disabled={date =>
           date < new Date() || date > new Date(new Date().setDate(new Date().getDate() + 30))
         }
       />
-      <p className="mt-4 text-neutral-11 text-xs">
+      <p className="text-neutral-11 mt-4 text-xs">
         Only dates within the next 30 days are selectable
       </p>
     </div>
@@ -102,16 +105,14 @@ export const InTracesFilter: Story = () => {
   });
 
   return (
-    <div className="p-4 max-w-2xl">
+    <div className="max-w-2xl p-4">
       <div className="mb-4">
-        <p className="text-neutral-11 text-sm mb-2">
-          Usage example from Traces filter page:
-        </p>
+        <p className="text-neutral-11 mb-2 text-sm">Usage example from Traces filter page:</p>
         <p className="text-neutral-10 text-xs">
           The calendar is used in a date range picker popover for filtering traces by date.
         </p>
       </div>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
         <Calendar mode="range" selected={range} onSelect={setRange} numberOfMonths={2} />
       </div>
     </div>
@@ -130,9 +131,9 @@ export const ColorPaletteShowcase: Story = () => {
   });
 
   return (
-    <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-6xl">
+    <div className="bg-neutral-2 max-w-6xl space-y-8 rounded-lg p-8">
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Calendar Component</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Calendar Component</h2>
         <p className="text-neutral-11 mb-4">
           Date picker calendar built on react-day-picker with custom styling. Supports single date
           selection, range selection, and multiple months. Used in date range pickers for filtering
@@ -142,10 +143,10 @@ export const ColorPaletteShowcase: Story = () => {
         <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Single Date Selection</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6 inline-block">
+            <div className="bg-neutral-1 border-neutral-6 inline-block rounded-sm border p-4">
               <Calendar mode="single" selected={date} onSelect={setDate} />
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Mode: <code className="text-neutral-12">single</code>
               <br />
               Container: <code className="text-neutral-12">p-3</code>
@@ -157,10 +158,10 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Range Selection (Two Months)</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6 inline-block">
+            <div className="bg-neutral-1 border-neutral-6 inline-block rounded-sm border p-4">
               <Calendar mode="range" selected={range} onSelect={setRange} numberOfMonths={2} />
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Mode: <code className="text-neutral-12">range</code>
               <br />
               Number of months: <code className="text-neutral-12">numberOfMonths={'{2}'}</code>
@@ -171,37 +172,38 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Day States</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6 space-y-3">
+            <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center size-8 rounded-md bg-neutral-11 text-neutral-2 text-sm font-normal">
+                <div className="bg-neutral-11 text-neutral-2 flex size-8 items-center justify-center rounded-md text-sm font-normal">
                   15
                 </div>
-                <span className="text-xs text-neutral-10">
+                <span className="text-neutral-10 text-xs">
                   Selected: <code className="text-neutral-12">bg-neutral-11 text-neutral-2</code>
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center size-8 rounded-md bg-accent text-neutral-12 text-sm font-normal">
+                <div className="bg-accent text-neutral-12 flex size-8 items-center justify-center rounded-md text-sm font-normal">
                   29
                 </div>
-                <span className="text-xs text-neutral-10">
+                <span className="text-neutral-10 text-xs">
                   Today: <code className="text-neutral-12">bg-accent text-neutral-12</code>
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center size-8 rounded-md hover:bg-neutral-3 text-neutral-12 text-sm font-normal">
+                <div className="hover:bg-neutral-3 text-neutral-12 flex size-8 items-center justify-center rounded-md text-sm font-normal">
                   10
                 </div>
-                <span className="text-xs text-neutral-10">
+                <span className="text-neutral-10 text-xs">
                   Default (hover): <code className="text-neutral-12">hover:bg-neutral-3</code>
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center size-8 rounded-md text-neutral-10 opacity-50 text-sm font-normal">
+                <div className="text-neutral-10 flex size-8 items-center justify-center rounded-md text-sm font-normal opacity-50">
                   31
                 </div>
-                <span className="text-xs text-neutral-10">
-                  Outside/Disabled: <code className="text-neutral-12">text-neutral-10 opacity-50</code>
+                <span className="text-neutral-10 text-xs">
+                  Outside/Disabled:{' '}
+                  <code className="text-neutral-12">text-neutral-10 opacity-50</code>
                 </span>
               </div>
             </div>
@@ -209,46 +211,47 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Range Selection Colors</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6 space-y-2">
+            <div className="bg-neutral-1 border-neutral-6 space-y-2 rounded-sm border p-4">
               <div className="flex gap-1">
-                <div className="flex items-center justify-center size-8 rounded-l-md bg-neutral-11 text-neutral-2 text-sm font-normal">
+                <div className="bg-neutral-11 text-neutral-2 flex size-8 items-center justify-center rounded-l-md text-sm font-normal">
                   10
                 </div>
-                <div className="flex items-center justify-center size-8 bg-accent text-neutral-12 text-sm font-normal">
+                <div className="bg-accent text-neutral-12 flex size-8 items-center justify-center text-sm font-normal">
                   11
                 </div>
-                <div className="flex items-center justify-center size-8 bg-accent text-neutral-12 text-sm font-normal">
+                <div className="bg-accent text-neutral-12 flex size-8 items-center justify-center text-sm font-normal">
                   12
                 </div>
-                <div className="flex items-center justify-center size-8 rounded-r-md bg-neutral-11 text-neutral-2 text-sm font-normal">
+                <div className="bg-neutral-11 text-neutral-2 flex size-8 items-center justify-center rounded-r-md text-sm font-normal">
                   13
                 </div>
               </div>
-              <p className="text-xs text-neutral-10">
+              <p className="text-neutral-10 text-xs">
                 Range start/end:{' '}
                 <code className="text-neutral-12">bg-neutral-11 text-neutral-2</code> with rounded
                 corners
                 <br />
                 Range middle: <code className="text-neutral-12">bg-accent text-neutral-12</code>
                 <br />
-                Cell background: <code className="text-neutral-12">[&:has([aria-selected])]:bg-accent</code>
+                Cell background:{' '}
+                <code className="text-neutral-12">[&:has([aria-selected])]:bg-accent</code>
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Header & Navigation</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-              <div className="flex justify-center items-center relative py-1">
-                <button className="absolute left-1 size-7 rounded-md border border-neutral-6 flex items-center justify-center opacity-50 hover:opacity-100">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+              <div className="relative flex items-center justify-center py-1">
+                <button className="border-neutral-6 absolute left-1 flex size-7 items-center justify-center rounded-md border opacity-50 hover:opacity-100">
                   ‹
                 </button>
-                <span className="text-sm font-medium text-neutral-12">January 2026</span>
-                <button className="absolute right-1 size-7 rounded-md border border-neutral-6 flex items-center justify-center opacity-50 hover:opacity-100">
+                <span className="text-neutral-12 text-sm font-medium">January 2026</span>
+                <button className="border-neutral-6 absolute right-1 flex size-7 items-center justify-center rounded-md border opacity-50 hover:opacity-100">
                   ›
                 </button>
               </div>
-              <p className="text-xs text-neutral-10 mt-2">
+              <p className="text-neutral-10 mt-2 text-xs">
                 Caption: <code className="text-neutral-12">text-sm font-medium</code>
                 <br />
                 Nav buttons:{' '}
@@ -263,18 +266,15 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Weekday Headers</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <div className="flex gap-2">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                  <div
-                    key={day}
-                    className="text-neutral-10 w-8 text-center text-xs font-normal"
-                  >
+                  <div key={day} className="text-neutral-10 w-8 text-center text-xs font-normal">
                     {day}
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-neutral-10 mt-2">
+              <p className="text-neutral-10 mt-2 text-xs">
                 Headers: <code className="text-neutral-12">text-neutral-10 w-8 text-xs</code>
               </p>
             </div>
@@ -283,12 +283,12 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-xs text-neutral-10 mb-2">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-10 mb-2 text-xs">
             Extends all react-day-picker DayPicker props. Common props:
           </p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">mode</code>: "single" | "multiple" | "range" -
               Selection mode
@@ -306,8 +306,8 @@ export const ColorPaletteShowcase: Story = () => {
               months to show
             </li>
             <li>
-              <code className="text-neutral-12">disabled</code>: Date | Date[] | function
-              (optional) - Disabled dates
+              <code className="text-neutral-12">disabled</code>: Date | Date[] | function (optional)
+              - Disabled dates
             </li>
             <li>
               <code className="text-neutral-12">showOutsideDays</code>: boolean (default: true) -
@@ -326,12 +326,12 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">DateRange Type</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-xs text-neutral-10 mb-2">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">DateRange Type</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-10 mb-2 text-xs">
             From <code className="text-neutral-12">react-day-picker</code>:
           </p>
-          <pre className="text-xs text-neutral-12 bg-neutral-3 p-3 rounded overflow-x-auto">
+          <pre className="text-neutral-12 bg-neutral-3 overflow-x-auto rounded-sm p-3 text-xs">
             {`type DateRange = {
   from: Date | undefined;
   to?: Date | undefined;
@@ -341,57 +341,59 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Styling Details</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Styling Details</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
-              <strong className="text-neutral-12">Day cells:</strong> <code className="text-neutral-12">size-8 p-0</code> with
-              ghost button variant
+              <strong className="text-neutral-12">Day cells:</strong>{' '}
+              <code className="text-neutral-12">size-8 p-0</code> with ghost button variant
             </li>
             <li>
-              <strong className="text-neutral-12">Selected cells:</strong> Dark background with light text for
-              visibility
+              <strong className="text-neutral-12">Selected cells:</strong> Dark background with
+              light text for visibility
             </li>
             <li>
-              <strong className="text-neutral-12">Today:</strong> Accent background to highlight current date
+              <strong className="text-neutral-12">Today:</strong> Accent background to highlight
+              current date
             </li>
             <li>
-              <strong className="text-neutral-12">Range selection:</strong> Accent background for middle days, selected
-              colors for endpoints
+              <strong className="text-neutral-12">Range selection:</strong> Accent background for
+              middle days, selected colors for endpoints
             </li>
             <li>
-              <strong className="text-neutral-12">Outside days:</strong> Lower opacity to differentiate from current
-              month
+              <strong className="text-neutral-12">Outside days:</strong> Lower opacity to
+              differentiate from current month
             </li>
             <li>
-              <strong className="text-neutral-12">Responsive:</strong> Stacks vertically on mobile, horizontal on
-              desktop
+              <strong className="text-neutral-12">Responsive:</strong> Stacks vertically on mobile,
+              horizontal on desktop
             </li>
             <li>
-              <strong className="text-neutral-12">Focus rings:</strong> Radix UI focus-visible styles applied
+              <strong className="text-neutral-12">Focus rings:</strong> Radix UI focus-visible
+              styles applied
             </li>
           </ul>
         </div>
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Patterns</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Patterns</h2>
         <div className="space-y-4">
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Date Range Picker</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Date Range Picker</p>
             <p className="text-neutral-10 text-xs">
               Used within DateRangePicker component for selecting date ranges in filters (traces,
               analytics, etc.)
             </p>
           </div>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Popover Context</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Popover Context</p>
             <p className="text-neutral-10 text-xs">
               Typically rendered inside a Popover component triggered by a button or input field
             </p>
           </div>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">State Management</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">State Management</p>
             <p className="text-neutral-10 text-xs">
               Controlled component - requires external state management via useState or form
               libraries
@@ -401,9 +403,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Implementation Details</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Implementation Details</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
               Built on <code className="text-neutral-12">react-day-picker</code> library
             </li>
@@ -414,15 +416,9 @@ export const ColorPaletteShowcase: Story = () => {
             <li>
               Button styles from <code className="text-neutral-12">buttonVariants</code> (CVA)
             </li>
-            <li>
-              Extensive classNames customization for all DayPicker elements
-            </li>
-            <li>
-              Uses Tailwind utility classes with conditional logic for range mode
-            </li>
-            <li>
-              Complex selector logic for aria-selected states and range highlighting
-            </li>
+            <li>Extensive classNames customization for all DayPicker elements</li>
+            <li>Uses Tailwind utility classes with conditional logic for range mode</li>
+            <li>Complex selector logic for aria-selected states and range highlighting</li>
           </ul>
         </div>
       </div>

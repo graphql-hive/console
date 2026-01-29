@@ -1,6 +1,10 @@
-import type { Story} from '@ladle/react';
-import { QueryError } from '@/components/ui/query-error';
 import { CombinedError } from 'urql';
+import { QueryError } from '@/components/ui/query-error';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Query Error',
+};
 
 // Mock error without request ID
 const mockErrorBasic = new CombinedError({
@@ -76,9 +80,9 @@ WithoutOrganization.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">QueryError Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">QueryError Component</h2>
       <p className="text-neutral-11 mb-4">
         Error display component for GraphQL query failures. Shows error illustration, message,
         optional sign out button, and request ID for support tracking.
@@ -87,24 +91,23 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Error with Request ID</p>
-          <div className="h-[400px] border border-neutral-6 rounded-lg overflow-hidden">
+          <div className="border-neutral-6 h-[400px] overflow-hidden rounded-lg border">
             <QueryError error={mockErrorWithRequestId} organizationSlug="my-org" />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Shows request ID in yellow badge for support tracking
             <br />
-            Sign out button positioned at top-right: <code className="text-neutral-12">
-              absolute right-6 top-6
-            </code>
+            Sign out button positioned at top-right:{' '}
+            <code className="text-neutral-12">absolute right-6 top-6</code>
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Network Error</p>
-          <div className="h-[400px] border border-neutral-6 rounded-lg overflow-hidden">
+          <div className="border-neutral-6 h-[400px] overflow-hidden rounded-lg border">
             <QueryError error={mockNetworkError} organizationSlug="my-org" />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Shows generic error message with support link when network error or unexpected error
             occurs
           </p>
@@ -112,10 +115,10 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Without Organization</p>
-          <div className="h-[400px] border border-neutral-6 rounded-lg overflow-hidden">
+          <div className="border-neutral-6 h-[400px] overflow-hidden rounded-lg border">
             <QueryError error={mockUnexpectedError} organizationSlug={null} />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             When no organization context, shows email link instead of support page link
           </p>
         </div>
@@ -123,9 +126,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">error</code>: CombinedError (required) - urql error
             object
@@ -139,17 +142,17 @@ export const ColorPaletteShowcase: Story = () => (
             true) - Show sign out button
           </li>
           <li>
-            <code className="text-neutral-12">showError</code>: boolean (optional) - Override
-            error display logic
+            <code className="text-neutral-12">showError</code>: boolean (optional) - Override error
+            display logic
           </li>
         </ul>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Error Display Logic</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Error Display Logic</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">Expected Errors:</strong> Shows specific GraphQL
             error message
@@ -175,9 +178,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Visual Elements</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Visual Elements</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             Image: <code className="text-neutral-12">/images/figures/connection.svg</code>{' '}
             (200x200px)
@@ -188,9 +191,7 @@ export const ColorPaletteShowcase: Story = () => (
           </li>
           <li>
             Content:{' '}
-            <code className="text-neutral-12">
-              max-w-[960px] flex-col sm:flex-row items-center
-            </code>
+            <code className="text-neutral-12">max-w-[960px] flex-col sm:flex-row items-center</code>
           </li>
           <li>
             Sign out button: <code className="text-neutral-12">absolute right-6 top-6</code>
@@ -207,23 +208,23 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Query Errors</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Query Errors</p>
           <p className="text-neutral-10 text-xs">
             Display GraphQL query errors throughout the app (target.tsx, organization-settings.tsx,
             etc.).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Network Failures</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Network Failures</p>
           <p className="text-neutral-10 text-xs">
             Handle network errors with user-friendly message and support contact.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Authentication Errors</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Authentication Errors</p>
           <p className="text-neutral-10 text-xs">
             Shows sign out button by default to allow users to re-authenticate.
           </p>
@@ -232,9 +233,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Support Integration</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Support Integration</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">With Organization:</strong> Links to{' '}
             <code className="text-neutral-12">/$organizationSlug/view/support</code>

@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { TimeAgo } from '@/components/ui/time-ago';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Time Ago',
+};
 
 export const Default: Story = () => {
   const now = new Date();
@@ -27,7 +31,7 @@ export const DifferentTimes: Story = () => {
   ];
 
   return (
-    <div className="space-y-3 max-w-md">
+    <div className="max-w-md space-y-3">
       {times.map((time, i) => (
         <div key={i} className="flex items-center justify-between">
           <span className="text-neutral-10 text-sm">{time.label}:</span>
@@ -61,15 +65,15 @@ export const InTable: Story = () => {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b">
-            <th className="text-left p-2 text-neutral-10 font-medium">Version</th>
-            <th className="text-right p-2 text-neutral-10 font-medium">Published</th>
+            <th className="text-neutral-10 p-2 text-left font-medium">Version</th>
+            <th className="text-neutral-10 p-2 text-right font-medium">Published</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item, i) => (
             <tr key={i} className="border-b">
-              <td className="p-2 text-neutral-11">{item.name}</td>
-              <td className="p-2 text-right text-neutral-11">
+              <td className="text-neutral-11 p-2">{item.name}</td>
+              <td className="text-neutral-11 p-2 text-right">
                 <TimeAgo date={item.date} />
               </td>
             </tr>
@@ -104,9 +108,9 @@ export const ColorPaletteShowcase: Story = () => {
   const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
 
   return (
-    <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+    <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">TimeAgo Component</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">TimeAgo Component</h2>
         <p className="text-neutral-11 mb-4">
           Displays relative time (e.g., "2 hours ago") using the @n1ru4l/react-time-ago library.
           Automatically updates as time passes.
@@ -115,12 +119,12 @@ export const ColorPaletteShowcase: Story = () => {
         <div className="space-y-4">
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Basic Usage</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <p className="text-neutral-11 text-sm">
                 Last seen: <TimeAgo date={oneHourAgo} />
               </p>
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Cursor: <code className="text-neutral-12">cursor-default</code>
               <br />
               Whitespace: <code className="text-neutral-12">whitespace-nowrap</code>
@@ -131,23 +135,25 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Auto-updating</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <p className="text-neutral-11 text-sm">
                 The time display automatically updates. Refresh the page to see the current time
                 relative to now: <TimeAgo date={oneHourAgo} />
               </p>
             </div>
-            <p className="text-xs text-neutral-10">Component re-renders periodically to stay current</p>
+            <p className="text-neutral-10 text-xs">
+              Component re-renders periodically to stay current
+            </p>
           </div>
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">With Custom Styling</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <p className="text-neutral-11 text-sm">
                 Custom color: <TimeAgo date={oneHourAgo} className="text-accent font-medium" />
               </p>
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Use <code className="text-neutral-12">className</code> prop for custom styles
             </p>
           </div>
@@ -155,9 +161,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-sm space-y-1 text-neutral-11">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-11 space-y-1 text-sm">
             <li>
               <code className="text-neutral-12">date</code>: ISO 8601 date string (optional)
             </li>
@@ -169,9 +175,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Format Examples</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Format Examples</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>Recent: "30 seconds ago", "5 minutes ago", "2 hours ago"</li>
             <li>Days: "1 day ago", "3 days ago"</li>
             <li>Weeks: "1 week ago", "2 weeks ago"</li>
@@ -182,22 +188,22 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
         <div className="space-y-4">
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Activity Feeds</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Activity Feeds</p>
             <p className="text-neutral-10 text-xs">
               Show when schema changes, deployments, or other events occurred.
             </p>
           </div>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Tables</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Tables</p>
             <p className="text-neutral-10 text-xs">
               Display creation or modification times in token tables, version lists, etc.
             </p>
           </div>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-neutral-11 text-sm font-medium mb-2">Last Seen/Updated</p>
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-11 mb-2 text-sm font-medium">Last Seen/Updated</p>
             <p className="text-neutral-10 text-xs">
               Show when users, operations, or services were last active or updated.
             </p>
@@ -206,10 +212,10 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Implementation Details</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm mb-2">Uses @n1ru4l/react-time-ago library</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Implementation Details</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm">Uses @n1ru4l/react-time-ago library</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>Formats dates with date-fns</li>
             <li>Renders semantic &lt;time&gt; element with dateTime attribute</li>
             <li>Title attribute shows full date for accessibility</li>

@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Resizable',
+};
 
 export const HorizontalPanels: Story = () => (
   <ResizablePanelGroup direction="horizontal" className="min-h-[400px] rounded-lg border">
@@ -89,7 +93,7 @@ export const EditorLayout: Story = () => (
         <ResizablePanel defaultSize={70}>
           <div className="h-full p-4">
             <h3 className="text-neutral-12 mb-4 font-semibold">Editor</h3>
-            <pre className="text-neutral-11 bg-neutral-1 rounded p-4 text-sm">
+            <pre className="text-neutral-11 bg-neutral-1 rounded-sm p-4 text-sm">
               {`type Query {
   user(id: ID!): User
   users: [User!]!
@@ -101,7 +105,7 @@ export const EditorLayout: Story = () => (
         <ResizablePanel defaultSize={30} minSize={20}>
           <div className="h-full p-4">
             <h3 className="text-neutral-12 mb-2 font-semibold">Terminal</h3>
-            <div className="text-neutral-11 bg-neutral-1 rounded p-4 text-sm font-mono">
+            <div className="text-neutral-11 bg-neutral-1 rounded-sm p-4 font-mono text-sm">
               $ hive schema:publish
             </div>
           </div>
@@ -112,9 +116,9 @@ export const EditorLayout: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-6xl">
+  <div className="bg-neutral-2 max-w-6xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Resizable Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Resizable Component</h2>
       <p className="text-neutral-11 mb-4">
         Resizable panel groups built with react-resizable-panels. Create split panes that users can
         resize.
@@ -136,7 +140,7 @@ export const ColorPaletteShowcase: Story = () => (
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Direction: <code className="text-neutral-12">horizontal</code>
             <br />
             Handle: <code className="text-neutral-12">bg-border w-px</code>
@@ -160,7 +164,7 @@ export const ColorPaletteShowcase: Story = () => (
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Handle with grip icon: <code className="text-neutral-12">withHandle</code> prop
             <br />
             Icon: <code className="text-neutral-12">GripVertical</code>
@@ -170,39 +174,39 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">ResizablePanelGroup</code>: Container for resizable
             panels
             <br />
-            <span className="text-xs text-neutral-10">
+            <span className="text-neutral-10 text-xs">
               Props: direction ("horizontal" | "vertical")
             </span>
           </li>
           <li>
             <code className="text-neutral-12">ResizablePanel</code>: Individual panel
             <br />
-            <span className="text-xs text-neutral-10">
+            <span className="text-neutral-10 text-xs">
               Props: defaultSize, minSize, maxSize (percentages)
             </span>
           </li>
           <li>
             <code className="text-neutral-12">ResizableHandle</code>: Draggable resize handle
             <br />
-            <span className="text-xs text-neutral-10">Props: withHandle (shows grip icon)</span>
+            <span className="text-neutral-10 text-xs">Props: withHandle (shows grip icon)</span>
           </li>
         </ul>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
       <div className="space-y-2">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">ResizablePanel</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">ResizablePanel</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">defaultSize</code>: Initial size (0-100)
             </li>
@@ -214,9 +218,9 @@ export const ColorPaletteShowcase: Story = () => (
             </li>
           </ul>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">ResizableHandle</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">ResizableHandle</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">withHandle</code>: Show grip icon (boolean)
             </li>
@@ -226,22 +230,22 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Code Editors</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Code Editors</p>
           <p className="text-neutral-10 text-xs">
             Split view for file explorer + editor, or editor + preview pane.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Dashboards</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Dashboards</p>
           <p className="text-neutral-10 text-xs">
             Resizable widgets and panels for customizable layouts.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Developer Tools</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Developer Tools</p>
           <p className="text-neutral-10 text-xs">
             Console, debugger, and output panes that users can resize to their preference.
           </p>
@@ -250,23 +254,23 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Features</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Features</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Nested Groups</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Nested Groups</p>
           <p className="text-neutral-10 text-xs">
             ResizablePanelGroups can be nested for complex layouts (horizontal inside vertical, or
             vice versa).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Keyboard Accessible</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Keyboard Accessible</p>
           <p className="text-neutral-10 text-xs">
             Handles can be focused and resized using keyboard arrow keys.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Constraints</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Constraints</p>
           <p className="text-neutral-10 text-xs">
             Min/max size constraints prevent panels from becoming too small or large.
           </p>

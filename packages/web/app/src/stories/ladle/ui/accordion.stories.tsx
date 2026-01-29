@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
+import { CheckIcon } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -8,15 +8,19 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckIcon } from 'lucide-react';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Accordion',
+};
 
 export const Default: Story = () => (
   <Accordion type="single" collapsible className="w-full max-w-md">
     <AccordionItem value="item-1">
       <AccordionTrigger>What is GraphQL Hive?</AccordionTrigger>
       <AccordionContent>
-        GraphQL Hive is a schema registry for your GraphQL APIs. It helps you track changes,
-        prevent breaking changes, and monitor usage.
+        GraphQL Hive is a schema registry for your GraphQL APIs. It helps you track changes, prevent
+        breaking changes, and monitor usage.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -200,9 +204,7 @@ export const PermissionGroups: Story = () => {
         onValueChange={values => setOpenGroups(values)}
       >
         {permissionGroups.map(group => {
-          const selectedCount = group.permissions.filter(p =>
-            selectedPermissions.has(p.id),
-          ).length;
+          const selectedCount = group.permissions.filter(p => selectedPermissions.has(p.id)).length;
 
           return (
             <AccordionItem value={group.title} key={group.title}>
@@ -219,7 +221,10 @@ export const PermissionGroups: Story = () => {
               </AccordionTrigger>
               <AccordionContent className="pl-2 pt-1">
                 {group.permissions.map(permission => (
-                  <div className="flex flex-row items-center space-x-4 pb-2 text-sm" key={permission.id}>
+                  <div
+                    className="flex flex-row items-center space-x-4 pb-2 text-sm"
+                    key={permission.id}
+                  >
                     <Checkbox
                       id={permission.id}
                       checked={selectedPermissions.has(permission.id)}
@@ -302,9 +307,9 @@ export const ChangeDetail: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Accordion Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Accordion Component</h2>
       <p className="text-neutral-11 mb-4">
         Collapsible sections to organize content. Based on Radix UI Accordion.
       </p>
@@ -312,7 +317,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default Accordion</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger>Click to expand</AccordionTrigger>
@@ -322,7 +327,7 @@ export const ColorPaletteShowcase: Story = () => (
               </AccordionItem>
             </Accordion>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-b</code> on AccordionItem
             <br />
             Hover: <code className="text-neutral-12">hover:underline</code> on trigger
@@ -333,7 +338,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Multiple Items</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger>First section</AccordionTrigger>
@@ -349,7 +354,7 @@ export const ColorPaletteShowcase: Story = () => (
               </AccordionItem>
             </Accordion>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Type: <code className="text-neutral-12">type="single"</code> - only one open at a time
             <br />
             Collapsible: Can close the open item
@@ -358,7 +363,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Multiple Open (type="multiple")</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Accordion type="multiple" className="w-full" defaultValue={['item-1', 'item-2']}>
               <AccordionItem value="item-1">
                 <AccordionTrigger>First section (open by default)</AccordionTrigger>
@@ -374,7 +379,7 @@ export const ColorPaletteShowcase: Story = () => (
               </AccordionItem>
             </Accordion>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Type: <code className="text-neutral-12">type="multiple"</code> - multiple items can be
             open simultaneously
           </p>
@@ -383,9 +388,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">Accordion</code>: Root container (type, collapsible,
             value props)
@@ -395,8 +400,8 @@ export const ColorPaletteShowcase: Story = () => (
             (value prop required)
           </li>
           <li>
-            <code className="text-neutral-12">AccordionTrigger</code>: Clickable header with
-            chevron icon
+            <code className="text-neutral-12">AccordionTrigger</code>: Clickable header with chevron
+            icon
           </li>
           <li>
             <code className="text-neutral-12">AccordionContent</code>: Collapsible content area
@@ -409,16 +414,15 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Animation</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Animation</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 text-xs">
           Chevron rotation:{' '}
           <code className="text-neutral-12">[&[data-state=open]&gt;svg]:rotate-180</code>
           <br />
           Duration: <code className="text-neutral-12">transition-transform duration-200</code>
           <br />
-          Content visibility:{' '}
-          <code className="text-neutral-12">data-[state=closed]:hidden</code>
+          Content visibility: <code className="text-neutral-12">data-[state=closed]:hidden</code>
         </p>
       </div>
     </div>

@@ -3,6 +3,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { Story } from '@ladle/react';
 
+export default {
+  title: 'UI / Radio Group',
+};
+
 export const Default: Story = () => (
   <RadioGroup defaultValue="option1">
     <div className="flex items-center gap-2">
@@ -128,7 +132,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Unselected</p>
-          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <RadioGroup>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="option1" id="showcase-1" />
@@ -143,7 +147,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Selected</p>
-          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <RadioGroup defaultValue="option1">
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="option1" id="showcase-2" />
@@ -160,7 +164,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Disabled Unselected</p>
-          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <RadioGroup>
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="option1" id="showcase-3" disabled />
@@ -175,7 +179,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Disabled Selected</p>
-          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <RadioGroup defaultValue="option1">
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="option1" id="showcase-4" disabled />
@@ -195,7 +199,7 @@ export const ColorPaletteShowcase: Story = () => (
       <p className="text-neutral-11 mb-4 text-sm">
         Tab to focus on a radio button to see the focus ring
       </p>
-      <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
         <RadioGroup defaultValue="option1">
           <div className="flex items-center gap-2">
             <RadioGroupItem value="option1" id="focus-1" />
@@ -218,7 +222,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Vertical (Default)</p>
-          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <RadioGroup defaultValue="option1">
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="option1" id="layout-1" />
@@ -234,7 +238,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Horizontal</p>
-          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <RadioGroup defaultValue="option1" className="flex gap-4">
               <div className="flex items-center gap-2">
                 <RadioGroupItem value="option1" id="layout-3" />

@@ -1,5 +1,6 @@
-import type { Story } from '@ladle/react';
-import { LeaveOrganizationModalContent } from '@/components/ui/user-menu';
+import { useState } from 'react';
+import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,11 +12,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar } from '@/components/v2';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
 import {
+  AlertTriangleIcon,
   CalendarIcon,
   FileTextIcon,
   GridIcon,
@@ -23,12 +21,18 @@ import {
   PlusIcon,
   SettingsIcon,
   TrendingUpIcon,
-  AlertTriangleIcon,
 } from '@/components/ui/icon';
+import { LeaveOrganizationModalContent } from '@/components/ui/user-menu';
+import { Avatar } from '@/components/v2';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / User Menu',
+};
 
 // Simplified user menu without GraphQL dependencies
 export const GoogleUser: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="cursor-pointer">
@@ -98,7 +102,7 @@ GoogleUser.meta = {
 };
 
 export const GithubUser: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="cursor-pointer">
@@ -167,7 +171,7 @@ GithubUser.meta = {
 };
 
 export const PasswordUser: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="cursor-pointer">
@@ -219,7 +223,7 @@ PasswordUser.meta = {
 };
 
 export const AdminUser: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="cursor-pointer">
@@ -275,7 +279,7 @@ AdminUser.meta = {
 };
 
 export const MultipleOrganizations: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="cursor-pointer">
@@ -374,23 +378,24 @@ LeaveOrganizationModal.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">UserMenu Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">UserMenu Component</h2>
       <p className="text-neutral-11 mb-4">
         Complex dropdown menu component with user profile, organization switcher, navigation links,
-        and authentication provider indicator. Built using DropdownMenu primitives with custom styling.
+        and authentication provider indicator. Built using DropdownMenu primitives with custom
+        styling.
       </p>
 
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">User Menu Trigger</p>
-          <div className="flex justify-end p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 flex justify-end rounded-sm border p-4">
             <div className="cursor-pointer">
               <Avatar shape="circle" className="border-accent_80 border-2" />
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Trigger: Avatar with <code className="text-neutral-12">border-accent_80 border-2</code>
             <br />
             Cursor: <code className="text-neutral-12">cursor-pointer</code>
@@ -401,8 +406,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Dropdown Menu Structure</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <ul className="text-xs text-neutral-10 space-y-1">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <ul className="text-neutral-10 space-y-1 text-xs">
               <li>
                 1. <strong className="text-neutral-12">Header:</strong> User name, email, auth
                 provider icon
@@ -447,24 +452,24 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Menu Colors</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 space-y-3">
+          <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
             <div>
-              <div className="text-neutral-12 text-sm font-medium mb-1">Display Name</div>
-              <p className="text-xs text-neutral-10">
+              <div className="text-neutral-12 mb-1 text-sm font-medium">Display Name</div>
+              <p className="text-neutral-10 text-xs">
                 <code className="text-neutral-12">text-sm font-medium</code> (no color class,
                 inherits neutral-12)
               </p>
             </div>
             <div>
-              <div className="text-neutral-10 text-xs mb-1">john.doe@example.com</div>
-              <p className="text-xs text-neutral-10">
+              <div className="text-neutral-10 mb-1 text-xs">john.doe@example.com</div>
+              <p className="text-neutral-10 text-xs">
                 Email: <code className="text-neutral-12">text-neutral-10 text-xs font-normal</code>
               </p>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 rounded bg-neutral-3 hover:bg-neutral-4">
+            <div className="bg-neutral-3 hover:bg-neutral-4 flex items-center gap-2 rounded-sm px-3 py-2">
               <span className="text-neutral-12 text-sm">Menu Item (hover me)</span>
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Items: Inherit menu item styles from DropdownMenuItem
               <br />
               Icons: <code className="text-neutral-12">mr-2 size-4</code> before text
@@ -474,35 +479,36 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Authentication Provider Icons</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex gap-4">
+          <div className="bg-neutral-1 border-neutral-6 flex gap-4 rounded-sm border p-4">
             <div className="flex flex-col items-center gap-2">
-              <div className="p-2 bg-neutral-3 rounded">
+              <div className="bg-neutral-3 rounded-sm p-2">
                 <span className="text-sm">🔑</span>
               </div>
-              <span className="text-xs text-neutral-10">Password</span>
+              <span className="text-neutral-10 text-xs">Password</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="p-2 bg-neutral-3 rounded">
+              <div className="bg-neutral-3 rounded-sm p-2">
                 <span className="text-sm">G</span>
               </div>
-              <span className="text-xs text-neutral-10">Google</span>
+              <span className="text-neutral-10 text-xs">Google</span>
             </div>
             <div className="flex flex-col items-center gap-2">
-              <div className="p-2 bg-neutral-3 rounded">
+              <div className="bg-neutral-3 rounded-sm p-2">
                 <span className="text-sm">GH</span>
               </div>
-              <span className="text-xs text-neutral-10">GitHub</span>
+              <span className="text-neutral-10 text-xs">GitHub</span>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
-            Icons from react-icons: <code className="text-neutral-12">FaKey, FaGoogle, FaGithub</code>
+          <p className="text-neutral-10 text-xs">
+            Icons from react-icons:{' '}
+            <code className="text-neutral-12">FaKey, FaGoogle, FaGithub</code>
           </p>
         </div>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">
         LeaveOrganizationModalContent Component
       </h2>
       <p className="text-neutral-11 mb-4">
@@ -512,15 +518,15 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Modal Preview</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <LeaveOrganizationModal />
           </div>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Content Structure</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <ul className="text-xs text-neutral-10 space-y-1">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <ul className="text-neutral-10 space-y-1 text-xs">
               <li>
                 Title: <code className="text-neutral-12">Leave {'{organizationSlug}'}?</code>
               </li>
@@ -543,10 +549,10 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm font-medium mb-2">LeaveOrganizationModalContent</p>
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-2 text-sm font-medium">LeaveOrganizationModalContent</p>
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             <code className="text-neutral-12">isOpen</code>: boolean
           </li>
@@ -564,9 +570,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Component Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Component Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">DropdownMenu:</strong> Main dropdown container from
             UI primitives
@@ -588,17 +594,17 @@ export const ColorPaletteShowcase: Story = () => (
             submenu
           </li>
           <li>
-            <strong className="text-neutral-12">DropdownMenuItem:</strong> Individual menu items with
-            icons
+            <strong className="text-neutral-12">DropdownMenuItem:</strong> Individual menu items
+            with icons
           </li>
         </ul>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Conditional Features</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Conditional Features</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">Organization switcher:</strong> Only if{' '}
             <code className="text-neutral-12">canSwitchOrganization</code> is true
@@ -628,9 +634,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Notes</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Notes</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>Always rendered in layout headers (organization, project, target layouts)</li>
           <li>
             Includes Changelog component and GetStartedProgress beside avatar in{' '}
@@ -643,13 +649,15 @@ export const ColorPaletteShowcase: Story = () => (
             Submenu for org switcher has <code className="text-neutral-12">max-w-[300px]</code>
           </li>
           <li>
-            Active organization in switcher uses{' '}
-            <code className="text-neutral-12">active</code> prop
+            Active organization in switcher uses <code className="text-neutral-12">active</code>{' '}
+            prop
           </li>
           <li>External links open in new tab with noreferrer</li>
           <li>
             Leave organization uses{' '}
-            <code className="text-neutral-12">LeaveOrganizationModal_LeaveOrganizationMutation</code>
+            <code className="text-neutral-12">
+              LeaveOrganizationModal_LeaveOrganizationMutation
+            </code>
           </li>
         </ul>
       </div>

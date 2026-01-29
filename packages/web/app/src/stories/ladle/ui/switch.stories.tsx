@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import type { Story } from '@ladle/react';
 
+export default {
+  title: 'UI / Switch',
+};
+
 export const Default: Story = () => <Switch />;
 
 export const Checked: Story = () => <Switch defaultChecked />;

@@ -1,12 +1,16 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Textarea',
+};
 
 export const Default: Story = () => <Textarea placeholder="Type your message here..." />;
 
 export const WithLabel: Story = () => (
-  <div className="flex flex-col gap-2 max-w-md">
+  <div className="flex max-w-md flex-col gap-2">
     <Label htmlFor="message">Your message</Label>
     <Textarea id="message" placeholder="Type your message here..." />
   </div>
@@ -29,21 +33,17 @@ export const Disabled: Story = () => (
 );
 
 export const AutoSize: Story = () => (
-  <div className="flex flex-col gap-4 max-w-md">
+  <div className="flex max-w-md flex-col gap-4">
     <div className="flex flex-col gap-2">
       <Label htmlFor="auto">Auto-sizing Textarea</Label>
-      <Textarea
-        id="auto"
-        autoSize
-        placeholder="This textarea automatically grows as you type..."
-      />
-      <p className="text-xs text-neutral-11">Try typing multiple lines</p>
+      <Textarea id="auto" autoSize placeholder="This textarea automatically grows as you type..." />
+      <p className="text-neutral-11 text-xs">Try typing multiple lines</p>
     </div>
   </div>
 );
 
 export const CustomHeight: Story = () => (
-  <div className="flex flex-col gap-4 max-w-md">
+  <div className="flex max-w-md flex-col gap-4">
     <div className="flex flex-col gap-2">
       <Label>Small (80px)</Label>
       <Textarea placeholder="min-h-[80px] (default)" />
@@ -63,17 +63,17 @@ export const Interactive: Story = () => {
   const [value, setValue] = React.useState('');
 
   return (
-    <div className="space-y-4 max-w-md">
+    <div className="max-w-md space-y-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="interactive">Interactive textarea</Label>
         <Textarea
           id="interactive"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={e => setValue(e.target.value)}
           placeholder="Start typing..."
         />
       </div>
-      <div className="text-sm space-y-1">
+      <div className="space-y-1 text-sm">
         <p className="text-neutral-11">
           Characters: <span className="font-mono">{value.length}</span>
         </p>
@@ -86,7 +86,7 @@ export const Interactive: Story = () => {
 };
 
 export const WithErrorState: Story = () => (
-  <div className="flex flex-col gap-4 max-w-md">
+  <div className="flex max-w-md flex-col gap-4">
     <div className="flex flex-col gap-2">
       <Label htmlFor="error" className="text-red-500">
         Message (required)
@@ -102,14 +102,14 @@ export const WithErrorState: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Textarea States</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Textarea States</h2>
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default</p>
           <Textarea placeholder="Type here..." />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-neutral-3</code>
             <br />
             Border: <code className="text-neutral-12">border-neutral-5</code>
@@ -121,7 +121,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">With Content</p>
           <Textarea defaultValue="This textarea contains some text content that demonstrates the text color and styling." />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Text: <code className="text-neutral-12">text-neutral-12 (inherited)</code>
           </p>
         </div>
@@ -129,7 +129,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Disabled</p>
           <Textarea disabled placeholder="Disabled textarea" defaultValue="Disabled content" />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Opacity: <code className="text-neutral-12">opacity-50</code>
           </p>
         </div>
@@ -137,19 +137,19 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Focus States</h2>
-      <p className="text-neutral-11 text-sm mb-4">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Focus States</h2>
+      <p className="text-neutral-11 mb-4 text-sm">
         Click or tab into the textarea to see the focus ring
       </p>
       <Textarea placeholder="Focus me to see the focus ring..." />
-      <p className="text-xs text-neutral-10 mt-2">
+      <p className="text-neutral-10 mt-2 text-xs">
         Focus ring: <code className="text-neutral-12">ring-ring</code> with{' '}
         <code className="text-neutral-12">ring-offset-neutral-2</code>
       </p>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Size Variants</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Size Variants</h2>
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Small (Default 80px)</p>
@@ -167,7 +167,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">With Labels</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">With Labels</h2>
       <div className="space-y-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="labeled">Description</Label>
@@ -176,9 +176,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="flex flex-col gap-2">
           <Label htmlFor="labeled-with-help">Feedback</Label>
           <Textarea id="labeled-with-help" placeholder="Share your feedback..." />
-          <p className="text-xs text-neutral-11">
-            Your feedback helps us improve the product
-          </p>
+          <p className="text-neutral-11 text-xs">Your feedback helps us improve the product</p>
         </div>
       </div>
     </div>

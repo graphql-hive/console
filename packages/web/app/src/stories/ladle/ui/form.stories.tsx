@@ -1,8 +1,8 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -13,10 +13,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Form',
+};
 
 const simpleSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters'),
@@ -39,7 +43,7 @@ export const SimpleForm: Story = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-md">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-md space-y-6">
         <FormField
           control={form.control}
           name="username"
@@ -100,7 +104,7 @@ export const ComplexForm: Story = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-md">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-md space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -188,9 +192,7 @@ export const ComplexForm: Story = () => {
               </FormControl>
               <div className="space-y-1 leading-none">
                 <FormLabel>Email notifications</FormLabel>
-                <FormDescription>
-                  Receive emails about your account activity.
-                </FormDescription>
+                <FormDescription>Receive emails about your account activity.</FormDescription>
               </div>
             </FormItem>
           )}
@@ -221,7 +223,7 @@ export const WithErrors: Story = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-md">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-md space-y-6">
         <FormField
           control={form.control}
           name="username"
@@ -256,29 +258,29 @@ export const WithErrors: Story = () => {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Form Components</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Form Components</h2>
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Form Layout</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <div className="space-y-6 max-w-md">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <div className="max-w-md space-y-6">
               <div className="space-y-2">
                 <div className="text-neutral-11 text-sm font-medium">FormLabel</div>
-                <p className="text-xs text-neutral-10">
+                <p className="text-neutral-10 text-xs">
                   Color: <code className="text-neutral-12">text-neutral-11</code>
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="text-neutral-11 text-sm">FormDescription</div>
-                <p className="text-xs text-neutral-10">
+                <p className="text-neutral-10 text-xs">
                   Helper text color: <code className="text-neutral-12">text-neutral-11</code>
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="text-red-500 text-sm">FormMessage (Error)</div>
-                <p className="text-xs text-neutral-10">
+                <div className="text-sm text-red-500">FormMessage (Error)</div>
+                <p className="text-neutral-10 text-xs">
                   Error color: <code className="text-neutral-12">text-red-500 (destructive)</code>
                 </p>
               </div>
@@ -288,9 +290,9 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Form Spacing</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <div className="space-y-2 max-w-md">
-              <p className="text-xs text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <div className="max-w-md space-y-2">
+              <p className="text-neutral-10 text-xs">
                 FormItem: <code className="text-neutral-12">space-y-2</code> (vertical spacing
                 between label, control, description, message)
               </p>
@@ -301,15 +303,15 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Complete Form Example</h2>
-      <div className="p-6 bg-neutral-1 rounded border border-neutral-6">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Complete Form Example</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-6">
         <SimpleForm />
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Form with Errors</h2>
-      <div className="p-6 bg-neutral-1 rounded border border-neutral-6">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Form with Errors</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-6">
         <WithErrors />
       </div>
     </div>

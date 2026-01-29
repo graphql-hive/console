@@ -1,12 +1,16 @@
-import type { Story } from '@ladle/react';
 import { Callout } from '@/components/ui/callout';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Callout',
+};
 
 export const Default: Story = () => (
   <Callout>This is a default callout message with important information.</Callout>
 );
 
 export const AllTypes: Story = () => (
-  <div className="space-y-4 max-w-2xl">
+  <div className="max-w-2xl space-y-4">
     <Callout type="default">
       This is a default callout. Use it for general announcements or tips.
     </Callout>
@@ -23,7 +27,7 @@ export const AllTypes: Story = () => (
 );
 
 export const WithCustomEmoji: Story = () => (
-  <div className="space-y-4 max-w-2xl">
+  <div className="max-w-2xl space-y-4">
     <Callout emoji="🎉">Congratulations! You've completed the setup process.</Callout>
     <Callout type="info" emoji="📝">
       Don't forget to save your changes before navigating away.
@@ -44,7 +48,7 @@ export const WithLongContent: Story = () => (
           paragraphs and more detailed information. The content will wrap naturally and maintain
           proper spacing.
         </p>
-        <ul className="list-disc list-inside space-y-1">
+        <ul className="list-inside list-disc space-y-1">
           <li>First important point</li>
           <li>Second important point</li>
           <li>Third important point</li>
@@ -55,21 +59,21 @@ export const WithLongContent: Story = () => (
 );
 
 export const WithLinks: Story = () => (
-  <div className="space-y-4 max-w-2xl">
+  <div className="max-w-2xl space-y-4">
     <Callout type="info">
       Need help? Check out our{' '}
-      <a href="#" className="underline font-medium">
+      <a href="#" className="font-medium underline">
         documentation
       </a>{' '}
       or{' '}
-      <a href="#" className="underline font-medium">
+      <a href="#" className="font-medium underline">
         contact support
       </a>
       .
     </Callout>
     <Callout type="warning">
       This feature is deprecated.{' '}
-      <a href="#" className="underline font-medium">
+      <a href="#" className="font-medium underline">
         Learn about the new approach
       </a>
       .
@@ -78,14 +82,14 @@ export const WithLinks: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Callout Types</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Callout Types</h2>
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default (Orange)</p>
           <Callout type="default">This is a default callout with orange styling.</Callout>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-orange-100</code>
             <br />
             Background: <code className="text-neutral-12">bg-orange-50</code>
@@ -97,7 +101,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Info (Blue)</p>
           <Callout type="info">This is an info callout with blue styling.</Callout>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-blue-200</code>
             <br />
             Background: <code className="text-neutral-12">bg-blue-100</code>
@@ -109,7 +113,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Warning (Yellow)</p>
           <Callout type="warning">This is a warning callout with yellow styling.</Callout>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-yellow-100</code>
             <br />
             Background: <code className="text-neutral-12">bg-yellow-50</code>
@@ -121,7 +125,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Error (Red)</p>
           <Callout type="error">This is an error callout with red styling.</Callout>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Border: <code className="text-neutral-12">border-red-200</code>
             <br />
             Background: <code className="text-neutral-12">bg-red-100</code>
@@ -133,14 +137,14 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Layout</p>
           <Callout type="info">
             <span className="font-mono text-sm">Icon + Content</span> layout with flexbox
           </Callout>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Container: <code className="text-neutral-12">flex items-center gap-4</code>
             <br />
             Padding: <code className="text-neutral-12">px-4 py-2</code>
@@ -172,7 +176,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Examples</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Examples</h2>
       <div className="space-y-4">
         <Callout type="default">
           <strong>Pro Tip:</strong> Use keyboard shortcuts to navigate faster through the interface.
@@ -180,7 +184,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <Callout type="info">
           Your changes have been saved automatically. You can continue editing or{' '}
-          <a href="#" className="underline font-medium">
+          <a href="#" className="font-medium underline">
             publish now
           </a>
           .

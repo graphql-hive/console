@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { NotFound } from '@/components/ui/not-found';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Not Found',
+};
 
 export const SupportTicket: Story = () => (
   <div className="py-6">
@@ -64,12 +68,12 @@ OrganizationNotFound.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">NotFound Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">NotFound Component</h2>
       <p className="text-neutral-11 mb-4">
-        404-style error state component for displaying when a resource is not found. Shows a
-        ghost illustration with title and description, commonly used for missing or inaccessible
+        404-style error state component for displaying when a resource is not found. Shows a ghost
+        illustration with title and description, commonly used for missing or inaccessible
         resources.
       </p>
 
@@ -80,7 +84,7 @@ export const ColorPaletteShowcase: Story = () => (
             title="Resource not found"
             description="The item you're looking for doesn't exist"
           />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Container: <code className="text-neutral-12">Card (v2) component</code>
             <br />
             Image: <code className="text-neutral-12">ghost.svg (200x200px)</code>
@@ -100,9 +104,7 @@ export const ColorPaletteShowcase: Story = () => (
             title="Support ticket not found."
             description="The support ticket you are looking for does not exist or you do not have access to it."
           />
-          <p className="text-xs text-neutral-10">
-            Real usage from organization-support-ticket.tsx
-          </p>
+          <p className="text-neutral-10 text-xs">Real usage from organization-support-ticket.tsx</p>
         </div>
 
         <div className="space-y-2">
@@ -111,7 +113,7 @@ export const ColorPaletteShowcase: Story = () => (
             title="Access denied"
             description="You don't have permission to view this resource."
           />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Can also be used for permission/access errors, not just missing resources
           </p>
         </div>
@@ -119,9 +121,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">title</code>: string (required) - Error title
           </li>
@@ -130,19 +132,19 @@ export const ColorPaletteShowcase: Story = () => (
             description
           </li>
           <li>
-            <code className="text-neutral-12">className</code>: string (optional) - Additional
-            CSS classes
+            <code className="text-neutral-12">className</code>: string (optional) - Additional CSS
+            classes
           </li>
         </ul>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Comparison: NotFound vs EmptyList</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Comparison: NotFound vs EmptyList</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">NotFound Component</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">NotFound Component</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               Image: <code className="text-neutral-12">ghost.svg</code>
             </li>
@@ -157,9 +159,9 @@ export const ColorPaletteShowcase: Story = () => (
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">EmptyList Component</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">EmptyList Component</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               Image: <code className="text-neutral-12">magnifier.svg</code>
             </li>
@@ -177,29 +179,29 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Missing Resources</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Missing Resources</p>
           <p className="text-neutral-10 text-xs">
-            Show when a specific resource (support ticket, project, target, etc.) cannot be found
-            or accessed (organization-support-ticket.tsx).
+            Show when a specific resource (support ticket, project, target, etc.) cannot be found or
+            accessed (organization-support-ticket.tsx).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">404 Pages</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">404 Pages</p>
           <p className="text-neutral-10 text-xs">
             Display on routes that don't match any known paths.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Access Denied</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Access Denied</p>
           <p className="text-neutral-10 text-xs">
             Show when a user lacks permissions to view a resource they're trying to access.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Deleted Resources</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Deleted Resources</p>
           <p className="text-neutral-10 text-xs">
             Display when accessing a resource that has been deleted.
           </p>
@@ -208,9 +210,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Visual Elements</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Visual Elements</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             Image: <code className="text-neutral-12">ghost.svg</code> (200x200px)
           </li>
@@ -237,11 +239,11 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">When to Use</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">When to Use</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Use NotFound When:</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Use NotFound When:</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>A specific resource cannot be found (404 scenario)</li>
             <li>User lacks access to an existing resource (403/permission error)</li>
             <li>A resource has been deleted or no longer exists</li>
@@ -249,9 +251,9 @@ export const ColorPaletteShowcase: Story = () => (
           </ul>
         </div>
 
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Use EmptyList When:</p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Use EmptyList When:</p>
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>A list/collection is empty but valid (no data yet)</li>
             <li>No schema has been published yet</li>
             <li>Search/filter returns no results</li>
@@ -262,9 +264,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Typical Wrapper Pattern</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <pre className="text-xs text-neutral-10 overflow-x-auto">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Typical Wrapper Pattern</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <pre className="text-neutral-10 overflow-x-auto text-xs">
           {`{resource ? (
   <ResourceContent resource={resource} />
 ) : (
@@ -276,7 +278,7 @@ export const ColorPaletteShowcase: Story = () => (
   </div>
 )}`}
         </pre>
-        <p className="text-neutral-10 text-xs mt-2">
+        <p className="text-neutral-10 mt-2 text-xs">
           Commonly wrapped in div with padding (py-6) as seen in organization-support-ticket.tsx
         </p>
       </div>

@@ -1,5 +1,4 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +12,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Sheet',
+};
 
 export const Default: Story = () => (
   <Sheet>
@@ -157,7 +161,7 @@ export const FilterPanel: Story = () => {
             {filteredOperations.map(operation => (
               <label
                 key={operation}
-                className="flex items-center gap-2 rounded p-2 hover:bg-neutral-3 cursor-pointer"
+                className="hover:bg-neutral-3 flex cursor-pointer items-center gap-2 rounded-sm p-2"
               >
                 <input
                   type="checkbox"
@@ -215,16 +219,16 @@ export const CreateAccessToken: Story = () => {
 
           <div className="space-y-2">
             <Label>Permissions</Label>
-            <div className="space-y-2 rounded border border-neutral-6 p-4">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <div className="border-neutral-6 space-y-2 rounded-sm border p-4">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input type="checkbox" />
                 <span className="text-neutral-11 text-sm">Read schema</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input type="checkbox" />
                 <span className="text-neutral-11 text-sm">Push schema</span>
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex cursor-pointer items-center gap-2">
                 <input type="checkbox" />
                 <span className="text-neutral-11 text-sm">Read operations</span>
               </label>
@@ -278,9 +282,9 @@ export const Controlled: Story = () => {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Sheet Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Sheet Component</h2>
       <p className="text-neutral-11 mb-4">
         Slide-out panel that appears from the edge of the screen. Built with Radix UI Dialog.
       </p>
@@ -288,7 +292,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Basic Sheet</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline">Open</Button>
@@ -298,11 +302,11 @@ export const ColorPaletteShowcase: Story = () => (
                   <SheetTitle>Title</SheetTitle>
                   <SheetDescription>Description</SheetDescription>
                 </SheetHeader>
-                <p className="text-neutral-11 text-sm py-4">Content</p>
+                <p className="text-neutral-11 py-4 text-sm">Content</p>
               </SheetContent>
             </Sheet>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-neutral-3</code>
             <br />
             Padding: <code className="text-neutral-12">p-6</code>
@@ -315,8 +319,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Overlay</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-xs text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-10 text-xs">
               Overlay background: <code className="text-neutral-12">bg-neutral-1.01</code>
               <br />
               Backdrop blur: <code className="text-neutral-12">backdrop-blur-sm</code>
@@ -328,8 +332,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Close Button</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-xs text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-10 text-xs">
               Position: <code className="text-neutral-12">absolute right-4 top-4</code>
               <br />
               Icon: <code className="text-neutral-12">X</code> from lucide-react
@@ -344,9 +348,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">Sheet</code>: Root container (manages open state)
           </li>
@@ -376,9 +380,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Sides</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Sides</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             <code className="text-neutral-12">side="right"</code> - Slides from right (default),
             full height
@@ -397,9 +401,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Animation</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Animation</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 text-xs">
           Open duration: <code className="text-neutral-12">500ms</code>
           <br />
           Close duration: <code className="text-neutral-12">300ms</code>
@@ -412,27 +416,27 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Filter Panels</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Filter Panels</p>
           <p className="text-neutral-10 text-xs">
             Used in insights and traces for filtering operations, clients, and other data. Includes
             search input and checkboxes.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Create/Edit Forms</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Create/Edit Forms</p>
           <p className="text-neutral-10 text-xs">
             Used for creating access tokens, editing settings, and other form-based interactions.
             Wide sheets (min-w-[700px]) for complex forms.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Detail Views</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Detail Views</p>
           <p className="text-neutral-10 text-xs">
-            Showing detailed information about tokens, members, or other entities without
-            navigating away.
+            Showing detailed information about tokens, members, or other entities without navigating
+            away.
           </p>
         </div>
       </div>

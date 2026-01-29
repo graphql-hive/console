@@ -1,8 +1,12 @@
-import type { Story } from '@ladle/react';
 import { Separator } from '@/components/ui/separator';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Separator',
+};
 
 export const Horizontal: Story = () => (
-  <div className="space-y-4 max-w-md">
+  <div className="max-w-md space-y-4">
     <div>
       <h3 className="text-neutral-12 font-medium">Section 1</h3>
       <p className="text-neutral-11 text-sm">Content above the separator.</p>
@@ -51,7 +55,7 @@ export const InList: Story = () => (
 );
 
 export const InNav: Story = () => (
-  <nav className="flex items-center space-x-4 max-w-md">
+  <nav className="flex max-w-md items-center space-x-4">
     <a href="#" className="text-neutral-11 hover:text-neutral-12 text-sm">
       Home
     </a>
@@ -67,10 +71,10 @@ export const InNav: Story = () => (
 );
 
 export const InCard: Story = () => (
-  <div className="max-w-sm rounded-lg border border-neutral-6 bg-neutral-1">
+  <div className="border-neutral-6 bg-neutral-1 max-w-sm rounded-lg border">
     <div className="p-4">
       <h3 className="text-neutral-12 font-semibold">Card Title</h3>
-      <p className="text-neutral-11 text-sm mt-1">Card description goes here</p>
+      <p className="text-neutral-11 mt-1 text-sm">Card description goes here</p>
     </div>
     <Separator />
     <div className="p-4">
@@ -84,9 +88,9 @@ export const InCard: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Separator Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Separator Component</h2>
       <p className="text-neutral-11 mb-4">
         Visually or semantically separates content. Built with Radix UI Separator.
       </p>
@@ -94,12 +98,12 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Horizontal Separator</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <p className="text-neutral-11 text-sm">Content above</p>
             <Separator className="my-4" />
             <p className="text-neutral-11 text-sm">Content below</p>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-border</code>
             <br />
             Height: <code className="text-neutral-12">h-[1px]</code>
@@ -110,14 +114,14 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Vertical Separator</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="flex h-16 items-center">
-              <p className="text-neutral-11 text-sm px-4">Left</p>
+              <p className="text-neutral-11 px-4 text-sm">Left</p>
               <Separator orientation="vertical" />
-              <p className="text-neutral-11 text-sm px-4">Right</p>
+              <p className="text-neutral-11 px-4 text-sm">Right</p>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-border</code>
             <br />
             Width: <code className="text-neutral-12">w-[1px]</code>
@@ -128,7 +132,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Custom Height (Vertical)</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="flex items-center gap-4">
               <span className="text-neutral-11 text-sm">Item 1</span>
               <Separator orientation="vertical" className="h-4" />
@@ -137,7 +141,7 @@ export const ColorPaletteShowcase: Story = () => (
               <span className="text-neutral-11 text-sm">Item 3</span>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Use <code className="text-neutral-12">className="h-4"</code> to control height
           </p>
         </div>
@@ -145,9 +149,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">orientation</code>: "horizontal" (default) |
             "vertical"
@@ -165,22 +169,22 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Content Sections</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Content Sections</p>
           <p className="text-neutral-10 text-xs">
             Separate distinct sections of content within cards, modals, or page layouts.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Navigation</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Navigation</p>
           <p className="text-neutral-10 text-xs">
             Vertical separators between navigation items in horizontal menus or breadcrumbs.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">List Items</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">List Items</p>
           <p className="text-neutral-10 text-xs">
             Horizontal separators between items in lists, menus, or settings panels.
           </p>
@@ -189,20 +193,20 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Accessibility</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-2">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Accessibility</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-2 text-sm">
           When <code className="text-neutral-12">decorative={true}</code> (default):
         </p>
-        <ul className="text-xs space-y-1 text-neutral-10">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>No ARIA role applied</li>
           <li>Not announced by screen readers</li>
           <li>Purely visual separation</li>
         </ul>
-        <p className="text-neutral-11 text-sm mt-4 mb-2">
+        <p className="text-neutral-11 mb-2 mt-4 text-sm">
           When <code className="text-neutral-12">decorative={false}</code>:
         </p>
-        <ul className="text-xs space-y-1 text-neutral-10">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>ARIA role="separator" applied</li>
           <li>Semantic separation for assistive technologies</li>
         </ul>

@@ -1,30 +1,26 @@
-import type { Story } from "@ladle/react";
-import { Button } from "@/components/ui/button";
-import { ArrowDown, Download, Trash2 } from "lucide-react";
+import { ArrowDown, Download, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Button',
+};
 
 export const Default: Story = () => <Button>Default Button</Button>;
 
-export const Primary: Story = () => (
-  <Button variant="primary">Primary Button</Button>
-);
+export const Primary: Story = () => <Button variant="primary">Primary Button</Button>;
 
-export const Destructive: Story = () => (
-  <Button variant="destructive">Destructive</Button>
-);
+export const Destructive: Story = () => <Button variant="destructive">Destructive</Button>;
 
 export const Outline: Story = () => <Button variant="outline">Outline</Button>;
 
-export const Secondary: Story = () => (
-  <Button variant="secondary">Secondary</Button>
-);
+export const Secondary: Story = () => <Button variant="secondary">Secondary</Button>;
 
 export const Ghost: Story = () => <Button variant="ghost">Ghost</Button>;
 
 export const Link: Story = () => <Button variant="link">Link Button</Button>;
 
-export const OrangeLink: Story = () => (
-  <Button variant="orangeLink">Orange Link</Button>
-);
+export const OrangeLink: Story = () => <Button variant="orangeLink">Orange Link</Button>;
 
 export const AllVariants: Story = () => (
   <div className="flex flex-wrap gap-4">
@@ -82,11 +78,9 @@ export const DisabledStates: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Button Color Variants
-      </h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Button Color Variants</h2>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default (Neutral)</p>
@@ -128,8 +122,8 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Hover States</h2>
-      <p className="text-neutral-11 text-sm mb-4">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Hover States</h2>
+      <p className="text-neutral-11 mb-4 text-sm">
         Hover over each button to see the hover state colors
       </p>
       <div className="flex flex-wrap gap-4">
@@ -141,16 +135,12 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Neutral Scale Reference
-      </h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Neutral Scale Reference</h2>
       <div className="grid grid-cols-6 gap-2">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((level) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(level => (
           <div key={level} className="text-center">
-            <div
-              className={`h-12 rounded mb-1 bg-neutral-${level} border border-neutral-6`}
-            />
-            <span className="text-xs text-neutral-11">{level}</span>
+            <div className={`mb-1 h-12 rounded-sm bg-neutral-${level} border-neutral-6 border`} />
+            <span className="text-neutral-11 text-xs">{level}</span>
           </div>
         ))}
       </div>

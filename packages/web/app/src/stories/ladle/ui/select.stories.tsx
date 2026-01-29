@@ -1,13 +1,17 @@
-import type { Story } from "@ladle/react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-  SelectGroup,
-  SelectLabel,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Select',
+};
 
 export const Default: Story = () => (
   <Select>
@@ -58,11 +62,9 @@ export const GhostVariant: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-2xl">
+  <div className="bg-neutral-2 max-w-2xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Select Variants
-      </h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Select Variants</h2>
 
       <div className="space-y-4">
         <div className="space-y-2">
@@ -100,12 +102,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Dropdown Colors
-      </h2>
-      <p className="text-neutral-11 text-sm mb-4">
-        Open the select to see dropdown menu colors (bg-neutral-4,
-        border-neutral-5)
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Dropdown Colors</h2>
+      <p className="text-neutral-11 mb-4 text-sm">
+        Open the select to see dropdown menu colors (bg-neutral-4, border-neutral-5)
       </p>
       <Select>
         <SelectTrigger className="w-full">
@@ -114,12 +113,8 @@ export const ColorPaletteShowcase: Story = () => (
         <SelectContent>
           <SelectGroup>
             <SelectLabel>Colors Reference</SelectLabel>
-            <SelectItem value="item1">
-              Regular item (hover:bg-neutral-5)
-            </SelectItem>
-            <SelectItem value="item2">
-              Selected item (bg-accent text-neutral-12)
-            </SelectItem>
+            <SelectItem value="item1">Regular item (hover:bg-neutral-5)</SelectItem>
+            <SelectItem value="item2">Selected item (bg-accent text-neutral-12)</SelectItem>
             <SelectItem value="item3">Another item</SelectItem>
           </SelectGroup>
         </SelectContent>
@@ -127,14 +122,10 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Real-world Example
-      </h2>
-      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Real-world Example</h2>
+      <form className="space-y-4" onSubmit={e => e.preventDefault()}>
         <div className="space-y-2">
-          <label className="text-neutral-12 text-sm font-medium">
-            GraphQL Client
-          </label>
+          <label className="text-neutral-12 text-sm font-medium">GraphQL Client</label>
           <Select>
             <SelectTrigger>
               <SelectValue placeholder="Select GraphQL client" />
@@ -148,9 +139,7 @@ export const ColorPaletteShowcase: Story = () => (
               </SelectGroup>
               <SelectGroup>
                 <SelectLabel>Lightweight</SelectLabel>
-                <SelectItem value="graphql-request">
-                  graphql-request
-                </SelectItem>
+                <SelectItem value="graphql-request">graphql-request</SelectItem>
                 <SelectItem value="fetch">Native Fetch</SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -158,9 +147,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
 
         <div className="space-y-2">
-          <label className="text-neutral-12 text-sm font-medium">
-            Cache Strategy
-          </label>
+          <label className="text-neutral-12 text-sm font-medium">Cache Strategy</label>
           <Select>
             <SelectTrigger>
               <SelectValue placeholder="Select caching strategy" />
@@ -168,9 +155,7 @@ export const ColorPaletteShowcase: Story = () => (
             <SelectContent>
               <SelectItem value="cache-first">Cache First</SelectItem>
               <SelectItem value="network-only">Network Only</SelectItem>
-              <SelectItem value="cache-and-network">
-                Cache and Network
-              </SelectItem>
+              <SelectItem value="cache-and-network">Cache and Network</SelectItem>
               <SelectItem value="no-cache">No Cache</SelectItem>
             </SelectContent>
           </Select>

@@ -1,11 +1,15 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
 import {
-  DateRangePicker,
-  type Preset,
   availablePresets,
+  DateRangePicker,
   presetLast7Days,
+  type Preset,
 } from '@/components/ui/date-range-picker';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Date Range Picker',
+};
 
 export const Default: Story = () => {
   const [selectedRange, setSelectedRange] = useState(presetLast7Days.range);
@@ -16,9 +20,9 @@ export const Default: Story = () => {
         selectedRange={selectedRange}
         onUpdate={({ preset }) => setSelectedRange(preset.range)}
       />
-      <div className="mt-4 p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-1">Selected range:</p>
-        <p className="text-neutral-12 text-sm font-mono">
+      <div className="bg-neutral-1 border-neutral-6 mt-4 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-1 text-sm">Selected range:</p>
+        <p className="text-neutral-12 font-mono text-sm">
           {selectedRange.from} → {selectedRange.to}
         </p>
       </div>
@@ -47,9 +51,9 @@ export const CustomPresets: Story = () => {
         selectedRange={selectedRange}
         onUpdate={({ preset }) => setSelectedRange(preset.range)}
       />
-      <div className="mt-4 p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-2">Custom presets (limited to 4 options)</p>
-        <p className="text-neutral-12 text-sm font-mono">
+      <div className="bg-neutral-1 border-neutral-6 mt-4 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-2 text-sm">Custom presets (limited to 4 options)</p>
+        <p className="text-neutral-12 font-mono text-sm">
           {selectedRange.from} → {selectedRange.to}
         </p>
       </div>
@@ -66,9 +70,9 @@ export const WithStartDate: Story = () => {
   const [selectedRange, setSelectedRange] = useState(presetLast7Days.range);
 
   return (
-    <div className="p-4 max-w-2xl">
-      <div className="mb-4 p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-1">Start date limitation:</p>
+    <div className="max-w-2xl p-4">
+      <div className="bg-neutral-1 border-neutral-6 mb-4 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-1 text-sm">Start date limitation:</p>
         <p className="text-neutral-10 text-xs">
           Cannot select ranges before December 1, 2025. Presets that go before this date are
           disabled.
@@ -94,12 +98,12 @@ export const LimitedUnits: Story = () => {
   });
 
   return (
-    <div className="p-4 max-w-2xl">
-      <div className="mb-4 p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-1">Valid units: hours and days only</p>
+    <div className="max-w-2xl p-4">
+      <div className="bg-neutral-1 border-neutral-6 mb-4 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-1 text-sm">Valid units: hours and days only</p>
         <p className="text-neutral-10 text-xs">
-          Only presets using 'h' (hours) and 'd' (days) are shown. Minutes, weeks, months, and
-          years are filtered out.
+          Only presets using 'h' (hours) and 'd' (days) are shown. Minutes, weeks, months, and years
+          are filtered out.
         </p>
       </div>
       <DateRangePicker
@@ -122,9 +126,9 @@ export const AbsoluteDateRange: Story = () => {
   });
 
   return (
-    <div className="p-4 max-w-2xl">
-      <div className="mb-4 p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-2">Absolute date range example:</p>
+    <div className="max-w-2xl p-4">
+      <div className="bg-neutral-1 border-neutral-6 mb-4 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-2 text-sm">Absolute date range example:</p>
         <p className="text-neutral-10 text-xs">
           When you select an absolute range (not a preset like "Last 7 days"), the button shows the
           formatted date range instead of a preset label.
@@ -134,8 +138,8 @@ export const AbsoluteDateRange: Story = () => {
         selectedRange={selectedRange}
         onUpdate={({ preset }) => setSelectedRange(preset.range)}
       />
-      <div className="mt-4 p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-12 text-sm font-mono">
+      <div className="bg-neutral-1 border-neutral-6 mt-4 rounded-sm border p-4">
+        <p className="text-neutral-12 font-mono text-sm">
           {selectedRange.from} → {selectedRange.to}
         </p>
       </div>
@@ -151,14 +155,12 @@ export const InTracesContext: Story = () => {
   const [selectedRange, setSelectedRange] = useState(presetLast7Days.range);
 
   return (
-    <div className="p-4 max-w-2xl">
+    <div className="max-w-2xl p-4">
       <div className="mb-4">
-        <p className="text-neutral-11 text-sm mb-2">
-          Usage example from Traces filter page:
-        </p>
+        <p className="text-neutral-11 mb-2 text-sm">Usage example from Traces filter page:</p>
         <p className="text-neutral-10 text-xs">
-          The date range picker is used to filter trace data by time period. Click the button to
-          see the popover with presets and absolute date inputs.
+          The date range picker is used to filter trace data by time period. Click the button to see
+          the popover with presets and absolute date inputs.
         </p>
       </div>
       <div className="flex items-center gap-2">
@@ -180,9 +182,9 @@ export const ColorPaletteShowcase: Story = () => {
   const [selectedRange, setSelectedRange] = useState(presetLast7Days.range);
 
   return (
-    <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-6xl">
+    <div className="bg-neutral-2 max-w-6xl space-y-8 rounded-lg p-8">
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">DateRangePicker Component</h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">DateRangePicker Component</h2>
         <p className="text-neutral-11 mb-4">
           Complex date range selection component with preset quick ranges and absolute date input.
           Features dynamic "Last X days/hours/minutes" generation, calendar popup, and date math
@@ -192,27 +194,26 @@ export const ColorPaletteShowcase: Story = () => {
         <div className="space-y-6">
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Trigger Button</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <DateRangePicker
                 selectedRange={selectedRange}
                 onUpdate={({ preset }) => setSelectedRange(preset.range)}
               />
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Button: <code className="text-neutral-12">variant="outline"</code>
               <br />
               Label: Shows preset label or formatted absolute date range
               <br />
-              Chevron: <code className="text-neutral-12">
-                scale-125 pl-1 opacity-60
-              </code> (ChevronUp when open, ChevronDown when closed)
+              Chevron: <code className="text-neutral-12">scale-125 pl-1 opacity-60</code> (ChevronUp
+              when open, ChevronDown when closed)
             </p>
           </div>
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Popover Structure</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-              <ul className="text-xs text-neutral-10 space-y-1">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+              <ul className="text-neutral-10 space-y-1 text-xs">
                 <li>
                   1. <strong className="text-neutral-12">Left side:</strong> Absolute date range
                   inputs (From + To with calendar buttons)
@@ -230,7 +231,7 @@ export const ColorPaletteShowcase: Story = () => {
                   when calendar button clicked
                 </li>
               </ul>
-              <p className="text-xs text-neutral-10 mt-2">
+              <p className="text-neutral-10 mt-2 text-xs">
                 Popover: <code className="text-neutral-12">h-[380px] w-auto p-0</code>
                 <br />
                 Modal: <code className="text-neutral-12">modal</code> prop (blocks background
@@ -241,22 +242,22 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Preset List</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-              <div className="space-y-1 max-w-xs">
-                <div className="border-neutral-6 bg-neutral-1 text-neutral-12 text-sm py-2 px-3 rounded border">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+              <div className="max-w-xs space-y-1">
+                <div className="border-neutral-6 bg-neutral-1 text-neutral-12 rounded-sm border px-3 py-2 text-sm">
                   Last 15 minutes
                 </div>
-                <div className="text-neutral-12 hover:bg-neutral-3 text-sm py-2 px-3 rounded">
+                <div className="text-neutral-12 hover:bg-neutral-3 rounded-sm px-3 py-2 text-sm">
                   Last 30 minutes
                 </div>
-                <div className="text-neutral-12 hover:bg-neutral-3 text-sm py-2 px-3 rounded">
+                <div className="text-neutral-12 hover:bg-neutral-3 rounded-sm px-3 py-2 text-sm">
                   Last 1 hour
                 </div>
-                <div className="text-neutral-10 opacity-50 text-sm py-2 px-3 rounded cursor-not-allowed">
+                <div className="text-neutral-10 cursor-not-allowed rounded-sm px-3 py-2 text-sm opacity-50">
                   Last 6 months (disabled)
                 </div>
               </div>
-              <p className="text-xs text-neutral-10 mt-3">
+              <p className="text-neutral-10 mt-3 text-xs">
                 Buttons:{' '}
                 <code className="text-neutral-12">variant="ghost" w-full justify-start</code>
                 <br />
@@ -270,40 +271,40 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Absolute Date Inputs</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6 space-y-3">
+            <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
               <div>
-                <label className="text-gray-400 text-xs mb-1 block">From</label>
+                <label className="mb-1 block text-xs text-gray-400">From</label>
                 <div className="relative">
                   <input
                     type="text"
                     value="now-7d"
                     readOnly
-                    className="border-neutral-5 bg-transparent text-neutral-12 border rounded-md px-3 py-2 text-sm w-full font-mono"
+                    className="border-neutral-5 text-neutral-12 w-full rounded-md border bg-transparent px-3 py-2 font-mono text-sm"
                   />
-                  <button className="absolute right-2 top-1/2 -translate-y-1/2 size-6 text-neutral-11">
+                  <button className="text-neutral-11 absolute right-2 top-1/2 size-6 -translate-y-1/2">
                     📅
                   </button>
                 </div>
               </div>
               <div>
-                <label className="text-gray-400 text-xs mb-1 block">To</label>
+                <label className="mb-1 block text-xs text-gray-400">To</label>
                 <div className="relative">
                   <input
                     type="text"
                     value="now"
                     readOnly
-                    className="border-neutral-5 bg-transparent text-neutral-12 border rounded-md px-3 py-2 text-sm w-full font-mono"
+                    className="border-neutral-5 text-neutral-12 w-full rounded-md border bg-transparent px-3 py-2 font-mono text-sm"
                   />
-                  <button className="absolute right-2 top-1/2 -translate-y-1/2 size-6 text-neutral-11">
+                  <button className="text-neutral-11 absolute right-2 top-1/2 size-6 -translate-y-1/2">
                     📅
                   </button>
                 </div>
               </div>
-              <button className="bg-neutral-3 text-neutral-12 w-full py-2 rounded-md text-sm hover:bg-neutral-4">
+              <button className="bg-neutral-3 text-neutral-12 hover:bg-neutral-4 w-full rounded-md py-2 text-sm">
                 Apply date range
               </button>
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Labels: <code className="text-neutral-12">text-xs text-gray-400</code>
               <br />
               Inputs: <code className="text-neutral-12">font-mono</code> for date strings
@@ -319,16 +320,16 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Quick Range Filter</p>
-            <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <div className="relative">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2">🔍</span>
                 <input
                   type="text"
                   placeholder="Filter quick ranges"
-                  className="border-neutral-5 bg-transparent text-neutral-12 placeholder:text-neutral-10 border rounded-md pl-7 pr-3 py-2 text-sm w-full"
+                  className="border-neutral-5 text-neutral-12 placeholder:text-neutral-10 w-full rounded-md border bg-transparent py-2 pl-7 pr-3 text-sm"
                 />
               </div>
-              <p className="text-xs text-neutral-10 mt-2">
+              <p className="text-neutral-10 mt-2 text-xs">
                 Icon: <code className="text-neutral-12">MagnifyingGlassIcon absolute left-2</code>
                 <br />
                 Input: <code className="text-neutral-12">pl-7</code> to accommodate icon
@@ -340,13 +341,13 @@ export const ColorPaletteShowcase: Story = () => {
 
           <div className="space-y-2">
             <p className="text-neutral-11 text-sm font-medium">Interactive Example</p>
-            <div className="flex justify-center p-4 bg-neutral-1 rounded border border-neutral-6">
+            <div className="bg-neutral-1 border-neutral-6 flex justify-center rounded-sm border p-4">
               <DateRangePicker
                 selectedRange={selectedRange}
                 onUpdate={({ preset }) => setSelectedRange(preset.range)}
               />
             </div>
-            <p className="text-xs text-neutral-10">
+            <p className="text-neutral-10 text-xs">
               Click to open popover. Try:
               <br />• Selecting a preset from the list
               <br />• Typing a number in the filter (e.g., "5" generates "Last 5 hours", "Last 5
@@ -359,9 +360,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
               <code className="text-neutral-12">presets</code>: Preset[] (optional) - Array of quick
               range presets (defaults to availablePresets)
@@ -371,12 +372,12 @@ export const ColorPaletteShowcase: Story = () => {
               {`{ from: string; to: string }`} | null (optional) - Active selected range
             </li>
             <li>
-              <code className="text-neutral-12">onUpdate</code>: (values:{' '}
-              {`{ preset: Preset }`}) =&gt; void (optional) - Callback when range is applied
+              <code className="text-neutral-12">onUpdate</code>: (values: {`{ preset: Preset }`})
+              =&gt; void (optional) - Callback when range is applied
             </li>
             <li>
-              <code className="text-neutral-12">align</code>: "start" | "center" | "end"
-              (optional) - Popover alignment
+              <code className="text-neutral-12">align</code>: "start" | "center" | "end" (optional)
+              - Popover alignment
             </li>
             <li>
               <code className="text-neutral-12">locale</code>: string (optional) - Locale for date
@@ -395,9 +396,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Preset Type</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <pre className="text-xs text-neutral-12 bg-neutral-3 p-3 rounded overflow-x-auto">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Preset Type</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <pre className="text-neutral-12 bg-neutral-3 overflow-x-auto rounded-sm p-3 text-xs">
             {`type Preset = {
   name: string;        // Unique identifier (e.g., "last7d")
   label: string;       // Display label (e.g., "Last 7 days")
@@ -411,9 +412,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Date Math Syntax</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-1 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Date Math Syntax</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               <code className="text-neutral-12">now</code> - Current date/time
             </li>
@@ -431,17 +432,19 @@ export const ColorPaletteShowcase: Story = () => {
               8601)
             </li>
           </ul>
-          <p className="text-xs text-neutral-10 mt-2">
-            Valid units: <code className="text-neutral-12">m (minutes), h (hours), d (days), w
-              (weeks), M (months), y (years)</code>
+          <p className="text-neutral-10 mt-2 text-xs">
+            Valid units:{' '}
+            <code className="text-neutral-12">
+              m (minutes), h (hours), d (days), w (weeks), M (months), y (years)
+            </code>
           </p>
         </div>
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Available Presets</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs text-neutral-10 grid grid-cols-3 gap-2">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Available Presets</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 grid grid-cols-3 gap-2 text-xs">
             {availablePresets.map(preset => (
               <li key={preset.name}>
                 <code className="text-neutral-12">{preset.label}</code>
@@ -452,12 +455,12 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Dynamic Preset Generation</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-xs text-neutral-10 mb-2">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Dynamic Preset Generation</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-10 mb-2 text-xs">
             When typing a number in the filter input, the component dynamically generates presets:
           </p>
-          <ul className="text-xs space-y-1 text-neutral-10">
+          <ul className="text-neutral-10 space-y-1 text-xs">
             <li>
               Input: <code className="text-neutral-12">5</code> → Generates: Last 5 minutes, Last 5
               hours, Last 5 days, etc.
@@ -473,39 +476,32 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Calendar Overlay</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Calendar Overlay</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
-              Positioned:{' '}
-              <code className="text-neutral-12">absolute left-0 -translate-x-full</code> (appears to
-              left of popover)
+              Positioned: <code className="text-neutral-12">absolute left-0 -translate-x-full</code>{' '}
+              (appears to left of popover)
             </li>
             <li>
-              Background: <code className="text-neutral-12">bg-neutral-4 rounded-md border p-4</code>
+              Background:{' '}
+              <code className="text-neutral-12">bg-neutral-4 rounded-md border p-4</code>
             </li>
+            <li>Shows 2 months by default, starts 1 month ago</li>
+            <li>Disables future dates and dates before startDate prop</li>
+            <li>Selecting a range auto-fills From/To inputs with formatted dates</li>
             <li>
-              Shows 2 months by default, starts 1 month ago
-            </li>
-            <li>
-              Disables future dates and dates before startDate prop
-            </li>
-            <li>
-              Selecting a range auto-fills From/To inputs with formatted dates
-            </li>
-            <li>
-              Close button: <code className="text-neutral-12">
-                absolute right-2 top-1 size-icon-sm
-              </code>
+              Close button:{' '}
+              <code className="text-neutral-12">absolute right-2 top-1 size-icon-sm</code>
             </li>
           </ul>
         </div>
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Validation & Errors</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Validation & Errors</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
               <strong className="text-neutral-12">Invalid date string:</strong>{' '}
               <span className="text-red-500">Shows error below input</span>
@@ -529,9 +525,9 @@ export const ColorPaletteShowcase: Story = () => {
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">Implementation Details</h2>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <ul className="text-xs space-y-2 text-neutral-10">
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Implementation Details</h2>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <ul className="text-neutral-10 space-y-2 text-xs">
             <li>
               Uses <code className="text-neutral-12">@/lib/date-math</code> for parsing date strings
             </li>
@@ -542,18 +538,10 @@ export const ColorPaletteShowcase: Story = () => {
             <li>
               Complex state management with multiple useState hooks for inputs, range, filter, etc.
             </li>
-            <li>
-              Modal popover blocks background interaction when open
-            </li>
-            <li>
-              Resets to initial state when popover is closed without applying
-            </li>
-            <li>
-              Finds matching preset or creates custom preset for absolute ranges
-            </li>
-            <li>
-              PresetButton memoized for performance with large preset lists
-            </li>
+            <li>Modal popover blocks background interaction when open</li>
+            <li>Resets to initial state when popover is closed without applying</li>
+            <li>Finds matching preset or creates custom preset for absolute ranges</li>
+            <li>PresetButton memoized for performance with large preset lists</li>
           </ul>
         </div>
       </div>

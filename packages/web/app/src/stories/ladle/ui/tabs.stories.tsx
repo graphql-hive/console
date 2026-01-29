@@ -1,5 +1,9 @@
-import type { Story } from "@ladle/react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Tabs',
+};
 
 export const Default: Story = () => (
   <Tabs defaultValue="tab1" className="w-[400px]">
@@ -31,16 +35,16 @@ export const MenuVariant: Story = () => (
       </TabsTrigger>
     </TabsList>
     <TabsContent variant="menu" value="overview">
-      <div className="p-4 text-neutral-11">Overview content</div>
+      <div className="text-neutral-11 p-4">Overview content</div>
     </TabsContent>
     <TabsContent variant="menu" value="schema">
-      <div className="p-4 text-neutral-11">Schema content</div>
+      <div className="text-neutral-11 p-4">Schema content</div>
     </TabsContent>
     <TabsContent variant="menu" value="operations">
-      <div className="p-4 text-neutral-11">Operations content</div>
+      <div className="text-neutral-11 p-4">Operations content</div>
     </TabsContent>
     <TabsContent variant="menu" value="settings">
-      <div className="p-4 text-neutral-11">Settings content</div>
+      <div className="text-neutral-11 p-4">Settings content</div>
     </TabsContent>
   </Tabs>
 );
@@ -59,33 +63,27 @@ export const ContentVariant: Story = () => (
       </TabsTrigger>
     </TabsList>
     <TabsContent variant="content" value="code">
-      <div className="p-4 bg-neutral-2 rounded text-neutral-11">
+      <div className="bg-neutral-2 text-neutral-11 rounded-sm p-4">
         Code editor content goes here
       </div>
     </TabsContent>
     <TabsContent variant="content" value="preview">
-      <div className="p-4 bg-neutral-2 rounded text-neutral-11">
-        Preview content goes here
-      </div>
+      <div className="bg-neutral-2 text-neutral-11 rounded-sm p-4">Preview content goes here</div>
     </TabsContent>
     <TabsContent variant="content" value="docs">
-      <div className="p-4 bg-neutral-2 rounded text-neutral-11">
-        Documentation goes here
-      </div>
+      <div className="bg-neutral-2 text-neutral-11 rounded-sm p-4">Documentation goes here</div>
     </TabsContent>
   </Tabs>
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-1 max-w-4xl">
+  <div className="bg-neutral-1 max-w-4xl space-y-8 p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Tab Variants
-      </h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Tab Variants</h2>
 
       <div className="space-y-8">
         <div>
-          <p className="text-neutral-11 text-sm font-medium mb-3">
+          <p className="text-neutral-11 mb-3 text-sm font-medium">
             Default (bg-muted with neutral colors)
           </p>
           <Tabs defaultValue="tab1" className="w-[400px]">
@@ -95,7 +93,7 @@ export const ColorPaletteShowcase: Story = () => (
               <TabsTrigger value="tab3">Another Tab</TabsTrigger>
             </TabsList>
             <TabsContent value="tab1">
-              <div className="p-4 bg-neutral-2 rounded text-neutral-11">
+              <div className="bg-neutral-2 text-neutral-11 rounded-sm p-4">
                 Active tab content (data-[state=active]:bg-neutral-3)
               </div>
             </TabsContent>
@@ -105,7 +103,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
 
         <div>
-          <p className="text-neutral-11 text-sm font-medium mb-3">
+          <p className="text-neutral-11 mb-3 text-sm font-medium">
             Menu variant (border-b-accent when active)
           </p>
           <Tabs defaultValue="active" className="w-full">
@@ -121,7 +119,7 @@ export const ColorPaletteShowcase: Story = () => (
               </TabsTrigger>
             </TabsList>
             <TabsContent variant="menu" value="active">
-              <div className="p-4 text-neutral-11">
+              <div className="text-neutral-11 p-4">
                 Menu tabs use border-b-accent for active state
               </div>
             </TabsContent>
@@ -135,7 +133,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
 
         <div>
-          <p className="text-neutral-11 text-sm font-medium mb-3">
+          <p className="text-neutral-11 mb-3 text-sm font-medium">
             Content variant (data-[state=active]:text-accent)
           </p>
           <Tabs defaultValue="code" className="w-full">
@@ -151,7 +149,7 @@ export const ColorPaletteShowcase: Story = () => (
               </TabsTrigger>
             </TabsList>
             <TabsContent variant="content" value="code">
-              <div className="p-4 bg-neutral-2 rounded text-neutral-11">
+              <div className="bg-neutral-2 text-neutral-11 rounded-sm p-4">
                 Active tab text uses accent color
               </div>
             </TabsContent>
@@ -167,9 +165,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">
-        Interactive Example
-      </h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Interactive Example</h2>
       <Tabs defaultValue="profile" className="w-full">
         <TabsList variant="menu">
           <TabsTrigger variant="menu" value="profile">
@@ -186,40 +182,32 @@ export const ColorPaletteShowcase: Story = () => (
           </TabsTrigger>
         </TabsList>
         <TabsContent variant="menu" value="profile">
-          <div className="p-6 bg-neutral-2 rounded">
-            <h3 className="text-neutral-12 font-semibold mb-2">
-              Profile Settings
-            </h3>
+          <div className="bg-neutral-2 rounded-sm p-6">
+            <h3 className="text-neutral-12 mb-2 font-semibold">Profile Settings</h3>
             <p className="text-neutral-11 text-sm">
               Manage your profile information and preferences.
             </p>
           </div>
         </TabsContent>
         <TabsContent variant="menu" value="security">
-          <div className="p-6 bg-neutral-2 rounded">
-            <h3 className="text-neutral-12 font-semibold mb-2">
-              Security Settings
-            </h3>
+          <div className="bg-neutral-2 rounded-sm p-6">
+            <h3 className="text-neutral-12 mb-2 font-semibold">Security Settings</h3>
             <p className="text-neutral-11 text-sm">
               Configure password, 2FA, and other security options.
             </p>
           </div>
         </TabsContent>
         <TabsContent variant="menu" value="billing">
-          <div className="p-6 bg-neutral-2 rounded">
-            <h3 className="text-neutral-12 font-semibold mb-2">
-              Billing Settings
-            </h3>
+          <div className="bg-neutral-2 rounded-sm p-6">
+            <h3 className="text-neutral-12 mb-2 font-semibold">Billing Settings</h3>
             <p className="text-neutral-11 text-sm">
               View your subscription and payment information.
             </p>
           </div>
         </TabsContent>
         <TabsContent variant="menu" value="notifications">
-          <div className="p-6 bg-neutral-2 rounded">
-            <h3 className="text-neutral-12 font-semibold mb-2">
-              Notification Settings
-            </h3>
+          <div className="bg-neutral-2 rounded-sm p-6">
+            <h3 className="text-neutral-12 mb-2 font-semibold">Notification Settings</h3>
             <p className="text-neutral-11 text-sm">
               Control email and push notification preferences.
             </p>

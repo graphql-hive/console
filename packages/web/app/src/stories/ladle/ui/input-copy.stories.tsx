@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { InputCopy } from '@/components/ui/input-copy';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Input Copy',
+};
 
 export const APIKey: Story = () => (
   <div className="p-4">
@@ -32,10 +36,7 @@ export const CDNUrl: Story = () => (
   <div className="p-4">
     <div className="space-y-2">
       <label className="text-neutral-12 text-sm font-medium">CDN Supergraph URL</label>
-      <InputCopy
-        multiline
-        value="https://cdn.graphql-hive.com/artifacts/v1/abc123/supergraph"
-      />
+      <InputCopy multiline value="https://cdn.graphql-hive.com/artifacts/v1/abc123/supergraph" />
     </div>
   </div>
 );
@@ -88,15 +89,15 @@ LongValue.meta = {
 };
 
 export const CopyButtonStates: Story = () => (
-  <div className="p-4 space-y-6">
+  <div className="space-y-6 p-4">
     <div className="space-y-2">
       <p className="text-neutral-12 text-sm font-medium">Default State</p>
-      <p className="text-neutral-10 text-xs mb-2">Shows copy icon</p>
+      <p className="text-neutral-10 mb-2 text-xs">Shows copy icon</p>
       <InputCopy value="Click the copy button to see the state change" />
     </div>
     <div className="space-y-2">
       <p className="text-neutral-12 text-sm font-medium">After Clicking</p>
-      <p className="text-neutral-10 text-xs mb-2">
+      <p className="text-neutral-10 mb-2 text-xs">
         Shows checkmark in emerald-500 for 2 seconds after copying
       </p>
     </div>
@@ -108,8 +109,8 @@ CopyButtonStates.meta = {
 };
 
 export const InForm: Story = () => (
-  <div className="p-4 max-w-2xl">
-    <div className="bg-neutral-1 border border-neutral-6 rounded-lg p-6 space-y-4">
+  <div className="max-w-2xl p-4">
+    <div className="bg-neutral-1 border-neutral-6 space-y-4 rounded-lg border p-6">
       <h3 className="text-neutral-12 text-lg font-semibold">Access Token Created</h3>
       <p className="text-neutral-11 text-sm">
         Your access token has been created. Copy it now as you won't be able to see it again.
@@ -130,24 +131,22 @@ InForm.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">InputCopy Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">InputCopy Component</h2>
       <p className="text-neutral-11 mb-4">
-        Read-only input or textarea with a copy button. Displays text that users need to copy
-        for use elsewhere, commonly for API keys, tokens, URLs, and CLI commands.
+        Read-only input or textarea with a copy button. Displays text that users need to copy for
+        use elsewhere, commonly for API keys, tokens, URLs, and CLI commands.
       </p>
 
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Single-line Input</p>
           <InputCopy value="https://app.graphql-hive.com/graphql" />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Element: <code className="text-neutral-12">Input</code> component
             <br />
-            Styling: <code className="text-neutral-12">
-              bg-secondary text-neutral-12 truncate
-            </code>
+            Styling: <code className="text-neutral-12">bg-secondary text-neutral-12 truncate</code>
             <br />
             Behavior: <code className="text-neutral-12">readOnly, onFocus selects all text</code>
             <br />
@@ -162,7 +161,7 @@ export const ColorPaletteShowcase: Story = () => (
             value={`curl -H 'X-Hive-CDN-Key: <key>' \\
   https://cdn.graphql-hive.com/supergraph`}
           />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Element: <code className="text-neutral-12">Textarea</code> component
             <br />
             Styling:{' '}
@@ -171,16 +170,14 @@ export const ColorPaletteShowcase: Story = () => (
             </code>
             <br />
             Behavior:{' '}
-            <code className="text-neutral-12">
-              readOnly, autoSize, onFocus selects all text
-            </code>
+            <code className="text-neutral-12">readOnly, autoSize, onFocus selects all text</code>
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Copy Button</p>
           <InputCopy value="Click the copy button to see it change" />
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Variant: <code className="text-neutral-12">outline</code>
             <br />
             Size: <code className="text-neutral-12">icon (size-10 shrink-0)</code>
@@ -199,16 +196,16 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
-            <code className="text-neutral-12">value</code>: string (required) - Text to display
-            and copy
+            <code className="text-neutral-12">value</code>: string (required) - Text to display and
+            copy
           </li>
           <li>
-            <code className="text-neutral-12">className</code>: string (optional) - Additional
-            CSS classes for input/textarea
+            <code className="text-neutral-12">className</code>: string (optional) - Additional CSS
+            classes for input/textarea
           </li>
           <li>
             <code className="text-neutral-12">multiline</code>: boolean (optional) - Use Textarea
@@ -219,9 +216,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Behavior</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Behavior</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             Input/textarea is <code className="text-neutral-12">readOnly</code>
           </li>
@@ -237,15 +234,12 @@ export const ColorPaletteShowcase: Story = () => (
             emerald-500
           </li>
           <li>
-            Check icon reverts to copy icon after{' '}
-            <code className="text-neutral-12">2 seconds</code>
+            Check icon reverts to copy icon after <code className="text-neutral-12">2 seconds</code>
           </li>
           <li>
             Multiline textarea has <code className="text-neutral-12">autoSize</code> prop
           </li>
-          <li>
-            Single-line input truncates long text with ellipsis
-          </li>
+          <li>Single-line input truncates long text with ellipsis</li>
           <li>
             Layout: <code className="text-neutral-12">flex items-center space-x-2</code>
           </li>
@@ -254,36 +248,36 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Access Tokens & API Keys</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Access Tokens & API Keys</p>
           <p className="text-neutral-10 text-xs">
-            Display newly created access tokens for users to copy (create-access-token-sheet-content.tsx,
-            create-project-access-token-sheet-content.tsx).
+            Display newly created access tokens for users to copy
+            (create-access-token-sheet-content.tsx, create-project-access-token-sheet-content.tsx).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">GraphQL Endpoints</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">GraphQL Endpoints</p>
           <p className="text-neutral-10 text-xs">
             Show GraphQL endpoint URLs that users can copy for their clients
             (connect-lab-modal.tsx).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">CDN URLs</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">CDN URLs</p>
           <p className="text-neutral-10 text-xs">
             Display CDN URLs for schema access, often in multiline mode (target.tsx layout).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">CLI Commands</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">CLI Commands</p>
           <p className="text-neutral-10 text-xs">
             Show cURL commands and other CLI snippets with multiline support (target.tsx layout).
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Registry Tokens</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Registry Tokens</p>
           <p className="text-neutral-10 text-xs">
             Display registry access tokens in target settings
             (target/settings/registry-access-token.tsx).
@@ -293,22 +287,22 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Visual Feedback</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Visual Feedback</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Copy Icon (Default)</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Copy Icon (Default)</p>
           <p className="text-neutral-10 text-xs">
             Lucide CopyIcon in default color, size-4. Indicates the content can be copied.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Check Icon (Copied)</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Check Icon (Copied)</p>
           <p className="text-neutral-10 text-xs">
             Lucide CheckIcon in emerald-500, size-4. Confirms successful copy for 2 seconds.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Text Selection</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Text Selection</p>
           <p className="text-neutral-10 text-xs">
             Clicking/focusing the input automatically selects all text for easy manual copying.
           </p>
@@ -317,21 +311,19 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Implementation Details</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Implementation Details</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
-            Container: <code className="text-neutral-12">
-              flex w-full max-w-2xl items-center space-x-2
-            </code>
+            Container:{' '}
+            <code className="text-neutral-12">flex w-full max-w-2xl items-center space-x-2</code>
           </li>
           <li>
             Input container: <code className="text-neutral-12">relative grow</code>
           </li>
           <li>
-            Button alignment:{' '}
-            <code className="text-neutral-12">self-baseline</code> (aligns with first line of
-            textarea)
+            Button alignment: <code className="text-neutral-12">self-baseline</code> (aligns with
+            first line of textarea)
           </li>
           <li>
             Uses <code className="text-neutral-12">useState</code> for isCopied state
@@ -340,8 +332,7 @@ export const ColorPaletteShowcase: Story = () => (
             Uses <code className="text-neutral-12">useEffect</code> to reset copied state after 2s
           </li>
           <li>
-            Uses <code className="text-neutral-12">useCallback</code> for handleClick
-            optimization
+            Uses <code className="text-neutral-12">useCallback</code> for handleClick optimization
           </li>
           <li>Screen reader text: "Copy" / "Copied" via sr-only span</li>
         </ul>

@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { Heading } from '@/components/ui/heading';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Heading',
+};
 
 export const AllSizes: Story = () => (
   <div className="space-y-4">
@@ -22,9 +26,9 @@ export const WithCustomClass: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Heading Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Heading Component</h2>
       <p className="text-neutral-11 mb-4">
         Semantic heading component with predefined sizes. Renders h1 or h3 based on size.
       </p>
@@ -32,10 +36,10 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Size: 2xl (h1)</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Heading size="2xl">Extra Large Heading</Heading>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Element: <code className="text-neutral-12">h1</code>
             <br />
             Font size: <code className="text-neutral-12">text-[28px]</code>
@@ -48,10 +52,10 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Size: xl (h3)</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Heading size="xl">Large Heading</Heading>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Element: <code className="text-neutral-12">h3</code>
             <br />
             Font size: <code className="text-neutral-12">text-xl</code>
@@ -62,10 +66,10 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Size: lg (h3)</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Heading size="lg">Medium Heading</Heading>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Element: <code className="text-neutral-12">h3</code>
             <br />
             Font size: <code className="text-neutral-12">text-lg</code>
@@ -76,12 +80,12 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Custom Styling</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <Heading size="xl" className="text-accent">
               Custom Color
             </Heading>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Use <code className="text-neutral-12">className</code> prop to override styles
           </p>
         </div>
@@ -89,9 +93,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">size</code>: "lg" | "xl" | "2xl" (default: "xl")
           </li>
@@ -106,9 +110,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Semantic HTML</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Semantic HTML</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             size="2xl" renders <code className="text-neutral-12">&lt;h1&gt;</code>
           </li>
@@ -119,40 +123,36 @@ export const ColorPaletteShowcase: Story = () => (
             size="lg" renders <code className="text-neutral-12">&lt;h3&gt;</code>
           </li>
         </ul>
-        <p className="text-neutral-10 text-xs mt-2">
+        <p className="text-neutral-10 mt-2 text-xs">
           Note: Only 2xl uses h1 for top-level page headings
         </p>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Patterns</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Patterns</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Page Titles</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Page Titles</p>
           <p className="text-neutral-10 text-xs">
             Use size="2xl" for main page titles (Dashboard, Schema Explorer, etc.)
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Section Headers</p>
-          <p className="text-neutral-10 text-xs">
-            Use size="xl" for major sections within a page
-          </p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Section Headers</p>
+          <p className="text-neutral-10 text-xs">Use size="xl" for major sections within a page</p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Sub-sections</p>
-          <p className="text-neutral-10 text-xs">
-            Use size="lg" for smaller subsection headings
-          </p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Sub-sections</p>
+          <p className="text-neutral-10 text-xs">Use size="lg" for smaller subsection headings</p>
         </div>
       </div>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Default Styles</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Default Styles</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             Color: <code className="text-neutral-12">text-neutral-12</code> (always)
           </li>

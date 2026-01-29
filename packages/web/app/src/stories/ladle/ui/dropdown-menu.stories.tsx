@@ -1,5 +1,4 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
 import {
   AlertTriangleIcon,
   CalendarIcon,
@@ -32,6 +31,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Dropdown Menu',
+};
 
 export const Default: Story = () => (
   <DropdownMenu>
@@ -204,16 +208,15 @@ export const ThemeSwitcher: Story = () => {
         <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            {theme === 'dark' ? (
-              <Moon className="mr-2 size-4" />
-            ) : (
-              <Sun className="mr-2 size-4" />
-            )}
+            {theme === 'dark' ? <Moon className="mr-2 size-4" /> : <Sun className="mr-2 size-4" />}
             Theme
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
             <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup value={theme} onValueChange={v => setTheme(v as typeof theme)}>
+              <DropdownMenuRadioGroup
+                value={theme}
+                onValueChange={v => setTheme(v as typeof theme)}
+              >
                 {themes.map(({ value, label, icon: Icon }) => (
                   <DropdownMenuRadioItem key={value} value={value}>
                     <Icon className="mr-2 size-4" />
@@ -343,9 +346,9 @@ export const WithSubMenu: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Dropdown Menu Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Dropdown Menu Component</h2>
       <p className="text-neutral-11 mb-4">
         Context menu built with Radix UI. Displays a list of actions when triggered.
       </p>
@@ -353,7 +356,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Basic Menu</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">Open</Button>
@@ -366,7 +369,7 @@ export const ColorPaletteShowcase: Story = () => (
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Content background: <code className="text-neutral-12">bg-neutral-4</code>
             <br />
             Content text: <code className="text-neutral-12">text-neutral-11</code>
@@ -377,7 +380,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Item States</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">Hover Items</Button>
@@ -389,7 +392,7 @@ export const ColorPaletteShowcase: Story = () => (
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Focus/hover: <code className="text-neutral-12">focus:bg-neutral-5</code>
             <br />
             Focus text: <code className="text-neutral-12">focus:text-neutral-12</code>
@@ -400,7 +403,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Checkbox Items</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">Select Options</Button>
@@ -412,14 +415,14 @@ export const ColorPaletteShowcase: Story = () => (
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Checkbox uses <code className="text-neutral-12">Check</code> icon when checked
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Radio Group</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">Select One</Button>
@@ -433,7 +436,7 @@ export const ColorPaletteShowcase: Story = () => (
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Radio uses filled <code className="text-neutral-12">Circle</code> icon when selected
           </p>
         </div>
@@ -441,9 +444,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">DropdownMenu</code>: Root container
           </li>
@@ -481,9 +484,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Animation</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Animation</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 text-xs">
           Slide-in animation: <code className="text-neutral-12">animate-in</code>
           <br />
           Direction-based:{' '}

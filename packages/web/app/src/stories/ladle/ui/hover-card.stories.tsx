@@ -1,8 +1,12 @@
-import type { Story } from '@ladle/react';
 import { CalendarIcon, User } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Hover Card',
+};
 
 export const Default: Story = () => (
   <HoverCard>
@@ -34,7 +38,7 @@ export const UserProfile: Story = () => (
           <Avatar className="size-12">
             <User className="size-6" />
           </Avatar>
-          <div className="space-y-1 flex-1">
+          <div className="flex-1 space-y-1">
             <h4 className="text-neutral-12 text-sm font-semibold">Alice Johnson</h4>
             <p className="text-neutral-11 text-sm">Full-stack developer</p>
             <div className="flex items-center pt-2">
@@ -53,7 +57,7 @@ export const OperationInfo: Story = () => (
     <p className="text-neutral-11 text-sm">
       Hover over the{' '}
       <HoverCard>
-        <HoverCardTrigger className="text-accent hover:underline cursor-pointer">
+        <HoverCardTrigger className="text-accent cursor-pointer hover:underline">
           GetUser operation
         </HoverCardTrigger>
         <HoverCardContent side="top">
@@ -80,7 +84,7 @@ export const OperationInfo: Story = () => (
 
 export const SchemaTypeInfo: Story = () => (
   <div className="space-y-4">
-    <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+    <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
       <code className="text-sm">
         type{' '}
         <HoverCard>
@@ -158,9 +162,9 @@ export const Positioning: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Hover Card Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Hover Card Component</h2>
       <p className="text-neutral-11 mb-4">
         Floating card that appears when hovering over a trigger element. Built with Radix UI Hover
         Card.
@@ -173,7 +177,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Basic Hover Card</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <HoverCard>
               <HoverCardTrigger asChild>
                 <Button variant="link">Hover over me</Button>
@@ -181,12 +185,14 @@ export const ColorPaletteShowcase: Story = () => (
               <HoverCardContent>
                 <div className="space-y-1">
                   <h4 className="text-neutral-12 text-sm font-semibold">Card Title</h4>
-                  <p className="text-neutral-11 text-sm">Additional information appears on hover.</p>
+                  <p className="text-neutral-11 text-sm">
+                    Additional information appears on hover.
+                  </p>
                 </div>
               </HoverCardContent>
             </HoverCard>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-neutral-4</code>
             <br />
             Text: <code className="text-neutral-12">text-neutral-11</code>
@@ -199,7 +205,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">User Profile Card</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <HoverCard>
               <HoverCardTrigger asChild>
                 <Button variant="link">@username</Button>
@@ -221,7 +227,7 @@ export const ColorPaletteShowcase: Story = () => (
               </HoverCardContent>
             </HoverCard>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Custom width: <code className="text-neutral-12">w-80</code>
             <br />
             Useful for showing user profiles, contributor info
@@ -231,12 +237,11 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
-            <code className="text-neutral-12">HoverCard</code>: Root container (manages hover
-            state)
+            <code className="text-neutral-12">HoverCard</code>: Root container (manages hover state)
           </li>
           <li>
             <code className="text-neutral-12">HoverCardTrigger</code>: Element that triggers hover
@@ -251,9 +256,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Hover vs Click</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <div className="space-y-2 text-sm text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Hover vs Click</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <div className="text-neutral-11 space-y-2 text-sm">
           <p>
             <span className="text-neutral-12 font-medium">HoverCard:</span> Opens on hover, useful
             for quick previews and contextual information
@@ -271,9 +276,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Animation</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Animation</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 text-xs">
           Open animation: <code className="text-neutral-12">fade-in-0 zoom-in-95</code>
           <br />
           Close animation: <code className="text-neutral-12">fade-out-0 zoom-out-95</code>
@@ -284,24 +289,24 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Potential Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Potential Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">User Mentions</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">User Mentions</p>
           <p className="text-neutral-10 text-xs">
-            Show user profile cards when hovering over @mentions in comments, changelog, or
-            activity feeds.
+            Show user profile cards when hovering over @mentions in comments, changelog, or activity
+            feeds.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Operation Details</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Operation Details</p>
           <p className="text-neutral-10 text-xs">
             Display operation metadata (hash, request count, last seen) when hovering over operation
             names in insights or history.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Schema Type Info</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Schema Type Info</p>
           <p className="text-neutral-10 text-xs">
             Show type information (kind, fields, description) when hovering over type names in
             schema explorer.

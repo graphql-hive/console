@@ -1,5 +1,9 @@
-import type { Story } from '@ladle/react';
 import { Changelog, type Changelog as ChangelogType } from '@/components/ui/changelog/changelog';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Changelog',
+};
 
 const mockChanges: ChangelogType[] = [
   {
@@ -19,7 +23,8 @@ const mockChanges: ChangelogType[] = [
     date: '2025-12-11',
     href: 'https://the-guild.dev/graphql/hive/product-updates/2025-12-09-versioned-cdn',
     title: 'Versioned CDN Artifacts',
-    description: 'Retrieve CDN artifacts for specific schema versions using new versioned endpoints.',
+    description:
+      'Retrieve CDN artifacts for specific schema versions using new versioned endpoints.',
   },
   {
     date: '2025-11-28',
@@ -31,7 +36,7 @@ const mockChanges: ChangelogType[] = [
 ];
 
 export const Default: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <Changelog changes={mockChanges} />
   </div>
 );
@@ -41,7 +46,7 @@ Default.meta = {
 };
 
 export const SingleChange: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <Changelog
       changes={[
         {
@@ -60,9 +65,9 @@ SingleChange.meta = {
 };
 
 export const NoChanges: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <Changelog changes={[]} />
-    <p className="text-neutral-11 text-sm ml-4">(Button not shown when no changes)</p>
+    <p className="text-neutral-11 ml-4 text-sm">(Button not shown when no changes)</p>
   </div>
 );
 
@@ -71,7 +76,7 @@ NoChanges.meta = {
 };
 
 export const LongDescriptions: Story = () => (
-  <div className="p-4 flex justify-end">
+  <div className="flex justify-end p-4">
     <Changelog
       changes={[
         {
@@ -98,14 +103,14 @@ LongDescriptions.meta = {
 };
 
 export const InHeader: Story = () => (
-  <div className="border-b border-neutral-6 bg-neutral-1 p-4">
+  <div className="border-neutral-6 bg-neutral-1 border-b p-4">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
         <span className="text-neutral-12 font-semibold">GraphQL Hive</span>
       </div>
       <div className="flex items-center gap-4">
         <Changelog changes={mockChanges} />
-        <div className="size-8 rounded-full bg-neutral-6" />
+        <div className="bg-neutral-6 size-8 rounded-full" />
       </div>
     </div>
   </div>
@@ -116,9 +121,9 @@ InHeader.meta = {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Changelog Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Changelog Component</h2>
       <p className="text-neutral-11 mb-4">
         Popover button that displays recent product updates and changes. Uses local storage to track
         which changes have been read and shows a pulsing dot indicator for new changes. Rendered
@@ -128,10 +133,10 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Changelog Button</p>
-          <div className="flex justify-end p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 flex justify-end rounded-sm border p-4">
             <Changelog changes={mockChanges} />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Button: <code className="text-neutral-12">variant="outline" text-sm</code>
             <br />
             Label: "Latest changes"
@@ -145,8 +150,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Popover Structure</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <ul className="text-xs text-neutral-10 space-y-1">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <ul className="text-neutral-10 space-y-1 text-xs">
               <li>
                 1. <strong className="text-neutral-12">Header:</strong> Title + description in{' '}
                 <code className="text-neutral-12">p-4</code>
@@ -163,7 +168,7 @@ export const ColorPaletteShowcase: Story = () => (
                 4. <strong className="text-neutral-12">Footer:</strong> "View all updates" link
               </li>
             </ul>
-            <p className="text-xs text-neutral-10 mt-2">
+            <p className="text-neutral-10 mt-2 text-xs">
               Popover width: <code className="text-neutral-12">w-[550px]</code>
               <br />
               Collision padding: <code className="text-neutral-12">20</code> (stays on screen)
@@ -173,7 +178,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">List Item Colors</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 space-y-3">
+          <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
             <div>
               <time className="text-neutral-10 text-xs font-normal">20th January 2026</time>
               <h3 className="text-neutral-12 text-base font-medium hover:underline">
@@ -185,15 +190,14 @@ export const ColorPaletteShowcase: Story = () => (
                 This is a description of the update with some details about what changed.
               </div>
             </div>
-            <p className="text-xs text-neutral-10 pt-2 border-t border-neutral-6">
+            <p className="text-neutral-10 border-neutral-6 border-t pt-2 text-xs">
               Date: <code className="text-neutral-12">text-neutral-10 text-xs</code>
               <br />
               Title: <code className="text-neutral-12">text-neutral-12 text-base font-medium</code>
               <br />
               Description: <code className="text-neutral-12">text-neutral-11 text-sm</code>
               <br />
-              Unread indicator:{' '}
-              <code className="text-neutral-12">border-l-2 border-accent_80</code>
+              Unread indicator: <code className="text-neutral-12">border-l-2 border-accent_80</code>
               <br />
               Read items: <code className="text-neutral-12">border-transparent</code>
             </p>
@@ -202,9 +206,9 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">New Changes Indicator</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex justify-center">
+          <div className="bg-neutral-1 border-neutral-6 flex justify-center rounded-sm border p-4">
             <div className="relative inline-flex">
-              <button className="border-neutral-6 text-neutral-12 border px-3 py-2 rounded text-sm">
+              <button className="border-neutral-6 text-neutral-12 rounded-sm border px-3 py-2 text-sm">
                 Latest changes
                 <div className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
                   <div className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
@@ -212,11 +216,11 @@ export const ColorPaletteShowcase: Story = () => (
               </button>
             </div>
           </div>
-          <p className="text-xs text-neutral-10">
-            Dot: <code className="text-neutral-12">size-2 bg-accent animate-pulse rounded-full</code>
+          <p className="text-neutral-10 text-xs">
+            Dot:{' '}
+            <code className="text-neutral-12">size-2 bg-accent animate-pulse rounded-full</code>
             <br />
-            Position:{' '}
-            <code className="text-neutral-12">absolute right-0 top-0 -mr-1 -mt-1</code>
+            Position: <code className="text-neutral-12">absolute right-0 top-0 -mr-1 -mt-1</code>
             <br />
             Shown when: Local storage indicates unread changes
             <br />
@@ -226,10 +230,10 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Interactive Example</p>
-          <div className="flex justify-center p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 flex justify-center rounded-sm border p-4">
             <Changelog changes={mockChanges} />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Click to open popover, then click a change title to mark it as read. The accent border
             disappears when marked read.
           </p>
@@ -238,15 +242,15 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Props</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Props</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">changes</code>: Changelog[] - Array of change objects
           </li>
         </ul>
-        <p className="text-xs text-neutral-10 mt-3">Changelog type:</p>
-        <ul className="text-xs space-y-1 text-neutral-10 mt-1">
+        <p className="text-neutral-10 mt-3 text-xs">Changelog type:</p>
+        <ul className="text-neutral-10 mt-1 space-y-1 text-xs">
           <li>
             <code className="text-neutral-12">title</code>: string - Change title
           </li>
@@ -268,9 +272,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Local Storage Tracking</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Local Storage Tracking</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">hive:changelog:dot:</strong> Boolean - Whether to
             show the dot indicator
@@ -283,12 +287,8 @@ export const ColorPaletteShowcase: Story = () => (
             When popover opens, dot is hidden (
             <code className="text-neutral-12">setDisplayDot(false)</code>)
           </li>
-          <li>
-            Clicking a change title adds its href to read list and removes accent border
-          </li>
-          <li>
-            Unread changes detected by comparing changes array with read list
-          </li>
+          <li>Clicking a change title adds its href to read list and removes accent border</li>
+          <li>Unread changes detected by comparing changes array with read list</li>
           <li>
             Read list is cleaned up automatically - only keeps hrefs from current changes array
           </li>
@@ -297,15 +297,13 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Data Source</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10 mb-2">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Data Source</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 mb-2 text-xs">
           Changes are loaded from{' '}
-          <code className="text-neutral-12">
-            @/components/ui/changelog/generated-changelog.ts
-          </code>
+          <code className="text-neutral-12">@/components/ui/changelog/generated-changelog.ts</code>
         </p>
-        <p className="text-xs text-neutral-10">
+        <p className="text-neutral-10 text-xs">
           This file is auto-generated and contains the latest product updates from the GraphQL Hive
           product updates page.
         </p>
@@ -313,9 +311,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Context</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Context</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             Rendered in <code className="text-neutral-12">UserMenu</code> component
           </li>
@@ -325,9 +323,7 @@ export const ColorPaletteShowcase: Story = () => (
               flex gap-8 with GetStartedProgress + Changelog + UserMenu
             </code>
           </li>
-          <li>
-            Always positioned to the right side of the header
-          </li>
+          <li>Always positioned to the right side of the header</li>
           <li>Changes loaded from generated file on app mount</li>
           <li>
             Footer link opens full product updates page:{' '}
@@ -340,9 +336,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Implementation Details</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-xs space-y-2 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Implementation Details</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             Date formatting: <code className="text-neutral-12">date-fns/format</code> with "do MMMM
             yyyy" (e.g., "20th January 2026")

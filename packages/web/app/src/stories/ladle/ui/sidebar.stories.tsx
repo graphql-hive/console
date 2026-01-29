@@ -1,10 +1,4 @@
-import type { Story } from '@ladle/react';
-import {
-  FileIcon,
-  HomeIcon,
-  SettingsIcon,
-  UserIcon,
-} from 'lucide-react';
+import { FileIcon, HomeIcon, SettingsIcon, UserIcon } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +14,11 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Sidebar',
+};
 
 export const Default: Story = () => (
   <SidebarProvider>
@@ -61,7 +60,7 @@ export const Default: Story = () => (
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="px-4 py-2 text-neutral-10 text-xs">v1.0.0</div>
+        <div className="text-neutral-10 px-4 py-2 text-xs">v1.0.0</div>
       </SidebarFooter>
     </Sidebar>
     <SidebarInset>
@@ -152,9 +151,9 @@ export const WithGroups: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Sidebar Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Sidebar Component</h2>
       <p className="text-neutral-11 mb-4">
         Collapsible sidebar navigation with keyboard shortcut support. Features expanded and
         collapsed states.
@@ -163,8 +162,8 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Layout</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-xs text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-10 text-xs">
               Uses <code className="text-neutral-12">SidebarProvider</code> context to manage state
               <br />
               Sidebar + SidebarInset for two-column layout
@@ -178,8 +177,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Dimensions</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-xs text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-10 text-xs">
               Expanded width: <code className="text-neutral-12">16rem</code> (desktop)
               <br />
               Mobile width: <code className="text-neutral-12">18rem</code>
@@ -192,9 +191,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">SidebarProvider</code>: Context provider for sidebar
             state
@@ -228,30 +227,30 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Features</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Features</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Collapsible</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Collapsible</p>
           <p className="text-neutral-10 text-xs">
-            Toggle between expanded and collapsed (icon-only) states. State persists across
-            sessions via cookies.
+            Toggle between expanded and collapsed (icon-only) states. State persists across sessions
+            via cookies.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Keyboard Shortcut</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Keyboard Shortcut</p>
           <p className="text-neutral-10 text-xs">
             Press <kbd>⌘B</kbd> (Mac) or <kbd>Ctrl+B</kbd> (Windows/Linux) to toggle sidebar from
             anywhere.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Mobile Support</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Mobile Support</p>
           <p className="text-neutral-10 text-xs">
             On mobile, sidebar appears as a sheet overlay instead of persistent column.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Tooltips</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Tooltips</p>
           <p className="text-neutral-10 text-xs">
             In collapsed state, menu items show tooltips on hover to display full labels.
           </p>
@@ -260,10 +259,10 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage in Codebase</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-neutral-11 text-sm mb-2">Used in traces pages for filter sidebars:</p>
-        <ul className="text-xs space-y-1 text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage in Codebase</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-11 mb-2 text-sm">Used in traces pages for filter sidebars:</p>
+        <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
             <code className="text-neutral-12">pages/target-traces.tsx</code>: Trace filtering UI
           </li>

@@ -1,12 +1,11 @@
-import type { Story } from "@ladle/react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { Info, HelpCircle, AlertCircle } from "lucide-react";
+import { AlertCircle, HelpCircle, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Tooltip',
+};
 
 export const Simple: Story = () => (
   <TooltipProvider>
@@ -119,11 +118,9 @@ export const MultipleTooltips: Story = () => (
 
 export const ColorPaletteShowcase: Story = () => (
   <TooltipProvider>
-    <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-3xl">
+    <div className="bg-neutral-2 max-w-3xl space-y-8 rounded-lg p-8">
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">
-          Tooltip Colors
-        </h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Tooltip Colors</h2>
         <div className="space-y-4">
           <p className="text-neutral-11 text-sm">
             <strong>Background:</strong> bg-neutral-4
@@ -134,7 +131,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-11 text-sm">
             <strong>Border:</strong> border (inherits border color)
           </p>
-          <p className="text-neutral-11 text-sm mb-4">
+          <p className="text-neutral-11 mb-4 text-sm">
             <strong>Animation:</strong> fade-in-50 with slide-in from direction
           </p>
 
@@ -161,14 +158,10 @@ export const ColorPaletteShowcase: Story = () => (
       </div>
 
       <div>
-        <h2 className="text-neutral-12 text-xl font-bold mb-4">
-          Usage Examples
-        </h2>
+        <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Examples</h2>
         <div className="space-y-6">
           <div>
-            <h3 className="text-neutral-12 font-semibold mb-3">
-              Icon Tooltips
-            </h3>
+            <h3 className="text-neutral-12 mb-3 font-semibold">Icon Tooltips</h3>
             <div className="flex gap-3">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -206,14 +199,10 @@ export const ColorPaletteShowcase: Story = () => (
           </div>
 
           <div>
-            <h3 className="text-neutral-12 font-semibold mb-3">
-              Form Field Hints
-            </h3>
+            <h3 className="text-neutral-12 mb-3 font-semibold">Form Field Hints</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <label className="text-neutral-12 text-sm font-medium">
-                  API Key
-                </label>
+                <label className="text-neutral-12 text-sm font-medium">API Key</label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button className="text-neutral-11 hover:text-neutral-12">
@@ -227,9 +216,7 @@ export const ColorPaletteShowcase: Story = () => (
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-neutral-12 text-sm font-medium">
-                  GraphQL Endpoint
-                </label>
+                <label className="text-neutral-12 text-sm font-medium">GraphQL Endpoint</label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button className="text-neutral-11 hover:text-neutral-12">
@@ -245,9 +232,7 @@ export const ColorPaletteShowcase: Story = () => (
           </div>
 
           <div>
-            <h3 className="text-neutral-12 font-semibold mb-3">
-              Disabled Elements
-            </h3>
+            <h3 className="text-neutral-12 mb-3 font-semibold">Disabled Elements</h3>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>

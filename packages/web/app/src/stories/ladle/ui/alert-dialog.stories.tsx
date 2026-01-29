@@ -1,4 +1,3 @@
-import type { Story } from '@ladle/react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +10,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Alert Dialog',
+};
 
 export const Default: Story = () => (
   <AlertDialog>
@@ -62,7 +66,7 @@ export const LongDescription: Story = () => (
       <AlertDialogHeader>
         <AlertDialogTitle>Terms and Conditions</AlertDialogTitle>
         <AlertDialogDescription>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          <div className="max-h-[300px] space-y-2 overflow-y-auto">
             <p>
               By clicking continue, you agree to our Terms of Service and Privacy Policy. Please
               read these documents carefully before proceeding.
@@ -109,9 +113,9 @@ export const CustomActions: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Alert Dialog Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Alert Dialog Component</h2>
       <p className="text-neutral-11 mb-4">
         Click the buttons below to see the alert dialog in action
       </p>
@@ -136,7 +140,7 @@ export const ColorPaletteShowcase: Story = () => (
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Overlay: <code className="text-neutral-12">bg-neutral-1.01 backdrop-blur-sm</code>
             <br />
             Content background: <code className="text-neutral-12">bg-neutral-3</code>
@@ -166,7 +170,7 @@ export const ColorPaletteShowcase: Story = () => (
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Action button can be customized with destructive colors
           </p>
         </div>
@@ -174,12 +178,12 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Layout</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <ul className="text-sm space-y-1 text-neutral-11">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <ul className="text-neutral-11 space-y-1 text-sm">
               <li>
                 <code className="text-neutral-12">AlertDialogHeader</code>: Title and description
               </li>
@@ -204,8 +208,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Spacing</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <p className="text-xs text-neutral-10">
+          <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+            <p className="text-neutral-10 text-xs">
               Content padding: <code className="text-neutral-12">p-6</code>
               <br />
               Content gap: <code className="text-neutral-12">gap-4</code>
@@ -220,19 +224,17 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Animation</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Animation</h2>
       <div className="space-y-2">
         <p className="text-neutral-11 text-sm">
           Alert dialogs feature smooth enter and exit animations:
         </p>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-xs text-neutral-10">
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-10 text-xs">
             Overlay: <code className="text-neutral-12">fade-in-0 / fade-out-0</code>
             <br />
             Content:{' '}
-            <code className="text-neutral-12">
-              zoom-in-95 / zoom-out-95 + slide animations
-            </code>
+            <code className="text-neutral-12">zoom-in-95 / zoom-out-95 + slide animations</code>
             <br />
             Duration: <code className="text-neutral-12">duration-200</code>
           </p>
@@ -241,7 +243,7 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Examples</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Examples</h2>
       <div className="flex flex-wrap gap-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -292,9 +294,7 @@ export const ColorPaletteShowcase: Story = () => (
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction className="bg-red-500 hover:bg-red-600">
-                Remove
-              </AlertDialogAction>
+              <AlertDialogAction className="bg-red-500 hover:bg-red-600">Remove</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

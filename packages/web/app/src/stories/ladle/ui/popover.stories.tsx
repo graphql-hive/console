@@ -1,9 +1,13 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import type { Story } from '@ladle/react';
+
+export default {
+  title: 'UI / Popover',
+};
 
 export const Default: Story = () => (
   <Popover>
@@ -189,9 +193,7 @@ export const Controlled: Story = () => {
         <PopoverContent>
           <div className="space-y-2">
             <h4 className="text-neutral-12 font-medium">Controlled Popover</h4>
-            <p className="text-neutral-11 text-sm">
-              This popover is controlled by external state.
-            </p>
+            <p className="text-neutral-11 text-sm">This popover is controlled by external state.</p>
             <Button size="sm" onClick={() => setOpen(false)}>
               Close
             </Button>
@@ -204,9 +206,9 @@ export const Controlled: Story = () => {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Popover Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Popover Component</h2>
       <p className="text-neutral-11 mb-4">
         Floating panel that appears next to a trigger element. Built with Radix UI Popover.
       </p>
@@ -214,7 +216,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-4">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Basic Popover</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline">Open</Button>
@@ -227,7 +229,7 @@ export const ColorPaletteShowcase: Story = () => (
               </PopoverContent>
             </Popover>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-neutral-4</code>
             <br />
             Border: <code className="text-neutral-12">border-neutral-5</code>
@@ -240,7 +242,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">With Arrow</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-start">
+          <div className="bg-neutral-1 border-neutral-6 flex items-start rounded-sm border p-4">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline">With Arrow</Button>
@@ -251,7 +253,7 @@ export const ColorPaletteShowcase: Story = () => (
               </PopoverContent>
             </Popover>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Arrow fill: <code className="text-neutral-12">fill-neutral-5</code>
             <br />
             Arrow automatically adjusts position based on side
@@ -260,7 +262,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Positioning</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6 flex items-center justify-center gap-4">
+          <div className="bg-neutral-1 border-neutral-6 flex items-center justify-center gap-4 rounded-sm border p-4">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -273,7 +275,7 @@ export const ColorPaletteShowcase: Story = () => (
               </PopoverContent>
             </Popover>
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Side prop: <code className="text-neutral-12">top | right | bottom | left</code>
             <br />
             Align prop: <code className="text-neutral-12">start | center | end</code>
@@ -285,9 +287,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Structure</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <ul className="text-sm space-y-1 text-neutral-11">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Structure</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <ul className="text-neutral-11 space-y-1 text-sm">
           <li>
             <code className="text-neutral-12">Popover</code>: Root container (manages open state)
           </li>
@@ -307,9 +309,9 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Animation</h2>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-        <p className="text-xs text-neutral-10">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Animation</h2>
+      <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+        <p className="text-neutral-10 text-xs">
           Open animation: <code className="text-neutral-12">fade-in-0 zoom-in-95</code>
           <br />
           Close animation: <code className="text-neutral-12">fade-out-0 zoom-out-95</code>
@@ -320,24 +322,24 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Use Cases</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Use Cases</h2>
       <div className="space-y-4">
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Info Tooltips</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Info Tooltips</p>
           <p className="text-neutral-10 text-xs">
             Show additional context when hovering/clicking text links. Used for operation details,
             schema information, and metadata.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Forms and Settings</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Forms and Settings</p>
           <p className="text-neutral-10 text-xs">
             Quick inline forms for editing settings, adding tags, or updating simple fields without
             navigating away.
           </p>
         </div>
-        <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-          <p className="text-neutral-11 text-sm font-medium mb-2">Searchable Dropdowns</p>
+        <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
+          <p className="text-neutral-11 mb-2 text-sm font-medium">Searchable Dropdowns</p>
           <p className="text-neutral-10 text-xs">
             Contains Command component for filterable selection. Used in schema filters, service
             selectors.
