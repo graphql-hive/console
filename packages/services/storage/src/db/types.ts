@@ -468,6 +468,7 @@ export interface users {
   full_name: string;
   id: string;
   is_admin: boolean | null;
+  linked_identity_ids: Array<string> | null;
   oidc_integration_id: string | null;
   supertoken_user_id: string | null;
   zendesk_user_id: string | null;

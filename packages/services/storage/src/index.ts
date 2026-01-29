@@ -491,19 +491,21 @@ export async function createStorage(
         email,
         fullName,
         displayName,
+        linkedIdentityIds,
       }: {
         email: string;
         fullName: string;
         displayName: string;
+        linkedIdentityIds: string[];
       },
       connection: Connection,
     ) {
       const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "full_name", "display_name")
+            ("email", "full_name", "display_name", "linked_identity_ids")
           VALUES
-            (${email}, ${fullName}, ${displayName})
+            (${email}, ${fullName}, ${displayName}, ${sql.array(linkedIdentityIds, 'text')})
           RETURNING id
         `,
       );
@@ -601,6 +603,7 @@ export async function createStorage(
     email: string;
     firstName: string | null;
     lastName: string | null;
+    linkedIdentityIds: string[];
   }) {
     const { firstName, lastName } = input;
     const name =
@@ -612,6 +615,7 @@ export async function createStorage(
       email: input.email,
       displayName: name,
       fullName: name,
+      linkedIdentityIds: input.linkedIdentityIds,
     };
   }
 
@@ -644,30 +648,57 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        const users = await t
-          .any<unknown>(
-            sql`/* ensureUserExists */
-              SELECT
-                ${userFields(sql`"users".`, sql`"stu".`)}
-              FROM
-                "users"
+
+        // try searching existing user first
+        let internalUser = await t
+          .maybeOne<unknown>(
+            sql`
+              SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+              FROM "users"
               LEFT JOIN "supertokens_thirdparty_users" AS "stu"
                 ON ("stu"."user_id" = "users"."supertoken_user_id")
               WHERE
-                "users"."email" = ${email};
+                "users"."supertoken_user_id" = ${superTokensUserId}
+                OR ${superTokensUserId} = ANY("users"."linked_identity_ids")
             `,
           )
-          .then(users => users.map(user => UserModel.parse(user)));
+          .then(v => UserModel.nullable().parse(v));
 
-        // prioritize existing user with matching superTokensUserId
-        let internalUser = users.find(user => user.superTokensUserId === superTokensUserId) ?? null;
         if (!internalUser) {
-          if (users.length === 0) {
-            // no user found with the given email, fallback to superTokensUserId
-            internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
-          } else if (users.length === 1) {
-            // only one user found with the given email, use it
-            internalUser = users[0];
+          // try automatic account linking
+          const sameEmailUsers = await t
+            .any<unknown>(
+              sql`/* ensureUserExists */
+                SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+                FROM "users"
+                LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                  ON ("stu"."user_id" = "users"."supertoken_user_id")
+                WHERE "users"."email" = ${email}
+                ORDER BY "users"."created_at";
+              `,
+            )
+            .then(users => users.map(user => UserModel.parse(user)));
+
+          if (sameEmailUsers.length === 1) {
+            internalUser = await t
+              .one<{}>(
+                sql`/* ensureUserExists */
+                  WITH "linked_user" AS (
+                    UPDATE "users"
+                    SET
+                      "supertoken_user_id" = NULL,
+                      "oidc_integration_id" = NULL,
+                      "linked_identity_ids" = array_append("linked_identity_ids", ${superTokensUserId})
+                    WHERE "id" = ${sameEmailUsers[0].id}
+                    RETURNING *
+                  )
+                  SELECT ${userFields(sql`"linked_user".`, sql`"stu".`)}
+                  FROM "linked_user"
+                  LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                    ON ("stu"."user_id" = "linked_user"."supertoken_user_id");
+                `,
+              )
+              .then(v => UserModel.parse(v));
           }
         }
 
@@ -678,21 +709,12 @@ export async function createStorage(
               email,
               firstName,
               lastName,
+              linkedIdentityIds: [superTokensUserId],
             }),
             t,
           );
 
           action = 'created';
-        }
-
-        if (users.length === 1 && internalUser.superTokensUserId != null) {
-          await t.query(sql`/* ensureUserExists */
-            UPDATE "users"
-            SET
-              "supertoken_user_id" = NULL,
-              "oidc_integration_id" = NULL
-            WHERE "id" = ${internalUser.id};
-          `);
         }
 
         if (oidcIntegration !== null) {
@@ -5631,6 +5653,7 @@ export const userFields = (
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
+  , ${user}"linked_identity_ids" AS "linkedIdentityIds"
   , ${superTokensThirdParty}"third_party_id" AS "provider"
 `;
 
@@ -5647,6 +5670,7 @@ export const UserModel = zod.object({
     .transform(value => value ?? false),
   oidcIntegrationId: zod.string().nullable(),
   zendeskId: zod.string().nullable(),
+  linkedIdentityIds: zod.array(zod.string()).nullable(),
   provider: zod
     .string()
     .nullable()
