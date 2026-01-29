@@ -83,7 +83,7 @@ export const BuilderArgument = (props: {
           }
         }}
       />
-      <BoxIcon className="size-4 text-rose-500 dark:text-rose-400" />
+      <BoxIcon className="size-4 text-rose-500" />
       {props.field.name}: <GraphQLType type={props.field.type} />
     </Button>
   );
@@ -153,7 +153,7 @@ export const BuilderScalarField = (props: {
             size="sm"
           >
             <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-            <div className="group-hover:bg-accent dark:group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+            <div className="group-hover:bg-accent absolute left-0 top-0 -z-10 size-full transition-colors" />
             <ChevronDownIcon
               className={cn('text-neutral-10 size-4 transition-all', {
                 '-rotate-90': !isOpen,
@@ -331,7 +331,7 @@ export const BuilderObjectField = (props: {
           size="sm"
         >
           <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-          <div className="group-hover:bg-accent dark:group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+          <div className="group-hover:bg-accent absolute left-0 top-0 -z-10 size-full transition-colors" />
           <ChevronDownIcon
             className={cn('text-neutral-10 size-4 transition-all', {
               '-rotate-90': !isOpen,

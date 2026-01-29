@@ -213,9 +213,7 @@ function SuccessRateStats({
   return (
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-emerald-500 dark:text-emerald-500">
-          Success rate
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-emerald-500">Success rate</CardTitle>
         <SmileIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
@@ -240,9 +238,7 @@ function FailureRateStats({
   return (
     <Card className="bg-gray-900/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-red-500 dark:text-red-500">
-          Failure rate
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-red-500">Failure rate</CardTitle>
         <FrownIcon className="text-neutral-10 size-4" />
       </CardHeader>
       <CardContent>
@@ -1112,7 +1108,7 @@ export function OperationsStats({
         : 'success';
 
   return (
-    <section className="space-y-12 text-gray-600 transition-opacity duration-700 ease-in-out dark:text-gray-400">
+    <section className="space-y-12 text-gray-600 transition-opacity duration-700 ease-in-out">
       <OperationsFallback state={state} refetch={refetch}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <RequestsStats requests={operationsStats?.totalRequests} dateRangeText={dateRangeText} />

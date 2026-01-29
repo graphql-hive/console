@@ -55,7 +55,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
       variant="ghost"
       size="sm"
       className={cn('bg-neutral-3 group sticky top-0 w-full justify-start px-2', {
-        'bg-accent dark:bg-accent/50': isActive,
+        'bg-accent': isActive,
       })}
       onClick={() => {
         setActiveTab(

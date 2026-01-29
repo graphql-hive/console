@@ -9,12 +9,10 @@ const Button = forwardRef<HTMLButtonElement, ComponentProps<'button'>>(
         {...props}
         className={clsx(
           'inline-flex select-none items-center justify-center rounded-md px-4 py-2 text-sm font-medium',
-          'dark:bg-neutral-5 dark:text-neutral-11 bg-white text-gray-700 dark:hover:bg-gray-900',
+          'bg-white text-gray-700',
           'focus-within:ring',
           // Register all radix states
           'group',
-          'dark:data-[state=open]:bg-gray-900',
-          'dark:data-[state=on]:bg-gray-900',
           className,
         )}
       >

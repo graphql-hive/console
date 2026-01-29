@@ -5,7 +5,7 @@ export function Label({ className, children, ...props }: ComponentProps<'span'>)
   return (
     <span
       className={cn(
-        'inline-block rounded-sm bg-yellow-50 px-2 py-1 text-xs font-medium tracking-widest text-yellow-600 dark:bg-white/10 dark:text-yellow-300',
+        'inline-block rounded-sm bg-yellow-50 px-2 py-1 text-xs font-medium tracking-widest text-yellow-600',
         className,
       )}
       {...props}
@@ -36,20 +36,15 @@ export const Page = ({
     <div className={cn('relative flex h-full flex-col', className)}>
       <div className="flex shrink-0 flex-row items-center justify-between p-4">
         <div>
-          <h2 className="dark:text-neutral-12 text-neutral-1 text-xl font-bold">{title}title</h2>
-          <span className="dark:text-neutral-11 mt-2 text-sm text-gray-600">{subtitle}</span>
+          <h2 className="text-neutral-1 text-xl font-bold">{title}title</h2>
+          <span className="mt-2 text-sm text-gray-600">{subtitle}</span>
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
       </div>
       {noPadding ? (
         children
       ) : (
-        <div
-          className={cn(
-            'dark:text-neutral-12 px-4 pb-4',
-            scrollable ? 'grow overflow-y-auto' : 'h-full',
-          )}
-        >
+        <div className={cn('px-4 pb-4', scrollable ? 'grow overflow-y-auto' : 'h-full')}>
           {children}
         </div>
       )}
@@ -59,23 +54,17 @@ export const Page = ({
 
 export const Section = {
   Title: ({ className, children, ...props }: ComponentProps<'h3'>): ReactElement => (
-    <h3
-      className={cn('dark:text-neutral-12 text-neutral-1 text-base font-bold', className)}
-      {...props}
-    >
+    <h3 className={cn('text-neutral-1 text-base font-bold', className)} {...props}>
       {children}
     </h3>
   ),
   BigTitle: ({ className, children, ...props }: ComponentProps<'h2'>): ReactElement => (
-    <h2
-      className={cn('dark:text-neutral-12 text-neutral-1 text-base font-bold', className)}
-      {...props}
-    >
+    <h2 className={cn('text-neutral-1 text-base font-bold', className)} {...props}>
       {children}
     </h2>
   ),
   Subtitle: ({ className, children, ...props }: ComponentProps<'div'>): ReactElement => (
-    <div className={cn('dark:text-neutral-11 text-sm text-gray-600', className)} {...props}>
+    <div className={cn('text-sm text-gray-600', className)} {...props}>
       {children}
     </div>
   ),
