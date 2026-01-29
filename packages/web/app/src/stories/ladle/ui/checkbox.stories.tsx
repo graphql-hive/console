@@ -1,7 +1,7 @@
 import React from 'react';
-import type { Story } from '@ladle/react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import type { Story } from '@ladle/react';
 
 export const Default: Story = () => <Checkbox />;
 
@@ -51,11 +51,11 @@ export const Interactive: Story = () => {
         <Checkbox
           id="interactive"
           checked={checked}
-          onCheckedChange={(checked) => setChecked(checked === true)}
+          onCheckedChange={checked => setChecked(checked === true)}
         />
         <Label htmlFor="interactive">Interactive checkbox</Label>
       </div>
-      <p className="text-sm text-neutral-11">
+      <p className="text-neutral-11 text-sm">
         State: <span className="font-mono">{checked ? 'checked' : 'unchecked'}</span>
       </p>
     </div>
@@ -63,48 +63,48 @@ export const Interactive: Story = () => {
 };
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Checkbox States</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Checkbox States</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Unchecked</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Checkbox />
           </div>
-          <p className="text-xs text-neutral-10">
-            Border: <code className="text-neutral-12">border-primary</code>
+          <p className="text-neutral-10 text-xs">
+            Border: <code className="text-neutral-12">border-neutral-11</code>
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Checked</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Checkbox defaultChecked />
           </div>
-          <p className="text-xs text-neutral-10">
-            Background: <code className="text-neutral-12">bg-primary</code>
+          <p className="text-neutral-10 text-xs">
+            Background: <code className="text-neutral-12">bg-neutral-11</code>
             <br />
-            Icon: <code className="text-neutral-12">text-primary-foreground</code>
+            Icon: <code className="text-neutral-12">text-neutral-2</code>
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Disabled Unchecked</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Checkbox disabled />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Opacity: <code className="text-neutral-12">opacity-50</code>
           </p>
         </div>
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Disabled Checked</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Checkbox disabled checked />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Opacity: <code className="text-neutral-12">opacity-50</code>
           </p>
         </div>
@@ -112,22 +112,22 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Focus States</h2>
-      <p className="text-neutral-11 text-sm mb-4">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Focus States</h2>
+      <p className="text-neutral-11 mb-4 text-sm">
         Tab to focus on the checkbox to see the focus ring
       </p>
-      <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+      <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
         <Checkbox />
       </div>
-      <p className="text-xs text-neutral-10 mt-2">
+      <p className="text-neutral-10 mt-2 text-xs">
         Focus ring: <code className="text-neutral-12">ring-ring</code> with{' '}
         <code className="text-neutral-12">ring-offset-neutral-2</code>
       </p>
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">With Labels</h2>
-      <div className="space-y-4 p-4 bg-neutral-1 rounded border border-neutral-6">
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">With Labels</h2>
+      <div className="bg-neutral-1 border-neutral-6 space-y-4 rounded border p-4">
         <div className="flex items-center gap-2">
           <Checkbox id="showcase1" defaultChecked />
           <Label htmlFor="showcase1">Checked option</Label>
@@ -137,7 +137,7 @@ export const ColorPaletteShowcase: Story = () => (
           <Label htmlFor="showcase2">Unchecked option</Label>
         </div>
       </div>
-      <p className="text-xs text-neutral-10 mt-2">
+      <p className="text-neutral-10 mt-2 text-xs">
         Label color: <code className="text-neutral-12">text-neutral-12</code>
       </p>
     </div>

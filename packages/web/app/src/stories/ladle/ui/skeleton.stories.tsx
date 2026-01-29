@@ -1,31 +1,31 @@
-import type { Story } from '@ladle/react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Story } from '@ladle/react';
 
 export const Default: Story = () => <Skeleton className="h-12 w-48" />;
 
 export const Shapes: Story = () => (
   <div className="space-y-6">
     <div className="space-y-2">
-      <p className="text-sm text-neutral-11">Rectangle</p>
+      <p className="text-neutral-11 text-sm">Rectangle</p>
       <Skeleton className="h-12 w-64" />
     </div>
     <div className="space-y-2">
-      <p className="text-sm text-neutral-11">Square</p>
+      <p className="text-neutral-11 text-sm">Square</p>
       <Skeleton className="size-24" />
     </div>
     <div className="space-y-2">
-      <p className="text-sm text-neutral-11">Circle (Avatar)</p>
+      <p className="text-neutral-11 text-sm">Circle (Avatar)</p>
       <Skeleton className="size-12 rounded-full" />
     </div>
     <div className="space-y-2">
-      <p className="text-sm text-neutral-11">Thin Line (Text)</p>
+      <p className="text-neutral-11 text-sm">Thin Line (Text)</p>
       <Skeleton className="h-4 w-full max-w-md" />
     </div>
   </div>
 );
 
 export const TextPlaceholder: Story = () => (
-  <div className="space-y-3 max-w-md">
+  <div className="max-w-md space-y-3">
     <Skeleton className="h-4 w-full" />
     <Skeleton className="h-4 w-full" />
     <Skeleton className="h-4 w-3/4" />
@@ -33,7 +33,7 @@ export const TextPlaceholder: Story = () => (
 );
 
 export const CardSkeleton: Story = () => (
-  <div className="max-w-md p-6 border border-neutral-6 rounded-lg space-y-4">
+  <div className="border-neutral-6 max-w-md space-y-4 rounded-lg border p-6">
     <div className="flex items-center gap-4">
       <Skeleton className="size-12 rounded-full" />
       <div className="flex-1 space-y-2">
@@ -81,17 +81,17 @@ export const FormSkeleton: Story = () => (
 );
 
 export const ColorPaletteShowcase: Story = () => (
-  <div className="space-y-8 p-8 bg-neutral-2 rounded-lg max-w-4xl">
+  <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Skeleton Component</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Skeleton Component</h2>
       <div className="grid grid-cols-1 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Default Skeleton</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Skeleton className="h-12 w-48" />
           </div>
-          <p className="text-xs text-neutral-10">
-            Background: <code className="text-neutral-12">bg-primary/10</code>
+          <p className="text-neutral-10 text-xs">
+            Background: <code className="text-neutral-12">bg-neutral-11/10</code>
             <br />
             Animation: <code className="text-neutral-12">animate-pulse</code>
             <br />
@@ -102,32 +102,32 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Common Shapes</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Common Shapes</h2>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Rectangle</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Skeleton className="h-12 w-64" />
           </div>
         </div>
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Square</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Skeleton className="size-24" />
           </div>
         </div>
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Circle (Avatar)</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Skeleton className="size-12 rounded-full" />
           </div>
-          <p className="text-xs text-neutral-10">
+          <p className="text-neutral-10 text-xs">
             Use <code className="text-neutral-12">rounded-full</code> for circles
           </p>
         </div>
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Text Line</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <Skeleton className="h-4 w-full" />
           </div>
         </div>
@@ -135,12 +135,12 @@ export const ColorPaletteShowcase: Story = () => (
     </div>
 
     <div>
-      <h2 className="text-neutral-12 text-xl font-bold mb-4">Usage Examples</h2>
+      <h2 className="text-neutral-12 mb-4 text-xl font-bold">Usage Examples</h2>
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Text Paragraph</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <div className="space-y-3 max-w-md">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+            <div className="max-w-md space-y-3">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-3/4" />
@@ -150,8 +150,8 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Card with Avatar</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
-            <div className="max-w-md p-6 border border-neutral-6 rounded-lg space-y-4">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
+            <div className="border-neutral-6 max-w-md space-y-4 rounded-lg border p-6">
               <div className="flex items-center gap-4">
                 <Skeleton className="size-12 rounded-full" />
                 <div className="flex-1 space-y-2">
@@ -170,7 +170,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Table Rows</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <div className="max-w-2xl space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-4">
@@ -186,7 +186,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Form Fields</p>
-          <div className="p-4 bg-neutral-1 rounded border border-neutral-6">
+          <div className="bg-neutral-1 border-neutral-6 rounded border p-4">
             <div className="max-w-md space-y-4">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-20" />
