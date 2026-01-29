@@ -16,6 +16,7 @@
     "vitest.config.ts",
     "scripts/serializer.ts",
     "packages/web/app/.babelrc.cjs",
+    "packages/web/app/.ladle",
     "configs",
     "codegen.mts"
   ],
