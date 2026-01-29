@@ -14,19 +14,11 @@ export const SupportTicket: Story = () => (
   </div>
 );
 
-SupportTicket.meta = {
-  description: 'Support ticket not found message, based on organization-support-ticket.tsx usage',
-};
-
 export const PageNotFound: Story = () => (
   <div className="py-6">
     <NotFound title="Page not found" description="The page you're looking for doesn't exist." />
   </div>
 );
-
-PageNotFound.meta = {
-  description: 'Generic 404 page not found message',
-};
 
 export const ResourceNotFound: Story = () => (
   <div className="py-6">
@@ -37,10 +29,6 @@ export const ResourceNotFound: Story = () => (
   </div>
 );
 
-ResourceNotFound.meta = {
-  description: 'Resource not found message for missing entities',
-};
-
 export const AccessDenied: Story = () => (
   <div className="py-6">
     <NotFound
@@ -50,10 +38,6 @@ export const AccessDenied: Story = () => (
   </div>
 );
 
-AccessDenied.meta = {
-  description: 'Access denied / permission error variant',
-};
-
 export const OrganizationNotFound: Story = () => (
   <div className="py-6">
     <NotFound
@@ -62,10 +46,6 @@ export const OrganizationNotFound: Story = () => (
     />
   </div>
 );
-
-OrganizationNotFound.meta = {
-  description: 'Organization not found message',
-};
 
 export const ColorPaletteShowcase: Story = () => (
   <div className="bg-neutral-2 max-w-4xl space-y-8 rounded-lg p-8">
