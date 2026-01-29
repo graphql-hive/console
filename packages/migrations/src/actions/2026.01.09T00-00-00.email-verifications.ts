@@ -23,7 +23,8 @@ export default {
         SELECT
           "seve"."user_id" "user_identity_id"
           , now() "verified_at"
-        FROM "supertokens_emailverification_verified_emails" "seve";
+        FROM "supertokens_emailverification_verified_emails" "seve"
+        ON CONFLICT DO NOTHING;
       END IF;
     END $$;
   `,
