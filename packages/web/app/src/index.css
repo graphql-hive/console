@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source('./');
 @plugin "./lib/tailwind-plugins.js";
 
 @theme {

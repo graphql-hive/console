@@ -7,6 +7,7 @@
     "build-storybook": "storybook build",
     "dev": "tsx watch --clear-screen=false --exclude \"./**/*.mjs\" src/server/dev.ts",
     "generate-changelog": "node ../../../scripts/generate-changelog.js",
+    "ladle": "ladle serve",
     "postinstall": "pnpm generate-changelog",
     "storybook": "storybook dev -p 6006",
     "typecheck": "tsc --noEmit"
@@ -30,6 +31,7 @@
     "@graphql-typed-document-node/core": "3.2.0",
     "@headlessui/react": "2.2.0",
     "@hookform/resolvers": "3.10.0",
+    "@ladle/react": "^5.1.1",
     "@monaco-editor/react": "4.8.0-rc.2",
     "@n1ru4l/react-time-ago": "1.1.0",
     "@radix-ui/react-accordion": "1.2.2",
