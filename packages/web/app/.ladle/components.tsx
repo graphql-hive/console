@@ -1,6 +1,7 @@
 import type { GlobalProvider } from "@ladle/react";
 import { useEffect } from "react";
 import "../src/index.css";
+import "./ladle.css";
 
 // Mock environment variables for Ladle stories
 if (typeof window !== 'undefined') {

@@ -1,0 +1,6 @@
+/* Ladle-specific styles */
+
+/* Make Ladle background match our theme background color */
+.ladle-background {
+  background-color: var(--color-neutral-2) !important;
+}
