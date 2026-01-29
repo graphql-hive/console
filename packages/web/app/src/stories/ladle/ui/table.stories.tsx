@@ -200,7 +200,6 @@ export const WithSelection: Story = () => {
   ];
 
   const allSelected = users.every(user => selectedRows.has(user.id));
-  const someSelected = users.some(user => selectedRows.has(user.id)) && !allSelected;
 
   return (
     <div className="space-y-4">
@@ -210,7 +209,6 @@ export const WithSelection: Story = () => {
             <TableHead className="w-[50px]">
               <Checkbox
                 checked={allSelected}
-                indeterminate={someSelected}
                 onCheckedChange={checked => {
                   if (checked) {
                     setSelectedRows(new Set(users.map(u => u.id)));
