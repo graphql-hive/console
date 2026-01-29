@@ -3185,8 +3185,8 @@ export async function createStorage(
       return decodeOktaIntegrationRecord(result);
     },
 
-    async getOIDCIntegrationForOrganization({ organizationId }) {
-      const result = await pool.maybeOne<unknown>(sql`/* getOIDCIntegrationForOrganization */
+    getOIDCIntegrationForOrganization: batch(async selectors => {
+      const result = await pool.query<unknown>(sql`/* getOIDCIntegrationForOrganization */
         SELECT
           "id"
           , "linked_organization_id"
@@ -3203,16 +3203,21 @@ export async function createStorage(
         FROM
           "oidc_integrations"
         WHERE
-          "linked_organization_id" = ${organizationId}
+          "linked_organization_id" = ANY(${sql.array(
+            selectors.map(s => s.organizationId),
+            'uuid',
+          )})
         LIMIT 1
       `);
+      const integrations = new Map(
+        result.rows.map(row => {
+          const integration = decodeOktaIntegrationRecord(row);
+          return [integration.linkedOrganizationId, integration] as const;
+        }),
+      );
 
-      if (result === null) {
-        return null;
-      }
-
-      return decodeOktaIntegrationRecord(result);
-    },
+      return selectors.map(async s => integrations.get(s.organizationId) ?? null);
+    }),
 
     async getOIDCIntegrationIdForOrganizationSlug({ slug }) {
       const id = await pool.maybeOneFirst<string>(sql`/* getOIDCIntegrationIdForOrganizationSlug */

@@ -1,4 +1,6 @@
+import { AccessError } from '../../../../shared/errors';
 import { Session } from '../../../auth/lib/authz';
+import { OIDCIntegrationsProvider } from '../../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { OrganizationManager } from '../../providers/organization-manager';
 import type { QueryResolvers } from './../../../../__generated__/types';
@@ -8,8 +10,12 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
   { previouslyVisitedOrganizationId: previouslyVisitedOrganizationSlug },
   { injector },
 ) => {
-  const user = await injector.get(Session).getViewer();
+  const actor = await injector.get(Session).getActor();
+  if (actor.type !== 'user') {
+    throw new AccessError('Only authenticated users can perform this action.');
+  }
   const organizationManager = injector.get(OrganizationManager);
+  const oidcManager = injector.get(OIDCIntegrationsProvider);
 
   // This is the organization that got stored as an cookie
   // We make sure it actually exists before directing to it.
@@ -32,17 +38,40 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
     }
   }
 
-  if (user?.id) {
+  if (actor.user?.id) {
     const allOrganizations = await organizationManager.getOrganizations();
+    const orgsWithOIDCConfig = await Promise.all(
+      allOrganizations.map(async org => ({
+        ...org,
+        oidcIntegration: await oidcManager.getOIDCIntegrationForOrganization({
+          organizationId: org.id,
+        }),
+      })),
+    ).then(arr => arr.filter(v => v != null));
 
-    if (allOrganizations.length > 0) {
-      const firstOrg = allOrganizations[0];
+    const matchingOrg = orgsWithOIDCConfig.find(org => {
+      if (actor.oidcIntegrationId) {
+        // select OIDC connected organization when user is authenticated with SSO
+        if (org.oidcIntegration?.id === actor.oidcIntegrationId) {
+          return org;
+        }
+      } else if (
+        !org.oidcIntegration ||
+        !org.oidcIntegration.oidcUserAccessOnly ||
+        actor.user.id === org.ownerId
+      ) {
+        // avoid showing OIDC forced organizations to be shown as the default
+        // when user is not authenticated with SSO
+        return org;
+      }
+    });
 
+    if (matchingOrg) {
       return {
         selector: {
-          organizationSlug: firstOrg.slug,
+          organizationSlug: matchingOrg.slug,
         },
-        organization: firstOrg,
+        organization: matchingOrg,
       };
     }
   }
