@@ -13,7 +13,7 @@ import { WEB_APP_URL } from '../../shared/providers/tokens';
 const EmailVerificationModelBase = zod.object({
   id: zod.string().uuid(),
   userIdentityId: zod.string(),
-  createdAt: zod.number().transform(value => new Date(value)),
+  createdAt: zod.number().transform(v => new Date(v)),
 });
 
 const UnverifiedEmailVerificationModel = EmailVerificationModelBase.extend({
@@ -152,7 +152,7 @@ export class EmailVerification {
     if (existingVerification && !input.resend) {
       return {
         ok: true,
-        expiresAt: new Date(existingVerification.expiresAt),
+        expiresAt: existingVerification.expiresAt,
       };
     }
 
@@ -191,7 +191,7 @@ export class EmailVerification {
 
     return {
       ok: true,
-      expiresAt: new Date(newVerification.expiresAt),
+      expiresAt: newVerification.expiresAt,
     };
   }
 
