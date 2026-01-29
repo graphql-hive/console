@@ -55,7 +55,10 @@ export function SignInButton(props: {
             {props.children}
           </Slot>
         </TooltipTrigger>
-        <TooltipContent className={cn('text-muted bg-white', props.tooltipClassName)} side="top">
+        <TooltipContent
+          className={cn('text-muted bg-neutral-12', props.tooltipClassName)}
+          side="top"
+        >
           You signed in with it last time.
         </TooltipContent>
       </Tooltip>

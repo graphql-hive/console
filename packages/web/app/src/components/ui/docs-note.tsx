@@ -18,7 +18,7 @@ export const DocsNote = ({
     <div
       className={cn(
         'my-2 flex border-l-2 px-4 py-2',
-        warn ? 'border-accent' : 'border-white',
+        warn ? 'border-accent' : 'border-neutral-12',
         className,
       )}
     >

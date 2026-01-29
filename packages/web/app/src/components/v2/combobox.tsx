@@ -56,12 +56,12 @@ export function Combobox(
         container: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-sm!'),
         menu: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-xs!'),
         menuList: () => clsx('bg-neutral-5! rounded-lg! text-xs!'),
-        option: () => clsx('bg-neutral-5! hover:bg-gray-700! text-xs! cursor-pointer!'),
+        option: () => clsx('bg-neutral-5! hover:bg-neutral-2! text-xs! cursor-pointer!'),
         placeholder: () => clsx('text-neutral-10! text-xs!'),
         input: () => clsx('text-neutral-10! text-xs!'),
         multiValue: () => clsx('text-neutral-10! text-xs! bg-neutral-10! font-bold!'),
         multiValueRemove: () =>
-          clsx('text-neutral-10! text-xs! hover:bg-neutral-11! hover:text-gray-700!'),
+          clsx('text-neutral-10! text-xs! hover:bg-neutral-11! hover:text-neutral-2!'),
       }}
       closeMenuOnSelect={false}
       value={props.value}

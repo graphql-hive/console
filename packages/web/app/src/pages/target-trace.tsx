@@ -338,7 +338,7 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
       <div
         className={cn(
           'bg-neutral-5 absolute inset-y-0 left-[2px] w-px',
-          isDragging ? 'bg-gray-600' : 'hover:bg-gray-700',
+          isDragging ? 'bg-gray-600' : 'hover:bg-neutral-2',
         )}
       />
     </div>

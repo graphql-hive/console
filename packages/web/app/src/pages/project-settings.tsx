@@ -114,7 +114,7 @@ function GitHubIntegration(props: {
           <div className="my-8 flex w-fit flex-col gap-y-1">
             <div className="flex items-center gap-x-2 pl-1">
               <CheckIcon className="size-4 text-emerald-500" />
-              <div className="flex size-6 items-center justify-center rounded-sm bg-white">
+              <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 
@@ -126,7 +126,7 @@ function GitHubIntegration(props: {
             <ArrowBigDownDashIcon className="size-6 self-center" />
             <div className="flex items-center gap-x-2 pl-1">
               <CheckIcon className="size-4 text-emerald-500" />
-              <div className="flex size-6 items-center justify-center rounded-sm bg-white">
+              <div className="bg-neutral-12 flex size-6 items-center justify-center rounded-sm">
                 <HiveLogo className="size-4/5" />
               </div>
 

@@ -11,7 +11,7 @@ function ExternalLink(props: { href: string; children: React.ReactNode }) {
       href={props.href}
       className="hover:text-accent text-neutral-12/30 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 text-[0.8125rem]/6 font-medium transition-colors"
     >
-      <span className="absolute inset-0 -z-10 scale-75 rounded-lg bg-white/5 opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
+      <span className="bg-neutral-12/5 absolute inset-0 -z-10 scale-75 rounded-lg opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
       {props.children}
     </a>
   );

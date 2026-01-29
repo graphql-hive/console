@@ -31,8 +31,8 @@ export const Input = forwardRef<
       <div
         ref={forwardedRef}
         className={clsx(
-          'bg-neutral-5 relative flex items-center gap-4 rounded-sm border border-gray-700 text-sm font-medium focus-within:ring',
-          isInvalid ? 'text-red-500 caret-white ring-red-500' : 'text-neutral-12',
+          'bg-neutral-5 border-neutral-2 relative flex items-center gap-4 rounded-sm border text-sm font-medium focus-within:ring',
+          isInvalid ? 'caret-neutral-12 text-red-500 ring-red-500' : 'text-neutral-12',
           {
             large: 'h-[50px] px-4 py-[18px]',
             medium: 'px-4 py-2.5',
@@ -58,7 +58,7 @@ export const Input = forwardRef<
           <button
             aria-label="Reset"
             onClick={onClear}
-            className="rounded-sm p-0.5 transition-colors hover:bg-gray-700/50"
+            className="hover:bg-neutral-2/50 rounded-sm p-0.5 transition-colors"
           >
             <svg
               stroke="currentColor"

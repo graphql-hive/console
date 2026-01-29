@@ -9,7 +9,7 @@ const tabsListVariants = cva('relative flex items-center', {
     variant: {
       default:
         'bg-muted text-neutral-10 inline-flex h-10 items-center justify-center rounded-md p-1',
-      menu: 'text-gray-700',
+      menu: 'text-neutral-2',
       content: 'm-0 block h-auto rounded-none border-b p-0',
     },
   },

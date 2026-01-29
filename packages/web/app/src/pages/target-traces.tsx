@@ -336,7 +336,7 @@ const TracesList = memo(function TracesList(
                 className="text-neutral-12 group block w-[6ch] overflow-hidden whitespace-nowrap"
               >
                 <span>
-                  <span className="decoration-neutral-5 underline decoration-2 underline-offset-2 group-hover:decoration-white">
+                  <span className="decoration-neutral-5 group-hover:decoration-neutral-12 underline decoration-2 underline-offset-2">
                     {traceId.substring(0, 8)}
                   </span>
                   <span
@@ -617,7 +617,7 @@ const TracesList = memo(function TracesList(
                   data-state={row.getIsSelected() && 'selected'}
                   className={cn(
                     'cursor-pointer',
-                    props.selectedTraceId === row.original.id ? 'bg-white/10' : '',
+                    props.selectedTraceId === row.original.id ? 'bg-neutral-12/10' : '',
                   )}
                   onClick={ev => {
                     ev.preventDefault();

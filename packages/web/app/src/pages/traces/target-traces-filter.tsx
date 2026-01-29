@@ -344,7 +344,7 @@ const DoubleSlider = forwardRef<
     {props.value?.map((_, index) => (
       <SliderPrimitive.Thumb
         key={index}
-        className="bg-neutral-5 block size-4 rounded-full border border-gray-700 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+        className="bg-neutral-5 border-neutral-2 block size-4 rounded-full border transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
       />
     ))}
   </SliderPrimitive.Root>

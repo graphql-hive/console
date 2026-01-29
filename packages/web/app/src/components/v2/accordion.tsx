@@ -77,7 +77,7 @@ function Header({
         <span className="text-neutral-11 text-sm font-medium">{children}</span>
         <ChevronDownIcon
           className={clsx(
-            'ml-2 size-5 shrink-0 text-gray-700 ease-in-out',
+            'text-neutral-2 ml-2 size-5 shrink-0 ease-in-out',
             'group-data-[state=open]:rotate-180 group-data-[state=open]:duration-300',
           )}
         />
@@ -95,7 +95,7 @@ function Content({
 }): ReactElement {
   return (
     <A.Content className={clsx('w-full rounded-b-lg px-4 pb-3 pt-1', className)}>
-      <div className="text-sm text-gray-700">{children}</div>
+      <div className="text-neutral-2 text-sm">{children}</div>
     </A.Content>
   );
 }

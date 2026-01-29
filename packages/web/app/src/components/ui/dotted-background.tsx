@@ -5,7 +5,7 @@ export function DottedBackground(props: { children: React.ReactNode; className?:
   return (
     <div
       className={clsx(
-        'bg-dot-white/[0.2] bg-neutral-1 relative flex size-full items-center justify-center',
+        'bg-dot-neutral-12/[0.2] bg-neutral-1 relative flex size-full items-center justify-center',
         props.className,
       )}
     >

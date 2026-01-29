@@ -193,9 +193,9 @@ export const TransferOrganizationOwnershipModal = ({
           <div className="relative">
             <div
               className={clsx(
-                'bg-neutral-5 text-neutral-12 rounded-sm p-4 text-sm font-medium ring-1 ring-gray-700 focus-within:ring',
+                'bg-neutral-5 text-neutral-12 ring-neutral-2 rounded-sm p-4 text-sm font-medium ring-1 focus-within:ring',
                 touched.newOwner && !!errors.newOwner
-                  ? 'text-red-500 caret-white ring-red-500'
+                  ? 'caret-neutral-12 text-red-500 ring-red-500'
                   : null,
               )}
             >
@@ -219,7 +219,7 @@ export const TransferOrganizationOwnershipModal = ({
             >
               <Combobox.Options className="bg-neutral-5 ring-neutral-1/5 absolute mt-1 max-h-60 w-full overflow-auto rounded-md text-base shadow-lg ring-1 focus:outline-none">
                 {filteredMembers.length === 0 && searchPhrase !== '' ? (
-                  <div className="relative cursor-default select-none px-4 py-2 text-base text-gray-700">
+                  <div className="text-neutral-2 relative cursor-default select-none px-4 py-2 text-base">
                     Nothing found.
                   </div>
                 ) : (
