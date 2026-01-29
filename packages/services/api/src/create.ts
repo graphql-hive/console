@@ -63,7 +63,7 @@ import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE } from './modules/shared/providers/redis';
 import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
 import { Storage } from './modules/shared/providers/storage';
-import { WEB_APP_URL } from './modules/shared/providers/tokens';
+import { FORWARDED_IP_HEADER_NAME, WEB_APP_URL } from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
 import { provideSupportConfig, SupportConfig } from './modules/support/providers/config';
 import { targetModule } from './modules/target';
@@ -154,6 +154,7 @@ export function createRegistry({
   encryptionSecret: string;
   app: {
     baseUrl: string;
+    forwardedIPHeaderName: string;
   } | null;
   schemaConfig: SchemaModuleConfig;
   supportConfig: SupportConfig | null;
@@ -296,6 +297,11 @@ export function createRegistry({
     {
       provide: WEB_APP_URL,
       useValue: app?.baseUrl.replace(/\/$/, '') ?? 'http://localhost:3000',
+      scope: Scope.Singleton,
+    },
+    {
+      provide: FORWARDED_IP_HEADER_NAME,
+      useValue: app?.forwardedIPHeaderName,
       scope: Scope.Singleton,
     },
     {
