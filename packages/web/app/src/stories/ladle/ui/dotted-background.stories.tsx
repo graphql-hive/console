@@ -193,8 +193,8 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Base: <code className="text-neutral-12">bg-neutral-1</code>
             <br />
-            Pattern: <code className="text-neutral-12">bg-dot-white/[0.2]</code> (dotted pattern at
-            20% opacity)
+            Pattern: <code className="text-neutral-12">bg-dot-neutral-12/[0.2]</code> (dotted
+            pattern at 20% opacity)
             <br />
             Mask:{' '}
             <code className="text-neutral-12">
@@ -284,7 +284,8 @@ export const ColorPaletteShowcase: Story = () => (
           <li>
             Outer container:{' '}
             <code className="text-neutral-12">
-              bg-dot-white/[0.2] bg-neutral-1 relative flex size-full items-center justify-center
+              bg-dot-neutral-12/[0.2] bg-neutral-1 relative flex size-full items-center
+              justify-center
             </code>
           </li>
           <li>
@@ -347,8 +348,8 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
         <ul className="text-neutral-10 space-y-1 text-xs">
           <li>
-            Dotted pattern: <code className="text-neutral-12">bg-dot-white/[0.2]</code> (Tailwind
-            custom utility)
+            Dotted pattern: <code className="text-neutral-12">bg-dot-neutral-12/[0.2]</code>{' '}
+            (Tailwind custom utility)
           </li>
           <li>
             Background color: <code className="text-neutral-12">bg-neutral-1</code>

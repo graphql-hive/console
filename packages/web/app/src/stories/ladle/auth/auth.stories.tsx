@@ -278,7 +278,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Container: <code className="text-neutral-12">flex items-center gap-x-4</code>
             <br />
-            Lines: <code className="text-neutral-12">h-[1px] w-full bg-gray-700</code>
+            Lines: <code className="text-neutral-12">h-[1px] w-full bg-neutral-2</code>
             <br />
             Text: <code className="text-neutral-12">text-gray-400</code>
             <br />
@@ -443,7 +443,7 @@ export const ColorPaletteShowcase: Story = () => (
         <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">AuthOrSeparator inconsistency:</strong> Uses{' '}
-            <code className="text-neutral-12">bg-gray-700</code> for lines and{' '}
+            <code className="text-neutral-12">bg-neutral-2</code> for lines and{' '}
             <code className="text-neutral-12">text-gray-400</code> for text, not neutral-* scale
           </li>
           <li>

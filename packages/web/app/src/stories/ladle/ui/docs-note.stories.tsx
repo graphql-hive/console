@@ -89,7 +89,7 @@ export const ColorPaletteShowcase: Story = () => (
             This is a standard documentation note. Use for helpful tips and information.
           </DocsNote>
           <p className="text-neutral-10 text-xs">
-            Border: <code className="text-neutral-12">border-l-2 border-white</code>
+            Border: <code className="text-neutral-12">border-l-2 border-neutral-12</code>
             <br />
             Text: <code className="text-neutral-12">text-neutral-12 text-sm</code>
             <br />
