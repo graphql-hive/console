@@ -2,6 +2,8 @@ import cookies from 'js-cookie';
 import { LifeBuoyIcon } from 'lucide-react';
 import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
 import { useMutation } from 'urql';
+import { isThemeSwitcherEnabled } from '@/components/theme/theme-provider';
+import { ThemeSwitcher } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -205,6 +207,12 @@ export function UserMenu(props: {
                 <SettingsIcon className="mr-2 size-4" />
                 Profile settings
               </DropdownMenuItem>
+              {isThemeSwitcherEnabled() ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <ThemeSwitcher />
+                </>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <a href={docsUrl} target="_blank" rel="noreferrer">

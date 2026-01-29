@@ -6,7 +6,7 @@ import { CheckIcon, PlusIcon } from '../../ui/icon';
 import { TimeAgo } from '../../v2';
 import { AnnotatedContext } from './schema-diff/components';
 
-const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
+export const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewCommentsFragment on SchemaProposalReview {
     id
     comments {
@@ -34,7 +34,7 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className="mb-2 rounded border-[1px] border-gray-600 bg-black px-6 py-4 font-sans">
+      <div className="mb-2 rounded-sm border border-gray-600 bg-black px-6 py-4 font-sans">
         {review.comments?.edges?.map(({ node: comment }, idx) => {
           return (
             <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />

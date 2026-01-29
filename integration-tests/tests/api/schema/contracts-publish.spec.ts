@@ -67,12 +67,8 @@ test.concurrent(
   'schema publish with successful initial contract composition',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -158,12 +154,8 @@ test.concurrent(
 
 test.concurrent('schema publish with failing initial contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -239,12 +231,8 @@ test.concurrent('schema publish with failing initial contract composition', asyn
 
 test.concurrent('schema publish with succeeding contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -330,12 +318,8 @@ test.concurrent('schema publish with succeeding contract composition', async ({ 
 
 test.concurrent('schema publish with failing contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -421,12 +405,8 @@ test.concurrent(
   'schema delete with successful initial contract composition',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -512,12 +492,8 @@ test.concurrent(
 
 test.concurrent('schema delete with failing initial contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -594,12 +570,8 @@ test.concurrent('schema delete with failing initial contract composition', async
 
 test.concurrent('schema delete with succeeding contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -684,12 +656,8 @@ test.concurrent('schema delete with succeeding contract composition', async ({ e
 
 test.concurrent('schema delete with failing contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-    ProjectType.Federation,
-  );
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -768,11 +736,10 @@ test.concurrent(
   'successful contracts schema can be fetched from the CDN with CDN access token',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, createCdnAccess, target, setNativeFederation } =
-      await createProject(ProjectType.Federation);
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+      ProjectType.Federation,
+    );
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -835,8 +802,6 @@ test.concurrent(
     const { createProject, setFeatureFlag } = await createOrg();
     const { createTargetAccessToken, createCdnAccess, target, setNativeFederation } =
       await createProject(ProjectType.Federation);
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -904,11 +869,10 @@ const DisabledContractMutation = graphql(`
 
 test.concurrent('disable contract results in CDN artifacts being removed', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject, setFeatureFlag } = await createOrg();
-  const { createTargetAccessToken, createCdnAccess, target, setNativeFederation } =
-    await createProject(ProjectType.Federation);
-  await setFeatureFlag('compareToPreviousComposableVersion', true);
-  await setNativeFederation(true);
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+    ProjectType.Federation,
+  );
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -993,11 +957,10 @@ test.concurrent(
   'disable contract delete succeeds if no version/CDN artifacts have been published yet',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, createCdnAccess, target, setNativeFederation } =
-      await createProject(ProjectType.Federation);
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+      ProjectType.Federation,
+    );
 
     // Create a token with write rights
     const writeToken = await createTargetAccessToken({});
@@ -1051,15 +1014,8 @@ test.concurrent(
   'disable contract delete succeeds if no version/CDN artifacts have been published yet',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
-    const { createProject, setFeatureFlag } = await createOrg();
-    const { createTargetAccessToken, target, setNativeFederation } = await createProject(
-      ProjectType.Federation,
-    );
-    await setFeatureFlag('compareToPreviousComposableVersion', true);
-    await setNativeFederation(true);
-
-    // Create a token with write rights
-    const writeToken = await createTargetAccessToken({});
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Federation);
 
     const createContractResult = await execute({
       document: CreateContractMutation,

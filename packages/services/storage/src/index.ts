@@ -366,9 +366,16 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_excluded_app_deployments'
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
       | 'fail_diff_on_dangerous_change'
+      | 'app_deployment_protection_enabled'
+      | 'app_deployment_protection_min_days_inactive'
+      | 'app_deployment_protection_max_traffic_percentage'
+      | 'app_deployment_protection_traffic_period_days'
+      | 'app_deployment_protection_rule_logic'
+      | 'app_deployment_protection_min_days_since_creation'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -385,6 +392,17 @@ export async function createStorage(
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
           : [],
+        excludedAppDeployments: Array.isArray(row.validation_excluded_app_deployments)
+          ? row.validation_excluded_app_deployments.filter(isDefined)
+          : [],
+      },
+      appDeploymentProtection: {
+        isEnabled: row.app_deployment_protection_enabled,
+        minDaysInactive: row.app_deployment_protection_min_days_inactive,
+        minDaysSinceCreation: row.app_deployment_protection_min_days_since_creation,
+        maxTrafficPercentage: Number(row.app_deployment_protection_max_traffic_percentage),
+        trafficPeriodDays: row.app_deployment_protection_traffic_period_days,
+        ruleLogic: row.app_deployment_protection_rule_logic as 'AND' | 'OR',
       },
     };
   }
@@ -1848,9 +1866,16 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_excluded_app_deployments'
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
           | 'fail_diff_on_dangerous_change'
+          | 'app_deployment_protection_enabled'
+          | 'app_deployment_protection_min_days_inactive'
+          | 'app_deployment_protection_max_traffic_percentage'
+          | 'app_deployment_protection_traffic_period_days'
+          | 'app_deployment_protection_rule_logic'
+          | 'app_deployment_protection_min_days_since_creation'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1860,10 +1885,17 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
+          t.validation_excluded_app_deployments,
           t.validation_request_count,
           t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets,
-          t.fail_diff_on_dangerous_change
+          t.fail_diff_on_dangerous_change,
+          t.app_deployment_protection_enabled,
+          t.app_deployment_protection_min_days_inactive,
+          t.app_deployment_protection_min_days_since_creation,
+          t.app_deployment_protection_max_traffic_percentage,
+          t.app_deployment_protection_traffic_period_days,
+          t.app_deployment_protection_rule_logic
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1894,7 +1926,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change, t.app_deployment_protection_enabled, t.app_deployment_protection_min_days_inactive, t.app_deployment_protection_max_traffic_percentage, t.app_deployment_protection_traffic_period_days, t.app_deployment_protection_rule_logic;
           `);
         }),
       );
@@ -1906,6 +1938,7 @@ export async function createStorage(
       period,
       targets,
       excludedClients,
+      excludedAppDeployments,
       breakingChangeFormula,
       requestCount,
       isEnabled,
@@ -1951,6 +1984,7 @@ export async function createStorage(
               validation_percentage = COALESCE(${percentage ?? null}, validation_percentage)
               , validation_period = COALESCE(${period ?? null}, validation_period)
               , validation_excluded_clients = COALESCE(${excludedClients?.length ? sql.array(excludedClients, 'text') : null}, validation_excluded_clients)
+              , validation_excluded_app_deployments = COALESCE(${excludedAppDeployments?.length ? sql.array(excludedAppDeployments, 'text') : null}, validation_excluded_app_deployments)
               , validation_request_count = COALESCE(${requestCount ?? null}, validation_request_count)
               , validation_breaking_change_formula = COALESCE(${breakingChangeFormula ?? null}, validation_breaking_change_formula)
               , validation_enabled = COALESCE(${isEnabled ?? null}, validation_enabled)
@@ -1975,13 +2009,72 @@ export async function createStorage(
               , t.validation_percentage
               , t.validation_period
               , t.validation_excluded_clients
+              , t.validation_excluded_app_deployments
               , ret.targets
               , t.validation_request_count
               , t.validation_breaking_change_formula
               , t.fail_diff_on_dangerous_change
+              , t.app_deployment_protection_enabled
+              , t.app_deployment_protection_min_days_inactive
+              , t.app_deployment_protection_max_traffic_percentage
+              , t.app_deployment_protection_traffic_period_days
+              , t.app_deployment_protection_rule_logic
           `);
         }),
       ).validation;
+    },
+
+    async updateTargetAppDeploymentProtectionSettings({
+      targetId: target,
+      projectId: project,
+      isEnabled,
+      minDaysInactive,
+      minDaysSinceCreation,
+      maxTrafficPercentage,
+      trafficPeriodDays,
+      ruleLogic,
+    }: {
+      targetId: string;
+      projectId: string;
+      isEnabled?: boolean | null;
+      minDaysInactive?: number | null;
+      minDaysSinceCreation?: number | null;
+      maxTrafficPercentage?: number | null;
+      trafficPeriodDays?: number | null;
+      ruleLogic?: 'AND' | 'OR' | null;
+    }) {
+      return transformTargetSettings(
+        await pool.one(sql`/* updateTargetAppDeploymentProtectionSettings */
+            UPDATE
+              targets
+            SET
+              app_deployment_protection_enabled = COALESCE(${isEnabled ?? null}, app_deployment_protection_enabled)
+              , app_deployment_protection_min_days_inactive = COALESCE(${minDaysInactive ?? null}, app_deployment_protection_min_days_inactive)
+              , app_deployment_protection_max_traffic_percentage = COALESCE(${maxTrafficPercentage ?? null}, app_deployment_protection_max_traffic_percentage)
+              , app_deployment_protection_traffic_period_days = COALESCE(${trafficPeriodDays ?? null}, app_deployment_protection_traffic_period_days)
+              , app_deployment_protection_min_days_since_creation = COALESCE(${minDaysSinceCreation ?? null}, app_deployment_protection_min_days_since_creation)
+              , app_deployment_protection_rule_logic = COALESCE(${ruleLogic ?? null}, app_deployment_protection_rule_logic)
+            WHERE
+              id = ${target}
+              AND project_id = ${project}
+            RETURNING
+              id
+              , validation_enabled
+              , validation_percentage
+              , validation_period
+              , validation_excluded_clients
+              , null as targets
+              , validation_request_count
+              , validation_breaking_change_formula
+              , fail_diff_on_dangerous_change
+              , app_deployment_protection_enabled
+              , app_deployment_protection_min_days_inactive
+              , app_deployment_protection_max_traffic_percentage
+              , app_deployment_protection_traffic_period_days
+              , app_deployment_protection_rule_logic
+              , app_deployment_protection_min_days_since_creation
+          `),
+      ).appDeploymentProtection;
     },
 
     async countSchemaVersionsOfProject({ projectId: project, period }) {
@@ -2115,36 +2208,6 @@ export async function createStorage(
       }
 
       return SchemaVersionModel.parse(version);
-    },
-    async getLatestSchemas({ projectId: project, targetId: target, onlyComposable }) {
-      const latest = await pool.maybeOne<
-        Pick<schema_versions, 'id' | 'is_composable'>
-      >(sql`/* getLatestSchemas */
-        SELECT sv.id, sv.is_composable
-        FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
-        WHERE t.id = ${target} AND t.project_id = ${project} AND ${
-          onlyComposable ? sql`sv.is_composable IS TRUE` : true
-        }
-        ORDER BY sv.created_at DESC
-        LIMIT 1
-      `);
-
-      if (!latest) {
-        return null;
-      }
-
-      const schemas = await storage.getSchemasOfVersion({
-        versionId: latest.id,
-        includeMetadata: true,
-      });
-
-      return {
-        versionId: latest.id,
-        valid: latest.is_composable,
-        schemas,
-      };
     },
     async getSchemaByNameOfVersion(args) {
       const result = await pool.maybeOne<
@@ -3961,6 +4024,7 @@ export async function createStorage(
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
             , "schema_proposal_id"
+            , "schema_proposal_changes"
           )
           VALUES (
               ${schemaSDLHash}
@@ -3991,6 +4055,7 @@ export async function createStorage(
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
             , ${args.schemaProposalId ?? null}
+            , ${jsonify(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
           )
           RETURNING
             "id"
@@ -4921,7 +4986,6 @@ const decodeCDNAccessTokenRecord = (result: unknown): CDNAccessToken => {
 
 const FeatureFlagsModel = zod
   .object({
-    compareToPreviousComposableVersion: zod.boolean().default(false),
     forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
     /** whether app deployments are enabled for the given organization */
     appDeployments: zod.boolean().default(false),
@@ -4935,7 +4999,6 @@ const FeatureFlagsModel = zod
   .transform(
     val =>
       val ?? {
-        compareToPreviousComposableVersion: false,
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
         otelTracing: false,
@@ -5325,6 +5388,15 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
+  affectedAppDeployments: null | Array<{
+    id: string;
+    name: string;
+    version: string;
+    affectedOperations: Array<{
+      hash: string;
+      name: string | null;
+    }>;
+  }>;
 } {
   return {
     id: change.id,
@@ -5333,6 +5405,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
     isSafeBasedOnUsage: change.isSafeBasedOnUsage,
     approvalMetadata: change.approvalMetadata,
     usageStatistics: change.usageStatistics,
+    affectedAppDeployments: change.affectedAppDeployments,
   };
 }
 
@@ -5363,6 +5436,7 @@ const schemaCheckSQLFields = sql`
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
   , c."schema_proposal_id" as "schemaProposalId"
+  , c."schema_proposal_changes" as "schemaProposalChanges"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`

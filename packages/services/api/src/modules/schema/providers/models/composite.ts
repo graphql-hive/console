@@ -1,24 +1,20 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { traceFn } from '@hive/service-common';
 import { SchemaChangeType } from '@hive/storage';
-import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from '../registry-checks';
-import { swapServices } from '../schema-helper';
-import { shouldUseLatestComposableVersion } from '../schema-manager';
-import type { PublishInput } from '../schema-publisher';
-import type {
-  DeletedCompositeSchema,
-  Organization,
-  Project,
-  PushedCompositeSchema,
-  Target,
-} from './../../../../shared/entities';
+import { AppDeployments } from '../../../app-deployments/providers/app-deployments';
+import {
+  GetAffectedAppDeployments,
+  RegistryChecks,
+  type ConditionalBreakingChangeDiffConfig,
+} from '../registry-checks';
+import { CompositeSchemaInput, swapServices } from '../schema-helper';
+import type { Organization, Project, Target } from './../../../../shared/entities';
 import { ProjectType } from './../../../../shared/entities';
 import { Logger } from './../../../shared/providers/logger';
 import {
   buildSchemaCheckFailureState,
   ContractCheckInput,
   ContractInput,
-  DeleteFailureReasonCode,
   isContractChecksSuccessful,
   PublishFailureReasonCode,
   PublishIgnoreReasonCode /* Check */,
@@ -27,7 +23,6 @@ import {
   SchemaDeleteConclusion,
   SchemaDeleteResult /* Publish */,
   SchemaPublishConclusion,
-  SchemaPublishFailureReason,
   SchemaPublishResult,
   temp,
 } from './shared';
@@ -39,6 +34,7 @@ export class CompositeModel {
   constructor(
     private checks: RegistryChecks,
     private logger: Logger,
+    private appDeployments: AppDeployments,
   ) {}
 
   private async getContractChecks(args: {
@@ -50,6 +46,7 @@ export class CompositeModel {
     compositionCheck: Awaited<ReturnType<RegistryChecks['composition']>>;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
+    getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }): Promise<Array<ContractCheckInput> | null> {
     const contractResults = (args.compositionCheck.result ?? args.compositionCheck.reason)
       ?.contracts;
@@ -79,10 +76,23 @@ export class CompositeModel {
             incomingSdl: contractCompositionResult?.result?.fullSchemaSdl ?? null,
             failDiffOnDangerousChange: args.failDiffOnDangerousChange,
             filterNestedChanges: true,
+            getAffectedAppDeployments: args.getAffectedAppDeployments,
           }),
         };
       }),
     );
+  }
+
+  @traceFn('Composite modern: diffSchema')
+  async diffSchema(args: {
+    existing: Array<Pick<CompositeSchemaInput, 'sdl' | 'serviceName'>> | null;
+    input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'>;
+  }) {
+    return this.checks.serviceDiff({
+      existing:
+        args.existing?.find(schema => schema.serviceName === args.input.serviceName) ?? null,
+      incoming: args.input,
+    });
   }
 
   @traceFn('Composite modern: check', {
@@ -106,10 +116,9 @@ export class CompositeModel {
     failDiffOnDangerousChange,
     filterNestedChanges,
   }: {
-    input: {
-      sdl: string;
-      serviceName: string;
-      url: string | null;
+    input: Pick<CompositeSchemaInput, 'sdl' | 'serviceName'> & {
+      // for a schema check the service url is optional
+      serviceUrl: string | null;
     };
     selector: {
       organizationId: string;
@@ -119,13 +128,13 @@ export class CompositeModel {
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: PushedCompositeSchema[];
+      schemas: CompositeSchemaInput[];
       contractNames: string[] | null;
     } | null;
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: PushedCompositeSchema[];
+      schemas: CompositeSchemaInput[];
     } | null;
     baseSchema: string | null;
     project: Project;
@@ -140,33 +149,20 @@ export class CompositeModel {
     > | null;
     filterNestedChanges: boolean;
   }): Promise<SchemaCheckResult> {
-    const incoming: PushedCompositeSchema = {
-      kind: 'composite',
+    const incoming: CompositeSchemaInput = {
       id: temp,
-      author: temp,
-      commit: temp,
-      target: selector.targetId,
-      date: Date.now(),
       sdl: input.sdl,
-      service_name: input.serviceName,
-      service_url:
-        input.url ??
-        latest?.schemas?.find(s => s.service_name === input.serviceName)?.service_url ??
-        'temp',
-      action: 'PUSH',
+      serviceName: input.serviceName,
+      serviceUrl:
+        input.serviceUrl ??
+        latest?.schemas?.find(s => s.serviceName === input.serviceName)?.serviceUrl ??
+        temp,
       metadata: null,
     };
 
     const schemaSwapResult = latest ? swapServices(latest.schemas, incoming) : null;
     const schemas = schemaSwapResult ? schemaSwapResult.schemas : [incoming];
-    schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
-
-    const compareToPreviousComposableVersion = shouldUseLatestComposableVersion(
-      selector.targetId,
-      project,
-      organization,
-    );
-    const comparedVersion = compareToPreviousComposableVersion ? latestComposable : latest;
+    schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
@@ -207,17 +203,31 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: comparedVersion,
+      version: latestComposable,
       organization,
       project,
       targetId: selector.targetId,
     });
+
+    const getAffectedAppDeployments: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: selector.targetId,
+        schemaCoordinates,
+        firstDeployments,
+        firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+      });
 
     const contractChecks = await this.getContractChecks({
       contracts,
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments,
     });
     this.logger.info('Contract checks: %o', contractChecks);
 
@@ -232,6 +242,7 @@ export class CompositeModel {
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         failDiffOnDangerousChange,
         filterNestedChanges,
+        getAffectedAppDeployments,
       }),
       this.checks.policyCheck({
         selector,
@@ -304,92 +315,67 @@ export class CompositeModel {
     conditionalBreakingChangeDiffConfig,
     failDiffOnDangerousChange,
   }: {
-    input: PublishInput;
+    input: {
+      sdl: string;
+      service: string;
+      url: string | null;
+      metadata: string | null;
+    };
     project: Project;
     organization: Organization;
     target: Target;
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: PushedCompositeSchema[];
+      schemas: CompositeSchemaInput[];
       contractNames: string[] | null;
     } | null;
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: PushedCompositeSchema[];
+      schemas: CompositeSchemaInput[];
     } | null;
     baseSchema: string | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaPublishResult> {
-    const incoming: PushedCompositeSchema = {
-      kind: 'composite',
+    const latestSchemaVersion = latest;
+    const latestServiceVersion = latest?.schemas?.find(
+      schema => schema.serviceName === input.service,
+    );
+
+    const serviceUrlCheck = await this.checks.serviceUrl(
+      input.url ?? null,
+      latestServiceVersion?.serviceUrl ?? null,
+    );
+
+    if (serviceUrlCheck.status === 'failed') {
+      return {
+        conclusion: SchemaPublishConclusion.Reject,
+        reasons: [
+          {
+            code: PublishFailureReasonCode.MissingServiceUrl,
+          },
+        ],
+      };
+    }
+
+    const incoming: CompositeSchemaInput = {
       id: temp,
-      author: input.author,
       sdl: input.sdl,
-      commit: input.commit,
-      target: target.id,
-      date: Date.now(),
-      service_name: input.service || '',
-      service_url: input.url || null,
-      action: 'PUSH',
+      serviceName: input.service,
+      serviceUrl: serviceUrlCheck.result.serviceUrl,
       metadata: input.metadata ?? null,
     };
 
-    const latestVersion = latest;
-    const schemaSwapResult = latestVersion ? swapServices(latestVersion.schemas, incoming) : null;
+    const schemaSwapResult = latestSchemaVersion
+      ? swapServices(latestSchemaVersion.schemas, incoming)
+      : null;
     const previousService = schemaSwapResult?.existing;
 
-    // default to previous service url if not provided.
-    incoming.service_url = incoming.service_url ?? previousService?.service_url ?? '';
-
     const schemas = schemaSwapResult?.schemas ?? [incoming];
-    schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
-    const compareToLatestComposable = shouldUseLatestComposableVersion(
-      target.id,
-      project,
-      organization,
-    );
-    const schemaVersionToCompareAgainst = compareToLatestComposable ? latestComposable : latest;
-
-    const [serviceNameCheck, serviceUrlCheck] = await Promise.all([
-      this.checks.serviceName({
-        name: incoming.service_name,
-      }),
-      this.checks.serviceUrl(
-        {
-          url: incoming.service_url,
-        },
-        previousService
-          ? {
-              url: previousService.service_url,
-            }
-          : null,
-      ),
-    ]);
-
-    if (serviceNameCheck.status === 'failed' || serviceUrlCheck.status === 'failed') {
-      const reasons: SchemaPublishFailureReason[] = [];
-
-      if (serviceNameCheck.status === 'failed') {
-        reasons.push({
-          code: PublishFailureReasonCode.MissingServiceName,
-        });
-      }
-
-      if (serviceUrlCheck.status === 'failed') {
-        reasons.push({
-          code: PublishFailureReasonCode.MissingServiceUrl,
-        });
-      }
-
-      return {
-        conclusion: SchemaPublishConclusion.Reject,
-        reasons,
-      };
-    }
+    schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
     const checksumCheck = await this.checks.checksum({
       existing: schemaSwapResult?.existing
@@ -457,33 +443,30 @@ export class CompositeModel {
       };
     }
 
-    if (
-      compositionCheck.status === 'failed' &&
-      compositionCheck.reason.errorsBySource.graphql.length > 0 &&
-      !compareToLatestComposable
-    ) {
-      return {
-        conclusion: SchemaPublishConclusion.Reject,
-        reasons: [
-          {
-            code: PublishFailureReasonCode.CompositionFailure,
-            compositionErrors: compositionCheck.reason.errorsBySource.graphql,
-          },
-        ],
-      };
-    }
-
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: schemaVersionToCompareAgainst,
+      version: latestComposable,
       organization,
       project,
       targetId: target.id,
     });
 
+    const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: target.id,
+        schemaCoordinates,
+        firstDeployments,
+        firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+      });
+
     const diffCheck = await this.checks.diff({
       conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
       includeUrlChanges: {
-        schemasBefore: schemaVersionToCompareAgainst?.schemas ?? [],
+        schemasBefore: latestComposable?.schemas ?? [],
         schemasAfter: schemas,
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
@@ -492,6 +475,7 @@ export class CompositeModel {
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
       failDiffOnDangerousChange,
       filterNestedChanges: true, // filter because publish is never associated to schema proposals in this way.
+      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
     });
 
     const contractChecks = await this.getContractChecks({
@@ -499,6 +483,7 @@ export class CompositeModel {
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: getAffectedAppDeploymentsForPublish,
     });
 
     const messages: string[] = [];
@@ -515,7 +500,7 @@ export class CompositeModel {
       conclusion: SchemaPublishConclusion.Publish,
       state: {
         composable: compositionCheck.status === 'completed',
-        initial: latestVersion === null,
+        initial: latestSchemaVersion === null,
         changes: diffCheck.result?.all ?? diffCheck.reason?.all ?? null,
         coordinatesDiff:
           diffCheck.result?.coordinatesDiff ??
@@ -576,50 +561,21 @@ export class CompositeModel {
     latest: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: PushedCompositeSchema[];
+      schemas: CompositeSchemaInput[];
     };
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: PushedCompositeSchema[];
+      schemas: CompositeSchemaInput[];
     } | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
     failDiffOnDangerousChange: null | boolean;
   }): Promise<SchemaDeleteResult> {
-    const incoming: DeletedCompositeSchema = {
-      kind: 'composite',
-      id: temp,
-      target: selector.target,
-      date: Date.now(),
-      service_name: input.serviceName,
-      action: 'DELETE',
-    };
-
     const latestVersion = latest;
-    const compareToLatestComposable = shouldUseLatestComposableVersion(
-      selector.target,
-      project,
-      organization,
-    );
 
-    const serviceNameCheck = await this.checks.serviceName({
-      name: incoming.service_name,
-    });
-
-    if (serviceNameCheck.status === 'failed') {
-      return {
-        conclusion: SchemaDeleteConclusion.Reject,
-        reasons: [
-          {
-            code: DeleteFailureReasonCode.MissingServiceName,
-          },
-        ],
-      };
-    }
-
-    const schemas = latestVersion.schemas.filter(s => s.service_name !== input.serviceName);
-    schemas.sort((a, b) => a.service_name.localeCompare(b.service_name));
+    const schemas = latestVersion.schemas.filter(s => s.serviceName !== input.serviceName);
+    schemas.sort((a, b) => a.serviceName.localeCompare(b.serviceName));
 
     const compositionCheck = await this.checks.composition({
       targetId: selector.target,
@@ -640,11 +596,24 @@ export class CompositeModel {
     });
 
     const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: compareToLatestComposable ? latestComposable : latest,
+      version: latestComposable,
       organization,
       project,
       targetId: selector.target,
     });
+
+    const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = (
+      schemaCoordinates,
+      firstDeployments,
+      firstOperations,
+    ) =>
+      this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
+        targetId: selector.target,
+        schemaCoordinates,
+        firstDeployments,
+        firstOperations,
+        excludedAppDeploymentNames: conditionalBreakingChangeDiffConfig?.excludedAppDeploymentNames,
+      });
 
     const diffCheck = await this.checks.diff({
       conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
@@ -658,6 +627,7 @@ export class CompositeModel {
       incomingSdl: compositionCheck.result?.fullSchemaSdl ?? null,
       failDiffOnDangerousChange,
       filterNestedChanges: true, // filter because deletes are never associated with schema proposals in this way.
+      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
     });
 
     const contractChecks = await this.getContractChecks({
@@ -665,24 +635,8 @@ export class CompositeModel {
       compositionCheck,
       conditionalBreakingChangeDiffConfig,
       failDiffOnDangerousChange,
+      getAffectedAppDeployments: getAffectedAppDeploymentsForDelete,
     });
-
-    if (
-      compositionCheck.status === 'failed' &&
-      compositionCheck.reason.errorsBySource.graphql.length > 0
-    ) {
-      if (!compareToLatestComposable) {
-        return {
-          conclusion: SchemaDeleteConclusion.Reject,
-          reasons: [
-            {
-              code: DeleteFailureReasonCode.CompositionFailure,
-              compositionErrors: compositionCheck.reason.errorsBySource.graphql,
-            },
-          ],
-        };
-      }
-    }
 
     const { changes, breakingChanges } =
       diffCheck.status === 'failed'

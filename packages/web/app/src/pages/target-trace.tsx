@@ -1779,7 +1779,7 @@ function ExceptionTeaser(props: {
       <div className="p-3 text-xs">
         <p className="text-gray-300">{props.message}</p>
         {props.stacktrace && (
-          <pre className="mt-2 overflow-x-auto rounded bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
+          <pre className="mt-2 overflow-x-auto rounded-sm bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
             {props.stacktrace}
           </pre>
         )}

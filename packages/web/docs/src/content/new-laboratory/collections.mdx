@@ -1,0 +1,189 @@
+# Collections
+
+Collections help you organize and manage your GraphQL operations. Think of them as folders where you
+can group related operations together for better project management and team collaboration.
+
+## What are Collections?
+
+Collections are named groups of operations that you can:
+
+- **Organize by feature** - Group operations related to a specific feature or API area
+- **Share with team** - Collections can be shared across your organization
+- **Quick access** - Quickly find and open operations you use frequently
+- **Version control** - Keep track of operations as your API evolves
+
+## Creating Collections
+
+To create a new collection:
+
+1. Open the Collections panel from the left sidebar
+2. Click the "+" button or use the Command Palette (`⌘J`) and select "Add collection"
+3. Enter a name for your collection
+4. Click "Add collection"
+
+The collection will appear in the Collections panel and is ready to store operations.
+
+## Adding Operations to Collections
+
+### From an Operation
+
+When you have an operation open:
+
+1. Click the "Save" button (bookmark icon) in the operation toolbar
+2. Select the collection from the dropdown
+3. The operation is now saved to that collection
+
+The bookmark icon will show as "Saved" when the operation is already in a collection.
+
+### From Collections Panel
+
+You can also add operations directly:
+
+1. Open the Collections panel
+2. Right-click on a collection (or use the collection menu)
+3. Select "Add operation"
+4. Create a new operation or select an existing one
+
+## Managing Collections
+
+### Viewing Collections
+
+The Collections panel shows:
+
+- **Collection name** - Click to expand/collapse
+- **Operation count** - Number of operations in each collection
+- **Operation list** - All operations within the collection
+
+### Opening Operations
+
+To open an operation from a collection:
+
+1. Expand the collection in the Collections panel
+2. Click on any operation
+3. It will open in a new tab
+
+If the operation is already open, clicking it will switch to that tab.
+
+### Searching Collections
+
+Use the search bar in the Collections panel to:
+
+- **Find operations** - Search across all collections
+- **Filter results** - See matching operations with their collection names
+- **Quick access** - Click search results to open operations
+
+Search results show operations in the format: `Collection Name / Operation Name`
+
+### Deleting Collections
+
+To delete a collection:
+
+1. Hover over the collection in the Collections panel
+2. Click the delete icon that appears
+3. Confirm the deletion
+
+**Warning:** Deleting a collection will also delete all operations within it.
+
+### Deleting Operations from Collections
+
+To remove an operation from a collection:
+
+1. Expand the collection
+2. Hover over the operation
+3. Click the delete icon
+4. Confirm the deletion
+
+This removes the operation from the collection but doesn't delete the operation itself if it's open
+in a tab.
+
+## Organizing Your Collections
+
+### Best Practices
+
+1. **Group by feature** - Create collections for different features or API areas
+
+   - Example: "User Management", "Product Catalog", "Analytics"
+
+2. **Group by team** - Organize by team or project
+
+   - Example: "Frontend Team", "Mobile App", "Admin Tools"
+
+3. **Group by environment** - Separate operations for different environments
+
+   - Example: "Development", "Staging", "Production"
+
+4. **Use descriptive names** - Clear names make collections easy to find
+   - Good: "Authentication Queries"
+   - Bad: "Stuff"
+
+### Naming Conventions
+
+Consider establishing naming conventions for your team:
+
+- Use consistent prefixes or suffixes
+- Include dates for time-sensitive collections
+- Add version numbers for API versions
+- Use emoji or icons for visual organization (if supported)
+
+## Sharing Collections
+
+Collections can be shared across your organization:
+
+- **Team access** - All team members can see and use shared collections
+- **Consistent operations** - Ensure everyone uses the same operation definitions
+- **Onboarding** - New team members can quickly access common operations
+
+Note: Sharing behavior depends on your Hive organization settings and permissions.
+
+## Collections vs. Operations
+
+Understanding the difference:
+
+- **Operations** - Individual GraphQL queries, mutations, or subscriptions
+- **Collections** - Groups of related operations
+
+An operation can exist:
+
+- Independently in a tab (not saved to any collection)
+- In one or more collections
+- Both in a collection and open in a tab
+
+## Keyboard Shortcuts
+
+- `⌘J` / `Ctrl+J` - Open Command Palette (includes collection actions)
+
+## Permissions
+
+Collection management may be restricted based on your permissions:
+
+- **Create** - Ability to create new collections
+- **Delete** - Ability to delete collections
+- **Update** - Ability to modify collection contents
+
+If you don't have certain permissions, some actions may be disabled or hidden.
+
+## Troubleshooting
+
+### Collection Not Appearing
+
+If a collection doesn't appear:
+
+1. Refresh the Collections panel
+2. Check if you have permission to view it
+3. Verify the collection wasn't deleted
+
+### Operation Not Saving
+
+If you can't save an operation:
+
+1. Check if you have permission to create operations in collections
+2. Verify the collection exists
+3. Try creating a new collection
+
+### Search Not Working
+
+If search doesn't find operations:
+
+1. Check your search term spelling
+2. Verify operations are actually in collections
+3. Try refreshing the panel

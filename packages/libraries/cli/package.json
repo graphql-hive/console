@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.57.1",
+  "version": "0.57.4",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
@@ -49,7 +49,7 @@
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
-    "@graphql-inspector/core": "7.1.0",
+    "@graphql-inspector/core": "7.1.2",
     "@graphql-tools/code-file-loader": "~8.1.0",
     "@graphql-tools/graphql-file-loader": "~8.1.0",
     "@graphql-tools/json-file-loader": "~8.0.0",
@@ -57,10 +57,10 @@
     "@graphql-tools/url-loader": "~8.0.0",
     "@graphql-tools/utils": "10.9.1",
     "@graphql-typed-document-node/core": "3.2.0",
-    "@oclif/core": "^3.26.6",
-    "@oclif/plugin-help": "6.0.22",
-    "@oclif/plugin-update": "4.2.13",
-    "@theguild/federation-composition": "0.21.2",
+    "@oclif/core": "3.26.6",
+    "@oclif/plugin-help": "6.2.36",
+    "@oclif/plugin-update": "4.7.16",
+    "@theguild/federation-composition": "0.21.3",
     "cli-table3": "0.6.5",
     "colors": "1.4.0",
     "env-ci": "7.3.0",
@@ -72,7 +72,7 @@
   "devDependencies": {
     "@types/env-ci": "3.1.4",
     "graphql": "16.9.0",
-    "oclif": "4.13.6",
+    "oclif": "4.22.65",
     "rimraf": "4.4.1",
     "tsx": "4.19.2",
     "typescript": "5.7.3"

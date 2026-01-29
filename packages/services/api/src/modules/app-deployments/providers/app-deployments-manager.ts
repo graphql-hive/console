@@ -43,6 +43,12 @@ export class AppDeploymentsManager {
     return appDeployment;
   }
 
+  async getAppDeploymentById(args: {
+    appDeploymentId: string;
+  }): Promise<AppDeploymentRecord | null> {
+    return await this.appDeployments.getAppDeploymentById(args);
+  }
+
   getStatusForAppDeployment(appDeployment: AppDeploymentRecord): AppDeploymentStatus {
     if (appDeployment.retiredAt) {
       return 'retired';
@@ -166,6 +172,7 @@ export class AppDeploymentsManager {
       name: string;
       version: string;
     };
+    force?: boolean;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
@@ -188,8 +195,10 @@ export class AppDeploymentsManager {
 
     return await this.appDeployments.retireAppDeployment({
       organizationId: selector.organizationId,
+      projectId: selector.projectId,
       targetId: selector.targetId,
       appDeployment: args.appDeployment,
+      force: args.force,
     });
   }
 
@@ -199,6 +208,7 @@ export class AppDeploymentsManager {
       cursor: string | null;
       first: number | null;
       operationName: string;
+      schemaCoordinates: string[] | null;
     },
   ) {
     return await this.appDeployments.getPaginatedGraphQLDocuments({
@@ -206,6 +216,7 @@ export class AppDeploymentsManager {
       cursor: args.cursor,
       first: args.first,
       operationName: args.operationName,
+      schemaCoordinates: args.schemaCoordinates,
     });
   }
 
@@ -217,6 +228,26 @@ export class AppDeploymentsManager {
       targetId: target.id,
       cursor: args.cursor,
       first: args.first,
+    });
+  }
+
+  async getActiveAppDeploymentsForTarget(
+    target: Target,
+    args: {
+      cursor: string | null;
+      first: number | null;
+      filter: {
+        name?: string | null;
+        lastUsedBefore?: string | null;
+        neverUsedAndCreatedBefore?: string | null;
+      };
+    },
+  ) {
+    return await this.appDeployments.getActiveAppDeployments({
+      targetId: target.id,
+      cursor: args.cursor,
+      first: args.first,
+      filter: args.filter,
     });
   }
 

@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
-import { CheckIcon } from 'lucide-react';
+import { BoxIcon, CheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
 import { Label, Label as LegacyLabel } from '@/components/common';
 import {
@@ -18,7 +18,6 @@ import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/compone
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -95,6 +94,27 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
         percentageFormatted
       }
     }
+    affectedAppDeployments(first: 5) {
+      edges {
+        cursor
+        node {
+          id
+          name
+          version
+          affectedOperations(first: 5) {
+            edges {
+              cursor
+              node {
+                hash
+                name
+              }
+            }
+          }
+          totalAffectedOperations
+        }
+      }
+      totalCount
+    }
   }
 `);
 
@@ -135,7 +155,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      <h2 className="mb-3 font-bold text-gray-900 dark:text-white">{props.title}</h2>
+      <h2 className="mb-3 font-bold text-white">{props.title}</h2>
       <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -207,14 +227,13 @@ function ChangeItem(
           <AccordionTrigger className="py-3 hover:no-underline">
             <div
               className={clsx(
+                'text-left',
                 (change.approval && 'text-orange-500') ||
                   (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
-              <div className="inline-flex justify-start space-x-2">
-                <span className="text-left text-gray-600 dark:text-white">
-                  {labelize(change.message)}
-                </span>
+              <div>
+                <span className="text-white">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
                   <span className="cursor-pointer text-yellow-500">
                     {' '}
@@ -222,27 +241,46 @@ function ChangeItem(
                   </span>
                 )}
                 {'usageStatistics' in change && change.usageStatistics && (
-                  <span className="flex items-center space-x-1 rounded-sm bg-gray-800 px-2 font-bold">
-                    <PulseIcon className="h-6 stroke-[1px]" />
-                    <span className="text-xs">
-                      {change.usageStatistics.topAffectedOperations.length}
-                      {change.usageStatistics.topAffectedOperations.length > 10 ? '+' : ''}{' '}
-                      {change.usageStatistics.topAffectedOperations.length === 1
-                        ? 'operation'
-                        : 'operations'}{' '}
-                      by {change.usageStatistics.topAffectedClients.length}{' '}
-                      {change.usageStatistics.topAffectedClients.length === 1
-                        ? 'client'
-                        : 'clients'}{' '}
-                      affected
+                  <>
+                    {' '}
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-gray-800 px-2 py-1 align-middle font-bold">
+                      <PulseIcon className="h-4 stroke-[1px]" />
+                      <span className="text-xs">
+                        {change.usageStatistics.topAffectedOperations.length}
+                        {change.usageStatistics.topAffectedOperations.length > 10 ? '+' : ''}{' '}
+                        {change.usageStatistics.topAffectedOperations.length === 1
+                          ? 'operation'
+                          : 'operations'}{' '}
+                        by {change.usageStatistics.topAffectedClients.length}{' '}
+                        {change.usageStatistics.topAffectedClients.length === 1
+                          ? 'client'
+                          : 'clients'}{' '}
+                        affected
+                      </span>
                     </span>
-                  </span>
+                  </>
                 )}
-                {change.approval ? (
-                  <div className="self-end">
-                    <ApprovedByBadge approval={change.approval} />
-                  </div>
+                {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
+                  <>
+                    {' '}
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 py-1 align-middle font-bold">
+                      <BoxIcon className="size-4 stroke-[2px]" />
+                      <span className="text-xs">
+                        {change.affectedAppDeployments.totalCount}{' '}
+                        {change.affectedAppDeployments.totalCount === 1
+                          ? 'app deployment'
+                          : 'app deployments'}{' '}
+                        affected
+                      </span>
+                    </span>
+                  </>
                 ) : null}
+                {change.approval && (
+                  <>
+                    {' '}
+                    <ApprovedByBadge approval={change.approval} />
+                  </>
+                )}
               </div>
             </div>
           </AccordionTrigger>
@@ -259,9 +297,54 @@ function ChangeItem(
           )}
           {'usageStatistics' in change && change.usageStatistics && metadata ? (
             <div>
+              <h4 className="mb-1 text-sm font-medium text-white">
+                Affected Operations (based on usage)
+              </h4>
+              <div className="mb-2 flex justify-between text-sm text-gray-500">
+                <span>
+                  Top 10 operations and clients affected by this change based on usage data.
+                </span>
+                {metadata && (
+                  <span className="text-xs text-gray-100">
+                    See{' '}
+                    {metadata.settings.targets.map((target, index, arr) => (
+                      <>
+                        {!target.target ? (
+                          <TooltipProvider key={index}>
+                            <Tooltip>
+                              <TooltipTrigger>{target.slug}</TooltipTrigger>
+                              <TooltipContent>Target does no longer exist.</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <Link
+                            key={index}
+                            className="text-orange-500 hover:text-orange-500"
+                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
+                            params={{
+                              organizationSlug: props.organizationSlug,
+                              projectSlug: props.projectSlug,
+                              targetSlug: target.target.slug,
+                              coordinate: change.path!.join('.'),
+                            }}
+                            target="_blank"
+                          >
+                            {target.slug}
+                          </Link>
+                        )}
+                        {index === arr.length - 1
+                          ? null
+                          : index === arr.length - 2
+                            ? ' and '
+                            : ', '}
+                      </>
+                    ))}{' '}
+                    target insights for live usage data.
+                  </span>
+                )}
+              </div>
               <div className="flex space-x-4">
                 <Table>
-                  <TableCaption>Top 10 affected operations.</TableCaption>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[150px]">Operation Name</TableHead>
@@ -315,7 +398,6 @@ function ChangeItem(
                   </TableBody>
                 </Table>
                 <Table>
-                  <TableCaption>Top 10 affected clients.</TableCaption>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[150px]">Client Name</TableHead>
@@ -336,52 +418,197 @@ function ChangeItem(
                   </TableBody>
                 </Table>
               </div>
-              <div className="mt-4 flex justify-end pt-2 text-xs text-gray-100">
-                {metadata && (
-                  <span>
-                    See{' '}
-                    {metadata.settings.targets.map((target, index, arr) => (
-                      <>
-                        {!target.target ? (
-                          <TooltipProvider key={index}>
-                            <Tooltip>
-                              <TooltipTrigger>{target.slug}</TooltipTrigger>
-                              <TooltipContent>Target does no longer exist.</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ) : (
-                          <Link
-                            key={index}
-                            className="text-orange-500 hover:text-orange-500"
-                            to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
-                            params={{
-                              organizationSlug: props.organizationSlug,
-                              projectSlug: props.projectSlug,
-                              targetSlug: target.target.slug,
-                              coordinate: change.path!.join('.'),
-                            }}
-                            target="_blank"
-                          >
-                            {target.slug}
-                          </Link>
-                        )}
-                        {index === arr.length - 1
-                          ? null
-                          : index === arr.length - 2
-                            ? ' and '
-                            : ', '}
-                      </>
-                    ))}{' '}
-                    target insights for live usage data.
-                  </span>
-                )}
-              </div>
+              {'affectedAppDeployments' in change &&
+              change.affectedAppDeployments?.edges?.length ? (
+                <div className="mt-6">
+                  <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
+                  <p className="mb-2 text-sm text-gray-500">
+                    Top 5 active app deployments that have operations using this schema coordinate.
+                  </p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">App Name</TableHead>
+                        <TableHead>Version</TableHead>
+                        <TableHead className="text-right">Affected Operations</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {change.affectedAppDeployments.edges.map(({ node: deployment }) => (
+                        <TableRow key={deployment.id}>
+                          <TableCell className="font-medium">
+                            <Link
+                              to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                              params={{
+                                organizationSlug: props.organizationSlug,
+                                projectSlug: props.projectSlug,
+                                targetSlug: props.targetSlug,
+                                appName: deployment.name,
+                                appVersion: deployment.version,
+                              }}
+                              search={{ coordinates: change.path?.join('.') }}
+                              className="text-orange-500 hover:text-orange-500 hover:underline"
+                            >
+                              {deployment.name}
+                            </Link>
+                          </TableCell>
+                          <TableCell>{deployment.version}</TableCell>
+                          <TableCell className="text-right">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="link" className="h-auto p-0 text-orange-500">
+                                  {deployment.totalAffectedOperations}{' '}
+                                  {deployment.totalAffectedOperations === 1
+                                    ? 'operation'
+                                    : 'operations'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent side="left" className="w-80">
+                                <div className="space-y-2">
+                                  <h5 className="font-medium text-white">Affected Operations</h5>
+                                  <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+                                    {deployment.affectedOperations.edges.map(({ node: op }) => (
+                                      <li key={op.hash} className="text-gray-300">
+                                        {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                  <Link
+                                    to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                                    params={{
+                                      organizationSlug: props.organizationSlug,
+                                      projectSlug: props.projectSlug,
+                                      targetSlug: props.targetSlug,
+                                      appName: deployment.name,
+                                      appVersion: deployment.version,
+                                    }}
+                                    search={{ coordinates: change.path?.join('.') }}
+                                    className="block pt-2 text-sm text-orange-500 hover:underline"
+                                  >
+                                    Show all ({deployment.totalAffectedOperations}) affected
+                                    operations
+                                  </Link>
+                                </div>
+                                <PopoverArrow />
+                              </PopoverContent>
+                            </Popover>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {change.affectedAppDeployments.totalCount > 5 && (
+                    <Link
+                      to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
+                      params={{
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                        schemaCheckId: props.schemaCheckId,
+                      }}
+                      search={{ coordinate: change.path?.join('.') }}
+                      className="mt-2 block text-sm text-orange-500 hover:underline"
+                    >
+                      View all ({change.affectedAppDeployments.totalCount}) affected app deployments
+                    </Link>
+                  )}
+                </div>
+              ) : null}
             </div>
-          ) : change.severityLevel === SeverityLevelType.Breaking ? (
-            <>{change.severityReason ?? 'No details available for this breaking change.'}</>
-          ) : (
-            <>No details available for this change.</>
-          )}
+          ) : 'affectedAppDeployments' in change && change.affectedAppDeployments?.edges?.length ? (
+            <div>
+              <h4 className="mb-1 text-sm font-medium text-white">Affected App Deployments</h4>
+              <p className="mb-2 text-sm text-gray-500">
+                Top 5 active app deployments that have operations using this schema coordinate.
+              </p>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">App Name</TableHead>
+                    <TableHead>Version</TableHead>
+                    <TableHead className="text-right">Affected Operations</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {change.affectedAppDeployments.edges.map(({ node: deployment }) => (
+                    <TableRow key={deployment.id}>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                            targetSlug: props.targetSlug,
+                            appName: deployment.name,
+                            appVersion: deployment.version,
+                          }}
+                          search={{ coordinates: change.path?.join('.') }}
+                          className="text-orange-500 hover:text-orange-500 hover:underline"
+                        >
+                          {deployment.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{deployment.version}</TableCell>
+                      <TableCell className="text-right">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="link" className="h-auto p-0 text-orange-500">
+                              {deployment.totalAffectedOperations}{' '}
+                              {deployment.totalAffectedOperations === 1
+                                ? 'operation'
+                                : 'operations'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent side="left" className="w-80">
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-white">Affected Operations</h5>
+                              <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
+                                {deployment.affectedOperations.edges.map(({ node: op }) => (
+                                  <li key={op.hash} className="text-gray-300">
+                                    {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
+                                  </li>
+                                ))}
+                              </ul>
+                              <Link
+                                to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+                                params={{
+                                  organizationSlug: props.organizationSlug,
+                                  projectSlug: props.projectSlug,
+                                  targetSlug: props.targetSlug,
+                                  appName: deployment.name,
+                                  appVersion: deployment.version,
+                                }}
+                                search={{ coordinates: change.path?.join('.') }}
+                                className="block pt-2 text-sm text-orange-500 hover:underline"
+                              >
+                                Show all ({deployment.totalAffectedOperations}) affected operations
+                              </Link>
+                            </div>
+                            <PopoverArrow />
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {change.affectedAppDeployments.totalCount > 5 && (
+                <Link
+                  to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId/affected-deployments"
+                  params={{
+                    organizationSlug: props.organizationSlug,
+                    projectSlug: props.projectSlug,
+                    targetSlug: props.targetSlug,
+                    schemaCheckId: props.schemaCheckId,
+                  }}
+                  search={{ coordinate: change.path?.join('.') }}
+                  className="mt-2 block text-sm text-orange-500 hover:underline"
+                >
+                  View all ({change.affectedAppDeployments.totalCount}) affected app deployments
+                </Link>
+              )}
+            </div>
+          ) : null}
         </AccordionContent>
       </AccordionItem>
     </Accordion>

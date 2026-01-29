@@ -1,0 +1,181 @@
+# Schema Support
+
+The Laboratory provides comprehensive schema support through automatic introspection and a visual
+Builder that helps you explore and build GraphQL operations.
+
+## Schema Introspection
+
+The Laboratory automatically introspects your GraphQL schema when you provide an endpoint. This
+enables:
+
+- **Auto-completion** - The editor suggests available fields, types, and arguments
+- **Validation** - Real-time checking of your queries against the schema
+- **Type information** - See field types, required arguments, and descriptions
+- **Builder** - Visual exploration of your entire schema
+
+## Setting Your Endpoint
+
+### Default Endpoint
+
+If your Laboratory is configured with a default endpoint, it will be automatically loaded. You can
+restore the default endpoint at any time using the restore button in the Builder panel.
+
+### Custom Endpoint
+
+To use a different endpoint:
+
+1. Open the Builder panel (left side of the Laboratory)
+2. Enter your GraphQL endpoint URL in the endpoint input field
+3. The Laboratory will automatically fetch the schema via introspection
+
+The endpoint can be:
+
+- A standard HTTP/HTTPS GraphQL endpoint
+- A GraphQL endpoint with custom path (e.g., `/graphql`, `/api/graphql`)
+- Any endpoint that supports GraphQL introspection
+
+### Refreshing the Schema
+
+If your schema changes, you can refresh it:
+
+1. Open the Command Palette (`⌘J`)
+2. Select "Refetch schema"
+3. Or use the refresh button in the Builder panel
+
+## The Builder
+
+The Builder provides a visual way to explore your schema and construct operations.
+
+### Schema Navigation
+
+The Builder organizes your schema into three main sections:
+
+- **Query** - All query operations available in your schema
+- **Mutation** - All mutation operations
+- **Subscription** - All subscription operations
+
+Each section shows all available fields with their types and arguments.
+
+### Building Operations Visually
+
+To build an operation using the Builder:
+
+1. **Select a root field** - Click on a query, mutation, or subscription field
+2. **Choose nested fields** - Expand object types to select nested fields
+3. **Add arguments** - Check arguments you want to include
+4. **Watch it build** - The query is automatically generated in the editor
+
+### Field Types
+
+The Builder displays different icons for different field types:
+
+- **Scalar fields** - Simple types like `String`, `Int`, `Boolean`
+- **Object fields** - Complex types that can be expanded
+- **List fields** - Arrays indicated by `[Type]`
+- **Required fields** - Marked with `!` (non-nullable)
+
+### Arguments
+
+When a field has arguments:
+
+1. Expand the `[arguments]` section
+2. Check the arguments you want to include
+3. Arguments are automatically added to your query with placeholder values
+4. Fill in the actual values in the Variables tab
+
+### Collapsing and Expanding
+
+- **Expand all** - Click on fields to expand and see nested types
+- **Collapse all** - Use the collapse button to close all expanded sections
+- **Auto-expand** - Fields used in your current query are automatically expanded
+
+## Schema-Aware Editor
+
+The operation editor uses your schema to provide:
+
+### Auto-completion
+
+As you type, the editor suggests:
+
+- Field names
+- Argument names
+- Type names
+- Enum values
+
+Press `Tab` or `Enter` to accept suggestions.
+
+### Validation
+
+The editor validates your query in real-time:
+
+- **Red underlines** - Syntax errors
+- **Yellow underlines** - Schema validation errors
+- **Hover for details** - See specific error messages
+
+### Type Information
+
+Hover over any field or type to see:
+
+- Field type
+- Description (if available)
+- Required arguments
+- Deprecation status
+
+## Working Without a Schema
+
+If you don't have a schema available, you can still:
+
+- Write operations manually
+- Use the editor without auto-completion
+- Execute operations against any endpoint
+
+However, you won't have access to:
+
+- Visual Builder
+- Auto-completion
+- Schema validation
+- Type information
+
+## Schema Caching
+
+The Laboratory caches your schema to improve performance:
+
+- **Fast loading** - Previously introspected schemas load instantly
+- **Automatic refresh** - Schema is refreshed when you change endpoints
+- **Manual refresh** - Use Command Palette to force a refresh
+
+## Best Practices
+
+1. **Use the Builder for exploration** - Great for discovering available fields and types
+2. **Combine Builder and editor** - Start with Builder, then fine-tune in the editor
+3. **Keep schema updated** - Refresh when your API schema changes
+4. **Check types** - Hover over fields to understand their types before using them
+5. **Validate early** - Use schema validation to catch errors before execution
+
+## Troubleshooting
+
+### Schema Not Loading
+
+If your schema doesn't load:
+
+1. **Check endpoint** - Verify the endpoint URL is correct
+2. **Check CORS** - Ensure your server allows introspection requests
+3. **Check authentication** - Some endpoints require authentication for introspection
+4. **Check network** - Verify you can reach the endpoint
+
+### Schema Out of Date
+
+If your schema seems outdated:
+
+1. Use "Refetch schema" from the Command Palette
+2. Change and restore your endpoint
+3. Refresh the page
+
+### Missing Fields
+
+If fields don't appear in the Builder:
+
+1. Check if you're looking in the correct tab (Query/Mutation/Subscription)
+2. Verify the field exists in your schema
+3. Refresh the schema
+4. Some fields may be hidden based on permissions or schema configuration

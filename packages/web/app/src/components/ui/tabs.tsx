@@ -19,7 +19,7 @@ const tabsListVariants = cva('relative flex items-center', {
 });
 
 // Define variants for TabsTrigger
-const tabsTriggerVariants = cva('cursor-pointer !appearance-none text-sm font-medium transition', {
+const tabsTriggerVariants = cva('cursor-pointer appearance-none! text-sm font-medium transition', {
   variants: {
     variant: {
       default:

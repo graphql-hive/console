@@ -156,7 +156,10 @@ export async function main() {
       return res.status(403).send(err.message);
     }
 
-    return supertokensErrorHandler()(err, req, res);
+    // We can not upgrade Supertokens Node as it removed some APIs we rely on for
+    // our SSO flow. This the as `any` cast here.
+    // The code is still compatible and purely a type error.
+    return supertokensErrorHandler()(err, req, res as any);
   });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {

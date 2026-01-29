@@ -17,7 +17,7 @@ import type {
 } from './providers/contracts';
 import type { SchemaCheckWarning } from './providers/models/shared';
 
-export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeType>;
+export type SchemaChangeConnectionMapper = ReadonlyArray<SchemaChangeMapper>;
 export type SchemaChangeMapper = SchemaChangeType;
 export type SchemaChangeApprovalMapper = SchemaCheckApprovalMetadata;
 export type SchemaErrorConnectionMapper = readonly SchemaError[];
@@ -309,4 +309,45 @@ export type SchemaChangeUsageStatisticsAffectedOperationMapper = {
   count: number;
   percentage: number;
   targetIds: Array<string>;
+};
+
+export type SchemaChangeAffectedAppDeploymentMapper = {
+  id: string;
+  name: string;
+  version: string;
+  operations: Array<{
+    hash: string;
+    name: string | null;
+  }>;
+  totalOperations: number;
+};
+
+export type SchemaChangeAffectedAppDeploymentOperationsConnectionMapper = {
+  edges: Array<{
+    cursor: string;
+    node: {
+      hash: string;
+      name: string | null;
+    };
+  }>;
+  pageInfo: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  };
+};
+
+export type SchemaChangeAffectedAppDeploymentsConnectionMapper = {
+  edges: Array<{
+    cursor: string;
+    node: SchemaChangeAffectedAppDeploymentMapper;
+  }>;
+  totalCount: number;
+  pageInfo: {
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  };
 };

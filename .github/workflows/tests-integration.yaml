@@ -89,11 +89,6 @@ jobs:
         name: Cache Rust
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
 
-      - if: matrix.shardIndex == 'apollo-router'
-        name: build apollo router
-        run: |
-          cargo build
-
       # ---- START ---- Disk space cleanup before apollo router tests
       - if: matrix.shardIndex == 'apollo-router'
         name: Before cleanup disk space
@@ -101,13 +96,30 @@ jobs:
       - if: matrix.shardIndex == 'apollo-router'
         name: Cleanup disk space
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          sudo rm -rf \
+            /usr/lib/jvm \
+            /usr/share/swift \
+            /usr/local/julia* \
+            /usr/local/share/chromium \
+            /opt/az \
+            /usr/local/share/powershell \
+            /opt/microsoft /opt/google \
+            /usr/local/lib/android \
+            /usr/local/.ghcup \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
           sudo docker builder prune -a
       - if: matrix.shardIndex == 'apollo-router'
         name: After cleanup disk space
         run: df -h
       # ---- END ---- Disk space cleanup before apollo router tests
+
+      - if: matrix.shardIndex == 'apollo-router'
+        name: build apollo router
+        run: |
+          cargo build
 
       - if: matrix.shardIndex == 'apollo-router'
         name: run apollo router integration tests

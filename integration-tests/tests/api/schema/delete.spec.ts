@@ -197,6 +197,7 @@ test.concurrent(
 
       expect(changes[0]).toMatchInlineSnapshot(`
         {
+          affectedAppDeployments: null,
           approvalMetadata: null,
           breakingChangeSchemaCoordinate: Query.bruv,
           criticality: BREAKING,
@@ -222,7 +223,7 @@ test.concurrent(
 );
 
 test.concurrent(
-  'composition error is persisted in the database when the super schema schema is not composable',
+  'composition error is persisted in the database when the supergraph is not composable',
   async ({ expect }) => {
     let storage: Awaited<ReturnType<typeof createStorage>> | undefined = undefined;
 
@@ -262,6 +263,7 @@ test.concurrent(
           url: 'http://localhost:4000/graphql',
         })
         .then(r => r.expectNoGraphQLErrors());
+
       expect(publishService1Result.schemaPublish.__typename).toBe('SchemaPublishSuccess');
 
       const publishService2Result = await readToken

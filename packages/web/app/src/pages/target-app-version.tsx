@@ -124,12 +124,14 @@ function TargetAppVersionContent(props: {
   targetSlug: string;
   appName: string;
   appVersion: string;
+  coordinates?: string;
 }) {
   const router = useRouter();
   const search =
     typeof router.latestLocation.search.search === 'string'
       ? router.latestLocation.search.search
       : '';
+  const coordinates = props.coordinates ?? null;
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -151,6 +153,7 @@ function TargetAppVersionContent(props: {
       first: 20,
       documentsFilter: {
         operationName: debouncedSearch,
+        schemaCoordinates: coordinates ? [coordinates] : null,
       },
     },
   });
@@ -249,6 +252,29 @@ function TargetAppVersionContent(props: {
         >
           <AppFilter />
         </SubPageLayoutHeader>
+        {coordinates ? (
+          <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
+            <span>
+              Showing operations affected by{' '}
+              <code className="rounded-sm bg-gray-800 px-1 py-0.5 font-mono text-orange-400">
+                {coordinates}
+              </code>
+            </span>
+            <Link
+              to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
+              params={{
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+                appName: props.appName,
+                appVersion: props.appVersion,
+              }}
+              className="text-orange-500 hover:underline"
+            >
+              Clear filter
+            </Link>
+          </div>
+        ) : null}
         <div className="mt-4" />
         {data.fetching || data.stale ? (
           <div className="flex h-fit flex-1 items-center justify-center">
@@ -260,11 +286,17 @@ function TargetAppVersionContent(props: {
         ) : !data.data?.target?.appDeployment?.documents?.edges.length ? (
           <EmptyList
             title={
-              debouncedSearch
-                ? 'No documents found matching that operation name'
-                : 'No documents have been uploaded for this app deployment'
+              coordinates
+                ? `No operations found using ${coordinates}`
+                : debouncedSearch
+                  ? 'No documents found matching that operation name'
+                  : 'No documents have been uploaded for this app deployment'
             }
-            description="You can upload documents via the Hive CLI"
+            description={
+              coordinates
+                ? 'No operations in this deployment use this schema coordinate'
+                : 'You can upload documents via the Hive CLI'
+            }
             docsUrl="/features/schema-registry#app-deplyments"
           />
         ) : (
@@ -285,7 +317,7 @@ function TargetAppVersionContent(props: {
                   {data.data?.target?.appDeployment.documents?.edges.map((edge, i) => (
                     <TableRow key={i}>
                       <TableCell>
-                        <span className="rounded bg-gray-800 p-1 font-mono text-sm">
+                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-sm">
                           {edge.node.hash}
                         </span>
                       </TableCell>
@@ -302,13 +334,13 @@ function TargetAppVersionContent(props: {
                             </Tooltip>
                           </TooltipProvider>
                         ) : (
-                          <span className="rounded bg-gray-800 p-1 font-mono text-xs">
+                          <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
                             {edge.node.operationName}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-end">
-                        <span className="rounded bg-gray-800 p-1 font-mono text-xs">
+                        <span className="rounded-sm bg-gray-800 p-1 font-mono text-xs">
                           {edge.node.body.length > 43
                             ? edge.node.body.substring(0, 43).replace(/\n/g, '\\n') + '...'
                             : edge.node.body}
@@ -385,6 +417,7 @@ function TargetAppVersionContent(props: {
                         after: data?.data?.target?.appDeployment?.documents.pageInfo?.endCursor,
                         documentsFilter: {
                           operationName: debouncedSearch,
+                          schemaCoordinates: coordinates ? [coordinates] : null,
                         },
                       })
                       .toPromise()
@@ -416,6 +449,7 @@ export function TargetAppVersionPage(props: {
   targetSlug: string;
   appName: string;
   appVersion: string;
+  coordinates?: string;
 }) {
   return (
     <>
@@ -424,7 +458,7 @@ export function TargetAppVersionPage(props: {
         projectSlug={props.projectSlug}
         organizationSlug={props.organizationSlug}
         page={Page.Apps}
-        className="min-h-content"
+        className="min-h-(--min-h-content)"
       >
         <TargetAppVersionContent {...props} />
       </TargetLayout>

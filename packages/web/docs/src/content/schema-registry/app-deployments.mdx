@@ -258,6 +258,132 @@ change to **retired**.
 
 - [`app:retire` API Reference](https://github.com/graphql-hive/console/tree/main/packages/libraries/cli#hive-appretire)
 
+## Finding Stale App Deployments
+
+Hive tracks usage data for your app deployments. Each time a GraphQL request uses a persisted
+document from an app deployment, Hive records when it was last used. This data helps you identify
+app deployments that are candidates for retirement.
+
+### Usage Tracking
+
+When your GraphQL server or gateway reports usage to Hive, the `lastUsed` timestamp for the
+corresponding app deployment is updated. You can see this information in the Hive dashboard or query
+it via the GraphQL API.
+
+### Querying Stale Deployments via GraphQL API
+
+You can use the `activeAppDeployments` query to find app deployments that match specific criteria.
+The date filters (`lastUsedBefore`, `neverUsedAndCreatedBefore`) use OR semantics. deployments
+matching **either** date condition are returned. The `name` filter uses AND semantics to narrow down
+results.
+
+```graphql
+query FindStaleDeployments($target: TargetReferenceInput!) {
+  target(reference: $target) {
+    activeAppDeployments(
+      filter: {
+        # Optional: filter by app name (case-insensitive partial match)
+        name: "my-app"
+        # Deployments last used more than 30 days ago
+        lastUsedBefore: "2024-11-01T00:00:00Z"
+        # OR deployments that have never been used and are older than 30 days
+        neverUsedAndCreatedBefore: "2024-11-01T00:00:00Z"
+      }
+    ) {
+      edges {
+        node {
+          name
+          version
+          createdAt
+          lastUsed
+        }
+      }
+    }
+  }
+}
+```
+
+| Filter Parameter            | Description                                                                                      |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| `name`                      | Filter by app deployment name (case-insensitive partial match). Uses AND semantics.              |
+| `lastUsedBefore`            | Return deployments that were last used before this timestamp. Uses OR with other date filter.    |
+| `neverUsedAndCreatedBefore` | Return deployments never used and created before this timestamp. Uses OR with other date filter. |
+
+### Retirement Workflow
+
+A typical workflow for retiring stale deployments:
+
+1. **Query stale deployments** using the `activeAppDeployments` query with appropriate filters
+2. **Review the results** to ensure you're not retiring deployments still in use
+3. **Retire deployments** using the `app:retire` CLI command or GraphQL mutation
+
+### Automated Cleanup
+
+For teams with many app deployments (e.g., one per PR or branch), you can automate cleanup by
+combining the GraphQL API with the Hive CLI.
+
+Example script pattern:
+
+```bash
+# Query stale deployments via GraphQL API
+# Parse the response to get app names and versions
+# Retire each deployment using the CLI:
+hive app:retire \
+  --registry.accessToken "<ACCESS_TOKEN>" \
+  --target "<ORGANIZATION>/<PROJECT>/<TARGET>" \
+  --name "<app-name>" \
+  --version "<app-version>"
+```
+
+<Callout type="warning">
+  Always review deployments before retiring them programmatically. Consider protecting your latest
+  production deployment to avoid accidentally retiring active versions.
+</Callout>
+
+## Schema Checks and Affected App Deployments
+
+When you run a schema check that detects breaking changes, Hive automatically identifies which
+active app deployments would be affected by those changes. This helps you understand the real-world
+impact of schema changes before deploying them.
+
+### How It Works
+
+During a schema check, Hive analyzes the breaking changes and matches them against the persisted
+documents in your active app deployments. Hive identifies all app deployments that have operations
+using any of the affected schema coordinates (e.g., fields like `Query.hello` that are being
+removed).
+
+For each affected app deployment, you'll see:
+
+- **The deployment** name and version
+- **Which specific operations** within that deployment use the affected schema coordinates
+
+This information is displayed alongside the breaking changes in the schema check results, helping
+you understand the collective impact across all your active app deployments.
+
+### Example
+
+If you have a breaking change that removes the `Query.users` field, and you have an active app
+deployment `mobile-app@2.1.0` with operations that query `Query.users`, the schema check will show:
+
+- The breaking change: "Field 'users' was removed from object type 'Query'"
+- Affected app deployment: `mobile-app` version `2.1.0`
+- Affected operations: The specific operation names and hashes that use this field
+
+### Benefits
+
+- **Impact assessment**: Understand which client applications would break before deploying schema
+  changes
+- **Coordination**: Know which teams need to update their apps before a breaking change can be
+  safely deployed
+- **Risk mitigation**: Make informed decisions about whether to proceed with breaking changes or
+  find alternative approaches
+
+<Callout type="info">
+  Only **active** app deployments (published and not retired) are checked for affected operations.
+  Pending and retired deployments are not included in this analysis.
+</Callout>
+
 ## Persisted Documents on GraphQL Server and Gateway
 
 Persisted documents can be used on your GraphQL server or Gateway to reduce the payload size of your

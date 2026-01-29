@@ -4,8 +4,8 @@ import { useMutation, useQuery, UseQueryExecute } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
-  ProposalOverview_ChangeFragment,
-  ProposalOverview_ReviewsFragment,
+  Proposal_ChangeFragment,
+  Proposal_ReviewsFragment,
   toUpperSnakeCase,
 } from '@/components/target/proposals';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
@@ -26,7 +26,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
-import { NoopError } from '@graphql-inspector/patch/errors';
+import { NoopError, ValueMismatchError } from '@graphql-inspector/patch/errors';
 import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import {
@@ -85,7 +85,7 @@ const ProposalQuery = graphql(/* GraphQL  */ `
         ...ProposalOverview_ChecksFragment
       }
       reviews {
-        ...ProposalOverview_ReviewsFragment
+        ...Proposal_ReviewsFragment
       }
       ...Proposals_EditProposalProposalFragment
     }
@@ -119,17 +119,17 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
         edges {
           node {
             id
-            ... on FailedSchemaCheck {
-              compositionErrors {
-                ...CompositionErrorsSection_SchemaErrorConnection
-              }
-            }
+            # ... on FailedSchemaCheck {
+            #   compositionErrors {
+            #     ...CompositionErrorsSection_SchemaErrorConnection
+            #   }
+            # }
             schemaSDL
             serviceName
-            schemaChanges {
+            schemaChanges: schemaProposalChanges {
               edges {
                 node {
-                  ...ProposalOverview_ChangeFragment
+                  ...Proposal_ChangeFragment
                 }
               }
             }
@@ -169,7 +169,7 @@ export function TargetProposalsSinglePage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Proposals}
-        className="flex h-[--content-height] min-h-[300px] flex-col pb-0"
+        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
       >
         <ProposalsContent {...props} />
       </TargetLayout>
@@ -233,9 +233,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           let compositionErrors:
             | FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>
             | undefined;
-          if (proposalVersion.__typename === 'FailedSchemaCheck') {
-            compositionErrors = proposalVersion.compositionErrors ?? undefined;
-          }
+          // if (proposalVersion.__typename === 'FailedSchemaCheck') {
+          //   compositionErrors = proposalVersion.compositionErrors ?? undefined;
+          // }
 
           const existingSchema = query.data?.latestValidVersion?.schemas.edges.find(
             ({ node: latestSchema }) =>
@@ -255,7 +255,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               ?.map(({ node: change }): Change<any> => {
                 // @todo don't useFragment here...
                 // eslint-disable-next-line react-hooks/rules-of-hooks
-                const c = useFragment(ProposalOverview_ChangeFragment, change);
+                const c = useFragment(Proposal_ChangeFragment, change);
                 return {
                   criticality: {
                     // isSafeBasedOnUsage: ,
@@ -268,6 +268,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   path: c.path?.join('.'),
                 };
               }) ?? [];
+
           const conflictingChanges: Array<{ change: Change; error: Error }> = [];
           const ignoredChanges: Array<{ change: Change; error: Error }> = [];
           let buildError: Error | null = null;
@@ -277,8 +278,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               onError(error, change) {
                 if (error instanceof NoopError) {
                   ignoredChanges.push({ change, error });
+                } else if (!(error instanceof ValueMismatchError)) {
+                  // totally ignore value mismatches
+                  conflictingChanges.push({ change, error });
                 }
-                conflictingChanges.push({ change, error });
                 return errors.looseErrorHandler(error, change);
               },
             });
@@ -416,7 +419,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded bg-gray-900/50 p-4">
+      <div className="flex w-full grow flex-col rounded-sm bg-gray-900/50 p-4">
         {query.fetching ? (
           <Spinner />
         ) : (
@@ -466,7 +469,7 @@ function TabbedContent(props: {
   version?: string;
   page?: string;
   services: ServiceProposalDetails[];
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  reviews: FragmentType<typeof Proposal_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
   versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;

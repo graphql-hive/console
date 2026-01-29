@@ -36,16 +36,13 @@ export class Inspector {
 
     const changes = await diff(existing, incoming, rules);
 
-    return changes
-      .filter(dropTrimmedDescriptionChangedChange)
-      .map(change =>
-        HiveSchemaChangeModel.parse({
-          type: change.type,
-          meta: change.meta,
-          isSafeBasedOnUsage: change.criticality.isSafeBasedOnUsage,
-        }),
-      )
-      .sort((a, b) => a.criticality.localeCompare(b.criticality));
+    return changes.filter(dropTrimmedDescriptionChangedChange).map(change =>
+      HiveSchemaChangeModel.parse({
+        type: change.type,
+        meta: change.meta,
+        isSafeBasedOnUsage: change.criticality.isSafeBasedOnUsage,
+      }),
+    );
   }
 }
 

@@ -373,6 +373,9 @@ export const Query = (props: {
     checkPermissions,
     preflight,
     setPreflight,
+    plugins,
+    pluginsState,
+    setPluginsState,
   } = useLaboratory();
 
   const operation = useMemo(() => {
@@ -384,7 +387,9 @@ export const Query = (props: {
       return;
     }
 
-    const result = await runPreflight?.();
+    const result = await runPreflight?.(plugins, pluginsState);
+
+    setPluginsState(result?.pluginsState ?? {});
 
     if (result?.status === 'error') {
       const newItemHistory = addHistory({
@@ -461,6 +466,7 @@ export const Query = (props: {
     props,
     addResponseToHistory,
     runPreflight,
+    pluginsState,
   ]);
 
   useEffect(() => {
@@ -640,7 +646,7 @@ export const Query = (props: {
             size="sm"
             variant="default"
             pressed={preflight?.enabled}
-            className="bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
+            className="hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
             onClick={() => {
               setPreflight({
                 ...(preflight ?? { script: '', enabled: true }),
@@ -763,7 +769,7 @@ export const Operation = (props: {
               <Query operation={operation} isReadOnly={isReadOnly} />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={30} className="!overflow-visible">
+            <ResizablePanel minSize={10} defaultSize={30} className="overflow-visible!">
               <Tabs className="grid size-full grid-rows-[auto_1fr]" defaultValue="variables">
                 <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
                   <TabsTrigger value="variables" className="grow-0 rounded-sm">
