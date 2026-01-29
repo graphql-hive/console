@@ -14,7 +14,7 @@ function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
       if (!env.auth.oidc) {
         throw new Error('OIDC provider is not configured');
       }
-      await startAuthFlowForOIDCProvider(props.oidcId);
+      await startAuthFlowForOIDCProvider(props.oidcId, props.redirectToPath);
       // we need to return something, otherwise react-query will throw an error
       return true;
     },
