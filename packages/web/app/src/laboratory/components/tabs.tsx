@@ -45,8 +45,7 @@ export const Tabs = ({ children, suffix }: TabsProps) => {
                 className={cn(
                   'text-neutral-10 hover:text-neutral-11 group relative flex cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 font-medium transition-all',
                   {
-                    'border-primary bg-card text-neutral-11-primary':
-                      activeTab === child.props.label,
+                    'border-neutral-11 bg-card text-neutral-11': activeTab === child.props.label,
                   },
                 )}
                 onClick={() => setActiveTab(child.props.label)}

@@ -373,7 +373,7 @@ const CircleStepIndicator = ({
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          className="text-primary transition-all duration-300 ease-in-out"
+          className="text-neutral-11 transition-all duration-300 ease-in-out"
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
@@ -403,7 +403,7 @@ const listVariants = cva('flex gap-2', {
 const classForSeparator = cva(
   [
     'bg-muted',
-    'data-[state=completed]:bg-primary data-disabled:opacity-50',
+    'data-[state=completed]:bg-neutral-11 data-disabled:opacity-50',
     'transition-all duration-300 ease-in-out',
   ],
   {

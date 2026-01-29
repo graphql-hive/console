@@ -233,7 +233,7 @@ const LaboratoryContent = () => {
               className={cn(
                 'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  'border-primary': activePanel === 'collections',
+                  'border-neutral-11': activePanel === 'collections',
                 },
               )}
             >
@@ -257,7 +257,7 @@ const LaboratoryContent = () => {
               className={cn(
                 'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  'border-primary': activePanel === 'history',
+                  'border-neutral-11': activePanel === 'history',
                 },
               )}
             >
@@ -279,7 +279,7 @@ const LaboratoryContent = () => {
           className={cn(
             'relative z-10 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
-              'border-primary': activePanel === 'settings',
+              'border-neutral-11': activePanel === 'settings',
             },
           )}
         >

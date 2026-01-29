@@ -15,7 +15,7 @@ const buttonVariants = cva(
           'text-neutral-11 hover:text-neutral-12 border border-neutral-5 hover:border-neutral-6 bg-neutral-3 hover:bg-neutral-4',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-neutral-12',
-        link: 'underline-offset-4 hover:underline text-primary',
+        link: 'underline-offset-4 hover:underline text-neutral-11',
         orangeLink: 'h-auto p-0 underline-offset-4 hover:underline text-accent',
       },
       size: {

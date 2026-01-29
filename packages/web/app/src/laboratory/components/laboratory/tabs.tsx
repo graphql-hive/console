@@ -236,7 +236,8 @@ export const Tab = (props: {
             <div
               className={cn(
                 'text-neutral-10 hover:text-neutral-11 group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
-                props.activeTab?.id === props.item.id && 'border-primary bg-card text-neutral-11',
+                props.activeTab?.id === props.item.id &&
+                  'border-neutral-11 bg-card text-neutral-11',
               )}
               onClick={() => {
                 props.setActiveTab(props.item);
@@ -423,7 +424,7 @@ export const Tabs = ({ className }: { className?: string }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-primary hover:text-primary"
+                className="text-neutral-11 hover:text-neutral-11"
                 onClick={handleAddOperation}
               >
                 <CirclePlus className="size-4" />

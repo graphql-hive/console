@@ -98,7 +98,7 @@ export function ChangeSpacing(props: { type?: 'removal' | 'addition' | 'mutual' 
         className={cn(
           props.type === 'removal' && 'bg-[#561c1d]',
           props.type === 'addition' && 'bg-[#11362b]',
-          (props.type === 'mutual' || !props.type) && 'bg-gray-900',
+          (props.type === 'mutual' || !props.type) && 'bg-neutral-2',
           'h-4',
         )}
       />
@@ -140,7 +140,7 @@ export function ChangeRow(props: {
       <tr style={{ counterIncrement: incrementCounter }}>
         <td
           className={cn(
-            'schema-doc-row-old w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'schema-doc-row-old bg-neutral-2 w-[42px] min-w-fit select-none pr-3 text-right text-gray-600',
             props.className,
             (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
@@ -148,7 +148,7 @@ export function ChangeRow(props: {
         />
         <td
           className={cn(
-            'schema-doc-row-new w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'schema-doc-row-new bg-neutral-2 w-[42px] min-w-fit select-none pr-3 text-right text-gray-600',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-green-900/30',
@@ -156,7 +156,7 @@ export function ChangeRow(props: {
         />
         <td
           className={cn(
-            'bg-gray-900 px-2',
+            'bg-neutral-2 px-2',
             props.className,
             props.type === 'removal' && 'bg-[#561c1d]',
             props.type === 'addition' && 'bg-[#11362b]',
@@ -164,7 +164,7 @@ export function ChangeRow(props: {
         >
           <span
             className={cn(
-              'bg-gray-900',
+              'bg-neutral-2',
               props.type === 'removal' && 'bg-[#561c1d] line-through decoration-[#998c8b]',
               props.type === 'addition' && 'bg-[#11362b]',
             )}

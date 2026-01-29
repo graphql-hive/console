@@ -192,7 +192,7 @@ function SchemaCoordinateView(props: {
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
           <div className="col-span-4">
             <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total calls</CardTitle>
                   <GlobeIcon className="text-neutral-10 size-4" />
@@ -206,7 +206,7 @@ function SchemaCoordinateView(props: {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Requests per minute</CardTitle>
                   <ActivityIcon className="text-neutral-10 size-4" />
@@ -228,7 +228,7 @@ function SchemaCoordinateView(props: {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Operations</CardTitle>
                   <BookIcon className="text-neutral-10 size-4" />
@@ -240,7 +240,7 @@ function SchemaCoordinateView(props: {
                   </p>
                 </CardContent>
               </Card>
-              <Card className="bg-gray-900/50">
+              <Card className="bg-neutral-2/50">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Consumers</CardTitle>
                   <TabletSmartphoneIcon className="text-neutral-10 size-4" />
@@ -255,7 +255,7 @@ function SchemaCoordinateView(props: {
             </div>
           </div>
           <div className="col-span-4">
-            <Card className="flex h-full flex-col bg-gray-900/50">
+            <Card className="bg-neutral-2/50 flex h-full flex-col">
               <CardHeader>
                 <CardTitle>Activity</CardTitle>
                 <CardDescription>
@@ -327,7 +327,7 @@ function SchemaCoordinateView(props: {
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4 flex h-full flex-col bg-gray-900/50">
+          <Card className="bg-neutral-2/50 col-span-4 flex h-full flex-col">
             <CardHeader>
               <CardTitle>Operations</CardTitle>
               <CardDescription>
@@ -371,7 +371,7 @@ function SchemaCoordinateView(props: {
             </CardContent>
           </Card>
 
-          <Card className="col-span-3 flex h-full flex-col bg-gray-900/50">
+          <Card className="bg-neutral-2/50 col-span-3 flex h-full flex-col">
             <CardHeader>
               <CardTitle>Clients</CardTitle>
               <CardDescription>

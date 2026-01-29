@@ -49,7 +49,7 @@ export function ChangeBlock(props: {
   return (
     props.changes.length !== 0 && (
       <>
-        <h2 className="mb-2 mt-6 flex items-center font-bold text-gray-900">
+        <h2 className="text-neutral-2 mb-2 mt-6 flex items-center font-bold">
           {props.title}
           {props.info && <ChangesBlockTooltip info={props.info} />}
         </h2>

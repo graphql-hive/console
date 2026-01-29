@@ -245,7 +245,7 @@ export function GraphQLTypeCard(props: {
   );
 
   return (
-    <div className="rounded-md border-2 border-gray-900">
+    <div className="border-neutral-2 rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
@@ -312,7 +312,7 @@ export function GraphQLTypeCardListItem(props: {
       onClick={props.onClick}
       className={clsx(
         'flex flex-row items-center justify-between p-4 text-sm',
-        props.index % 2 ? '' : 'bg-gray-900/50',
+        props.index % 2 ? '' : 'bg-neutral-2/50',
         props.className,
       )}
     >
@@ -503,7 +503,7 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className="rounded-md border-2 border-gray-900">
+    <div className="border-neutral-2 rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div className="flex flex-row items-center gap-2">
           <Skeleton className="bg-muted my-1 h-4 w-32" />

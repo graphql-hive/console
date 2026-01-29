@@ -416,7 +416,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded-sm bg-gray-900/50 p-4">
+      <div className="bg-neutral-2/50 flex w-full grow flex-col rounded-sm p-4">
         {query.fetching ? (
           <Spinner />
         ) : (

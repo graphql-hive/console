@@ -282,7 +282,7 @@ export const Collections = () => {
                     className="p-1! size-6 rounded-sm"
                     onClick={openAddCollectionDialog}
                   >
-                    <FolderPlusIcon className="text-primary size-4" />
+                    <FolderPlusIcon className="text-neutral-11 size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Add collection</TooltipContent>

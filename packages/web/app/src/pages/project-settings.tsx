@@ -281,7 +281,7 @@ function ProjectSettingsPage_SlugForm(props: { organizationSlug: string; project
                 <FormItem>
                   <FormControl>
                     <div className="grid max-w-xl grid-cols-1 md:grid-cols-2">
-                      <div className="border-neutral-5 text-neutral-10 h-10 overflow-auto text-nowrap rounded-md border bg-gray-900 px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
+                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 overflow-auto text-nowrap rounded-md border px-3 py-2 text-sm md:rounded-r-none md:border-r-0">
                         {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
                       </div>
                       <Input placeholder="slug" className="rounded-l-none" {...field} />

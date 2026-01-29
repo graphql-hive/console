@@ -47,7 +47,7 @@ export const PolicyEnumSelect = (props: {
         }}
         value={currentValue}
         type="single"
-        className="text-neutral-10 bg-gray-900/50"
+        className="text-neutral-10 bg-neutral-2/50"
       >
         {props.options.map(option => (
           <ToggleGroupItem

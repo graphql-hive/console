@@ -19,7 +19,7 @@ export function Select({
       <select
         value={value}
         className={clsx(
-          'bg-neutral-5 h-[50px] w-full text-ellipsis rounded-sm border pl-4 pr-10 text-sm font-medium transition focus:ring active:bg-gray-900',
+          'bg-neutral-5 active:bg-neutral-2 h-[50px] w-full text-ellipsis rounded-sm border pl-4 pr-10 text-sm font-medium transition focus:ring',
           isInvalid
             ? 'border-red-500 text-red-500'
             : ['border-transparent', value ? 'text-neutral-12' : 'text-neutral-10'],

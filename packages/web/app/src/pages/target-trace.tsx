@@ -481,7 +481,7 @@ function SpanNode(props: SpanNodeProps) {
     <>
       <div
         className={cn(
-          'odd:bg-neutral-5/20 pr-8 hover:bg-gray-900',
+          'odd:bg-neutral-5/20 hover:bg-neutral-2 pr-8',
           hasException && 'bg-red-900/20 odd:bg-red-900/20 hover:bg-red-900',
           highlightedEvent && highlightedEvent.spanId === span.id && 'bg-red-900 odd:bg-red-900',
         )}

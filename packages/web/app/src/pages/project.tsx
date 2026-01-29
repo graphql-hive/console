@@ -64,7 +64,7 @@ const TargetCard = (props: {
   return (
     <Card
       asChild
-      className="hover:bg-neutral-5/40 hover:shadow-neutral-5/50 h-full self-start bg-gray-900/50 px-0 pt-4 hover:shadow-md"
+      className="hover:bg-neutral-5/40 hover:shadow-neutral-5/50 bg-neutral-2/50 h-full self-start px-0 pt-4 hover:shadow-md"
     >
       <Link
         to="/$organizationSlug/$projectSlug/$targetSlug"

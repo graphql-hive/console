@@ -7,7 +7,7 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+        default: 'border-transparent bg-neutral-11 text-neutral-2 hover:bg-neutral-11/80',
         secondary:
           'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         destructive:
@@ -40,7 +40,7 @@ const badgeRoundedVariants = cva(
         red: 'border-red-900 bg-red-500',
         yellow: 'border-yellow-900 bg-yellow-500',
         green: 'border-green-900 bg-green-500',
-        gray: 'border-gray-900 bg-neutral-10',
+        gray: 'border-neutral-2 bg-neutral-10',
         orange: 'border-orange-900 bg-accent',
       },
     },

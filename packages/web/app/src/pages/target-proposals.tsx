@@ -172,7 +172,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="border-neutral-5/50 min-h-full gap-2.5 rounded-md border bg-gray-900/50 p-2.5">
+      <div className="border-neutral-5/50 bg-neutral-2/50 min-h-full gap-2.5 rounded-md border p-2.5">
         {pageVariables.map(({ after }, i) => (
           <ProposalsListPage
             key={after ?? i}
@@ -270,7 +270,7 @@ const ProposalsListPage = (props: {
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
                   <div className="mr-6 flex min-w-0 flex-row text-sm md:text-base">
-                    <span className="text-primary mr-6 truncate font-semibold">
+                    <span className="text-neutral-11 mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
                     <span className="text-accent">

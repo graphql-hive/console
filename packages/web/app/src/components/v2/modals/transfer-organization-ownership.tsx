@@ -229,7 +229,7 @@ export const TransferOrganizationOwnershipModal = ({
                       className={({ active, selected }: { active?: boolean; selected?: boolean }) =>
                         clsx(
                           'text-neutral-11 relative cursor-pointer select-none p-2 font-medium',
-                          active || selected ? 'bg-gray-900' : null,
+                          active || selected ? 'bg-neutral-2' : null,
                         )
                       }
                       value={member}
@@ -270,7 +270,7 @@ export const TransferOrganizationOwnershipModal = ({
         />
       </div>
 
-      <div className="h-0 w-full border-t-2 border-gray-900" />
+      <div className="border-neutral-2 h-0 w-full border-t-2" />
 
       <div className="font-bold">About the ownership transfer</div>
       <ul className="text-neutral-12 list-inside list-disc px-5 text-sm">

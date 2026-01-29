@@ -62,7 +62,7 @@ export const BuilderArgument = (props: {
       key={props.field.name}
       variant="ghost"
       className={cn('text-neutral-10 p-1! w-full justify-start text-xs', {
-        'text-neutral-11-primary': isInQuery,
+        'text-neutral-11': isInQuery,
       })}
       size="sm"
     >
@@ -144,7 +144,7 @@ export const BuilderScalarField = (props: {
             className={cn(
               'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
               {
-                'text-neutral-11-primary': isInQuery,
+                'text-neutral-11': isInQuery,
               },
             )}
             style={{
@@ -187,7 +187,7 @@ export const BuilderScalarField = (props: {
                       className={cn(
                         'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                         {
-                          'text-neutral-11-primary': hasArgs,
+                          'text-neutral-11': hasArgs,
                         },
                       )}
                       style={{
@@ -230,7 +230,7 @@ export const BuilderScalarField = (props: {
       key={props.field.name}
       variant="ghost"
       className={cn('text-neutral-10 p-1! w-full justify-start text-xs', {
-        'text-neutral-11-primary': isInQuery,
+        'text-neutral-11': isInQuery,
       })}
       size="sm"
     >
@@ -322,7 +322,7 @@ export const BuilderObjectField = (props: {
           className={cn(
             'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
             {
-              'text-neutral-11-primary': isInQuery,
+              'text-neutral-11': isInQuery,
             },
           )}
           style={{
@@ -365,7 +365,7 @@ export const BuilderObjectField = (props: {
                     className={cn(
                       'text-neutral-10 bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                       {
-                        'text-neutral-11-primary': hasArgs,
+                        'text-neutral-11': hasArgs,
                       },
                     )}
                     style={{

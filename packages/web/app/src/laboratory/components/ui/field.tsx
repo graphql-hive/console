@@ -105,7 +105,7 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
       className={cn(
         'group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50',
         'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4',
-        'has-[>[data-state=checked]]:bg-primary/5 has-[>[data-state=checked]]:border-primary',
+        'has-[>[data-state=checked]]:bg-neutral-11/5 has-[>[data-state=checked]]:border-neutral-11',
         className,
       )}
       {...props}
@@ -133,7 +133,7 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
       className={cn(
         'text-neutral-10 text-sm font-normal leading-normal group-has-[[data-orientation=horizontal]]/field:text-balance',
         'nth-last-2:-mt-1 last:mt-0 [[data-variant=legend]+&]:-mt-1.5',
-        '[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4',
+        '[&>a:hover]:text-neutral-11 [&>a]:underline [&>a]:underline-offset-4',
         className,
       )}
       {...props}

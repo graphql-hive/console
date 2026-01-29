@@ -516,7 +516,7 @@ function LaboratoryPageContent(props: {
               }}
               value="mock"
               type="single"
-              className="text-neutral-10 bg-gray-900/50"
+              className="text-neutral-10 bg-neutral-2/50"
             >
               <ToggleGroupItem
                 key="mockApi"
@@ -554,7 +554,7 @@ function LaboratoryPageContent(props: {
         <style key="laboratory">{`
           .graphiql-container,
           .graphiql-dialog a {
-            --color-primary: 40, 89%, 60% !important;
+            --color-neutral-11: 40, 89%, 60% !important;
           }
 
           .graphiql-container {

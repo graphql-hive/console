@@ -196,7 +196,7 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="mb-2 text-sm font-medium text-gray-900">{props.title}</h2>
+      <h2 className="text-neutral-2 mb-2 text-sm font-medium">{props.title}</h2>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
@@ -1174,7 +1174,7 @@ const ActiveSchemaCheck = (props: {
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
           <div className="py-6">
-            <div className="flex flex-row items-center gap-x-6 rounded-md border border-gray-900 p-4 font-medium text-gray-400">
+            <div className="border-neutral-2 flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium text-gray-400">
               <div>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>

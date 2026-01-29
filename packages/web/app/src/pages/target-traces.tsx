@@ -584,7 +584,7 @@ const TracesList = memo(function TracesList(
 
   return (
     <>
-      <div className="rounded-lg border bg-gray-900/50 shadow-sm">
+      <div className="bg-neutral-2/50 rounded-lg border shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (

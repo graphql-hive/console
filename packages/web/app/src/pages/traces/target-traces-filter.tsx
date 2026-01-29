@@ -91,7 +91,7 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
   return (
     <SidebarGroupLabel
       asChild
-      className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
+      className="group/label text-neutral-11 hover:bg-sidebar-accent hover:text-neutral-11 w-full text-sm"
     >
       <CollapsibleTrigger>
         <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
@@ -196,7 +196,7 @@ export const MultiInputFilter = memo(
             >
               <div
                 data-active
-                className="text-sidebar-primary-foreground border-sidebar-primary bg-sidebar-primary group-hover/trace-id:border-sidebar-border flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
+                className="text-neutral-12 border-sidebar-neutral-11 bg-sidebar-neutral-11 group-hover/trace-id:border-sidebar-border flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
               >
                 <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
                 <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
@@ -303,7 +303,7 @@ function FilterOption(props: {
       <div className="flex items-center gap-2 overflow-hidden">
         <div
           data-active={props.selected}
-          className="group/filter-item border-sidebar-border text-sidebar-primary-foreground data-[active=true]:border-sidebar-primary data-[active=true]:bg-sidebar-primary flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
+          className="group/filter-item border-sidebar-border text-neutral-12 data-[active=true]:border-sidebar-neutral-11 data-[active=true]:bg-sidebar-neutral-11 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
         >
           <CheckIcon className="hidden size-3 group-data-[active=true]/filter-item:block" />
         </div>

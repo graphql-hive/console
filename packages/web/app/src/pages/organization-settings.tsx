@@ -298,7 +298,7 @@ const OrganizationSettingsContent = (props: {
                   <FormItem>
                     <FormControl>
                       <div className="flex items-center">
-                        <div className="border-neutral-5 text-neutral-10 h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                        <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
                           {env.appBaseUrl.replace(/https?:\/\//i, '')}/
                         </div>
                         <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />

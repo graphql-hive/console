@@ -44,7 +44,7 @@ function isCompositeSchema(
 
 function SchemaBlock({ schema }: { schema: CompositeSchema }) {
   return (
-    <Accordion.Item value={schema.id} key={schema.id} className="border-2 border-gray-900/50">
+    <Accordion.Item value={schema.id} key={schema.id} className="border-neutral-2/50 border-2">
       <Accordion.Header>
         <div>
           <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>

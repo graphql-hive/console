@@ -42,7 +42,7 @@ export function TargetProposalChecksPage(props: {
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem
-            className={index % 2 === 1 ? 'bg-gray-900/50' : ''}
+            className={index % 2 === 1 ? 'bg-neutral-2/50' : ''}
             key={node.id}
             {...props}
             {...node}
