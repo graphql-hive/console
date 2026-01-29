@@ -112,7 +112,7 @@ export function GraphQLFields(props: {
                       organizationSlug={props.organizationSlug}
                       projectSlug={props.projectSlug}
                       targetSlug={props.targetSlug}
-                      className="font-semibold text-gray-300"
+                      className="text-neutral-11 font-semibold"
                       type={field.type}
                     />
                   </div>

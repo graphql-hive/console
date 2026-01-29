@@ -217,7 +217,7 @@ export const TransferOrganizationOwnershipModal = ({
               leaveTo="opacity-0"
               afterLeave={() => setSearchPhrase('')}
             >
-              <Combobox.Options className="bg-neutral-5 absolute mt-1 max-h-60 w-full overflow-auto rounded-md text-base shadow-lg ring-1 ring-black/5 focus:outline-none">
+              <Combobox.Options className="bg-neutral-5 ring-neutral-1/5 absolute mt-1 max-h-60 w-full overflow-auto rounded-md text-base shadow-lg ring-1 focus:outline-none">
                 {filteredMembers.length === 0 && searchPhrase !== '' ? (
                   <div className="relative cursor-default select-none px-4 py-2 text-base text-gray-700">
                     Nothing found.
@@ -228,7 +228,7 @@ export const TransferOrganizationOwnershipModal = ({
                       key={member.user.id}
                       className={({ active, selected }: { active?: boolean; selected?: boolean }) =>
                         clsx(
-                          'relative cursor-pointer select-none p-2 font-medium text-gray-300',
+                          'text-neutral-11 relative cursor-pointer select-none p-2 font-medium',
                           active || selected ? 'bg-gray-900' : null,
                         )
                       }

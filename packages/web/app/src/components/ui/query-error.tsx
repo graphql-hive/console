@@ -76,7 +76,7 @@ export function QueryError({
 
             {requestId ? (
               <div className="mt-6 text-xs">
-                <div className="inline-flex items-center text-gray-300">
+                <div className="text-neutral-11 inline-flex items-center">
                   <div className="rounded-l-sm bg-yellow-500/10 p-2">Error ID</div>
                   <div className="rounded-r-sm bg-yellow-500/5 p-2">{requestId}</div>
                 </div>

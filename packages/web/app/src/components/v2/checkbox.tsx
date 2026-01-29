@@ -13,7 +13,7 @@ export const Checkbox = (props: CheckboxProps): ReactElement => {
       )}
     >
       <Indicator className="flex size-full items-center justify-center bg-current">
-        <CheckIcon className="text-black" />
+        <CheckIcon className="text-neutral-1" />
       </Indicator>
     </Root>
   );

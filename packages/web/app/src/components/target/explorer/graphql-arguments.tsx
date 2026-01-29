@@ -26,7 +26,7 @@ export function GraphQLArguments(props: {
   return (
     <span className="ml-1 text-gray-400">
       <span>(</span>
-      <div className="pl-4 text-gray-300">
+      <div className="text-neutral-11 pl-4">
         {args.map(arg => {
           const coordinate = `${props.parentCoordinate}.${arg.name}`;
           return (

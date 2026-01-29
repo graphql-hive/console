@@ -1170,7 +1170,7 @@ function RowItem(props: {
 }) {
   return (
     <div
-      className="flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default data-[active=true]:bg-gray-200 data-[active=true]:text-black"
+      className="data-[active=true]:bg-neutral-10 data-[active=true]:text-neutral-1 flex cursor-pointer items-center space-x-1 px-2 py-1 data-[active=true]:cursor-default"
       data-active={props.isActive}
     >
       <span className="grow text-sm" onClick={props.onClick}>

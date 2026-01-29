@@ -412,7 +412,10 @@ function SchemaChecksSideNav(props: {
     <div className="flex flex-col gap-5">
       <div>
         <div className="flex h-9 flex-row items-center justify-between">
-          <Label htmlFor="filter-toggle-has-changes" className="text-sm font-normal text-gray-100">
+          <Label
+            htmlFor="filter-toggle-has-changes"
+            className="text-neutral-11 text-sm font-normal"
+          >
             Show only changed schemas
           </Label>
           <Switch
@@ -424,7 +427,7 @@ function SchemaChecksSideNav(props: {
         <div className="flex h-9 flex-row items-center justify-between">
           <Label
             htmlFor="filter-toggle-status-failed"
-            className="text-sm font-normal text-gray-100"
+            className="text-neutral-11 text-sm font-normal"
           >
             Show only failed checks
           </Label>

@@ -394,9 +394,9 @@ export function OrganizationMembers(props: {
             <tr>
               <td colSpan={4} className="py-16">
                 <div className="flex flex-col items-center justify-center px-4">
-                  <h3 className="mb-2 text-lg font-semibold text-gray-100">No members found</h3>
+                  <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
 
-                  <p className="max-w-sm text-center text-sm text-gray-200">
+                  <p className="text-neutral-10 max-w-sm text-center text-sm">
                     {`No results for "${searchValue}". Try adjusting your search term.`}
                   </p>
                 </div>

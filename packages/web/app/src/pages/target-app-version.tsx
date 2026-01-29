@@ -242,7 +242,7 @@ function TargetAppVersionContent(props: {
               {/* <CardDescription>
                   <DocsLink
                     href="/management/targets#cdn-access-tokens"
-                    className="text-neutral-10 hover:text-gray-300"
+                    className="text-neutral-10 hover:text-neutral-11"
                   >
                     Learn more about App Deployments
                   </DocsLink>

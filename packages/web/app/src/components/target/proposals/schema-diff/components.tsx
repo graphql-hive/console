@@ -467,7 +467,7 @@ export function DiffField({
 }
 
 export function DirectiveName(props: { name: string }) {
-  return <span className="text-gray-200">@{props.name}</span>;
+  return <span className="text-neutral-10">@{props.name}</span>;
 }
 
 export function DiffArguments(props: {

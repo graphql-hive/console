@@ -28,7 +28,7 @@ const changes = [
 
 export const Default: Story = {
   render: () => (
-    <div className="flex h-[600px] w-full flex-row items-start justify-center bg-black pt-12">
+    <div className="bg-neutral-1 flex h-[600px] w-full flex-row items-start justify-center pt-12">
       <Changelog changes={changes} />
     </div>
   ),

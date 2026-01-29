@@ -389,7 +389,7 @@ const TracesList = memo(function TracesList(
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="cursor-auto overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                  className="text-neutral-11 cursor-auto overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
                   onClick={e => {
                     // Prevent the click event from bubbling up to the row,
                     // which would trigger the sheet with trace details to open
@@ -444,7 +444,7 @@ const TracesList = memo(function TracesList(
               </TooltipTrigger>
               <TooltipContent
                 side="bottom"
-                className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
               >
                 <GridTable
                   rows={[
@@ -531,7 +531,7 @@ const TracesList = memo(function TracesList(
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                  className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
                 >
                   <GridTable
                     rows={[
@@ -926,7 +926,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
   const trace = queryResult.data?.target?.trace;
 
   return (
-    <SheetContent className="border-neutral-5 text-neutral-12 border-l bg-black p-0 md:max-w-[50%]">
+    <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 border-l p-0 md:max-w-[50%]">
       <SheetHeader className="border-neutral-5 relative border-b p-4">
         <div className="flex items-center justify-between">
           <SheetTitle className="text-neutral-12 text-lg font-medium">
@@ -958,7 +958,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
             <>
               <div className="flex items-center gap-1">
                 <Clock className="size-3 text-gray-400" />
-                <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
+                <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
               </div>
               <Badge
                 variant="outline"
@@ -969,7 +969,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               >
                 {trace.success ? 'Ok' : 'Error'}
               </Badge>
-              <span className="font-mono uppercase text-gray-300">
+              <span className="text-neutral-11 font-mono uppercase">
                 {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
               </span>
             </>

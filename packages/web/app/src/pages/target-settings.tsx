@@ -140,7 +140,7 @@ function RegistryAccessTokens(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#registry-access-tokens"
-                className="text-neutral-10 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about Registry Access Tokens
               </DocsLink>
@@ -249,7 +249,7 @@ const ExtendBaseSchema = (props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#schema-extensions"
-                className="text-neutral-10 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 You can find more details and examples in the documentation
               </DocsLink>
@@ -706,7 +706,7 @@ const BreakingChanges = (props: {
               <CardDescription>
                 <DocsLink
                   href="/management/targets#dangerous-changes"
-                  className="text-neutral-10 hover:text-gray-300"
+                  className="text-neutral-10 hover:text-neutral-11"
                 >
                   Learn more
                 </DocsLink>
@@ -760,7 +760,7 @@ const BreakingChanges = (props: {
                 <CardDescription>
                   <DocsLink
                     href="/management/targets#conditional-breaking-changes"
-                    className="text-neutral-10 hover:text-gray-300"
+                    className="text-neutral-10 hover:text-neutral-11"
                   >
                     Learn more
                   </DocsLink>
@@ -794,7 +794,7 @@ const BreakingChanges = (props: {
               />
             )}
           </SubPageLayoutHeader>
-          <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+          <div className={clsx('text-neutral-11', !isEnabled && 'pointer-events-none opacity-25')}>
             <div>A schema change is considered as breaking only if it affects more than</div>
             <div className="mx-4 my-2">
               <RadioGroup
@@ -1339,7 +1339,7 @@ function TargetDelete(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#delete-a-target"
-                className="text-neutral-10 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 <strong>This action is not reversible!</strong> You can find more information about
                 this process in the documentation

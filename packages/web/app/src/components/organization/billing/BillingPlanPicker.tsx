@@ -103,7 +103,7 @@ function Plan(plan: {
       {plan.footer && (
         <div>
           <div className="border-neutral-5 mx-auto my-4 w-9/12 border-b" />
-          <div className="text-xs text-gray-300">{plan.footer}</div>
+          <div className="text-neutral-11 text-xs">{plan.footer}</div>
         </div>
       )}
     </div>

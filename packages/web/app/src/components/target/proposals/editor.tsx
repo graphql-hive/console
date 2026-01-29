@@ -402,7 +402,7 @@ export function ProposalEditor(props: {
                   onChange={setActiveTabSource}
                 />
                 {showSettings && service.__typename === 'CompositeSchema' && (
-                  <div className="absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border bg-black p-4 pt-6 text-sm">
+                  <div className="bg-neutral-1 absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border p-4 pt-6 text-sm">
                     {!!service.service && (
                       <SubPageLayoutHeader
                         subPageTitle="Settings"

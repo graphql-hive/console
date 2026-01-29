@@ -254,7 +254,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/management/targets#conditional-breaking-changes"
-          className="text-neutral-10 hover:text-gray-300"
+          className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
         </DocsLink>
@@ -337,7 +337,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/management/targets#conditional-breaking-changes"
-          className="text-neutral-10 hover:text-gray-300"
+          className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
         </DocsLink>

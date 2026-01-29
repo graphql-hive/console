@@ -146,7 +146,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         )}
                       >
                         <div className="text-neutral-12 font-semibold">{permission.title}</div>
-                        <div className="text-xs text-gray-400">{permission.description}</div>
+                        <div className="text-neutral-11 text-xs">{permission.description}</div>
                       </div>
                       {permission.isAssignableByViewer === false ? (
                         <div className="flex grow justify-end">

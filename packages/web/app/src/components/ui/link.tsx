@@ -8,7 +8,7 @@ const linkVariants = cva('font-medium transition-colors', {
   variants: {
     variant: {
       primary: 'text-accent hover:underline',
-      secondary: 'text-neutral-10 hover:text-gray-300',
+      secondary: 'text-neutral-10 hover:text-neutral-11',
     },
   },
   defaultVariants: {

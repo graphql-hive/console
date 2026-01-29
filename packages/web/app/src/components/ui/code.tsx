@@ -13,7 +13,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
   return (
     <span
       ref={ref}
-      className="relative flex cursor-text items-center gap-2 break-all rounded-md border border-gray-600 bg-black p-4 pr-14 font-mono text-sm"
+      className="bg-neutral-1 relative flex cursor-text items-center gap-2 break-all rounded-md border border-gray-600 p-4 pr-14 font-mono text-sm"
       // Make this element able to be focused by setting tabIndex.
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}

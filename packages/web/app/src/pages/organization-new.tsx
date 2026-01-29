@@ -148,7 +148,7 @@ export const CreateOrganizationFormContent = ({
   return (
     <div className="container w-4/5 max-w-[520px] md:w-3/5">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="bg-black">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="bg-neutral-1">
           <Card className="w-full">
             <CardHeader>
               <CardTitle>Create an organization</CardTitle>
@@ -180,7 +180,7 @@ export const CreateOrganizationFormContent = ({
               >
                 {form.formState.isSubmitting ? (
                   <>
-                    <Spinner className="size-6 text-black" />
+                    <Spinner className="text-neutral-1 size-6" />
                     <span className="ml-4">Creating...</span>
                   </>
                 ) : (

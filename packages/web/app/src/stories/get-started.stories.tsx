@@ -17,7 +17,7 @@ export const Default: Story = {
     isOpen: true,
   },
   render: props => (
-    <div className="flex h-[600px] w-full flex-row items-start justify-center bg-black pt-12">
+    <div className="bg-neutral-1 flex h-[600px] w-full flex-row items-start justify-center pt-12">
       <GetStartedWizard
         isOpen={props.isOpen}
         onClose={() => {}}

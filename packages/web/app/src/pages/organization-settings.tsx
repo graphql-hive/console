@@ -603,7 +603,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-gray-300">
+            <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
               Allow projects to override or disable rules
             </label>
           </div>

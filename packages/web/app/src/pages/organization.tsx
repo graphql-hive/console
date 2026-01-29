@@ -167,7 +167,7 @@ const ProjectCard = (props: {
                 {project ? (
                   <div>
                     <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-                    <p className="text-xs text-gray-300">{projectTypeFullNames[project.type]}</p>
+                    <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
                   </div>
                 ) : (
                   <div>

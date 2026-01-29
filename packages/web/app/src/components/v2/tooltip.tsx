@@ -26,7 +26,7 @@ function Wrapper({
         contentProps.className,
       )}
     >
-      <T.Arrow className="fill-current text-black" />
+      <T.Arrow className="text-neutral-1 fill-current" />
       {content}
     </T.Content>
   );

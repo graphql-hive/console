@@ -337,7 +337,7 @@ export function CreateAccessTokenSheetContent(
                                       {resolvedResources[group.level].map(id => (
                                         <li key={id}>
                                           <Badge
-                                            className="px-3 py-1 font-mono text-xs text-gray-300"
+                                            className="text-neutral-11 px-3 py-1 font-mono text-xs"
                                             variant="outline"
                                           >
                                             {id}

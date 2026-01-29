@@ -44,7 +44,7 @@ export function AuthPage() {
                     <h1 className="text-neutral-12 text-balance font-light md:text-2xl/tight lg:text-3xl/tight">
                       Open-source <span className="text-accent">GraphQL</span> management platform
                     </h1>
-                    <p className="mt-4 text-balance text-sm/6 text-gray-300">
+                    <p className="text-neutral-11 mt-4 text-balance text-sm/6">
                       Prevent breaking changes, monitor performance of your GraphQL API, and manage
                       your API gateway
                     </p>

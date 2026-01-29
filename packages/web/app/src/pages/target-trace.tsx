@@ -561,7 +561,7 @@ function SpanNode(props: SpanNodeProps) {
               </TooltipTrigger>
               <TooltipContent
                 side="bottom"
-                className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
+                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[200px]"
               >
                 {/* Content */}
                 <div className="space-y-3">
@@ -670,7 +670,7 @@ function SpanNode(props: SpanNodeProps) {
                   </TooltipTrigger>
                   <TooltipContent
                     side="bottom"
-                    className="overflow-hidden rounded-lg border-none p-1 text-xs text-gray-100 shadow-lg sm:min-w-[200px]"
+                    className="text-neutral-11 overflow-hidden rounded-lg border-none p-1 text-xs shadow-lg sm:min-w-[200px]"
                   >
                     <div className="z-20">
                       <ExceptionTeaser
@@ -1097,7 +1097,9 @@ function TargetInsightsNewPageContent(props: {
               <div className="mt-2 flex items-center gap-3 text-xs">
                 <div className="flex items-center gap-1">
                   <Clock className="size-3 text-gray-400" />
-                  <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
+                  <span className="text-neutral-11">
+                    {formatNanoseconds(BigInt(trace.duration))}
+                  </span>
                 </div>
                 <Badge
                   variant="outline"
@@ -1108,7 +1110,7 @@ function TargetInsightsNewPageContent(props: {
                 >
                   {trace.success ? 'Ok' : 'Error'}
                 </Badge>
-                <span className="font-mono uppercase text-gray-300">
+                <span className="text-neutral-11 font-mono uppercase">
                   {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
                 </span>
               </div>
@@ -1443,7 +1445,7 @@ function SpanSheet(props: SpanSheetProps) {
 
   return (
     <Sheet open onOpenChange={props.onClose}>
-      <SheetContent className="border-neutral-5 text-neutral-12 flex flex-col border-l bg-black p-0 md:max-w-[50%]">
+      <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 flex flex-col border-l p-0 md:max-w-[50%]">
         <SheetHeader className="border-neutral-5 relative border-b p-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-neutral-12 text-lg font-medium">
@@ -1779,9 +1781,9 @@ function ExceptionTeaser(props: {
         </Badge>
       </div>
       <div className="p-3 text-xs">
-        <p className="text-gray-300">{props.message}</p>
+        <p className="text-neutral-11">{props.message}</p>
         {props.stacktrace && (
-          <pre className="mt-2 overflow-x-auto rounded-sm bg-black/50 p-2 font-mono text-[10px] leading-tight text-gray-400">
+          <pre className="bg-neutral-1/50 mt-2 overflow-x-auto rounded-sm p-2 font-mono text-[10px] leading-tight text-gray-400">
             {props.stacktrace}
           </pre>
         )}

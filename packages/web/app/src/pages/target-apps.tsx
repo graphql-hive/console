@@ -243,7 +243,7 @@ function TargetAppsView(props: {
             {/* <CardDescription>
               <DocsLink
                  href="/management/app-deployments"
-                className="text-neutral-10 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about App Deployments
               </DocsLink>

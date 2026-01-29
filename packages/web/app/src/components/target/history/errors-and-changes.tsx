@@ -307,7 +307,7 @@ function ChangeItem(
                   Top 10 operations and clients affected by this change based on usage data.
                 </span>
                 {metadata && (
-                  <span className="text-xs text-gray-100">
+                  <span className="text-neutral-11 text-xs">
                     See{' '}
                     {metadata.settings.targets.map((target, index, arr) => (
                       <>
@@ -474,7 +474,7 @@ function ChangeItem(
                                   </h5>
                                   <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
                                     {deployment.affectedOperations.edges.map(({ node: op }) => (
-                                      <li key={op.hash} className="text-gray-300">
+                                      <li key={op.hash} className="text-neutral-11">
                                         {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                                       </li>
                                     ))}
@@ -570,7 +570,7 @@ function ChangeItem(
                               <h5 className="text-neutral-12 font-medium">Affected Operations</h5>
                               <ul className="max-h-40 space-y-1 overflow-y-auto text-sm">
                                 {deployment.affectedOperations.edges.map(({ node: op }) => (
-                                  <li key={op.hash} className="text-gray-300">
+                                  <li key={op.hash} className="text-neutral-11">
                                     {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                                   </li>
                                 ))}
