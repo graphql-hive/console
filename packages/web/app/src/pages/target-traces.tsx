@@ -776,7 +776,7 @@ function Filters(
 
   return (
     <>
-      <SidebarGroupLabel className="flex items-center justify-between">
+      <SidebarGroupLabel className="text-neutral-12 flex items-center justify-between">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>

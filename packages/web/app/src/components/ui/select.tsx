@@ -16,7 +16,7 @@ const selectVariants = cva(
     variants: {
       variant: {
         default:
-          'hover:text-neutral-12 text-neutral-11 hover:bg-neutral-5 bg-neutral-4 hover:border-neutral-6 border-neutral-5 border ring-offset-background placeholder:text-neutral-10 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1',
+          'hover:text-neutral-12 text-neutral-11 hover:bg-neutral-5 bg-neutral-4 hover:border-neutral-6 border-neutral-5 border ring-offset-neutral-2 placeholder:text-neutral-10 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1',
         ghost: '',
       },
     },
