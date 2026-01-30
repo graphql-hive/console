@@ -7,6 +7,6 @@ const __dirname = dirname(__filename);
 export default {
   stories: 'src/stories/ladle/**/*.stories.{ts,tsx}',
   viteConfig: resolve(__dirname, 'vite.config.ts'),
-  port: 61000,
+  port: 61_000,
   base: '/',
 };
