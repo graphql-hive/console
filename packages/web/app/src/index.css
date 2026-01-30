@@ -3,7 +3,7 @@
 
 @theme {
   /* Typography */
-  --font-sans: 'Inter var', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', 'Monaco', monospace;
   --default-font-feature-settings: normal;
   --default-font-variation-settings: 'opsz' 32;
