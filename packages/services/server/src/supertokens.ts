@@ -169,17 +169,21 @@ export const backendConfig = (requirements: {
                 );
               }
 
-              const internalUser = await internalApi.ensureUser({
+              const ensureUserResult = await internalApi.ensureUser({
                 superTokensUserId: user.id,
                 email: user.emails[0],
                 oidcIntegrationId: input.userContext['oidcId'] ?? null,
                 firstName: null,
                 lastName: null,
               });
+              if (!ensureUserResult.ok) {
+                throw new SessionCreationError(ensureUserResult.reason);
+              }
+
               const payload: SuperTokensSessionPayload = {
                 version: '2',
                 superTokensUserId: input.userId,
-                userId: internalUser.user.id,
+                userId: ensureUserResult.user.id,
                 oidcIntegrationId: input.userContext['oidcId'] ?? null,
                 email: user.emails[0],
               };
@@ -253,22 +257,46 @@ const getEnsureUserOverrides = (
         };
       }
 
-      const response = await originalImplementation.emailPasswordSignUpPOST(input);
+      try {
+        const response = await originalImplementation.emailPasswordSignUpPOST(input);
 
-      const firstName = input.formFields.find(field => field.id === 'firstName')?.value ?? null;
-      const lastName = input.formFields.find(field => field.id === 'lastName')?.value ?? null;
+        const firstName = input.formFields.find(field => field.id === 'firstName')?.value ?? null;
+        const lastName = input.formFields.find(field => field.id === 'lastName')?.value ?? null;
 
-      if (response.status === 'OK') {
-        await internalApi.ensureUser({
-          superTokensUserId: response.user.id,
-          email: response.user.emails[0],
-          oidcIntegrationId: null,
-          firstName,
-          lastName,
-        });
+        if (response.status === 'SIGN_UP_NOT_ALLOWED') {
+          return {
+            status: 'SIGN_UP_NOT_ALLOWED',
+            reason: 'Sign up not allowed.',
+          };
+        }
+
+        if (response.status === 'OK') {
+          const result = await internalApi.ensureUser({
+            superTokensUserId: response.user.id,
+            email: response.user.emails[0],
+            oidcIntegrationId: null,
+            firstName,
+            lastName,
+          });
+
+          if (!result.ok) {
+            return {
+              status: 'SIGN_UP_NOT_ALLOWED',
+              reason: result.reason,
+            };
+          }
+        }
+
+        return response;
+      } catch (e) {
+        if (e instanceof SessionCreationError) {
+          return {
+            status: 'SIGN_UP_NOT_ALLOWED',
+            reason: e.reason,
+          };
+        }
+        throw e;
       }
-
-      return response;
     },
     async emailPasswordSignInPOST(input) {
       if (originalImplementation.emailPasswordSignInPOST === undefined) {
@@ -287,20 +315,44 @@ const getEnsureUserOverrides = (
         };
       }
 
-      const response = await originalImplementation.emailPasswordSignInPOST(input);
+      try {
+        const response = await originalImplementation.emailPasswordSignInPOST(input);
 
-      if (response.status === 'OK') {
-        await internalApi.ensureUser({
-          superTokensUserId: response.user.id,
-          email: response.user.emails[0],
-          oidcIntegrationId: null,
-          // They are not available during sign in.
-          firstName: null,
-          lastName: null,
-        });
+        if (response.status === 'SIGN_IN_NOT_ALLOWED') {
+          return {
+            status: 'SIGN_IN_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          };
+        }
+
+        if (response.status === 'OK') {
+          const result = await internalApi.ensureUser({
+            superTokensUserId: response.user.id,
+            email: response.user.emails[0],
+            oidcIntegrationId: null,
+            // They are not available during sign in.
+            firstName: null,
+            lastName: null,
+          });
+
+          if (!result.ok) {
+            return {
+              status: 'SIGN_IN_NOT_ALLOWED',
+              reason: result.reason,
+            };
+          }
+        }
+
+        return response;
+      } catch (e) {
+        if (e instanceof SessionCreationError) {
+          return {
+            status: 'SIGN_IN_NOT_ALLOWED',
+            reason: e.reason,
+          };
+        }
+        throw e;
       }
-
-      return response;
     },
     async thirdPartySignInUpPOST(input) {
       if (originalImplementation.thirdPartySignInUpPOST === undefined) {
@@ -316,20 +368,45 @@ const getEnsureUserOverrides = (
         }
         return null;
       }
-      const response = await originalImplementation.thirdPartySignInUpPOST(input);
 
-      if (response.status === 'OK') {
-        await internalApi.ensureUser({
-          superTokensUserId: response.user.id,
-          email: response.user.emails[0],
-          oidcIntegrationId: extractOidcId(input),
-          // TODO: should we somehow extract the first and last name from the third party provider?
-          firstName: null,
-          lastName: null,
-        });
+      try {
+        const response = await originalImplementation.thirdPartySignInUpPOST(input);
+
+        if (response.status === 'SIGN_IN_UP_NOT_ALLOWED') {
+          return {
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          };
+        }
+
+        if (response.status === 'OK') {
+          const result = await internalApi.ensureUser({
+            superTokensUserId: response.user.id,
+            email: response.user.emails[0],
+            oidcIntegrationId: extractOidcId(input),
+            // TODO: should we somehow extract the first and last name from the third party provider?
+            firstName: null,
+            lastName: null,
+          });
+
+          if (!result.ok) {
+            return {
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: result.reason,
+            };
+          }
+        }
+
+        return response;
+      } catch (e) {
+        if (e instanceof SessionCreationError) {
+          return {
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: e.reason,
+          };
+        }
+        throw e;
       }
-
-      return response;
     },
     async passwordResetPOST(input) {
       const logger = getLoggerFromUserContext(input.userContext);
@@ -447,4 +524,10 @@ export async function oidcIdLookup(
     ok: true,
     id: oidcId,
   };
+}
+
+class SessionCreationError extends Error {
+  constructor(public reason: string) {
+    super(reason);
+  }
 }

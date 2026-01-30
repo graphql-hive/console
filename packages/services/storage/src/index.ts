@@ -653,121 +653,132 @@ export async function createStorage(
         id: string;
       };
     }) {
-      return tracedTransaction('ensureUserExists', pool, async t => {
-        let action: 'created' | 'no_action' = 'no_action';
+      try {
+        return await tracedTransaction('ensureUserExists', pool, async t => {
+          let action: 'created' | 'no_action' = 'no_action';
 
-        // try searching existing user first
-        let internalUser = await t
-          .maybeOne<unknown>(
-            sql`
-              SELECT
-                ${userFields(sql`"users".`)}
-              FROM "users"
-              WHERE
-                "users"."supertoken_user_id" = ${superTokensUserId}
-                OR EXISTS (
-                  SELECT 1 FROM "users_linked_identities" "uli"
-                  WHERE "uli"."user_id" = "users"."id"
-                  AND "uli"."identity_id" = ${superTokensUserId}
-                )
-            `,
-          )
-          .then(v => UserModel.nullable().parse(v));
-
-        if (!internalUser) {
-          // try automatic account linking
-          const sameEmailUsers = await t
-            .any<unknown>(
-              sql`/* ensureUserExists */
-                SELECT ${userFields(sql`"users".`)}
-                FROM "users"
-                WHERE "users"."email" = ${email}
-                ORDER BY "users"."created_at";
-              `,
-            )
-            .then(users => users.map(user => UserModel.parse(user)));
-
-          if (sameEmailUsers.length === 1) {
-            internalUser = sameEmailUsers[0];
-            await t.query(sql`
-              INSERT INTO "users_linked_identities" ("user_id", "identity_id")
-              VALUES (${internalUser.id}, ${superTokensUserId})
-            `);
-          }
-        }
-
-        const oidcConfig =
-          oidcIntegration &&
-          (await this.getOIDCIntegrationById({ oidcIntegrationId: oidcIntegration.id }));
-        const invitation =
-          oidcConfig &&
-          (await t
+          // try searching existing user first
+          let internalUser = await t
             .maybeOne<unknown>(
               sql`
-                DELETE FROM "organization_invitations" AS "oi"
+                SELECT
+                  ${userFields(sql`"users".`)}
+                FROM "users"
                 WHERE
-                  "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
-                  AND "oi"."email" = ${email}
-                  AND "oi"."expires_at" > now()
-                RETURNING
-                  "oi"."organization_id" "organizationId"
-                  , "oi"."code" "code"
-                  , "oi"."email" "email"
-                  , "oi"."created_at" "createdAt"
-                  , "oi"."expires_at" "expiresAt"
-                  , "oi"."role_id" "roleId"
-                  , "oi"."assigned_resources" "assignedResources"
+                  "users"."supertoken_user_id" = ${superTokensUserId}
+                  OR EXISTS (
+                    SELECT 1 FROM "users_linked_identities" "uli"
+                    WHERE "uli"."user_id" = "users"."id"
+                    AND "uli"."identity_id" = ${superTokensUserId}
+                  )
               `,
             )
-            .then(v => OrganizationInvitationModel.nullable().parse(v)));
+            .then(v => UserModel.nullable().parse(v));
 
-        // TODO: guard this with a specific setting value
-        if (oidcConfig && !invitation) {
-          const member =
-            internalUser &&
-            (await this.getOrganizationMember({
-              organizationId: oidcConfig.linkedOrganizationId,
-              userId: internalUser.id,
-            }));
+          if (!internalUser) {
+            // try automatic account linking
+            const sameEmailUsers = await t
+              .any<unknown>(
+                sql`/* ensureUserExists */
+                  SELECT ${userFields(sql`"users".`)}
+                  FROM "users"
+                  WHERE "users"."email" = ${email}
+                  ORDER BY "users"."created_at";
+                `,
+              )
+              .then(users => users.map(user => UserModel.parse(user)));
 
-          if (!member) {
-            throw new Error('User is not invited to the organization');
+            if (sameEmailUsers.length === 1) {
+              internalUser = sameEmailUsers[0];
+              await t.query(sql`
+                INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+                VALUES (${internalUser.id}, ${superTokensUserId})
+              `);
+            }
           }
+
+          const oidcConfig =
+            oidcIntegration &&
+            (await this.getOIDCIntegrationById({ oidcIntegrationId: oidcIntegration.id }));
+          const invitation =
+            oidcConfig &&
+            (await t
+              .maybeOne<unknown>(
+                sql`
+                  DELETE FROM "organization_invitations" AS "oi"
+                  WHERE
+                    "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
+                    AND "oi"."email" = ${email}
+                    AND "oi"."expires_at" > now()
+                  RETURNING
+                    "oi"."organization_id" "organizationId"
+                    , "oi"."code" "code"
+                    , "oi"."email" "email"
+                    , "oi"."created_at" "createdAt"
+                    , "oi"."expires_at" "expiresAt"
+                    , "oi"."role_id" "roleId"
+                    , "oi"."assigned_resources" "assignedResources"
+                `,
+              )
+              .then(v => OrganizationInvitationModel.nullable().parse(v)));
+
+          // TODO: guard this with a specific setting value
+          if (oidcConfig && !invitation) {
+            const member =
+              internalUser &&
+              (await this.getOrganizationMember({
+                organizationId: oidcConfig.linkedOrganizationId,
+                userId: internalUser.id,
+              }));
+
+            if (!member) {
+              throw 'User is not invited to the organization.';
+            }
+          }
+
+          // either user is brand new or user is not linkable (multiple accounts with the same email exist)
+          if (!internalUser) {
+            internalUser = await shared.createUser(
+              buildUserData({
+                email,
+                firstName,
+                lastName,
+                superTokensUserId,
+                oidcIntegrationId: oidcIntegration?.id ?? null,
+              }),
+              t,
+            );
+
+            action = 'created';
+          }
+
+          if (oidcIntegration !== null) {
+            // Add user to OIDC linked integration
+            await shared.addOrganizationMemberViaOIDCIntegrationId(
+              {
+                oidcIntegrationId: oidcIntegration.id,
+                userId: internalUser.id,
+                invitation,
+              },
+              t,
+            );
+          }
+
+          return {
+            ok: true,
+            user: internalUser,
+            action,
+          };
+        });
+      } catch (e) {
+        if (typeof e === 'string') {
+          return {
+            ok: false,
+            reason: e,
+          };
         }
-
-        // either user is brand new or user is not linkable (multiple accounts with the same email exist)
-        if (!internalUser) {
-          internalUser = await shared.createUser(
-            buildUserData({
-              email,
-              firstName,
-              lastName,
-              superTokensUserId,
-              oidcIntegrationId: oidcIntegration?.id ?? null,
-            }),
-            t,
-          );
-
-          action = 'created';
-        }
-
-        if (oidcIntegration !== null) {
-          // Add user to OIDC linked integration
-          await shared.addOrganizationMemberViaOIDCIntegrationId(
-            {
-              oidcIntegrationId: oidcIntegration.id,
-              userId: internalUser.id,
-              invitation,
-            },
-            t,
-          );
-        }
-
-        return {
-          user: internalUser,
-          action,
-        };
-      });
+        throw e;
+      }
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
       return shared.getUserBySuperTokenId({ superTokensUserId }, pool);

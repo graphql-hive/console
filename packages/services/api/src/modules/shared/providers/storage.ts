@@ -79,10 +79,17 @@ export interface Storage {
     };
     firstName: string | null;
     lastName: string | null;
-  }): Promise<{
-    user: User;
-    action: 'created' | 'no_action';
-  }>;
+  }): Promise<
+    | {
+        ok: true;
+        user: User;
+        action: 'created' | 'no_action';
+      }
+    | {
+        ok: false;
+        reason: string;
+      }
+  >;
 
   getUserBySuperTokenId(_: { superTokensUserId: string }): Promise<User | null>;
   getUserById(_: { id: string }): Promise<User | null>;
