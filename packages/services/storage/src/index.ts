@@ -722,8 +722,7 @@ export async function createStorage(
               )
               .then(v => OrganizationInvitationModel.nullable().parse(v)));
 
-          // TODO: guard this with a specific setting value
-          if (oidcConfig && !invitation) {
+          if (oidcConfig?.requireInvitation && !invitation) {
             const member =
               internalUser &&
               (await this.getOrganizationMember({
@@ -3238,6 +3237,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         FROM
           "oidc_integrations"
         WHERE
@@ -3268,6 +3268,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         FROM
           "oidc_integrations"
         WHERE
@@ -3340,6 +3341,7 @@ export async function createStorage(
             , "oidc_user_access_only"
             , "default_role_id"
             , "default_assigned_resources"
+            , "require_invitation"
         `);
 
         return {
@@ -3399,6 +3401,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3410,6 +3413,7 @@ export async function createStorage(
           SET
             "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
             , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? sql`"oidc_user_access_only"`}
+            , "require_invitation" = ${args.requireInvitation ?? sql`"require_invitation"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -3426,6 +3430,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3453,6 +3458,7 @@ export async function createStorage(
           , "additional_scopes"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -3495,6 +3501,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -5021,6 +5028,7 @@ const OktaIntegrationBaseModel = zod.object({
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
+  require_invitation: zod.boolean(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -5057,6 +5065,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       additionalScopes: rawRecord.additional_scopes,
       oidcUserJoinOnly: rawRecord.oidc_user_join_only,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+      requireInvitation: rawRecord.require_invitation,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
     };
@@ -5073,6 +5082,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     additionalScopes: rawRecord.additional_scopes,
     oidcUserJoinOnly: rawRecord.oidc_user_join_only,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+    requireInvitation: rawRecord.require_invitation,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,
   };

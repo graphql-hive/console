@@ -871,6 +871,7 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     additionalScopes
     oidcUserJoinOnly
     oidcUserAccessOnly
+    requireInvitation
     defaultMemberRole {
       id
       ...OIDCDefaultRoleSelector_MemberRoleFragment
@@ -922,6 +923,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
           id
           oidcUserJoinOnly
           oidcUserAccessOnly
+          requireInvitation
         }
       }
       error {
@@ -985,7 +987,7 @@ function UpdateOIDCIntegrationForm(props: {
   });
 
   const onOidcRestrictionChange = async (
-    name: 'oidcUserJoinOnly' | 'oidcUserAccessOnly',
+    name: 'oidcUserJoinOnly' | 'oidcUserAccessOnly' | 'requireInvitation',
     value: boolean,
   ) => {
     if (oidcRestrictionsMutation.fetching) {
@@ -1014,6 +1016,9 @@ function UpdateOIDCIntegrationForm(props: {
             oidcUserAccessOnly: value
               ? 'Only OIDC users can now access the organization'
               : 'Access to the organization is no longer restricted to OIDC users',
+            requireInvitation: value
+              ? 'Only invited users can now access the organization.'
+              : 'Access to the organization is no longer restricted to invited users.',
           }[name],
         });
       } else {
@@ -1109,6 +1114,21 @@ function UpdateOIDCIntegrationForm(props: {
                         checked={props.oidcIntegration.oidcUserAccessOnly}
                         onCheckedChange={checked =>
                           onOidcRestrictionChange('oidcUserAccessOnly', checked)
+                        }
+                        disabled={oidcRestrictionsMutation.fetching}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                        <p>Require Invitation to Join</p>
+                        <p className="text-neutral-10 text-xs font-normal leading-snug">
+                          Restricts only invited OIDC accounts to join the organization.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={props.oidcIntegration.requireInvitation}
+                        onCheckedChange={checked =>
+                          onOidcRestrictionChange('requireInvitation', checked)
                         }
                         disabled={oidcRestrictionsMutation.fetching}
                       />

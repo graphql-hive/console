@@ -96,17 +96,20 @@ const createSession = async (
       ],
     });
 
-    const { user } = await internalApi.ensureUser.mutate({
+    const ensureUserResult = await internalApi.ensureUser.mutate({
       superTokensUserId,
       email,
       oidcIntegrationId,
       firstName: null,
       lastName: null,
     });
+    if (!ensureUserResult.ok) {
+      throw new Error(ensureUserResult.reason);
+    }
 
     const sessionData = createSessionPayload({
       superTokensUserId,
-      userId: user.id,
+      userId: ensureUserResult.user.id,
       oidcIntegrationId,
       email,
     });
