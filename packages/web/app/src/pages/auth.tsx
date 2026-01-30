@@ -9,9 +9,9 @@ function ExternalLink(props: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={props.href}
-      className="hover:text-accent text-neutral-12/30 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 text-[0.8125rem]/6 font-medium transition-colors"
+      className="hover:text-neutral-2 text-neutral-12/30 group relative isolate flex flex-none items-center gap-x-3 rounded-lg px-2 py-0.5 text-[0.8125rem]/6 font-medium transition-colors"
     >
-      <span className="bg-neutral-12/5 absolute inset-0 -z-10 scale-75 rounded-lg opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
+      <span className="bg-neutral-4 absolute inset-0 -z-10 scale-75 rounded-lg opacity-0 transition group-hover:scale-100 group-hover:opacity-100" />
       {props.children}
     </a>
   );
@@ -26,13 +26,13 @@ export function AuthPage() {
       <div className="size-full">
         <>
           {session.loading ? (
-            <div className="flex min-h-[100vh] items-center justify-center">
+            <div className="flex min-h-screen items-center justify-center">
               <HiveLogo animated={false} className="size-8 animate-pulse" />
             </div>
           ) : (
-            <div className="grid h-full min-h-[100vh] items-center justify-center md:grid-cols-2 lg:max-w-none lg:grid-cols-3 lg:px-0">
-              <div className="bg-muted text-neutral-12 relative hidden h-full flex-col p-10 lg:flex">
-                <div className="absolute inset-0 bg-[#101014]" />
+            <div className="grid h-full min-h-screen items-center justify-center md:grid-cols-2 lg:max-w-none lg:grid-cols-3 lg:px-0">
+              <div className="bg-neutral-3 border-r-neutral-3 text-neutral-12 relative hidden h-full flex-col border-r p-10 lg:flex">
+                <div className="bg-neutral-1 absolute inset-0" />
                 <Link to="/">
                   <div className="relative z-20 flex items-center text-lg font-medium">
                     <HiveLogo animated={false} className="mr-2 size-6" />
@@ -50,11 +50,11 @@ export function AuthPage() {
                     </p>
                     <div className="mt-8 flex flex-wrap justify-center gap-x-1 gap-y-3 sm:gap-x-2 lg:justify-start">
                       <ExternalLink href="https://the-guild.dev/graphql/hive/docs">
-                        <BookIcon className="size-4 flex-none" />
+                        <BookIcon className="text-neutral-10 size-4 flex-none" />
                         <span className="text-neutral-12 self-baseline">Documentation</span>
                       </ExternalLink>
                       <ExternalLink href="https://github.com/graphql-hive/platform">
-                        <SiGithub className="size-4 flex-none" />
+                        <SiGithub className="text-neutral-10 size-4 flex-none" />
                         <span className="text-neutral-12 self-baseline">Github</span>
                       </ExternalLink>
                     </div>

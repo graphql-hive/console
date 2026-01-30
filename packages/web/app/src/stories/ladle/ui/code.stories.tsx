@@ -74,7 +74,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Background: <code className="text-neutral-12">bg-neutral-1</code>
             <br />
-            Border: <code className="text-neutral-12">border-gray-600</code>
+            Border: <code className="text-neutral-12">border-neutral-8</code>
             <br />
             Font: <code className="text-neutral-12">font-mono text-sm</code>
             <br />

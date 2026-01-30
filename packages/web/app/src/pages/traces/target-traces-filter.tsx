@@ -91,7 +91,7 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
   return (
     <SidebarGroupLabel
       asChild
-      className="group/label text-neutral-11 hover:bg-sidebar-accent hover:text-neutral-11 w-full text-sm"
+      className="group/label text-neutral-11 hover:bg-neutral-5 hover:text-neutral-11 w-full text-sm"
     >
       <CollapsibleTrigger>
         <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
@@ -100,7 +100,7 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
           <Button
             variant="secondary"
             size="sm"
-            className="hover:bg-secondary text-neutral-10 group ml-auto h-6 w-8 px-1 py-0 text-xs"
+            className="hover:bg-neutral-2 text-neutral-10 group ml-auto h-6 w-8 px-1 py-0 text-xs"
             onClick={e => {
               e.preventDefault();
               props.onReset();
@@ -192,11 +192,11 @@ export const MultiInputFilter = memo(
             <SidebarMenuButton
               key={value}
               onClick={() => props.onChange(props.selectedValues.filter(val => val !== value))}
-              className="group/trace-id hover:bg-sidebar-accent/50"
+              className="group/trace-id hover:bg-neutral-5/50"
             >
               <div
                 data-active
-                className="text-neutral-12 border-sidebar-neutral-11 bg-sidebar-neutral-11 group-hover/trace-id:border-sidebar-border flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
+                className="text-neutral-12 border-neutral-11 bg-blue/50 group-hover/trace-id:border-neutral-5 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
               >
                 <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
                 <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
@@ -261,7 +261,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
           <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
         )}
         {filteredOptions.length === 0 ? (
-          <div className="text-center text-sm text-gray-600">No option available</div>
+          <div className="text-neutral-8 text-center text-sm">No option available</div>
         ) : (
           filteredOptions.map((option, index) => (
             <FilterOption
@@ -277,7 +277,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
               }}
             >
               {option.label === '' ? (
-                <span className="text-gray-400">{'<unknown>'}</span>
+                <span className="text-neutral-10">{'<unknown>'}</span>
               ) : (
                 option.label
               )}
@@ -298,12 +298,12 @@ function FilterOption(props: {
   return (
     <SidebarMenuButton
       onClick={props.onClick}
-      className="hover:bg-sidebar-accent/50 flex-row items-center justify-between"
+      className="hover:bg-neutral-5/50 flex-row items-center justify-between"
     >
       <div className="flex items-center gap-2 overflow-hidden">
         <div
           data-active={props.selected}
-          className="group/filter-item border-sidebar-border text-neutral-12 data-[active=true]:border-sidebar-neutral-11 data-[active=true]:bg-sidebar-neutral-11 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
+          className="group/filter-item border-neutral-5 text-neutral-12 data-[active=true]:border-neutral-11 data-[active=true]:bg-neutral-11 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
         >
           <CheckIcon className="hidden size-3 group-data-[active=true]/filter-item:block" />
         </div>
@@ -339,7 +339,7 @@ const DoubleSlider = forwardRef<
     {...props}
   >
     <SliderPrimitive.Track className="bg-neutral-5 relative h-1 w-full grow overflow-hidden rounded-full">
-      <SliderPrimitive.Range className="absolute h-full bg-gray-400" />
+      <SliderPrimitive.Range className="bg-neutral-10 absolute h-full" />
     </SliderPrimitive.Track>
     {props.value?.map((_, index) => (
       <SliderPrimitive.Thumb
@@ -435,7 +435,7 @@ export const DurationFilter = memo(
                     onChange={handleMaxInputChange}
                     className="border-neutral-5 text-neutral-12 h-7 bg-transparent px-2 pr-8 font-mono"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
+                  <span className="text-neutral-10 absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs">
                     ms
                   </span>
                 </div>
@@ -585,7 +585,7 @@ export const TimelineFilter = memo(
                       numberOfMonths={1}
                       className="p-2 pb-0"
                     />
-                    <div className="border-border mt-4 space-y-2 border-t p-2">
+                    <div className="border-neutral-5 mt-4 space-y-2 border-t p-2">
                       <div>
                         <Label className="text-neutral-10 text-sm font-normal">Start</Label>
                         <div className="flex items-center gap-x-2">

@@ -273,7 +273,7 @@ export const ColorPaletteShowcase: Story = () => {
             <p className="text-neutral-11 text-sm font-medium">Absolute Date Inputs</p>
             <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
               <div>
-                <label className="mb-1 block text-xs text-gray-400">From</label>
+                <label className="text-neutral-10 mb-1 block text-xs">From</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -287,7 +287,7 @@ export const ColorPaletteShowcase: Story = () => {
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-400">To</label>
+                <label className="text-neutral-10 mb-1 block text-xs">To</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -305,7 +305,7 @@ export const ColorPaletteShowcase: Story = () => {
               </button>
             </div>
             <p className="text-neutral-10 text-xs">
-              Labels: <code className="text-neutral-12">text-xs text-gray-400</code>
+              Labels: <code className="text-neutral-12">text-xs text-neutral-10</code>
               <br />
               Inputs: <code className="text-neutral-12">font-mono</code> for date strings
               <br />

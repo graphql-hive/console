@@ -5,7 +5,7 @@ const colors = {
   green: 'bg-green-500/10 text-green-500',
   yellow: 'bg-yellow-500/10 text-yellow-500',
   gray: 'bg-neutral-10/10 text-neutral-10',
-  orange: 'bg-accent/10 text-accent',
+  orange: 'bg-neutral-2/10 text-neutral-2',
   red: 'bg-red-500/10 text-red-500',
 } as const;
 

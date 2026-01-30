@@ -169,7 +169,7 @@ const Navigation = (
           </RouterLink>
           {edge.node.githubRepository && edge.node.meta ? (
             <a
-              className="text-neutral-10 -ml-px text-xs font-medium hover:text-gray-400"
+              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
@@ -332,7 +332,7 @@ function ChecksPageContent(props: {
               </div>
             ) : (
               !isLoading && (
-                <div className="my-4 cursor-default text-center text-sm text-gray-400">
+                <div className="text-neutral-10 my-4 cursor-default text-center text-sm">
                   No schema checks found with the current filters
                 </div>
               )

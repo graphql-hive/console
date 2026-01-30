@@ -170,7 +170,7 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.Normal} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
+                            <FormLabel className="text-neutral-10 font-normal">
                               <span className="text-neutral-12 font-semibold">Normal</span> -{' '}
                               {priorityDescription[SupportTicketPriority.Normal]}
                             </FormLabel>
@@ -179,7 +179,7 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.High} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
+                            <FormLabel className="text-neutral-10 font-normal">
                               <span className="text-neutral-12 font-semibold">High</span> -{' '}
                               {priorityDescription[SupportTicketPriority.High]}
                             </FormLabel>
@@ -188,7 +188,7 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.Urgent} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
+                            <FormLabel className="text-neutral-10 font-normal">
                               <span className="text-neutral-12 font-semibold">Urgent</span> -{' '}
                               {priorityDescription[SupportTicketPriority.Urgent]}
                             </FormLabel>

@@ -918,7 +918,7 @@ const BreakingChanges = (props: {
                 <div className="space-y-2">
                   <div>
                     <div className="font-semibold">Allow breaking change for these clients:</div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-neutral-10 text-xs">
                       Marks a breaking change as safe when it only affects the following clients.
                     </div>
                   </div>
@@ -955,7 +955,7 @@ const BreakingChanges = (props: {
                     <div className="font-semibold">
                       Allow breaking change for these app deployments:
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-neutral-10 text-xs">
                       Marks a breaking change as safe when it only affects the following app
                       deployments.
                     </div>
@@ -986,7 +986,7 @@ const BreakingChanges = (props: {
               <div className="space-y-2">
                 <div>
                   <div className="font-semibold">Schema usage data from these targets:</div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-neutral-10 text-xs">
                     Marks a breaking change as safe when it was not requested in the targets
                     clients.
                   </div>
@@ -1015,7 +1015,7 @@ const BreakingChanges = (props: {
             {touched.targetIds && errors.targetIds && (
               <div className="text-red-500">{errors.targetIds}</div>
             )}
-            <div className="border-l-neutral-5 mb-3 mt-5 space-y-2 rounded-sm border-l-2 bg-gray-600/10 py-2 pl-5 text-gray-400">
+            <div className="border-l-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 mt-5 space-y-2 rounded-sm border-l-2 py-2 pl-5">
               <div>
                 <div className="font-semibold">Example settings</div>
                 <div className="text-sm">Removal of a field is considered breaking if</div>
@@ -1533,7 +1533,7 @@ function TargetSettingsContent(props: {
               }}
               className={cn(
                 resolvedPage.key === subPage.key
-                  ? 'bg-muted hover:bg-muted'
+                  ? 'bg-neutral-3 hover:bg-neutral-3'
                   : 'hover:bg-transparent hover:underline',
                 'w-full justify-start text-left',
               )}

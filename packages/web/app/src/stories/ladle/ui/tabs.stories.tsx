@@ -84,7 +84,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-8">
         <div>
           <p className="text-neutral-11 mb-3 text-sm font-medium">
-            Default (bg-muted with neutral colors)
+            Default (bg-neutral-3 with neutral colors)
           </p>
           <Tabs defaultValue="tab1" className="w-[400px]">
             <TabsList>

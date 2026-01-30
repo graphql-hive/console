@@ -266,7 +266,7 @@ export function NativeCompositionSettings(props: {
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Unknown ? (
-              <FlaskConicalIcon className="text-accent size-10" />
+              <FlaskConicalIcon className="text-neutral-2 size-10" />
             ) : null}
           </div>
           <div>
@@ -355,7 +355,7 @@ export function NativeCompositionSettings(props: {
           )}
         </Button>
         <div>
-          <Button variant="link" className="text-accent" asChild>
+          <Button variant="link" className="text-neutral-2" asChild>
             <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
               Learn more about risks and compatibility with other composition libraries
             </a>

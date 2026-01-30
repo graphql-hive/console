@@ -313,7 +313,7 @@ export function CreatePersonalAccessTokenSheetContent(
                                   <>Granted on all {permissionLevelToResourceName(group.level)}</>
                                 ) : (
                                   <>
-                                    <p className="text-gray-400">
+                                    <p className="text-neutral-10">
                                       Granted on {permissionLevelToResourceName(group.level)}:
                                     </p>
                                     <ul className="flex list-none flex-wrap gap-1">

@@ -89,7 +89,7 @@ export function StageTransitionSelect(props: {
                 >
                   <div
                     className={cn(
-                      'hover:text-neutral-12 flex flex-row truncate p-1 text-gray-400',
+                      'hover:text-neutral-12 text-neutral-10 flex flex-row truncate p-1',
                       s.value === props.stage && 'underline',
                     )}
                   >

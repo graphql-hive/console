@@ -17,7 +17,7 @@ export const WithContent: Story = () => (
     <p className="text-neutral-11 mb-4 text-sm">
       This is a simple card component that provides a bordered container with padding.
     </p>
-    <button className="bg-accent text-neutral-12 rounded-sm px-4 py-2 text-sm">Action</button>
+    <button className="bg-neutral-2 text-neutral-12 rounded-sm px-4 py-2 text-sm">Action</button>
   </Card>
 );
 
@@ -52,7 +52,7 @@ export const CustomStyling: Story = () => (
     <Card className="bg-neutral-3">
       <div className="text-sm">Card with custom background</div>
     </Card>
-    <Card className="border-accent border-2">
+    <Card className="border-neutral-2 border-2">
       <div className="text-sm">Card with accent border</div>
     </Card>
     <Card className="p-8">

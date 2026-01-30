@@ -1108,7 +1108,7 @@ export function OperationsStats({
         : 'success';
 
   return (
-    <section className="space-y-12 text-gray-600 transition-opacity duration-700 ease-in-out">
+    <section className="text-neutral-8 space-y-12 transition-opacity duration-700 ease-in-out">
       <OperationsFallback state={state} refetch={refetch}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <RequestsStats requests={operationsStats?.totalRequests} dateRangeText={dateRangeText} />

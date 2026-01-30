@@ -1,5 +1,5 @@
+import { Table, TBody, Td, TFoot, Th, THead, Tr } from '@/components/v2/table';
 import type { Story } from '@ladle/react';
-import { Table, TBody, THead, TFoot, Th, Td, Tr } from '@/components/v2/table';
 
 export default {
   title: 'V2 / Table',
@@ -89,8 +89,8 @@ export const ColorPaletteShowcase: Story = () => (
       <h4 className="text-neutral-12 mb-3 font-medium">Background Colors</h4>
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="bg-gray-600/10 h-6 w-16 rounded-sm" />
-          <code className="text-xs">odd:bg-gray-600/10</code>
+          <div className="bg-neutral-8/10 h-6 w-16 rounded-sm" />
+          <code className="text-xs">odd:bg-neutral-8/10</code>
           <span className="text-neutral-11 text-xs">- Odd rows (zebra striping)</span>
         </div>
       </div>
@@ -100,8 +100,8 @@ export const ColorPaletteShowcase: Story = () => (
       <h4 className="text-neutral-12 mb-3 font-medium">Border Colors</h4>
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="border-gray-600/10 h-6 w-16 rounded-sm border" />
-          <code className="text-xs">border-gray-600/10</code>
+          <div className="border-neutral-8/10 h-6 w-16 rounded-sm border" />
+          <code className="text-xs">border-neutral-8/10</code>
           <span className="text-neutral-11 text-xs">- Row borders</span>
         </div>
       </div>
@@ -220,7 +220,7 @@ export const ColorPaletteShowcase: Story = () => (
         <li>All components accept ComponentProps for their respective HTML elements</li>
         <li>THead automatically wraps children in a tr element</li>
         <li>TFoot automatically wraps children in a tr with text-neutral-10 class</li>
-        <li>Tr provides zebra striping via odd:bg-gray-600/10</li>
+        <li>Tr provides zebra striping via odd:bg-neutral-8/10</li>
         <li>All components support className for customization via cn() utility</li>
         <li>Th supports align prop for text alignment</li>
         <li>Commented code hints at future column.align and column.width features</li>

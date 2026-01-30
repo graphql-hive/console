@@ -80,7 +80,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="link"
-                      className="text-neutral-10 hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-neutral-10 hover:text-red p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
                       onClick={e => {
                         e.stopPropagation();
                       }}
@@ -120,7 +120,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
           )}
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
+      <CollapsibleContent className={cn('border-neutral-5 ml-4 flex flex-col gap-1 border-l pl-2')}>
         {isOpen &&
           props.collection.operations.map(operation => {
             const isActive = activeOperation?.id === operation.id;
@@ -130,7 +130,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                 key={operation.name}
                 variant="ghost"
                 className={cn('group w-full justify-start gap-2 px-2', {
-                  'bg-accent': isActive,
+                  'bg-neutral-2': isActive,
                 })}
                 size="sm"
                 onClick={() => {
@@ -156,7 +156,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="link"
-                            className="text-neutral-10 hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                            className="text-neutral-10 hover:text-red p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
                             onClick={e => {
                               e.stopPropagation();
                             }}
@@ -219,7 +219,7 @@ export const CollectionsSearchResult = (props: { items: CollectionsSearchResultI
             key={operation.name}
             variant="ghost"
             className={cn('group w-full justify-start gap-2 px-2', {
-              'bg-accent': isActive,
+              'bg-neutral-2': isActive,
             })}
             size="sm"
             onClick={() => {
@@ -290,7 +290,7 @@ export const Collections = () => {
             )}
           </div>
         </div>
-        <div className="border-border relative border-b p-3">
+        <div className="border-neutral-5 relative border-b p-3">
           <SearchIcon className="text-neutral-10 absolute left-5 top-1/2 size-4 -translate-y-1/2" />
           <Input
             type="text"

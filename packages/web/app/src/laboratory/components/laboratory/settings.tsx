@@ -37,7 +37,7 @@ export const Settings = () => {
   });
 
   return (
-    <div className="bg-card size-full p-3">
+    <div className="bg-neutral-2 size-full p-3">
       <form
         id="settings-form"
         onSubmit={form.handleSubmit}

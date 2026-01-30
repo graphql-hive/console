@@ -1,7 +1,7 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
-import { Modal } from '@/components/v2/modal';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/v2/modal';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Modal',
@@ -63,14 +63,14 @@ export const WithForm: Story = () => (
         <label className="mb-2 block text-sm font-medium">Project Name</label>
         <input
           type="text"
-          className="w-full rounded-sm border border-neutral-6 bg-neutral-5 px-3 py-2 text-sm"
+          className="border-neutral-6 bg-neutral-5 w-full rounded-sm border px-3 py-2 text-sm"
           placeholder="my-project"
         />
       </div>
       <div>
         <label className="mb-2 block text-sm font-medium">Description</label>
         <textarea
-          className="w-full rounded-sm border border-neutral-6 bg-neutral-5 px-3 py-2 text-sm"
+          className="border-neutral-6 bg-neutral-5 w-full rounded-sm border px-3 py-2 text-sm"
           rows={3}
           placeholder="Project description..."
         />
@@ -88,7 +88,8 @@ export const ColorPaletteShowcase: Story = () => (
     <div>
       <h3 className="text-neutral-12 mb-4 text-lg font-semibold">V2 Modal Component</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Radix UI Dialog wrapper with composed Title and Description subcomponents. Provides centered modal with overlay, close button, and size variants.
+        Radix UI Dialog wrapper with composed Title and Description subcomponents. Provides centered
+        modal with overlay, close button, and size variants.
       </p>
     </div>
 
@@ -132,7 +133,7 @@ export const ColorPaletteShowcase: Story = () => (
           <span className="text-neutral-11 text-xs">- Default icon color</span>
         </div>
         <div className="flex items-center gap-3">
-          <code className="text-xs">hover:text-accent hover:border-neutral-10</code>
+          <code className="text-xs">hover:text-neutral-2 hover:border-neutral-10</code>
           <span className="text-neutral-11 text-xs">- Hover states</span>
         </div>
         <div className="flex items-center gap-3">
@@ -190,7 +191,9 @@ export const ColorPaletteShowcase: Story = () => (
       <h4 className="text-neutral-12 mb-3 font-medium">ModalTooltipContext</h4>
       <div className="space-y-2">
         <div>
-          <p className="text-neutral-11 mb-2 text-xs">Special context for tooltips inside modals:</p>
+          <p className="text-neutral-11 mb-2 text-xs">
+            Special context for tooltips inside modals:
+          </p>
           <ul className="text-neutral-10 ml-4 list-inside list-disc space-y-1 text-xs">
             <li>Provides modal content div as portal container</li>
             <li>Ensures tooltips render inside modal (proper z-index)</li>
@@ -228,7 +231,10 @@ export const ColorPaletteShowcase: Story = () => (
     <div>
       <h4 className="text-neutral-12 mb-3 font-medium">Implementation Notes</h4>
       <ul className="text-neutral-11 list-inside list-disc space-y-1 text-sm">
-        <li>Uses Radix UI Dialog primitives (Root, Trigger, Portal, Overlay, Content, Close, Title, Description)</li>
+        <li>
+          Uses Radix UI Dialog primitives (Root, Trigger, Portal, Overlay, Content, Close, Title,
+          Description)
+        </li>
         <li>Object.assign pattern to attach Title and Description as static properties</li>
         <li>XIcon component for close button</li>
         <li>Button component (ghost variant, icon size) for close</li>

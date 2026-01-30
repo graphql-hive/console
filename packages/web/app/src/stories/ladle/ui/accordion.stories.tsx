@@ -90,7 +90,7 @@ export const SchemaChanges: Story = () => (
           <AccordionTrigger className="py-3 hover:no-underline">
             <div className="text-left text-red-400">
               <div>
-                <span className="text-gray-600">
+                <span className="text-neutral-8">
                   Field <code className="text-neutral-12">User.email</code> removed
                 </span>
               </div>
@@ -117,7 +117,7 @@ export const SchemaChanges: Story = () => (
           <AccordionTrigger className="py-3 hover:no-underline">
             <div className="text-left text-yellow-400">
               <div>
-                <span className="text-gray-600">
+                <span className="text-neutral-8">
                   Field <code className="text-neutral-12">User.phone</code> deprecated
                 </span>
                 <span className="cursor-pointer text-yellow-500">
@@ -142,7 +142,7 @@ export const SchemaChanges: Story = () => (
           <AccordionTrigger className="py-3 hover:no-underline">
             <div className="text-left text-emerald-400">
               <div>
-                <span className="text-gray-600">
+                <span className="text-neutral-8">
                   Field <code className="text-neutral-12">User.avatar</code> added
                 </span>
               </div>
@@ -258,7 +258,7 @@ export const ChangeDetail: Story = () => (
     <Accordion type="single">
       <AccordionItem value="item-1">
         <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 text-gray-600 hover:no-underline">
+          <AccordionTrigger className="text-neutral-8 py-3 hover:no-underline">
             <div className="flex w-full flex-row items-center text-left">
               <div>
                 Type <code className="text-neutral-12">Query.user</code> return type changed from{' '}
@@ -283,7 +283,7 @@ export const ChangeDetail: Story = () => (
     <Accordion type="single">
       <AccordionItem value="item-2">
         <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 text-gray-600 hover:no-underline">
+          <AccordionTrigger className="text-neutral-8 py-3 hover:no-underline">
             <div className="flex w-full flex-row items-center text-left">
               <div>
                 Argument <code className="text-neutral-12">limit</code> added to{' '}

@@ -375,7 +375,7 @@ const ProjectsPageContent = (
             </div>
             <Separator orientation="vertical" className="mx-4 h-8" />
             <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
-              <SelectTrigger className="hover:bg-accent bg-transparent">
+              <SelectTrigger className="hover:bg-neutral-2 bg-transparent">
                 {props.sortBy === 'versions'
                   ? 'Schema Versions'
                   : props.sortBy === 'name'

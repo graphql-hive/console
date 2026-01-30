@@ -129,7 +129,7 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
         isSupport ? 'justify-end' : 'justify-start',
       )}
     >
-      {isSupport ? null : <UserIcon className="text-accent size-6" />}
+      {isSupport ? null : <UserIcon className="text-neutral-2 size-6" />}
       <Tooltip>
         <TooltipTrigger asChild>
           <div

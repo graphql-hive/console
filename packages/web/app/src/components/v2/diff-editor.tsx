@@ -58,7 +58,7 @@ export const DiffEditor = (props: {
 
   return (
     <div className="w-full">
-      <div className="border-muted mb-2 flex items-center justify-between border-b px-2 py-1">
+      <div className="border-neutral-3 mb-2 flex items-center justify-between border-b px-2 py-1">
         <div className="px-2 font-bold">Diff View</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {sdlAfter && props.downloadFileName && (

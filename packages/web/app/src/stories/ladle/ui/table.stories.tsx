@@ -377,7 +377,7 @@ export const ColorPaletteShowcase: Story = () => (
             </Table>
           </div>
           <p className="text-neutral-10 text-xs">
-            Hover: <code className="text-neutral-12">hover:bg-muted/50</code>
+            Hover: <code className="text-neutral-12">hover:bg-neutral-3/50</code>
             <br />
             Transition: <code className="text-neutral-12">transition-colors</code>
           </p>

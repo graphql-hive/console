@@ -432,12 +432,12 @@ const TracesList = memo(function TracesList(
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-4 text-xs">
-                  <span className="bg-muted text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                  <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
                     {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                   </span>
                   <span>
                     {row.getValue('operationName') ?? (
-                      <span className="text-gray-400">{'<unknown>'}</span>
+                      <span className="text-neutral-10">{'<unknown>'}</span>
                     )}
                   </span>
                 </div>
@@ -932,7 +932,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           <SheetTitle className="text-neutral-12 text-lg font-medium">
             {trace ? (
               <>
-                {trace.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
+                {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
                 <span className="text-neutral-10 ml-2 font-mono font-normal">
                   {trace.id.substring(0, 4)}
                 </span>
@@ -942,7 +942,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
             )}
           </SheetTitle>
         </div>
-        <SheetDescription className="mt-1 text-xs text-gray-400">
+        <SheetDescription className="text-neutral-10 mt-1 text-xs">
           Trace ID:{' '}
           {trace?.id ? (
             <>
@@ -957,7 +957,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           {trace ? (
             <>
               <div className="flex items-center gap-1">
-                <Clock className="size-3 text-gray-400" />
+                <Clock className="text-neutral-10 size-3" />
                 <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
               </div>
               <Badge
@@ -1431,7 +1431,7 @@ function GridTable(props: {
     <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
       {props.rows.map(row => (
         <Fragment key={row.key}>
-          <div className="font-sans text-gray-400">{row.key}</div>
+          <div className="text-neutral-10 font-sans">{row.key}</div>
           <div className="text-right font-mono">{row.value}</div>
         </Fragment>
       ))}

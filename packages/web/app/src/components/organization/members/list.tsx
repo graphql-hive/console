@@ -176,7 +176,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
         </td>
         <td className="grow overflow-hidden py-3 text-sm font-medium">
           <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
-          <h4 className="text-xs text-gray-400">{member.user.email}</h4>
+          <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
         <td className="relative py-3 text-center text-sm">
           {member.isOwner ? (
@@ -199,7 +199,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           {member.viewerCanRemove && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
+                <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
                   <MoreHorizontalIcon className="size-4" />
                   <span className="sr-only">Open menu</span>
                 </Button>
@@ -264,7 +264,7 @@ function MemberRole(props: {
       {organization.viewerCanAssignUserRoles && (
         <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
           <Sheet.SheetTrigger asChild>
-            <button className="text-accent font-medium transition-colors hover:underline">
+            <button className="text-neutral-2 font-medium transition-colors hover:underline">
               change
             </button>
           </Sheet.SheetTrigger>

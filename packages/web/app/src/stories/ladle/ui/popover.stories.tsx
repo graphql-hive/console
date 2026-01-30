@@ -117,7 +117,7 @@ export const InfoHover: Story = () => (
     <p className="text-neutral-11 text-sm">
       Hover over the{' '}
       <Popover>
-        <PopoverTrigger className="text-accent hover:text-accent hover:underline hover:underline-offset-4">
+        <PopoverTrigger className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-4">
           operation name
         </PopoverTrigger>
         <PopoverContent side="right">
@@ -135,7 +135,7 @@ export const InfoHover: Story = () => (
     <p className="text-neutral-11 text-sm">
       This{' '}
       <Popover>
-        <PopoverTrigger className="text-accent hover:text-accent hover:underline hover:underline-offset-4">
+        <PopoverTrigger className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-4">
           breaking change
         </PopoverTrigger>
         <PopoverContent side="top">
@@ -160,7 +160,7 @@ export const AffectedOperations: Story = () => (
     <p className="text-neutral-11 text-sm">Deployment affects</p>
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="link" className="text-accent h-auto p-0">
+        <Button variant="link" className="text-neutral-2 h-auto p-0">
           5 operations
         </Button>
       </PopoverTrigger>

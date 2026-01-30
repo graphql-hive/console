@@ -201,7 +201,7 @@ function Save(props: {
         <DropdownMenuItem
           disabled={isSame || !currentOperation}
           className={cx(
-            (isSame || !currentOperation) && 'cursor-default text-gray-400 hover:bg-transparent',
+            (isSame || !currentOperation) && 'text-neutral-10 cursor-default hover:bg-transparent',
           )}
           onClick={async () => {
             if (!currentOperation || isSame) {
@@ -474,7 +474,7 @@ function LaboratoryPageContent(props: {
                 </TabsTrigger>
                 <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                   Hive Laboratory
-                  <div className="bg-accent size-2 rounded-full" />
+                  <div className="bg-neutral-2 size-2 rounded-full" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -601,7 +601,7 @@ function LaboratoryPageContent(props: {
           }
 
           #preflight-logs h2 {
-            color: hsla(var(--color-neutral), var(--alpha-secondary));
+            color: hsla(var(--color-neutral), var(--alpha-neutral-2));
           }
 
           #preflight-logs button[data-state="open"] > h2 {
@@ -609,7 +609,7 @@ function LaboratoryPageContent(props: {
           }
 
           #preflight-logs > div {
-            border-color: hsl(var(--border));
+            border-color: hsl(var(--neutral-5));
           }
         `}</style>
       </Helmet>
@@ -787,7 +787,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
         {props.logs.length === 0 ? (
           <div
             data-cy="empty-state"
-            className="flex flex-col items-center justify-center text-gray-400"
+            className="text-neutral-10 flex flex-col items-center justify-center"
           >
             <p>No logs available</p>
             <p>Execute a query to see logs</p>

@@ -18,13 +18,13 @@ export const DocsNote = ({
     <div
       className={cn(
         'my-2 flex border-l-2 px-4 py-2',
-        warn ? 'border-accent' : 'border-neutral-12',
+        warn ? 'border-neutral-2' : 'border-neutral-12',
         className,
       )}
     >
       {/* <div className="items-center align-middle pr-2 flex flex-row">
         {warn ? (
-          <ExclamationTriangleIcon className="text-accent" />
+          <ExclamationTriangleIcon className="text-neutral-2" />
         ) : (
           <InfoCircledIcon className="text-current" />
         )}
@@ -52,7 +52,7 @@ export const DocsLink = ({
       asChild
       variant="link"
       className={cn(
-        'text-accent p-0',
+        'text-neutral-2 p-0',
         'whitespace-pre-wrap', // to not lose whitespace between tags due to `display: 'inline-flex'`
         className,
       )}

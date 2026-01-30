@@ -64,7 +64,7 @@ export const ColorPaletteShowcase: Story = () => (
             </Link>
           </div>
           <p className="text-neutral-10 text-xs">
-            Color: <code className="text-neutral-12">text-accent</code>
+            Color: <code className="text-neutral-12">text-neutral-2</code>
             <br />
             Hover: <code className="text-neutral-12">hover:underline</code>
             <br />

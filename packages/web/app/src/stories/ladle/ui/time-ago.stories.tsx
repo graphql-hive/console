@@ -150,7 +150,7 @@ export const ColorPaletteShowcase: Story = () => {
             <p className="text-neutral-11 text-sm font-medium">With Custom Styling</p>
             <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
               <p className="text-neutral-11 text-sm">
-                Custom color: <TimeAgo date={oneHourAgo} className="text-accent font-medium" />
+                Custom color: <TimeAgo date={oneHourAgo} className="text-neutral-2 font-medium" />
               </p>
             </div>
             <p className="text-neutral-10 text-xs">

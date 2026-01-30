@@ -96,7 +96,7 @@ export const Overview: Story = () => (
           <li>Switch component with label "Show descriptions"</li>
           <li>Uses useDescriptionsVisibleToggle from provider</li>
           <li>Wrapped in Tooltip with explanation</li>
-          <li>bg-secondary flex h-[40px] rounded-md border px-3</li>
+          <li>bg-neutral-2 flex h-[40px] rounded-md border px-3</li>
           <li>Default: descriptions hidden</li>
         </ul>
       </div>
@@ -213,8 +213,8 @@ export const Overview: Story = () => (
     <div>
       <h4 className="text-neutral-12 mb-3 font-medium">Note</h4>
       <p className="text-neutral-10 text-sm">
-        This is a documentation-only story. These components use GraphQL queries, router
-        navigation, and schema explorer context. See actual usage in target explorer pages.
+        This is a documentation-only story. These components use GraphQL queries, router navigation,
+        and schema explorer context. See actual usage in target explorer pages.
       </p>
     </div>
   </div>

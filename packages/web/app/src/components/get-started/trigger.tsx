@@ -51,7 +51,10 @@ export function GetStartedProgress(props: {
         </div>
         <div>
           <div className="bg-neutral-5 relative mt-1 h-[5px] w-full overflow-hidden rounded-sm">
-            <div className="bg-accent h-full" style={{ width: `${(completed / total) * 100}%` }} />
+            <div
+              className="bg-neutral-2 h-full"
+              style={{ width: `${(completed / total) * 100}%` }}
+            />
           </div>
         </div>
       </button>

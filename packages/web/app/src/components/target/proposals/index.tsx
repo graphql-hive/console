@@ -502,7 +502,7 @@ export function Proposal(props: {
           coordinates={reviewssByCoordinate.keys().toArray()}
           annotate={(coordinate, withPreview) => (
             <>
-              <div className="p-2 text-sm text-gray-600">
+              <div className="text-neutral-8 p-2 text-sm">
                 This comment refers to a schema coordinate that no longer exists.
               </div>
               {annotations(coordinate, withPreview)}

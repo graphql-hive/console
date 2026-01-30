@@ -141,7 +141,7 @@ export const ColorPaletteShowcase: Story = () => (
             <br />
             Label: "Latest changes"
             <br />
-            Indicator: Pulsing <code className="text-neutral-12">bg-accent</code> dot when unread
+            Indicator: Pulsing <code className="text-neutral-12">bg-neutral-2</code> dot when unread
             changes
             <br />
             Position: <code className="text-neutral-12">absolute right-0 top-0 -mr-1 -mt-1</code>
@@ -197,7 +197,8 @@ export const ColorPaletteShowcase: Story = () => (
               <br />
               Description: <code className="text-neutral-12">text-neutral-11 text-sm</code>
               <br />
-              Unread indicator: <code className="text-neutral-12">border-l-2 border-accent_80</code>
+              Unread indicator:{' '}
+              <code className="text-neutral-12">border-l-2 border-neutral-2_80</code>
               <br />
               Read items: <code className="text-neutral-12">border-transparent</code>
             </p>
@@ -211,14 +212,14 @@ export const ColorPaletteShowcase: Story = () => (
               <button className="border-neutral-6 text-neutral-12 rounded-sm border px-3 py-2 text-sm">
                 Latest changes
                 <div className="absolute right-0 top-0 -mr-1 -mt-1 flex size-2">
-                  <div className="bg-accent absolute inline-flex size-full animate-pulse rounded-full" />
+                  <div className="bg-neutral-2 absolute inline-flex size-full animate-pulse rounded-full" />
                 </div>
               </button>
             </div>
           </div>
           <p className="text-neutral-10 text-xs">
             Dot:{' '}
-            <code className="text-neutral-12">size-2 bg-accent animate-pulse rounded-full</code>
+            <code className="text-neutral-12">size-2 bg-neutral-2 animate-pulse rounded-full</code>
             <br />
             Position: <code className="text-neutral-12">absolute right-0 top-0 -mr-1 -mt-1</code>
             <br />

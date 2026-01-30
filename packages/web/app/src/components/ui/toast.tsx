@@ -27,8 +27,7 @@ const toastVariants = cva(
     variants: {
       variant: {
         default: 'border bg-neutral-3 text-neutral-11',
-        destructive:
-          'destructive group border-destructive bg-destructive text-destructive-foreground',
+        destructive: 'destructive group border-red bg-red text-neutral-12',
         warning: 'group border-orange-900 bg-orange-600 text-neutral-1',
       },
     },
@@ -59,7 +58,7 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      'ring-offset-neutral-2 hover:bg-secondary focus:ring-ring group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+      'ring-offset-neutral-2 hover:bg-neutral-2 focus:ring-ring group-[.destructive]:border-neutral-3/40 group-[.destructive]:hover:border-red/30 group-[.destructive]:hover:bg-red group-[.destructive]:hover:text-neutral-12 group-[.destructive]:focus:ring-red inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
       className,
     )}
     {...props}

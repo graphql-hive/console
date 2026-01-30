@@ -132,7 +132,7 @@ function MemberInvitationForm(props: {
     return (
       <>
         <div className="text-red-500">Viewer role not found in organization member roles</div>
-        <div className="text-gray-400">Please contact support.</div>
+        <div className="text-neutral-10">Please contact support.</div>
       </>
     );
   }
@@ -190,7 +190,7 @@ function MemberInvitationForm(props: {
     return (
       <>
         <div className="text-red-500">Viewer role not found in organization member roles</div>
-        <div className="text-gray-400">Please contact support.</div>
+        <div className="text-neutral-10">Please contact support.</div>
       </>
     );
   }
@@ -423,13 +423,13 @@ function Invitation(props: {
         <td className="truncate py-3 text-center text-sm" title={invitation.role.name}>
           {invitation.role.name}
         </td>
-        <td className="py-3 text-center text-sm text-gray-400">
+        <td className="text-neutral-10 py-3 text-center text-sm">
           {DateFormatter.format(new Date(invitation.expiresAt))}
         </td>
         <td className="py-3 text-right text-sm">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
+              <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
                 <MoreHorizontalIcon className="size-4" />
                 <span className="sr-only">Open menu</span>
               </Button>

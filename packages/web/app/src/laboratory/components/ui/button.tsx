@@ -3,16 +3,15 @@ import { cn } from '@/laboratory/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-red/20 aria-invalid:border-red",
   {
     variants: {
       variant: {
         default: 'bg-neutral-11 text-neutral-2 hover:bg-neutral-11/90',
-        destructive:
-          'bg-destructive !text-neutral-12 hover:bg-destructive/90 focus-visible:ring-destructive/20',
-        outline: 'border bg-neutral-3 shadow-sm hover:bg-accent hover:text-neutral-12',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-neutral-12',
+        destructive: 'bg-red !text-neutral-12 hover:bg-red/90 focus-visible:ring-red/20',
+        outline: 'border bg-neutral-3 shadow-sm hover:bg-neutral-2 hover:text-neutral-12',
+        secondary: 'bg-neutral-2 text-neutral-11 hover:bg-neutral-2/80',
+        ghost: 'hover:bg-neutral-2 hover:text-neutral-12',
         link: 'text-neutral-11 underline-offset-4 hover:underline',
       },
       size: {

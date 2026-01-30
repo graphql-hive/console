@@ -182,11 +182,11 @@ export const ColorPaletteShowcase: Story = () => {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="bg-accent text-neutral-12 flex size-8 items-center justify-center rounded-md text-sm font-normal">
+                <div className="bg-neutral-2 text-neutral-12 flex size-8 items-center justify-center rounded-md text-sm font-normal">
                   29
                 </div>
                 <span className="text-neutral-10 text-xs">
-                  Today: <code className="text-neutral-12">bg-accent text-neutral-12</code>
+                  Today: <code className="text-neutral-12">bg-neutral-2 text-neutral-12</code>
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -216,10 +216,10 @@ export const ColorPaletteShowcase: Story = () => {
                 <div className="bg-neutral-11 text-neutral-2 flex size-8 items-center justify-center rounded-l-md text-sm font-normal">
                   10
                 </div>
-                <div className="bg-accent text-neutral-12 flex size-8 items-center justify-center text-sm font-normal">
+                <div className="bg-neutral-2 text-neutral-12 flex size-8 items-center justify-center text-sm font-normal">
                   11
                 </div>
-                <div className="bg-accent text-neutral-12 flex size-8 items-center justify-center text-sm font-normal">
+                <div className="bg-neutral-2 text-neutral-12 flex size-8 items-center justify-center text-sm font-normal">
                   12
                 </div>
                 <div className="bg-neutral-11 text-neutral-2 flex size-8 items-center justify-center rounded-r-md text-sm font-normal">
@@ -231,10 +231,10 @@ export const ColorPaletteShowcase: Story = () => {
                 <code className="text-neutral-12">bg-neutral-11 text-neutral-2</code> with rounded
                 corners
                 <br />
-                Range middle: <code className="text-neutral-12">bg-accent text-neutral-12</code>
+                Range middle: <code className="text-neutral-12">bg-neutral-2 text-neutral-12</code>
                 <br />
                 Cell background:{' '}
-                <code className="text-neutral-12">[&:has([aria-selected])]:bg-accent</code>
+                <code className="text-neutral-12">[&:has([aria-selected])]:bg-neutral-2</code>
               </p>
             </div>
           </div>

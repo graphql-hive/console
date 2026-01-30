@@ -1189,7 +1189,7 @@ function RowItem(props: {
                 <XIcon
                   size={12}
                   data-active={props.isActive}
-                  className="text-neutral-10 data-[active=true]:text-secondary"
+                  className="text-neutral-10 data-[active=true]:text-neutral-2"
                 />
               </button>
             </TooltipTrigger>

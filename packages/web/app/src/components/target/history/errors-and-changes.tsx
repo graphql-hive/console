@@ -156,7 +156,7 @@ export function ChangesBlock(
   return (
     <div>
       <h2 className="text-neutral-2 mb-3 font-bold">{props.title}</h2>
-      <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
+      <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
             organizationSlug={props.organizationSlug}
@@ -228,12 +228,12 @@ function ChangeItem(
             <div
               className={clsx(
                 'text-left',
-                (change.approval && 'text-accent') ||
+                (change.approval && 'text-neutral-2') ||
                   (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
               <div>
-                <span className="text-gray-600">{labelize(change.message)}</span>
+                <span className="text-neutral-8">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
                   <span className="cursor-pointer text-yellow-500">
                     {' '}
@@ -319,7 +319,7 @@ function ChangeItem(
                         ) : (
                           <Link
                             key={index}
-                            className="text-accent hover:text-accent"
+                            className="text-neutral-2 hover:text-neutral-2"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                             params={{
                               organizationSlug: props.organizationSlug,
@@ -358,7 +358,7 @@ function ChangeItem(
                         <TableRow key={hash}>
                           <TableCell className="font-medium">
                             <Popover>
-                              <PopoverTrigger className="text-accent hover:text-accent hover:underline hover:underline-offset-4">
+                              <PopoverTrigger className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-4">
                                 {hash.substring(0, 4)}_{name}
                               </PopoverTrigger>
                               <PopoverContent side="right">
@@ -368,7 +368,7 @@ function ChangeItem(
                                     target.target ? (
                                       <p key={i}>
                                         <Link
-                                          className="text-accent hover:text-accent"
+                                          className="text-neutral-2 hover:text-neutral-2"
                                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                                           params={{
                                             organizationSlug: props.organizationSlug,
@@ -449,7 +449,7 @@ function ChangeItem(
                                 appVersion: deployment.version,
                               }}
                               search={{ coordinates: change.path?.join('.') }}
-                              className="text-accent hover:text-accent hover:underline"
+                              className="text-neutral-2 hover:text-neutral-2 hover:underline"
                             >
                               {deployment.name}
                             </Link>
@@ -458,7 +458,7 @@ function ChangeItem(
                           <TableCell className="text-right">
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="link" className="text-accent h-auto p-0">
+                                <Button variant="link" className="text-neutral-2 h-auto p-0">
                                   {deployment.totalAffectedOperations}{' '}
                                   {deployment.totalAffectedOperations === 1
                                     ? 'operation'
@@ -487,7 +487,7 @@ function ChangeItem(
                                       appVersion: deployment.version,
                                     }}
                                     search={{ coordinates: change.path?.join('.') }}
-                                    className="text-accent block pt-2 text-sm hover:underline"
+                                    className="text-neutral-2 block pt-2 text-sm hover:underline"
                                   >
                                     Show all ({deployment.totalAffectedOperations}) affected
                                     operations
@@ -511,7 +511,7 @@ function ChangeItem(
                         schemaCheckId: props.schemaCheckId,
                       }}
                       search={{ coordinate: change.path?.join('.') }}
-                      className="text-accent mt-2 block text-sm hover:underline"
+                      className="text-neutral-2 mt-2 block text-sm hover:underline"
                     >
                       View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                     </Link>
@@ -547,7 +547,7 @@ function ChangeItem(
                             appVersion: deployment.version,
                           }}
                           search={{ coordinates: change.path?.join('.') }}
-                          className="text-accent hover:text-accent hover:underline"
+                          className="text-neutral-2 hover:text-neutral-2 hover:underline"
                         >
                           {deployment.name}
                         </Link>
@@ -556,7 +556,7 @@ function ChangeItem(
                       <TableCell className="text-right">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="link" className="text-accent h-auto p-0">
+                            <Button variant="link" className="text-neutral-2 h-auto p-0">
                               {deployment.totalAffectedOperations}{' '}
                               {deployment.totalAffectedOperations === 1
                                 ? 'operation'
@@ -583,7 +583,7 @@ function ChangeItem(
                                   appVersion: deployment.version,
                                 }}
                                 search={{ coordinates: change.path?.join('.') }}
-                                className="text-accent block pt-2 text-sm hover:underline"
+                                className="text-neutral-2 block pt-2 text-sm hover:underline"
                               >
                                 Show all ({deployment.totalAffectedOperations}) affected operations
                               </Link>
@@ -606,7 +606,7 @@ function ChangeItem(
                     schemaCheckId: props.schemaCheckId,
                   }}
                   search={{ coordinate: change.path?.join('.') }}
-                  className="text-accent mt-2 block text-sm hover:underline"
+                  className="text-neutral-2 mt-2 block text-sm hover:underline"
                 >
                   View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                 </Link>
@@ -663,7 +663,7 @@ function SchemaChangeApproval(props: {
           approved by {approvalName} in this schema check on {approvalDate}.
         </>
       ) : (
-        <a href={schemaCheckPath} className="text-accent hover:underline">
+        <a href={schemaCheckPath} className="text-neutral-2 hover:underline">
           approved by {approvalName} on {approvalDate}.
         </a>
       )}

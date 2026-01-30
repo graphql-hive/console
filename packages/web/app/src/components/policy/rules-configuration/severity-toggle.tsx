@@ -14,7 +14,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       label: 'Warning',
       icon: (active: boolean) => (
         <ExclamationTriangleIcon
-          className={clsx(active ? 'text-orange-600' : 'text-gray-600', 'hover:text-orange-600')}
+          className={clsx(active ? 'text-orange-600' : 'text-neutral-8', 'hover:text-orange-600')}
         />
       ),
     },
@@ -23,7 +23,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       label: 'Error',
       icon: (active: boolean) => (
         <CrossCircledIcon
-          className={clsx(active ? 'text-red-600' : 'text-gray-600', 'hover:text-red-600')}
+          className={clsx(active ? 'text-red-600' : 'text-neutral-8', 'hover:text-red-600')}
         />
       ),
     },
@@ -35,7 +35,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
         <MinusCircledIcon
-          className={clsx(active ? 'text-neutral-12' : 'text-gray-600', 'hover:text-neutral-12')}
+          className={clsx(active ? 'text-neutral-12' : 'text-neutral-8', 'hover:text-neutral-12')}
         />
       ),
     });

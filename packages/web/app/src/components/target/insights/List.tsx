@@ -271,7 +271,7 @@ function OperationsTable({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <InfoIcon className="size-4 text-gray-400" />
+                            <InfoIcon className="text-neutral-10 size-4" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-[300px] text-left text-sm">
                             <p className="mb-4">

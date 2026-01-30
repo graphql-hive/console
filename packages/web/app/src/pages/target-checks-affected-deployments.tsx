@@ -231,7 +231,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   targetSlug: props.targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
-                className="text-accent hover:underline"
+                className="text-neutral-2 hover:underline"
               >
                 Schema Check
               </Link>
@@ -296,14 +296,14 @@ function TargetChecksAffectedDeploymentsContent(props: {
                           search={{
                             coordinates: props.coordinate,
                           }}
-                          className="text-accent hover:underline"
+                          className="text-neutral-2 hover:underline"
                         >
                           {deployment.name}
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="link" className="text-accent h-auto p-0" asChild>
+                        <Button variant="link" className="text-neutral-2 h-auto p-0" asChild>
                           <Link
                             to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
                             params={{

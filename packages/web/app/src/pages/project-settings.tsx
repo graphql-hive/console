@@ -451,8 +451,8 @@ function ProjectPolicySettings(props: {
           currentState={currentProject.schemaPolicy}
         />
       ) : (
-        <div className="pl-1 text-sm font-bold text-gray-400">
-          <p className="text-accent mr-4 inline-block">!</p>
+        <div className="text-neutral-10 pl-1 text-sm font-bold">
+          <p className="text-neutral-2 mr-4 inline-block">!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>
@@ -601,7 +601,7 @@ function ProjectSettingsContent(props: {
             }}
             className={cn(
               resolvedPage.key === subPage.key
-                ? 'bg-muted hover:bg-muted'
+                ? 'bg-neutral-3 hover:bg-neutral-3'
                 : 'hover:bg-transparent hover:underline',
               'w-full justify-start text-left',
             )}

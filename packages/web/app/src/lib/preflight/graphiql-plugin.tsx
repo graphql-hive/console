@@ -816,7 +816,7 @@ const LOG_COLORS = {
   error: 'text-red-400',
   info: 'text-emerald-400',
   warn: 'text-yellow-400',
-  log: 'text-gray-400',
+  log: 'text-neutral-10',
 };
 
 export function LogLine({ log }: { log: LogRecord }) {

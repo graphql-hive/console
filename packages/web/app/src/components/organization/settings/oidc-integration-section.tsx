@@ -73,7 +73,7 @@ const classes = {
 };
 
 function FormError({ children }: { children: React.ReactNode }) {
-  return <div className="text-destructive text-sm">{children}</div>;
+  return <div className="text-red text-sm">{children}</div>;
 }
 
 const OIDCIntegrationSection_OrganizationFragment = graphql(`
@@ -488,7 +488,7 @@ function CreateOIDCIntegrationForm(props: {
         </DialogDescription>
       </DialogHeader>
       <div className="space-y-2">
-        <div className="bg-muted border-border rounded-md border p-3">
+        <div className="bg-neutral-3 border-neutral-5 rounded-md border p-3">
           <OIDCMetadataFetcher
             onEndpointChange={endpoints => {
               void formik.setFieldValue('tokenEndpoint', endpoints.token);
@@ -1008,7 +1008,7 @@ function UpdateOIDCIntegrationForm(props: {
     <Dialog open={props.isOpen} onOpenChange={props.close}>
       <DialogContent className="flex max-h-[100vh] w-[960px] max-w-[100%] overflow-y-auto">
         <div className={classes.container}>
-          <div className="bg-border grid grid-cols-1 gap-[1px] md:grid-cols-2">
+          <div className="bg-neutral-5 grid grid-cols-1 gap-[1px] md:grid-cols-2">
             <div className="bg-neutral-3 py-4 pr-4 md:pt-0">
               <div className="flex flex-col gap-y-5">
                 <div className={cn(classes.container, 'flex flex-col gap-y-4')}>

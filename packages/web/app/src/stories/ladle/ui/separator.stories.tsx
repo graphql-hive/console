@@ -82,7 +82,7 @@ export const InCard: Story = () => (
     </div>
     <Separator />
     <div className="p-4">
-      <button className="text-accent text-sm hover:underline">Card Action</button>
+      <button className="text-neutral-2 text-sm hover:underline">Card Action</button>
     </div>
   </div>
 );
@@ -104,7 +104,7 @@ export const ColorPaletteShowcase: Story = () => (
             <p className="text-neutral-11 text-sm">Content below</p>
           </div>
           <p className="text-neutral-10 text-xs">
-            Background: <code className="text-neutral-12">bg-border</code>
+            Background: <code className="text-neutral-12">bg-neutral-5</code>
             <br />
             Height: <code className="text-neutral-12">h-[1px]</code>
             <br />
@@ -122,7 +122,7 @@ export const ColorPaletteShowcase: Story = () => (
             </div>
           </div>
           <p className="text-neutral-10 text-xs">
-            Background: <code className="text-neutral-12">bg-border</code>
+            Background: <code className="text-neutral-12">bg-neutral-5</code>
             <br />
             Width: <code className="text-neutral-12">w-[1px]</code>
             <br />

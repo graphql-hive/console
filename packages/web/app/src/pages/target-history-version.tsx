@@ -92,7 +92,7 @@ function SchemaVersionView(props: {
         <Subtitle>Detailed view of the schema version</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="border-neutral-5 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+        <div className="border-neutral-5 text-neutral-10 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
           <div className="min-w-0">
             <div className="text-xs">Status</div>
             <div
@@ -346,7 +346,7 @@ function DefaultSchemaVersionView(props: {
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
           <TabsList
             className={cn(
-              'bg-neutral-3 border-muted w-full justify-start rounded-none border-x border-b',
+              'bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b',
               !props.hasContracts && 'rounded-t border-t',
             )}
           >
@@ -370,7 +370,7 @@ function DefaultSchemaVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-muted grow rounded-md rounded-t-none border border-t-0">
+      <div className="border-neutral-3 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {schemaVersion.isFirstComposableVersion ? (
@@ -522,7 +522,7 @@ function ContractVersionView(props: {
     <>
       <TooltipProvider>
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-          <TabsList className="bg-neutral-3 border-muted w-full justify-start rounded-none border-x border-b">
+          <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
             {availableViews.map(item => (
               <Tooltip key={item.value}>
                 <TooltipTrigger>
@@ -543,7 +543,7 @@ function ContractVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-muted grow rounded-md rounded-t-none border border-t-0">
+      <div className="border-neutral-3 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractVersion.isFirstComposableVersion ? (

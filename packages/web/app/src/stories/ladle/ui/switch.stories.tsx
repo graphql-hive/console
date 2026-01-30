@@ -70,7 +70,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-6">
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">
-            Unchecked (data-[state=unchecked]:bg-input)
+            Unchecked (data-[state=unchecked]:bg-neutral-5)
           </p>
           <div className="flex items-center space-x-2">
             <Switch />

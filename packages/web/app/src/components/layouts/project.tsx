@@ -161,7 +161,7 @@ export function ProjectLayout({
                 </div>
               )}
               {currentProject?.viewerCanCreateTarget ? (
-                <Button onClick={toggleModalOpen} variant="link" className="text-accent">
+                <Button onClick={toggleModalOpen} variant="link" className="text-neutral-2">
                   <PlusIcon size={16} className="mr-2" />
                   New target
                 </Button>

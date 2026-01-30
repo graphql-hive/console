@@ -171,7 +171,7 @@ function OperationsFilter({
           </div>
           <div className="grow pl-1">
             {clientFilteredOperations && (
-              <div className="text-right text-xs text-gray-600">
+              <div className="text-neutral-8 text-right text-xs">
                 <span className="text-neutral-10">selected</span> / all clients
               </div>
             )}
@@ -340,11 +340,11 @@ function OperationRow({
       return (
         <div className="text-neutral-10 flex shrink-0 text-right">
           <span>{clientsRequests === '-' ? 0 : clientsRequests}</span>
-          <span className="ml-1 truncate text-gray-600">/ {requests}</span>
+          <span className="text-neutral-8 ml-1 truncate">/ {requests}</span>
         </div>
       );
     }
-    return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
+    return <div className="text-neutral-8 shrink-0 text-right">{requests}</div>;
   };
 
   return (
@@ -382,7 +382,7 @@ export function OperationsFilterTrigger({
 
   return (
     <>
-      <Button variant="outline" className="bg-accent" onClick={toggle}>
+      <Button variant="outline" className="bg-neutral-2" onClick={toggle}>
         <span>Operations ({selected?.length || 'all'})</span>
         <FilterIcon className="ml-2 size-4" />
       </Button>
@@ -441,11 +441,11 @@ function ClientRow({
       return (
         <div className="text-neutral-10 flex shrink-0 text-right">
           <span>{clientOperation?.count ?? 0}</span>
-          <span className="ml-1 truncate text-gray-600">/ {requests}</span>
+          <span className="text-neutral-8 ml-1 truncate">/ {requests}</span>
         </div>
       );
     }
-    return <div className="shrink-0 text-right text-gray-600">{requests}</div>;
+    return <div className="text-neutral-8 shrink-0 text-right">{requests}</div>;
   };
 
   return (
@@ -611,7 +611,7 @@ function ClientsFilter({
           </div>
           <div className="grow pl-1">
             {operationStatsConnection && (
-              <div className="text-right text-xs text-gray-600">
+              <div className="text-neutral-8 text-right text-xs">
                 <span className="text-neutral-10">selected</span> / all operations
               </div>
             )}
@@ -759,7 +759,7 @@ export function ClientsFilterTrigger({
 
   return (
     <>
-      <Button variant="outline" className="bg-accent" onClick={toggle}>
+      <Button variant="outline" className="bg-neutral-2" onClick={toggle}>
         <span>Clients ({selected?.length || 'all'})</span>
         <FilterIcon className="ml-2 size-4" />
       </Button>

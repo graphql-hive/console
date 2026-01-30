@@ -140,7 +140,7 @@ export function ChangeRow(props: {
       <tr style={{ counterIncrement: incrementCounter }}>
         <td
           className={cn(
-            'schema-doc-row-old bg-neutral-2 w-[42px] min-w-fit select-none pr-3 text-right text-gray-600',
+            'schema-doc-row-old bg-neutral-2 text-neutral-8 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
@@ -148,7 +148,7 @@ export function ChangeRow(props: {
         />
         <td
           className={cn(
-            'schema-doc-row-new bg-neutral-2 w-[42px] min-w-fit select-none pr-3 text-right text-gray-600',
+            'schema-doc-row-new bg-neutral-2 text-neutral-8 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-green-900/30',
@@ -202,7 +202,7 @@ export function ChangeRow(props: {
 }
 
 function Keyword(props: { term: string }) {
-  return <span className="text-gray-400">{props.term}</span>;
+  return <span className="text-neutral-10">{props.term}</span>;
 }
 
 function Removal(props: { children: ReactNode | string; className?: string }): ReactNode {

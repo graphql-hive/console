@@ -1,23 +1,17 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
 import { Sortable } from '@/components/v2/sortable';
+import type { Story } from '@ladle/react';
 import { SortDirection } from '@tanstack/react-table';
 
 export default {
   title: 'V2 / Sortable',
 };
 
-export const NotSorted: Story = () => (
-  <Sortable sortOrder={false}>Column Name</Sortable>
-);
+export const NotSorted: Story = () => <Sortable sortOrder={false}>Column Name</Sortable>;
 
-export const Ascending: Story = () => (
-  <Sortable sortOrder="asc">Column Name</Sortable>
-);
+export const Ascending: Story = () => <Sortable sortOrder="asc">Column Name</Sortable>;
 
-export const Descending: Story = () => (
-  <Sortable sortOrder="desc">Column Name</Sortable>
-);
+export const Descending: Story = () => <Sortable sortOrder="desc">Column Name</Sortable>;
 
 export const Interactive: Story = () => {
   const [sortOrder, setSortOrder] = useState<SortDirection | false>(false);
@@ -46,9 +40,12 @@ export const InTableHeader: Story = () => {
   return (
     <table className="w-full">
       <thead>
-        <tr className="border-b border-neutral-6">
+        <tr className="border-neutral-6 border-b">
           <th className="px-4 py-3 text-left">
-            <Sortable sortOrder={sortOrder} onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
+            <Sortable
+              sortOrder={sortOrder}
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
               Name
             </Sortable>
           </th>
@@ -57,12 +54,12 @@ export const InTableHeader: Story = () => {
         </tr>
       </thead>
       <tbody>
-        <tr className="border-b border-neutral-6">
+        <tr className="border-neutral-6 border-b">
           <td className="px-4 py-2">John Doe</td>
           <td className="px-4 py-2">john@example.com</td>
           <td className="px-4 py-2">Admin</td>
         </tr>
-        <tr className="border-b border-neutral-6">
+        <tr className="border-neutral-6 border-b">
           <td className="px-4 py-2">Jane Smith</td>
           <td className="px-4 py-2">jane@example.com</td>
           <td className="px-4 py-2">User</td>
@@ -77,7 +74,8 @@ export const ColorPaletteShowcase: Story = () => (
     <div>
       <h3 className="text-neutral-12 mb-4 text-lg font-semibold">V2 Sortable Component</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Sortable table header component with tooltip and triangle icon indicators. Integrates with TanStack Table for sorting functionality.
+        Sortable table header component with tooltip and triangle icon indicators. Integrates with
+        TanStack Table for sorting functionality.
       </p>
     </div>
 
@@ -86,7 +84,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <Sortable sortOrder="asc">Sorted</Sortable>
-          <code className="text-xs">text-accent</code>
+          <code className="text-xs">text-neutral-2</code>
           <span className="text-neutral-11 text-xs">- Triangle icon when sorted</span>
         </div>
       </div>

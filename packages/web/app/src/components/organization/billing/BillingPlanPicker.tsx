@@ -53,7 +53,7 @@ const planCollection: {
           href="https://the-guild.dev"
           target="_blank"
           rel="noreferrer"
-          className="text-accent font-medium transition-colors hover:underline"
+          className="text-neutral-2 font-medium transition-colors hover:underline"
         >
           The Guild
         </a>

@@ -242,7 +242,7 @@ function TabButton(props: { isActive: boolean; onClick(): void; children: ReactN
     <button
       className={cn(
         'border-b-2 p-2',
-        props.isActive ? 'border-[#2662d8]' : 'hover:border-border border-transparent',
+        props.isActive ? 'border-[#2662d8]' : 'hover:border-neutral-5 border-transparent',
       )}
       onClick={props.onClick}
     >
@@ -338,7 +338,7 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
       <div
         className={cn(
           'bg-neutral-5 absolute inset-y-0 left-[2px] w-px',
-          isDragging ? 'bg-gray-600' : 'hover:bg-neutral-2',
+          isDragging ? 'bg-neutral-8' : 'hover:bg-neutral-2',
         )}
       />
     </div>
@@ -527,7 +527,7 @@ function SpanNode(props: SpanNodeProps) {
             </div>
             {span.spanAttributes['hive.gateway.upstream.subgraph.name'] ? (
               <div
-                className={cn('truncate text-xs', isDimmed ? 'text-gray-600' : 'text-neutral-10')}
+                className={cn('truncate text-xs', isDimmed ? 'text-neutral-8' : 'text-neutral-10')}
               >
                 {span.spanAttributes['hive.gateway.upstream.subgraph.name']}
               </div>
@@ -566,17 +566,17 @@ function SpanNode(props: SpanNodeProps) {
                 {/* Content */}
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-y-2">
-                    <div className="text-gray-400">Duration</div>
+                    <div className="text-neutral-10">Duration</div>
                     <div className="text-right font-mono">
                       <span>{formatNanoseconds(props.span.durationNs)}</span>
                     </div>
 
-                    <div className="text-gray-400">Started At</div>
+                    <div className="text-neutral-10">Started At</div>
                     <div className="text-right font-mono">
                       {formatNanoseconds(props.span.startNs)}
                     </div>
 
-                    <div className="text-gray-400">% of Total</div>
+                    <div className="text-neutral-10">% of Total</div>
                     <div className="text-right font-mono">{props.span.percentageOfTotal}%</div>
 
                     <div className="col-span-2">
@@ -596,7 +596,7 @@ function SpanNode(props: SpanNodeProps) {
 
                     {props.span.percentageOfParentSpan === null ? null : (
                       <>
-                        <div className="text-gray-400">% of Parent</div>
+                        <div className="text-neutral-10">% of Parent</div>
                         <div className="text-right font-mono">
                           {props.span.percentageOfParentSpan}%
                         </div>
@@ -926,7 +926,7 @@ export function TraceSheet(props: TraceSheetProps) {
                     <div className="p-4">
                       <div className="space-y-2">
                         {!events.length ? (
-                          <div className="text-sm text-gray-600">
+                          <div className="text-neutral-8 text-sm">
                             No events occured during this trace.
                           </div>
                         ) : (
@@ -1070,7 +1070,7 @@ function TargetInsightsNewPageContent(props: {
             <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
             {trace ? (
               <>
-                {trace.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
+                {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
                 <span className="text-neutral-10 ml-2 font-mono font-normal">
                   {trace.id.substring(0, 4)}
                 </span>
@@ -1096,7 +1096,7 @@ function TargetInsightsNewPageContent(props: {
             {trace && (
               <div className="mt-2 flex items-center gap-3 text-xs">
                 <div className="flex items-center gap-1">
-                  <Clock className="size-3 text-gray-400" />
+                  <Clock className="text-neutral-10 size-3" />
                   <span className="text-neutral-11">
                     {formatNanoseconds(BigInt(trace.duration))}
                   </span>
@@ -1456,7 +1456,7 @@ function SpanSheet(props: SpanSheetProps) {
               <span className="text-neutral-10 ml-2">{span.name}</span>
             </SheetTitle>
           </div>
-          <SheetDescription className="mt-1 text-xs text-gray-400">
+          <SheetDescription className="text-neutral-10 mt-1 text-xs">
             Span ID: <span className="font-mono">{span.id}</span>
             <CopyIconButton value={span.id} label="Copy Span ID" />
           </SheetDescription>
@@ -1505,7 +1505,7 @@ function SpanSheet(props: SpanSheetProps) {
               {/* Percentage of Parent */}
               {props.computedSpanMetrics.percentageOfParentSpan && (
                 <div className="flex items-center space-x-2">
-                  <TreePine className="text-accent size-4" />
+                  <TreePine className="text-neutral-2 size-4" />
                   <div>
                     <p className="text-neutral-10 text-xs">% of Parent</p>
                     <p className="text-sm font-medium">
@@ -1719,11 +1719,11 @@ function AttributeRow(props: AttributeRowProps) {
     <div
       key={props.attributeKey}
       className={cn(
-        'border-border flex items-center justify-between border-b p-3 text-xs last:border-0',
+        'border-neutral-5 flex items-center justify-between border-b p-3 text-xs last:border-0',
         isExpanded && 'flex-col text-left',
       )}
     >
-      <div className={cn('flex flex-1 pr-2 text-gray-400', isExpanded && 'w-full pr-0')}>
+      <div className={cn('text-neutral-10 flex flex-1 pr-2', isExpanded && 'w-full pr-0')}>
         {props.attributeKey}
         {isExpanded && actionsNode}
       </div>
@@ -1783,7 +1783,7 @@ function ExceptionTeaser(props: {
       <div className="p-3 text-xs">
         <p className="text-neutral-11">{props.message}</p>
         {props.stacktrace && (
-          <pre className="bg-neutral-1/50 mt-2 overflow-x-auto rounded-sm p-2 font-mono text-[10px] leading-tight text-gray-400">
+          <pre className="bg-neutral-1/50 text-neutral-10 mt-2 overflow-x-auto rounded-sm p-2 font-mono text-[10px] leading-tight">
             {props.stacktrace}
           </pre>
         )}

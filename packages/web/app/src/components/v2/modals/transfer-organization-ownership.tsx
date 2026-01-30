@@ -207,7 +207,7 @@ export const TransferOrganizationOwnershipModal = ({
                 onBlur={handleBlur}
               />
               <Combobox.Button className="absolute inset-y-0 right-0 flex items-center px-6">
-                <ArrowDownIcon className="size-5 text-gray-400" aria-hidden="true" />
+                <ArrowDownIcon className="text-neutral-10 size-5" aria-hidden="true" />
               </Combobox.Button>
             </div>
             <Transition
@@ -238,7 +238,7 @@ export const TransferOrganizationOwnershipModal = ({
                         <div className="flex flex-row items-center justify-between gap-2">
                           <div className="ml-2 flex flex-1 flex-col gap-x-2">
                             <div className="block truncate text-sm">{member.user.displayName}</div>
-                            <div className="text-xs font-normal text-gray-400">
+                            <div className="text-neutral-10 text-xs font-normal">
                               {member.user.email}
                             </div>
                           </div>

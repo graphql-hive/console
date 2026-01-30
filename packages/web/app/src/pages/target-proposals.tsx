@@ -273,10 +273,10 @@ const ProposalsListPage = (props: {
                     <span className="text-neutral-11 mr-6 truncate font-semibold">
                       {proposal.title}
                     </span>
-                    <span className="text-accent">
+                    <span className="text-neutral-2">
                       <BadgeRounded color={stageToColor(proposal.stage)} />
                     </span>
-                    <span className="text-gray-400">{proposal.stage}</span>
+                    <span className="text-neutral-10">{proposal.stage}</span>
                   </div>
                   <div className="mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium text-[#c4c4c4] md:flex-row">
                     <div className="truncate">

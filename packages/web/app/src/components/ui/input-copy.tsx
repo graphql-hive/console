@@ -33,7 +33,7 @@ export function InputCopy(props: { value: string; className?: string; multiline?
           readOnly
           autoSize
           onFocus={ev => ev.target.select()}
-          className={`bg-secondary text-neutral-12 w-full resize-none font-mono text-xs ${props.className}`}
+          className={`bg-neutral-2 text-neutral-12 w-full resize-none font-mono text-xs ${props.className}`}
         />
       ) : (
         <div className="relative grow">
@@ -41,7 +41,7 @@ export function InputCopy(props: { value: string; className?: string; multiline?
             type="text"
             value={props.value}
             readOnly
-            className={`bg-secondary text-neutral-12 truncate ${props.className}`}
+            className={`bg-neutral-2 text-neutral-12 truncate ${props.className}`}
             onFocus={ev => ev.target.select()}
           />
         </div>
@@ -51,7 +51,7 @@ export function InputCopy(props: { value: string; className?: string; multiline?
         onClick={handleClick}
         variant="outline"
         size="icon"
-        className="bg-secondary size-10 shrink-0 self-baseline"
+        className="bg-neutral-2 size-10 shrink-0 self-baseline"
       >
         {isCopied ? (
           <CheckIcon className="size-4 text-emerald-500" />

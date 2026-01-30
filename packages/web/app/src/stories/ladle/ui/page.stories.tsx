@@ -77,7 +77,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Font size: <code className="text-neutral-12">text-sm</code>
             <br />
-            Color: <code className="text-neutral-12">text-gray-400</code>
+            Color: <code className="text-neutral-12">text-neutral-10</code>
             <br />
             Cursor: <code className="text-neutral-12">cursor-default</code>
           </p>
@@ -101,7 +101,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-11 text-sm font-medium">Custom Styling</p>
           <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
             <div className="space-y-2">
-              <Title className="text-accent">Custom Colored Title</Title>
+              <Title className="text-neutral-2">Custom Colored Title</Title>
               <Subtitle className="text-neutral-11">Custom colored subtitle</Subtitle>
             </div>
           </div>

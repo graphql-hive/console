@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import { Radio, RadioGroup } from '@/components/v2/radio-group';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Radio Group',
@@ -100,7 +100,7 @@ export const ColorPaletteShowcase: Story = () => (
               <div className="p-2 text-xs">Checked</div>
             </Radio>
           </RadioGroup>
-          <code className="text-xs">data-[state=checked]:border-accent</code>
+          <code className="text-xs">data-[state=checked]:border-neutral-2</code>
           <span className="text-neutral-11 text-xs">- Checked border</span>
         </div>
         <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export const ColorPaletteShowcase: Story = () => (
               <div className="p-2 text-xs">Hover me</div>
             </Radio>
           </RadioGroup>
-          <code className="text-xs">hover:border-accent/50</code>
+          <code className="text-xs">hover:border-neutral-2/50</code>
           <span className="text-neutral-11 text-xs">- Hover border (not disabled)</span>
         </div>
       </div>

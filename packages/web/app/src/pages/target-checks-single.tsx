@@ -203,7 +203,7 @@ const PolicyBlock = (props: {
             key={key}
             className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-red-400', 'my-1')}
           >
-            <span className="text-left text-gray-600">{labelize(edge.node.message)}</span>
+            <span className="text-neutral-8 text-left">{labelize(edge.node.message)}</span>
           </li>
         ))}
       </ul>
@@ -247,7 +247,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
 
   if (!schemaCheck.conditionalBreakingChangeMetadata) {
     return (
-      <div className="mb-5 mt-10 text-sm text-gray-400">
+      <div className="text-neutral-10 mb-5 mt-10 text-sm">
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
@@ -269,7 +269,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
   const allTargets = schemaCheck.conditionalBreakingChangeMetadata.settings.targets;
 
   return (
-    <div className="mb-5 mt-10 text-sm text-gray-400">
+    <div className="text-neutral-10 mb-5 mt-10 text-sm">
       <p>
         Based on{' '}
         <span className="text-neutral-12">
@@ -309,7 +309,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
                     <div className="divide-neutral-5 grid grid-cols-1 divide-y">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
-                          <div className="line-clamp-3 text-sm text-gray-400">{target.slug}</div>
+                          <div className="text-neutral-10 line-clamp-3 text-sm">{target.slug}</div>
                         </div>
                       ))}
                     </div>
@@ -476,7 +476,7 @@ function DefaultSchemaView(props: {
   return (
     <>
       <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-        <TabsList className="bg-neutral-3 border-muted w-full justify-start rounded-none border-x border-b">
+        <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
             <TabsTrigger key={item.value} value={item.value} disabled={item.isDisabled}>
               {item.icon}
@@ -485,7 +485,7 @@ function DefaultSchemaView(props: {
           ))}
         </TabsList>
       </Tabs>
-      <div className="border-muted min-h-[850px] rounded-md rounded-t-none border border-t-0">
+      <div className="border-neutral-3 min-h-[850px] rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
@@ -671,7 +671,7 @@ function ContractCheckView(props: {
   return (
     <TooltipProvider>
       <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-        <TabsList className="bg-neutral-3 border-muted w-full justify-start rounded-none border-x border-b">
+        <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
             <Tooltip key={item.value}>
               <TooltipTrigger>
@@ -689,7 +689,7 @@ function ContractCheckView(props: {
           ))}
         </TabsList>
       </Tabs>
-      <div className="border-muted min-h-[850px] rounded-md rounded-t-none border border-t-0">
+      <div className="border-neutral-3 min-h-[850px] rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractCheck.schemaCompositionErrors && (
@@ -1103,7 +1103,7 @@ const ActiveSchemaCheck = (props: {
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="border-neutral-5 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+        <div className="border-neutral-5 text-neutral-10 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
           <div className="min-w-0">
             <div className="text-xs">Status</div>
             <div
@@ -1174,7 +1174,7 @@ const ActiveSchemaCheck = (props: {
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
           <div className="py-6">
-            <div className="border-neutral-2 flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium text-gray-400">
+            <div className="border-neutral-2 text-neutral-10 flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
               <div>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>

@@ -152,7 +152,7 @@ HiveLogoSizes.meta = {
 export const WithColors: Story = () => (
   <div className="flex gap-8 p-8">
     <GraphQLIcon className="text-neutral-12 size-10" />
-    <GraphQLIcon className="text-accent size-10" />
+    <GraphQLIcon className="text-neutral-2 size-10" />
     <GraphQLIcon className="size-10 text-emerald-500" />
     <GraphQLIcon className="size-10 text-blue-500" />
     <GraphQLIcon className="size-10 text-orange-500" />
@@ -230,7 +230,7 @@ export const ColorPaletteShowcase: Story = () => (
             <AlertTriangleIcon className="size-6 text-orange-500" />
             <CheckIcon className="size-6 text-emerald-500" />
             <XIcon className="size-6 text-red-500" />
-            <KeyIcon className="text-accent size-6" />
+            <KeyIcon className="text-neutral-2 size-6" />
           </div>
           <p className="text-neutral-10 text-xs">
             Icons use <code className="text-neutral-12">currentColor</code>, controlled via{' '}

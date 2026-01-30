@@ -34,7 +34,7 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className="bg-neutral-1 mb-2 rounded-sm border border-gray-600 px-6 py-4 font-sans">
+      <div className="bg-neutral-1 border-neutral-8 mb-2 rounded-sm border px-6 py-4 font-sans">
         {review.comments?.edges?.map(({ node: comment }, idx) => {
           return (
             <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />
@@ -74,10 +74,10 @@ export function ReviewComment(props: {
   return (
     <>
       <div className={cn(!props.first && 'pl-4', 'flex grow flex-row align-middle')}>
-        <div className="flex grow font-bold text-gray-400">{comment.author ?? 'Unknown'}</div>
+        <div className="text-neutral-10 flex grow font-bold">{comment.author ?? 'Unknown'}</div>
         <div className="flex text-xs">
           {!!comment.updatedAt && 'updated '}
-          <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-gray-400" />
+          <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-neutral-10" />
         </div>
       </div>
       <div className="mt-2 flex-row">{comment.body}</div>

@@ -143,7 +143,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Direction: <code className="text-neutral-12">horizontal</code>
             <br />
-            Handle: <code className="text-neutral-12">bg-border w-px</code>
+            Handle: <code className="text-neutral-12">bg-neutral-5 w-px</code>
             <br />
             Drag the handle to resize panels
           </p>

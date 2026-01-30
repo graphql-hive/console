@@ -367,7 +367,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
               <div className="mb-2 text-sm">Absolute date range</div>
               <div className="space-y-2">
                 <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="from" className="text-xs text-gray-400">
+                  <Label htmlFor="from" className="text-neutral-10 text-xs">
                     From
                   </Label>
                   <div className="flex w-full max-w-sm items-center space-x-2">
@@ -399,7 +399,7 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
                   </div>
                 </div>
                 <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="to" className="text-xs text-gray-400">
+                  <Label htmlFor="to" className="text-neutral-10 text-xs">
                     To
                   </Label>
                   <div className="flex w-full max-w-sm items-center space-x-2">

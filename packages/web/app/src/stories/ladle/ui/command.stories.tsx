@@ -365,7 +365,7 @@ export const ColorPaletteShowcase: Story = () => (
             </div>
           </div>
           <p className="text-neutral-10 text-xs">
-            Selected: <code className="text-neutral-12">aria-selected:bg-accent</code>
+            Selected: <code className="text-neutral-12">aria-selected:bg-neutral-2</code>
             <br />
             Selected text: <code className="text-neutral-12">aria-selected:text-neutral-12</code>
           </p>

@@ -205,7 +205,7 @@ export function DescriptionsVisibilityFilter() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="bg-secondary flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
+          <div className="bg-neutral-2 flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
             <div>
               <Label htmlFor="filter-toggle-descriptions" className="text-sm font-normal">
                 Show descriptions
@@ -312,7 +312,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" className="data-[state=open]:bg-muted">
+        <Button variant="secondary" className="data-[state=open]:bg-neutral-3">
           <FilterIcon className="size-4" />
           &nbsp;Metadata
           <span className="sr-only">Open menu to filter by metadata.</span>
@@ -326,7 +326,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
           <React.Fragment key={name}>
             {i > 0 && <DropdownMenuSeparator />}
             <DropdownMenuGroup
-              className="flex cursor-pointer overflow-x-hidden text-sm text-gray-400 hover:underline"
+              className="text-neutral-10 flex cursor-pointer overflow-x-hidden text-sm hover:underline"
               onClick={() => {
                 const isChecked = !values.every(value => hasMetadataFilter(name, value));
                 if (isChecked) {

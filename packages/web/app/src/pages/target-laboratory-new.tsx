@@ -621,7 +621,7 @@ function LaboratoryPageContent(props: {
                   </TabsTrigger>
                   <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                     Hive Laboratory
-                    <div className="bg-accent size-2 rounded-full" />
+                    <div className="bg-neutral-2 size-2 rounded-full" />
                   </TabsTrigger>
                 </TabsList>
               </Tabs>

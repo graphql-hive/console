@@ -253,7 +253,7 @@ function TargetAppVersionContent(props: {
           <AppFilter />
         </SubPageLayoutHeader>
         {coordinates ? (
-          <div className="border-accent/50 bg-accent/10 mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
+          <div className="border-neutral-2/50 bg-neutral-2/10 mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
               <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
@@ -269,7 +269,7 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-accent hover:underline"
+              className="text-neutral-2 hover:underline"
             >
               Clear filter
             </Link>

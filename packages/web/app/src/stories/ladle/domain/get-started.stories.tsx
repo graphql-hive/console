@@ -273,7 +273,7 @@ export const ColorPaletteShowcase: Story = () => (
           <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
             <a className="border-neutral-5 hover:bg-neutral-5 bg-neutral-4 relative block rounded-lg border p-4">
               <div className="flex items-start space-x-3">
-                <Circle className="text-accent size-5" />
+                <Circle className="text-neutral-2 size-5" />
                 <div className="w-0 flex-1">
                   <p className="text-neutral-12 font-medium leading-5">Create a project</p>
                   <p className="text-neutral-10 mt-1 text-sm">A project represents a GraphQL API</p>
@@ -293,7 +293,7 @@ export const ColorPaletteShowcase: Story = () => (
           <div className="bg-neutral-1 border-neutral-6 space-y-3 rounded-sm border p-4">
             <a className="border-neutral-5 hover:bg-neutral-5 bg-neutral-4 relative block rounded-lg border p-4 opacity-70">
               <div className="flex items-start space-x-3">
-                <CircleCheck className="text-accent size-5" />
+                <CircleCheck className="text-neutral-2 size-5" />
                 <div className="w-0 flex-1">
                   <p className="text-neutral-12 font-medium leading-5">Create a project</p>
                   <p className="text-neutral-10 mt-1 text-sm">A project represents a GraphQL API</p>
@@ -318,7 +318,7 @@ export const ColorPaletteShowcase: Story = () => (
               <div className="text-neutral-10 text-xs">3 remaining tasks</div>
               <div>
                 <div className="bg-neutral-5 relative mt-1 h-[5px] w-full overflow-hidden rounded-sm">
-                  <div className="bg-accent h-full" style={{ width: '50%' }} />
+                  <div className="bg-neutral-2 h-full" style={{ width: '50%' }} />
                 </div>
               </div>
             </button>
@@ -333,7 +333,7 @@ export const ColorPaletteShowcase: Story = () => (
               <br />
               Progress bar background: <code className="text-neutral-12">bg-neutral-5 h-[5px]</code>
               <br />
-              Progress fill: <code className="text-neutral-12">bg-accent</code> (width
+              Progress fill: <code className="text-neutral-12">bg-neutral-2</code> (width
               percentage-based)
             </p>
           </div>
@@ -345,25 +345,25 @@ export const ColorPaletteShowcase: Story = () => (
             <div className="space-y-2">
               <p className="text-neutral-11 text-xs">0% Complete (0 of 6 tasks)</p>
               <div className="bg-neutral-5 relative h-[5px] w-full overflow-hidden rounded-sm">
-                <div className="bg-accent h-full" style={{ width: '0%' }} />
+                <div className="bg-neutral-2 h-full" style={{ width: '0%' }} />
               </div>
             </div>
             <div className="space-y-2">
               <p className="text-neutral-11 text-xs">33% Complete (2 of 6 tasks)</p>
               <div className="bg-neutral-5 relative h-[5px] w-full overflow-hidden rounded-sm">
-                <div className="bg-accent h-full" style={{ width: '33%' }} />
+                <div className="bg-neutral-2 h-full" style={{ width: '33%' }} />
               </div>
             </div>
             <div className="space-y-2">
               <p className="text-neutral-11 text-xs">67% Complete (4 of 6 tasks)</p>
               <div className="bg-neutral-5 relative h-[5px] w-full overflow-hidden rounded-sm">
-                <div className="bg-accent h-full" style={{ width: '67%' }} />
+                <div className="bg-neutral-2 h-full" style={{ width: '67%' }} />
               </div>
             </div>
             <div className="space-y-2">
               <p className="text-neutral-11 text-xs">100% Complete (6 of 6 tasks)</p>
               <div className="bg-neutral-5 relative h-[5px] w-full overflow-hidden rounded-sm">
-                <div className="bg-accent h-full" style={{ width: '100%' }} />
+                <div className="bg-neutral-2 h-full" style={{ width: '100%' }} />
               </div>
             </div>
           </div>

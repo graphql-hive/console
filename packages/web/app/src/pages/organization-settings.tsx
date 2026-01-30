@@ -728,7 +728,7 @@ function SettingsPageContent(props: {
                 }}
                 className={cn(
                   resolvedPage.key === subPage.key
-                    ? 'bg-muted hover:bg-muted'
+                    ? 'bg-neutral-3 hover:bg-neutral-3'
                     : 'hover:bg-transparent hover:underline',
                   'w-full justify-start text-left',
                 )}

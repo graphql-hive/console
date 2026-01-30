@@ -206,7 +206,7 @@ export function OrganizationLayout({
               <Button
                 onClick={toggleModalOpen}
                 variant="link"
-                className="text-accent"
+                className="text-neutral-2"
                 data-cy="new-project-button"
               >
                 <PlusIcon size={16} className="mr-2" />
@@ -299,7 +299,7 @@ function ProjectTypeCard(props: {
         <FormControl>
           <RadioGroupItem value={props.type} className="sr-only" />
         </FormControl>
-        <div className="border-neutral-5 hover:border-accent flex items-center gap-4 rounded-md border p-4">
+        <div className="border-neutral-5 hover:border-neutral-2 flex items-center gap-4 rounded-md border p-4">
           <Slot className="text-neutral-12 size-8">{props.icon}</Slot>
           <div>
             <span className="text-neutral-12 text-sm font-medium">{props.title}</span>

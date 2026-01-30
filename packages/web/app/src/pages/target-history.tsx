@@ -140,7 +140,7 @@ function ListPage(props: {
           </Link>
           {version.githubMetadata ? (
             <a
-              className="text-neutral-10 -ml-px text-xs font-medium hover:text-gray-400"
+              className="text-neutral-10 hover:text-neutral-10 -ml-px text-xs font-medium"
               target="_blank"
               rel="noreferrer"
               href={`https://github.com/${version.githubMetadata.repository}/commit/${version.githubMetadata.commit}`}

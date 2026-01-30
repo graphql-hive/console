@@ -1,6 +1,6 @@
-import type { Story } from '@ladle/react';
-import { Label, Page, Section, Scale } from '@/components/common';
+import { Label, Page, Scale, Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'Common / Common Utilities',
@@ -181,7 +181,7 @@ export const ColorPaletteShowcase: Story = () => (
           <span className="text-neutral-11 text-xs">- Title styling</span>
         </div>
         <div className="flex items-center gap-3">
-          <code className="text-xs">text-sm text-gray-600</code>
+          <code className="text-xs">text-sm text-neutral-8</code>
           <span className="text-neutral-11 text-xs">- Subtitle styling</span>
         </div>
         <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
         <div>
           <p className="text-neutral-11 mb-2 text-xs font-medium">Section.Subtitle:</p>
-          <code className="text-xs">text-sm text-gray-600</code>
+          <code className="text-xs">text-sm text-neutral-8</code>
         </div>
         <div>
           <p className="text-neutral-10 text-xs">
@@ -234,7 +234,7 @@ export const ColorPaletteShowcase: Story = () => (
       <h4 className="text-neutral-12 mb-3 font-medium">Scale Colors</h4>
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-400 h-4 w-4" />
+          <div className="h-4 w-4 bg-emerald-400" />
           <code className="text-xs">bg-emerald-400</code>
           <span className="text-neutral-11 text-xs">- Filled bars (active)</span>
         </div>

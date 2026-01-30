@@ -57,7 +57,7 @@ export const OperationInfo: Story = () => (
     <p className="text-neutral-11 text-sm">
       Hover over the{' '}
       <HoverCard>
-        <HoverCardTrigger className="text-accent cursor-pointer hover:underline">
+        <HoverCardTrigger className="text-neutral-2 cursor-pointer hover:underline">
           GetUser operation
         </HoverCardTrigger>
         <HoverCardContent side="top">
@@ -88,7 +88,7 @@ export const SchemaTypeInfo: Story = () => (
       <code className="text-sm">
         type{' '}
         <HoverCard>
-          <HoverCardTrigger className="text-accent cursor-pointer">User</HoverCardTrigger>
+          <HoverCardTrigger className="text-neutral-2 cursor-pointer">User</HoverCardTrigger>
           <HoverCardContent>
             <div className="space-y-2">
               <h4 className="text-neutral-12 text-sm font-semibold">User Type</h4>

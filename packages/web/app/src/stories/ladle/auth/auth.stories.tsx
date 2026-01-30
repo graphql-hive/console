@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Text } from '@/components/ui/text';
 import type { Story } from '@ladle/react';
 
 export default {
@@ -51,11 +52,14 @@ export const LoginForm: Story = () => (
             <FaRegUserCircle className="mr-4 size-4" /> Login with SSO
           </Button>
         </AuthCardStack>
-        <div className="mt-4 text-center text-sm">
-          Don't have an account?{' '}
-          <a href="#" className="underline">
-            Sign up
-          </a>
+
+        <div className="mt-4">
+          <Text arrangement="block" align="center" size="small">
+            Don't have an account?{' '}
+            <a href="#" className="underline">
+              Sign up
+            </a>
+          </Text>
         </div>
       </AuthCardContent>
     </AuthCard>
@@ -177,11 +181,13 @@ export const EmailPasswordOnly: Story = () => (
             </Button>
           </div>
         </AuthCardStack>
-        <div className="mt-4 text-center text-sm">
-          Don't have an account?{' '}
-          <a href="#" className="underline">
-            Sign up
-          </a>
+        <div className="mt-8">
+          <Text align="center" size="small" color="secondary">
+            Don't have an account?{' '}
+            <a href="_blank" className="underline">
+              Sign up
+            </a>
+          </Text>
         </div>
       </AuthCardContent>
     </AuthCard>
@@ -280,7 +286,7 @@ export const ColorPaletteShowcase: Story = () => (
             <br />
             Lines: <code className="text-neutral-12">h-[1px] w-full bg-neutral-2</code>
             <br />
-            Text: <code className="text-neutral-12">text-gray-400</code>
+            Text: <code className="text-neutral-12">text-neutral-10</code>
             <br />
             Note: Uses gray-* instead of neutral-* scale
           </p>
@@ -444,7 +450,7 @@ export const ColorPaletteShowcase: Story = () => (
           <li>
             <strong className="text-neutral-12">AuthOrSeparator inconsistency:</strong> Uses{' '}
             <code className="text-neutral-12">bg-neutral-2</code> for lines and{' '}
-            <code className="text-neutral-12">text-gray-400</code> for text, not neutral-* scale
+            <code className="text-neutral-12">text-neutral-10</code> for text, not neutral-* scale
           </li>
           <li>
             <strong className="text-neutral-12">Form inputs:</strong> Inherit neutral colors from

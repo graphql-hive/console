@@ -274,7 +274,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Tooltip</p>
           <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
-            <div className="bg-neutral-3 border-border/50 max-w-xs rounded-lg border px-2.5 py-1.5 shadow-xl">
+            <div className="bg-neutral-3 border-neutral-5/50 max-w-xs rounded-lg border px-2.5 py-1.5 shadow-xl">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="size-2.5 rounded-sm bg-emerald-500" />
@@ -295,7 +295,7 @@ export const ColorPaletteShowcase: Story = () => (
             <p className="text-neutral-10 mt-3 text-xs">
               Background: <code className="text-neutral-12">bg-neutral-3</code>
               <br />
-              Border: <code className="text-neutral-12">border-border/50</code>
+              Border: <code className="text-neutral-12">border-neutral-5/50</code>
               <br />
               Values: <code className="text-neutral-12">font-mono font-medium tabular-nums</code>
               <br />
@@ -446,19 +446,19 @@ const chartConfig = {
         <ul className="text-neutral-10 space-y-2 text-xs">
           <li>
             <strong className="text-neutral-12">Axis ticks:</strong>{' '}
-            <code className="text-neutral-12">fill-muted-foreground</code>
+            <code className="text-neutral-12">fill-neutral-10</code>
           </li>
           <li>
             <strong className="text-neutral-12">Grid lines:</strong>{' '}
-            <code className="text-neutral-12">stroke-border/50</code>
+            <code className="text-neutral-12">stroke-neutral-5/50</code>
           </li>
           <li>
             <strong className="text-neutral-12">Tooltip cursor:</strong>{' '}
-            <code className="text-neutral-12">stroke-border or fill-muted</code>
+            <code className="text-neutral-12">stroke-neutral-5 or fill-neutral-3</code>
           </li>
           <li>
             <strong className="text-neutral-12">Today marker:</strong>{' '}
-            <code className="text-neutral-12">bg-accent text-neutral-12</code>
+            <code className="text-neutral-12">bg-neutral-2 text-neutral-12</code>
           </li>
           <li>
             <strong className="text-neutral-12">White strokes removed:</strong> Transparent for

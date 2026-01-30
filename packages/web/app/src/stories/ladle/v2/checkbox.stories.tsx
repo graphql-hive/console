@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import { Checkbox } from '@/components/v2/checkbox';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Checkbox',
@@ -95,7 +95,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <Checkbox />
-          <code className="text-xs">border-accent</code>
+          <code className="text-xs">border-neutral-2</code>
           <span className="text-neutral-11 text-xs">- Default border</span>
         </div>
         <div className="flex items-center gap-3">
@@ -111,7 +111,7 @@ export const ColorPaletteShowcase: Story = () => (
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <Checkbox />
-          <code className="text-xs">text-accent</code>
+          <code className="text-xs">text-neutral-2</code>
           <span className="text-neutral-11 text-xs">- Root text color (unused in visual)</span>
         </div>
         <div className="flex items-center gap-3">

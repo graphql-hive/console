@@ -45,7 +45,7 @@ export const PermissionScopeItem = <
     >
       <div>
         <div className="text-neutral-12 font-semibold">{props.scope.name}</div>
-        <div className="text-xs text-gray-400">{props.scope.description}</div>
+        <div className="text-neutral-10 text-xs">{props.scope.description}</div>
       </div>
       <Select
         disabled={!props.canManageScope || props.disabled}

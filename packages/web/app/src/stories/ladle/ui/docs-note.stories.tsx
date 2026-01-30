@@ -103,7 +103,7 @@ export const ColorPaletteShowcase: Story = () => (
             This is a warning note for important information that needs attention.
           </DocsNote>
           <p className="text-neutral-10 text-xs">
-            Border: <code className="text-neutral-12">border-l-2 border-accent</code>
+            Border: <code className="text-neutral-12">border-l-2 border-neutral-2</code>
             <br />
             Use <code className="text-neutral-12">warn</code> prop to show accent border
           </p>
@@ -139,7 +139,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Icon: <code className="text-neutral-12">Book (Lucide, 16px)</code>
             <br />
-            Color: <code className="text-neutral-12">text-accent</code>
+            Color: <code className="text-neutral-12">text-neutral-2</code>
             <br />
             External icon: <code className="text-neutral-12">ExternalLinkIcon</code>
             <br />

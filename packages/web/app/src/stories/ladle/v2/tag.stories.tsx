@@ -1,10 +1,9 @@
-import type { Story } from '@ladle/react';
 import { Tag } from '@/components/v2/tag';
+import type { Story } from '@ladle/react';
 
 export default {
-  title: "V2 / Tag",
+  title: 'V2 / Tag',
 };
-
 
 export const Default: Story = () => <Tag>Default Tag</Tag>;
 
@@ -99,7 +98,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
         <div className="flex items-center gap-3">
           <Tag color="orange">Orange Tag</Tag>
-          <code className="text-xs">bg-accent/10 text-accent</code>
+          <code className="text-xs">bg-neutral-2/10 text-neutral-2</code>
           <span className="text-neutral-11 text-xs">- Accent/highlight state</span>
         </div>
         <div className="flex items-center gap-3">

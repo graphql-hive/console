@@ -189,7 +189,7 @@ export const Tab = (props: {
     }
 
     if (props.item.type === 'settings') {
-      return <SettingsIcon className="size-4 text-gray-400" />;
+      return <SettingsIcon className="text-neutral-10 size-4" />;
     }
 
     if (props.item.type === 'test') {
@@ -237,7 +237,7 @@ export const Tab = (props: {
               className={cn(
                 'text-neutral-10 hover:text-neutral-11 group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
                 props.activeTab?.id === props.item.id &&
-                  'border-neutral-11 bg-card text-neutral-11',
+                  'border-neutral-11 bg-neutral-2 text-neutral-11',
               )}
               onClick={() => {
                 props.setActiveTab(props.item);
@@ -254,7 +254,7 @@ export const Tab = (props: {
               {tabIcon}
               {tabName}
               {props.isOperationLoading(props.item.id) && <Spinner className="size-3" />}
-              {props.item.readOnly && <LockIcon className="size-3 text-gray-400" />}
+              {props.item.readOnly && <LockIcon className="text-neutral-10 size-3" />}
               <XIcon
                 className="text-neutral-10 size-3"
                 onMouseDown={e => {
@@ -267,7 +267,7 @@ export const Tab = (props: {
               />
             </div>
           </div>
-          <div className="bg-border mb-px w-px" />
+          <div className="bg-neutral-5 mb-px w-px" />
         </Sortable.Item>
       </ContextMenuTrigger>
       <ContextMenuContent>
@@ -369,7 +369,7 @@ export const Tabs = ({ className }: { className?: string }) => {
     <div
       className={cn('relative z-10 grid size-full grid-cols-[1fr_auto] overflow-hidden', className)}
     >
-      <div className="bg-border absolute bottom-0 left-0 -z-10 h-px w-full" />
+      <div className="bg-neutral-5 absolute bottom-0 left-0 -z-10 h-px w-full" />
       <div className="overflow-hidden">
         <ScrollArea className="size-full whitespace-nowrap">
           <div className="flex items-stretch">

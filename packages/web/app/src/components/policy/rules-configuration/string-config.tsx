@@ -27,7 +27,7 @@ export const PolicyStringInputConfig = (props: {
           <div>{props.title}</div>
           {props.tooltip ? (
             <Tooltip content={props.tooltip}>
-              <InfoIcon className="text-accent ml-2 size-4" />
+              <InfoIcon className="text-neutral-2 ml-2 size-4" />
             </Tooltip>
           ) : null}
         </div>

@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import { FullLogo } from '@/components/common/Logo';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'Common / Logo',
@@ -25,16 +25,14 @@ export const CustomColors: Story = () => (
       <p className="text-neutral-11 mb-2 text-sm">Custom main (orange) and sub (white):</p>
       <FullLogo color={{ main: '#FF6B00', sub: '#FFFFFF' }} />
     </div>
-    <div className="rounded-md bg-black p-4">
+    <div className="bg-neutral-1 rounded-md p-4">
       <p className="text-neutral-11 mb-2 text-sm">On dark background:</p>
       <FullLogo color={{ main: '#FFFFFF', sub: '#C4C4C4' }} />
     </div>
   </div>
 );
 
-export const WithClassName: Story = () => (
-  <FullLogo className="text-accent" width={200} />
-);
+export const WithClassName: Story = () => <FullLogo className="text-neutral-2" width={200} />;
 
 export const ColorPaletteShowcase: Story = () => (
   <div className="bg-neutral-2 space-y-8 p-8">
@@ -52,9 +50,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 rounded-sm" style={{ backgroundColor: '#0B0D11' }} />
           <code className="text-xs">#0B0D11</code>
-          <span className="text-neutral-11 text-xs">
-            - Main color (icon, "HIVE" text)
-          </span>
+          <span className="text-neutral-11 text-xs">- Main color (icon, "HIVE" text)</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="h-6 w-6 rounded-sm" style={{ backgroundColor: '#C4C4C4' }} />

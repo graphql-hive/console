@@ -92,7 +92,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Scrollbar width: <code className="text-neutral-12">w-2.5</code>
             <br />
-            Thumb: <code className="text-neutral-12">bg-border rounded-full</code>
+            Thumb: <code className="text-neutral-12">bg-neutral-5 rounded-full</code>
             <br />
             Overflow: <code className="text-neutral-12">overflow-hidden</code> on root
           </p>

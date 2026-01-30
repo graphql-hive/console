@@ -99,7 +99,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
         <div className="flex items-center gap-3">
           <Switch defaultChecked />
-          <code className="text-xs">data-[state=checked]:bg-accent</code>
+          <code className="text-xs">data-[state=checked]:bg-neutral-2</code>
           <span className="text-neutral-11 text-xs">- Checked thumb</span>
         </div>
       </div>

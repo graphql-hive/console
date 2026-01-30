@@ -114,7 +114,7 @@ export const ColorPaletteShowcase: Story = () => (
           <SelectGroup>
             <SelectLabel>Colors Reference</SelectLabel>
             <SelectItem value="item1">Regular item (hover:bg-neutral-5)</SelectItem>
-            <SelectItem value="item2">Selected item (bg-accent text-neutral-12)</SelectItem>
+            <SelectItem value="item2">Selected item (bg-neutral-2 text-neutral-12)</SelectItem>
             <SelectItem value="item3">Another item</SelectItem>
           </SelectGroup>
         </SelectContent>

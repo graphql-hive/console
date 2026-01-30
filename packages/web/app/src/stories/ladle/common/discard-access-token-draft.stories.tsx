@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import { DiscardAccessTokenDraft } from '@/components/common/discard-access-token-draft';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'Common / Discard Access Token Draft',
@@ -107,7 +107,7 @@ export const ColorPaletteShowcase: Story = () => (
         <li>Parent component controls when to mount/unmount</li>
         <li>Two callback props for different outcomes</li>
         <li>Uses standard AlertDialog styling and behavior</li>
-        <li>Cancel action is non-destructive (continue editing)</li>
+        <li>Cancel action is non-red (continue editing)</li>
         <li>Action button is destructive (discard draft)</li>
       </ul>
     </div>

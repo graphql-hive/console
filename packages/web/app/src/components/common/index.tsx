@@ -37,7 +37,7 @@ export const Page = ({
       <div className="flex shrink-0 flex-row items-center justify-between p-4">
         <div>
           <h2 className="text-neutral-1 text-xl font-bold">{title}title</h2>
-          <span className="mt-2 text-sm text-gray-600">{subtitle}</span>
+          <span className="text-neutral-8 mt-2 text-sm">{subtitle}</span>
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
       </div>
@@ -64,7 +64,7 @@ export const Section = {
     </h2>
   ),
   Subtitle: ({ className, children, ...props }: ComponentProps<'div'>): ReactElement => (
-    <div className={cn('text-sm text-gray-600', className)} {...props}>
+    <div className={cn('text-neutral-8 text-sm', className)} {...props}>
       {children}
     </div>
   ),

@@ -20,7 +20,7 @@ export const ExtraLarge: Story = () => <Heading size="xl">Dashboard</Heading>;
 export const ExtraExtraLarge: Story = () => <Heading size="2xl">GraphQL Hive</Heading>;
 
 export const WithCustomClass: Story = () => (
-  <Heading size="xl" className="text-accent">
+  <Heading size="xl" className="text-neutral-2">
     Custom Colored Heading
   </Heading>
 );
@@ -81,7 +81,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="space-y-2">
           <p className="text-neutral-11 text-sm font-medium">Custom Styling</p>
           <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
-            <Heading size="xl" className="text-accent">
+            <Heading size="xl" className="text-neutral-2">
               Custom Color
             </Heading>
           </div>

@@ -201,7 +201,8 @@ export const ColorPaletteShowcase: Story = () => (
             <code className="text-neutral-12">bg-yellow-500/10 and bg-yellow-500/5</code>
           </li>
           <li>
-            Support link: <code className="text-neutral-12">Button variant="link" text-accent</code>
+            Support link:{' '}
+            <code className="text-neutral-12">Button variant="link" text-neutral-2</code>
           </li>
         </ul>
       </div>

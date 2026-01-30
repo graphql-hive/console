@@ -161,7 +161,7 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
     <div className="space-y-6">
       {unusedFieldsMessage.length ? (
         <div>
-          <p className="text-sm text-gray-400">
+          <p className="text-neutral-10 text-sm">
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>
@@ -178,7 +178,9 @@ const UnusedSchemaView = memo(function _UnusedSchemaView(props: {
                   size="sm"
                   className={cn(
                     'rounded-none px-2 py-1',
-                    letter === selectedLetter ? 'text-accent' : 'text-neutral-10 hover:text-accent',
+                    letter === selectedLetter
+                      ? 'text-neutral-2'
+                      : 'text-neutral-10 hover:text-neutral-2',
                   )}
                   key={letter}
                 >

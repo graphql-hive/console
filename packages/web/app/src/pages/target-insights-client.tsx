@@ -286,7 +286,7 @@ function ClientView(props: {
                       <div key={operation.id} className="flex items-center">
                         <p className="truncate text-sm font-medium">
                           <Link
-                            className="text-accent hover:text-accent hover:underline hover:underline-offset-2"
+                            className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                             params={{
                               organizationSlug: props.organizationSlug,

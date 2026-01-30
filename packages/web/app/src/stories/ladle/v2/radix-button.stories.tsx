@@ -130,8 +130,8 @@ export const ColorPaletteShowcase: Story = () => (
     <div>
       <h4 className="text-neutral-12 mb-3 font-medium">Customization Examples</h4>
       <div className="space-y-3">
-        <RadixButton className="bg-accent text-neutral-12">Accent Button</RadixButton>
-        <RadixButton className="border-accent text-accent border-2 bg-transparent">
+        <RadixButton className="bg-neutral-2 text-neutral-12">Accent Button</RadixButton>
+        <RadixButton className="border-neutral-2 text-neutral-2 border-2 bg-transparent">
           Outlined
         </RadixButton>
         <RadixButton className="text-neutral-11 hover:bg-neutral-3 bg-transparent shadow-none">

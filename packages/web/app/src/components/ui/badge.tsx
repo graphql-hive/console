@@ -8,10 +8,8 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: 'border-transparent bg-neutral-11 text-neutral-2 hover:bg-neutral-11/80',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+        secondary: 'border-transparent bg-neutral-2 text-neutral-11 hover:bg-neutral-2/80',
+        destructive: 'border-transparent bg-red text-neutral-12 hover:bg-red/80',
         outline: 'text-neutral-11',
         success: 'bg-emerald-950 text-emerald-400 border-transparent',
         warning: 'bg-yellow-700 border-transparent',
@@ -41,7 +39,7 @@ const badgeRoundedVariants = cva(
         yellow: 'border-yellow-900 bg-yellow-500',
         green: 'border-green-900 bg-green-500',
         gray: 'border-neutral-2 bg-neutral-10',
-        orange: 'border-orange-900 bg-accent',
+        orange: 'border-orange-900 bg-neutral-2',
       },
     },
     defaultVariants: {

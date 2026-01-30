@@ -80,7 +80,7 @@ const ProjectCard = (props: {
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
   return (
-    <Card className="hover:bg-neutral-5/40 hover:shadow-neutral-5/50 bg-neutral-2/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
+    <Card className="hover:bg-neutral-4 hover:shadow-neutral-3/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
       <Link
         to="/$organizationSlug/$projectSlug"
         params={{
@@ -419,7 +419,7 @@ function OrganizationPageContent(
                 </div>
                 <Separator orientation="vertical" className="mx-4 h-8" />
                 <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
-                  <SelectTrigger className="hover:bg-accent bg-transparent">
+                  <SelectTrigger className="hover:bg-neutral-2 bg-transparent">
                     {props.sortBy === 'versions'
                       ? 'Schema Versions'
                       : props.sortBy === 'name'

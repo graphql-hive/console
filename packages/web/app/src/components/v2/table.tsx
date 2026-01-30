@@ -40,7 +40,7 @@ function Th({ children, className, align = 'left', ...props }: ComponentProps<'t
 function Tr({ children, className, ...props }: ComponentProps<'tr'>): ReactElement {
   return (
     <tr
-      className={cn('border border-gray-600/10 text-xs odd:bg-gray-600/10', className)}
+      className={cn('border-neutral-8/10 odd:bg-neutral-8/10 border text-xs', className)}
       {...props}
     >
       {children}

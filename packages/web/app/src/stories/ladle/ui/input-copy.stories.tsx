@@ -146,7 +146,7 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-10 text-xs">
             Element: <code className="text-neutral-12">Input</code> component
             <br />
-            Styling: <code className="text-neutral-12">bg-secondary text-neutral-12 truncate</code>
+            Styling: <code className="text-neutral-12">bg-neutral-2 text-neutral-12 truncate</code>
             <br />
             Behavior: <code className="text-neutral-12">readOnly, onFocus selects all text</code>
             <br />
@@ -166,7 +166,7 @@ export const ColorPaletteShowcase: Story = () => (
             <br />
             Styling:{' '}
             <code className="text-neutral-12">
-              bg-secondary text-neutral-12 resize-none font-mono text-xs
+              bg-neutral-2 text-neutral-12 resize-none font-mono text-xs
             </code>
             <br />
             Behavior:{' '}
@@ -182,7 +182,7 @@ export const ColorPaletteShowcase: Story = () => (
             <br />
             Size: <code className="text-neutral-12">icon (size-10 shrink-0)</code>
             <br />
-            Background: <code className="text-neutral-12">bg-secondary</code>
+            Background: <code className="text-neutral-12">bg-neutral-2</code>
             <br />
             Default icon: <code className="text-neutral-12">CopyIcon (size-4)</code>
             <br />
