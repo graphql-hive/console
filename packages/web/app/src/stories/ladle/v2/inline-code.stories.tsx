@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import { InlineCode } from '@/components/v2/inline-code';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Inline Code',
@@ -76,13 +76,13 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="flex items-center gap-3">
           <div className="bg-neutral-5 flex items-center gap-2 rounded-md py-1">
             <code className="grow px-3 text-sm">hover</code>
-            <button className="cursor-pointer p-2 hover:text-orange-600">
+            <button className="hover:text-orange cursor-pointer p-2">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <rect width="10" height="10" x="3" y="3" rx="1" />
               </svg>
             </button>
           </div>
-          <code className="text-xs">hover:text-orange-600</code>
+          <code className="text-xs">hover:text-orange</code>
           <span className="text-neutral-11 text-xs">- Copy button hover</span>
         </div>
       </div>
@@ -123,7 +123,7 @@ export const ColorPaletteShowcase: Story = () => (
           <span className="text-neutral-11 text-xs">- Shows "Copied to clipboard" toast</span>
         </div>
         <div className="flex items-center gap-3">
-          <button className="cursor-pointer p-2 hover:text-orange-600" title="Copy to clipboard">
+          <button className="hover:text-orange cursor-pointer p-2" title="Copy to clipboard">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <rect width="10" height="10" x="3" y="3" rx="1" />
             </svg>

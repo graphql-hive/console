@@ -7,12 +7,10 @@ export default {
 export const Overview: Story = () => (
   <div className="bg-neutral-2 space-y-8 p-8">
     <div>
-      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">
-        Target Settings Components
-      </h3>
+      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">Target Settings Components</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Target-level settings components for managing CDN access tokens, registry access tokens,
-        and schema contracts. Each component provides CRUD operations for its respective settings.
+        Target-level settings components for managing CDN access tokens, registry access tokens, and
+        schema contracts. Each component provides CRUD operations for its respective settings.
       </p>
     </div>
 

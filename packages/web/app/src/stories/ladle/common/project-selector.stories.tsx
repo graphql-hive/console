@@ -69,7 +69,9 @@ export const Overview: Story = () => (
       <div className="space-y-2">
         <div>
           <p className="text-neutral-11 mb-2 text-xs">Organization loading:</p>
-          <code className="text-xs">bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full</code>
+          <code className="text-xs">
+            bg-neutral-5 h-5 w-48 max-w-[200px] animate-pulse rounded-full
+          </code>
         </div>
         <div>
           <p className="text-neutral-11 mb-2 text-xs">Project loading:</p>
@@ -111,8 +113,8 @@ onValueChange={id => {
       <ul className="text-neutral-11 list-inside list-disc space-y-1 text-sm">
         <li>Organization link: Shows if currentOrganization exists, else loading skeleton</li>
         <li>
-          Project selector: Shows if projectEdges has length AND currentProject exists, else
-          loading skeleton
+          Project selector: Shows if projectEdges has length AND currentProject exists, else loading
+          skeleton
         </li>
         <li>Separator always shows between organization and project</li>
       </ul>

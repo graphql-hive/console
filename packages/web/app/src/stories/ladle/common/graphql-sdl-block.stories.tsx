@@ -115,9 +115,9 @@ type User {
     <div>
       <h4 className="text-neutral-12 mb-3 font-medium">Note</h4>
       <p className="text-neutral-10 text-sm">
-        This is a documentation-only story. The component relies on Monaco editor and
-        SchemaEditor, which require complex setup. See the actual component usage in schema
-        explorer and documentation pages.
+        This is a documentation-only story. The component relies on Monaco editor and SchemaEditor,
+        which require complex setup. See the actual component usage in schema explorer and
+        documentation pages.
       </p>
     </div>
   </div>

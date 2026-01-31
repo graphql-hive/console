@@ -9,8 +9,8 @@ export const Documentation: Story = () => (
     <div>
       <h3 className="text-neutral-12 mb-4 text-lg font-semibold">Common Loading API Indicator</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Global loading indicator that appears at the top of the page when GraphQL requests are in flight.
-        Uses custom urql exchange to track inflight requests.
+        Global loading indicator that appears at the top of the page when GraphQL requests are in
+        flight. Uses custom urql exchange to track inflight requests.
       </p>
     </div>
 

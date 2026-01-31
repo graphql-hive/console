@@ -144,8 +144,8 @@ export const TransferLayout: Story = () => (
                 <label className="text-neutral-12 text-sm font-medium">New Owner Email</label>
                 <Input type="email" placeholder="user@example.com" />
               </div>
-              <div className="rounded-sm border border-orange-500/20 bg-orange-500/10 p-3">
-                <p className="text-xs text-orange-500">
+              <div className="border-orange brightness-120/20 bg-orange brightness-120/10 rounded-sm border p-3">
+                <p className="text-orange brightness-120 text-xs">
                   Warning: This action cannot be undone. You will lose admin access to this
                   organization.
                 </p>

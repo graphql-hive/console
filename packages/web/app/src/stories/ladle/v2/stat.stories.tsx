@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import Stat from '@/components/v2/stat';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Stat',
@@ -56,7 +56,7 @@ export const CustomColors: Story = () => (
 );
 
 export const DashboardExample: Story = () => (
-  <div className="rounded-lg border border-neutral-6 bg-neutral-1 p-6">
+  <div className="border-neutral-6 bg-neutral-1 rounded-lg border p-6">
     <h3 className="text-neutral-12 mb-6 text-lg font-semibold">Analytics Overview</h3>
     <div className="grid grid-cols-4 gap-6">
       <Stat>

@@ -1,7 +1,7 @@
-import type { GlobalProvider } from "@ladle/react";
-import { useEffect } from "react";
-import "../src/index.css";
-import "./ladle.css";
+import { useEffect } from 'react';
+import type { GlobalProvider } from '@ladle/react';
+import '../src/index.css';
+import './ladle.css';
 
 // Mock environment variables for Ladle stories
 if (typeof window !== 'undefined') {
@@ -21,7 +21,7 @@ if (typeof window !== 'undefined') {
 export const Provider: GlobalProvider = ({ children, globalState }) => {
   // Sync Ladle's theme toggle with Tailwind's dark class
   useEffect(() => {
-    const isDark = globalState.theme === "dark";
+    const isDark = globalState.theme === 'dark';
     const htmlElement = document.documentElement;
 
     if (isDark) {

@@ -232,8 +232,8 @@ export const Overview: Story = () => (
     <div>
       <h4 className="text-neutral-12 mb-3 font-medium">Note</h4>
       <p className="text-neutral-10 text-sm">
-        This is a documentation-only story. These modals use GraphQL mutations, form validation,
-        and router navigation. See actual usage in target laboratory pages.
+        This is a documentation-only story. These modals use GraphQL mutations, form validation, and
+        router navigation. See actual usage in target laboratory pages.
       </p>
     </div>
   </div>

@@ -104,7 +104,7 @@ export const CustomActions: Story = () => (
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel>Save as Draft</AlertDialogCancel>
-        <AlertDialogAction className="bg-orange-500 hover:bg-orange-600">
+        <AlertDialogAction className="hover:bg-orange bg-orange brightness-120">
           Publish Now
         </AlertDialogAction>
       </AlertDialogFooter>

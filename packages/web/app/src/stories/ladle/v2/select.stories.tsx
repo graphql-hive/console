@@ -1,6 +1,6 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
 import { Select } from '@/components/v2/select';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Select',

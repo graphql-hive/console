@@ -7,13 +7,11 @@ export default {
 export const Overview: Story = () => (
   <div className="bg-neutral-2 space-y-8 p-8">
     <div>
-      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">
-        Layout Target Layout Component
-      </h3>
+      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">Layout Target Layout Component</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Full page layout for target-level pages. Includes header with full breadcrumb (org /
-        project / target), user menu, connect schema dialog, secondary navigation tabs with
-        conditional rendering, and target reference context provider.
+        Full page layout for target-level pages. Includes header with full breadcrumb (org / project
+        / target), user menu, connect schema dialog, secondary navigation tabs with conditional
+        rendering, and target reference context provider.
       </p>
     </div>
 

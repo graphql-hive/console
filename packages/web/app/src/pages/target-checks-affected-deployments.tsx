@@ -243,7 +243,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
+                <code className="bg-neutral-5 text-orange rounded-sm px-1 py-0.5 font-mono brightness-110">
                   {props.coordinate}
                 </code>
               </>
@@ -303,7 +303,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="link" className="text-neutral-2 h-auto p-0" asChild>
+                        <Button variant="link" className="h-auto p-0" asChild>
                           <Link
                             to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
                             params={{

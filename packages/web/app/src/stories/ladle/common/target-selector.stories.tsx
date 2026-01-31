@@ -12,8 +12,8 @@ export const Overview: Story = () => (
       </h3>
       <p className="text-neutral-11 mb-6 text-sm">
         Full navigation breadcrumb: organization (link) / project (link) / target (selector).
-        Displays hierarchy with separators and dropdown for switching between targets within
-        current project.
+        Displays hierarchy with separators and dropdown for switching between targets within current
+        project.
       </p>
     </div>
 

@@ -263,7 +263,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-900/50 px-2 py-1 align-middle font-bold">
+                    <span className="bg-orange brightness-80 /50 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -458,7 +458,7 @@ function ChangeItem(
                           <TableCell className="text-right">
                             <Popover>
                               <PopoverTrigger asChild>
-                                <Button variant="link" className="text-neutral-2 h-auto p-0">
+                                <Button variant="link" className="h-auto p-0">
                                   {deployment.totalAffectedOperations}{' '}
                                   {deployment.totalAffectedOperations === 1
                                     ? 'operation'
@@ -556,7 +556,7 @@ function ChangeItem(
                       <TableCell className="text-right">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="link" className="text-neutral-2 h-auto p-0">
+                            <Button variant="link" className="h-auto p-0">
                               {deployment.totalAffectedOperations}{' '}
                               {deployment.totalAffectedOperations === 1
                                 ? 'operation'

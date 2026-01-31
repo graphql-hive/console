@@ -1,5 +1,5 @@
-import type { Story } from '@ladle/react';
 import { Markdown } from '@/components/v2/markdown';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Markdown',
@@ -76,7 +76,7 @@ For more info, visit [our docs](https://the-guild.dev/graphql/hive/docs).`}
 export const WithCustomStyling: Story = () => (
   <Markdown
     content="This is **markdown** with custom styling."
-    className="rounded-lg border border-neutral-6 bg-neutral-1 p-4"
+    className="border-neutral-6 bg-neutral-1 rounded-lg border p-4"
   />
 );
 
@@ -85,8 +85,8 @@ export const ColorPaletteShowcase: Story = () => (
     <div>
       <h3 className="text-neutral-12 mb-4 text-lg font-semibold">V2 Markdown Component</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Simple markdown renderer using snarkdown for parsing and dompurify for sanitization.
-        Renders markdown as HTML with custom styling via hive-markdown class.
+        Simple markdown renderer using snarkdown for parsing and dompurify for sanitization. Renders
+        markdown as HTML with custom styling via hive-markdown class.
       </p>
     </div>
 
@@ -163,9 +163,7 @@ export const ColorPaletteShowcase: Story = () => (
           </span>
         </div>
         <div>
-          <p className="text-neutral-10 text-xs">
-            Only re-processes when content prop changes
-          </p>
+          <p className="text-neutral-10 text-xs">Only re-processes when content prop changes</p>
         </div>
       </div>
     </div>
@@ -177,14 +175,14 @@ export const ColorPaletteShowcase: Story = () => (
           <p className="text-neutral-11 mb-2 text-sm">Documentation:</p>
           <Markdown
             content="Read the **docs** for more info about [GraphQL](https://graphql.org)."
-            className="rounded-sm border border-neutral-6 bg-neutral-1 p-3 text-sm"
+            className="border-neutral-6 bg-neutral-1 rounded-sm border p-3 text-sm"
           />
         </div>
         <div>
           <p className="text-neutral-11 mb-2 text-sm">User-generated content:</p>
           <Markdown
             content="User wrote: *This is amazing!*"
-            className="rounded-sm border border-neutral-6 bg-neutral-1 p-3 text-sm"
+            className="border-neutral-6 bg-neutral-1 rounded-sm border p-3 text-sm"
           />
         </div>
       </div>

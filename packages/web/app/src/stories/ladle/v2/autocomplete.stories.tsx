@@ -57,9 +57,7 @@ export const Documentation: Story = () => (
       <h4 className="text-neutral-12 mb-3 font-medium">Props</h4>
       <div className="space-y-2">
         <div>
-          <p className="text-neutral-11 mb-2 text-xs">
-            Accepts all react-select SelectProps plus:
-          </p>
+          <p className="text-neutral-11 mb-2 text-xs">Accepts all react-select SelectProps plus:</p>
           <ul className="text-neutral-10 ml-4 list-inside list-disc space-y-1 text-xs">
             <li>options: SelectOption[] (from radix-select type)</li>
             <li>value, onChange, onBlur, etc.</li>

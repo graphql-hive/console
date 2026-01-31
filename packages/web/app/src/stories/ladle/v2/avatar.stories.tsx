@@ -1,10 +1,9 @@
-import type { Story } from '@ladle/react';
 import { Avatar } from '@/components/v2/avatar';
+import type { Story } from '@ladle/react';
 
 export default {
-  title: "V2 / Avatar",
+  title: 'V2 / Avatar',
 };
-
 
 export const Default: Story = () => <Avatar />;
 
@@ -18,19 +17,19 @@ export const AllSizes: Story = () => (
   <div className="flex items-end gap-4">
     <div className="flex flex-col items-center gap-2">
       <Avatar size="xs" />
-      <span className="text-xs text-neutral-11">xs (20px)</span>
+      <span className="text-neutral-11 text-xs">xs (20px)</span>
     </div>
     <div className="flex flex-col items-center gap-2">
       <Avatar size="sm" />
-      <span className="text-xs text-neutral-11">sm (34px)</span>
+      <span className="text-neutral-11 text-xs">sm (34px)</span>
     </div>
     <div className="flex flex-col items-center gap-2">
       <Avatar size="md" />
-      <span className="text-xs text-neutral-11">md (40px)</span>
+      <span className="text-neutral-11 text-xs">md (40px)</span>
     </div>
     <div className="flex flex-col items-center gap-2">
       <Avatar size="lg" />
-      <span className="text-xs text-neutral-11">lg (50px)</span>
+      <span className="text-neutral-11 text-xs">lg (50px)</span>
     </div>
   </div>
 );
@@ -39,11 +38,11 @@ export const Shapes: Story = () => (
   <div className="flex gap-4">
     <div className="flex flex-col items-center gap-2">
       <Avatar shape="square" />
-      <span className="text-xs text-neutral-11">square</span>
+      <span className="text-neutral-11 text-xs">square</span>
     </div>
     <div className="flex flex-col items-center gap-2">
       <Avatar shape="circle" />
-      <span className="text-xs text-neutral-11">circle</span>
+      <span className="text-neutral-11 text-xs">circle</span>
     </div>
   </div>
 );

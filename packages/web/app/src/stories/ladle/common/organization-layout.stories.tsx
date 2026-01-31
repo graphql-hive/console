@@ -11,8 +11,8 @@ export const Overview: Story = () => (
         Layout Organization Layout Component
       </h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Full page layout for organization-level pages. Includes header with org selector, user
-        menu, create project dialog, secondary navigation tabs, billing warnings, and content area.
+        Full page layout for organization-level pages. Includes header with org selector, user menu,
+        create project dialog, secondary navigation tabs, billing warnings, and content area.
       </p>
     </div>
 

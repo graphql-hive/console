@@ -27,8 +27,8 @@ export const Documentation: Story = () => (
         <div>
           <p className="text-neutral-11 mb-2 text-sm font-medium">GraphQLBlock</p>
           <p className="text-neutral-10 text-xs">
-            Complete block with Card wrapper, Heading, and GraphQLHighlight. Includes optional
-            title and URL display.
+            Complete block with Card wrapper, Heading, and GraphQLHighlight. Includes optional title
+            and URL display.
           </p>
         </div>
       </div>

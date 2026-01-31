@@ -14,7 +14,7 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       label: 'Warning',
       icon: (active: boolean) => (
         <ExclamationTriangleIcon
-          className={clsx(active ? 'text-orange-600' : 'text-neutral-8', 'hover:text-orange-600')}
+          className={clsx(active ? 'text-orange' : 'text-neutral-8', 'hover:text-orange')}
         />
       ),
     },

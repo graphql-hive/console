@@ -9,8 +9,8 @@ export const Documentation: Story = () => (
     <div>
       <h3 className="text-neutral-12 mb-4 text-lg font-semibold">V2 Data Wrapper Component</h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Higher-order component that wraps urql query results and handles loading, error, and
-        success states. Provides clean render prop pattern for data access.
+        Higher-order component that wraps urql query results and handles loading, error, and success
+        states. Provides clean render prop pattern for data access.
       </p>
     </div>
 

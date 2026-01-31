@@ -40,7 +40,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
       <button
         hidden={!navigatorClipboardSupport}
         data-hovering={hovering || copied}
-        className="border-neutral-8 absolute right-3 top-2 cursor-pointer rounded-md border p-2 opacity-0 hover:text-orange-600 data-[hovering=true]:opacity-100 data-[hovering=true]:transition-opacity"
+        className="border-neutral-8 hover:text-orange absolute right-3 top-2 cursor-pointer rounded-md border p-2 opacity-0 data-[hovering=true]:opacity-100 data-[hovering=true]:transition-opacity"
         onClick={async ev => {
           const value = children?.valueOf().toString();
           if (value) {

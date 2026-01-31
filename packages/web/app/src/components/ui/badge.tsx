@@ -39,7 +39,7 @@ const badgeRoundedVariants = cva(
         yellow: 'border-yellow-900 bg-yellow-500',
         green: 'border-green-900 bg-green-500',
         gray: 'border-neutral-2 bg-neutral-10',
-        orange: 'border-orange-900 bg-neutral-2',
+        orange: 'border-orange brightness-80  bg-neutral-2',
       },
     },
     defaultVariants: {

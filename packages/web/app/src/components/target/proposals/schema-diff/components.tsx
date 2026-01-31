@@ -283,7 +283,7 @@ function FieldName(props: { name: string }): ReactNode {
 }
 
 function FieldReturnType(props: { returnType: string }): ReactNode {
-  return <span className="text-orange-400">{props.returnType}</span>;
+  return <span className="text-orange brightness-110">{props.returnType}</span>;
 }
 
 export function DiffDescription(
@@ -941,7 +941,7 @@ export function DiffType({
 }
 
 function TypeName({ name }: { name: string }) {
-  return <span className="text-orange-400">{name}</span>;
+  return <span className="text-orange brightness-110">{name}</span>;
 }
 
 export function DiffInputObject({

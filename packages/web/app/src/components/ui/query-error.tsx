@@ -59,13 +59,13 @@ export function QueryError({
                 <p>
                   {commonErrorStrings.track}{' '}
                   {organizationSlug ? (
-                    <Button variant="link" className="text-neutral-2 h-auto p-0" asChild>
+                    <Button variant="link" className="h-auto p-0" asChild>
                       <Link to="/$organizationSlug/view/support" params={{ organizationSlug }}>
                         {commonErrorStrings.link}
                       </Link>
                     </Button>
                   ) : (
-                    <Button variant="link" className="text-neutral-2 h-auto p-0" asChild>
+                    <Button variant="link" className="h-auto p-0" asChild>
                       <a href="mailto:support@graphql-hive.com">{commonErrorStrings.link}</a>
                     </Button>
                   )}

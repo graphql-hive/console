@@ -1,6 +1,6 @@
-import type { Story } from '@ladle/react';
 import { useState } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
+import type { Story } from '@ladle/react';
 import { FontBoldIcon, FontItalicIcon, UnderlineIcon } from '@radix-ui/react-icons';
 
 export default {

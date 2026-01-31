@@ -1,4 +1,4 @@
-import type { Story} from '@ladle/react';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'Domain / Target / Proposals',
@@ -7,9 +7,7 @@ export default {
 export const Overview: Story = () => (
   <div className="bg-neutral-2 space-y-8 p-8">
     <div>
-      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">
-        Target Proposals Components
-      </h3>
+      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">Target Proposals Components</h3>
       <p className="text-neutral-11 mb-6 text-sm">
         Schema proposal workflow components for reviewing, approving, and managing schema changes
         before they're published. Includes proposal editor, review interface, schema diff viewer,
@@ -276,8 +274,8 @@ export const Overview: Story = () => (
       <h4 className="text-neutral-12 mb-3 font-medium">Note</h4>
       <p className="text-neutral-10 text-sm">
         This is a documentation-only story. These components implement complex schema proposal
-        workflows with GraphQL mutations, diff algorithms, and review processes. See actual usage
-        in target proposals pages.
+        workflows with GraphQL mutations, diff algorithms, and review processes. See actual usage in
+        target proposals pages.
       </p>
     </div>
   </div>

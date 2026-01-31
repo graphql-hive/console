@@ -1,6 +1,6 @@
-import type { Story } from '@ladle/react';
-import { Tooltip } from '@/components/v2/tooltip';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/v2/tooltip';
+import type { Story } from '@ladle/react';
 
 export default {
   title: 'V2 / Tooltip',

@@ -52,7 +52,7 @@ export const DocsLink = ({
       asChild
       variant="link"
       className={cn(
-        'text-neutral-2 p-0',
+        'p-0',
         'whitespace-pre-wrap', // to not lose whitespace between tags due to `display: 'inline-flex'`
         className,
       )}

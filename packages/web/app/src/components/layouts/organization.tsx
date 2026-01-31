@@ -203,12 +203,7 @@ export function OrganizationLayout({
           )}
           {currentOrganization?.viewerCanCreateProject ? (
             <>
-              <Button
-                onClick={toggleModalOpen}
-                variant="link"
-                className="text-neutral-2"
-                data-cy="new-project-button"
-              >
+              <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
                 <PlusIcon size={16} className="mr-2" />
                 New project
               </Button>

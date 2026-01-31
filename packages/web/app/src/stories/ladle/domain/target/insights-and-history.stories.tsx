@@ -11,8 +11,8 @@ export const Overview: Story = () => (
         Target Insights and History Components
       </h3>
       <p className="text-neutral-11 mb-6 text-sm">
-        Operation insights components for analyzing GraphQL query usage and performance, plus
-        schema history components for tracking changes over time.
+        Operation insights components for analyzing GraphQL query usage and performance, plus schema
+        history components for tracking changes over time.
       </p>
     </div>
 

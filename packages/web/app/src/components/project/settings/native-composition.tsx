@@ -355,7 +355,7 @@ export function NativeCompositionSettings(props: {
           )}
         </Button>
         <div>
-          <Button variant="link" className="text-neutral-2" asChild>
+          <Button variant="link" asChild>
             <a href="https://github.com/the-guild-org/federation?tab=readme-ov-file#compatibility">
               Learn more about risks and compatibility with other composition libraries
             </a>

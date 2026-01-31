@@ -7,9 +7,7 @@ export default {
 export const Overview: Story = () => (
   <div className="bg-neutral-2 space-y-8 p-8">
     <div>
-      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">
-        Project Alerts Components
-      </h3>
+      <h3 className="text-neutral-12 mb-4 text-lg font-semibold">Project Alerts Components</h3>
       <p className="text-neutral-11 mb-6 text-sm">
         Alert management components for monitoring schema changes and events. Includes alert
         configuration, channel setup (Slack, webhook), and alert delivery management.
