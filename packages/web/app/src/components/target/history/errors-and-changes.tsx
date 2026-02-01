@@ -233,9 +233,9 @@ function ChangeItem(
               )}
             >
               <div>
-                <span className="text-neutral-8">{labelize(change.message)}</span>
+                <span className="text-neutral-10">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="cursor-pointer text-yellow-500">
+                  <span className="text-yellow cursor-pointer">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>

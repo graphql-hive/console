@@ -24,24 +24,14 @@ export const OrangeLink: Story = () => <Button variant="orangeLink">Orange Link<
 
 export const AllVariants: Story = () => (
   <div className="flex flex-wrap gap-4">
-    {/* <Button variant="default">Default</Button>
+    <Button variant="default">Default</Button>
     <Button variant="primary">Primary</Button>
     <Button variant="destructive">Destructive</Button>
     <Button variant="outline">Outline</Button>
     <Button variant="secondary">Secondary</Button>
     <Button variant="ghost">Ghost</Button>
     <Button variant="link">Link</Button>
-    <Button variant="orangeLink">Orange Link</Button> */}
-    <div className="bg-orange saturate-160 h-24 w-24"></div>
-    <div className="bg-orange h-24 w-24 brightness-150"></div>
-    <div className="bg-orange brightness-140 h-24 w-24"></div>
-    <div className="bg-orange brightness-130 h-24 w-24"></div>
-    <div className="bg-orange brightness-120 h-24 w-24"></div>
-    <div className="bg-orange h-24 w-24 brightness-110"></div>
-    <div className="bg-orange h-24 w-24"></div>
-    <div className="bg-orange h-24 w-24 brightness-90"></div>
-    <div className="bg-orange brightness-80 h-24 w-24"></div>
-    <div className="bg-orange brightness-70 h-24 w-24"></div>
+    <Button variant="orangeLink">Orange Link</Button>
   </div>
 );
 

@@ -31,15 +31,15 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 const badgeRoundedVariants = cva(
-  'inline-block rounded-full mx-1 border-[3px] p-[3px] align-middle text-xs font-bold leading-none text-neutral-12',
+  'inline-block rounded-full mx-1 outline-offset-[-10px] border-[3px] p-[3px] align-middle text-xs font-bold leading-none text-neutral-12',
   {
     variants: {
       color: {
         red: 'border-red-900 bg-red-500',
         yellow: 'border-yellow-900 bg-yellow-500',
         green: 'border-green-900 bg-green-500',
-        gray: 'border-neutral-2 bg-neutral-10',
-        orange: 'border-orange brightness-80  bg-neutral-2',
+        gray: 'border-neutral-7 bg-neutral-11',
+        orange: 'border-orange-900  bg-orange-500',
       },
     },
     defaultVariants: {
