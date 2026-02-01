@@ -120,7 +120,7 @@ export const ColorPaletteShowcase: Story = () => (
         </div>
         <div className="flex items-center gap-3">
           <Switch defaultChecked />
-          <code className="text-xs">hover:data-[state=checked]:border-orange brightness-90</code>
+          <code className="text-xs">hover:data-[state=checked]:border-orange-500</code>
           <span className="text-neutral-11 text-xs">- Hover border (checked)</span>
         </div>
       </div>

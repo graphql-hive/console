@@ -84,23 +84,23 @@ function TraceView(props: {
               <div className="absolute left-0 top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[0])}
               </div>
-              <div className="absolute bottom-0 left-0 h-2 w-px bg-[#27272a]" />
+              <div className="absolute bottom-0 left-0 h-2 w-px bg-zinc-800" />
               <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[1])}
               </div>
-              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-zinc-800" />
               <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[2])}
               </div>
-              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-zinc-800" />
               <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[3])}
               </div>
-              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-zinc-800" />
               <div className="absolute right-0 top-6 translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[4])}
               </div>
-              <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-[#27272a]" />
+              <div className="absolute bottom-0 right-0 h-2 w-px -translate-x-1/2 bg-zinc-800" />
             </div>
           </div>
         </div>
@@ -421,7 +421,7 @@ type NodeElementProps = {
 function NodeElement(props: NodeElementProps) {
   return (
     <div
-      className={cn('relative z-20 block h-6 min-w-[1px] select-none rounded-sm')}
+      className={cn('relative z-20 block h-6 min-w-px select-none rounded-sm')}
       style={{
         left: `min(${props.leftPositionPercentage}%, 100% - 1px)`,
         width: `${props.widthPercentage}%`,

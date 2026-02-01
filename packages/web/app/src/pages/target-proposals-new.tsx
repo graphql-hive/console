@@ -576,7 +576,7 @@ function ProposalsNewContent(
             </Button>
           </div>
         </TabsList>
-        <div className="w-full flex-col items-start overflow-x-hidden pl-8 [&>*]:pt-0">
+        <div className="w-full flex-col items-start overflow-x-hidden pl-8 *:pt-0">
           <OverviewTab
             title={title}
             description={description}

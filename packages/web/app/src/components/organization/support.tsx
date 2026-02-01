@@ -38,9 +38,9 @@ const priorityVariants = cva(
   {
     variants: {
       variant: {
-        [SupportTicketPriority.Normal]: 'border-transparent bg-red/40 text-neutral-12',
-        [SupportTicketPriority.High]: 'border-transparent bg-red/60 text-neutral-12',
-        [SupportTicketPriority.Urgent]: 'border-transparent bg-red/80 text-neutral-12',
+        [SupportTicketPriority.Normal]: 'border-transparent bg-red-400 text-neutral-12',
+        [SupportTicketPriority.High]: 'border-transparent bg-red-600 text-neutral-12',
+        [SupportTicketPriority.Urgent]: 'border-transparent bg-red-800 text-neutral-12',
       },
     },
     defaultVariants: {

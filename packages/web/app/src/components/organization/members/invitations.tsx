@@ -494,7 +494,7 @@ export function OrganizationInvitations(props: {
         />
       </SubPageLayoutHeader>
       {organization.invitations.edges.length > 0 ? (
-        <table className="divide-neutral-10/20 w-full table-fixed divide-y-[1px]">
+        <table className="divide-neutral-10/20 w-full table-fixed divide-y">
           <thead>
             <tr>
               <th className="w-[100px] py-3 text-left text-sm font-semibold sm:w-auto">Email</th>
@@ -503,7 +503,7 @@ export function OrganizationInvitations(props: {
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
           </thead>
-          <tbody className="divide-neutral-10/20 max-w-full divide-y-[1px]">
+          <tbody className="divide-neutral-10/20 max-w-full divide-y">
             {organization.invitations.edges.map(edge => (
               <Invitation
                 key={edge.node.id}

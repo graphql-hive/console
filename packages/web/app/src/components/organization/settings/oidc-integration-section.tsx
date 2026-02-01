@@ -73,7 +73,7 @@ const classes = {
 };
 
 function FormError({ children }: { children: React.ReactNode }) {
-  return <div className="text-red text-sm">{children}</div>;
+  return <div className="text-sm text-red-500">{children}</div>;
 }
 
 const OIDCIntegrationSection_OrganizationFragment = graphql(`

@@ -23,6 +23,11 @@ export const AllTypes: Story = () => (
     <Callout type="error">
       This is an error callout. Use it to display error messages or critical warnings.
     </Callout>
+    <div className="rounded-sm border border-orange-600 bg-orange-300 p-3">
+      <p className="text-xs text-orange-900">
+        Warning: This action cannot be undone. You will lose admin access to this organization.
+      </p>
+    </div>
   </div>
 );
 

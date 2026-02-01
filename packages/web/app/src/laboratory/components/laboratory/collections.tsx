@@ -80,7 +80,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="link"
-                      className="text-neutral-10 hover:text-red p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                       onClick={e => {
                         e.stopPropagation();
                       }}
@@ -156,7 +156,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="link"
-                            className="text-neutral-10 hover:text-red p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                            className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                             onClick={e => {
                               e.stopPropagation();
                             }}

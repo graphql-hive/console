@@ -349,9 +349,7 @@ export const TargetLayout = ({
               )}
             </div>
           </SecondaryNavigation>
-          <div className={cn('container min-h-[var(--content-height)] pb-7', className)}>
-            {children}
-          </div>
+          <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
         </>
       )}
     </TargetReferenceProvider>

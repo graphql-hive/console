@@ -76,7 +76,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="flex items-center gap-3">
           <div className="bg-neutral-5 flex items-center gap-2 rounded-md py-1">
             <code className="grow px-3 text-sm">hover</code>
-            <button className="hover:text-orange cursor-pointer p-2">
+            <button className="cursor-pointer p-2 hover:text-orange-500">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                 <rect width="10" height="10" x="3" y="3" rx="1" />
               </svg>
@@ -123,7 +123,7 @@ export const ColorPaletteShowcase: Story = () => (
           <span className="text-neutral-11 text-xs">- Shows "Copied to clipboard" toast</span>
         </div>
         <div className="flex items-center gap-3">
-          <button className="hover:text-orange cursor-pointer p-2" title="Copy to clipboard">
+          <button className="cursor-pointer p-2 hover:text-orange-500" title="Copy to clipboard">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <rect width="10" height="10" x="3" y="3" rx="1" />
             </svg>

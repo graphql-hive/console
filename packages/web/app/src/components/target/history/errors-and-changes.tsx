@@ -235,7 +235,7 @@ function ChangeItem(
               <div>
                 <span className="text-neutral-10">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="text-yellow cursor-pointer">
+                  <span className="cursor-pointer text-yellow-500">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
@@ -263,7 +263,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="bg-orange brightness-80 /50 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}

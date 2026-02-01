@@ -218,7 +218,7 @@ export function OrganizationLayout({
           ) : null}
         </div>
       </SecondaryNavigation>
-      <div className="container min-h-[var(--content-height)] pb-7">
+      <div className="min-h-(--content-height) container pb-7">
         {currentOrganization ? (
           <>
             <ProPlanBilling organization={currentOrganization} />

@@ -103,7 +103,7 @@ function ContextMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "focus:bg-neutral-2 focus:text-neutral-12 data-[variant=destructive]:text-red data-[variant=destructive]:focus:bg-red/10 data-[variant=destructive]:focus:text-red data-[variant=destructive]:*:[svg]:text-red! [&_svg:not([class*='text-'])]:text-neutral-10 outline-hidden data-disabled:pointer-events-none data-inset:pl-8 data-disabled:opacity-50 relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-neutral-2 focus:text-neutral-12 data-[variant=destructive]:*:[svg]:text-red! [&_svg:not([class*='text-'])]:text-neutral-10 outline-hidden data-disabled:pointer-events-none data-inset:pl-8 data-disabled:opacity-50 relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm data-[variant=destructive]:text-red-500 data-[variant=destructive]:focus:bg-red-100 data-[variant=destructive]:focus:text-red-500 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}

@@ -86,7 +86,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
               <AlertDialogTrigger asChild>
                 <Button
                   variant="link"
-                  className="text-neutral-10 hover:text-red p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                  className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                   onClick={e => {
                     e.stopPropagation();
                   }}
@@ -149,7 +149,7 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="link"
-                    className="text-neutral-10 hover:text-red p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                    className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                     onClick={e => {
                       e.stopPropagation();
                     }}
@@ -246,7 +246,7 @@ export const History = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="text-neutral-10 hover:text-red p-1! size-6 rounded-sm"
+                    className="text-neutral-10 p-1! size-6 rounded-sm hover:text-red-500"
                     disabled={history.length === 0}
                   >
                     <TrashIcon className="size-4" />

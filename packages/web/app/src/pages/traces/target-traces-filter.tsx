@@ -196,7 +196,7 @@ export const MultiInputFilter = memo(
             >
               <div
                 data-active
-                className="text-neutral-12 border-neutral-11 bg-blue/50 group-hover/trace-id:border-neutral-5 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
+                className="text-neutral-12 border-neutral-11 group-hover/trace-id:border-neutral-5 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border bg-blue-500 group-hover/trace-id:bg-transparent"
               >
                 <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
                 <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
@@ -448,7 +448,7 @@ export const DurationFilter = memo(
               step={1}
               value={values}
               onValueChange={handleSliderChange}
-              className="[&_[role=slider]]:size-4"
+              className="**:[[role=slider]]:size-4"
             />
           </div>
         </FilterContent>

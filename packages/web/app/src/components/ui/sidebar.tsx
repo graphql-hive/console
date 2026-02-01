@@ -325,7 +325,7 @@ const SidebarInput = React.forwardRef<
       ref={ref}
       data-sidebar="input"
       className={cn(
-        'bg-neutral-3 focus-visible:ring-blue h-8 w-full shadow-none focus-visible:ring-2',
+        'bg-neutral-3 h-8 w-full shadow-none focus-visible:ring-2 focus-visible:ring-blue-500',
         className,
       )}
       {...props}
@@ -419,7 +419,7 @@ const SidebarGroupLabel = React.forwardRef<
       ref={ref}
       data-sidebar="group-label"
       className={cn(
-        'text-neutral-11/70 ring-blue flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-none transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-neutral-11/70 flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-none ring-blue-500 transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
         className,
       )}
@@ -440,7 +440,7 @@ const SidebarGroupAction = React.forwardRef<
       ref={ref}
       data-sidebar="group-action"
       className={cn(
-        'text-neutral-11 ring-blue hover:bg-neutral-5 hover:text-neutral-11 absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-none transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-neutral-11 hover:bg-neutral-5 hover:text-neutral-11 absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-none ring-blue-500 transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         // Increases the hit area of the button on mobile.
         'after:absolute after:-inset-2 after:md:hidden',
         'group-data-[collapsible=icon]:hidden',
@@ -489,7 +489,7 @@ const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<'li
 SidebarMenuItem.displayName = 'SidebarMenuItem';
 
 const sidebarMenuButtonVariants = cva(
-  'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-blue transition-[width,height,padding] hover:bg-neutral-5 hover:text-neutral-11 focus-visible:ring-2 active:bg-neutral-5 active:text-neutral-11 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-neutral-5 data-[active=true]:font-medium data-[active=true]:text-neutral-11 data-[state=open]:hover:bg-neutral-5 data-[state=open]:hover:text-neutral-11 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+  'peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-blue-500 transition-[width,height,padding] hover:bg-neutral-5 hover:text-neutral-11 focus-visible:ring-2 active:bg-neutral-5 active:text-neutral-11 disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-neutral-5 data-[active=true]:font-medium data-[active=true]:text-neutral-11 data-[state=open]:hover:bg-neutral-5 data-[state=open]:hover:text-neutral-11 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -583,7 +583,7 @@ const SidebarMenuAction = React.forwardRef<
       ref={ref}
       data-sidebar="menu-action"
       className={cn(
-        'text-neutral-11 ring-blue hover:bg-neutral-5 hover:text-neutral-11 peer-hover/menu-button:text-neutral-11 absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-none transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-neutral-11 hover:bg-neutral-5 hover:text-neutral-11 peer-hover/menu-button:text-neutral-11 absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-none ring-blue-500 transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
         // Increases the hit area of the button on mobile.
         'after:absolute after:-inset-2 after:md:hidden',
         'peer-data-[size=sm]/menu-button:top-1',
@@ -691,7 +691,7 @@ const SidebarMenuSubButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        'text-neutral-11 ring-blue hover:bg-neutral-5 hover:text-neutral-11 active:bg-neutral-5 active:text-neutral-11 [&>svg]:text-neutral-11 flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
+        'text-neutral-11 hover:bg-neutral-5 hover:text-neutral-11 active:bg-neutral-5 active:text-neutral-11 [&>svg]:text-neutral-11 flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-none ring-blue-500 focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0',
         'data-[active=true]:bg-neutral-5 data-[active=true]:text-neutral-11',
         size === 'sm' && 'text-xs',
         size === 'md' && 'text-sm',

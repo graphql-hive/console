@@ -81,7 +81,7 @@ export const ColorPaletteShowcase: Story = () => (
 
         <div>
           <p className="text-neutral-11 mb-2 text-sm font-medium">
-            Destructive (border-red/50, text-red)
+            Destructive (border-red-500, text-red)
           </p>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />

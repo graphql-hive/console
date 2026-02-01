@@ -155,7 +155,7 @@ export const WithColors: Story = () => (
     <GraphQLIcon className="text-neutral-2 size-10" />
     <GraphQLIcon className="size-10 text-emerald-500" />
     <GraphQLIcon className="size-10 text-blue-500" />
-    <GraphQLIcon className="text-orange brightness-120 size-10" />
+    <GraphQLIcon className="size-10 text-orange-500" />
   </div>
 );
 
@@ -227,7 +227,7 @@ export const ColorPaletteShowcase: Story = () => (
         <div className="bg-neutral-1 border-neutral-6 rounded-sm border p-4">
           <p className="text-neutral-11 mb-2 text-sm font-medium">Color Control</p>
           <div className="mb-2 flex gap-4">
-            <AlertTriangleIcon className="text-orange brightness-120 size-6" />
+            <AlertTriangleIcon className="size-6 text-orange-400" />
             <CheckIcon className="size-6 text-emerald-500" />
             <XIcon className="size-6 text-red-500" />
             <KeyIcon className="text-neutral-2 size-6" />
