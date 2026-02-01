@@ -1,5 +1,6 @@
 import { ReactElement, useEffect } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import MonacoEditor, { type Monaco } from '@monaco-editor/react';
@@ -29,6 +30,7 @@ const DEFAULT_VALUE = {
 export function NamingConventionConfigEditor(props: {
   configJsonSchema: JSONSchema | null;
 }): ReactElement {
+  const { resolvedTheme } = useTheme();
   const { config, setConfig, getConfigValue, setConfigAsInvalid, getValidationStatus } =
     useConfigurationHelper().ruleConfig('naming-convention');
   const currentValue = getConfigValue<string | undefined>('');
@@ -63,7 +65,8 @@ export function NamingConventionConfigEditor(props: {
   return (
     <div className="col-span-4">
       <MonacoEditor
-        theme="vs-dark"
+        // this outputs either "vs-light" or "vs-dark"
+        theme={`vs-${resolvedTheme}`}
         loading={<Spinner />}
         height="40vh"
         beforeMount={handleEditorWillMount}

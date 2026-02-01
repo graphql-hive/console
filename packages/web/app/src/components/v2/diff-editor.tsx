@@ -2,6 +2,7 @@ import { ReactElement, useEffect, useRef, useState } from 'react';
 import { parse, print } from 'graphql';
 import { editor } from 'monaco-editor';
 import { MonacoDiffEditor, MonacoEditor } from '@/components/schema-editor';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -21,6 +22,7 @@ export const DiffEditor = (props: {
   onMount?: (editor: editor.IStandaloneCodeEditor) => void;
   onChange?: (source: string | undefined) => void;
 }): ReactElement => {
+  const { resolvedTheme } = useTheme();
   const [showDiff, setShowDiff] = useState<boolean>(true);
   const sdlBefore = usePrettify(props.before);
   // runs once on mount then uses internal monaco state to manage
@@ -111,10 +113,11 @@ export const DiffEditor = (props: {
       </div>
       {showDiff ? (
         <MonacoDiffEditor
+          // this outputs either "vs-light" or "vs-dark"
+          theme={`vs-${resolvedTheme}`}
           width="100%"
           height="70vh"
           language="graphql"
-          theme="vs-dark"
           loading={<Spinner />}
           original={sdlBefore ?? undefined}
           modified={sdlAfter ?? undefined}
@@ -129,10 +132,11 @@ export const DiffEditor = (props: {
         />
       ) : (
         <MonacoEditor
+          // this outputs either "vs-light" or "vs-dark"
+          theme={`vs-${resolvedTheme}`}
           width="100%"
           height="70vh"
           language="graphql"
-          theme="vs-dark"
           loading={<Spinner />}
           value={sdlAfter ?? undefined}
           onMount={props.onMount}
