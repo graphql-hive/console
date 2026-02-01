@@ -253,10 +253,10 @@ function TargetAppVersionContent(props: {
           <AppFilter />
         </SubPageLayoutHeader>
         {coordinates ? (
-          <div className="border-neutral-2/50 bg-neutral-2/10 mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
+          <div className="mt-4 flex items-center justify-between rounded-md border border-orange-500/50 bg-orange-500/10 px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-500 brightness-110">
+              <code className="bg-neutral-5 rounded-sm px-1 py-0.5 font-mono text-orange-400">
                 {coordinates}
               </code>
             </span>

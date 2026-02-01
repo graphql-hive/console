@@ -15,8 +15,8 @@ export const Switch = ({ className, disabled, ...props }: SwitchProps): ReactEle
     >
       <SwitchPrimitive.Thumb
         className={clsx(
-          'bg-neutral-10 data-[state=checked]:bg-neutral-2 block size-[25px] rounded-full border-2 border-transparent brightness-90 transition-all data-[state=checked]:translate-x-5 hover:data-[state=checked]:border-orange-500',
-          !disabled && 'hover:border-neutral-2',
+          'bg-neutral-9 block size-[25px] rounded-full border-2 border-transparent transition-all data-[state=checked]:translate-x-5 data-[state=checked]:bg-orange-500 hover:data-[state=checked]:border-orange-800',
+          !disabled && 'hover:border-gray-700',
         )}
       />
     </SwitchPrimitive.Root>

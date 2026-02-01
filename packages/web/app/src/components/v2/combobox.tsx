@@ -61,7 +61,7 @@ export function Combobox(
         input: () => clsx('text-neutral-10! text-xs!'),
         multiValue: () => clsx('text-neutral-10! text-xs! bg-neutral-10! font-bold!'),
         multiValueRemove: () =>
-          clsx('text-neutral-10! text-xs! hover:bg-neutral-11! hover:text-neutral-2!'),
+          clsx('text-neutral-6 text-xs! hover:bg-neutral-11! hover:text-neutral-2!'),
       }}
       closeMenuOnSelect={false}
       value={props.value}
