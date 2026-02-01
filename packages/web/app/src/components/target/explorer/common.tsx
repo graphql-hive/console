@@ -245,7 +245,7 @@ export function GraphQLTypeCard(props: {
   );
 
   return (
-    <div className="border-neutral-2 rounded-md border-2">
+    <div className="border-neutral-5 rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
