@@ -1,0 +1,218 @@
+---
+title: 'Operation Complexity'
+---
+
+# Operation Complexity
+
+GraphQL by design allows clients to request exactly the data they need. However, this flexibility
+can be exploited to create overly complex GraphQL operations that can strain server resources,
+leading to performance degradation or denial of service. To mitigate these risks, it's essential to
+implement operation complexity limits in your GraphQL router configuration, especially in production
+environments.
+
+This guide explains how to configure the GraphQL router to enforce operation complexity limits to
+prevent abusive GraphQL operations. For the complete configuration options,
+[see `limits` in the configuration reference](../configuration/limits).
+
+## Protection against malicious complex GraphQL operations
+
+One of the main benefits of GraphQL is that data can be requested individually. However, this also
+introduces the possibility for attackers to send operations with deeply nested selection sets that
+could block other requests being processed. Even if infinite loops are not possible by design as a
+fragment cannot self-reference itself; but that still does not prevent possible attackers from
+sending selection sets that are hundreds of levels deep.
+
+The following schema:
+
+```graphql
+type Query {
+  author(id: ID!): Author!
+}
+type Author {
+  id: ID!
+  posts: [Post!]!
+}
+type Post {
+  id: ID!
+  author: Author!
+}
+```
+
+Would allow sending and executing GraphQL operations such as:
+
+```graphql
+query {
+  author(id: 42) {
+    posts {
+      author {
+        posts {
+          author {
+            posts {
+              author {
+                posts {
+                  author {
+                    posts {
+                      author {
+                        posts {
+                          author {
+                            id
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+There are a few ways to mitigate this risk which is covered by this documentation.
+
+{/* TODO: Persisted Operations */}
+
+## Reject operations based on the size / tokens
+
+Parsing a GraphQL operation is not a cheap process, but an expensive and compute-intensive one. In
+order to avoid to parse the operations over and over again, Hive Router has a built-in parsing cache
+that stores the parsed documents by their string representation.
+
+However, due to the flexibility of GraphQL, an attacker could send a very complex operation document
+with slight variations over and over again, which would bypass the parsing cache and degrade the
+performance of your GraphQL router.
+
+In that case, parsing cache by itself is not sufficient to protect your API server from abusive
+GraphQL operations. In addition to the caching, you can limit the size of incoming operations.
+
+A potential solution is to limit the maximum number of tokens in a GraphQL document.
+
+In computer science, lexical analysis, lexing or tokenization is the process of converting a
+sequence of characters into a sequence of lexical tokens.
+
+For example, the given GraphQL operation;
+
+```graphql
+query {
+  me {
+    id
+    user
+  }
+}
+```
+
+The tokens are `query`, `{`, `me`, `{`, `id`, `user`, `}`, `}` which gives a total of 8 tokens.
+
+The optimal maximum token count for your application depends on the complexity of the GraphQL
+operations and documents.
+
+You can use tools like
+[GraphQL Inspector](https://the-guild.dev/graphql/inspector/docs/essentials/audit) to analyse and
+find the best defaults for your use cases.
+
+But on the API side, you can configure the maximum amount as shown below;
+
+```yaml filename="router.config.yaml"
+limits:
+  max_tokens:
+    n: 1000
+```
+
+In that example, any incoming GraphQL operation that exceeds 1000 tokens will be rejected with an
+error.
+
+## Prevent deeply nested GraphQL operations
+
+If you build an API that is open which means it is accessible by the public or 3rd-party consumers,
+it is recommended to limit the maximum depth of incoming GraphQL operations to prevent overly
+complex GraphQL operations.
+
+```yaml filename="router.config.yaml"
+limits:
+  max_depth:
+    n: 10
+```
+
+In that example, any incoming GraphQL operation that exceeds a depth of 10 will be rejected with an
+error.
+
+```graphql
+query {
+  user {
+    posts {
+      comments {
+        text
+      }
+    }
+  }
+}
+```
+
+The above operation has a depth of 3 (`user` -> `posts` -> `comments`), so it would be accepted.
+
+This can prevent malicious API users executing GraphQL operations with deeply nested selection sets.
+You need to tweak the maximum depth an operation selection set is allowed to have based on your
+schema and needs, as it could vary between users.
+
+{/* TODO: Rate Limiting here */}
+
+## Why using `max_depth` along with `max_tokens`
+
+Both `max_depth` and `max_tokens` serve different purposes in protecting your GraphQL API from
+abusive GraphQL operations.
+
+- `max_depth` specifically targets the structure of the operation, preventing excessively nested
+  selection sets that can lead to performance issues. This is particularly important in GraphQL,
+  where deeply nested GraphQL operations can be constructed even without a large number of tokens.
+- `max_tokens`, on the other hand, provides a broader safeguard by limiting the overall size of the
+  operation. This helps to prevent attacks that exploit the complexity of GraphQL operations through
+  a large number of fields, arguments, and other GraphQL constructs, regardless of their nesting
+  level.
+
+The following operation has 20 tokens and a depth of 5 which will be rejected by both limits if set
+to 10 and 15 respectively:
+
+```graphql
+query {
+  author(id: 1) {
+    id
+    posts {
+      id
+      author {
+        id
+        posts {
+          id
+        }
+      }
+    }
+  }
+}
+```
+
+So you might think `max_depth` is sufficient enough, however consider the below operation. The
+following operation has 20 tokens but only a depth of 2:
+
+```graphql
+query {
+  me {
+    id
+    name
+    email
+  }
+  post(id: 1) {
+    id
+    title
+    content
+  }
+}
+```
+
+This operation passes a `max_depth` of 2 but would be rejected by a `max_tokens` limit of 10.
+
+By implementing both `max_depth` and `max_tokens`, you create a more robust defense against a wider
+range of potential operation abuses, ensuring better performance and reliability for your GraphQL
+API.
