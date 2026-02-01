@@ -333,6 +333,11 @@ export interface Storage {
     _: TargetSelector & Pick<TargetSettings, 'failDiffOnDangerousChange'>,
   ): Promise<TargetSettings | never>; // @todo decide if something should be returned.
 
+  updateTargetAppDeploymentProtectionSettings(
+    _: Pick<TargetSelector, 'targetId' | 'projectId'> &
+      Partial<TargetSettings['appDeploymentProtection']>,
+  ): Promise<TargetSettings['appDeploymentProtection']>;
+
   countSchemaVersionsOfProject(
     _: ProjectSelector & {
       period: {
@@ -351,16 +356,6 @@ export interface Storage {
   ): Promise<number>;
 
   hasSchema(_: TargetSelector): Promise<boolean>;
-
-  getLatestSchemas(
-    _: {
-      onlyComposable?: boolean;
-    } & TargetSelector,
-  ): Promise<{
-    schemas: Schema[];
-    versionId: string;
-    valid: boolean;
-  } | null>;
 
   getLatestValidVersion(_: { targetId: string }): Promise<SchemaVersion | never>;
 
@@ -776,7 +771,11 @@ export interface Storage {
    * Persist a schema check record in the database.
    */
   createSchemaCheck(
-    _: SchemaCheckInput & { expiresAt: Date | null; schemaProposalId?: string | null },
+    _: SchemaCheckInput & {
+      expiresAt: Date | null;
+      schemaProposalId?: string | null;
+      schemaProposalChanges: null | Array<SchemaChangeType>;
+    },
   ): Promise<SchemaCheck>;
   /**
    * Delete the expired schema checks from the database.

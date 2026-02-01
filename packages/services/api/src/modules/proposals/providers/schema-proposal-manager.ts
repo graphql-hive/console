@@ -3,7 +3,6 @@
  */
 import { Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
-import { SchemaChangeType } from '@hive/storage';
 import { SchemaProposalCheckInput, SchemaProposalStage } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
@@ -57,7 +56,6 @@ export class SchemaProposalManager {
     }
 
     const proposal = createProposalResult.proposal;
-    const changes: SchemaChangeType[] = [];
     const checkPromises = args.initialChecks.map(async check => {
       const result = await this.schemaPublisher.check({
         ...check,
@@ -66,10 +64,8 @@ export class SchemaProposalManager {
         schemaProposalId: proposal.id,
       });
       if ('changes' in result && result.changes) {
-        changes.push(...result.changes);
         return {
           ...result,
-          changes: result.changes,
           errors:
             result.errors?.map(error => ({
               ...error,

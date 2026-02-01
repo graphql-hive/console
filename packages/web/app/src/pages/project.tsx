@@ -68,6 +68,9 @@ const TargetCard = (props: {
     >
       <Link
         to="/$organizationSlug/$projectSlug/$targetSlug"
+        disabled={
+          props.organizationSlug == null || props.projectSlug == null || target?.slug == null
+        }
         params={{
           organizationSlug: props.organizationSlug ?? 'unknown-yet',
           projectSlug: props.projectSlug ?? 'unknown-yet',

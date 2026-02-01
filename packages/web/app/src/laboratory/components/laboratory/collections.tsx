@@ -130,7 +130,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                 key={operation.name}
                 variant="ghost"
                 className={cn('group w-full justify-start gap-2 px-2', {
-                  'bg-neutral-2': isActive,
+                  'bg-accent_80': isActive,
                 })}
                 size="sm"
                 onClick={() => {
@@ -219,7 +219,7 @@ export const CollectionsSearchResult = (props: { items: CollectionsSearchResultI
             key={operation.name}
             variant="ghost"
             className={cn('group w-full justify-start gap-2 px-2', {
-              'bg-neutral-2': isActive,
+              'bg-accent_80': isActive,
             })}
             size="sm"
             onClick={() => {

@@ -31,8 +31,8 @@ export const GraphQLType = (props: {
   }
 
   if (props.type instanceof GraphQLScalarType || props.type instanceof GraphQLEnumType) {
-    return <span className="text-teal-500">{props.type.name}</span>;
+    return <span className="text-teal-400">{props.type.name}</span>;
   }
 
-  return <span className="text-amber-500">{props.type.name}</span>;
+  return <span className="text-amber-400">{props.type.name}</span>;
 };

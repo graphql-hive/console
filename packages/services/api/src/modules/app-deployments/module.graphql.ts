@@ -133,10 +133,45 @@ export default gql`
     target: TargetReferenceInput
     appName: String!
     appVersion: String!
+    """
+    Force retirement even if protection rules would prevent it.
+    """
+    force: Boolean
+  }
+
+  """
+  Details about why protection prevented retirement.
+  """
+  type AppDeploymentProtectionBlockDetails {
+    """
+    The last time the app deployment was used.
+    """
+    lastUsed: DateTime
+    """
+    Days since the app deployment was last used.
+    """
+    daysSinceLastUsed: Int
+    """
+    Required minimum days of inactivity.
+    """
+    requiredMinDaysInactive: Int!
+    """
+    Current traffic percentage of this app deployment.
+    """
+    currentTrafficPercentage: Float
+    """
+    Maximum traffic percentage allowed for retirement.
+    """
+    maxTrafficPercentage: Float!
   }
 
   type RetireAppDeploymentError implements Error {
     message: String!
+    """
+    Details about why protection prevented retirement.
+    Only present when retirement was blocked due to protection rules.
+    """
+    protectionDetails: AppDeploymentProtectionBlockDetails
   }
 
   type RetireAppDeploymentOk {

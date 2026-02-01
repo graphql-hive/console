@@ -1117,11 +1117,10 @@ function runArtifactsCDNTests(
       'access versioned contract artifact with valid credentials',
       async ({ expect }) => {
         const { createOrg, ownerToken } = await initSeed().createOwner();
-        const { createProject, setFeatureFlag } = await createOrg();
-        const { createTargetAccessToken, createCdnAccess, target, setNativeFederation } =
-          await createProject(ProjectType.Federation);
-        await setFeatureFlag('compareToPreviousComposableVersion', true);
-        await setNativeFederation(true);
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
 
         const writeToken = await createTargetAccessToken({});
 

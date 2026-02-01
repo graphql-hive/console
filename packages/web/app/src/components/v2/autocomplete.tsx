@@ -108,6 +108,7 @@ export function Autocomplete(props: {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
+  onInputChange?: (value: string) => void;
 }): ReactElement {
   return (
     <Select
@@ -125,6 +126,11 @@ export function Autocomplete(props: {
       isClearable
       closeMenuOnSelect
       onChange={option => props.onChange(option as SelectOption)}
+      onInputChange={(value, { action }) => {
+        if (action === 'input-change') {
+          props.onInputChange?.(value);
+        }
+      }}
       isDisabled={props.disabled}
       isLoading={props.loading}
       placeholder={props.placeholder}

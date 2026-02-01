@@ -377,6 +377,9 @@ export const Query = (props: {
     checkPermissions,
     preflight,
     setPreflight,
+    plugins,
+    pluginsState,
+    setPluginsState,
   } = useLaboratory();
 
   const operation = useMemo(() => {
@@ -388,7 +391,9 @@ export const Query = (props: {
       return;
     }
 
-    const result = await runPreflight?.();
+    const result = await runPreflight?.(plugins, pluginsState);
+
+    setPluginsState(result?.pluginsState ?? {});
 
     if (result?.status === 'error') {
       const newItemHistory = addHistory({
@@ -465,6 +470,7 @@ export const Query = (props: {
     props,
     addResponseToHistory,
     runPreflight,
+    pluginsState,
   ]);
 
   useEffect(() => {

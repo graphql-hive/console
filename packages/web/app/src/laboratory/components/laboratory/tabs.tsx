@@ -27,8 +27,10 @@ import * as Sortable from '@/laboratory/components/ui/sortable';
 import { Spinner } from '@/laboratory/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/laboratory/components/ui/tooltip';
 import { getOperationName, getOperationType } from '@/laboratory/lib/operations.utils';
+import { LaboratoryPluginTab } from '@/laboratory/lib/plugins';
 import type {
   LaboratoryTab,
+  LaboratoryTabHistory,
   LaboratoryTabOperation,
   LaboratoryTabTest,
 } from '@/laboratory/lib/tabs';
@@ -44,7 +46,8 @@ export const Tab = (props: {
   handleDeleteOtherTabs: (excludeTabId: string) => void;
   isOverlay?: boolean;
 }) => {
-  const { history, operations, tests } = useLaboratory();
+  const { history, operations, tests, plugins } = useLaboratory();
+  const laboratory = useLaboratory();
   const bypassMouseDownRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -74,7 +77,9 @@ export const Tab = (props: {
       return null;
     }
 
-    return history.find(h => props.item.type === 'history' && h.id === props.item.data.id);
+    return history.find(
+      h => props.item.type === 'history' && h.id === (props.item.data as LaboratoryTabHistory).id,
+    );
   }, [history, props.item]);
 
   const operation = useMemo(() => {
@@ -161,6 +166,25 @@ export const Tab = (props: {
       return test?.name || 'Untitled';
     }
 
+    let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
+
+    for (const plugin of plugins) {
+      for (const tab of plugin.tabs ?? []) {
+        if (tab.type === props.item.type) {
+          customTab = tab;
+          break;
+        }
+      }
+    }
+
+    if (customTab) {
+      if (typeof customTab.name === 'function') {
+        return customTab.name(laboratory, {});
+      }
+
+      return customTab.name;
+    }
+
     return 'Untitled';
   }, [props.item, historyItem, operation, test]);
 
@@ -196,7 +220,26 @@ export const Tab = (props: {
       return <FlaskConicalIcon className="size-4 text-lime-400" />;
     }
 
-    return <FileIcon className="text-neutral-10 size-4" />;
+    let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
+
+    for (const plugin of plugins) {
+      for (const tab of plugin.tabs ?? []) {
+        if (tab.type === props.item.type) {
+          customTab = tab;
+          break;
+        }
+      }
+    }
+
+    if (customTab) {
+      if (typeof customTab.icon === 'function') {
+        return customTab.icon(laboratory, {});
+      }
+
+      return customTab.icon;
+    }
+
+    return <FileIcon className="text-neutral-8 size-4" />;
   }, [props.item, isError]);
 
   return (
@@ -325,7 +368,7 @@ export const Tabs = ({ className }: { className?: string }) => {
       const tab = tabs[tabIndex];
 
       if (tab.type === 'operation') {
-        deleteOperation(tab.data.id);
+        deleteOperation((tab.data as LaboratoryTabOperation).id);
       }
 
       deleteTab(tab.id);
@@ -354,7 +397,7 @@ export const Tabs = ({ className }: { className?: string }) => {
         const tabsToDelete = tabs.filter(t => t.id !== excludeTabId);
         const operationsToDelete = tabsToDelete
           .filter(t => t.type === 'operation')
-          .map(t => t.data.id);
+          .map(t => (t.data as LaboratoryTabOperation).id);
 
         setOperations(operations.filter(o => !operationsToDelete.includes(o.id)));
 

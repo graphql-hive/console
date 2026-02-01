@@ -73,9 +73,9 @@
     "@graphql-codegen/typescript-resolvers": "5.1.0",
     "@graphql-codegen/urql-introspection": "3.0.1",
     "@graphql-eslint/eslint-plugin": "3.20.1",
-    "@graphql-inspector/cli": "6.0.0",
-    "@graphql-inspector/core": "7.1.0",
-    "@graphql-inspector/patch": "0.1.0",
+    "@graphql-inspector/cli": "6.0.6",
+    "@graphql-inspector/core": "7.1.2",
+    "@graphql-inspector/patch": "0.1.2",
     "@graphql-tools/load": "8.1.2",
     "@manypkg/get-packages": "2.2.2",
     "@next/eslint-plugin-next": "14.2.23",
@@ -122,6 +122,8 @@
     "overrides.@types/nodemailer>@aws-sdk/client-sesv2": "@types/nodemailer depends on some AWS stuff that causes the 3.x.x version to stick around. We don't need that dependency. (https://github.com/graphql-hive/console/security/dependabot/436)",
     "overrides.tar@6.x.x": "address https://github.com/graphql-hive/console/security/dependabot/443",
     "overrides.diff@<8.0.3": "address https://github.com/graphql-hive/console/security/dependabot/438",
+    "overrides.lodash-es@4.x.x": "address https://github.com/graphql-hive/console/security/dependabot/453",
+    "overrides.lodash@4.x.x": "address https://github.com/graphql-hive/console/security/dependabot/455",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -142,7 +144,10 @@
       "nodemailer@^6.0.0": "^7.0.11",
       "@types/nodemailer>@aws-sdk/client-sesv2": "-",
       "tar@6.x.x": "^7.5.3",
-      "diff@<8.0.3": "^8.0.3"
+      "diff@<8.0.3": "^8.0.3",
+      "lodash-es@4.x.x": "^4.17.23",
+      "lodash@4.x.x": "^4.17.23",
+      "seroval@<1.4.1": "^1.4.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
@@ -158,7 +163,6 @@
       "@graphiql/react": "patches/@graphiql__react.patch",
       "countup.js": "patches/countup.js.patch",
       "@oclif/core@4.0.6": "patches/@oclif__core@4.0.6.patch",
-      "@fastify/vite": "patches/@fastify__vite.patch",
       "p-cancelable@4.0.1": "patches/p-cancelable@4.0.1.patch",
       "bentocache": "patches/bentocache.patch",
       "nextra": "patches/nextra.patch",

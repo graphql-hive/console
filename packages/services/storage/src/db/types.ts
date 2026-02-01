@@ -288,6 +288,7 @@ export interface schema_checks {
   schema_composition_errors: any | null;
   schema_policy_errors: any | null;
   schema_policy_warnings: any | null;
+  schema_proposal_changes: any | null;
   schema_proposal_id: string | null;
   schema_sdl: string | null;
   schema_sdl_store_id: string | null;
@@ -412,6 +413,12 @@ export interface target_validation {
 }
 
 export interface targets {
+  app_deployment_protection_enabled: boolean;
+  app_deployment_protection_max_traffic_percentage: number;
+  app_deployment_protection_min_days_inactive: number;
+  app_deployment_protection_min_days_since_creation: number;
+  app_deployment_protection_rule_logic: string;
+  app_deployment_protection_traffic_period_days: number;
   base_schema: string | null;
   clean_id: string;
   created_at: Date;

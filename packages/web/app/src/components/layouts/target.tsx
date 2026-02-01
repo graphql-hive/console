@@ -594,8 +594,14 @@ function FederationModalContent(props: {
         <TabsTrigger value="hive-gateway" variant="content">
           Hive Gateway
         </TabsTrigger>
+        <TabsTrigger value="hive-router" variant="content">
+          Hive Router
+        </TabsTrigger>
         <TabsTrigger value="apollo-router" variant="content">
           Apollo Router
+        </TabsTrigger>
+        <TabsTrigger value="grafbase-gateway" variant="content">
+          Grafbase Gateway
         </TabsTrigger>
         <TabsTrigger value="cdn" variant="content">
           Custom / HTTP
@@ -618,21 +624,52 @@ function FederationModalContent(props: {
         </div>
         <p>
           For more information please refer to our{' '}
-          <UiLink variant="primary" target="_blank" rel="noreferrer" to={getDocsUrl('/gateway')}>
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/gateway/usage-reporting')}
+          >
             Hive Gateway documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="hive-router" variant="content">
+        <p>
+          Start up a Hive Router instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name hive-router --rm -p 4000:4000 \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
+  ghcr.io/graphql-hive/router`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/router/observability/usage_reporting')}
+          >
+            Hive Router documentation
           </UiLink>
           .
         </p>
       </TabsContent>
       <TabsContent value="apollo-router" variant="content">
         <p>
-          Start up a Hive Gateway instance polling the supergraph from the Hive CDN using the
+          Start up a Apollo Router instance polling the supergraph from the Hive CDN using the
           following command.
         </p>
         {authenticateSection}
         <InputCopy
           multiline
-          value={`docker run --name hive-gateway --rm \\
+          value={`docker run --name apollo-router -p 4000:4000 --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
@@ -646,6 +683,32 @@ function FederationModalContent(props: {
             to={getDocsUrl('/other-integrations/apollo-router')}
           >
             Apollo Router documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="grafbase-gateway" variant="content">
+        <p>
+          Start up a Grafbase Gateway instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>"
+  ghcr.io/grafbase/gateway`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/other-integrations/grafbase-gateway')}
+          >
+            Grafbase Gateway documentation
           </UiLink>
           .
         </p>

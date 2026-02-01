@@ -671,7 +671,6 @@ export const DirectiveUsageSchemaAddedModel = implement<DirectiveUsageSchemaAdde
   type: DirectiveUsageSchemaAddedLiteral,
   meta: z.object({
     addedDirectiveName: z.string(),
-    schemaTypeName: z.string(),
     addedToNewType: z.boolean().default(false),
     directiveRepeatedTimes: z.number().default(1),
   }),
@@ -682,7 +681,6 @@ export const DirectiveUsageSchemaRemovedModel = implement<DirectiveUsageSchemaRe
     type: DirectiveUsageSchemaRemovedLiteral,
     meta: z.object({
       removedDirectiveName: z.string(),
-      schemaTypeName: z.string(),
       directiveRepeatedTimes: z.number().default(1),
     }),
   },
@@ -1435,13 +1433,17 @@ const NotManuallyApprovedSchemaCheckFields = {
   manualApprovalUserId: z.null(),
 };
 
+const SchemaProposalOutputFields = {
+  schemaProposalId: z.string().nullable(),
+  schemaProposalChanges: z.array(HiveSchemaChangeModel).nullable(),
+};
+
 const SchemaCheckSharedOutputFields = {
   schemaSDL: z.string(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
   targetId: z.string(),
   schemaVersionId: z.string().nullable(),
-  schemaProposalId: z.string().nullable(),
   meta: z
     .object({
       author: z.string(),
@@ -1455,6 +1457,7 @@ const SchemaCheckSharedOutputFields = {
   githubRepository: z.string().nullable(),
   githubSha: z.string().nullable(),
   contextId: z.string().nullable(),
+  ...SchemaProposalOutputFields,
 };
 
 const SchemaCheckSharedInputFields = {

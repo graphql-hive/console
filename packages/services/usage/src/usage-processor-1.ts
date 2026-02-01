@@ -123,7 +123,7 @@ export const usageProcessorV1 = traceInlineSync(
         logger.warn(
           `Detected invalid operation (target=%s): %o`,
           token.target,
-          validationResult.errors,
+          validationResult.errors ?? [],
         );
         invalidRawOperations
           .labels({

@@ -2,6 +2,7 @@ import cookies from 'js-cookie';
 import { LifeBuoyIcon } from 'lucide-react';
 import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
 import { useMutation } from 'urql';
+import { isThemeSwitcherEnabled } from '@/components/theme/theme-provider';
 import { ThemeSwitcher } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
 import {

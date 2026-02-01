@@ -28,6 +28,9 @@ export const Preflight = () => {
     setEnv,
     openPreflightPromptModal,
     checkPermissions,
+    plugins,
+    pluginsState,
+    setPluginsState,
   } = useLaboratory();
 
   const run = useCallback(async () => {
@@ -49,9 +52,12 @@ export const Preflight = () => {
           });
         });
       },
+      plugins,
+      pluginsState,
     );
 
     setEnv(result?.env ?? { variables: {} });
+    setPluginsState(result?.pluginsState ?? {});
     setLastTestResult(result);
   }, [env, setEnv, preflight, setLastTestResult, openPreflightPromptModal]);
 
@@ -91,6 +97,12 @@ export const Preflight = () => {
                     };
                     prompt: (placeholder: string, defaultValue: string) => Promise<string | null>;
                     CryptoJS: typeof CryptoJS;
+                    plugins: {
+                      ${plugins
+                        .filter(plugin => plugin.preflight?.lab?.definition)
+                        .map(plugin => plugin.preflight?.lab?.definition)
+                        .join('\n')}
+                    }
                   }
 
                   declare namespace CryptoJS {

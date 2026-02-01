@@ -1,5 +1,15 @@
 # @graphql-hive/core
 
+## 0.20.2
+
+### Patch Changes
+
+- [#7541](https://github.com/graphql-hive/console/pull/7541)
+  [`1f824a7`](https://github.com/graphql-hive/console/commit/1f824a7d503c39d8675fb44e899da275d5ac7045)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Clear persisted documents caches on
+  dispose to prevent memory leaks. The `dispose()` function now clears `persistedDocumentsCache` and
+  `fetchCache` to allow proper garbage collection.
+
 ## 0.20.1
 
 ### Patch Changes
