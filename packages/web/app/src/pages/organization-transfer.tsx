@@ -105,7 +105,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
   return (
     <>
       <Meta title="Organization Transfer" />
-      <DottedBackground className="min-h-[100vh]">
+      <DottedBackground className="min-h-screen">
         <div className="flex h-full grow items-center">
           <Button
             variant="outline"
