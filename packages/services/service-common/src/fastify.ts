@@ -66,7 +66,9 @@ export async function createServer(options: {
             redact: ['request.options', 'options', 'request.headers.authorization'],
           },
         }),
-    maxParamLength: 5000,
+    routerOptions: {
+      maxParamLength: 5000,
+    },
     requestIdHeader: 'x-request-id',
     trustProxy: true,
   });
