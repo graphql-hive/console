@@ -2,12 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useLocalStorage } from '@/lib/hooks';
 
 const STORAGE_KEY = 'hive-theme';
-const TEMP_THEME_SWITCHER_KEY = 'hive-temp-theme-switcher';
-
-export function isThemeSwitcherEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem(TEMP_THEME_SWITCHER_KEY) === 'true';
-}
 
 export type Theme = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -34,15 +28,13 @@ function applyTheme(resolvedTheme: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [storedTheme, setStoredTheme] = useLocalStorage(STORAGE_KEY, 'dark');
+  const [storedTheme, setStoredTheme] = useLocalStorage(STORAGE_KEY, 'system');
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(getSystemTheme);
 
-  // When theme switcher is disabled, always use dark mode regardless of stored value
-  const theme: Theme = isThemeSwitcherEnabled()
-    ? ((storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
-        ? storedTheme
-        : 'system') as Theme)
-    : 'dark';
+  const theme: Theme =
+    storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+      ? (storedTheme as Theme)
+      : 'system';
 
   const resolvedTheme: ResolvedTheme = theme === 'system' ? systemTheme : theme;
 
@@ -50,10 +42,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setStoredTheme(newTheme);
   };
 
-  // Listen for system theme changes (only when theme switcher is enabled)
+  // Listen for system theme changes
   useEffect(() => {
-    if (!isThemeSwitcherEnabled()) return;
-
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleChange = (e: MediaQueryListEvent) => {
@@ -66,9 +56,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Apply theme to document
   useEffect(() => {
-    // TODO: we're forcing dark mode here, remove when color palette work is complete
-    // applyTheme(resolvedTheme);
-    applyTheme('dark');
+    applyTheme(resolvedTheme);
   }, [resolvedTheme]);
 
   const value = useMemo(() => ({ theme, setTheme, resolvedTheme }), [theme, resolvedTheme]);
