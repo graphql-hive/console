@@ -54,17 +54,17 @@ export const Page = ({
 
 export const Section = {
   Title: ({ className, children, ...props }: ComponentProps<'h3'>): ReactElement => (
-    <h3 className={cn('text-neutral-1 text-base font-bold', className)} {...props}>
+    <h3 className={cn('text-neutral-11 text-base font-bold', className)} {...props}>
       {children}
     </h3>
   ),
   BigTitle: ({ className, children, ...props }: ComponentProps<'h2'>): ReactElement => (
-    <h2 className={cn('text-neutral-1 text-base font-bold', className)} {...props}>
+    <h2 className={cn('text-neutral-11 text-base font-bold', className)} {...props}>
       {children}
     </h2>
   ),
   Subtitle: ({ className, children, ...props }: ComponentProps<'div'>): ReactElement => (
-    <div className={cn('text-neutral-8 text-sm', className)} {...props}>
+    <div className={cn('text-neutral-10 text-sm', className)} {...props}>
       {children}
     </div>
   ),
