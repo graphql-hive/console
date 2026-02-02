@@ -4,8 +4,8 @@ type HeaderProps = {
 
 export function Header({ children }: HeaderProps) {
   return (
-    <header className="h-(--header-height) bg-neutral-3 container flex items-center justify-between">
-      {children}
-    </header>
+    <div className="h-(--header-height) bg-neutral-3">
+      <header className="container flex h-full items-center justify-between">{children}</header>
+    </div>
   );
 }
