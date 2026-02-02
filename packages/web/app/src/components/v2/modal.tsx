@@ -61,7 +61,7 @@ const Modal = ({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-2 absolute right-5 top-5"
+                    className="text-neutral-10 hover:border-neutral-10 hover:text-neutral-12 absolute right-5 top-5"
                   >
                     <XIcon />
                   </Button>
