@@ -35,7 +35,10 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
   const { activeTab, addTab, setActiveTab, deleteHistory } = useLaboratory();
 
   const isActive = useMemo(() => {
-    return activeTab?.type === 'history' && activeTab.data.id === props.historyItem.id;
+    return (
+      activeTab?.type === 'history' &&
+      (activeTab.data as LaboratoryHistoryRequest).id === props.historyItem.id
+    );
   }, [activeTab, props.historyItem]);
 
   const isError = useMemo(() => {
@@ -55,7 +58,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
       variant="ghost"
       size="sm"
       className={cn('bg-background group sticky top-0 w-full justify-start px-2', {
-        'bg-accent dark:bg-accent/50': isActive,
+        'bg-accent/50': isActive,
       })}
       onClick={() => {
         setActiveTab(

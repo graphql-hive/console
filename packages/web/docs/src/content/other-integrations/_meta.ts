@@ -6,6 +6,7 @@ export default {
   'apollo-server': 'Apollo Server',
   'apollo-router': 'Apollo Router',
   'apollo-gateway': 'Apollo Gateway',
+  'grafbase-gateway': 'Grafbase Gateway',
   'graphql-ruby': 'GraphQL Ruby',
   lighthouse: 'Lighthouse (Laravel)',
   'ci-cd': 'CI/CD Guide',

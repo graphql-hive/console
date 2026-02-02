@@ -1,3 +1,4 @@
+import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 'slonik';
 import { z } from 'zod';
@@ -501,12 +502,27 @@ export class AppDeployments {
 
   async retireAppDeployment(args: {
     organizationId: string;
+    projectId: string;
     targetId: string;
     appDeployment: {
       name: string;
       version: string;
     };
-  }) {
+    force?: boolean;
+  }): Promise<
+    | { type: 'success'; appDeployment: AppDeploymentRecord }
+    | {
+        type: 'error';
+        message: string;
+        protectionDetails?: {
+          lastUsed: Date | null;
+          daysSinceLastUsed: number | null;
+          requiredMinDaysInactive: number;
+          currentTrafficPercentage: number | null;
+          maxTrafficPercentage: number;
+        };
+      }
+  > {
     this.logger.debug('retire app deployment (targetId=%s, appName=%s, appVersion=%s)');
 
     if (this.appDeploymentsEnabled === false) {
@@ -567,6 +583,105 @@ export class AppDeployments {
         type: 'error' as const,
         message: 'App deployment is already retired',
       };
+    }
+
+    // Check protection settings if force flag is not set
+    if (args.force !== true) {
+      const targetSettings = await this.storage.getTargetSettings({
+        organizationId: args.organizationId,
+        targetId: args.targetId,
+        projectId: args.projectId,
+      });
+
+      if (targetSettings.appDeploymentProtection.isEnabled) {
+        const protectionConfig = targetSettings.appDeploymentProtection;
+
+        // Get last used timestamp
+        const lastUsedResults = await this.getLastUsedForAppDeployments({
+          appDeploymentIds: [appDeployment.id],
+        });
+        const lastUsedStr =
+          lastUsedResults.find(r => r.appDeploymentId === appDeployment.id)?.lastUsed ?? null;
+        const lastUsed = lastUsedStr ? new Date(lastUsedStr) : null;
+
+        // Calculate days since last used
+        let daysSinceLastUsed: number | null = null;
+        if (lastUsed) {
+          const now = new Date();
+          const diffMs = now.getTime() - lastUsed.getTime();
+          daysSinceLastUsed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        }
+
+        // Get traffic percentage using configured period
+        const trafficData = await this.getAppDeploymentTrafficPercentage({
+          targetId: args.targetId,
+          appName: args.appDeployment.name,
+          appVersion: args.appDeployment.version,
+          periodDays: protectionConfig.trafficPeriodDays,
+        });
+        const trafficPercentage = trafficData?.trafficPercentage ?? null;
+
+        // Check protection rules:
+        // 1. App deployment must have been created at least minDaysSinceCreation days ago
+        // 2. If usage data exists, check inactivity and traffic criteria based on ruleLogic:
+        //    AND: Both conditions must pass (inactive enough AND low traffic)
+        //    OR: Either condition can pass (inactive enough OR low traffic)
+
+        let isBlocked = false;
+        let blockReason = '';
+
+        const createdAt = new Date(appDeployment.createdAt);
+        const daysSinceCreation = differenceInCalendarDays(new Date(), createdAt);
+
+        if (daysSinceCreation < protectionConfig.minDaysSinceCreation) {
+          isBlocked = true;
+          blockReason = `App deployment was created ${daysSinceCreation} days ago, but requires at least ${protectionConfig.minDaysSinceCreation} days since creation`;
+        } else if (lastUsed !== null) {
+          const inactiveEnough =
+            daysSinceLastUsed === null || daysSinceLastUsed >= protectionConfig.minDaysInactive;
+          const lowTraffic =
+            trafficPercentage === null ||
+            trafficPercentage <= protectionConfig.maxTrafficPercentage;
+
+          if (protectionConfig.ruleLogic === 'OR') {
+            // OR logic: retirement allowed if EITHER condition is met
+            isBlocked = !inactiveEnough && !lowTraffic;
+            if (isBlocked) {
+              blockReason = `App deployment was used ${daysSinceLastUsed} days ago (requires ${protectionConfig.minDaysInactive}) and has ${trafficPercentage?.toFixed(2)}% traffic (max ${protectionConfig.maxTrafficPercentage}%)`;
+            }
+          } else {
+            // AND logic (default): retirement allowed only if BOTH conditions are met
+            if (!inactiveEnough) {
+              isBlocked = true;
+              blockReason = `App deployment was used ${daysSinceLastUsed} days ago, but requires ${protectionConfig.minDaysInactive} days of inactivity`;
+            } else if (!lowTraffic) {
+              isBlocked = true;
+              blockReason = `App deployment has ${trafficPercentage?.toFixed(2)}% of traffic, but maximum allowed is ${protectionConfig.maxTrafficPercentage}%`;
+            }
+          }
+        }
+
+        if (isBlocked) {
+          this.logger.debug(
+            'retire app deployment blocked by protection settings. (targetId=%s, appDeploymentId=%s, reason=%s)',
+            args.targetId,
+            appDeployment.id,
+            blockReason,
+          );
+
+          return {
+            type: 'error' as const,
+            message: `App deployment retirement blocked by protection settings. ${blockReason}.`,
+            protectionDetails: {
+              lastUsed,
+              daysSinceLastUsed,
+              requiredMinDaysInactive: protectionConfig.minDaysInactive,
+              currentTrafficPercentage: trafficPercentage,
+              maxTrafficPercentage: protectionConfig.maxTrafficPercentage,
+            },
+          };
+        }
+      }
     }
 
     for (const s3 of this.s3) {
@@ -872,7 +987,13 @@ export class AppDeployments {
             any(app_name) AS "appName",
             any(app_version) AS "appVersion"
           FROM app_deployments
-          PREWHERE target_id = ${args.targetId}
+          PREWHERE
+            target_id = ${args.targetId}
+            ${
+              args.excludedAppDeploymentNames?.length
+                ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                : cSql``
+            }
           GROUP BY app_deployment_id
           HAVING min(is_active) = True
         `,
@@ -896,27 +1017,11 @@ export class AppDeployments {
 
     let activeDeployments = z.array(ActiveDeploymentModel).parse(activeDeploymentsResult.data);
 
-    // Filter out excluded app deployment names
-    if (args.excludedAppDeploymentNames?.length) {
-      const excludedNamesSet = new Set(args.excludedAppDeploymentNames);
-      const originalCount = activeDeployments.length;
-      activeDeployments = activeDeployments.filter(d => !excludedNamesSet.has(d.appName));
-      if (activeDeployments.length !== originalCount) {
-        this.logger.debug(
-          'Filtered out %d app deployments by excluded names (targetId=%s, excludedNames=%o)',
-          originalCount - activeDeployments.length,
-          args.targetId,
-          args.excludedAppDeploymentNames,
-        );
-      }
-    }
-
     if (activeDeployments.length === 0) {
       this.logger.debug('No active app deployments found (targetId=%s)', args.targetId);
       return emptyResult;
     }
 
-    const deploymentIds = activeDeployments.map(d => d.appDeploymentId);
     const deploymentIdToInfo = new Map(
       activeDeployments.map(d => [d.appDeploymentId, { name: d.appName, version: d.appVersion }]),
     );
@@ -928,7 +1033,19 @@ export class AppDeployments {
         query: cSql`
           SELECT uniq(app_deployment_id) AS "total"
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (${cSql.array(deploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
         `,
         queryId: 'count-affected-app-deployments',
@@ -963,7 +1080,19 @@ export class AppDeployments {
         query: cSql`
           SELECT DISTINCT app_deployment_id AS "appDeploymentId"
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (${cSql.array(deploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           ${args.afterCursor ? cSql`AND app_deployment_id > ${args.afterCursor}` : cSql``}
           ${limit ? cSql`ORDER BY app_deployment_id LIMIT ${cSql.raw(String(limit + 1))}` : cSql``}
@@ -1017,7 +1146,19 @@ export class AppDeployments {
             count() AS "count"
           FROM app_deployment_documents
           ARRAY JOIN arrayIntersect(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')}) AS coord
-          PREWHERE app_deployment_id IN (${cSql.array(affectedDeploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           GROUP BY app_deployment_id, coord
         `,
@@ -1062,7 +1203,19 @@ export class AppDeployments {
             operation_name AS "operationName",
             arrayIntersect(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')}) AS "matchingCoordinates"
           FROM app_deployment_documents
-          PREWHERE app_deployment_id IN (${cSql.array(affectedDeploymentIds, 'String')})
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE
+              target_id = ${args.targetId}
+              ${
+                args.excludedAppDeploymentNames?.length
+                  ? cSql`AND app_name NOT IN (${cSql.array(args.excludedAppDeploymentNames, 'String')})`
+                  : cSql``
+              }
+            GROUP BY app_deployment_id
+            HAVING min(is_active) = True
+          )
           WHERE hasAny(schema_coordinates, ${cSql.array(args.schemaCoordinates, 'String')})
           ${operationsLimit ? cSql`LIMIT ${cSql.raw(String(operationsLimit))} BY app_deployment_id` : cSql``}
         `,
@@ -1375,6 +1528,57 @@ export class AppDeployments {
         endCursor: items[items.length - 1]?.cursor ?? '',
         startCursor: items[0]?.cursor ?? '',
       },
+    };
+  }
+
+  async getAppDeploymentTrafficPercentage(args: {
+    targetId: string;
+    appName: string;
+    appVersion: string;
+    periodDays: number;
+  }): Promise<{
+    trafficPercentage: number;
+    totalOperations: number;
+    appDeploymentOperations: number;
+  } | null> {
+    const periodFrom = startOfDay(subDays(new Date(), args.periodDays));
+
+    const periodTo = new Date();
+
+    const result = await this.clickhouse.query({
+      query: cSql`
+        SELECT
+          SUM(CASE WHEN "client_name" = ${args.appName} AND "client_version" = ${args.appVersion} THEN "total" ELSE 0 END) AS "appDeploymentOps"
+          , SUM("total") AS "totalOps"
+        FROM "operations_daily"
+        WHERE
+          "target" = ${args.targetId}
+          AND "timestamp" >= parseDateTimeBestEffort(${periodFrom.toISOString()})
+          AND "timestamp" <= parseDateTimeBestEffort(${periodTo.toISOString()})
+      `,
+      queryId: 'get-app-deployment-traffic-percentage',
+      timeout: 20_000,
+    });
+
+    const model = z.array(
+      z.object({
+        appDeploymentOps: z.string().transform(str => parseInt(str, 10)),
+        totalOps: z.string().transform(str => parseInt(str, 10)),
+      }),
+    );
+
+    const parsed = model.parse(result.data);
+
+    if (parsed.length === 0 || parsed[0].totalOps === 0) {
+      return null;
+    }
+
+    const { appDeploymentOps, totalOps } = parsed[0];
+
+    return {
+      trafficPercentage: (appDeploymentOps / totalOps) * 100,
+      totalOperations: totalOps,
+      appDeploymentOperations: appDeploymentOps,
     };
   }
 }

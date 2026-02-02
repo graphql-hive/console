@@ -727,6 +727,11 @@ export default gql`
     valid: Boolean!
     initial: Boolean!
     changes: SchemaChangeConnection
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
     warnings: SchemaWarningConnection
     schemaCheck: SchemaCheck
   }
@@ -740,6 +745,11 @@ export default gql`
 
   type SchemaCheckError {
     valid: Boolean!
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
     changes: SchemaChangeConnection
     errors: SchemaErrorConnection!
     warnings: SchemaWarningConnection
@@ -1335,6 +1345,12 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
     schemaChanges: SchemaChangeConnection @tag(name: "public")
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
@@ -1486,6 +1502,12 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
     schemaChanges: SchemaChangeConnection @tag(name: "public")
     """
     Breaking changes can exist in an successful schema check if the check was manually approved.
@@ -1582,6 +1604,12 @@ export default gql`
     Whether this schema check has any schema changes.
     """
     hasSchemaChanges: Boolean!
+
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
 
     schemaChanges: SchemaChangeConnection @tag(name: "public")
     breakingSchemaChanges: SchemaChangeConnection

@@ -194,7 +194,7 @@ export function createUsage(config: {
       return Object.keys(report.map).length;
     },
     split(report, numOfChunks) {
-      logger.info('Splitting report into %s (id=%s)', numOfChunks, report.id);
+      logger.debug('Splitting report into %s (id=%s)', numOfChunks, report.id);
       return splitReport(report, numOfChunks);
     },
     onRetry(reports) {

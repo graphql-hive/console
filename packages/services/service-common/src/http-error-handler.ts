@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import { type FastifyError, type FastifyInstance, type FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
 import { cleanRequestId, maskToken } from './helpers';
@@ -9,7 +9,7 @@ const plugin: FastifyPluginAsync<{ isSentryEnabled: boolean }> = async (server, 
   }
 
   server.setErrorHandler((err, req, reply) => {
-    if (err.statusCode && err.statusCode < 500) {
+    if (isFastifyError(err) && err.statusCode && err.statusCode < 500) {
       req.log.warn(err.message);
       void reply.status(err.statusCode).send({
         error: err.statusCode,
@@ -66,4 +66,8 @@ export async function useHTTPErrorHandler(server: FastifyInstance, isSentryEnabl
   await server.register(httpErrorHandler, {
     isSentryEnabled,
   });
+}
+
+function isFastifyError(error: unknown): error is FastifyError {
+  return typeof error === 'object' && !!error && 'statusCode' in error && 'code' in error;
 }

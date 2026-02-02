@@ -41,6 +41,12 @@ export default gql`
       input: UpdateTargetDangerousChangeClassificationInput! @tag(name: "public")
     ): UpdateTargetDangerousChangeClassificationResult! @tag(name: "public")
     """
+    Update the app deployment protection configuration of a target.
+    """
+    updateTargetAppDeploymentProtectionConfiguration(
+      input: UpdateTargetAppDeploymentProtectionConfigurationInput!
+    ): UpdateTargetAppDeploymentProtectionConfigurationResult!
+    """
     Overwrites project's schema composition library.
     Works only for Federation projects with native composition enabled.
     This mutation is temporary and will be removed once no longer needed.
@@ -285,6 +291,10 @@ export default gql`
     """
     conditionalBreakingChangeConfiguration: ConditionalBreakingChangeConfiguration!
       @tag(name: "public")
+    """
+    Configuration for app deployment retirement protection.
+    """
+    appDeploymentProtectionConfiguration: AppDeploymentProtectionConfiguration!
     experimental_forcedLegacySchemaComposition: Boolean!
     viewerCanAccessSettings: Boolean!
     viewerCanModifySettings: Boolean!
@@ -331,6 +341,113 @@ export default gql`
     List of app deployment names that are excluded from the breaking change detection.
     """
     excludedAppDeployments: [String!]! @tag(name: "public")
+  }
+
+  """
+  Configuration for app deployment retirement protection.
+  """
+  type AppDeploymentProtectionConfiguration {
+    """
+    Whether app deployment protection is enabled.
+    """
+    isEnabled: Boolean!
+    """
+    Minimum number of days an app deployment must be inactive before it can be retired.
+    """
+    minDaysInactive: Int!
+    """
+    Minimum number of days since creation before an app deployment can be retired.
+    """
+    minDaysSinceCreation: Int!
+    """
+    Maximum traffic percentage threshold. App deployments with traffic above this percentage cannot be retired.
+    """
+    maxTrafficPercentage: Float!
+    """
+    Number of days to look back when calculating traffic percentage.
+    """
+    trafficPeriodDays: Int!
+    """
+    Logic to apply between the inactivity and traffic rules. AND requires both conditions, OR requires either.
+    """
+    ruleLogic: AppDeploymentProtectionRuleLogicType!
+  }
+
+  """
+  Logic type for combining app deployment protection rules.
+  """
+  enum AppDeploymentProtectionRuleLogicType {
+    """
+    Both conditions must be met (inactive days AND low traffic).
+    """
+    AND
+    """
+    Either condition can be met (inactive days OR low traffic).
+    """
+    OR
+  }
+
+  """
+  Input for updating app deployment protection configuration.
+  Fields not provided (omitted) will retain the previous value.
+  """
+  input AppDeploymentProtectionConfigurationInput {
+    """
+    Enable or disable app deployment protection.
+    """
+    isEnabled: Boolean
+    """
+    Minimum days of inactivity required before retirement (must be >= 0).
+    """
+    minDaysInactive: Int
+    """
+    Minimum days since creation before retirement (must be >= 0).
+    """
+    minDaysSinceCreation: Int
+    """
+    Maximum traffic percentage allowed for retirement (0-100).
+    """
+    maxTrafficPercentage: Float
+    """
+    Number of days to look back when calculating traffic percentage (must be >= 1).
+    """
+    trafficPeriodDays: Int
+    """
+    Logic to apply between the inactivity and traffic rules.
+    """
+    ruleLogic: AppDeploymentProtectionRuleLogicType
+  }
+
+  input UpdateTargetAppDeploymentProtectionConfigurationInput {
+    """
+    The target on which the settings are adjusted.
+    """
+    target: TargetReferenceInput!
+    """
+    Updates to the app deployment protection configuration.
+    """
+    appDeploymentProtectionConfiguration: AppDeploymentProtectionConfigurationInput!
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationResult {
+    ok: UpdateTargetAppDeploymentProtectionConfigurationResultOk
+    error: UpdateTargetAppDeploymentProtectionConfigurationResultError
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationInputErrors {
+    minDaysInactive: String
+    minDaysSinceCreation: String
+    maxTrafficPercentage: String
+    trafficPeriodDays: String
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationResultError {
+    message: String!
+    inputErrors: UpdateTargetAppDeploymentProtectionConfigurationInputErrors!
+  }
+
+  type UpdateTargetAppDeploymentProtectionConfigurationResultOk {
+    target: Target!
   }
 
   enum BreakingChangeFormulaType {

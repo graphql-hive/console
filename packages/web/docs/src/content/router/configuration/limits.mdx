@@ -1,0 +1,144 @@
+---
+title: 'limits'
+---
+
+# limits
+
+The `limits` configuration allows you to set various limits on incoming GraphQL requests to prevent
+too large queries that could lead to overfetching or DOS attacks.
+
+[Learn more about operation complexity and why limiting it is important](../security/operation-complexity).
+
+## Options
+
+### `max_depth`
+
+This configuration allows you to set a maximum depth for incoming GraphQL queries. Queries that
+exceed this depth will be rejected with an error. If not specified, there is no limit on query
+depth.
+
+#### `n`
+
+- **Type:** `integer`
+
+The maximum allowed depth for incoming GraphQL queries.
+
+#### `disable_introspection`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+When set to `true`, introspection queries will not be exempt from the depth limit. This means that
+introspection queries will also be subject to the maximum depth restriction. This is usually set to
+`true` when you want to fully enforce depth limits, including for introspection queries. But be
+aware that this may break tools that rely on introspection, because they often generate deep queries
+to explore the schema.
+
+#### `flatten_fragments`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+When set to `true`, the depth calculation will consider fragment spreads as if they were inlined.
+This provides a more accurate depth measurement, especially when fragments are used extensively in
+queries.
+
+### `max_directives`
+
+This option allows you to set a maximum number of directives allowed in incoming GraphQL queries.
+Queries that exceed this number will be rejected with an error. If not specified, there is no limit
+on the number of directives.
+
+#### `n`
+
+- **Type:** `integer`
+
+The maximum allowed number of directives in incoming GraphQL queries.
+
+### `max_tokens`
+
+This option allows you to set a maximum number of tokens allowed in incoming GraphQL queries.
+Queries that exceed this number will be rejected with an error. If not specified, there is no limit
+on the number of tokens.
+
+#### `n`
+
+- **Type:** `integer`
+
+The maximum allowed number of tokens in incoming GraphQL queries.
+
+## Examples
+
+### Limit Query Depth to 2
+
+```yaml filename="router.config.yaml"
+limits:
+  max_depth:
+    n: 2
+```
+
+In that example, any incoming GraphQL query that exceeds a depth of 2 will be rejected with an
+error.
+
+```graphql
+query {
+  user {
+    posts {
+      comments {
+        text
+      }
+    }
+  }
+}
+```
+
+The above query has a depth of 3 (`user` -> `posts` -> `comments`), so it would be rejected.
+
+### Limit Directives to 5
+
+```yaml filename="router.config.yaml"
+limits:
+  max_directives:
+    n: 5
+```
+
+In that example, any incoming GraphQL query that contains more than 5 directives will be rejected
+with an error.
+
+```graphql
+query {
+  user @include(if: true) {
+    posts @skip(if: false) {
+      comments @include(if: true) {
+        text @skip(if: false)
+      }
+    }
+  }
+}
+```
+
+The above query contains 4 directives, so it would be accepted. If a query contained more than 5
+directives, it would be rejected.
+
+### Limit Tokens to 10
+
+```yaml filename="router.config.yaml"
+limits:
+  max_tokens:
+    n: 10
+```
+
+In that example, any incoming GraphQL query that contains more than 10 tokens will be rejected with
+an error.
+
+```graphql
+query {
+  user {
+    id
+    name
+  }
+}
+```
+
+The above query contains 8 tokens, so it would be accepted. If a query contained more than 10
+tokens, it would be rejected.

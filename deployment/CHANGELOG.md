@@ -1,5 +1,31 @@
 # hive
 
+## 9.2.0
+
+### Minor Changes
+
+- [#7531](https://github.com/graphql-hive/console/pull/7531)
+  [`f4eb13f`](https://github.com/graphql-hive/console/commit/f4eb13f9edad1bc9f4d98afae55a006094b8a030)
+  Thanks [@jdolle](https://github.com/jdolle)! - Store schema proposal changes on a separate column
+  in the schema check; update graphql inspector
+
+### Patch Changes
+
+- [#7491](https://github.com/graphql-hive/console/pull/7491)
+  [`c4776b8`](https://github.com/graphql-hive/console/commit/c4776b80abf7e71f48d82a8988bc6055d14706b0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Support repeat directives in schema proposal diff
+  renderer. This uses an index based approach to identify and render differences in the list of
+  directives used.
+
+- [#7543](https://github.com/graphql-hive/console/pull/7543)
+  [`cf4ff09`](https://github.com/graphql-hive/console/commit/cf4ff0923a85c02a85631e7c2edffd9bb2f83526)
+  Thanks [@jdolle](https://github.com/jdolle)! - Disable project and target cards during loading
+
+- [#7538](https://github.com/graphql-hive/console/pull/7538)
+  [`5a07b98`](https://github.com/graphql-hive/console/commit/5a07b982b1f1617138b9b0e21b12447c8b3ad86b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix schema check approval dropdown submit button
+  style
+
 ## 9.1.0
 
 ### Minor Changes
