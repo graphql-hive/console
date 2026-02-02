@@ -468,10 +468,15 @@ export interface users {
   full_name: string;
   id: string;
   is_admin: boolean | null;
-  linked_identity_ids: Array<string> | null;
   oidc_integration_id: string | null;
   supertoken_user_id: string | null;
   zendesk_user_id: string | null;
+}
+
+export interface users_linked_identities {
+  created_at: Date;
+  identity_id: string;
+  user_id: string;
 }
 
 export interface version_commit {
@@ -529,6 +534,7 @@ export interface DBTables {
   targets: targets;
   tokens: tokens;
   users: users;
+  users_linked_identities: users_linked_identities;
   version_commit: version_commit;
   versions: versions;
 }

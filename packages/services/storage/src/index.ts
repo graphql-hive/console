@@ -491,24 +491,29 @@ export async function createStorage(
         email,
         fullName,
         displayName,
-        linkedIdentityIds,
+        identityId,
       }: {
         email: string;
         fullName: string;
         displayName: string;
-        linkedIdentityIds: string[];
+        identityId: string;
       },
       connection: Connection,
     ) {
       const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "full_name", "display_name", "linked_identity_ids")
+            ("email", "full_name", "display_name")
           VALUES
-            (${email}, ${fullName}, ${displayName}, ${sql.array(linkedIdentityIds, 'text')})
+            (${email}, ${fullName}, ${displayName})
           RETURNING id
         `,
       );
+
+      await connection.query(sql`
+        INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+        VALUES (${id}, ${identityId})
+      `);
 
       const user = await shared.getUserById({ id, connection });
       if (!user) {
@@ -603,7 +608,7 @@ export async function createStorage(
     email: string;
     firstName: string | null;
     lastName: string | null;
-    linkedIdentityIds: string[];
+    identityId: string;
   }) {
     const { firstName, lastName } = input;
     const name =
@@ -615,7 +620,7 @@ export async function createStorage(
       email: input.email,
       displayName: name,
       fullName: name,
-      linkedIdentityIds: input.linkedIdentityIds,
+      identityId: input.identityId,
     };
   }
 
@@ -653,13 +658,18 @@ export async function createStorage(
         let internalUser = await t
           .maybeOne<unknown>(
             sql`
-              SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+              SELECT
+                ${userFields(sql`"users".`, sql`"stu".`)}
               FROM "users"
               LEFT JOIN "supertokens_thirdparty_users" AS "stu"
                 ON ("stu"."user_id" = "users"."supertoken_user_id")
               WHERE
                 "users"."supertoken_user_id" = ${superTokensUserId}
-                OR ${superTokensUserId} = ANY("users"."linked_identity_ids")
+                OR EXISTS (
+                  SELECT 1 FROM "users_linked_identities" "uli"
+                  WHERE "uli"."user_id" = "users"."id"
+                  AND "uli"."identity_id" = ${superTokensUserId}
+                )
             `,
           )
           .then(v => UserModel.nullable().parse(v));
@@ -680,16 +690,16 @@ export async function createStorage(
             .then(users => users.map(user => UserModel.parse(user)));
 
           if (sameEmailUsers.length === 1) {
+            const targetUserId = sameEmailUsers[0].id;
             internalUser = await t
               .one<{}>(
                 sql`/* ensureUserExists */
                   WITH "linked_user" AS (
                     UPDATE "users"
                     SET
-                      "supertoken_user_id" = NULL,
-                      "oidc_integration_id" = NULL,
-                      "linked_identity_ids" = array_append("linked_identity_ids", ${superTokensUserId})
-                    WHERE "id" = ${sameEmailUsers[0].id}
+                      "supertoken_user_id" = NULL
+                      , "oidc_integration_id" = NULL
+                    WHERE "id" = ${targetUserId}
                     RETURNING *
                   )
                   SELECT ${userFields(sql`"linked_user".`, sql`"stu".`)}
@@ -699,6 +709,11 @@ export async function createStorage(
                 `,
               )
               .then(v => UserModel.parse(v));
+
+            await t.query(sql`
+              INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+              VALUES (${targetUserId}, ${superTokensUserId})
+            `);
           }
         }
 
@@ -709,7 +724,7 @@ export async function createStorage(
               email,
               firstName,
               lastName,
-              linkedIdentityIds: [superTokensUserId],
+              identityId: superTokensUserId,
             }),
             t,
           );
@@ -5653,7 +5668,6 @@ export const userFields = (
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
-  , ${user}"linked_identity_ids" AS "linkedIdentityIds"
   , ${superTokensThirdParty}"third_party_id" AS "provider"
 `;
 
@@ -5670,7 +5684,6 @@ export const UserModel = zod.object({
     .transform(value => value ?? false),
   oidcIntegrationId: zod.string().nullable(),
   zendeskId: zod.string().nullable(),
-  linkedIdentityIds: zod.array(zod.string()).nullable(),
   provider: zod
     .string()
     .nullable()
