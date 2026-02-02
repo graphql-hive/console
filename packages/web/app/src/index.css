@@ -1,6 +1,9 @@
 @import 'tailwindcss' source('./');
 @plugin "./lib/tailwind-plugins.js";
 
+/* Configure dark mode to use .dark class instead of prefers-color-scheme */
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Typography */
   --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
