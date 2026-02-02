@@ -85,7 +85,7 @@ export function ChangeRow(props: {
       <tr>
         <td
           className={cn(
-            'w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
@@ -95,7 +95,7 @@ export function ChangeRow(props: {
         </td>
         <td
           className={cn(
-            'w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-green-900/30',

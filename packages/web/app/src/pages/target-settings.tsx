@@ -1213,7 +1213,7 @@ const AppDeploymentProtection = (props: {
               </CardDescription>
               <CardDescription>
                 Use{' '}
-                <code className="rounded-sm bg-gray-800 px-1 py-0.5 text-xs">
+                <code className="bg-neutral-3 rounded-sm px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
@@ -1221,7 +1221,7 @@ const AppDeploymentProtection = (props: {
               <CardDescription>
                 <DocsLink
                   href="/schema-registry/app-deployments#protection"
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-neutral-8 hover:text-neutral-10"
                 >
                   Learn more
                 </DocsLink>
@@ -1255,7 +1255,7 @@ const AppDeploymentProtection = (props: {
             />
           )}
         </SubPageLayoutHeader>
-        <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+        <div className={clsx('text-neutral-10', !isEnabled && 'pointer-events-none opacity-25')}>
           <div className="space-y-4">
             <div>
               <div className="mb-2">An app deployment can only be retired if it</div>
@@ -1270,7 +1270,7 @@ const AppDeploymentProtection = (props: {
                     disabled={isSubmitting}
                     type="number"
                     min="0"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>days ago and has not been used for at least</span>
                   <Input
@@ -1281,7 +1281,7 @@ const AppDeploymentProtection = (props: {
                     disabled={isSubmitting}
                     type="number"
                     min="0"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>days</span>
                 </div>
@@ -1292,7 +1292,7 @@ const AppDeploymentProtection = (props: {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     disabled={isSubmitting}
-                    className="border-input bg-background h-10 w-20 rounded-md border px-2 text-center text-sm"
+                    className="border-neutral-4 bg-neutral-2 h-10 w-20 rounded-md border px-2 text-center text-sm"
                   >
                     <option value={AppDeploymentProtectionRuleLogicType.And}>AND</option>
                     <option value={AppDeploymentProtectionRuleLogicType.Or}>OR</option>
@@ -1308,7 +1308,7 @@ const AppDeploymentProtection = (props: {
                     min="0"
                     max="100"
                     step="0.01"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>percent of traffic over the last</span>
                   <Input
@@ -1319,13 +1319,13 @@ const AppDeploymentProtection = (props: {
                     disabled={isSubmitting}
                     type="number"
                     min="1"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>days</span>
                 </div>
               </div>
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-neutral-11 text-sm">
               The creation date check always applies. The inactivity and traffic checks only apply
               if the app deployment has usage data.
             </div>
