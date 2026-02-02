@@ -106,7 +106,7 @@ function Task({
     >
       <div className="flex items-start space-x-3">
         {completed ? (
-          <CircleCheck className="text-neutral-2 size-5" />
+          <CircleCheck className="text-accent size-5" />
         ) : (
           <Circle className="text-neutral-2 size-5" />
         )}
