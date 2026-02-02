@@ -92,6 +92,7 @@ function AuthVerifyEmail() {
         {
           input: {
             userIdentityId: search.userIdentityId,
+            email: search.email,
             token: search.token,
           },
         },

@@ -281,10 +281,12 @@ const authSignUpRoute = createRoute({
 const AuthVerifyEmailSearch = z.union([
   z.object({
     userIdentityId: z.string(),
+    email: z.string(),
     token: z.string(),
   }),
   z.object({
     userIdentityId: z.undefined().optional(),
+    email: z.undefined().optional(),
     token: z.undefined().optional(),
   }),
 ]);

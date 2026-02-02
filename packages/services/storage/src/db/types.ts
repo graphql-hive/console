@@ -138,6 +138,7 @@ export interface document_preflight_scripts {
 
 export interface email_verifications {
   created_at: Date;
+  email: string;
   expires_at: Date | null;
   id: string;
   token_hash: string | null;

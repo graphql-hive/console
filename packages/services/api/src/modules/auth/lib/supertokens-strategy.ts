@@ -192,21 +192,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    if (this.emailVerification) {
-      // Check whether the email is already verified.
-      // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
-      const { verified } = await this.emailVerification.checkUserEmailVerified({
-        userIdentityId: session.getUserId(),
-      });
-      if (!verified) {
-        throw new HiveError('Your account is not verified. Please verify your email address.', {
-          extensions: {
-            code: 'VERIFY_EMAIL',
-          },
-        });
-      }
-    }
-
     const payload = session.getAccessTokenPayload();
 
     if (!payload) {
@@ -224,6 +209,22 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
         JSON.stringify(result.error.flatten().fieldErrors),
       );
       throw new HiveError(`Invalid access token provided`);
+    }
+
+    if (this.emailVerification) {
+      // Check whether the email is already verified.
+      // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
+      const { verified } = await this.emailVerification.checkUserEmailVerified({
+        userIdentityId: session.getUserId(),
+        email: result.data.email,
+      });
+      if (!verified) {
+        throw new HiveError('Your account is not verified. Please verify your email address.', {
+          extensions: {
+            code: 'VERIFY_EMAIL',
+          },
+        });
+      }
     }
 
     this.logger.debug('SuperTokens session resolved.');

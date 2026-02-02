@@ -65,6 +65,7 @@ export default gql`
 
   input VerifyEmailInput {
     userIdentityId: ID!
+    email: String!
     token: String!
   }
 
