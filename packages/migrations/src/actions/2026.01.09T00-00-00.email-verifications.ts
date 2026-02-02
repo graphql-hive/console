@@ -10,7 +10,7 @@ export default {
     BEGIN
       CREATE TABLE IF NOT EXISTS "email_verifications" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4()
-        , "user_identity_id" text NOT NULL
+        , "user_identity_id" uuid NOT NULL
         , "email" text NOT NULL
         , "token_hash" text
         , "created_at" timestamptz NOT NULL DEFAULT now()
@@ -23,7 +23,7 @@ export default {
       THEN
         INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
         SELECT
-          "seve"."user_id" "user_identity_id"
+          "seve"."user_id"::uuid "user_identity_id"
           , "seve"."email" "email"
           , now() "verified_at"
         FROM "supertokens_emailverification_verified_emails" "seve"
