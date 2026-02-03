@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
 import { buildSchema, introspectionFromSchema } from 'graphql';
 import { throttle } from 'lodash';
+import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
@@ -605,10 +606,21 @@ function LaboratoryPageContent(props: {
   });
 
   const sdl = query.data?.target?.latestSchemaVersion?.sdl;
-  const introspection = useMemo(
-    () => (sdl ? introspectionFromSchema(buildSchema(sdl)) : null),
-    [sdl],
-  );
+
+  const introspection = useMemo(() => {
+    if (!sdl) {
+      return null;
+    }
+
+    try {
+      return introspectionFromSchema(buildSchema(sdl));
+    } catch (err) {
+      toast.error('Failed to fetch schema', {
+        description: err instanceof Error ? err.message : 'Unknown error',
+      });
+      return null;
+    }
+  }, [sdl]);
 
   if (laboratoryState.fetching) {
     return null;
