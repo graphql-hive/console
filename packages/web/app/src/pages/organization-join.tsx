@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation, useQuery } from 'urql';
@@ -92,24 +92,29 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
       ? query.data.organizationByInviteCode.name
       : null;
 
+  useEffect(() => {
+    if (!session.loading && !session.doesSessionExist) {
+      toast({
+        title: 'Account Required',
+        description:
+          'To accept an organization invite, you must first have an account, log in, and then use the invitation.',
+        variant: 'default',
+        duration: 10_000,
+      });
+      void router.navigate({
+        to: '/auth/sign-in',
+        search: {
+          redirectToPath: router.latestLocation.pathname,
+        },
+      });
+    }
+  }, [!session.loading && !session.doesSessionExist, toast, router]);
+
   if (session.loading) {
     return <Spinner className="m-auto mt-6" />;
   }
 
-  if (!session.loading && !session.doesSessionExist) {
-    toast({
-      title: 'Account Required',
-      description:
-        'To accept an organization invite, you must first have an account, log in, and then use the invitation.',
-      variant: 'default',
-      duration: 10_000,
-    });
-    void router.navigate({
-      to: '/auth/sign-in',
-      search: {
-        redirectToPath: router.latestLocation.pathname,
-      },
-    });
+  if (!session.doesSessionExist) {
     return <></>;
   }
 

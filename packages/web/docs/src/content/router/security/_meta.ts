@@ -3,4 +3,6 @@ export default {
   cors: 'Configuring CORS',
   csrf: 'CSRF Prevention',
   'jwt-authentication': 'JWT Authentication',
+  introspection: 'Introspection',
+  'operation-complexity': 'Operation Complexity',
 };
