@@ -168,6 +168,10 @@
       "nextra": "patches/nextra.patch",
       "nextra-theme-docs": "patches/nextra-theme-docs.patch",
       "@graphql-codegen/schema-ast": "patches/@graphql-codegen__schema-ast.patch"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@pulumi/kubernetes",
+      "sharp"
+    ]
   }
 }
