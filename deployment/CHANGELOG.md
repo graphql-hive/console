@@ -1,5 +1,56 @@
 # hive
 
+## 9.3.0
+
+### Minor Changes
+
+- [#7540](https://github.com/graphql-hive/console/pull/7540)
+  [`903c7f5`](https://github.com/graphql-hive/console/commit/903c7f57c89a85bc2068216292df2ac0c329212b)
+  Thanks [@rickbijkerk](https://github.com/rickbijkerk)! - Improve type sorting within the schema
+  explorer. The changes are now sorted by relevance.
+
+  - Exact matches appear first (e.g., `Product` when searching `product`)
+  - Prefix matches appear second (e.g., `ProductInfo` when searching `prod`)
+  - Contains matches appear last, sorted alphabetically
+
+- [#7432](https://github.com/graphql-hive/console/pull/7432)
+  [`f8e49ae`](https://github.com/graphql-hive/console/commit/f8e49ae53f743a50e104fba216bd4545fb4abdd6)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add app deployment retirement
+  protection settings. When enabled, prevents retiring app deployments that were recently created or
+  are still actively used, based on configurable inactivity period, creation age, and traffic
+  thresholds.
+
+- [#7584](https://github.com/graphql-hive/console/pull/7584)
+  [`0f0430f`](https://github.com/graphql-hive/console/commit/0f0430f4f56c5508c9bea737d10de14e1a08d5af)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Enable automatic retrieval of schema changes by
+  comparing with the latest composable version. This has already been the default for new projects
+  created after April 2024.
+
+  Federation and schema stitching projects can now publish service schemas to the registry even if
+  those schemas would break composition. This has also been the default behavior for new projects
+  created after April 2024.
+
+  To ensure every version publishd to the schema registry is composable, we recommend to first check
+  the schema against the registry **before** publishing.
+
+- [#7603](https://github.com/graphql-hive/console/pull/7603)
+  [`545349f`](https://github.com/graphql-hive/console/commit/545349fbc76f55c4b79fcb4260ad2fc0453275b7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Enable email verification against SSO accounts.
+
+  This is a prior step to ensure that all SSO account owners also own their email, before
+  introducing an email-based account linking system.
+
+### Patch Changes
+
+- [#7612](https://github.com/graphql-hive/console/pull/7612)
+  [`1272c1c`](https://github.com/graphql-hive/console/commit/1272c1ca32e6f09659f817301e965840aad621e2)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities in dependencies
+  (CVE-2026-25224, CVE-2026-25223).
+
+- [#7552](https://github.com/graphql-hive/console/pull/7552)
+  [`3f1743c`](https://github.com/graphql-hive/console/commit/3f1743c76187adfa9f2a60afbdc8c3b632aaf711)
+  Thanks [@jdolle](https://github.com/jdolle)! - Render directive diff on schema definitions
+
 ## 9.2.0
 
 ### Minor Changes
