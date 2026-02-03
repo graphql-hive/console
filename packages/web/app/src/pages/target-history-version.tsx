@@ -522,7 +522,7 @@ function ContractVersionView(props: {
     <>
       <TooltipProvider>
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-          <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
+          <TabsList className="dark:bg-neutral-3 bg-neutral-2 border-neutral-3 w-full justify-start rounded-none border-x border-b">
             {availableViews.map(item => (
               <Tooltip key={item.value}>
                 <TooltipTrigger>

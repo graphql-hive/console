@@ -79,7 +79,7 @@ function PageContent(props: {
               variant="ghost"
               className={cn(
                 props.page === subPage.key
-                  ? 'bg-neutral-3 hover:bg-neutral-3'
+                  ? 'bg-neutral-4 hover:bg-neutral-4 dark:bg-neutral-3 dark:hover:bg-neutral-3'
                   : 'hover:bg-transparent hover:underline',
                 'justify-start',
               )}

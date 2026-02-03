@@ -373,7 +373,7 @@ const ProjectsPageContent = (
                 placeholder="Search..."
                 defaultValue={props.search}
                 onChange={onSearchChange}
-                className="bg-neutral-3 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                className="dark:bg-neutral-3 bg-neutral-2 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
               />
             </div>
             <Separator orientation="vertical" className="mx-4 h-8" />
