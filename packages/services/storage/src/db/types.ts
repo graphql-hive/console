@@ -136,16 +136,6 @@ export interface document_preflight_scripts {
   updated_at: Date;
 }
 
-export interface email_verifications {
-  created_at: Date;
-  email: string;
-  expires_at: Date | null;
-  id: string;
-  token_hash: string | null;
-  user_identity_id: string;
-  verified_at: Date | null;
-}
-
 export interface graphile_worker_deduplication {
   dedupe_key: string;
   expires_at: Date;
@@ -423,12 +413,6 @@ export interface target_validation {
 }
 
 export interface targets {
-  app_deployment_protection_enabled: boolean;
-  app_deployment_protection_max_traffic_percentage: number;
-  app_deployment_protection_min_days_inactive: number;
-  app_deployment_protection_min_days_since_creation: number;
-  app_deployment_protection_rule_logic: string;
-  app_deployment_protection_traffic_period_days: number;
   base_schema: string | null;
   clean_id: string;
   created_at: Date;
@@ -501,7 +485,6 @@ export interface DBTables {
   document_collection_documents: document_collection_documents;
   document_collections: document_collections;
   document_preflight_scripts: document_preflight_scripts;
-  email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
   oidc_integrations: oidc_integrations;
