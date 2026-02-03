@@ -124,6 +124,7 @@
     "overrides.diff@<8.0.3": "address https://github.com/graphql-hive/console/security/dependabot/438",
     "overrides.lodash-es@4.x.x": "address https://github.com/graphql-hive/console/security/dependabot/453",
     "overrides.lodash@4.x.x": "address https://github.com/graphql-hive/console/security/dependabot/455",
+    "overrides.fast-xml-parser@5.x.x": "address https://github.com/graphql-hive/console/security/dependabot/463",
     "overrides": {
       "esbuild": "0.25.9",
       "csstype": "3.1.2",
@@ -147,7 +148,8 @@
       "diff@<8.0.3": "^8.0.3",
       "lodash-es@4.x.x": "^4.17.23",
       "lodash@4.x.x": "^4.17.23",
-      "seroval@<1.4.1": "^1.4.1"
+      "seroval@<1.4.1": "^1.4.1",
+      "fast-xml-parser@<5.3.4": "^5.3.4"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
