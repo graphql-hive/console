@@ -606,6 +606,11 @@ export const Laboratory = (
       className={cn('hive-laboratory bg-neutral-3 size-full', {
         'fixed inset-0 z-50': isFullScreen,
       })}
+      style={
+        {
+          '--color-primary': 'var(--color-orange-500)',
+        } as React.CSSProperties
+      }
       ref={containerRef}
     >
       <Toaster richColors closeButton position="top-right" />

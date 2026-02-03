@@ -717,7 +717,7 @@ export const Query = (props: {
       </div>
       <div className="size-full">
         <Editor
-          uri={monaco.Uri.file('operation.graphql')}
+          uri={monaco.Uri.file(`operation_${endpoint}.graphql`)}
           variablesUri={variablesUri}
           value={operation?.query ?? ''}
           onChange={value => {
