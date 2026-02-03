@@ -116,7 +116,7 @@ export const Editor = forwardRef<
 >((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const { introspection } = useLaboratory();
+  const { introspection, endpoint } = useLaboratory();
 
   useEffect(() => {
     if (introspection) {
@@ -124,7 +124,7 @@ export const Editor = forwardRef<
         schemas: [
           {
             introspectionJSON: introspection,
-            uri: 'schema.graphql',
+            uri: `schema_${endpoint}.graphql`,
           },
         ],
         diagnosticSettings:
