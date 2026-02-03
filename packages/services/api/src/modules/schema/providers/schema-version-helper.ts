@@ -105,12 +105,17 @@ export class SchemaVersionHelper {
 
   async getCompositeSchemaSdl(schemaVersion: SchemaVersion) {
     if (schemaVersion.hasPersistedSchemaChanges) {
+      if (!schemaVersion.supergraphSDL) {
+        return schemaVersion.compositeSchemaSDL;
+      }
+
       return schemaVersion.compositeSchemaSDL
         ? this.autoFixCompositeSchemaSdl(schemaVersion.compositeSchemaSDL, schemaVersion.id)
         : null;
     }
 
     const composition = await this.composeSchemaVersion(schemaVersion);
+
     if (composition === null) {
       return null;
     }
@@ -134,6 +139,7 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getCompositeSchemaAst(schemaVersion: SchemaVersion) {
     const compositeSchemaSdl = await this.getCompositeSchemaSdl(schemaVersion);
+
     if (compositeSchemaSdl === null) {
       return null;
     }

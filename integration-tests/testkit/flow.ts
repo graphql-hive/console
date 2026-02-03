@@ -1242,6 +1242,7 @@ export function fetchLatestValidSchema(token: string) {
             }
           }
           tags
+          sdl
           schemas {
             nodes {
               ... on SingleSchema {
