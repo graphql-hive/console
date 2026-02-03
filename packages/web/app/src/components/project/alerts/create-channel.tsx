@@ -115,7 +115,7 @@ export const CreateChannelModal = ({
               {mutation.data.addAlertChannel.error.inputErrors.name}
             </div>
           )}
-          <p className="text-sm text-gray-500">
+          <p className="text-neutral-10 text-sm">
             This will be displayed on channels list, we recommend to make it self-explanatory.
           </p>
         </div>
@@ -164,7 +164,7 @@ export const CreateChannelModal = ({
               </div>
             )}
             {values.endpoint ? (
-              <p className="text-sm text-gray-500">Hive will send alerts to your endpoint.</p>
+              <p className="text-neutral-10 text-sm">Hive will send alerts to your endpoint.</p>
             ) : (
               <a href="https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet">
                 Follow this guide to set up an incoming webhook connector in MS Teams
@@ -196,7 +196,7 @@ export const CreateChannelModal = ({
                 {mutation.data.addAlertChannel.error.inputErrors.slackChannel}
               </div>
             )}
-            <p className="text-sm text-gray-500">
+            <p className="text-neutral-10 text-sm">
               Use <Tag>#channel</Tag> or <Tag>@username</Tag> form.
             </p>
           </div>

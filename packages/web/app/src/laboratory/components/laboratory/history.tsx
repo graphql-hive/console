@@ -57,8 +57,8 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
     <Button
       variant="ghost"
       size="sm"
-      className={cn('bg-background group sticky top-0 w-full justify-start px-2', {
-        'bg-accent/50': isActive,
+      className={cn('bg-neutral-3 group sticky top-0 w-full justify-start px-2', {
+        'bg-neutral-2': isActive,
       })}
       onClick={() => {
         setActiveTab(
@@ -78,7 +78,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
           'text-red-500': isError,
         })}
       />
-      <span className="text-muted-foreground">
+      <span className="text-neutral-10">
         {format(new Date(props.historyItem.createdAt), 'HH:mm')}
       </span>
       <div className="truncate">{props.historyItem.operation.name || 'Untitled'}</div>
@@ -89,7 +89,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
               <AlertDialogTrigger asChild>
                 <Button
                   variant="link"
-                  className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                  className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                   onClick={e => {
                     e.stopPropagation();
                   }}
@@ -137,13 +137,13 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
-          className="bg-background group sticky top-0 w-full justify-start px-2"
+          className="bg-neutral-3 group sticky top-0 w-full justify-start px-2"
           size="sm"
         >
           {isOpen ? (
-            <FolderOpenIcon className="text-muted-foreground size-4" />
+            <FolderOpenIcon className="text-neutral-10 size-4" />
           ) : (
-            <FolderClockIcon className="text-muted-foreground size-4" />
+            <FolderClockIcon className="text-neutral-10 size-4" />
           )}
           {props.group.date}
           <Tooltip>
@@ -152,7 +152,7 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="link"
-                    className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                    className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                     onClick={e => {
                       e.stopPropagation();
                     }}
@@ -188,7 +188,7 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
           </Tooltip>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
+      <CollapsibleContent className={cn('border-neutral-5 ml-4 flex flex-col gap-1 border-l pl-2')}>
         {props.group.items.map(h => {
           return <HistoryOperationItem key={h.id} historyItem={h as LaboratoryHistoryRequest} />;
         })}
@@ -239,7 +239,7 @@ export const History = () => {
 
   return (
     <div className="grid size-full grid-rows-[auto_1fr] pb-0">
-      <div className="border-border flex h-12 items-center gap-2 border-b p-3">
+      <div className="border-neutral-5 flex h-12 items-center gap-2 border-b p-3">
         <span className="text-base font-medium">History</span>
         <div className="ml-auto flex items-center">
           <Tooltip>
@@ -249,7 +249,7 @@ export const History = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="text-muted-foreground hover:text-destructive p-1! size-6 rounded-sm"
+                    className="text-neutral-10 p-1! size-6 rounded-sm hover:text-red-500"
                     disabled={history.length === 0}
                   >
                     <TrashIcon className="size-4" />
@@ -296,7 +296,7 @@ export const History = () => {
               <Empty className="px-0! w-full">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <ClockIcon className="text-muted-foreground size-6" />
+                    <ClockIcon className="text-neutral-10 size-6" />
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No history yet</EmptyTitle>
                   <EmptyDescription className="text-xs">

@@ -73,7 +73,7 @@ const classes = {
 };
 
 function FormError({ children }: { children: React.ReactNode }) {
-  return <div className="text-destructive text-sm">{children}</div>;
+  return <div className="text-sm text-red-500">{children}</div>;
 }
 
 const OIDCIntegrationSection_OrganizationFragment = graphql(`
@@ -488,7 +488,7 @@ function CreateOIDCIntegrationForm(props: {
         </DialogDescription>
       </DialogHeader>
       <div className="space-y-2">
-        <div className="bg-muted border-border rounded-md border p-3">
+        <div className="bg-neutral-3 border-neutral-5 rounded-md border p-3">
           <OIDCMetadataFetcher
             onEndpointChange={endpoints => {
               void formik.setFieldValue('tokenEndpoint', endpoints.token);
@@ -1008,13 +1008,13 @@ function UpdateOIDCIntegrationForm(props: {
     <Dialog open={props.isOpen} onOpenChange={props.close}>
       <DialogContent className="flex max-h-[100vh] w-[960px] max-w-[100%] overflow-y-auto">
         <div className={classes.container}>
-          <div className="bg-border grid grid-cols-1 gap-[1px] md:grid-cols-2">
-            <div className="bg-background py-4 pr-4 md:pt-0">
+          <div className="bg-neutral-5 grid grid-cols-1 gap-[1px] md:grid-cols-2">
+            <div className="bg-neutral-3 py-4 pr-4 md:pt-0">
               <div className="flex flex-col gap-y-5">
                 <div className={cn(classes.container, 'flex flex-col gap-y-4')}>
                   <div>
                     <div className="text-lg font-medium">OIDC Provider Instructions</div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-neutral-10 text-sm">
                       Configure your OIDC provider with the following settings
                     </p>
                   </div>
@@ -1048,7 +1048,7 @@ function UpdateOIDCIntegrationForm(props: {
                     <div className="flex items-center justify-between space-x-4">
                       <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                         <p>OIDC-Only Access</p>
-                        <p className="text-muted-foreground text-xs font-normal leading-snug">
+                        <p className="text-neutral-10 text-xs font-normal leading-snug">
                           Restricts organization access to only authenticated OIDC accounts.
                           <br />
                           <span className="font-medium">
@@ -1071,7 +1071,7 @@ function UpdateOIDCIntegrationForm(props: {
                       <p>Default Member Role</p>
                       <div className="flex items-start justify-between space-x-4">
                         <div className="flex basis-2/3 flex-col md:basis-1/2">
-                          <p className="text-muted-foreground text-xs font-normal leading-snug">
+                          <p className="text-neutral-10 text-xs font-normal leading-snug">
                             This role is assigned to new members who sign in via OIDC.{' '}
                             <span className="font-medium">
                               Only members with the Admin role can modify it.
@@ -1098,12 +1098,12 @@ function UpdateOIDCIntegrationForm(props: {
               onSubmit={formik.handleSubmit}
               className={cn(
                 classes.container,
-                'bg-background order-first pb-4 md:order-none md:pl-4',
+                'bg-neutral-3 order-first pb-4 md:order-none md:pl-4',
               )}
             >
               <div>
                 <div className="text-lg font-medium">Properties</div>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-neutral-10 text-sm">
                   Configure your OIDC provider with the following settings
                 </p>
               </div>
@@ -1223,7 +1223,7 @@ function UpdateOIDCIntegrationForm(props: {
           </div>
           <div className="space-y-1 text-sm font-medium leading-none">
             <p>Default Resource Assignments</p>
-            <p className="text-muted-foreground text-xs font-normal leading-snug">
+            <p className="text-neutral-10 text-xs font-normal leading-snug">
               This permitted resources for new members who sign in via OIDC.{' '}
               <span className="font-medium">Only members with the Admin role can modify it.</span>
             </p>

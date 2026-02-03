@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
 
 const classes = {
-  title: cn('sm:text-4xl text-3xl mb-4 font-medium text-white'),
+  title: cn('sm:text-4xl text-3xl mb-4 font-medium text-neutral-12'),
   description: cn('mb-8 leading-relaxed'),
   actions: cn('flex flex-row gap-2 items-center justify-center'),
 };
@@ -105,7 +105,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
   return (
     <>
       <Meta title="Organization Transfer" />
-      <DottedBackground className="min-h-[100vh]">
+      <DottedBackground className="min-h-screen">
         <div className="flex h-full grow items-center">
           <Button
             variant="outline"

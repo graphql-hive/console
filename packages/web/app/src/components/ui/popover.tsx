@@ -16,7 +16,7 @@ const PopoverContent = React.forwardRef<
       align={align}
       sideOffset={sideOffset}
       className={cn(
-        'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 shadow-md outline-none',
+        'bg-neutral-4 border-neutral-5 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 shadow-md outline-none',
         className,
       )}
       {...props}
@@ -29,7 +29,7 @@ const PopoverArrow = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Arrow>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Arrow>
 >(({ className, ...props }, ref) => (
-  <PopoverPrimitive.Arrow ref={ref} className={cn('fill-gray-800', className)} {...props} />
+  <PopoverPrimitive.Arrow ref={ref} className={cn('fill-neutral-5', className)} {...props} />
 ));
 
 PopoverArrow.displayName = PopoverPrimitive.Arrow.displayName;

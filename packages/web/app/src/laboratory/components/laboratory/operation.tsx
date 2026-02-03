@@ -178,14 +178,14 @@ export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHis
       <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
         {historyItem?.preflightLogs?.map((log, i) => (
           <div className="gap-2 font-mono" key={i}>
-            <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
+            <span className="text-neutral-10 text-xs">{log.createdAt}</span>{' '}
             <span
               className={cn('text-xs font-medium', {
                 'text-blue-400': log.level === 'info',
                 'text-green-400': log.level === 'log',
                 'text-yellow-400': log.level === 'warn',
                 'text-red-400': log.level === 'error',
-                'text-gray-400': log.level === 'system',
+                'text-neutral-10': log.level === 'system',
               })}
             >
               {log.level.toUpperCase()}
@@ -208,7 +208,7 @@ export const ResponseSubscription = ({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-border flex h-12 border-b p-3 text-base font-medium">
+      <div className="border-neutral-5 flex h-12 border-b p-3 text-base font-medium">
         Subscription
         <div className="ml-auto flex items-center gap-2">
           {isActiveOperationLoading ? (
@@ -237,7 +237,11 @@ export const ResponseSubscription = ({
                 const height = 20.5 * value.split('\n').length;
 
                 return (
-                  <div className="border-border border-b" style={{ height: `${height}px` }} key={i}>
+                  <div
+                    className="border-neutral-5 border-b"
+                    style={{ height: `${height}px` }}
+                    key={i}
+                  >
                     <Editor
                       key={response.createdAt}
                       value={value}
@@ -312,7 +316,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
               </Badge>
             )}
             {historyItem?.duration && (
-              <Badge variant="outline" className="bg-card">
+              <Badge variant="outline" className="bg-neutral-2">
                 <ClockIcon className="size-3" />
                 <span>
                   {Math.round((historyItem as LaboratoryHistoryRequest).duration!)}
@@ -321,7 +325,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
               </Badge>
             )}
             {historyItem?.size && (
-              <Badge variant="outline" className="bg-card">
+              <Badge variant="outline" className="bg-neutral-2">
                 <FileTextIcon className="size-3" />
                 <span>
                   {Math.round((historyItem as LaboratoryHistoryRequest).size! / 1024)}
@@ -603,7 +607,7 @@ export const Query = (props: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="border-border flex w-full items-center gap-2 border-b p-3">
+      <div className="border-neutral-5 flex w-full items-center gap-2 border-b p-3">
         <span className="text-base font-medium">Operation</span>
         {checkPermissions?.('collectionsOperations:create') && (
           <Toggle
@@ -646,7 +650,7 @@ export const Query = (props: {
             size="sm"
             variant="default"
             pressed={preflight?.enabled}
-            className="hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
+            className="bg-neutral-3 hover:bg-neutral-2 hover:text-neutral-12 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
             onClick={() => {
               setPreflight({
                 ...(preflight ?? { script: '', enabled: true }),
@@ -757,7 +761,7 @@ export const Operation = (props: {
   }, [props.historyItem]);
 
   return (
-    <div className="bg-card size-full">
+    <div className="bg-neutral-2 size-full">
       <ResizablePanelGroup direction="horizontal" className="size-full">
         <ResizablePanel defaultSize={25}>
           <Builder operation={operation} isReadOnly={isReadOnly} />
@@ -809,7 +813,7 @@ export const Operation = (props: {
             <Empty className="size-full">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <HistoryIcon className="text-muted-foreground size-6" />
+                  <HistoryIcon className="text-neutral-10 size-6" />
                 </EmptyMedia>
                 <EmptyTitle>No history yet</EmptyTitle>
                 <EmptyDescription>

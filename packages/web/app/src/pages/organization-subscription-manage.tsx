@@ -333,7 +333,7 @@ function Inner(props: {
       <Card className="w-full">
         <Heading className="mb-4">Choose Your Plan</Heading>
         {missingBillingUpdatePermissions ? (
-          <div className="mb-3 text-sm text-orange-500">
+          <div className="text-neutral-2 mb-3 text-sm">
             You lack the necessary permission 'billing:update' to update the subscription plan.
           </div>
         ) : null}
@@ -366,14 +366,14 @@ function Inner(props: {
                 <>
                   <div className="my-8 w-1/2">
                     <Heading>Define your reserved volume</Heading>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-neutral-10 text-sm">
                       Pro plan requires to defined quota of reported operations.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-neutral-10 text-sm">
                       Pick a volume a little higher than you think you'll need to avoid being rate
                       limited.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-neutral-10 text-sm">
                       Don't worry, you can always adjust it later.
                     </p>
                     <div className="mt-5 pl-2.5">

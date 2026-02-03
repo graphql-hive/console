@@ -3,16 +3,15 @@ import { cn } from '@/laboratory/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]  aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',
+  'inline-flex items-center justify-center rounded-full border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-red-200 aria-invalid:border-red-500 transition-[color,box-shadow] overflow-hidden',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90',
+        default: 'border-transparent bg-neutral-11 text-neutral-2 [a&]:hover:bg-neutral-11/90',
+        secondary: 'border-transparent bg-neutral-2 text-neutral-11 [a&]:hover:bg-neutral-2/90',
         destructive:
-          'border-transparent  text-white [a&]:hover:bg-destructive/90  focus-visible:ring-destructive/40 bg-destructive/60',
-        outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+          'border-transparent bg-red-500 text-neutral-12 [a&]:hover:bg-red-900 focus-visible:ring-red-200',
+        outline: 'text-neutral-11 [a&]:hover:bg-neutral-2 [a&]:hover:text-neutral-12',
       },
     },
     defaultVariants: {

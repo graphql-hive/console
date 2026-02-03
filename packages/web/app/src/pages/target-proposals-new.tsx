@@ -123,7 +123,7 @@ function ProposalsNewHeading(props: Parameters<typeof TargetProposalsNewPage>[0]
           subPageTitle={
             <span className="flex items-center">
               <Link
-                className="text-white"
+                className="text-neutral-12"
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                 params={{
                   organizationSlug: props.organizationSlug,
@@ -133,7 +133,7 @@ function ProposalsNewHeading(props: Parameters<typeof TargetProposalsNewPage>[0]
               >
                 Schema Proposals
               </Link>{' '}
-              <span className="inline-block px-2 italic text-gray-500">/</span> New
+              <span className="text-neutral-10 inline-block px-2 italic">/</span> New
             </span>
           }
           description={
@@ -576,7 +576,7 @@ function ProposalsNewContent(
             </Button>
           </div>
         </TabsList>
-        <div className="w-full flex-col items-start overflow-x-hidden pl-8 [&>*]:pt-0">
+        <div className="w-full flex-col items-start overflow-x-hidden pl-8 *:pt-0">
           <OverviewTab
             title={title}
             description={description}
@@ -690,7 +690,7 @@ function OverviewTab(props: {
       {props.error}
       <div className="pb-10">
         <Label htmlFor="proposal-title" className="p-1">
-          Title <span className="text-gray-500">(required)</span>
+          Title <span className="text-neutral-10">(required)</span>
         </Label>
         <Input
           aria-label="title"

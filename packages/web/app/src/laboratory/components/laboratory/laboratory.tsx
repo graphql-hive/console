@@ -223,7 +223,7 @@ const LaboratoryContent = () => {
           <Empty className="px-0! w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <FileIcon className="text-muted-foreground size-6" />
+                <FileIcon className="text-neutral-10 size-6" />
               </EmptyMedia>
               <EmptyTitle>No operation selected</EmptyTitle>
               <EmptyDescription>
@@ -270,7 +270,7 @@ const LaboratoryContent = () => {
               className={cn(
                 'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  'border-primary': activePanel === 'collections',
+                  'border-neutral-11': activePanel === 'collections',
                 },
               )}
             >
@@ -278,8 +278,8 @@ const LaboratoryContent = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActivePanel(activePanel === 'collections' ? null : 'collections')}
-                className={cn('text-muted-foreground hover:text-foreground', {
-                  'text-foreground': activePanel === 'collections',
+                className={cn('text-neutral-10 hover:text-neutral-11', {
+                  'text-neutral-11': activePanel === 'collections',
                 })}
               >
                 <FoldersIcon className="size-5" />
@@ -294,7 +294,7 @@ const LaboratoryContent = () => {
               className={cn(
                 'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  'border-primary': activePanel === 'history',
+                  'border-neutral-11': activePanel === 'history',
                 },
               )}
             >
@@ -302,8 +302,8 @@ const LaboratoryContent = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
-                className={cn('text-muted-foreground hover:text-foreground', {
-                  'text-foreground': activePanel === 'history',
+                className={cn('text-neutral-10 hover:text-neutral-11', {
+                  'text-neutral-11': activePanel === 'history',
                 })}
               >
                 <HistoryIcon className="size-5" />
@@ -316,7 +316,7 @@ const LaboratoryContent = () => {
           className={cn(
             'relative z-10 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
-              'border-primary': activePanel === 'settings',
+              'border-neutral-11': activePanel === 'settings',
             },
           )}
         >
@@ -328,8 +328,8 @@ const LaboratoryContent = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
-                    className={cn('text-muted-foreground hover:text-foreground', {
-                      'text-foreground': activePanel === 'history',
+                    className={cn('text-neutral-10 hover:text-neutral-11', {
+                      'text-neutral-11': activePanel === 'history',
                     })}
                   >
                     <SettingsIcon className="size-5" />
@@ -403,7 +403,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="bg-card flex-1 overflow-hidden">{contentNode}</div>
+          <div className="bg-neutral-3 flex-1 overflow-hidden">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -603,7 +603,7 @@ export const Laboratory = (
 
   return (
     <div
-      className={cn('hive-laboratory bg-background size-full', {
+      className={cn('hive-laboratory bg-neutral-3 size-full', {
         'fixed inset-0 z-50': isFullScreen,
       })}
       style={

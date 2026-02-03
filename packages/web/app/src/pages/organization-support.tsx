@@ -170,8 +170,8 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.Normal} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
-                              <span className="font-semibold text-white">Normal</span> -{' '}
+                            <FormLabel className="text-neutral-10 font-normal">
+                              <span className="text-neutral-12 font-semibold">Normal</span> -{' '}
                               {priorityDescription[SupportTicketPriority.Normal]}
                             </FormLabel>
                           </FormItem>
@@ -179,8 +179,8 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.High} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
-                              <span className="font-semibold text-white">High</span> -{' '}
+                            <FormLabel className="text-neutral-10 font-normal">
+                              <span className="text-neutral-12 font-semibold">High</span> -{' '}
                               {priorityDescription[SupportTicketPriority.High]}
                             </FormLabel>
                           </FormItem>
@@ -188,8 +188,8 @@ function NewTicketForm(props: {
                             <FormControl>
                               <RadioGroupItem value={SupportTicketPriority.Urgent} />
                             </FormControl>
-                            <FormLabel className="font-normal text-gray-400">
-                              <span className="font-semibold text-white">Urgent</span> -{' '}
+                            <FormLabel className="text-neutral-10 font-normal">
+                              <span className="text-neutral-12 font-semibold">Urgent</span> -{' '}
                               {priorityDescription[SupportTicketPriority.Urgent]}
                             </FormLabel>
                           </FormItem>
@@ -260,12 +260,12 @@ function SupportTicketRow(props: {
   const isSolved = ticket.status === SupportTicketStatus.Solved;
 
   return (
-    <TableRow className={cn(isSolved ? 'text-gray-500' : '')}>
+    <TableRow className={cn(isSolved ? 'text-neutral-10' : '')}>
       <TableCell className="text-center">{ticket.id}</TableCell>
       <TableCell>
         <Button
           variant="link"
-          className={cn(isSolved ? 'text-gray-500' : '', 'h-auto p-0 text-left')}
+          className={cn(isSolved ? 'text-neutral-10' : '', 'h-auto p-0 text-left')}
           asChild
         >
           <Link
@@ -283,7 +283,7 @@ function SupportTicketRow(props: {
         <Priority level={ticket.priority} />
       </TableCell>
       <TableCell className="w-[200px] text-right text-xs">
-        <TimeAgo date={ticket.updatedAt} className="text-gray-500" />
+        <TimeAgo date={ticket.updatedAt} className="text-neutral-10" />
       </TableCell>
     </TableRow>
   );

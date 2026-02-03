@@ -144,7 +144,7 @@ function RegistryAccessTokens(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#registry-access-tokens"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 Learn more about Registry Access Tokens
               </DocsLink>
@@ -253,7 +253,7 @@ const ExtendBaseSchema = (props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#schema-extensions"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 You can find more details and examples in the documentation
               </DocsLink>
@@ -750,7 +750,7 @@ const BreakingChanges = (props: {
               <CardDescription>
                 <DocsLink
                   href="/management/targets#dangerous-changes"
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-neutral-10 hover:text-neutral-11"
                 >
                   Learn more
                 </DocsLink>
@@ -804,7 +804,7 @@ const BreakingChanges = (props: {
                 <CardDescription>
                   <DocsLink
                     href="/management/targets#conditional-breaking-changes"
-                    className="text-gray-500 hover:text-gray-300"
+                    className="text-neutral-10 hover:text-neutral-11"
                   >
                     Learn more
                   </DocsLink>
@@ -838,7 +838,7 @@ const BreakingChanges = (props: {
               />
             )}
           </SubPageLayoutHeader>
-          <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+          <div className={clsx('text-neutral-11', !isEnabled && 'pointer-events-none opacity-25')}>
             <div>A schema change is considered as breaking only if it affects more than</div>
             <div className="mx-4 my-2">
               <RadioGroup
@@ -962,7 +962,7 @@ const BreakingChanges = (props: {
                 <div className="space-y-2">
                   <div>
                     <div className="font-semibold">Allow breaking change for these clients:</div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-neutral-10 text-xs">
                       Marks a breaking change as safe when it only affects the following clients.
                     </div>
                   </div>
@@ -985,7 +985,7 @@ const BreakingChanges = (props: {
                         disabled={isSubmitting}
                       />
                     ) : (
-                      <div className="text-gray-500">Select targets first</div>
+                      <div className="text-neutral-10">Select targets first</div>
                     )}
                   </div>
                   {touched.excludedClients && errors.excludedClients && (
@@ -999,7 +999,7 @@ const BreakingChanges = (props: {
                     <div className="font-semibold">
                       Allow breaking change for these app deployments:
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-neutral-10 text-xs">
                       Marks a breaking change as safe when it only affects the following app
                       deployments.
                     </div>
@@ -1030,7 +1030,7 @@ const BreakingChanges = (props: {
               <div className="space-y-2">
                 <div>
                   <div className="font-semibold">Schema usage data from these targets:</div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-neutral-10 text-xs">
                     Marks a breaking change as safe when it was not requested in the targets
                     clients.
                   </div>
@@ -1059,7 +1059,7 @@ const BreakingChanges = (props: {
             {touched.targetIds && errors.targetIds && (
               <div className="text-red-500">{errors.targetIds}</div>
             )}
-            <div className="mb-3 mt-5 space-y-2 rounded-sm border-l-2 border-l-gray-800 bg-gray-600/10 py-2 pl-5 text-gray-400">
+            <div className="border-l-neutral-5 bg-neutral-8/10 text-neutral-10 mb-3 mt-5 space-y-2 rounded-sm border-l-2 py-2 pl-5">
               <div>
                 <div className="font-semibold">Example settings</div>
                 <div className="text-sm">Removal of a field is considered breaking if</div>
@@ -1213,7 +1213,7 @@ const AppDeploymentProtection = (props: {
               </CardDescription>
               <CardDescription>
                 Use{' '}
-                <code className="rounded-sm bg-gray-800 px-1 py-0.5 text-xs">
+                <code className="bg-neutral-3 rounded-sm px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
@@ -1221,7 +1221,7 @@ const AppDeploymentProtection = (props: {
               <CardDescription>
                 <DocsLink
                   href="/schema-registry/app-deployments#protection"
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-neutral-8 hover:text-neutral-10"
                 >
                   Learn more
                 </DocsLink>
@@ -1255,7 +1255,7 @@ const AppDeploymentProtection = (props: {
             />
           )}
         </SubPageLayoutHeader>
-        <div className={clsx('text-gray-300', !isEnabled && 'pointer-events-none opacity-25')}>
+        <div className={clsx('text-neutral-10', !isEnabled && 'pointer-events-none opacity-25')}>
           <div className="space-y-4">
             <div>
               <div className="mb-2">An app deployment can only be retired if it</div>
@@ -1270,7 +1270,7 @@ const AppDeploymentProtection = (props: {
                     disabled={isSubmitting}
                     type="number"
                     min="0"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>days ago and has not been used for at least</span>
                   <Input
@@ -1281,7 +1281,7 @@ const AppDeploymentProtection = (props: {
                     disabled={isSubmitting}
                     type="number"
                     min="0"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>days</span>
                 </div>
@@ -1292,7 +1292,7 @@ const AppDeploymentProtection = (props: {
                     onChange={handleChange}
                     onBlur={handleBlur}
                     disabled={isSubmitting}
-                    className="border-input bg-background h-10 w-20 rounded-md border px-2 text-center text-sm"
+                    className="border-neutral-4 bg-neutral-2 h-10 w-20 rounded-md border px-2 text-center text-sm"
                   >
                     <option value={AppDeploymentProtectionRuleLogicType.And}>AND</option>
                     <option value={AppDeploymentProtectionRuleLogicType.Or}>OR</option>
@@ -1308,7 +1308,7 @@ const AppDeploymentProtection = (props: {
                     min="0"
                     max="100"
                     step="0.01"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>percent of traffic over the last</span>
                   <Input
@@ -1319,13 +1319,13 @@ const AppDeploymentProtection = (props: {
                     disabled={isSubmitting}
                     type="number"
                     min="1"
-                    className="!inline-flex w-20 text-center"
+                    className="inline-flex! w-20 text-center"
                   />
                   <span>days</span>
                 </div>
               </div>
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-neutral-11 text-sm">
               The creation date check always applies. The inactivity and traffic checks only apply
               if the app deployment has usage data.
             </div>
@@ -1481,7 +1481,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
                 target.
                 <br />
                 <DocsLink
-                  className="text-muted-foreground text-sm"
+                  className="text-neutral-10 text-sm"
                   href="/management/targets#change-slug-of-a-target"
                 >
                   You can read more about it in the documentation
@@ -1497,7 +1497,7 @@ function TargetSlug(props: { organizationSlug: string; projectSlug: string; targ
                 <FormItem>
                   <FormControl>
                     <div className="flex items-center">
-                      <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                      <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
                         {env.appBaseUrl.replace(/https?:\/\//i, '')}/{props.organizationSlug}/
                         {props.projectSlug}/
                       </div>
@@ -1683,7 +1683,7 @@ function TargetDelete(props: {
             <CardDescription>
               <DocsLink
                 href="/management/targets#delete-a-target"
-                className="text-gray-500 hover:text-gray-300"
+                className="text-neutral-10 hover:text-neutral-11"
               >
                 <strong>This action is not reversible!</strong> You can find more information about
                 this process in the documentation
@@ -1878,7 +1878,7 @@ function TargetSettingsContent(props: {
               }}
               className={cn(
                 resolvedPage.key === subPage.key
-                  ? 'bg-muted hover:bg-muted'
+                  ? 'bg-neutral-3 hover:bg-neutral-3'
                   : 'hover:bg-transparent hover:underline',
                 'w-full justify-start text-left',
               )}

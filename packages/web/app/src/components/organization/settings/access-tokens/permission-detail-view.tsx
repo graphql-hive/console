@@ -89,19 +89,19 @@ export function PermissionDetailView(props: {
           ))}
           <div className="w-full space-y-1">
             {group.resolvedResourceIds == null ? (
-              <p className="text-gray-400">
+              <p className="text-neutral-10">
                 Granted on all {permissionLevelToResourceName(group.level)}
               </p>
             ) : (
               <>
-                <p className="text-gray-400">
+                <p className="text-neutral-10">
                   Granted on {permissionLevelToResourceName(group.level)}:
                 </p>
                 <ul className="flex list-none flex-wrap gap-1">
                   {group.resolvedResourceIds.map(id => (
                     <li key={id}>
                       <Badge
-                        className="px-3 py-1 font-mono text-xs text-gray-300"
+                        className="text-neutral-11 px-3 py-1 font-mono text-xs"
                         variant="outline"
                       >
                         {id}

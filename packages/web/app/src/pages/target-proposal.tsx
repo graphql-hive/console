@@ -392,7 +392,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             subPageTitle={
               <span className="flex items-center">
                 <Link
-                  className="text-white"
+                  className="text-neutral-12"
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
                     organizationSlug: props.organizationSlug,
@@ -402,7 +402,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
+                <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
@@ -419,7 +419,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded-sm bg-gray-900/50 p-4">
+      <div className="bg-neutral-2/50 flex w-full grow flex-col rounded-sm p-4">
         {query.fetching ? (
           <Spinner />
         ) : (
@@ -446,8 +446,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 </div>
               </div>
               <div className="p-4 py-8">
-                <Title className="text-orange-500">{proposal.title}</Title>
-                <div className="text-xs text-gray-400">
+                <Title className="text-neutral-2">{proposal.title}</Title>
+                <div className="text-neutral-10 text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
                 <div className="w-full p-2 pt-4">{proposal.description}</div>

@@ -63,9 +63,9 @@ export const Preflight = () => {
 
   return (
     <ResizablePanelGroup direction="horizontal" className="size-full">
-      <ResizablePanel defaultSize={50} className="bg-card">
+      <ResizablePanel defaultSize={50} className="bg-neutral-2">
         <div className="grid size-full grid-rows-[auto_1fr] pb-0">
-          <div className="border-border flex w-full items-center gap-2 border-b p-3">
+          <div className="border-neutral-5 flex w-full items-center gap-2 border-b p-3">
             <span className="text-base font-medium">Preflight</span>
             <div className="ml-auto flex items-center gap-2">
               <Button variant="default" size="sm" className="h-6 rounded-sm" onClick={run}>
@@ -251,10 +251,10 @@ export const Preflight = () => {
         </div>
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel minSize={10} defaultSize={50} className="bg-card">
+      <ResizablePanel minSize={10} defaultSize={50} className="bg-neutral-2">
         {preflight?.lastTestResult?.logs && preflight?.lastTestResult?.logs.length > 0 ? (
           <div className="grid size-full grid-rows-[auto_1fr] pb-0">
-            <div className="border-border flex h-12 w-full items-center gap-2 border-b p-3">
+            <div className="border-neutral-5 flex h-12 w-full items-center gap-2 border-b p-3">
               <span className="text-base font-medium">Logs</span>
               <div className="ml-auto flex items-center gap-2" />
             </div>
@@ -262,14 +262,14 @@ export const Preflight = () => {
               <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
                 {preflight?.lastTestResult?.logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
-                    <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
+                    <span className="text-neutral-10 text-xs">{log.createdAt}</span>{' '}
                     <span
                       className={cn('text-xs font-medium', {
                         'text-blue-400': log.level === 'info',
                         'text-green-400': log.level === 'log',
                         'text-yellow-400': log.level === 'warn',
                         'text-red-400': log.level === 'error',
-                        'text-gray-400': log.level === 'system',
+                        'text-neutral-10': log.level === 'system',
                       })}
                     >
                       {log.level.toUpperCase()}
@@ -285,7 +285,7 @@ export const Preflight = () => {
           <Empty className="size-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <HistoryIcon className="text-muted-foreground size-6" />
+                <HistoryIcon className="text-neutral-10 size-6" />
               </EmptyMedia>
               <EmptyTitle>No logs yet</EmptyTitle>
               <EmptyDescription>

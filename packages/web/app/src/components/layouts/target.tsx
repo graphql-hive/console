@@ -1,6 +1,8 @@
 import { createContext, ReactElement, ReactNode, useContext, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -156,26 +158,24 @@ export const TargetLayout = ({
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
     >
-      <header>
-        <div className="h-(--header-height) container flex items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <TargetSelector
-              organizations={query.data?.organizations ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              currentTargetSlug={props.targetSlug}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <TargetSelector
+            organizations={query.data?.organizations ?? null}
+            currentOrganizationSlug={props.organizationSlug}
+            currentProjectSlug={props.projectSlug}
+            currentTargetSlug={props.targetSlug}
+          />
         </div>
-      </header>
+        <div>
+          <UserMenu
+            me={me ?? null}
+            currentOrganizationSlug={props.organizationSlug}
+            organizations={query.data?.organizations ?? null}
+          />
+        </div>
+      </Header>
 
       {query.fetching === false &&
       query.stale === false &&
@@ -183,7 +183,7 @@ export const TargetLayout = ({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <div className="h-(--tabs-navbar-height) relative border-b border-gray-800">
+          <SecondaryNavigation>
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject && currentTarget ? (
                 <Tabs className="flex h-full grow flex-col" value={page}>
@@ -323,9 +323,9 @@ export const TargetLayout = ({
                 </Tabs>
               ) : (
                 <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
                 </div>
               )}
               {currentTarget && isCDNEnabled && (
@@ -333,7 +333,7 @@ export const TargetLayout = ({
                   <Button
                     onClick={toggleModalOpen}
                     variant="link"
-                    className="hidden whitespace-nowrap text-orange-500 md:flex"
+                    className="hidden whitespace-nowrap md:flex"
                   >
                     <LinkIcon size={16} className="mr-2" />
                     Connect to CDN
@@ -348,10 +348,8 @@ export const TargetLayout = ({
                 </>
               )}
             </div>
-          </div>
-          <div className={cn('container min-h-[var(--content-height)] pb-7', className)}>
-            {children}
-          </div>
+          </SecondaryNavigation>
+          <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
         </>
       )}
     </TargetReferenceProvider>

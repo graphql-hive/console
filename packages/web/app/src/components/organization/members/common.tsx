@@ -61,7 +61,7 @@ export function RoleSelector<T>(props: {
           >
             {props.defaultRole?.name ?? 'Select role'}
           </span>
-          <ChevronDownIcon className="text-muted-foreground ml-2 size-4" />
+          <ChevronDownIcon className="text-neutral-10 ml-2 size-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="end">
@@ -81,7 +81,7 @@ export function RoleSelector<T>(props: {
                   }}
                 >
                   <p>None</p>
-                  <p className="text-muted-foreground text-sm">Do not assign a role</p>
+                  <p className="text-neutral-10 text-sm">Do not assign a role</p>
                 </CommandItem>
               ) : null}
               {props.roles.map(role => {
@@ -118,7 +118,7 @@ export function RoleSelector<T>(props: {
                           disabled={!isActive}
                         >
                           <p>{role.name}</p>
-                          <p className="text-muted-foreground text-sm">{role.description}</p>
+                          <p className="text-neutral-10 text-sm">{role.description}</p>
                         </CommandItem>
                       </TooltipTrigger>
                       <TooltipContent>{reason}</TooltipContent>

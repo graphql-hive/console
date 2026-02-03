@@ -4,6 +4,8 @@ import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { NotFoundContent } from '@/components/common/not-found-content';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -123,26 +125,22 @@ export function OrganizationLayout({
 
   return (
     <>
-      <header>
-        <div className="h-(--header-height) container flex items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <OrganizationSelector
-              isOIDCUser={query.data?.me.provider === AuthProviderType.Oidc}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={query.data?.me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <OrganizationSelector
+            isOIDCUser={query.data?.me.provider === AuthProviderType.Oidc}
+            currentOrganizationSlug={props.organizationSlug}
+            organizations={query.data?.organizations ?? null}
+          />
         </div>
-      </header>
-      <div className="h-(--tabs-navbar-height) relative border-b border-gray-800">
+        <UserMenu
+          me={query.data?.me ?? null}
+          currentOrganizationSlug={props.organizationSlug}
+          organizations={query.data?.organizations ?? null}
+        />
+      </Header>
+      <SecondaryNavigation>
         <div className="container flex items-center justify-between">
           {currentOrganization ? (
             <Tabs value={page} className="min-w-[600px]">
@@ -198,19 +196,14 @@ export function OrganizationLayout({
             </Tabs>
           ) : (
             <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-              <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+              <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+              <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+              <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
             </div>
           )}
           {currentOrganization?.viewerCanCreateProject ? (
             <>
-              <Button
-                onClick={toggleModalOpen}
-                variant="link"
-                className="text-orange-500"
-                data-cy="new-project-button"
-              >
+              <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
                 <PlusIcon size={16} className="mr-2" />
                 New project
               </Button>
@@ -224,8 +217,8 @@ export function OrganizationLayout({
             </>
           ) : null}
         </div>
-      </div>
-      <div className="container min-h-[var(--content-height)] pb-7">
+      </SecondaryNavigation>
+      <div className="min-h-(--content-height) container pb-7">
         {currentOrganization ? (
           <>
             <ProPlanBilling organization={currentOrganization} />
@@ -297,15 +290,15 @@ function ProjectTypeCard(props: {
 }) {
   return (
     <FormItem>
-      <FormLabel className="[&:has([data-state=checked])>div]:border-primary cursor-pointer">
+      <FormLabel className="[&:has([data-state=checked])>div]:border-accent_80 cursor-pointer">
         <FormControl>
           <RadioGroupItem value={props.type} className="sr-only" />
         </FormControl>
-        <div className="border-muted hover:border-accent hover:bg-accent flex items-center gap-4 rounded-md border-2 p-4">
-          <Slot className="size-8 text-gray-400">{props.icon}</Slot>
+        <div className="border-neutral-5 hover:border-neutral-2 flex items-center gap-4 rounded-md border p-4">
+          <Slot className="text-neutral-12 size-8">{props.icon}</Slot>
           <div>
-            <span className="text-sm font-medium">{props.title}</span>
-            <p className="text-sm text-gray-400">{props.description}</p>
+            <span className="text-neutral-12 text-sm font-medium">{props.title}</span>
+            <p className="text-neutral-11 text-sm">{props.description}</p>
           </div>
         </div>
       </FormLabel>
@@ -427,7 +420,9 @@ export function CreateProjectModalContent(props: {
                           description="Single GraphQL schema developed as a monolith"
                           icon={
                             <BoxIcon
-                              className={cn(field.value === ProjectType.Single && 'text-white')}
+                              className={cn(
+                                field.value === ProjectType.Single && 'text-neutral-12',
+                              )}
                             />
                           }
                         />
@@ -437,7 +432,9 @@ export function CreateProjectModalContent(props: {
                           description="Project developed according to Apollo Federation specification"
                           icon={
                             <BlocksIcon
-                              className={cn(field.value === ProjectType.Federation && 'text-white')}
+                              className={cn(
+                                field.value === ProjectType.Federation && 'text-neutral-12',
+                              )}
                             />
                           }
                         />
@@ -447,7 +444,9 @@ export function CreateProjectModalContent(props: {
                           description="Project that stitches together multiple GraphQL APIs"
                           icon={
                             <FoldVerticalIcon
-                              className={cn(field.value === ProjectType.Stitching && 'text-white')}
+                              className={cn(
+                                field.value === ProjectType.Stitching && 'text-neutral-12',
+                              )}
                             />
                           }
                         />

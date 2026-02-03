@@ -20,10 +20,10 @@ type CalloutType = keyof typeof TypeToEmoji;
 const calloutVariants = cva('mt-6 flex items-center gap-4 rounded-lg border px-4 py-2', {
   variants: {
     type: {
-      default: ' border-orange-400/30 bg-orange-400/20 text-orange-300',
-      error: ' border-red-200/30 bg-red-900/30 text-red-200',
-      info: ' border-blue-200/30 bg-blue-900/30 text-blue-200',
-      warning: ' border-yellow-200/30 bg-yellow-700/30 text-yellow-200',
+      default: 'border-orange-300 bg-orange-200 text-orange-900',
+      error: 'border-red-300 bg-red-200 text-red-900',
+      info: 'border-blue-300 bg-blue-200 text-blue-900',
+      warning: 'border-yellow-300 bg-yellow-200 text-yellow-900',
     },
   },
   defaultVariants: {

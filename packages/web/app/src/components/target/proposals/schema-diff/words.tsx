@@ -19,7 +19,7 @@ export function Word(props: WordProps) {
     <Change type={props.change}>
       <span
         className={cn(
-          props.kind === 'description' && 'text-gray-500',
+          props.kind === 'description' && 'textneutral-8',
           props.kind === 'field' && 'text-white',
           props.kind === 'keyword' && 'text-gray-400',
           props.kind === 'literal' && 'text-white',

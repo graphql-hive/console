@@ -43,7 +43,7 @@ function MissingOIDCId() {
     <AuthCard>
       <AuthCardHeader title="Missing ID" description="You need to provide an OIDC ID to sign in." />
       <AuthCardContent>
-        <p className="text-muted-foreground">
+        <p className="text-neutral-10">
           <DocsLink href="/management/sso-oidc-provider#login-via-oidc">
             Learn how to login via OIDC
           </DocsLink>

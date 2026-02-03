@@ -28,9 +28,9 @@ export function AuthCardStack(props: { children: React.ReactNode }) {
 export function AuthOrSeparator() {
   return (
     <div className="flex flex-row items-center justify-between gap-x-4">
-      <div className="h-[1px] w-full bg-gray-700" />
-      <div className="text-center text-gray-400">or</div>
-      <div className="h-[1px] w-full bg-gray-700" />
+      <div className="bg-neutral-4 h-px w-full" />
+      <div className="text-neutral-9 text-center">or</div>
+      <div className="bg-neutral-4 h-px w-full" />
     </div>
   );
 }

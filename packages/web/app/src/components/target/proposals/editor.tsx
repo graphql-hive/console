@@ -351,7 +351,7 @@ export function ProposalEditor(props: {
             </TabsList>
             <div className="flex flex-row items-center justify-end">
               <Link
-                className="ml-2 cursor-pointer p-1 hover:text-orange-500"
+                className="hover:text-neutral-2 ml-2 cursor-pointer p-1"
                 title="Prettify schema"
                 onClick={e => {
                   e.preventDefault();
@@ -364,8 +364,8 @@ export function ProposalEditor(props: {
               </Link>
               <Link
                 className={cn(
-                  'ml-2 cursor-pointer p-1 hover:text-orange-500',
-                  showSettings && 'border-b-2 border-orange-500',
+                  'hover:text-neutral-2 ml-2 cursor-pointer p-1',
+                  showSettings && 'border-neutral-2 border-b-2',
                   projectType?.project.type === ProjectType.Single && 'hidden',
                 )}
                 title="Edit schema settings"
@@ -402,7 +402,7 @@ export function ProposalEditor(props: {
                   onChange={setActiveTabSource}
                 />
                 {showSettings && service.__typename === 'CompositeSchema' && (
-                  <div className="absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border bg-black p-4 pt-6 text-sm">
+                  <div className="bg-neutral-1 absolute right-0 top-0 z-10 h-full w-[20vw] min-w-[200px] max-w-full border p-4 pt-6 text-sm">
                     {!!service.service && (
                       <SubPageLayoutHeader
                         subPageTitle="Settings"

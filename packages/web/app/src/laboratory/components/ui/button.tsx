@@ -3,18 +3,16 @@ import { cn } from '@/laboratory/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-red-200 aria-invalid:border-red-500",
   {
     variants: {
       variant: {
-        default: 'bg-orange-500 !text-black hover:bg-orange-500/90',
-        destructive:
-          '!text-white hover:bg-destructive/90 focus-visible:ring-destructive/40 bg-destructive/60',
-        outline:
-          'border shadow-sm hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:text-accent-foreground hover:bg-accent/50',
-        link: 'text-primary underline-offset-4 hover:underline',
+        default: 'bg-accent text-neutral-2 hover:bg-accent_80',
+        destructive: 'bg-red-500 text-neutral-12! hover:bg-red-400 focus-visible:ring-red-200',
+        outline: 'border bg-neutral-3 shadow-sm hover:bg-neutral-2 hover:text-neutral-12',
+        secondary: 'bg-neutral-2 text-neutral-11 hover:bg-neutral-2/80',
+        ghost: 'hover:bg-neutral-2 hover:text-neutral-12',
+        link: 'text-neutral-11 underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

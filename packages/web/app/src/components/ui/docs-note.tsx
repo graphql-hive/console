@@ -18,18 +18,18 @@ export const DocsNote = ({
     <div
       className={cn(
         'my-2 flex border-l-2 px-4 py-2',
-        warn ? 'border-orange-500' : 'border-white',
+        warn ? 'border-neutral-2' : 'border-neutral-12',
         className,
       )}
     >
       {/* <div className="items-center align-middle pr-2 flex flex-row">
         {warn ? (
-          <ExclamationTriangleIcon className="text-orange-500" />
+          <ExclamationTriangleIcon className="text-neutral-2" />
         ) : (
           <InfoCircledIcon className="text-current" />
         )}
       </div> */}
-      <div className="grow align-middle text-sm text-white">{children}</div>
+      <div className="text-neutral-12 grow align-middle text-sm">{children}</div>
     </div>
   );
 };
@@ -52,7 +52,7 @@ export const DocsLink = ({
       asChild
       variant="link"
       className={cn(
-        'p-0 text-orange-500',
+        'p-0',
         'whitespace-pre-wrap', // to not lose whitespace between tags due to `display: 'inline-flex'`
         className,
       )}

@@ -201,7 +201,7 @@ function Save(props: {
         <DropdownMenuItem
           disabled={isSame || !currentOperation}
           className={cx(
-            (isSame || !currentOperation) && 'cursor-default text-gray-400 hover:bg-transparent',
+            (isSame || !currentOperation) && 'text-neutral-10 cursor-default hover:bg-transparent',
           )}
           onClick={async () => {
             if (!currentOperation || isSame) {
@@ -461,7 +461,7 @@ function LaboratoryPageContent(props: {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
-            <div className="h-4 w-px bg-gray-800" />
+            <div className="bg-neutral-5 h-4 w-px" />
             <Tabs
               defaultValue={props.defaultLaboratoryTab}
               onValueChange={value =>
@@ -474,14 +474,14 @@ function LaboratoryPageContent(props: {
                 </TabsTrigger>
                 <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                   Hive Laboratory
-                  <div className="size-2 rounded-full bg-orange-500" />
+                  <div className="bg-neutral-2 size-2 rounded-full" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
           <Subtitle>Explore your GraphQL schema and run queries against your GraphQL API.</Subtitle>
           <p>
-            <DocsLink className="text-muted-foreground text-sm" href="/schema-registry/laboratory">
+            <DocsLink className="text-neutral-10 text-sm" href="/schema-registry/laboratory">
               Learn more about the Laboratory
             </DocsLink>
           </p>
@@ -516,17 +516,17 @@ function LaboratoryPageContent(props: {
               }}
               value="mock"
               type="single"
-              className="bg-gray-900/50 text-gray-500"
+              className="text-neutral-10 bg-neutral-2/50"
             >
               <ToggleGroupItem
                 key="mockApi"
                 value="mockApi"
                 title="Use Mock Schema"
                 className={clsx(
-                  'text-xs hover:text-white',
+                  'hover:text-neutral-12 text-xs',
                   !query.fetching &&
                     actualSelectedApiEndpoint === 'mockApi' &&
-                    'bg-gray-800 text-white',
+                    'bg-neutral-5 text-neutral-12',
                 )}
                 disabled={query.fetching}
               >
@@ -537,10 +537,10 @@ function LaboratoryPageContent(props: {
                 value="linkedApi"
                 title="Use API endpoint"
                 className={cn(
-                  'text-xs hover:text-white',
+                  'hover:text-neutral-12 text-xs',
                   !query.fetching &&
                     actualSelectedApiEndpoint === 'linkedApi' &&
-                    'bg-gray-800 text-white',
+                    'bg-neutral-5 text-neutral-12',
                 )}
                 disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
               >
@@ -554,7 +554,7 @@ function LaboratoryPageContent(props: {
         <style key="laboratory">{`
           .graphiql-container,
           .graphiql-dialog a {
-            --color-primary: 40, 89%, 60% !important;
+            --color-neutral-11: 40, 89%, 60% !important;
           }
 
           .graphiql-container {
@@ -601,7 +601,7 @@ function LaboratoryPageContent(props: {
           }
 
           #preflight-logs h2 {
-            color: hsla(var(--color-neutral), var(--alpha-secondary));
+            color: hsla(var(--color-neutral), var(--alpha-neutral-2));
           }
 
           #preflight-logs button[data-state="open"] > h2 {
@@ -609,7 +609,7 @@ function LaboratoryPageContent(props: {
           }
 
           #preflight-logs > div {
-            border-color: hsl(var(--border));
+            border-color: hsl(var(--neutral-5));
           }
         `}</style>
       </Helmet>
@@ -756,7 +756,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             data-cy="trigger"
           >
             <ChevronDownIcon
-              className={`size-4 text-gray-500 transition-transform ${
+              className={`text-neutral-10 size-4 transition-transform ${
                 isOpen ? 'rotate-0' : '-rotate-90'
               }`}
             />
@@ -769,7 +769,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             size="icon"
             data-cy="erase-logs"
             className={cn(
-              'size-8 text-gray-500 hover:text-white',
+              'text-neutral-10 hover:text-neutral-12 size-8',
               isOpen ? 'visible' : 'invisible',
             )}
             onClick={props.onClear}
@@ -787,7 +787,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
         {props.logs.length === 0 ? (
           <div
             data-cy="empty-state"
-            className="flex flex-col items-center justify-center text-gray-400"
+            className="text-neutral-10 flex flex-col items-center justify-center"
           >
             <p>No logs available</p>
             <p>Execute a query to see logs</p>

@@ -74,7 +74,7 @@ function ApproveFailedSchemaCheckModal(props: {
     return (
       <div className="space-y-2">
         <h4 className="font-medium leading-none">Oops. Something unexpected happened</h4>
-        <p className="text-muted-foreground text-sm">{mutation.error.message}</p>
+        <p className="text-neutral-10 text-sm">{mutation.error.message}</p>
         <div className="text-right">
           <Button onClick={props.onClose}>Close</Button>
         </div>
@@ -86,7 +86,7 @@ function ApproveFailedSchemaCheckModal(props: {
     return (
       <div className="space-y-2">
         <h4 className="font-medium leading-none">Approval failed</h4>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-neutral-10 text-sm">
           {mutation.data.approveFailedSchemaCheck.error.message}
         </p>
         <div className="text-right">
@@ -113,11 +113,9 @@ function ApproveFailedSchemaCheckModal(props: {
     <div className="space-y-2">
       <h4 className="font-medium leading-none">Finish your approval</h4>
       <div>
-        <p className="text-muted-foreground pb-1 text-sm">
-          Acknowledge and accept breaking changes.
-        </p>
+        <p className="text-neutral-10 text-sm">Acknowledge and accept breaking changes.</p>
         {props?.contextId ? (
-          <p className="text-muted-foreground text-sm">
+          <p className="text-neutral-10 text-sm">
             Approval applies to all future changes within the context of a pull request or branch
             lifecycle: <span className="font-medium">{props?.contextId}</span>
           </p>
@@ -202,14 +200,14 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="mb-2 text-sm font-medium text-white">{props.title}</h2>
+      <h2 className="text-neutral-2 mb-2 text-sm font-medium">{props.title}</h2>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
             key={key}
             className={cn(props.type === 'warning' ? 'text-yellow-400' : 'text-red-400', 'my-1')}
           >
-            <span className="text-left text-white">{labelize(edge.node.message)}</span>
+            <span className="text-neutral-8 text-left">{labelize(edge.node.message)}</span>
           </li>
         ))}
       </ul>
@@ -253,12 +251,12 @@ function ConditionalBreakingChangesMetadataSection(props: {
 
   if (!schemaCheck.conditionalBreakingChangeMetadata) {
     return (
-      <div className="mb-5 mt-10 text-sm text-gray-400">
+      <div className="text-neutral-10 mb-5 mt-10 text-sm">
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
           href="/management/targets#conditional-breaking-changes"
-          className="text-gray-500 hover:text-gray-300"
+          className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
         </DocsLink>
@@ -275,10 +273,10 @@ function ConditionalBreakingChangesMetadataSection(props: {
   const allTargets = schemaCheck.conditionalBreakingChangeMetadata.settings.targets;
 
   return (
-    <div className="mb-5 mt-10 text-sm text-gray-400">
+    <div className="text-neutral-10 mb-5 mt-10 text-sm">
       <p>
         Based on{' '}
-        <span className="text-white">
+        <span className="text-neutral-12">
           {schemaCheck.conditionalBreakingChangeMetadata.usage.totalRequestCountFormatted} requests
         </span>{' '}
         from target
@@ -287,7 +285,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {allTargets.map((target, index) => (
               <Fragment key={target.slug}>
-                <span className="text-white">{target.slug}</span>
+                <span className="text-neutral-12">{target.slug}</span>
                 {index === allTargets.length - 1 ? null : ', '}
               </Fragment>
             ))}
@@ -297,7 +295,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {truncatedTargets.map((target, index) => (
               <Fragment key={target.slug}>
-                <span className="text-white">{target.slug}</span>
+                <span className="text-neutral-12">{target.slug}</span>
                 {index === truncatedTargets.length - 1 ? null : ', '}
               </Fragment>
             ))}
@@ -310,12 +308,12 @@ function ConditionalBreakingChangesMetadataSection(props: {
               </PopoverTrigger>
               <PopoverContent>
                 <div className="p-2">
-                  <h4 className="mb-2 text-sm font-semibold text-white">All Targets</h4>
+                  <h4 className="text-neutral-12 mb-2 text-sm font-semibold">All Targets</h4>
                   <ScrollArea className="h-44 w-full">
-                    <div className="grid grid-cols-1 divide-y divide-gray-800">
+                    <div className="divide-neutral-5 grid grid-cols-1 divide-y">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
-                          <div className="line-clamp-3 text-sm text-gray-400">{target.slug}</div>
+                          <div className="text-neutral-10 line-clamp-3 text-sm">{target.slug}</div>
                         </div>
                       ))}
                     </div>
@@ -327,11 +325,11 @@ function ConditionalBreakingChangesMetadataSection(props: {
         )}
         . <br />
         Usage data ranges from{' '}
-        <span className="text-white">
+        <span className="text-neutral-12">
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.from, 'do MMM yyyy HH:mm')}
         </span>{' '}
         to{' '}
-        <span className="text-white">
+        <span className="text-neutral-12">
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.to, 'do MMM yyyy HH:mm')} (
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.to, 'z')})
         </span>{' '}
@@ -341,7 +339,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
         <br />
         <DocsLink
           href="/management/targets#conditional-breaking-changes"
-          className="text-gray-500 hover:text-gray-300"
+          className="text-neutral-10 hover:text-neutral-11"
         >
           Learn more about conditional breaking changes.
         </DocsLink>
@@ -482,7 +480,7 @@ function DefaultSchemaView(props: {
   return (
     <>
       <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-        <TabsList className="bg-background border-muted w-full justify-start rounded-none border-x border-b">
+        <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
             <TabsTrigger key={item.value} value={item.value} disabled={item.isDisabled}>
               {item.icon}
@@ -491,7 +489,7 @@ function DefaultSchemaView(props: {
           ))}
         </TabsList>
       </Tabs>
-      <div className="border-muted min-h-[850px] rounded-md rounded-t-none border border-t-0">
+      <div className="border-neutral-3 min-h-[850px] rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
@@ -677,7 +675,7 @@ function ContractCheckView(props: {
   return (
     <TooltipProvider>
       <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-        <TabsList className="bg-background border-muted w-full justify-start rounded-none border-x border-b">
+        <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
             <Tooltip key={item.value}>
               <TooltipTrigger>
@@ -695,7 +693,7 @@ function ContractCheckView(props: {
           ))}
         </TabsList>
       </Tabs>
-      <div className="border-muted min-h-[850px] rounded-md rounded-t-none border border-t-0">
+      <div className="border-neutral-3 min-h-[850px] rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractCheck.schemaCompositionErrors && (
@@ -1073,7 +1071,7 @@ const ActiveSchemaCheck = (props: {
   if (query.fetching || query.stale) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center self-center">
-        <div className="flex flex-col items-center text-sm text-gray-500">
+        <div className="text-neutral-10 flex flex-col items-center text-sm">
           <Spinner className="mb-3 size-8" />
           Loading Schema Check...
         </div>
@@ -1109,12 +1107,12 @@ const ActiveSchemaCheck = (props: {
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="grid items-center justify-between gap-x-4 gap-y-2 rounded-md border border-gray-800 p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+        <div className="border-neutral-5 text-neutral-10 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
           <div className="min-w-0">
             <div className="text-xs">Status</div>
             <div
               className={cn(
-                'truncate text-sm font-semibold text-white',
+                'text-neutral-12 truncate text-sm font-semibold',
                 schemaCheck.__typename === 'FailedSchemaCheck' && 'text-red-600',
               )}
             >
@@ -1125,7 +1123,7 @@ const ActiveSchemaCheck = (props: {
             <div className="min-w-0">
               <div className="text-xs">Service</div>
               <div
-                className="truncate text-sm font-semibold text-white"
+                className="text-neutral-12 truncate text-sm font-semibold"
                 title={schemaCheck.serviceName}
               >
                 {schemaCheck.serviceName}
@@ -1137,7 +1135,7 @@ const ActiveSchemaCheck = (props: {
               Triggered <TimeAgo date={schemaCheck.createdAt} />
             </div>
             {schemaCheck.meta?.author && (
-              <div className="truncate text-sm text-white" title={schemaCheck.meta.author}>
+              <div className="text-neutral-12 truncate text-sm" title={schemaCheck.meta.author}>
                 by {schemaCheck.meta.author}
               </div>
             )}
@@ -1146,7 +1144,7 @@ const ActiveSchemaCheck = (props: {
             <div className="min-w-0">
               <div className="text-xs">Commit</div>
               <div
-                className="truncate text-sm font-semibold text-white"
+                className="text-neutral-12 truncate text-sm font-semibold"
                 title={schemaCheck.meta.commit}
               >
                 <CopyText>{schemaCheck.meta.commit}</CopyText>
@@ -1185,7 +1183,7 @@ const ActiveSchemaCheck = (props: {
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
           <div className="py-6">
-            <div className="flex flex-row items-center gap-x-6 rounded-md border border-gray-900 p-4 font-medium text-gray-400">
+            <div className="border-neutral-2 text-neutral-10 flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
               <div>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
@@ -1208,14 +1206,14 @@ const ActiveSchemaCheck = (props: {
                     schemaCheck.cliApprovalMetadata?.displayName ??
                     'unknown'}
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-neutral-10 text-sm">
                   {schemaCheck.approvedBy?.email ??
                     schemaCheck.cliApprovalMetadata?.email ??
                     'unknown'}
                 </p>
               </div>
               {schemaCheck.approvalComment ? (
-                <div className="text-sm italic text-white">
+                <div className="text-neutral-12 text-sm italic">
                   <span>„ </span>
                   {schemaCheck.approvalComment}
                   <span> ”</span>

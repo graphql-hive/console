@@ -5,7 +5,7 @@ export function Label({ className, children, ...props }: ComponentProps<'span'>)
   return (
     <span
       className={cn(
-        'inline-block rounded-sm bg-white/10 px-2 py-1 text-xs font-medium tracking-widest text-yellow-300',
+        'bg-accent_10 text-accent inline-block rounded-sm px-2 py-1 text-xs font-medium tracking-widest',
         className,
       )}
       {...props}
@@ -36,15 +36,15 @@ export const Page = ({
     <div className={cn('relative flex h-full flex-col', className)}>
       <div className="flex shrink-0 flex-row items-center justify-between p-4">
         <div>
-          <h2 className="text-xl font-bold text-white">{title}</h2>
-          <span className="mt-2 text-sm text-gray-300">{subtitle}</span>
+          <h2 className="text-neutral-1 text-xl font-bold">{title}title</h2>
+          <span className="text-neutral-8 mt-2 text-sm">{subtitle}</span>
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
       </div>
       {noPadding ? (
         children
       ) : (
-        <div className={cn('px-4 pb-4 text-white', scrollable ? 'grow overflow-y-auto' : 'h-full')}>
+        <div className={cn('px-4 pb-4', scrollable ? 'grow overflow-y-auto' : 'h-full')}>
           {children}
         </div>
       )}
@@ -54,17 +54,17 @@ export const Page = ({
 
 export const Section = {
   Title: ({ className, children, ...props }: ComponentProps<'h3'>): ReactElement => (
-    <h3 className={cn('text-base font-bold text-white', className)} {...props}>
+    <h3 className={cn('text-neutral-11 text-base font-bold', className)} {...props}>
       {children}
     </h3>
   ),
   BigTitle: ({ className, children, ...props }: ComponentProps<'h2'>): ReactElement => (
-    <h2 className={cn('text-base font-bold text-white', className)} {...props}>
+    <h2 className={cn('text-neutral-11 text-base font-bold', className)} {...props}>
       {children}
     </h2>
   ),
   Subtitle: ({ className, children, ...props }: ComponentProps<'div'>): ReactElement => (
-    <div className={cn('text-sm text-gray-300', className)} {...props}>
+    <div className={cn('text-neutral-10 text-sm', className)} {...props}>
       {children}
     </div>
   ),
@@ -86,7 +86,7 @@ export function Scale({
       {new Array(size).fill(null).map((_, i) => (
         <div
           key={i}
-          className={cn('h-4 w-1', value >= i * (max / size) ? 'bg-emerald-400' : 'bg-gray-200')}
+          className={cn('h-4 w-1', value >= i * (max / size) ? 'bg-emerald-400' : 'bg-neutral-10')}
         />
       ))}
     </div>

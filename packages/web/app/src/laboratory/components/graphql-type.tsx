@@ -15,7 +15,7 @@ export const GraphQLType = (props: {
     return (
       <span>
         <GraphQLType type={props.type.ofType} />
-        <span className="text-muted-foreground!">!</span>
+        <span className="text-neutral-10!">!</span>
       </span>
     );
   }
@@ -23,9 +23,9 @@ export const GraphQLType = (props: {
   if (props.type instanceof GraphQLList) {
     return (
       <span>
-        <span className="text-muted-foreground!">[</span>
+        <span className="text-neutral-10!">[</span>
         <GraphQLType type={props.type.ofType} />
-        <span className="text-muted-foreground!">]</span>
+        <span className="text-neutral-10!">]</span>
       </span>
     );
   }

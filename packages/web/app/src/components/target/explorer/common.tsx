@@ -22,7 +22,7 @@ export function Description(props: { description: string }) {
         hidden: !isDescriptionsVisible,
       })}
     >
-      <Markdown className={clsx('text-left text-sm text-gray-400')} content={props.description} />
+      <Markdown className={clsx('text-neutral-10 text-left text-sm')} content={props.description} />
     </div>
   );
 }
@@ -62,10 +62,10 @@ export function SchemaExplorerUsageStats(props: {
           </div>
           <div
             title={`${toDecimal(percentage)}% of all requests`}
-            className="relative z-0 mt-1 w-full min-w-[25px] overflow-hidden rounded-sm bg-orange-500/20"
+            className="bg-neutral-2/20 relative z-0 mt-1 w-full min-w-[25px] overflow-hidden rounded-sm"
             style={{ width: 50, height: 5 }}
           >
-            <div className="z-0 h-full bg-orange-500" style={{ width: `${percentage}%` }} />
+            <div className="bg-neutral-2 z-0 h-full" style={{ width: `${percentage}%` }} />
           </div>
         </div>
         <Tooltip>
@@ -101,7 +101,7 @@ export function SchemaExplorerUsageStats(props: {
                           <tr key={op.hash}>
                             <td className="px-2 pl-0 text-left">
                               <NextLink
-                                className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                                className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                                 params={{
                                   organizationSlug: props.organizationSlug,
@@ -146,7 +146,7 @@ export function SchemaExplorerUsageStats(props: {
                     {usage.usedByClients.map(clientName => (
                       <li key={clientName} className="font-bold">
                         <NextLink
-                          className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-2"
+                          className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug: props.organizationSlug,
@@ -219,7 +219,7 @@ export function DeprecationNote(props: {
         </TooltipTrigger>
         <TooltipContent className="min-w-6 max-w-screen-md" side="right" sideOffset={5}>
           <div className="mb-2">Deprecation reason</div>
-          <Markdown className="text-gray-400" content={props.deprecationReason} />
+          <Markdown className="text-neutral-10" content={props.deprecationReason} />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -245,11 +245,11 @@ export function GraphQLTypeCard(props: {
   );
 
   return (
-    <div className="rounded-md border-2 border-gray-900">
+    <div className="border-neutral-5 rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
-            <div className="font-normal text-gray-400">{props.kind}</div>
+            <div className="text-neutral-10 font-normal">{props.kind}</div>
             <div className="font-semibold">
               <GraphQLTypeAsLink
                 organizationSlug={props.organizationSlug}
@@ -262,7 +262,7 @@ export function GraphQLTypeCard(props: {
           {props.description && <Description description={props.description} />}
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 && (
-          <div className="flex flex-row items-center text-sm text-gray-400">
+          <div className="text-neutral-10 flex flex-row items-center text-sm">
             <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
@@ -312,7 +312,7 @@ export function GraphQLTypeCardListItem(props: {
       onClick={props.onClick}
       className={clsx(
         'flex flex-row items-center justify-between p-4 text-sm',
-        props.index % 2 ? '' : 'bg-gray-900/50',
+        props.index % 2 ? '' : 'bg-neutral-2/50',
         props.className,
       )}
     >
@@ -343,14 +343,14 @@ export function GraphQLInputFields(props: {
           <GraphQLTypeCardListItem key={field.name} index={i}>
             <div>
               <div className="flex w-full flex-row items-center justify-between">
-                <div className="text-gray-400">
+                <div className="text-neutral-10">
                   <DeprecationNote deprecationReason={field.deprecationReason}>
                     <LinkToCoordinatePage
                       organizationSlug={props.organizationSlug}
                       projectSlug={props.projectSlug}
                       targetSlug={props.targetSlug}
                       coordinate={coordinate}
-                      className="font-semibold text-white"
+                      className="text-neutral-12 font-semibold"
                     >
                       {field.name}
                     </LinkToCoordinatePage>
@@ -414,7 +414,7 @@ export function GraphQLTypeAsLink(props: {
             >
               Visit in <span className="font-bold">Explorer</span>
             </NextLink>
-            <span className="text-xs text-gray-500"> - displays a full type</span>
+            <span className="text-neutral-10 text-xs"> - displays a full type</span>
           </p>
           <p>
             <NextLink
@@ -430,7 +430,7 @@ export function GraphQLTypeAsLink(props: {
             >
               Visit in <span className="font-bold">Insights</span>
             </NextLink>
-            <span className="text-xs text-gray-500"> - usage insights</span>
+            <span className="text-neutral-10 text-xs"> - usage insights</span>
           </p>
         </div>
         <PopoverArrow />
@@ -488,11 +488,11 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
       {widths.map((width, index) => (
         <GraphQLTypeCardListItem key={index} index={index} className="w-full">
           <div className="flex w-full flex-row items-center gap-2">
-            <Skeleton className={cn('bg-muted my-1 h-4', width)} />
+            <Skeleton className={cn('bg-neutral-3 my-1 h-4', width)} />
             <div className="ml-auto flex flex-row items-center gap-2">
-              <Skeleton className="bg-muted my-1 size-4" />
-              <Skeleton className="bg-muted my-1 size-4" />
-              <Skeleton className="bg-muted my-1 size-4" />
+              <Skeleton className="bg-neutral-3 my-1 size-4" />
+              <Skeleton className="bg-neutral-3 my-1 size-4" />
+              <Skeleton className="bg-neutral-3 my-1 size-4" />
             </div>
           </div>
         </GraphQLTypeCardListItem>
@@ -503,10 +503,10 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className="rounded-md border-2 border-gray-900">
+    <div className="border-neutral-2 rounded-md border-2">
       <div className="flex flex-row justify-between p-4">
         <div className="flex flex-row items-center gap-2">
-          <Skeleton className="bg-muted my-1 h-4 w-32" />
+          <Skeleton className="bg-neutral-3 my-1 h-4 w-32" />
         </div>
       </div>
       <div>{props.children}</div>

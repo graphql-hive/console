@@ -34,7 +34,7 @@ const Template: StoryObj<typeof PageLayout> = {
                 onClick={() => setPage(subPage.key)}
                 className={
                   page === subPage.key
-                    ? 'bg-muted hover:bg-muted'
+                    ? 'bg-neutral-3 hover:bg-neutral-3'
                     : 'hover:bg-transparent hover:underline'
                 }
               >

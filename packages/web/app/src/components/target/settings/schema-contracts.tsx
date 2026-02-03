@@ -181,7 +181,7 @@ export function SchemaContracts(props: {
               <CardDescription>
                 <DocsLink
                   href="/management/contracts"
-                  className="text-gray-500 hover:text-gray-300"
+                  className="text-neutral-10 hover:text-neutral-11"
                 >
                   Learn more about Schema Contracts
                 </DocsLink>
@@ -700,7 +700,7 @@ function CreateContractDialogContent(props: {
                 />
                 <label
                   htmlFor="removeUnreachableTypesFromPublicApiSchema"
-                  className="ml-2 inline-block cursor-pointer text-sm text-gray-300"
+                  className="text-neutral-11 ml-2 inline-block cursor-pointer text-sm"
                 >
                   Remove unreachable types from public API schema
                 </label>

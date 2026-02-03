@@ -143,7 +143,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
                 if (invitation.__typename === 'OrganizationInvitationError') {
                   return (
-                    <div className="bg-black">
+                    <div className="bg-neutral-1">
                       <Card>
                         <CardHeader>
                           <CardTitle>Invitation Error</CardTitle>
@@ -160,7 +160,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                 }
 
                 return (
-                  <div className="bg-black">
+                  <div className="bg-neutral-1">
                     <Card>
                       <CardHeader>
                         <CardTitle>Join "{invitation.name}" organization</CardTitle>
@@ -170,7 +170,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                           You've been invited to become a member of{' '}
                           <span className="font-semibold">{invitation.name}</span>.
                         </p>
-                        <p className="text-muted-foreground mt-2">
+                        <p className="text-neutral-10 mt-2">
                           By accepting the invitation, you will be able to collaborate with other
                           members of this organization.
                         </p>

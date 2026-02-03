@@ -176,7 +176,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
         </td>
         <td className="grow overflow-hidden py-3 text-sm font-medium">
           <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
-          <h4 className="text-xs text-gray-400">{member.user.email}</h4>
+          <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
         <td className="relative py-3 text-center text-sm">
           {member.isOwner ? (
@@ -199,7 +199,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
           {member.viewerCanRemove && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
+                <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
                   <MoreHorizontalIcon className="size-4" />
                   <span className="sr-only">Open menu</span>
                 </Button>
@@ -264,7 +264,7 @@ function MemberRole(props: {
       {organization.viewerCanAssignUserRoles && (
         <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
           <Sheet.SheetTrigger asChild>
-            <button className="font-medium text-orange-500 transition-colors hover:underline">
+            <button className="text-neutral-2 font-medium transition-colors hover:underline">
               change
             </button>
           </Sheet.SheetTrigger>
@@ -377,7 +377,7 @@ export function OrganizationMembers(props: {
           )}
         </div>
       </SubPageLayoutHeader>
-      <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
+      <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
         <thead>
           <tr>
             <th colSpan={2} className="relative select-none py-3 text-left text-sm font-semibold">
@@ -389,14 +389,14 @@ export function OrganizationMembers(props: {
             <th className="w-12 py-3 text-right text-sm font-semibold" />
           </tr>
         </thead>
-        <tbody className="divide-y-[1px] divide-gray-500/20">
+        <tbody className="divide-neutral-10/20 divide-y-[1px]">
           {members.length === 0 ? (
             <tr>
               <td colSpan={4} className="py-16">
                 <div className="flex flex-col items-center justify-center px-4">
-                  <h3 className="mb-2 text-lg font-semibold text-gray-100">No members found</h3>
+                  <h3 className="text-neutral-11 mb-2 text-lg font-semibold">No members found</h3>
 
-                  <p className="max-w-sm text-center text-sm text-gray-200">
+                  <p className="text-neutral-10 max-w-sm text-center text-sm">
                     {`No results for "${searchValue}". Try adjusting your search term.`}
                   </p>
                 </div>
@@ -415,7 +415,7 @@ export function OrganizationMembers(props: {
       </table>
       {/* Pagination Controls */}
       <div className="mt-4 flex items-center justify-between">
-        <div className="text-sm text-gray-500">
+        <div className="text-neutral-10 text-sm">
           Page {currentPage + 1}
           {searchValue && members.length > 0 && ` - showing results for "${searchValue}"`}
         </div>

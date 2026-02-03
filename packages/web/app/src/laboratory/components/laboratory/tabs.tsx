@@ -213,7 +213,7 @@ export const Tab = (props: {
     }
 
     if (props.item.type === 'settings') {
-      return <SettingsIcon className="size-4 text-gray-400" />;
+      return <SettingsIcon className="text-neutral-10 size-4" />;
     }
 
     if (props.item.type === 'test') {
@@ -239,7 +239,7 @@ export const Tab = (props: {
       return customTab.icon;
     }
 
-    return <FileIcon className="text-muted-foreground size-4" />;
+    return <FileIcon className="text-neutral-8 size-4" />;
   }, [props.item, isError]);
 
   return (
@@ -250,7 +250,7 @@ export const Tab = (props: {
           asHandle
           className={cn(
             'data-dragging:opacity-0 flex h-12 w-max items-stretch',
-            props.isOverlay && 'bg-background',
+            props.isOverlay && 'bg-neutral-3',
             props.isOverlay && !isActive && 'h-12',
           )}
         >
@@ -278,8 +278,9 @@ export const Tab = (props: {
           >
             <div
               className={cn(
-                'text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
-                props.activeTab?.id === props.item.id && 'border-primary bg-card text-foreground',
+                'text-neutral-10 hover:text-neutral-11 group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
+                props.activeTab?.id === props.item.id &&
+                  'border-neutral-11 bg-neutral-2 text-neutral-11',
               )}
               onClick={() => {
                 props.setActiveTab(props.item);
@@ -296,9 +297,9 @@ export const Tab = (props: {
               {tabIcon}
               {tabName}
               {props.isOperationLoading(props.item.id) && <Spinner className="size-3" />}
-              {props.item.readOnly && <LockIcon className="size-3 text-gray-400" />}
+              {props.item.readOnly && <LockIcon className="text-neutral-10 size-3" />}
               <XIcon
-                className="text-muted-foreground size-3"
+                className="text-neutral-10 size-3"
                 onMouseDown={e => {
                   e.stopPropagation();
                 }}
@@ -309,7 +310,7 @@ export const Tab = (props: {
               />
             </div>
           </div>
-          <div className="bg-border mb-px w-px" />
+          <div className="bg-neutral-5 mb-px w-px" />
         </Sortable.Item>
       </ContextMenuTrigger>
       <ContextMenuContent>
@@ -411,7 +412,7 @@ export const Tabs = ({ className }: { className?: string }) => {
     <div
       className={cn('relative z-10 grid size-full grid-cols-[1fr_auto] overflow-hidden', className)}
     >
-      <div className="bg-border absolute bottom-0 left-0 -z-10 h-px w-full" />
+      <div className="bg-neutral-5 absolute bottom-0 left-0 -z-10 h-px w-full" />
       <div className="overflow-hidden">
         <ScrollArea className="size-full whitespace-nowrap">
           <div className="flex items-stretch">
@@ -466,7 +467,7 @@ export const Tabs = ({ className }: { className?: string }) => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-primary hover:text-primary"
+                className="text-neutral-11 hover:text-neutral-11"
                 onClick={handleAddOperation}
               >
                 <CirclePlus className="size-4" />

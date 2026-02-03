@@ -40,7 +40,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       <table
         aria-label="change-document"
         className={cn(
-          'min-w-full cursor-default whitespace-pre font-mono text-sm text-white',
+          'text-neutral-12 min-w-full cursor-default whitespace-pre font-mono text-sm',
           props.className,
         )}
       >
@@ -85,7 +85,7 @@ export function ChangeRow(props: {
       <tr>
         <td
           className={cn(
-            'w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             (props.type === 'removal' || removed) && 'bg-red-900/30',
             props.type === 'addition' && 'invisible',
@@ -95,7 +95,7 @@ export function ChangeRow(props: {
         </td>
         <td
           className={cn(
-            'w-[42px] min-w-fit select-none bg-gray-900 pr-3 text-right text-gray-600',
+            'bg-neutral-3 text-neutral-7 w-[42px] min-w-fit select-none pr-3 text-right',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-green-900/30',
@@ -105,7 +105,7 @@ export function ChangeRow(props: {
         </td>
         <td
           className={cn(
-            'bg-gray-900 px-2',
+            'bg-neutral-2 px-2',
             props.className,
             props.type === 'removal' && 'bg-[#561c1d]',
             props.type === 'addition' && 'bg-[#11362b]',
@@ -113,7 +113,7 @@ export function ChangeRow(props: {
         >
           <span
             className={cn(
-              'bg-gray-900',
+              'bg-neutral-2',
               props.type === 'removal' && 'bg-[#561c1d] line-through decoration-[#998c8b]',
               props.type === 'addition' && 'bg-[#11362b]',
             )}
@@ -178,7 +178,7 @@ function Addition(props: { children: ReactNode; className?: string }): ReactNode
     }
   }, [change.addition]);
   return (
-    <span className={cn('bg-[#11362b] hover:bg-green-900', props.className)}>{props.children}</span>
+    <span className={cn('bg-neutral-3 hover:bg-green-900', props.className)}>{props.children}</span>
   );
 }
 

@@ -131,7 +131,7 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
               <span className="font-semibold">{form.getValues().email}</span>, if it exists in our
               system.
             </p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-neutral-10 text-sm">
               If you don't receive an email, try to{' '}
               <Link href="#" className="underline" onClick={resetEmail.reset}>
                 reset your password again

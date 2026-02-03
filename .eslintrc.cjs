@@ -161,7 +161,7 @@ module.exports = {
       rules: {
         // conflicts with official prettier-plugin-tailwindcss and tailwind v3
         'better-tailwindcss/enforce-consistent-class-order': 'off',
-        'better-tailwindcss/enforce-canonical-classes': 'warn',
+        'better-tailwindcss/enforce-canonical-classes': 'off',
         // keeping classes in one line helps prettier-plugin-tailwindcss
         // enable wrapping in text editors to make classes human readable
         'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
@@ -214,10 +214,6 @@ module.exports = {
           {
             ignore: [
               'drag-none',
-              // Tailwind v4 semantic colors from @theme in index.css
-              // Regex patterns to match all utility variants (bg-*, text-*, border-*, etc.)
-              // Includes optional opacity modifier (/40, /60, etc.)
-              '(bg|text|border|ring|outline|shadow|from|via|to|fill|stroke|caret|accent|divide|placeholder)-(background|foreground|card|card-foreground|popover|popover-foreground|primary|primary-foreground|secondary|secondary-foreground|muted|muted-foreground|accent|accent-foreground|destructive|destructive-foreground|border|input|ring|sidebar|sidebar-background|sidebar-foreground|sidebar-primary|sidebar-primary-foreground|sidebar-accent|sidebar-accent-foreground|sidebar-border|sidebar-ring|chart-1|chart-2)(/.*)?',
               // Animation utilities (from index.css, replaces tailwindcss-animate)
               'animate-in',
               'animate-out',

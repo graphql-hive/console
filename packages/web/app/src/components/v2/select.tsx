@@ -15,14 +15,14 @@ export function Select({
 }): ReactElement {
   return (
     <div className={clsx('relative w-full', className)}>
-      <ArrowDownIcon className="absolute right-4 translate-y-1/2 text-gray-500" />
+      <ArrowDownIcon className="text-neutral-10 absolute right-4 translate-y-1/2" />
       <select
         value={value}
         className={clsx(
-          'h-[50px] w-full text-ellipsis rounded-sm border bg-gray-800 pl-4 pr-10 text-sm font-medium transition focus:ring active:bg-gray-900',
+          'bg-neutral-5 active:bg-neutral-2 h-[50px] w-full text-ellipsis rounded-sm border pl-4 pr-10 text-sm font-medium transition focus:ring',
           isInvalid
             ? 'border-red-500 text-red-500'
-            : ['border-transparent', value ? 'text-white' : 'text-gray-500'],
+            : ['border-transparent', value ? 'text-neutral-12' : 'text-neutral-10'],
         )}
         {...props}
       >

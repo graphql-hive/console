@@ -47,7 +47,7 @@ const IndicatorSeparator = (_: IndicatorSeparatorProps<unknown, boolean>) => {
 const styles: StylesConfig = {
   input: styles => ({
     ...styles,
-    color: '#fff',
+    color: 'var(--color-neutral-12)',
     fontSize: '14px',
   }),
   placeholder: styles => ({
@@ -56,34 +56,34 @@ const styles: StylesConfig = {
   }),
   control: styles => ({
     ...styles,
-    backgroundColor: '#121217',
+    backgroundColor: 'var(--color-neutral-2)',
     borderWidth: 1,
-    borderColor: '#282524',
+    borderColor: 'var(--color-neutral-5)',
     paddingTop: 1,
     paddingBottom: 1,
     borderRadius: 6,
     ':hover': {
       cursor: 'pointer',
-      borderColor: '#282524',
+      borderColor: 'var(--color-neutral-5)',
     },
   }),
   singleValue: styles => ({
     ...styles,
-    color: '#fff',
+    color: 'var(--color-neutral-10)',
     fontSize: '14px',
   }),
   option: styles => ({
     ...styles,
-    color: '#fff',
+    color: 'var(--color-neutral-10)',
     fontSize: '14px',
-    backgroundColor: '#121217',
+    backgroundColor: 'var(--color-neutral-3)',
     ':hover': {
-      backgroundColor: '#282524',
+      backgroundColor: 'var(--color-neutral-5)',
     },
   }),
   menu: styles => ({
     ...styles,
-    backgroundColor: '#121217',
+    backgroundColor: 'var(--color-neutral-3)',
   }),
 };
 

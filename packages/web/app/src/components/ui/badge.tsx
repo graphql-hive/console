@@ -7,15 +7,13 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        outline: 'text-foreground',
+        default: 'border-transparent bg-neutral-11 text-neutral-2 hover:bg-neutral-11/80',
+        secondary: 'border-transparent bg-neutral-2 text-neutral-11 hover:bg-neutral-2/80',
+        destructive: 'border-transparent bg-red-500 text-neutral-12 hover:bg-red-800',
+        outline: 'text-neutral-11',
         success: 'bg-emerald-950 text-emerald-400 border-transparent',
         warning: 'bg-yellow-700 border-transparent',
-        failure: 'bg-red-900 text-white border-transparent',
+        failure: 'bg-red-900 text-neutral-12 border-transparent',
       },
     },
     defaultVariants: {
@@ -33,15 +31,15 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 const badgeRoundedVariants = cva(
-  'inline-block rounded-full mx-1 border-[3px] p-[3px] align-middle text-xs font-bold leading-none text-white',
+  'inline-block rounded-full mx-1 outline-offset-[-10px] border-[3px] p-[3px] align-middle text-xs font-bold leading-none text-neutral-12',
   {
     variants: {
       color: {
         red: 'border-red-900 bg-red-500',
         yellow: 'border-yellow-900 bg-yellow-500',
         green: 'border-green-900 bg-green-500',
-        gray: 'border-gray-900 bg-gray-500',
-        orange: 'border-orange-900 bg-orange-500',
+        gray: 'border-neutral-7 bg-neutral-11',
+        orange: 'border-orange-900  bg-orange-500',
       },
     },
     defaultVariants: {
