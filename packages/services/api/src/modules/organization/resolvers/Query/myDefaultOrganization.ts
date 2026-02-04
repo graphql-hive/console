@@ -45,33 +45,34 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
         ...org,
         oidcIntegration: await oidcManager.getOIDCIntegrationForOrganization({
           organizationId: org.id,
+          skipAccessCheck: true,
         }),
       })),
     ).then(arr => arr.filter(v => v != null));
 
-    const matchingOrg = orgsWithOIDCConfig.find(org => {
-      if (actor.oidcIntegrationId) {
-        // select OIDC connected organization when user is authenticated with SSO
-        if (org.oidcIntegration?.id === actor.oidcIntegrationId) {
-          return org;
-        }
-      } else if (
-        !org.oidcIntegration ||
-        !org.oidcIntegration.oidcUserAccessOnly ||
-        actor.user.id === org.ownerId
-      ) {
-        // avoid showing OIDC forced organizations to be shown as the default
-        // when user is not authenticated with SSO
-        return org;
+    const getPriority = (org: (typeof orgsWithOIDCConfig)[number]) => {
+      // prioritize user's own organization
+      if (org.ownerId === actor.user.id) {
+        return 1;
       }
-    });
-
-    if (matchingOrg) {
+      if (actor.oidcIntegrationId) {
+        // prioritize OIDC connected organization when user is authenticated with SSO
+        if (org.oidcIntegration?.id === actor.oidcIntegrationId) {
+          return 2;
+        }
+      } else if (org.oidcIntegration?.oidcUserAccessOnly) {
+        // deprioritize OIDC forced organizations when user is not authenticated with SSO
+        return 4;
+      }
+      return 3;
+    };
+    const selectedOrg = orgsWithOIDCConfig.toSorted((a, b) => getPriority(a) - getPriority(b))[0];
+    if (selectedOrg) {
       return {
         selector: {
-          organizationSlug: matchingOrg.slug,
+          organizationSlug: selectedOrg.slug,
         },
-        organization: matchingOrg,
+        organization: selectedOrg,
       };
     }
   }
