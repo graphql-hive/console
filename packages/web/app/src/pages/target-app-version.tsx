@@ -27,8 +27,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
+import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
+import { cn } from '@/lib/utils';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 import { Link, useRouter } from '@tanstack/react-router';
 
@@ -57,6 +60,10 @@ const TargetAppsVersionQuery = graphql(`
         id
         name
         version
+        createdAt
+        lastUsed
+        totalDocumentCount
+        status
         documents(first: $first, filter: $documentsFilter) {
           pageInfo {
             hasNextPage
@@ -196,7 +203,8 @@ function TargetAppVersionContent(props: {
     return null;
   }
 
-  if (!data.fetching && !data.stale && !data?.data?.target?.appDeployment) {
+  const appDeployment = data.data?.target?.appDeployment;
+  if (!data.fetching && !data.stale && !appDeployment) {
     return (
       <>
         <Meta title="App Version Not found" />
@@ -226,8 +234,8 @@ function TargetAppVersionContent(props: {
                 App Deployments
               </Link>{' '}
               <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
-              {data.data?.target?.appDeployment ? (
-                `${data.data.target.appDeployment.name}@${data.data.target.appDeployment.version}`
+              {appDeployment ? (
+                `${appDeployment.name}@${appDeployment.version}`
               ) : (
                 <Skeleton className="inline-block h-5 w-[150px]" />
               )}
@@ -301,6 +309,43 @@ function TargetAppVersionContent(props: {
           />
         ) : (
           <>
+            <div className="mb-3">
+              <div className="border-neutral-5 text-neutral-10 grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border px-4 py-3 font-medium md:grid-rows-1">
+                <div className="min-w-0">
+                  <div className="text-xs">Status</div>
+                  <div
+                    className={cn(
+                      'text-neutral-12 truncate text-sm font-semibold',
+                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-red-600',
+                      appDeployment?.status === AppDeploymentStatus.Pending && 'text-neutral-11',
+                    )}
+                  >
+                    {appDeployment?.status.toUpperCase() ?? '...'}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Total Documents</div>
+                  <div className={cn('text-neutral-12 truncate text-center text-sm font-semibold')}>
+                    {appDeployment?.totalDocumentCount ?? '...'}
+                  </div>
+                </div>
+                <div className="min-w-0 text-xs">
+                  Created{' '}
+                  {appDeployment?.createdAt ? <TimeAgo date={appDeployment.createdAt} /> : '...'}
+                </div>
+                <div className="min-w-0 text-xs">
+                  {data.fetching ? (
+                    '...'
+                  ) : appDeployment?.lastUsed ? (
+                    <>
+                      Last Used <TimeAgo date={appDeployment.lastUsed} />
+                    </>
+                  ) : (
+                    'No Usage Data'
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -391,7 +436,13 @@ function TargetAppVersionContent(props: {
                 </TableBody>
               </Table>
             </div>
-            <div className="mt-2">
+            <div
+              className={cn(
+                'mt-2',
+                data?.data?.target?.appDeployment?.documents?.pageInfo?.hasNextPage === false &&
+                  'hidden',
+              )}
+            >
               <Button
                 size="sm"
                 variant="outline"
