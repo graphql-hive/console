@@ -567,7 +567,7 @@ export class OrganizationManager {
 
     const { email } = input;
     this.logger.info(
-      'Inviting to the organization (email=%s, organization=%s, role=%s)',
+      'Inviting to the organization (email=%s, organization=%o, role=%s)',
       email,
       input.organization,
       input.role,
