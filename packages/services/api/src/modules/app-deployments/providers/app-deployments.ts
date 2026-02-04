@@ -954,95 +954,69 @@ export class AppDeployments {
     lastUsedBefore: string | null;
     neverUsedAndCreatedBefore: string | null;
   }): Promise<string[]> {
-    const staleIds = new Set<string>();
+    const { targetId, name, lastUsedBefore, neverUsedAndCreatedBefore } = args;
 
-    // Get deployments with lastUsed < threshold
-    if (args.lastUsedBefore) {
-      let result;
-      try {
-        result = await this.clickhouse.query({
-          query: cSql`
-            SELECT app_deployment_id FROM app_deployments
-            WHERE target_id = ${args.targetId}
-              ${args.name ? cSql`AND app_name ILIKE ${'%' + args.name + '%'}` : cSql``}
-              AND (target_id, app_name, app_version) IN (
-                SELECT target_id, app_name, app_version
-                FROM app_deployment_usage
-                WHERE target_id = ${args.targetId}
-                GROUP BY target_id, app_name, app_version
-                HAVING max(last_request) < parseDateTimeBestEffort(${args.lastUsedBefore})
-              )
-          `,
-          queryId: 'get-stale-deployment-ids-by-usage',
-          timeout: 30_000,
-        });
-      } catch (error) {
-        this.logger.error(
-          'Failed to query stale deployment IDs by usage from clickhouse (targetId=%s, lastUsedBefore=%s): %s',
-          args.targetId,
-          args.lastUsedBefore,
-          error instanceof Error ? error.message : String(error),
-        );
-        throw error;
-      }
-
-      const model = z.array(z.object({ app_deployment_id: z.string() }));
-      const parsed = model.parse(result.data);
-      for (const row of parsed) {
-        staleIds.add(row.app_deployment_id);
-      }
-
-      this.logger.debug(
-        'found %d deployments with lastUsed before threshold (targetId=%s)',
-        parsed.length,
-        args.targetId,
-      );
+    if (!lastUsedBefore && !neverUsedAndCreatedBefore) {
+      return [];
     }
 
-    // Get deployments with NO usage data that were created before threshold
-    if (args.neverUsedAndCreatedBefore) {
-      // Find deployments that exist in clickhouse app_deployments but have NO matching usage rows
-      let result;
-      try {
-        result = await this.clickhouse.query({
-          query: cSql`
-            SELECT app_deployment_id FROM app_deployments
-            WHERE target_id = ${args.targetId}
-              ${args.name ? cSql`AND app_name ILIKE ${'%' + args.name + '%'}` : cSql``}
-              AND (target_id, app_name, app_version) NOT IN (
-                SELECT DISTINCT target_id, app_name, app_version
-                FROM app_deployment_usage
-                WHERE target_id = ${args.targetId}
-              )
-          `,
-          queryId: 'get-never-used-deployment-ids',
-          timeout: 30_000,
-        });
-      } catch (error) {
-        this.logger.error(
-          'Failed to query never-used deployment IDs from clickhouse (targetId=%s, neverUsedAndCreatedBefore=%s): %s',
-          args.targetId,
-          args.neverUsedAndCreatedBefore,
-          error instanceof Error ? error.message : String(error),
-        );
-        throw error;
-      }
+    const lastUsedCondition = lastUsedBefore
+      ? cSql`(target_id, app_name, app_version) IN (
+          SELECT target_id, app_name, app_version
+          FROM app_deployment_usage
+          WHERE target_id = ${targetId}
+          GROUP BY target_id, app_name, app_version
+          HAVING max(last_request) < parseDateTimeBestEffort(${lastUsedBefore})
+        )`
+      : null;
 
-      const model = z.array(z.object({ app_deployment_id: z.string() }));
-      const parsed = model.parse(result.data);
+    const neverUsedCondition = neverUsedAndCreatedBefore
+      ? cSql`(target_id, app_name, app_version) NOT IN (
+          SELECT DISTINCT target_id, app_name, app_version
+          FROM app_deployment_usage
+          WHERE target_id = ${targetId}
+        )`
+      : null;
 
-      for (const row of parsed) {
-        staleIds.add(row.app_deployment_id);
-      }
+    const staleCondition = (
+      lastUsedCondition && neverUsedCondition
+        ? cSql`(${lastUsedCondition} OR ${neverUsedCondition})`
+        : lastUsedCondition ?? neverUsedCondition
+    )!;
 
-      this.logger.debug(
-        'found %d deployments with no usage data (targetId=%s)',
-        parsed.length,
-        args.targetId,
+    let result;
+    try {
+      result = await this.clickhouse.query({
+        query: cSql`
+          SELECT app_deployment_id FROM app_deployments
+          WHERE target_id = ${targetId}
+            ${name ? cSql`AND app_name ILIKE ${'%' + name + '%'}` : cSql``}
+            AND ${staleCondition}
+        `,
+        queryId: 'get-stale-deployment-ids',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query stale deployment IDs from clickhouse (targetId=%s, lastUsedBefore=%s, neverUsedAndCreatedBefore=%s): %s',
+        targetId,
+        lastUsedBefore,
+        neverUsedAndCreatedBefore,
+        error instanceof Error ? error.message : String(error),
       );
+      throw error;
     }
 
-    return Array.from(staleIds);
+    const model = z.array(z.object({ app_deployment_id: z.string() }));
+    const parsed = model.parse(result.data);
+
+    this.logger.debug(
+      'found %d stale deployment candidates from clickhouse (targetId=%s)',
+      parsed.length,
+      targetId,
+    );
+
+    return parsed.map(row => row.app_deployment_id);
   }
 
   async getAffectedAppDeploymentsBySchemaCoordinates(args: {
