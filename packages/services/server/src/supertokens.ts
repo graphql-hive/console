@@ -167,24 +167,20 @@ export const backendConfig = (requirements: {
                 );
               }
 
-              let payload = {
+              const internalUser = await internalApi.ensureUser({
+                superTokensUserId: user.id,
+                email: user.emails[0],
+                oidcIntegrationId: input.userContext['oidcId'] ?? null,
+                firstName: null,
+                lastName: null,
+              });
+              const payload = {
                 version: '1',
                 superTokensUserId: input.userId,
+                userId: internalUser.user.id,
+                oidcIntegrationId: input.userContext['oidcId'] ?? null,
                 email: user.emails[0],
-                userId: undefined as string | undefined,
-                oidcIntegrationId: undefined as string | null | undefined,
               };
-              try {
-                const internalUser = await internalApi.ensureUser({
-                  superTokensUserId: user.id,
-                  email: user.emails[0],
-                  oidcIntegrationId: input.userContext['oidcId'] ?? null,
-                  firstName: null,
-                  lastName: null,
-                });
-                payload.userId = internalUser.user.id;
-                payload.oidcIntegrationId = input.userContext['oidcId'] ?? null;
-              } catch {}
 
               input.accessTokenPayload = structuredClone(payload);
               input.sessionDataInDatabase = structuredClone(payload);
