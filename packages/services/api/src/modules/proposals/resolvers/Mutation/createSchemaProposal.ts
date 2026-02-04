@@ -6,7 +6,7 @@ export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaPr
   { input },
   { injector },
 ) => {
-  const { target, title, description, isDraft, initialChecks, author } = input;
+  const { target, title, description, isDraft, author } = input;
 
   const result = await injector.get(SchemaProposalManager).proposeSchema({
     target,
@@ -14,7 +14,6 @@ export const createSchemaProposal: NonNullable<MutationResolvers['createSchemaPr
     description: description ?? '',
     isDraft: isDraft ?? false,
     author,
-    initialChecks,
   });
 
   if (result.type === 'error') {

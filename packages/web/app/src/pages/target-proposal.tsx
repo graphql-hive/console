@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { buildSchema, GraphQLSchema } from 'graphql';
-import { useMutation, useQuery, UseQueryExecute } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -8,6 +8,7 @@ import {
   Proposal_ReviewsFragment,
   toUpperSnakeCase,
 } from '@/components/target/proposals';
+import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import {
   ProposalQuery_VersionsListFragment,
@@ -160,6 +161,7 @@ export function TargetProposalsSinglePage(props: {
   proposalId: string;
   tab?: string;
   version?: string;
+  timestamp?: number;
 }) {
   return (
     <>
@@ -197,16 +199,21 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
       },
       id: props.proposalId,
       version: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
     },
     requestPolicy: 'cache-and-network',
   });
 
   // fetch all proposed changes for the selected version
-  const [changesQuery, refreshChanges] = useQuery({
+  const [changesQuery] = useQuery({
     query: ProposalChangesQuery,
     variables: {
       id: props.proposalId,
       v: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
+
       // @todo deal with pagination
     },
     // don't cache this because caching can make it behave strangely --
@@ -368,10 +375,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         proposal={proposal}
         target={query.data.target}
         me={query.data.me}
-        refreshData={(...args) => {
-          refreshProposal(args);
-          refreshChanges(args);
-        }}
       />
     );
   }, [
@@ -431,7 +434,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   <StageTransitionSelect
                     stage={proposal.stage}
                     onSelect={async stage => {
-                      const review = await reviewSchemaProposal({
+                      const _review = await reviewSchemaProposal({
                         input: {
                           schemaProposalId: props.proposalId,
                           stageTransition: stage,
@@ -439,7 +442,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           serviceName: '',
                         },
                       });
-                      console.log('@todo ', review);
+                      // @todo use urqlCache to invalidate the proposal and refresh?
                       refreshProposal();
                     }}
                   />
@@ -476,7 +479,6 @@ function TabbedContent(props: {
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
-  refreshData: UseQueryExecute;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
@@ -586,7 +588,9 @@ function TabbedContent(props: {
       </TabsContent>
       <TabsContent value={Tab.EDIT} variant="content" className="w-full">
         <div className="flex grow flex-row">
-          <TargetProposalEditPage {...props} />
+          <SaveProposalProvider>
+            <TargetProposalEditPage {...props} />
+          </SaveProposalProvider>
         </div>
       </TabsContent>
     </Tabs>
