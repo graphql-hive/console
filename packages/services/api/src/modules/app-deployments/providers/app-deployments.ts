@@ -913,7 +913,7 @@ export class AppDeployments {
       query: cSql`
         SELECT
           "filtered_app_deployments"."app_deployment_id" AS "appDeploymentId"
-          , formatDateTimeInJodaSyntax(max("app_deployment_usage"."last_request"), 'YYYY-MM-dd\\'T\\'HH:mm:SS.000000+00:00') AS "lastUsed"
+          , formatDateTimeInJodaSyntax(max("app_deployment_usage"."last_request"), 'yyyy-MM-dd\\'T\\'HH:mm:ss.000000+00:00') AS "lastUsed"
         FROM (
           SELECT
             "target_id"
@@ -946,6 +946,103 @@ export class AppDeployments {
     );
 
     return model.parse(result.data);
+  }
+
+  private async getStaleDeploymentIds(args: {
+    targetId: string;
+    name: string | null;
+    lastUsedBefore: string | null;
+    neverUsedAndCreatedBefore: string | null;
+  }): Promise<string[]> {
+    const staleIds = new Set<string>();
+
+    // Get deployments with lastUsed < threshold
+    if (args.lastUsedBefore) {
+      let result;
+      try {
+        result = await this.clickhouse.query({
+          query: cSql`
+            SELECT app_deployment_id FROM app_deployments
+            WHERE target_id = ${args.targetId}
+              ${args.name ? cSql`AND app_name ILIKE ${'%' + args.name + '%'}` : cSql``}
+              AND (target_id, app_name, app_version) IN (
+                SELECT target_id, app_name, app_version
+                FROM app_deployment_usage
+                WHERE target_id = ${args.targetId}
+                GROUP BY target_id, app_name, app_version
+                HAVING max(last_request) < parseDateTimeBestEffort(${args.lastUsedBefore})
+              )
+          `,
+          queryId: 'get-stale-deployment-ids-by-usage',
+          timeout: 30_000,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to query stale deployment IDs by usage from clickhouse (targetId=%s, lastUsedBefore=%s): %s',
+          args.targetId,
+          args.lastUsedBefore,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw error;
+      }
+
+      const model = z.array(z.object({ app_deployment_id: z.string() }));
+      const parsed = model.parse(result.data);
+      for (const row of parsed) {
+        staleIds.add(row.app_deployment_id);
+      }
+
+      this.logger.debug(
+        'found %d deployments with lastUsed before threshold (targetId=%s)',
+        parsed.length,
+        args.targetId,
+      );
+    }
+
+    // Get deployments with NO usage data that were created before threshold
+    if (args.neverUsedAndCreatedBefore) {
+      // Find deployments that exist in clickhouse app_deployments but have NO matching usage rows
+      let result;
+      try {
+        result = await this.clickhouse.query({
+          query: cSql`
+            SELECT app_deployment_id FROM app_deployments
+            WHERE target_id = ${args.targetId}
+              ${args.name ? cSql`AND app_name ILIKE ${'%' + args.name + '%'}` : cSql``}
+              AND (target_id, app_name, app_version) NOT IN (
+                SELECT DISTINCT target_id, app_name, app_version
+                FROM app_deployment_usage
+                WHERE target_id = ${args.targetId}
+              )
+          `,
+          queryId: 'get-never-used-deployment-ids',
+          timeout: 30_000,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to query never-used deployment IDs from clickhouse (targetId=%s, neverUsedAndCreatedBefore=%s): %s',
+          args.targetId,
+          args.neverUsedAndCreatedBefore,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw error;
+      }
+
+      const model = z.array(z.object({ app_deployment_id: z.string() }));
+      const parsed = model.parse(result.data);
+
+      for (const row of parsed) {
+        staleIds.add(row.app_deployment_id);
+      }
+
+      this.logger.debug(
+        'found %d deployments with no usage data (targetId=%s)',
+        parsed.length,
+        args.targetId,
+      );
+    }
+
+    return Array.from(staleIds);
   }
 
   async getAffectedAppDeploymentsBySchemaCoordinates(args: {
@@ -1382,7 +1479,40 @@ export class AppDeployments {
     }
 
     // Get active deployments from db
-    const maxDeployments = 1000; // note: hard limit
+    const hasDateFilter = args.filter.lastUsedBefore || args.filter.neverUsedAndCreatedBefore;
+    const maxDeployments = 1000; // note: hard limit, only applies when no date filters are used
+
+    // When date filters are present, query clickhouse first to identify stale deployment IDs
+    // This avoids the LIMIT 1000 problem where old stale deployments get cut off
+    let staleDeploymentIds;
+    if (hasDateFilter) {
+      staleDeploymentIds = await this.getStaleDeploymentIds({
+        targetId: args.targetId,
+        name: args.filter.name ?? null,
+        lastUsedBefore: args.filter.lastUsedBefore ?? null,
+        neverUsedAndCreatedBefore: args.filter.neverUsedAndCreatedBefore ?? null,
+      });
+
+      this.logger.debug(
+        'found %d stale deployment candidates from clickhouse (targetId=%s)',
+        staleDeploymentIds.length,
+        args.targetId,
+      );
+
+      if (staleDeploymentIds.length === 0) {
+        return {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: cursor !== null,
+            endCursor: '',
+            startCursor: '',
+          },
+        };
+      }
+    }
+
+    // Fetch deployments from postgres
     let activeDeployments;
     try {
       const activeDeploymentsResult = await this.pool.query<unknown>(sql`
@@ -1391,12 +1521,16 @@ export class AppDeployments {
         FROM
           "app_deployments"
         WHERE
-          "target_id" = ${args.targetId}
+          ${
+            staleDeploymentIds
+              ? sql`"id" = ANY(${sql.array(staleDeploymentIds, 'uuid')})`
+              : sql`"target_id" = ${args.targetId}
+              ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}`
+          }
           AND "activated_at" IS NOT NULL
           AND "retired_at" IS NULL
-          ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
         ORDER BY "created_at" DESC, "id"
-        LIMIT ${maxDeployments}
+        ${staleDeploymentIds ? sql`` : sql`LIMIT ${maxDeployments}`}
       `);
 
       activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
@@ -1452,8 +1586,6 @@ export class AppDeployments {
 
     // Apply OR filter logic for date filters
     // If no date filters provided, return all active deployments (name filter already applied in SQL)
-    const hasDateFilter = args.filter.lastUsedBefore || args.filter.neverUsedAndCreatedBefore;
-
     const filteredDeployments = activeDeployments.filter(deployment => {
       // If no date filters, include all deployments
       if (!hasDateFilter) {
