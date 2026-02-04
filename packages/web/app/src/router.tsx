@@ -35,7 +35,6 @@ import { SchemaProposalStage } from './gql/graphql';
 import { AuthPage } from './pages/auth';
 import { AuthCallbackPage } from './pages/auth-callback';
 import { AuthOIDCPage } from './pages/auth-oidc';
-import { AuthOIDCRequestPage } from './pages/auth-oidc-request';
 import { AuthResetPasswordPage } from './pages/auth-reset-password';
 import { AuthSignInPage } from './pages/auth-sign-in';
 import { AuthSignUpPage } from './pages/auth-sign-up';
@@ -50,6 +49,7 @@ import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organiza
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
+import { OrganizationOIDCRequestPage } from './pages/organization-oidc-request';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -237,21 +237,6 @@ const authSSORoute = createRoute({
   },
 });
 
-const AuthOIDCRequestRouteSearch = AuthSharedSearch.extend({
-  id: z.string({ required_error: 'OIDC ID is required' }),
-});
-const authOIDCRequestRoute = createRoute({
-  getParentRoute: () => authRoute,
-  path: 'oidc-request',
-  validateSearch(search) {
-    return AuthOIDCRequestRouteSearch.parse(search);
-  },
-  component: function AuthOIDCRequestRoute() {
-    const { id, redirectToPath } = authOIDCRequestRoute.useSearch();
-    return <AuthOIDCRequestPage oidcId={id} redirectToPath={redirectToPath} />;
-  },
-});
-
 const AuthOIDCRouteSearch = AuthSharedSearch.extend({
   id: z
     .string({
@@ -383,6 +368,29 @@ const organizationRoute = createRoute({
   path: '$organizationSlug',
   notFoundComponent: NotFound,
   errorComponent: ErrorComponent,
+});
+
+const OrganizationOIDCRequestRouteSearch = z.object({
+  id: z.string({ required_error: 'OIDC ID is required' }),
+  redirectToPath: z.string().optional().default('/'),
+});
+const organizationOIDCRequestRoute = createRoute({
+  getParentRoute: () => organizationRoute,
+  path: 'oidc-request',
+  validateSearch(search) {
+    return OrganizationOIDCRequestRouteSearch.parse(search);
+  },
+  component: function OrganizationOIDCRequestRoute() {
+    const { organizationSlug } = organizationRoute.useParams();
+    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
+    return (
+      <OrganizationOIDCRequestPage
+        organizationSlug={organizationSlug}
+        oidcId={id}
+        redirectToPath={redirectToPath}
+      />
+    );
+  },
 });
 
 const organizationIndexRoute = createRoute({
@@ -1065,7 +1073,6 @@ const routeTree = root.addChildren([
       authSignInRoute,
       authSignUpRoute,
       authSSORoute,
-      authOIDCRequestRoute,
       authOIDCRoute,
       authCallbackRoute,
       authVerifyEmailRoute,
@@ -1082,6 +1089,7 @@ const routeTree = root.addChildren([
       organizationIndexRoute,
       joinOrganizationRoute,
       transferOrganizationRoute,
+      organizationOIDCRequestRoute,
       organizationSupportRoute,
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,

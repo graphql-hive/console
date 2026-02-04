@@ -39,10 +39,11 @@ export class AccessError extends HiveError {
 
 export class OIDCRequiredError extends AccessError {
   constructor(
+    organizationSlug: string,
     oidcIntegrationId: string,
     reason: string = 'This action requires OIDC authentication to proceed.',
   ) {
-    super(reason, 'NEEDS_OIDC', { oidcIntegrationId });
+    super(reason, 'NEEDS_OIDC', { organizationSlug, oidcIntegrationId });
   }
 }
 

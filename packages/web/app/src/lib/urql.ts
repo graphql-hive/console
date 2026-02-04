@@ -178,7 +178,9 @@ export const urqlClient = createClient({
     authExchange(async () => {
       let action:
         | { type: 'NEEDS_REFRESH' | 'VERIFY_EMAIL' | 'UNAUTHENTICATED' }
-        | { type: 'NEEDS_OIDC'; oidcIntegrationId: string } = { type: 'UNAUTHENTICATED' };
+        | { type: 'NEEDS_OIDC'; organizationSlug: string; oidcIntegrationId: string } = {
+        type: 'UNAUTHENTICATED',
+      };
 
       return {
         addAuthToOperation(operation) {
@@ -207,6 +209,7 @@ export const urqlClient = createClient({
           if (oidcError) {
             action = {
               type: 'NEEDS_OIDC',
+              organizationSlug: oidcError.extensions?.organizationSlug as string,
               oidcIntegrationId: oidcError.extensions?.oidcIntegrationId as string,
             };
             return true;
@@ -220,7 +223,7 @@ export const urqlClient = createClient({
           } else if (action.type === 'VERIFY_EMAIL') {
             window.location.href = '/auth/verify-email';
           } else if (action.type === 'NEEDS_OIDC') {
-            window.location.href = `/auth/oidc-request?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
+            window.location.href = `/${action.organizationSlug}/oidc-request?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           } else {
             window.location.href = `/auth?redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           }

@@ -115,7 +115,7 @@ export class SuperTokensCookieBasedSession extends Session {
     }
 
     if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
-      throw new OIDCRequiredError(oidcIntegration.id);
+      throw new OIDCRequiredError(organization.slug, oidcIntegration.id);
     }
 
     this.logger.debug(

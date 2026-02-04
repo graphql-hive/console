@@ -52,13 +52,13 @@ export enum Page {
   Subscription = 'subscription',
 }
 const OrganizationLayoutQuery = graphql(`
-  query OrganizationLayoutQuery($organizationSlug: String!) {
+  query OrganizationLayoutQuery($organizationSlug: String!, $minimal: Boolean!) {
     me {
       id
       provider
       ...UserMenu_MeFragment
     }
-    organizationBySlug(organizationSlug: $organizationSlug) {
+    organizationBySlug(organizationSlug: $organizationSlug) @skip(if: $minimal) {
       id
       slug
       viewerCanCreateProject
@@ -84,6 +84,7 @@ export function OrganizationLayout({
 }: {
   page?: Page;
   className?: string;
+  minimal?: boolean;
   organizationSlug: string;
   children: ReactNode;
 }): ReactElement | null {
@@ -92,6 +93,7 @@ export function OrganizationLayout({
     query: OrganizationLayoutQuery,
     variables: {
       organizationSlug: props.organizationSlug,
+      minimal: props.minimal ?? false,
     },
     requestPolicy: 'cache-first',
   });
@@ -105,7 +107,7 @@ export function OrganizationLayout({
 
   // Only show the null state state if the query has finished fetching and data is not stale
   // This prevents showing null state when switching between orgs with cached data
-  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization;
+  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization && !props.minimal;
 
   return (
     <>
