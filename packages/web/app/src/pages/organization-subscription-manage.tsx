@@ -333,7 +333,7 @@ function Inner(props: {
       <Card className="w-full">
         <Heading className="mb-4">Choose Your Plan</Heading>
         {missingBillingUpdatePermissions ? (
-          <div className="text-neutral-2 mb-3 text-sm">
+          <div className="text-neutral-10 mb-3 text-sm">
             You lack the necessary permission 'billing:update' to update the subscription plan.
           </div>
         ) : null}
