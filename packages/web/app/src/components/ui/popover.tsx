@@ -31,9 +31,20 @@ const PopoverArrow = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <PopoverPrimitive.Arrow
     ref={ref}
-    className={cn('dark:fill-neutral-5 fill-neutral-1 stroke-neutral-4', className)}
+    className={cn('dark:fill-neutral-4 fill-neutral-1 relative -top-px', className)}
     {...props}
-  />
+    asChild
+  >
+    <svg>
+      <polygon points="0,0 30,0 15,10" />
+      <path
+        d="M0,0 L15,10 L30,0"
+        className="stroke-neutral-4 dark:stroke-neutral-5"
+        fill="none"
+        vector-effect="non-scaling-stroke"
+      />
+    </svg>
+  </PopoverPrimitive.Arrow>
 ));
 
 PopoverArrow.displayName = PopoverPrimitive.Arrow.displayName;
