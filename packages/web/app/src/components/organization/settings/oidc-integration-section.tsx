@@ -1127,6 +1127,7 @@ function UpdateOIDCIntegrationForm(props: {
                       </div>
                       <Switch
                         checked={props.oidcIntegration.requireInvitation}
+                        data-cy="oidc-require-invitation-toggle"
                         onCheckedChange={checked =>
                           onOidcRestrictionChange('requireInvitation', checked)
                         }
