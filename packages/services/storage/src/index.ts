@@ -498,7 +498,7 @@ export async function createStorage(
         displayName: string;
         identityId: string;
       },
-      connection: Connection,
+      connection: DatabaseTransactionConnection,
     ) {
       const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
