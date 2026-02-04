@@ -1607,15 +1607,15 @@ export class AppDeployments {
     );
 
     // apply cursor-based pagination
+    // Order is: created_at DESC, id ASC
+    // Items after cursor have: smaller created_at OR (same created_at AND larger id)
+    // Note: Compare ISO strings directly to preserve microsecond precision (JS Date loses it)
     let paginatedDeployments = filteredDeployments;
     if (cursor) {
-      const cursorCreatedAt = new Date(cursor.createdAt).getTime();
       paginatedDeployments = filteredDeployments.filter(deployment => {
-        const deploymentCreatedAt = new Date(deployment.createdAt).getTime();
-        return (
-          deploymentCreatedAt < cursorCreatedAt ||
-          (deploymentCreatedAt === cursorCreatedAt && deployment.id < cursor.id)
-        );
+        if (deployment.createdAt < cursor.createdAt) return true;
+        if (deployment.createdAt === cursor.createdAt && deployment.id > cursor.id) return true;
+        return false;
       });
     }
 
