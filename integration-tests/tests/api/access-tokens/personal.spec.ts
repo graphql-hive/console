@@ -696,7 +696,7 @@ test.concurrent(
       },
     ]);
 
-    const projectQuery = await execute({
+    let projectQuery = await execute({
       document: OrganizationProjectTargetQuery1,
       variables: {
         organizationSlug: org.organization.slug,
@@ -731,7 +731,7 @@ test.concurrent(
 
     expect(await fetchPermissions(personalAccessToken)).toEqual([]);
 
-    await execute({
+    projectQuery = await execute({
       document: OrganizationProjectTargetQuery1,
       variables: {
         organizationSlug: org.organization.slug,
@@ -739,6 +739,10 @@ test.concurrent(
         targetSlug: project.target.slug,
       },
       authToken: personalAccessToken,
-    }).then(e => e.expectGraphQLErrors());
+    }).then(e => e.expectNoGraphQLErrors());
+
+    expect(projectQuery).toEqual({
+      organization: null,
+    });
   },
 );
