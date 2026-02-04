@@ -969,7 +969,7 @@ describe('restrictions', () => {
 });
 
 test.concurrent(
-  'Querying Organization.oidcIntegration details errors if user does not have oidc:modify permission',
+  'Organization.oidcIntegration resolves to null without error if user does not have oidc:modify permission',
   async ({ expect }) => {
     const seed = initSeed();
     const { createOrg, ownerToken } = await seed.createOwner();
@@ -998,17 +998,19 @@ test.concurrent(
     const role = await createMemberRole([]);
     await assignMemberRole({ roleId: role.id, userId: member.id });
 
-    await execute({
+    let result = await execute({
       document: OrganizationWithOIDCIntegration,
       variables: {
         organizationSlug: organization.slug,
       },
       authToken: memberToken,
-    }).then(r => r.expectGraphQLErrors());
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.organization!.oidcIntegration).toEqual(null);
 
     await updateMemberRole(role, ['oidc:modify']);
 
-    const result = await execute({
+    result = await execute({
       document: OrganizationWithOIDCIntegration,
       variables: {
         organizationSlug: organization.slug,
