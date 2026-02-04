@@ -296,7 +296,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                           search={{
                             coordinates: props.coordinate,
                           }}
-                          className="text-neutral-2 hover:underline"
+                          className="text-neutral-11 hover:text-neutral-12 hover:underline"
                         >
                           {deployment.name}
                         </Link>
