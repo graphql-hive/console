@@ -14,5 +14,14 @@ export default {
         );
       `,
     },
+    {
+      name: 'rename `oidc_user_access_only` to `oidc_user_join_only` and re-add `oidc_user_access_only` column',
+      query: sql`
+        ALTER TABLE IF EXISTS "oidc_integrations"
+        RENAME COLUMN "oidc_user_access_only" TO "oidc_user_join_only";
+        ALTER TABLE IF EXISTS "oidc_integrations"
+        ADD COLUMN IF NOT EXISTS "oidc_user_access_only" boolean NOT NULL DEFAULT false;
+      `,
+    },
   ],
 } satisfies MigrationExecutor;

@@ -661,7 +661,7 @@ export class OrganizationManager {
         organizationId: organization.id,
       });
 
-      if (oidcIntegration?.oidcUserAccessOnly && actor.oidcIntegrationId !== oidcIntegration.id) {
+      if (oidcIntegration?.oidcUserJoinOnly && actor.oidcIntegrationId !== oidcIntegration.id) {
         return {
           message:
             'The user is not authorized through the OIDC integration required for the organization',

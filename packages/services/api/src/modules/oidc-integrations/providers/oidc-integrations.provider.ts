@@ -344,7 +344,11 @@ export class OIDCIntegrationsProvider {
     } as const;
   }
 
-  async updateOIDCRestrictions(args: { oidcIntegrationId: string; oidcUserAccessOnly: boolean }) {
+  async updateOIDCRestrictions(args: {
+    oidcIntegrationId: string;
+    oidcUserJoinOnly: boolean | null;
+    oidcUserAccessOnly: boolean | null;
+  }) {
     if (this.isEnabled() === false) {
       return {
         type: 'error',

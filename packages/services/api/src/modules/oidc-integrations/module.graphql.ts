@@ -18,6 +18,7 @@ export default gql`
     userinfoEndpoint: String!
     authorizationEndpoint: String!
     additionalScopes: [String!]!
+    oidcUserJoinOnly: Boolean!
     oidcUserAccessOnly: Boolean!
     activeWithCurrentSession: Boolean!
     defaultMemberRole: MemberRole!
@@ -165,7 +166,8 @@ export default gql`
     Applies only to newly invited members.
     Existing members are not affected.
     """
-    oidcUserAccessOnly: Boolean!
+    oidcUserJoinOnly: Boolean
+    oidcUserAccessOnly: Boolean
   }
 
   """

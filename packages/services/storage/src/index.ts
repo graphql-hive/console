@@ -3205,6 +3205,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3234,6 +3235,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3305,6 +3307,7 @@ export async function createStorage(
             , "userinfo_endpoint"
             , "authorization_endpoint"
             , "additional_scopes"
+            , "oidc_user_join_only"
             , "oidc_user_access_only"
             , "default_role_id"
             , "default_assigned_resources"
@@ -3363,6 +3366,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3375,7 +3379,8 @@ export async function createStorage(
       const result = await pool.one(sql`/* updateOIDCRestrictions */
           UPDATE "oidc_integrations"
           SET
-            "oidc_user_access_only" = ${args.oidcUserAccessOnly}
+            "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
+            , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? sql`"oidc_user_access_only"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -3388,6 +3393,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3413,6 +3419,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "additional_scopes"
           , "default_role_id"
@@ -3455,6 +3462,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -4980,6 +4988,7 @@ const OktaIntegrationBaseModel = zod.object({
     .array(zod.string())
     .nullable()
     .transform(value => (value === null ? [] : value)),
+  oidc_user_join_only: zod.boolean(),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
@@ -5017,6 +5026,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       additionalScopes: rawRecord.additional_scopes,
+      oidcUserJoinOnly: rawRecord.oidc_user_join_only,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
@@ -5032,6 +5042,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
     additionalScopes: rawRecord.additional_scopes,
+    oidcUserJoinOnly: rawRecord.oidc_user_join_only,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,

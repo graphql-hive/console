@@ -645,7 +645,8 @@ export interface Storage {
 
   updateOIDCRestrictions(_: {
     oidcIntegrationId: string;
-    oidcUserAccessOnly: boolean;
+    oidcUserJoinOnly: boolean | null;
+    oidcUserAccessOnly: boolean | null;
   }): Promise<OIDCIntegration>;
 
   updateOIDCDefaultMemberRole(_: {
