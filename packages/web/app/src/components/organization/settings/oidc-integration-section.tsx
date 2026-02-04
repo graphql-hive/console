@@ -1096,7 +1096,7 @@ function UpdateOIDCIntegrationForm(props: {
                     <div className="flex items-center justify-between space-x-4">
                       <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
                         <p>Require OIDC to Access</p>
-                        <p className="text-muted-foreground text-xs font-normal leading-snug">
+                        <p className="text-neutral-10 text-xs font-normal leading-snug">
                           Prompt users to authenticate with OIDC before accessing the organization.
                           <br />
                           <span className="font-bold">

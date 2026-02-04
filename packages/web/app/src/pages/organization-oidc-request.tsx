@@ -26,7 +26,7 @@ export function OrganizationOIDCRequestPage(props: {
           <Lock className="size-20 stroke-amber-400" />
           <div className="flex flex-col gap-y-2 text-center">
             <Heading>Single sign-on</Heading>
-            <span className="text-center text-sm font-medium text-gray-500">
+            <span className="text-neutral-10 text-center text-sm font-medium">
               To access the organization's resources, authenticate your account with single sign-on.
             </span>
           </div>
