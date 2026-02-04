@@ -139,15 +139,7 @@ export function TargetProposalEditPage(props: {
               });
             }}
           >
-            {isSaving ? (
-              <Spinner className="mr-1 size-4" />
-            ) : (
-              // ) : saved ? (
-              //   <CheckIcon size={16} className="mr-1 text-green-500" />
-              // ) : errored ? (
-              //   <XIcon className="mr-1 size-5 text-red-500" />
-              <SaveIcon className="mr-1 size-4" />
-            )}
+            {isSaving ? <Spinner className="mr-1 size-4" /> : <SaveIcon className="mr-1 size-4" />}
             Save Changes
           </Button>
         </div>
@@ -158,15 +150,6 @@ export function TargetProposalEditPage(props: {
           existingServices={existingServices ?? []}
           projectTypeFragment={target ?? undefined}
           selectFragment={target ?? undefined}
-          error={
-            <></>
-            // @todo decide what to do with these errors...
-            // editorError.length > 0 && (
-            //   <Callout type="error" className="mb-6 w-full text-sm">
-            //     {editorError}
-            //   </Callout>
-            // )
-          }
         />
       </div>
     </>

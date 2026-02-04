@@ -394,8 +394,7 @@ function ProposalsNewContent(
                 schemaProposalId,
               });
             } catch (e) {
-              console.error('saveChanges', e);
-              // @todo
+              setEditorError(e instanceof Error ? e.message : 'Something went wrong.');
             }
           }
           setIsSubmitting(false);

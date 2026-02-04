@@ -178,7 +178,6 @@ export interface oidc_integrations {
 export interface organization_access_tokens {
   assigned_resources: any | null;
   created_at: Date;
-  created_by_user_id: string | null;
   description: string;
   first_characters: string;
   hash: string;

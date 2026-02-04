@@ -48,12 +48,7 @@ export const SaveProposalContext = createContext({
   }) => Promise.resolve(void 0),
   state: [] as Progress,
   isSaving: false,
-  selector: {
-    organizationSlug: 'todo',
-    projectSlug: 'todo',
-    targetSlug: 'todo',
-    schemaProposalId: 'todo',
-  } as {
+  selector: null as {
     organizationSlug: string;
     projectSlug: string;
     targetSlug: string;
@@ -138,7 +133,6 @@ export function SaveProposalProvider(props: { children: ReactNode }) {
               setChecksInProgress(checksCopy);
             }
           }
-          // setIsSaving(false);
         },
         state: checksInProgress,
         isSaving,
@@ -159,8 +153,6 @@ export function SaveProposalModal() {
       open={isSaving && !!selector}
       onOpenChange={async isOpen => {
         if (isOpen === false && selector) {
-          // setChecksInProgress([]);
-
           // on close, navigate to the proposal's show page
           await navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
