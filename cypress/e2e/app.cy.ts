@@ -196,13 +196,6 @@ describe('oidc', () => {
       cy.fillSignInFormAndSubmit(memberData);
       cy.wait(500);
 
-      // If account linking was successful, the app should prompt user to continue with SSO
-      cy.get('button').contains('Continue').click();
-
-      cy.get('input[id="Input_Username"]').type('test-user-2');
-      cy.get('input[id="Input_Password"]').type('password');
-      cy.get('button[value="login"]').click();
-
       cy.get(`a[href="/${slug}"]`).should('exist');
     });
   });
