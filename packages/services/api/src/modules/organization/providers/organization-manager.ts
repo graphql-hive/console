@@ -6,7 +6,7 @@ import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-i
 import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
-import { HiveError } from '../../../shared/errors';
+import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -103,13 +103,25 @@ export class OrganizationManager {
       return null;
     }
 
-    await this.session.assertPerformAction({
-      action: 'organization:describe',
-      organizationId: organization.id,
-      params: {
+    const canAccess = await this.session
+      .assertPerformAction({
+        action: 'organization:describe',
         organizationId: organization.id,
-      },
-    });
+        params: {
+          organizationId: organization.id,
+        },
+      })
+      .then(() => true)
+      .catch(err => {
+        if (err instanceof AccessError && !(err instanceof OIDCRequiredError)) {
+          return false;
+        }
+        return Promise.reject(err);
+      });
+
+    if (canAccess === false) {
+      return null;
+    }
 
     return organization;
   }
