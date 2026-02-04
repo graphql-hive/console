@@ -73,7 +73,9 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
     openUpdateEndpointDialog?: () => void;
     openAddTestDialog?: () => void;
     openPreflightPromptModal?: (props: {
-      placeholder: string;
+      title?: string;
+      description?: string;
+      placeholder?: string;
       defaultValue?: string;
       onSubmit?: (value: string | null) => void;
     }) => void;
@@ -142,7 +144,9 @@ export interface LaboratoryApi {
   openUpdateEndpointDialog?: () => void;
   openAddTestDialog?: () => void;
   openPreflightPromptModal?: (props: {
-    placeholder: string;
+    title?: string;
+    description?: string;
+    placeholder?: string;
     defaultValue?: string;
     onSubmit?: (value: string | null) => void;
   }) => void;

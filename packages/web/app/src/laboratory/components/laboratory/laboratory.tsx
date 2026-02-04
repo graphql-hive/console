@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
 import * as z from 'zod';
+import { Markdown } from '@/components/v2/markdown';
 import { Collections } from '@/laboratory/components/laboratory/collections';
 import { Command } from '@/laboratory/components/laboratory/command';
 import {
@@ -44,7 +45,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/laboratory/components/ui/empty';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/laboratory/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/laboratory/components/ui/field';
 import { Input } from '@/laboratory/components/ui/input';
 import {
   ResizableHandle,
@@ -81,7 +88,9 @@ const addTestFormSchema = z.object({
 const PreflightPromptModal = (props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  placeholder: string;
+  title?: string;
+  description?: string;
+  placeholder?: string;
   defaultValue?: string;
   onSubmit?: (value: string | null) => void;
 }) => {
@@ -116,7 +125,6 @@ const PreflightPromptModal = (props: {
         <DialogHeader>
           <DialogTitle>Preflight prompt</DialogTitle>
         </DialogHeader>
-        <DialogDescription>Enter values for the preflight script.</DialogDescription>
         <form
           id="preflight-prompt-form"
           onSubmit={e => {
@@ -128,8 +136,15 @@ const PreflightPromptModal = (props: {
             <form.Field name="value">
               {field => {
                 const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
                 return (
                   <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>{props.title}</FieldLabel>
+                    {props.description && (
+                      <FieldDescription>
+                        <Markdown content={props.description} />
+                      </FieldDescription>
+                    )}
                     <Input
                       id={field.name}
                       name={field.name}
@@ -470,11 +485,51 @@ export const Laboratory = (
     [props.permissions],
   );
 
+  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
+
+  const [preflightPromptModalProps, setPreflightPromptModalProps] = useState<{
+    title?: string;
+    description?: string;
+    placeholder?: string;
+    defaultValue?: string;
+    onSubmit?: (value: string | null) => void;
+  }>({
+    title: undefined,
+    description: undefined,
+    placeholder: undefined,
+    defaultValue: undefined,
+    onSubmit: undefined,
+  });
+
+  const openPreflightPromptModal = useCallback(
+    (props: {
+      title?: string;
+      description?: string;
+      placeholder?: string;
+      defaultValue?: string;
+      onSubmit?: (value: string | null) => void;
+    }) => {
+      setPreflightPromptModalProps({
+        title: props.title,
+        description: props.description,
+        placeholder: props.placeholder,
+        defaultValue: props.defaultValue,
+        onSubmit: props.onSubmit,
+      });
+
+      setTimeout(() => {
+        setIsPreflightPromptModalOpen(true);
+      }, 200);
+    },
+    [],
+  );
+
   const settingsApi = useSettings(props);
   const envApi = useEnv(props);
   const preflightApi = usePreflight({
     ...props,
     envApi,
+    openPreflightPromptModal,
   });
 
   const pluginsApi = usePlugins(props);
@@ -557,37 +612,6 @@ export const Laboratory = (
       setIsAddTestDialogOpen(false);
     },
   });
-
-  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
-
-  const [preflightPromptModalProps, setPreflightPromptModalProps] = useState<{
-    placeholder: string;
-    defaultValue?: string;
-    onSubmit?: (value: string | null) => void;
-  }>({
-    placeholder: '',
-    defaultValue: undefined,
-    onSubmit: undefined,
-  });
-
-  const openPreflightPromptModal = useCallback(
-    (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => {
-      setPreflightPromptModalProps({
-        placeholder: props.placeholder,
-        defaultValue: props.defaultValue,
-        onSubmit: props.onSubmit,
-      });
-
-      setTimeout(() => {
-        setIsPreflightPromptModalOpen(true);
-      }, 200);
-    },
-    [],
-  );
 
   const containerRef = useRef<HTMLDivElement>(null);
 
