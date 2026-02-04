@@ -20,7 +20,6 @@ export default gql`
     additionalScopes: [String!]!
     oidcUserJoinOnly: Boolean!
     oidcUserAccessOnly: Boolean!
-    activeWithCurrentSession: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
   }

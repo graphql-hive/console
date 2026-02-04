@@ -8,11 +8,6 @@ const OrganizationSelector_OrganizationConnectionFragment = graphql(`
     nodes {
       id
       slug
-      oidcIntegration {
-        id
-        oidcUserAccessOnly
-        activeWithCurrentSession
-      }
     }
   }
 `);

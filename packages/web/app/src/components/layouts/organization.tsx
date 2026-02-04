@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
-import { graphql, useFragment } from '@/gql';
+import { graphql } from '@/gql';
 import { AuthProviderType, ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
@@ -51,20 +51,6 @@ export enum Page {
   Support = 'support',
   Subscription = 'subscription',
 }
-
-const OrganizationLayout_OrganizationFragment = graphql(`
-  fragment OrganizationLayout_OrganizationFragment on Organization {
-    id
-    slug
-    viewerCanCreateProject
-    viewerCanManageSupportTickets
-    viewerCanDescribeBilling
-    viewerCanSeeMembers
-    ...ProPlanBilling_OrganizationFragment
-    ...RateLimitWarn_OrganizationFragment
-  }
-`);
-
 const OrganizationLayoutQuery = graphql(`
   query OrganizationLayoutQuery($organizationSlug: String!) {
     me {
@@ -74,13 +60,18 @@ const OrganizationLayoutQuery = graphql(`
     }
     organizationBySlug(organizationSlug: $organizationSlug) {
       id
+      slug
+      viewerCanCreateProject
+      viewerCanManageSupportTickets
+      viewerCanDescribeBilling
+      viewerCanSeeMembers
+      ...UserMenu_OrganizationFragment
+      ...ProPlanBilling_OrganizationFragment
+      ...RateLimitWarn_OrganizationFragment
     }
     organizations {
       ...OrganizationSelector_OrganizationConnectionFragment
       ...UserMenu_OrganizationConnectionFragment
-      nodes {
-        ...OrganizationLayout_OrganizationFragment
-      }
     }
   }
 `);
@@ -105,14 +96,7 @@ export function OrganizationLayout({
     requestPolicy: 'cache-first',
   });
 
-  const organizationExists = query.data?.organizationBySlug;
-
-  const organizations = useFragment(
-    OrganizationLayout_OrganizationFragment,
-    query.data?.organizations.nodes,
-  );
-  const currentOrganization = organizations?.find(org => org.slug === props.organizationSlug);
-
+  const currentOrganization = query.data?.organizationBySlug;
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   if (query.error) {
@@ -121,7 +105,7 @@ export function OrganizationLayout({
 
   // Only show the null state state if the query has finished fetching and data is not stale
   // This prevents showing null state when switching between orgs with cached data
-  const shouldShowNoOrg = !query.fetching && !query.stale && !organizationExists;
+  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization;
 
   return (
     <>
@@ -136,7 +120,7 @@ export function OrganizationLayout({
         </div>
         <UserMenu
           me={query.data?.me ?? null}
-          currentOrganizationSlug={props.organizationSlug}
+          currentOrganization={query.data?.organizationBySlug ?? null}
           organizations={query.data?.organizations ?? null}
         />
       </Header>

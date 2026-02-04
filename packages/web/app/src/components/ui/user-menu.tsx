@@ -54,13 +54,20 @@ const UserMenu_OrganizationConnectionFragment = graphql(`
     nodes {
       id
       slug
-      me {
-        id
-        ...UserMenu_MemberFragment
-      }
-      getStarted {
-        ...GetStartedWizard_GetStartedProgress
-      }
+    }
+  }
+`);
+
+const UserMenu_OrganizationFragment = graphql(`
+  fragment UserMenu_OrganizationFragment on Organization {
+    id
+    slug
+    me {
+      id
+      canLeaveOrganization
+    }
+    getStarted {
+      ...GetStartedWizard_GetStartedProgress
     }
   }
 `);
@@ -76,16 +83,10 @@ const UserMenu_MeFragment = graphql(`
   }
 `);
 
-const UserMenu_MemberFragment = graphql(`
-  fragment UserMenu_MemberFragment on Member {
-    canLeaveOrganization
-  }
-`);
-
 export function UserMenu(props: {
   me: FragmentType<typeof UserMenu_MeFragment> | null;
   organizations: FragmentType<typeof UserMenu_OrganizationConnectionFragment> | null;
-  currentOrganizationSlug: string;
+  currentOrganization: FragmentType<typeof UserMenu_OrganizationFragment> | null;
 }) {
   const docsUrl = getDocsUrl();
   const me = useFragment(UserMenu_MeFragment, props.me);
@@ -93,14 +94,9 @@ export function UserMenu(props: {
     UserMenu_OrganizationConnectionFragment,
     props.organizations,
   )?.nodes;
+  const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
   const [isLeaveOrganizationModalOpen, toggleLeaveOrganizationModalOpen] = useToggle();
-  const currentOrganization = organizations?.find(
-    org => org.slug === props.currentOrganizationSlug,
-  );
-  const meInOrg = useFragment(UserMenu_MemberFragment, currentOrganization?.me);
-
-  const canLeaveOrganization = !!currentOrganization && meInOrg?.canLeaveOrganization === true;
 
   return (
     <>
@@ -108,7 +104,7 @@ export function UserMenu(props: {
         toggleModalOpen={toggleUserSettingsModalOpen}
         isOpen={isUserSettingsModalOpen}
       />
-      {canLeaveOrganization ? (
+      {currentOrganization?.me.canLeaveOrganization ? (
         <LeaveOrganizationModal
           toggleModalOpen={toggleLeaveOrganizationModalOpen}
           isOpen={isLeaveOrganizationModalOpen}
@@ -253,7 +249,7 @@ export function UserMenu(props: {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              {canLeaveOrganization ? (
+              {currentOrganization?.me.canLeaveOrganization ? (
                 <DropdownMenuItem
                   onClick={() => {
                     toggleLeaveOrganizationModalOpen();
