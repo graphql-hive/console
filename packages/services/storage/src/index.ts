@@ -3244,7 +3244,6 @@ export async function createStorage(
             selectors.map(s => s.organizationId),
             'uuid',
           )})
-        LIMIT 1
       `);
       const integrations = new Map(
         result.rows.map(row => {
