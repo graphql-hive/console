@@ -170,6 +170,7 @@ export interface oidc_integrations {
   linked_organization_id: string;
   oauth_api_url: string | null;
   oidc_user_access_only: boolean;
+  oidc_user_join_only: boolean;
   token_endpoint: string | null;
   updated_at: Date;
   userinfo_endpoint: string | null;

@@ -22,7 +22,7 @@ export function OrganizationOIDCRequestPage(props: {
     <>
       <Meta title="Single sign-on" />
       <OrganizationLayout organizationSlug={props.organizationSlug} minimal>
-        <Card className="my-6 min-h-140 flex flex-col items-center justify-center gap-y-6 p-5">
+        <Card className="min-h-140 my-6 flex flex-col items-center justify-center gap-y-6 p-5">
           <Lock className="size-20 stroke-amber-400" />
           <div className="flex flex-col gap-y-2 text-center">
             <Heading>Single sign-on</Heading>
