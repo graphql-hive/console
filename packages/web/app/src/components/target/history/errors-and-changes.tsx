@@ -449,7 +449,7 @@ function ChangeItem(
                                 appVersion: deployment.version,
                               }}
                               search={{ coordinates: change.path?.join('.') }}
-                              className="text-neutral-11 hover:text-neutral-12 hover:underline"
+                              className="text-neutral-11 hover:text-neutral-12"
                             >
                               {deployment.name}
                             </Link>
