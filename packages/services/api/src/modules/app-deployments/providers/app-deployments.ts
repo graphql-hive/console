@@ -981,7 +981,7 @@ export class AppDeployments {
     const staleCondition = (
       lastUsedCondition && neverUsedCondition
         ? cSql`(${lastUsedCondition} OR ${neverUsedCondition})`
-        : lastUsedCondition ?? neverUsedCondition
+        : (lastUsedCondition ?? neverUsedCondition)
     )!;
 
     let result;
