@@ -185,13 +185,13 @@ type BatchGroup<TItem, TResult> = {
  */
 export function batchBy<TItem, TResult>(
   /** Function to determine the batch group. */
-  buildBatchKey: (arg: TItem) => unknown,
+  buildBatchKey: (arg: TItem) => string,
   /** Loader for each batch group. */
   loader: (args: TItem[]) => Promise<Promise<TResult>[]>,
   /** Maximum amount of items per batch, if it is exceeded a new batch for a given batchKey is created. */
   maxBatchSize = Infinity,
 ) {
-  let batchGroups = new Map<unknown, BatchGroup<TItem, TResult>>();
+  let batchGroups = new Map<string, BatchGroup<TItem, TResult>>();
   let didSchedule = false;
 
   function startLoadingBatch(currentBatch: BatchGroup<TItem, TResult>): void {
@@ -226,7 +226,7 @@ export function batchBy<TItem, TResult>(
     );
   }
 
-  function getBatchGroup(batchKey: unknown) {
+  function getBatchGroup(batchKey: string) {
     // get the batch collection for the batch key
     let currentBatch = batchGroups.get(batchKey);
     // if it does not exist or the batch is full, create a new batch

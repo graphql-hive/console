@@ -170,7 +170,6 @@ export interface oidc_integrations {
   linked_organization_id: string;
   oauth_api_url: string | null;
   oidc_user_access_only: boolean;
-  oidc_user_join_only: boolean;
   token_endpoint: string | null;
   updated_at: Date;
   userinfo_endpoint: string | null;
@@ -474,12 +473,6 @@ export interface users {
   zendesk_user_id: string | null;
 }
 
-export interface users_linked_identities {
-  created_at: Date;
-  identity_id: string;
-  user_id: string;
-}
-
 export interface version_commit {
   commit_id: string;
   url: string | null;
@@ -535,7 +528,6 @@ export interface DBTables {
   targets: targets;
   tokens: tokens;
   users: users;
-  users_linked_identities: users_linked_identities;
   version_commit: version_commit;
   versions: versions;
 }

@@ -22,15 +22,13 @@ import {
 } from './supertokens/oidc-provider';
 import { createThirdPartyEmailPasswordNodeOktaProvider } from './supertokens/okta-provider';
 
-const SuperTokenAccessTokenV2Model = zod.object({
-  version: zod.literal('2'),
+const SuperTokenAccessTokenModel = zod.object({
+  version: zod.literal('1'),
   superTokensUserId: zod.string(),
-  userId: zod.string(),
-  oidcIntegrationId: zod.string().nullable(),
   email: zod.string(),
 });
 
-export type SupertokensSession = zod.TypeOf<typeof SuperTokenAccessTokenV2Model>;
+export type SupertokensSession = zod.TypeOf<typeof SuperTokenAccessTokenModel>;
 
 export const backendConfig = (requirements: {
   storage: Storage;
@@ -169,23 +167,17 @@ export const backendConfig = (requirements: {
                 );
               }
 
-              const internalUser = await internalApi.ensureUser({
-                superTokensUserId: user.id,
-                email: user.emails[0],
-                oidcIntegrationId: input.userContext['oidcId'] ?? null,
-                firstName: null,
-                lastName: null,
-              });
-              const payload: SupertokensSession = {
-                version: '2',
+              input.accessTokenPayload = {
+                version: '1',
                 superTokensUserId: input.userId,
-                userId: internalUser.user.id,
-                oidcIntegrationId: input.userContext['oidcId'] ?? null,
                 email: user.emails[0],
               };
 
-              input.accessTokenPayload = structuredClone(payload);
-              input.sessionDataInDatabase = structuredClone(payload);
+              input.sessionDataInDatabase = {
+                version: '1',
+                superTokensUserId: input.userId,
+                email: user.emails[0],
+              };
 
               return originalImplementation.createNewSession(input);
             },
@@ -198,23 +190,14 @@ export const backendConfig = (requirements: {
 };
 
 function extractIPFromUserContext(userContext: unknown): string {
-  const defaultIp = (userContext as any)._default.request.original.ip;
-  if (!env.supertokens?.rateLimit) {
-    return defaultIp;
-  }
-
   return (
-    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimit.ipHeaderName) ??
-    defaultIp
+    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimitIPHeaderName) ||
+    (userContext as any)._default.request.original.ip
   );
 }
 
 function createRedisRateLimiter(redis: Redis, windowSeconds = 5 * 60, maxRequests = 10) {
   async function isRateLimited(action: string, ip: string): Promise<boolean> {
-    if (env.supertokens.rateLimit === null) {
-      return false;
-    }
-
     const key = `supertokens-rate-limit:${action}:${ip}`;
     const current = await redis.incr(key);
     if (current === 1) {

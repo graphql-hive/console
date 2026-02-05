@@ -9,9 +9,7 @@ const OrganizationWithOIDCIntegration = graphql(`
       id
       oidcIntegration {
         id
-        oidcUserJoinOnly
         oidcUserAccessOnly
-        tokenEndpoint
       }
     }
   }
@@ -37,7 +35,6 @@ const CreateOIDCIntegrationMutation = graphql(`
           userinfoEndpoint
           authorizationEndpoint
           additionalScopes
-          oidcUserJoinOnly
           oidcUserAccessOnly
         }
       }
@@ -62,7 +59,6 @@ const UpdateOIDCRestrictionsMutation = graphql(`
       ok {
         updatedOIDCIntegration {
           id
-          oidcUserJoinOnly
           oidcUserAccessOnly
         }
       }
@@ -106,8 +102,7 @@ describe('create', () => {
               tokenEndpoint: 'http://localhost:8888/oauth/token',
               userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
               authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-              oidcUserJoinOnly: true,
-              oidcUserAccessOnly: false,
+              oidcUserAccessOnly: true,
               additionalScopes: [],
             },
           },
@@ -127,9 +122,7 @@ describe('create', () => {
           id: organization.id,
           oidcIntegration: {
             id: result.createOIDCIntegration.ok!.createdOIDCIntegration.id,
-            oidcUserJoinOnly: true,
-            oidcUserAccessOnly: false,
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
+            oidcUserAccessOnly: true,
           },
         },
       });
@@ -393,8 +386,7 @@ describe('create', () => {
               tokenEndpoint: 'http://localhost:8888/oauth/token',
               userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
               authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
-              oidcUserJoinOnly: true,
-              oidcUserAccessOnly: false,
+              oidcUserAccessOnly: true,
               additionalScopes: [],
             },
           },
@@ -487,9 +479,7 @@ describe('delete', () => {
           id: organization.id,
           oidcIntegration: {
             id: oidcIntegrationId,
-            oidcUserJoinOnly: true,
-            oidcUserAccessOnly: false,
-            tokenEndpoint: 'http://localhost:8888/oauth/token',
+            oidcUserAccessOnly: true,
           },
         },
       });
@@ -571,6 +561,79 @@ describe('delete', () => {
         ]),
       );
     });
+
+    test.concurrent(
+      'success: upon integration deletion oidc members are also deleted',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const { ownerToken, createOrg } = await seed.createOwner();
+        const { organization } = await createOrg();
+
+        const createResult = await execute({
+          document: CreateOIDCIntegrationMutation,
+          variables: {
+            input: {
+              organizationId: organization.id,
+              clientId: 'foo',
+              clientSecret: 'foofoofoofoo',
+              tokenEndpoint: 'http://localhost:8888/oauth/token',
+              userinfoEndpoint: 'http://localhost:8888/oauth/userinfo',
+              authorizationEndpoint: 'http://localhost:8888/oauth/authorize',
+              additionalScopes: [],
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+
+        const oidcIntegrationId = createResult.createOIDCIntegration.ok!.createdOIDCIntegration.id;
+
+        const MeQuery = graphql(`
+          query Me {
+            me {
+              id
+            }
+          }
+        `);
+
+        const { access_token: memberAccessToken } = await seed.authenticate(
+          seed.generateEmail(),
+          oidcIntegrationId,
+        );
+        const meResult = await execute({
+          document: MeQuery,
+          authToken: memberAccessToken,
+        }).then(r => r.expectNoGraphQLErrors());
+
+        expect(meResult).toEqual({
+          me: {
+            id: expect.any(String),
+          },
+        });
+
+        await execute({
+          document: DeleteOIDCIntegrationMutation,
+          variables: {
+            input: {
+              oidcIntegrationId,
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+
+        const refetchedMeResult = await execute({
+          document: MeQuery,
+          authToken: memberAccessToken,
+        }).then(r => r.expectGraphQLErrors());
+
+        expect(refetchedMeResult).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              message: `No access (reason: "User not found")`,
+            }),
+          ]),
+        );
+      },
+    );
   });
 });
 
@@ -729,8 +792,7 @@ describe('restrictions', () => {
         ok: {
           createdOIDCIntegration: {
             id: expect.any(String),
-            oidcUserJoinOnly: true,
-            oidcUserAccessOnly: false,
+            oidcUserAccessOnly: true,
             clientId: 'foo',
             clientSecretPreview: 'ofoo',
             tokenEndpoint: 'http://localhost:8888/oauth/token',
@@ -745,50 +807,45 @@ describe('restrictions', () => {
     return result.createOIDCIntegration.ok!.createdOIDCIntegration.id;
   }
 
-  test.concurrent(
-    'users authorized with non-OIDC method cannot join an organization (default)',
-    async ({ expect }) => {
-      const seed = initSeed();
-      const { ownerToken, createOrg } = await seed.createOwner();
-      const { organization, inviteMember, joinMemberUsingCode } = await createOrg();
+  test.concurrent('non-oidc users cannot join an organization (default)', async ({ expect }) => {
+    const seed = initSeed();
+    const { ownerToken, createOrg } = await seed.createOwner();
+    const { organization, inviteMember, joinMemberUsingCode } = await createOrg();
 
-      await configureOIDC({
-        ownerToken,
-        organizationId: organization.id,
-      });
+    await configureOIDC({
+      ownerToken,
+      organizationId: organization.id,
+    });
 
-      const refetchedOrg = await execute({
-        document: OrganizationWithOIDCIntegration,
-        variables: {
-          organizationSlug: organization.slug,
-        },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
+    const refetchedOrg = await execute({
+      document: OrganizationWithOIDCIntegration,
+      variables: {
+        organizationSlug: organization.slug,
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
 
-      expect(refetchedOrg.organization?.oidcIntegration?.oidcUserJoinOnly).toEqual(true);
+    expect(refetchedOrg.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(true);
 
-      const invitation = await inviteMember('example@example.com');
-      const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
+    const invitation = await inviteMember('example@example.com');
+    const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
-      if (!invitationCode) {
-        throw new Error('No invitation code');
-      }
+    if (!invitationCode) {
+      throw new Error('No invitation code');
+    }
 
-      const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
-      const joinResult = await joinMemberUsingCode(
-        invitationCode,
-        nonOidcAccount.access_token,
-      ).then(r => r.expectNoGraphQLErrors());
+    const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
+    const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.access_token).then(
+      r => r.expectNoGraphQLErrors(),
+    );
 
-      expect(joinResult.joinOrganization).toEqual(
-        expect.objectContaining({
-          __typename: 'OrganizationInvitationError',
-          message:
-            'The user is not authorized through the OIDC integration required for the organization',
-        }),
-      );
-    },
-  );
+    expect(joinResult.joinOrganization).toEqual(
+      expect.objectContaining({
+        __typename: 'OrganizationInvitationError',
+        message: 'Non-OIDC users are not allowed to join this organization.',
+      }),
+    );
+  });
 
   test.concurrent('non-oidc users can join an organization (opt-in)', async ({ expect }) => {
     const seed = initSeed();
@@ -808,21 +865,21 @@ describe('restrictions', () => {
       authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
-    expect(orgAfterOidc.organization?.oidcIntegration?.oidcUserJoinOnly).toEqual(true);
+    expect(orgAfterOidc.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(true);
 
     const restrictionsUpdateResult = await execute({
       document: UpdateOIDCRestrictionsMutation,
       variables: {
         input: {
           oidcIntegrationId,
-          oidcUserJoinOnly: false,
+          oidcUserAccessOnly: false,
         },
       },
       authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(
-      restrictionsUpdateResult.updateOIDCRestrictions.ok?.updatedOIDCIntegration.oidcUserJoinOnly,
+      restrictionsUpdateResult.updateOIDCRestrictions.ok?.updatedOIDCIntegration.oidcUserAccessOnly,
     ).toEqual(false);
 
     const orgAfterDisablingOidcRestrictions = await execute({
@@ -834,7 +891,7 @@ describe('restrictions', () => {
     }).then(r => r.expectNoGraphQLErrors());
 
     expect(
-      orgAfterDisablingOidcRestrictions.organization?.oidcIntegration?.oidcUserJoinOnly,
+      orgAfterDisablingOidcRestrictions.organization?.oidcIntegration?.oidcUserAccessOnly,
     ).toEqual(false);
 
     const invitation = await inviteMember('example@example.com');
@@ -853,7 +910,7 @@ describe('restrictions', () => {
   });
 
   test.concurrent(
-    'existing non-oidc users can access the organization (default)',
+    'existing non-oidc users can always access the organization',
     async ({ expect }) => {
       const seed = initSeed();
       const { ownerToken, createOrg } = await seed.createOwner();
@@ -890,82 +947,6 @@ describe('restrictions', () => {
       expect(readAccessCheck.organization?.id).toEqual(organization.id);
     },
   );
-
-  test.concurrent(
-    'existing non-oidc users should lose access to the organization (opt-in)',
-    async ({ expect }) => {
-      const seed = initSeed();
-      const { ownerToken, createOrg } = await seed.createOwner();
-      const { organization, inviteMember, joinMemberUsingCode } = await createOrg();
-
-      const invitation = await inviteMember('example@example.com');
-      const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
-
-      if (!invitationCode) {
-        throw new Error('No invitation code');
-      }
-
-      const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
-      const joinResult = await joinMemberUsingCode(
-        invitationCode,
-        nonOidcAccount.access_token,
-      ).then(r => r.expectNoGraphQLErrors());
-
-      expect(joinResult.joinOrganization.__typename).toEqual('OrganizationPayload');
-
-      const oidcIntegrationId = await configureOIDC({
-        ownerToken,
-        organizationId: organization.id,
-      });
-
-      const orgAfterOidc = await execute({
-        document: OrganizationWithOIDCIntegration,
-        variables: {
-          organizationSlug: organization.slug,
-        },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
-
-      expect(orgAfterOidc.organization?.oidcIntegration?.oidcUserAccessOnly).toEqual(false);
-
-      const restrictionsUpdateResult = await execute({
-        document: UpdateOIDCRestrictionsMutation,
-        variables: {
-          input: {
-            oidcIntegrationId,
-            oidcUserAccessOnly: true,
-          },
-        },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
-
-      expect(
-        restrictionsUpdateResult.updateOIDCRestrictions.ok?.updatedOIDCIntegration
-          .oidcUserAccessOnly,
-      ).toEqual(true);
-
-      const orgAfterEnablingOidcRestrictions = await execute({
-        document: OrganizationWithOIDCIntegration,
-        variables: {
-          organizationSlug: organization.slug,
-        },
-        authToken: ownerToken,
-      }).then(r => r.expectNoGraphQLErrors());
-
-      expect(
-        orgAfterEnablingOidcRestrictions.organization?.oidcIntegration?.oidcUserAccessOnly,
-      ).toEqual(true);
-
-      const orgReadErrors = await execute({
-        document: OrganizationReadTest,
-        variables: {
-          organizationSlug: organization.slug,
-        },
-        authToken: nonOidcAccount.access_token,
-      }).then(r => r.expectGraphQLErrors());
-      expect(orgReadErrors.some(e => e.message.includes('requires OIDC'))).toBe(true);
-    },
-  );
 });
 
 test.concurrent(
@@ -974,8 +955,10 @@ test.concurrent(
     const seed = initSeed();
     const { createOrg, ownerToken } = await seed.createOwner();
     const { organization, inviteAndJoinMember } = await createOrg();
+    const { createMemberRole, assignMemberRole, updateMemberRole, memberToken, member } =
+      await inviteAndJoinMember();
 
-    const createOIDCIntegrationResult = await execute({
+    await execute({
       document: CreateOIDCIntegrationMutation,
       variables: {
         input: {
@@ -990,11 +973,7 @@ test.concurrent(
       },
       authToken: ownerToken,
     }).then(r => r.expectNoGraphQLErrors());
-    const oidcIntegrationId =
-      createOIDCIntegrationResult.createOIDCIntegration.ok?.createdOIDCIntegration.id;
 
-    const { createMemberRole, assignMemberRole, updateMemberRole, memberToken, member } =
-      await inviteAndJoinMember({ oidcIntegrationId });
     const role = await createMemberRole([]);
     await assignMemberRole({ roleId: role.id, userId: member.id });
 

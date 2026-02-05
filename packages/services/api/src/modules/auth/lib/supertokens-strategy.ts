@@ -2,7 +2,7 @@ import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
-import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
+import { AccessError, HiveError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
@@ -12,24 +12,15 @@ import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from 
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
-  public userId: string;
-  public oidcIntegrationId: string | null;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
 
   constructor(
-    args: {
-      superTokensUserId: string;
-      userId: string;
-      oidcIntegrationId: string | null;
-      email: string;
-    },
+    args: { superTokensUserId: string; email: string },
     deps: { organizationMembers: OrganizationMembers; storage: Storage; logger: Logger },
   ) {
     super({ logger: deps.logger });
     this.superTokensUserId = args.superTokensUserId;
-    this.userId = args.userId;
-    this.oidcIntegrationId = args.oidcIntegrationId;
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
   }
@@ -64,12 +55,7 @@ export class SuperTokensCookieBasedSession extends Session {
       user.id,
       organizationId,
     );
-    const [organization, oidcIntegration] = await Promise.all([
-      this.storage.getOrganization({ organizationId }),
-      this.storage.getOIDCIntegrationForOrganization({
-        organizationId,
-      }),
-    ]);
+    const organization = await this.storage.getOrganization({ organizationId });
     const organizationMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
       userId: user.id,
@@ -114,10 +100,6 @@ export class SuperTokensCookieBasedSession extends Session {
       ];
     }
 
-    if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
-      throw new OIDCRequiredError(organization.slug, oidcIntegration.id);
-    }
-
     this.logger.debug(
       'Translate organization role assignments to policy statements. (userId=%s, organizationId=%s)',
       user.id,
@@ -128,7 +110,9 @@ export class SuperTokensCookieBasedSession extends Session {
   }
 
   public async getActor(): Promise<UserActor> {
-    const user = await this.storage.getUserById({ id: this.userId });
+    const user = await this.storage.getUserBySuperTokenId({
+      superTokensUserId: this.superTokensUserId,
+    });
 
     if (!user) {
       throw new AccessError('User not found');
@@ -137,7 +121,6 @@ export class SuperTokensCookieBasedSession extends Session {
     return {
       type: 'user',
       user,
-      oidcIntegrationId: this.oidcIntegrationId,
     };
   }
 
@@ -225,15 +208,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
         'SuperTokens session parsing errors: %s',
         JSON.stringify(result.error.flatten().fieldErrors),
       );
-      throw new HiveError('Invalid access token provided', {
-        extensions: {
-          code: 'UNAUTHENTICATED',
-        },
-      });
-    }
-
-    if (result.data.version === '1') {
-      throw new AccessError('Expired authorization token.', 'UNAUTHENTICATED');
+      throw new HiveError(`Invalid access token provided`);
     }
 
     if (this.emailVerification) {
@@ -270,8 +245,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     return new SuperTokensCookieBasedSession(
       {
         superTokensUserId: session.superTokensUserId,
-        userId: session.userId,
-        oidcIntegrationId: session.oidcIntegrationId,
         email: session.email,
       },
       {
@@ -283,21 +256,8 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   }
 }
 
-const SuperTokenAccessTokenV1Model = zod.object({
+const SuperTokenAccessTokenModel = zod.object({
   version: zod.literal('1'),
   superTokensUserId: zod.string(),
   email: zod.string(),
 });
-
-const SuperTokenAccessTokenV2Model = zod.object({
-  version: zod.literal('2'),
-  superTokensUserId: zod.string(),
-  userId: zod.string(),
-  oidcIntegrationId: zod.string().nullable(),
-  email: zod.string(),
-});
-
-const SuperTokenAccessTokenModel = zod.union([
-  SuperTokenAccessTokenV1Model,
-  SuperTokenAccessTokenV2Model,
-]);

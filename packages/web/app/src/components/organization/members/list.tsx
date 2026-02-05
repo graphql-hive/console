@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
-import { FaUserLock } from 'react-icons/fa';
+import type { IconType } from 'react-icons';
+import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import {
@@ -31,6 +32,31 @@ import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
+
+export const authProviderToIconAndTextMap: Record<
+  GraphQLSchema.AuthProviderType,
+  {
+    icon: IconType;
+    text: string;
+  }
+> = {
+  [GraphQLSchema.AuthProviderType.Google]: {
+    icon: FaGoogle,
+    text: 'Google OAuth 2.0',
+  },
+  [GraphQLSchema.AuthProviderType.Github]: {
+    icon: FaGithub,
+    text: 'GitHub OAuth 2.0',
+  },
+  [GraphQLSchema.AuthProviderType.Oidc]: {
+    icon: FaOpenid,
+    text: 'OpenID Connect',
+  },
+  [GraphQLSchema.AuthProviderType.UsernamePassword]: {
+    icon: FaUserLock,
+    text: 'Email & Password',
+  },
+};
 
 const OrganizationMemberRow_DeleteMember = graphql(`
   mutation OrganizationMemberRow_DeleteMember($input: OrganizationMemberInput!) {
@@ -76,6 +102,8 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
+  const IconToUse = authProviderToIconAndTextMap[member.user.provider].icon;
+  const authMethod = authProviderToIconAndTextMap[member.user.provider].text;
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -135,9 +163,16 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
       </AlertDialog>
       <tr key={member.id}>
         <td className="w-12">
-          <div>
-            <FaUserLock className="mx-auto size-5" />
-          </div>
+          <TooltipProvider>
+            <Tooltip delayDuration={100}>
+              <TooltipTrigger asChild>
+                <div>
+                  <IconToUse className="mx-auto size-5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>User's authentication method: {authMethod}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </td>
         <td className="grow overflow-hidden py-3 text-sm font-medium">
           <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>

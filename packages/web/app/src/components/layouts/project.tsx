@@ -54,7 +54,6 @@ const ProjectLayoutQuery = graphql(`
         viewerCanCreateTarget
         viewerCanModifyAlerts
       }
-      ...UserMenu_OrganizationFragment
     }
   }
 `);
@@ -101,7 +100,7 @@ export function ProjectLayout({
         <div>
           <UserMenu
             me={me ?? null}
-            currentOrganization={currentOrganization ?? null}
+            currentOrganizationSlug={props.organizationSlug}
             organizations={query.data?.organizations ?? null}
           />
         </div>

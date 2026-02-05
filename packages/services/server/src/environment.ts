@@ -102,7 +102,6 @@ const RedisModel = zod.object({
 const SuperTokensModel = zod.object({
   SUPERTOKENS_CONNECTION_URI: zod.string().url(),
   SUPERTOKENS_API_KEY: zod.string(),
-  SUPERTOKENS_RATE_LIMIT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME: emptyString(zod.string().optional()),
 });
 
@@ -434,12 +433,7 @@ export const env = {
   supertokens: {
     connectionURI: supertokens.SUPERTOKENS_CONNECTION_URI,
     apiKey: supertokens.SUPERTOKENS_API_KEY,
-    rateLimit:
-      supertokens.SUPERTOKENS_RATE_LIMIT === '0'
-        ? null
-        : {
-            ipHeaderName: supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
-          },
+    rateLimitIPHeaderName: supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
   },
   auth: {
     github:

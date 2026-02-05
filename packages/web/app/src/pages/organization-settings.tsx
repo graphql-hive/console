@@ -184,6 +184,7 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
     viewerCanModifySlackIntegration
     viewerCanModifyGitHubIntegration
     viewerCanExportAuditLogs
+    ...OIDCIntegrationSection_OrganizationFragment
     ...TransferOrganizationOwnershipModal_OrganizationFragment
     ...GitHubIntegrationSection_OrganizationFragment
     ...SlackIntegrationSection_OrganizationFragment
@@ -337,7 +338,7 @@ const OrganizationSettingsContent = (props: {
             }
           />
           <div className="text-neutral-10">
-            <OIDCIntegrationSection organizationSlug={organization.slug} />
+            <OIDCIntegrationSection organization={organization} />
           </div>
         </SubPageLayout>
       )}

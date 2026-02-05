@@ -27,23 +27,12 @@ export function isGraphQLError(error: unknown): error is GraphQLError {
 export const HiveError = GraphQLError;
 
 export class AccessError extends HiveError {
-  constructor(reason: string, code: string = 'UNAUTHORISED', extensions?: Record<string, unknown>) {
+  constructor(reason: string, code: string = 'UNAUTHORISED') {
     super(`No access (reason: "${reason}")`, {
       extensions: {
         code,
-        ...extensions,
       },
     });
-  }
-}
-
-export class OIDCRequiredError extends AccessError {
-  constructor(
-    organizationSlug: string,
-    oidcIntegrationId: string,
-    reason: string = 'This action requires OIDC authentication to proceed.',
-  ) {
-    super(reason, 'NEEDS_OIDC', { organizationSlug, oidcIntegrationId });
   }
 }
 

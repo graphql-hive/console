@@ -891,68 +891,48 @@ export function initSeed() {
                 },
               };
             },
-            async inviteAndJoinMember(options?: {
-              inviteToken?: string;
-              memberRoleId?: string | undefined;
-              oidcIntegrationId?: string | undefined;
-              resources?: GraphQLSchema.ResourceAssignmentInput | undefined;
-            }) {
-              const { inviteToken, memberRoleId, oidcIntegrationId, resources } = Object.assign(
-                options ?? {},
-                {
-                  inviteToken: ownerToken,
-                },
-              );
+            async inviteAndJoinMember(
+              inviteToken: string = ownerToken,
+              memberRoleId: string | undefined = undefined,
+              resources: GraphQLSchema.ResourceAssignmentInput | undefined = undefined,
+            ) {
               const memberEmail = userEmail(generateUnique());
-              const memberToken = await authenticate(memberEmail, oidcIntegrationId).then(
-                r => r.access_token,
-              );
+              const memberToken = await authenticate(memberEmail).then(r => r.access_token);
 
-              if (!oidcIntegrationId) {
-                const invitationResult = await inviteToOrganization(
-                  {
-                    organization: {
-                      bySelector: {
-                        organizationSlug: organization.slug,
-                      },
+              const invitationResult = await inviteToOrganization(
+                {
+                  organization: {
+                    bySelector: {
+                      organizationSlug: organization.slug,
                     },
-                    email: memberEmail,
-                    memberRoleId,
-                    resources,
                   },
-                  inviteToken,
-                ).then(r => r.expectNoGraphQLErrors());
-                const code =
-                  invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation
-                    .code;
+                  email: memberEmail,
+                  memberRoleId,
+                  resources,
+                },
+                inviteToken,
+              ).then(r => r.expectNoGraphQLErrors());
 
-                if (!code) {
-                  throw new Error(
-                    `Could not create invitation for ${memberEmail} to join org ${organization.slug}`,
-                  );
-                }
+              const code =
+                invitationResult.inviteToOrganizationByEmail.ok?.createdOrganizationInvitation.code;
 
-                const joinResult = await joinOrganization(code, memberToken).then(r =>
-                  r.expectNoGraphQLErrors(),
+              if (!code) {
+                throw new Error(
+                  `Could not create invitation for ${memberEmail} to join org ${organization.slug}`,
                 );
-
-                if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
-                  throw new Error(
-                    `Member ${memberEmail} could not join organization ${organization.slug}`,
-                  );
-                }
               }
 
-              const orgAfterJoin = await getOrganization(organization.slug, memberToken).then(r =>
+              const joinResult = await joinOrganization(code, memberToken).then(r =>
                 r.expectNoGraphQLErrors(),
               );
-              const member = orgAfterJoin.organization?.me;
 
-              if (!member) {
+              if (joinResult.joinOrganization.__typename !== 'OrganizationPayload') {
                 throw new Error(
-                  `Could not retrieve membership for ${memberEmail} in ${organization.slug} after joining`,
+                  `Member ${memberEmail} could not join organization ${organization.slug}`,
                 );
               }
+
+              const member = joinResult.joinOrganization.organization.me;
 
               return {
                 member,
