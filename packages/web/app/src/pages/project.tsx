@@ -373,7 +373,7 @@ const ProjectsPageContent = (
                 placeholder="Search..."
                 defaultValue={props.search}
                 onChange={onSearchChange}
-                className="bg-neutral-3 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                className="dark:bg-neutral-3 bg-neutral-2 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
               />
             </div>
             <Separator orientation="vertical" className="mx-4 h-8" />
@@ -387,19 +387,19 @@ const ProjectsPageContent = (
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="requests">
-                  <div className="font-bold">Requests</div>
+                  <div className="font-medium">Requests</div>
                   <div className="text-neutral-10 text-xs">
                     GraphQL requests made in the last {days} days.
                   </div>
                 </SelectItem>
                 <SelectItem value="versions">
-                  <div className="font-bold">Schema Versions</div>
+                  <div className="font-medium">Schema Versions</div>
                   <div className="text-neutral-10 text-xs">
                     Schemas published in last {days} days.
                   </div>
                 </SelectItem>
                 <SelectItem value="name">
-                  <div className="font-bold">Name</div>
+                  <div className="font-medium">Name</div>
                   <div className="text-neutral-10 text-xs">Sort by target name.</div>
                 </SelectItem>
               </SelectContent>

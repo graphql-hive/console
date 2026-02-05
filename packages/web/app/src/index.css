@@ -295,13 +295,9 @@
     @apply border-neutral-5;
   }
 
-  #root {
-    background-color: var(--color-neutral-2);
-    color: var(--color-neutral-11);
-  }
-
+  #root,
   body {
-    @apply text-neutral-11 bg-neutral-2;
+    @apply text-neutral-11 dark:bg-neutral-2 bg-neutral-3;
   }
 
   button,

@@ -3,6 +3,13 @@ import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
 import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/laboratory/lib/env';
 import { LaboratoryPlugin } from '@/laboratory/lib/plugins';
 
+export interface LaboratoryPreflightPromptField {
+  title?: string;
+  defaultValue?: string;
+  description?: string;
+  placeholder?: string;
+}
+
 export interface LaboratoryPreflightLog {
   level: 'log' | 'warn' | 'error' | 'info' | 'system';
   message: unknown[];
@@ -41,6 +48,13 @@ export const usePreflight = (props: {
   defaultPreflight?: LaboratoryPreflight | null;
   onPreflightChange?: (preflight: LaboratoryPreflight | null) => void;
   envApi: LaboratoryEnvState & LaboratoryEnvActions;
+  openPreflightPromptModal?: (props: {
+    title?: string;
+    description?: string;
+    placeholder?: string;
+    defaultValue?: string;
+    onSubmit?: (value: string | null) => void;
+  }) => void;
 }): LaboratoryPreflightState & LaboratoryPreflightActions => {
   // eslint-disable-next-line react/hook-use-state
   const [preflight, _setPreflight] = useState<LaboratoryPreflight | null>(
@@ -64,7 +78,19 @@ export const usePreflight = (props: {
       return runIsolatedLabScript(
         preflight.script,
         props.envApi?.env ?? { variables: {} },
-        undefined,
+        (title, defaultValue, options) => {
+          return new Promise(resolve => {
+            props.openPreflightPromptModal?.({
+              title,
+              description: options?.description,
+              placeholder: options?.placeholder,
+              defaultValue,
+              onSubmit: value => {
+                resolve(value);
+              },
+            });
+          });
+        },
         plugins,
         pluginsState,
       );
@@ -94,7 +120,11 @@ export const usePreflight = (props: {
 export async function runIsolatedLabScript(
   script: string,
   env: LaboratoryEnv,
-  prompt?: (placeholder: string, defaultValue: string) => Promise<string | null>,
+  prompt?: (
+    title: string,
+    defaultValue: string,
+    options?: { placeholder?: string; description?: string },
+  ) => Promise<string | null>,
   plugins: LaboratoryPlugin[] = [],
   pluginsState: Record<string, any> = {},
 ): Promise<LaboratoryPreflightResult> {
@@ -152,10 +182,10 @@ export async function runIsolatedLabScript(
                 request: {
                   headers: new Headers()
                 },
-                prompt: (placeholder, defaultValue) => {
+                prompt: (title, defaultValue, options) => {
                   return new Promise((resolve) => {
                     promptResolve = resolve;
-                    self.postMessage({ type: 'prompt', placeholder, defaultValue });
+                    self.postMessage({ type: 'prompt', title, defaultValue, options: options ?? {} });
                   });
                 },
                 plugins: {
@@ -241,7 +271,7 @@ export async function runIsolatedLabScript(
           createdAt: new Date().toISOString(),
         });
       } else if (data.type === 'prompt') {
-        void prompt?.(data.placeholder, data.defaultValue).then(value => {
+        void prompt?.(data.title, data.defaultValue, data.options).then(value => {
           worker.postMessage({ type: 'prompt:result', value });
         });
       }

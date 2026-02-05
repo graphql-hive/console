@@ -147,8 +147,11 @@ function SchemaVersionView(props: {
           value={selectedItem}
           onValueChange={value => setSelectedItem(value)}
         >
-          <TabsList className="w-full justify-start rounded-b-none px-2 py-0">
-            <TabsTrigger value="default" className="mt-1 py-2 data-[state=active]:rounded-b-none">
+          <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
+            <TabsTrigger
+              value="default"
+              className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
+            >
               <span>Default Graph</span>
               <TooltipProvider>
                 <Tooltip>
@@ -181,7 +184,7 @@ function SchemaVersionView(props: {
               <TabsTrigger
                 value={edge.node.id}
                 key={edge.node.id}
-                className="mt-1 py-2 data-[state=active]:rounded-b-none"
+                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
               >
                 {edge.node.contractName}
                 <TooltipProvider>
@@ -346,7 +349,7 @@ function DefaultSchemaVersionView(props: {
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
           <TabsList
             className={cn(
-              'bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b',
+              'bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b',
               !props.hasContracts && 'rounded-t border-t',
             )}
           >
@@ -370,7 +373,7 @@ function DefaultSchemaVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-neutral-3 grow rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {schemaVersion.isFirstComposableVersion ? (
@@ -522,7 +525,7 @@ function ContractVersionView(props: {
     <>
       <TooltipProvider>
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-          <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
+          <TabsList className="dark:bg-neutral-3 bg-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
             {availableViews.map(item => (
               <Tooltip key={item.value}>
                 <TooltipTrigger>
@@ -543,7 +546,7 @@ function ContractVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-neutral-3 grow rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractVersion.isFirstComposableVersion ? (

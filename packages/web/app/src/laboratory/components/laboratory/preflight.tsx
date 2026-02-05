@@ -41,10 +41,12 @@ export const Preflight = () => {
     const result = await runIsolatedLabScript(
       preflight?.script ?? '',
       env ?? { variables: {} },
-      (placeholder, defaultValue) => {
+      (title, defaultValue, options) => {
         return new Promise(resolve => {
           openPreflightPromptModal?.({
-            placeholder,
+            title,
+            description: options?.description,
+            placeholder: options?.placeholder,
             defaultValue,
             onSubmit: value => {
               resolve(value);
@@ -95,7 +97,7 @@ export const Preflight = () => {
                     request: {
                       headers: Headers;
                     };
-                    prompt: (placeholder: string, defaultValue: string) => Promise<string | null>;
+                    prompt: (title: string, defaultValue: string, options?: { placeholder?: string; description?: string }) => Promise<string | null>;
                     CryptoJS: typeof CryptoJS;
                     plugins: {
                       ${plugins

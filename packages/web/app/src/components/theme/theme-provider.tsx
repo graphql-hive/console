@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useLocalStorage } from '@/lib/hooks';
 
 const STORAGE_KEY = 'hive-theme';
@@ -55,7 +55,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Apply theme to document
-  useEffect(() => {
+  // useLayoutEffect ensures DOM is updated before browser paint
+  useLayoutEffect(() => {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
 
