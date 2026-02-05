@@ -1,6 +1,6 @@
 import cookies from 'js-cookie';
 import { LifeBuoyIcon } from 'lucide-react';
-import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
+import { FaUsersSlash } from 'react-icons/fa';
 import { useMutation } from 'urql';
 import { ThemeSwitcher } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,6 @@ import { Avatar } from '@/components/v2';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AuthProviderType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { useNotifications } from '@/lib/hooks/use-notifications';
@@ -134,15 +133,6 @@ export function UserMenu(props: {
                   <div className="text-neutral-10 truncate text-xs font-normal leading-none">
                     {me?.email}
                   </div>
-                </div>
-                <div>
-                  {me?.provider === AuthProviderType.Google ? (
-                    <FaGoogle title="Signed in using Google" />
-                  ) : me?.provider === AuthProviderType.Github ? (
-                    <FaGithub title="Signed in using Github" />
-                  ) : (
-                    <FaKey title="Signed in using username and password" />
-                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

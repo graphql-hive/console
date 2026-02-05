@@ -491,28 +491,30 @@ export async function createStorage(
         email,
         fullName,
         displayName,
-        identityId,
+        superTokensUserId,
+        oidcIntegrationId,
       }: {
         email: string;
         fullName: string;
         displayName: string;
-        identityId: string;
+        superTokensUserId: string;
+        oidcIntegrationId: string | null;
       },
       connection: DatabaseTransactionConnection,
     ) {
       const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "full_name", "display_name")
+            ("email", "full_name", "display_name", "supertoken_user_id", "oidc_integration_id")
           VALUES
-            (${email}, ${fullName}, ${displayName})
+            (${email}, ${fullName}, ${displayName}, ${superTokensUserId}, ${oidcIntegrationId})
           RETURNING id
         `,
       );
 
       await connection.query(sql`
         INSERT INTO "users_linked_identities" ("user_id", "identity_id")
-        VALUES (${id}, ${identityId})
+        VALUES (${id}, ${superTokensUserId})
       `);
 
       const user = await shared.getUserById({ id, connection });
@@ -608,7 +610,8 @@ export async function createStorage(
     email: string;
     firstName: string | null;
     lastName: string | null;
-    identityId: string;
+    superTokensUserId: string;
+    oidcIntegrationId: string | null;
   }) {
     const { firstName, lastName } = input;
     const name =
@@ -620,7 +623,8 @@ export async function createStorage(
       email: input.email,
       displayName: name,
       fullName: name,
-      identityId: input.identityId,
+      superTokensUserId: input.superTokensUserId,
+      oidcIntegrationId: input.oidcIntegrationId,
     };
   }
 
@@ -690,29 +694,10 @@ export async function createStorage(
             .then(users => users.map(user => UserModel.parse(user)));
 
           if (sameEmailUsers.length === 1) {
-            const targetUserId = sameEmailUsers[0].id;
-            internalUser = await t
-              .one<{}>(
-                sql`/* ensureUserExists */
-                  WITH "linked_user" AS (
-                    UPDATE "users"
-                    SET
-                      "supertoken_user_id" = NULL
-                      , "oidc_integration_id" = NULL
-                    WHERE "id" = ${targetUserId}
-                    RETURNING *
-                  )
-                  SELECT ${userFields(sql`"linked_user".`, sql`"stu".`)}
-                  FROM "linked_user"
-                  LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-                    ON ("stu"."user_id" = "linked_user"."supertoken_user_id");
-                `,
-              )
-              .then(v => UserModel.parse(v));
-
+            internalUser = sameEmailUsers[0];
             await t.query(sql`
               INSERT INTO "users_linked_identities" ("user_id", "identity_id")
-              VALUES (${targetUserId}, ${superTokensUserId})
+              VALUES (${internalUser.id}, ${superTokensUserId})
             `);
           }
         }
@@ -724,7 +709,8 @@ export async function createStorage(
               email,
               firstName,
               lastName,
-              identityId: superTokensUserId,
+              superTokensUserId,
+              oidcIntegrationId: oidcIntegration?.id ?? null,
             }),
             t,
           );
