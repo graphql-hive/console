@@ -53,9 +53,14 @@ export function LegacyCompositionSettings(props: {
     const previousCompositionMode = props.activeCompositionMode;
     try {
       const result = await props.onMutate({
-        legacy: {
-          organizationSlug: organization.slug,
-          projectSlug: project.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          legacy: true,
         },
       });
 
