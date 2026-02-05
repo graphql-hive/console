@@ -358,7 +358,7 @@ function ChangeItem(
                         <TableRow key={hash}>
                           <TableCell className="font-medium">
                             <Popover>
-                              <PopoverTrigger className="text-orange-500 hover:text-orange-500 hover:underline hover:underline-offset-4">
+                              <PopoverTrigger className="text-orange-800 hover:text-orange-800 hover:underline-offset-4 dark:text-orange-500 dark:hover:text-orange-500">
                                 {hash.substring(0, 4)}_{name}
                               </PopoverTrigger>
                               <PopoverContent side="right">
