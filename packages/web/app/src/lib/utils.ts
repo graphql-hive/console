@@ -8,23 +8,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function getNeutralColor() {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-neutral-12').trim();
+}
+
 export function useChartStyles() {
   const { resolvedTheme } = useTheme();
   const [textColor, setTextColor] = useState(() => {
     // Read CSS variable on initial mount
-    return getComputedStyle(document.documentElement).getPropertyValue('--color-neutral-12').trim();
+    return getNeutralColor();
   });
 
   useLayoutEffect(() => {
-    // Use setTimeout to ensure DOM has fully updated after theme change
-    const timeoutId = setTimeout(() => {
-      const color = getComputedStyle(document.documentElement)
-        .getPropertyValue('--color-neutral-12')
-        .trim();
+    // Use requestAnimationFrame to ensure DOM updates are complete
+    const rafId = requestAnimationFrame(() => {
+      const color = getNeutralColor();
       setTextColor(color);
-    }, 0);
+    });
 
-    return () => clearTimeout(timeoutId);
+    return () => cancelAnimationFrame(rafId);
   }, [resolvedTheme]);
 
   return {
