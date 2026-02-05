@@ -175,7 +175,7 @@ export const backendConfig = (requirements: {
                 lastName: null,
               });
               const payload = {
-                version: '1',
+                version: '2',
                 superTokensUserId: input.userId,
                 userId: internalUser.user.id,
                 oidcIntegrationId: input.userContext['oidcId'] ?? null,

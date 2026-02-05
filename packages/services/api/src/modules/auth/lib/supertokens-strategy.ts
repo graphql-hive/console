@@ -228,6 +228,10 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       throw new HiveError(`Invalid access token provided`);
     }
 
+    if (result.data.version === '1') {
+      throw new AccessError('Expired authorization token.', 'UNAUTHENTICATED');
+    }
+
     if (this.emailVerification) {
       // Check whether the email is already verified.
       // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
@@ -275,10 +279,21 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   }
 }
 
-const SuperTokenAccessTokenModel = zod.object({
+const SuperTokenAccessTokenV1Model = zod.object({
   version: zod.literal('1'),
+  superTokensUserId: zod.string(),
+  email: zod.string(),
+});
+
+const SuperTokenAccessTokenV2Model = zod.object({
+  version: zod.literal('2'),
   superTokensUserId: zod.string(),
   userId: zod.string(),
   oidcIntegrationId: zod.string().nullable(),
   email: zod.string(),
 });
+
+const SuperTokenAccessTokenModel = zod.union([
+  SuperTokenAccessTokenV1Model,
+  SuperTokenAccessTokenV2Model,
+]);
