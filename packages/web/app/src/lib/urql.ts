@@ -225,6 +225,7 @@ export const urqlClient = createClient({
           } else if (action.type === 'NEEDS_OIDC') {
             window.location.href = `/${action.organizationSlug}/oidc-request?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           } else {
+            await Session.signOut();
             window.location.href = `/auth?redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           }
         },

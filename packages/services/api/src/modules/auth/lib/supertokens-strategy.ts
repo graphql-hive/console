@@ -225,7 +225,11 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
         'SuperTokens session parsing errors: %s',
         JSON.stringify(result.error.flatten().fieldErrors),
       );
-      throw new HiveError(`Invalid access token provided`);
+      throw new HiveError('Invalid access token provided', {
+        extensions: {
+          code: 'UNAUTHENTICATED',
+        },
+      });
     }
 
     if (this.emailVerification) {
