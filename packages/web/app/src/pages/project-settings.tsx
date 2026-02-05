@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { Page, ProjectLayout } from '@/components/layouts/project';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { ProjectAccessTokensSubPage } from '@/components/project/settings/access-tokens/project-access-tokens-sub-page';
 import { CompositionSettings } from '@/components/project/settings/composition';
@@ -38,7 +39,6 @@ import { ProjectType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useNotifications, useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -589,9 +589,9 @@ function ProjectSettingsContent(props: {
     <PageLayout>
       <NavLayout>
         {subPages.map(subPage => (
-          <Button
+          <SubPageNavigationLink
             key={subPage.key}
-            variant="ghost"
+            isActive={resolvedPage.key === subPage.key}
             onClick={() => {
               void router.navigate({
                 search: {
@@ -599,15 +599,8 @@ function ProjectSettingsContent(props: {
                 },
               });
             }}
-            className={cn(
-              resolvedPage.key === subPage.key
-                ? 'bg-neutral-3 hover:bg-neutral-3'
-                : 'hover:bg-transparent hover:underline',
-              'w-full justify-start text-left',
-            )}
-          >
-            {subPage.title}
-          </Button>
+            title={subPage.title}
+          />
         ))}
       </NavLayout>
       <PageLayoutContent>

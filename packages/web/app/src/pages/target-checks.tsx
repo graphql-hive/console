@@ -147,7 +147,7 @@ const Navigation = (
                 <span className="overflow-hidden truncate">{edge.node.meta.author}</span>
               </div>
             ) : null}
-            <div className="mb-1.5 mt-2.5 flex align-middle text-xs font-medium text-[#c4c4c4]">
+            <div className="text-neutral-10 mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
               <div
                 className={cn(
                   edge.node.__typename === 'FailedSchemaCheck' ? 'text-red-500' : null,

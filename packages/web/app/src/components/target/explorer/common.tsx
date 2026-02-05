@@ -101,7 +101,7 @@ export function SchemaExplorerUsageStats(props: {
                           <tr key={op.hash}>
                             <td className="px-2 pl-0 text-left">
                               <NextLink
-                                className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
+                                className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
                                 to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                                 params={{
                                   organizationSlug: props.organizationSlug,
@@ -146,7 +146,7 @@ export function SchemaExplorerUsageStats(props: {
                     {usage.usedByClients.map(clientName => (
                       <li key={clientName} className="font-bold">
                         <NextLink
-                          className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
+                          className="text-orange-800 hover:text-orange-800 hover:underline hover:underline-offset-2 dark:text-orange-500 dark:hover:text-orange-500"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug: props.organizationSlug,
