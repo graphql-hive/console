@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
@@ -39,7 +40,6 @@ import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -715,10 +715,10 @@ function SettingsPageContent(props: {
         <NavLayout>
           {subPages.map(subPage => {
             return (
-              <Button
+              <SubPageNavigationLink
                 key={subPage.key}
                 data-cy={`target-settings-${subPage.key}-link`}
-                variant="ghost"
+                isActive={resolvedPage.key === subPage.key}
                 onClick={() => {
                   void router.navigate({
                     search: {
@@ -726,15 +726,8 @@ function SettingsPageContent(props: {
                     },
                   });
                 }}
-                className={cn(
-                  resolvedPage.key === subPage.key
-                    ? 'bg-neutral-3 hover:bg-neutral-3'
-                    : 'hover:bg-transparent hover:underline',
-                  'w-full justify-start text-left',
-                )}
-              >
-                {subPage.title}
-              </Button>
+                title={subPage.title}
+              />
             );
           })}
         </NavLayout>
