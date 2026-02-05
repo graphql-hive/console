@@ -1,6 +1,6 @@
 import cookies from 'js-cookie';
 import { LifeBuoyIcon } from 'lucide-react';
-import { FaUsersSlash } from 'react-icons/fa';
+import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
 import { useMutation } from 'urql';
 import { ThemeSwitcher } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ import { Avatar } from '@/components/v2';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { AuthProviderType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { useNotifications } from '@/lib/hooks/use-notifications';
@@ -53,20 +54,13 @@ const UserMenu_OrganizationConnectionFragment = graphql(`
     nodes {
       id
       slug
-    }
-  }
-`);
-
-const UserMenu_OrganizationFragment = graphql(`
-  fragment UserMenu_OrganizationFragment on Organization {
-    id
-    slug
-    me {
-      id
-      canLeaveOrganization
-    }
-    getStarted {
-      ...GetStartedWizard_GetStartedProgress
+      me {
+        id
+        ...UserMenu_MemberFragment
+      }
+      getStarted {
+        ...GetStartedWizard_GetStartedProgress
+      }
     }
   }
 `);
@@ -82,10 +76,16 @@ const UserMenu_MeFragment = graphql(`
   }
 `);
 
+const UserMenu_MemberFragment = graphql(`
+  fragment UserMenu_MemberFragment on Member {
+    canLeaveOrganization
+  }
+`);
+
 export function UserMenu(props: {
   me: FragmentType<typeof UserMenu_MeFragment> | null;
   organizations: FragmentType<typeof UserMenu_OrganizationConnectionFragment> | null;
-  currentOrganization: FragmentType<typeof UserMenu_OrganizationFragment> | null;
+  currentOrganizationSlug: string;
 }) {
   const docsUrl = getDocsUrl();
   const me = useFragment(UserMenu_MeFragment, props.me);
@@ -93,9 +93,14 @@ export function UserMenu(props: {
     UserMenu_OrganizationConnectionFragment,
     props.organizations,
   )?.nodes;
-  const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
   const [isLeaveOrganizationModalOpen, toggleLeaveOrganizationModalOpen] = useToggle();
+  const currentOrganization = organizations?.find(
+    org => org.slug === props.currentOrganizationSlug,
+  );
+  const meInOrg = useFragment(UserMenu_MemberFragment, currentOrganization?.me);
+
+  const canLeaveOrganization = !!currentOrganization && meInOrg?.canLeaveOrganization === true;
 
   return (
     <>
@@ -103,7 +108,7 @@ export function UserMenu(props: {
         toggleModalOpen={toggleUserSettingsModalOpen}
         isOpen={isUserSettingsModalOpen}
       />
-      {currentOrganization?.me.canLeaveOrganization ? (
+      {canLeaveOrganization ? (
         <LeaveOrganizationModal
           toggleModalOpen={toggleLeaveOrganizationModalOpen}
           isOpen={isLeaveOrganizationModalOpen}
@@ -133,6 +138,15 @@ export function UserMenu(props: {
                   <div className="text-neutral-10 truncate text-xs font-normal leading-none">
                     {me?.email}
                   </div>
+                </div>
+                <div>
+                  {me?.provider === AuthProviderType.Google ? (
+                    <FaGoogle title="Signed in using Google" />
+                  ) : me?.provider === AuthProviderType.Github ? (
+                    <FaGithub title="Signed in using Github" />
+                  ) : (
+                    <FaKey title="Signed in using username and password" />
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -237,7 +251,7 @@ export function UserMenu(props: {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              {currentOrganization?.me.canLeaveOrganization ? (
+              {canLeaveOrganization ? (
                 <DropdownMenuItem
                   onClick={() => {
                     toggleLeaveOrganizationModalOpen();

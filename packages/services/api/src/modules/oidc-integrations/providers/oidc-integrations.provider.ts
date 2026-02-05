@@ -54,7 +54,6 @@ export class OIDCIntegrationsProvider {
 
   async getOIDCIntegrationForOrganization(args: {
     organizationId: string;
-    skipAccessCheck?: boolean;
   }): Promise<OIDCIntegration | null> {
     this.logger.debug(
       'getting oidc integration for organization (organizationId=%s)',
@@ -65,18 +64,16 @@ export class OIDCIntegrationsProvider {
       return null;
     }
 
-    if (!args.skipAccessCheck) {
-      const canPerformAction = await this.session.canPerformAction({
+    const canPerformAction = await this.session.canPerformAction({
+      organizationId: args.organizationId,
+      action: 'oidc:modify',
+      params: {
         organizationId: args.organizationId,
-        action: 'oidc:modify',
-        params: {
-          organizationId: args.organizationId,
-        },
-      });
+      },
+    });
 
-      if (canPerformAction === false) {
-        return null;
-      }
+    if (canPerformAction === false) {
+      return null;
     }
 
     return await this.storage.getOIDCIntegrationForOrganization({
@@ -359,11 +356,7 @@ export class OIDCIntegrationsProvider {
     } as const;
   }
 
-  async updateOIDCRestrictions(args: {
-    oidcIntegrationId: string;
-    oidcUserJoinOnly: boolean | null;
-    oidcUserAccessOnly: boolean | null;
-  }) {
+  async updateOIDCRestrictions(args: { oidcIntegrationId: string; oidcUserAccessOnly: boolean }) {
     if (this.isEnabled() === false) {
       return {
         type: 'error',

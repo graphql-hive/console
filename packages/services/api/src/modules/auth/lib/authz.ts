@@ -51,7 +51,6 @@ function parseResourceIdentifier(resource: string) {
 export type UserActor = {
   type: 'user';
   user: User;
-  oidcIntegrationId: string | null;
 };
 
 export type OrganizationAccessTokenActor = {

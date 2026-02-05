@@ -49,7 +49,6 @@ import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organiza
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
-import { OrganizationOIDCRequestPage } from './pages/organization-oidc-request';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -368,29 +367,6 @@ const organizationRoute = createRoute({
   path: '$organizationSlug',
   notFoundComponent: NotFound,
   errorComponent: ErrorComponent,
-});
-
-const OrganizationOIDCRequestRouteSearch = z.object({
-  id: z.string({ required_error: 'OIDC ID is required' }),
-  redirectToPath: z.string().optional().default('/'),
-});
-const organizationOIDCRequestRoute = createRoute({
-  getParentRoute: () => organizationRoute,
-  path: 'oidc-request',
-  validateSearch(search) {
-    return OrganizationOIDCRequestRouteSearch.parse(search);
-  },
-  component: function OrganizationOIDCRequestRoute() {
-    const { organizationSlug } = organizationRoute.useParams();
-    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
-    return (
-      <OrganizationOIDCRequestPage
-        organizationSlug={organizationSlug}
-        oidcId={id}
-        redirectToPath={redirectToPath}
-      />
-    );
-  },
 });
 
 const organizationIndexRoute = createRoute({
@@ -1089,7 +1065,6 @@ const routeTree = root.addChildren([
       organizationIndexRoute,
       joinOrganizationRoute,
       transferOrganizationRoute,
-      organizationOIDCRequestRoute,
       organizationSupportRoute,
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,

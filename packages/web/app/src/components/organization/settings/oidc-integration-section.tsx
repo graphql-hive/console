@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { useFormik } from 'formik';
 import { useForm } from 'react-hook-form';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { useClient, useMutation, useQuery } from 'urql';
+import { useClient, useMutation } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { z } from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -76,14 +76,6 @@ function FormError({ children }: { children: React.ReactNode }) {
   return <div className="text-sm text-red-500">{children}</div>;
 }
 
-const OrganizationSettingsOIDCIntegrationSectionQuery = graphql(`
-  query OrganizationSettingsOIDCIntegrationSectionQuery($organizationSlug: String!) {
-    organization: organizationBySlug(organizationSlug: $organizationSlug) {
-      ...OIDCIntegrationSection_OrganizationFragment
-    }
-  }
-`);
-
 const OIDCIntegrationSection_OrganizationFragment = graphql(`
   fragment OIDCIntegrationSection_OrganizationFragment on Organization {
     id
@@ -120,14 +112,12 @@ function extractDomain(rawUrl: string) {
   return url.host;
 }
 
-export function OIDCIntegrationSection(props: { organizationSlug: string }): ReactElement {
+export function OIDCIntegrationSection(props: {
+  organization: FragmentType<typeof OIDCIntegrationSection_OrganizationFragment>;
+}): ReactElement {
   const router = useRouter();
-  const [query] = useQuery({
-    query: OrganizationSettingsOIDCIntegrationSectionQuery,
-    variables: {
-      organizationSlug: props.organizationSlug,
-    },
-  });
+  const organization = useFragment(OIDCIntegrationSection_OrganizationFragment, props.organization);
+  const isAdmin = organization.me.role.name === 'Admin';
 
   const hash = router.latestLocation.hash;
   const openCreateModalHash = 'create-oidc-integration';
@@ -144,14 +134,6 @@ export function OIDCIntegrationSection(props: { organizationSlug: string }): Rea
       hash: undefined,
     });
   };
-
-  const organization = useFragment(
-    OIDCIntegrationSection_OrganizationFragment,
-    query.data?.organization,
-  );
-  if (!organization) return <Spinner />;
-
-  const isAdmin = organization.me.role.name === 'Admin';
 
   return (
     <>
@@ -869,7 +851,6 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     clientId
     clientSecretPreview
     additionalScopes
-    oidcUserJoinOnly
     oidcUserAccessOnly
     defaultMemberRole {
       id
@@ -920,7 +901,6 @@ const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
       ok {
         updatedOIDCIntegration {
           id
-          oidcUserJoinOnly
           oidcUserAccessOnly
         }
       }
@@ -984,10 +964,7 @@ function UpdateOIDCIntegrationForm(props: {
     },
   });
 
-  const onOidcRestrictionChange = async (
-    name: 'oidcUserJoinOnly' | 'oidcUserAccessOnly',
-    value: boolean,
-  ) => {
+  const onOidcUserAccessOnlyChange = async (oidcUserAccessOnly: boolean) => {
     if (oidcRestrictionsMutation.fetching) {
       return;
     }
@@ -1000,21 +977,16 @@ function UpdateOIDCIntegrationForm(props: {
       const result = await oidcRestrictionsMutate({
         input: {
           oidcIntegrationId: props.oidcIntegration.id,
-          [name]: value,
+          oidcUserAccessOnly,
         },
       });
 
       if (result.data?.updateOIDCRestrictions.ok) {
         toast({
           title: 'OIDC restrictions updated successfully',
-          description: {
-            oidcUserJoinOnly: value
-              ? 'Only OIDC users can now join the organization'
-              : 'Joining the organization is no longer restricted to OIDC users',
-            oidcUserAccessOnly: value
-              ? 'Only OIDC users can now access the organization'
-              : 'Access to the organization is no longer restricted to OIDC users',
-          }[name],
+          description: oidcUserAccessOnly
+            ? 'Only OIDC users can now access the organization'
+            : 'Access to the organization is no longer restricted to OIDC users',
         });
       } else {
         toast({
@@ -1075,41 +1047,18 @@ function UpdateOIDCIntegrationForm(props: {
                   <div className="space-y-5">
                     <div className="flex items-center justify-between space-x-4">
                       <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                        <p>Require OIDC to Join</p>
+                        <p>OIDC-Only Access</p>
                         <p className="text-neutral-10 text-xs font-normal leading-snug">
-                          Restricts new accounts joining the organization to be authenticated via
-                          OIDC.
+                          Restricts organization access to only authenticated OIDC accounts.
                           <br />
-                          <span className="font-bold">
+                          <span className="font-medium">
                             Existing non-OIDC members will keep their access.
                           </span>
                         </p>
                       </div>
                       <Switch
-                        checked={props.oidcIntegration.oidcUserJoinOnly}
-                        onCheckedChange={checked =>
-                          onOidcRestrictionChange('oidcUserJoinOnly', checked)
-                        }
-                        disabled={oidcRestrictionsMutation.fetching}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between space-x-4">
-                      <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                        <p>Require OIDC to Access</p>
-                        <p className="text-neutral-10 text-xs font-normal leading-snug">
-                          Prompt users to authenticate with OIDC before accessing the organization.
-                          <br />
-                          <span className="font-bold">
-                            Existing users without OIDC credentials will not be able to access the
-                            organization.
-                          </span>
-                        </p>
-                      </div>
-                      <Switch
                         checked={props.oidcIntegration.oidcUserAccessOnly}
-                        onCheckedChange={checked =>
-                          onOidcRestrictionChange('oidcUserAccessOnly', checked)
-                        }
+                        onCheckedChange={onOidcUserAccessOnlyChange}
                         disabled={oidcRestrictionsMutation.fetching}
                       />
                     </div>

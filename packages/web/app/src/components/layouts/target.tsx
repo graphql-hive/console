@@ -114,7 +114,6 @@ const TargetLayoutQuery = graphql(`
           }
         }
       }
-      ...UserMenu_OrganizationFragment
     }
   }
 `);
@@ -172,7 +171,7 @@ export const TargetLayout = ({
         <div>
           <UserMenu
             me={me ?? null}
-            currentOrganization={currentOrganization ?? null}
+            currentOrganizationSlug={props.organizationSlug}
             organizations={query.data?.organizations ?? null}
           />
         </div>

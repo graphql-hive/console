@@ -180,6 +180,5 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2026.01.25T00-00-00.checks-proposals-changes'),
       await import('./actions/2026.01.27T00-00-00.app-deployment-protection'),
       await import('./actions/2026.01.09T00-00-00.email-verifications'),
-      await import('./actions/2026.01.30T00-00-00.account-linking'),
     ],
   });
