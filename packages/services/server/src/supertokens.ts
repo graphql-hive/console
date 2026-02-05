@@ -198,14 +198,21 @@ export const backendConfig = (requirements: {
 };
 
 function extractIPFromUserContext(userContext: unknown): string {
-  return (
-    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimitIPHeaderName) ||
-    (userContext as any)._default.request.original.ip
+  if (!env.supertokens?.rateLimit?.ipHeaderName) {
+    return (userContext as any)._default.request.original.ip;
+  }
+
+  return (userContext as any)._default.request.getHeaderValue(
+    env.supertokens.rateLimit.ipHeaderName,
   );
 }
 
 function createRedisRateLimiter(redis: Redis, windowSeconds = 5 * 60, maxRequests = 10) {
   async function isRateLimited(action: string, ip: string): Promise<boolean> {
+    if (env.supertokens.rateLimit === null) {
+      return false;
+    }
+
     const key = `supertokens-rate-limit:${action}:${ip}`;
     const current = await redis.incr(key);
     if (current === 1) {
