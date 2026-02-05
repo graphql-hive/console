@@ -198,12 +198,14 @@ export const backendConfig = (requirements: {
 };
 
 function extractIPFromUserContext(userContext: unknown): string {
-  if (!env.supertokens?.rateLimit?.ipHeaderName) {
-    return (userContext as any)._default.request.original.ip;
+  const defaultIp = (userContext as any)._default.request.original.ip;
+  if (!env.supertokens?.rateLimit) {
+    return defaultIp;
   }
 
-  return (userContext as any)._default.request.getHeaderValue(
-    env.supertokens.rateLimit.ipHeaderName,
+  return (
+    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimit.ipHeaderName) ??
+    defaultIp
   );
 }
 
