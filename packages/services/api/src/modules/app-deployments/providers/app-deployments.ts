@@ -1458,7 +1458,7 @@ export class AppDeployments {
 
     // When date filters are present, query clickhouse first to identify stale deployment IDs
     // This avoids the LIMIT 1000 problem where old stale deployments get cut off
-    let staleDeploymentIds;
+    let staleDeploymentIds: string[] | undefined;
     if (hasDateFilter) {
       staleDeploymentIds = await this.getStaleDeploymentIds({
         targetId: args.targetId,
@@ -1487,31 +1487,66 @@ export class AppDeployments {
     }
 
     // Fetch deployments from postgres
+    // When using stale deployment IDs, batch queries to avoid issues with large arrays
+    const BATCH_SIZE = 1000;
     let activeDeployments;
-    try {
-      const activeDeploymentsResult = await this.pool.query<unknown>(sql`
-        SELECT
-          ${appDeploymentFields}
-        FROM
-          "app_deployments"
-        WHERE
-          ${
-            staleDeploymentIds
-              ? sql`"id" = ANY(${sql.array(staleDeploymentIds, 'uuid')})`
-              : sql`"target_id" = ${args.targetId}
-              ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}`
-          }
-          AND "activated_at" IS NOT NULL
-          AND "retired_at" IS NULL
-        ORDER BY "created_at" DESC, "id"
-        ${staleDeploymentIds ? sql`` : sql`LIMIT ${maxDeployments}`}
-      `);
 
-      activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
+    try {
+      if (staleDeploymentIds) {
+        // Batch the IDs to avoid query size issues
+        const batches: string[][] = [];
+        for (let i = 0; i < staleDeploymentIds.length; i += BATCH_SIZE) {
+          batches.push(staleDeploymentIds.slice(i, i + BATCH_SIZE));
+        }
+
+        const batchResults = await Promise.all(
+          batches.map(batchIds =>
+            this.pool.query<unknown>(sql`
+              SELECT
+                ${appDeploymentFields}
+              FROM
+                "app_deployments"
+              WHERE
+                "id" = ANY(${sql.array(batchIds, 'uuid')})
+                AND "activated_at" IS NOT NULL
+                AND "retired_at" IS NULL
+            `),
+          ),
+        );
+
+        // Merge and sort results
+        activeDeployments = batchResults
+          .flatMap(result => result.rows.map(row => AppDeploymentModel.parse(row)))
+          .sort((a, b) => {
+            // Sort by created_at DESC, id ASC
+            if (a.createdAt > b.createdAt) return -1;
+            if (a.createdAt < b.createdAt) return 1;
+            return a.id.localeCompare(b.id);
+          });
+      } else {
+        const activeDeploymentsResult = await this.pool.query<unknown>(sql`
+          SELECT
+            ${appDeploymentFields}
+          FROM
+            "app_deployments"
+          WHERE
+            "target_id" = ${args.targetId}
+            ${args.filter.name ? sql`AND "name" ILIKE ${'%' + args.filter.name + '%'}` : sql``}
+            AND "activated_at" IS NOT NULL
+            AND "retired_at" IS NULL
+          ORDER BY "created_at" DESC, "id" ASC
+          LIMIT ${maxDeployments}
+        `);
+
+        activeDeployments = activeDeploymentsResult.rows.map(row => AppDeploymentModel.parse(row));
+      }
     } catch (error) {
+      const batchCount = staleDeploymentIds ? Math.ceil(staleDeploymentIds.length / BATCH_SIZE) : 0;
       this.logger.error(
-        'Failed to query active deployments from PostgreSQL (targetId=%s): %s',
+        'Failed to query active deployments from PostgreSQL (targetId=%s, batchCount=%d, totalIds=%d): %s',
         args.targetId,
+        batchCount,
+        staleDeploymentIds?.length ?? 0,
         error instanceof Error ? error.message : String(error),
       );
       throw error;
