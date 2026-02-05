@@ -22,15 +22,15 @@ import {
 } from './supertokens/oidc-provider';
 import { createThirdPartyEmailPasswordNodeOktaProvider } from './supertokens/okta-provider';
 
-const SuperTokenAccessTokenV2Model = zod.object({
+const SuperTokensSessionPayloadV2Model = zod.object({
   version: zod.literal('2'),
   superTokensUserId: zod.string(),
+  email: zod.string(),
   userId: zod.string(),
   oidcIntegrationId: zod.string().nullable(),
-  email: zod.string(),
 });
 
-export type SupertokensSession = zod.TypeOf<typeof SuperTokenAccessTokenV2Model>;
+type SuperTokensSessionPayload = zod.TypeOf<typeof SuperTokensSessionPayloadV2Model>;
 
 export const backendConfig = (requirements: {
   storage: Storage;
@@ -176,7 +176,7 @@ export const backendConfig = (requirements: {
                 firstName: null,
                 lastName: null,
               });
-              const payload: SupertokensSession = {
+              const payload: SuperTokensSessionPayload = {
                 version: '2',
                 superTokensUserId: input.userId,
                 userId: internalUser.user.id,

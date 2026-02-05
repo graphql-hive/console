@@ -12,26 +12,29 @@ import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from 
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
-  public userId: string;
-  public oidcIntegrationId: string | null;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  /**
+   * The properties `userId` and `oidcIntegrationId` are nullable for backwards compatibility.
+   * In the future, when all still active sessions are using the new format, we can remove the nullability.
+   */
+  public userId: string | null = null;
+  public oidcIntegrationId: string | null = null;
 
   constructor(
-    args: {
-      superTokensUserId: string;
-      userId: string;
-      oidcIntegrationId: string | null;
-      email: string;
-    },
+    sessionPayload: SuperTokensSessionPayload,
     deps: { organizationMembers: OrganizationMembers; storage: Storage; logger: Logger },
   ) {
     super({ logger: deps.logger });
-    this.superTokensUserId = args.superTokensUserId;
-    this.userId = args.userId;
-    this.oidcIntegrationId = args.oidcIntegrationId;
+    this.superTokensUserId = sessionPayload.superTokensUserId;
+
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+
+    if (sessionPayload.version === '2') {
+      this.userId = sessionPayload.userId;
+      this.oidcIntegrationId = sessionPayload.oidcIntegrationId;
+    }
   }
 
   get id(): string {
@@ -128,7 +131,9 @@ export class SuperTokensCookieBasedSession extends Session {
   }
 
   public async getActor(): Promise<UserActor> {
-    const user = await this.storage.getUserById({ id: this.userId });
+    const user = this.userId
+      ? await this.storage.getUserById({ id: this.userId })
+      : await this.storage.getUserBySuperTokenId({ superTokensUserId: this.superTokensUserId });
 
     if (!user) {
       throw new AccessError('User not found');
@@ -165,7 +170,10 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     this.emailVerification = deps.emailVerification;
   }
 
-  private async verifySuperTokensSession(args: { req: FastifyRequest; reply: FastifyReply }) {
+  private async verifySuperTokensSession(args: {
+    req: FastifyRequest;
+    reply: FastifyReply;
+  }): Promise<SuperTokensSessionPayload | null> {
     this.logger.debug('Attempt verifying SuperTokens session');
 
     if (args.req.headers['ignore-session']) {
@@ -216,7 +224,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    const result = SuperTokenAccessTokenModel.safeParse(payload);
+    const result = SuperTokensSessionPayloadModel.safeParse(payload);
 
     if (result.success === false) {
       this.logger.error('SuperTokens session payload is invalid');
@@ -230,10 +238,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
           code: 'UNAUTHENTICATED',
         },
       });
-    }
-
-    if (result.data.version === '1') {
-      throw new AccessError('Expired authorization token.', 'UNAUTHENTICATED');
     }
 
     if (this.emailVerification) {
@@ -260,44 +264,43 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     req: FastifyRequest;
     reply: FastifyReply;
   }): Promise<SuperTokensCookieBasedSession | null> {
-    const session = await this.verifySuperTokensSession(args);
-    if (!session) {
+    const sessionPayload = await this.verifySuperTokensSession(args);
+    if (!sessionPayload) {
       return null;
     }
 
     this.logger.debug('SuperTokens session resolved successfully');
 
-    return new SuperTokensCookieBasedSession(
-      {
-        superTokensUserId: session.superTokensUserId,
-        userId: session.userId,
-        oidcIntegrationId: session.oidcIntegrationId,
-        email: session.email,
-      },
-      {
-        storage: this.storage,
-        organizationMembers: this.organizationMembers,
-        logger: args.req.log,
-      },
-    );
+    return new SuperTokensCookieBasedSession(sessionPayload, {
+      storage: this.storage,
+      organizationMembers: this.organizationMembers,
+      logger: args.req.log,
+    });
   }
 }
 
-const SuperTokenAccessTokenV1Model = zod.object({
+/**
+ * This is the legacy format that is no longer issued for new logins.
+ * In the future, when all sessions using this access token payload format are expired
+ * we can remove it from here.
+ */
+const SuperTokensSessionPayloadV1Model = zod.object({
   version: zod.literal('1'),
   superTokensUserId: zod.string(),
   email: zod.string(),
 });
 
-const SuperTokenAccessTokenV2Model = zod.object({
+const SuperTokensSessionPayloadV2Model = zod.object({
   version: zod.literal('2'),
   superTokensUserId: zod.string(),
+  email: zod.string(),
   userId: zod.string(),
   oidcIntegrationId: zod.string().nullable(),
-  email: zod.string(),
 });
 
-const SuperTokenAccessTokenModel = zod.union([
-  SuperTokenAccessTokenV1Model,
-  SuperTokenAccessTokenV2Model,
+const SuperTokensSessionPayloadModel = zod.union([
+  SuperTokensSessionPayloadV1Model,
+  SuperTokensSessionPayloadV2Model,
 ]);
+
+type SuperTokensSessionPayload = zod.TypeOf<typeof SuperTokensSessionPayloadModel>;
