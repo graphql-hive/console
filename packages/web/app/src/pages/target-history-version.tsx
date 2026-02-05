@@ -150,7 +150,7 @@ function SchemaVersionView(props: {
           <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
             <TabsTrigger
               value="default"
-              className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 border-px mt-1 rounded-b-none border py-2"
+              className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
             >
               <span>Default Graph</span>
               <TooltipProvider>
@@ -184,7 +184,7 @@ function SchemaVersionView(props: {
               <TabsTrigger
                 value={edge.node.id}
                 key={edge.node.id}
-                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 border-px mt-1 rounded-b-none border py-2"
+                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
               >
                 {edge.node.contractName}
                 <TooltipProvider>
