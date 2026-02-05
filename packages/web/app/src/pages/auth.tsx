@@ -31,7 +31,7 @@ export function AuthPage() {
             </div>
           ) : (
             <div className="grid h-full min-h-screen items-center justify-center md:grid-cols-2 lg:max-w-none lg:grid-cols-3 lg:px-0">
-              <div className="bg-neutral-3 border-r-neutral-3 text-neutral-12 relative hidden h-full flex-col border-r p-10 lg:flex">
+              <div className="dark:bg-neutral-3 bg-neutral-2 border-r-neutral-3 text-neutral-12 relative hidden h-full flex-col border-r p-10 lg:flex">
                 <div className="bg-neutral-1 absolute inset-0" />
                 <Link to="/">
                   <div className="relative z-20 flex items-center text-lg font-medium">

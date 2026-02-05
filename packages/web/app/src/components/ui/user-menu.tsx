@@ -206,10 +206,8 @@ export function UserMenu(props: {
                 <SettingsIcon className="mr-2 size-4" />
                 Profile settings
               </DropdownMenuItem>
-              <>
-                <DropdownMenuSeparator />
-                <ThemeSwitcher />
-              </>
+              <DropdownMenuSeparator />
+              <ThemeSwitcher />
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <a href={docsUrl} target="_blank" rel="noreferrer">

@@ -155,7 +155,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      <h2 className="text-neutral-2 mb-3 font-bold">{props.title}</h2>
+      <h2 className="text-neutral-10 mb-3 font-bold">{props.title}</h2>
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
