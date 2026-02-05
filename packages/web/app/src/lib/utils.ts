@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useTheme } from '@/components/theme/theme-provider';
@@ -12,12 +12,10 @@ export function useChartStyles() {
   const { resolvedTheme } = useTheme();
   const [textColor, setTextColor] = useState(() => {
     // Read CSS variable on initial mount
-    return getComputedStyle(document.documentElement)
-      .getPropertyValue('--color-neutral-12')
-      .trim();
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-neutral-12').trim();
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Use setTimeout to ensure DOM has fully updated after theme change
     const timeoutId = setTimeout(() => {
       const color = getComputedStyle(document.documentElement)
