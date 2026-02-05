@@ -41,10 +41,10 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
   if (actor.user?.id) {
     const allOrganizations = await organizationManager.getOrganizations();
     const orgsWithOIDCConfig = await Promise.all(
-      allOrganizations.map(async org => ({
-        ...org,
+      allOrganizations.map(async organization => ({
+        organization,
         oidcIntegration: await oidcManager.getOIDCIntegrationForOrganization({
-          organizationId: org.id,
+          organizationId: organization.id,
           skipAccessCheck: true,
         }),
       })),
@@ -52,7 +52,7 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
 
     const getPriority = (org: (typeof orgsWithOIDCConfig)[number]) => {
       // prioritize user's own organization
-      if (org.ownerId === actor.user.id) {
+      if (org.organization.ownerId === actor.user.id) {
         return 2;
       }
       if (actor.oidcIntegrationId) {
@@ -70,9 +70,9 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
     if (selectedOrg) {
       return {
         selector: {
-          organizationSlug: selectedOrg.slug,
+          organizationSlug: selectedOrg.organization.slug,
         },
-        organization: selectedOrg,
+        organization: selectedOrg.organization,
       };
     }
   }
