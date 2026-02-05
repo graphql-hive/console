@@ -1,5 +1,16 @@
 import { useMemo } from 'react';
-import { buildSchema, GraphQLSchema } from 'graphql';
+import {
+  buildASTSchema,
+  buildSchema,
+  DefinitionNode,
+  DocumentNode,
+  GraphQLSchema,
+  isTypeDefinitionNode,
+  isTypeExtensionNode,
+  Kind,
+  parse,
+  visit,
+} from 'graphql';
 import { useMutation, useQuery, UseQueryExecute } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
@@ -177,6 +188,43 @@ export function TargetProposalsSinglePage(props: {
   );
 }
 
+function addTypeForExtensions(ast: DocumentNode) {
+  const trackTypeDefs = new Map<string, 'TYPE_ONLY' | 'EXTENSION_ONLY' | 'VALID_EXTENSION'>();
+  for (const node of ast.definitions) {
+    if ('name' in node && node.name !== undefined) {
+      const name = node.name?.value;
+      const state = trackTypeDefs.get(name);
+      if (isTypeExtensionNode(node)) {
+        if (!state) {
+          trackTypeDefs.set(name, 'EXTENSION_ONLY');
+        } else if (state === 'TYPE_ONLY') {
+          trackTypeDefs.set(name, 'VALID_EXTENSION');
+        }
+      } else if (isTypeDefinitionNode(node)) {
+        if (!state) {
+          trackTypeDefs.set(name, 'TYPE_ONLY');
+        } else if (state === 'EXTENSION_ONLY') {
+          trackTypeDefs.set(name, 'VALID_EXTENSION');
+        }
+      }
+    }
+  }
+
+  const astCopy = visit(ast, {});
+  for (const [name, state] of trackTypeDefs) {
+    if (state === 'EXTENSION_ONLY') {
+      (astCopy.definitions as DefinitionNode[]).push({
+        kind: Kind.OBJECT_TYPE_DEFINITION,
+        name: {
+          kind: Kind.NAME,
+          value: name,
+        },
+      });
+    }
+  }
+  return astCopy;
+}
+
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
   // fetch main page details
   const [query, refreshProposal] = useQuery({
@@ -245,9 +293,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
 
-          const beforeSchema = existingSchema?.length
-            ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
-            : null;
+          let beforeSchema: GraphQLSchema | null = null;
+          if (existingSchema?.length) {
+            const ast = addTypeForExtensions(parse(existingSchema));
+            beforeSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+          }
+
           // @todo better handle pagination
           const allChanges =
             proposalVersion.schemaChanges?.edges
