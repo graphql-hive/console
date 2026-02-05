@@ -50,7 +50,7 @@ export default {
         ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),
       },
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: '[name].[hash].js',
       },
     },
   },
