@@ -278,7 +278,7 @@ const ProposalsListPage = (props: {
                     </span>
                     <span className="text-neutral-10">{proposal.stage}</span>
                   </div>
-                  <div className="mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium text-[#c4c4c4] md:flex-row">
+                  <div className="text-neutral-10 mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
                     <div className="truncate">
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
