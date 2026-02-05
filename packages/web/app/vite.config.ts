@@ -49,9 +49,6 @@ export default {
         index: resolve(__dirname, 'index.html'),
         ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),
       },
-      output: {
-        entryFileNames: '[name].[hash].js',
-      },
     },
   },
   optimizeDeps: {
