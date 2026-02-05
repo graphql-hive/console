@@ -63,7 +63,7 @@ const createSessionPayload = (payload: {
   oidcIntegrationId: string | null;
   email: string;
 }) => ({
-  version: '1',
+  version: '2',
   superTokensUserId: payload.superTokensUserId,
   userId: payload.userId,
   oidcIntegrationId: payload.oidcIntegrationId,
