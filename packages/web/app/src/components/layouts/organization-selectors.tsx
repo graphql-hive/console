@@ -1,4 +1,3 @@
-import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRouter } from '@tanstack/react-router';
@@ -15,7 +14,6 @@ const OrganizationSelector_OrganizationConnectionFragment = graphql(`
 export function OrganizationSelector(props: {
   currentOrganizationSlug: string;
   organizations: FragmentType<typeof OrganizationSelector_OrganizationConnectionFragment> | null;
-  isOIDCUser: boolean;
 }) {
   const router = useRouter();
   const organizations = useFragment(
@@ -31,26 +29,14 @@ export function OrganizationSelector(props: {
     return <div className="bg-neutral-5 h-5 w-48 animate-pulse rounded-full" />;
   }
 
-  if (props.isOIDCUser) {
-    return (
-      <PrimaryNavigationLink
-        linkProps={{
-          to: '/$organizationSlug',
-          params: { organizationSlug: props.currentOrganizationSlug },
-        }}
-        linkText={props.currentOrganizationSlug}
-      />
-    );
-  }
-
   return (
     <Select
       value={props.currentOrganizationSlug}
-      onValueChange={id => {
+      onValueChange={slug => {
         void router.navigate({
           to: '/$organizationSlug',
           params: {
-            organizationSlug: id,
+            organizationSlug: slug,
           },
         });
       }}

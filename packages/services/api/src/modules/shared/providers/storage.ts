@@ -79,7 +79,10 @@ export interface Storage {
     };
     firstName: string | null;
     lastName: string | null;
-  }): Promise<'created' | 'no_action'>;
+  }): Promise<{
+    user: User;
+    action: 'created' | 'no_action';
+  }>;
 
   getUserBySuperTokenId(_: { superTokensUserId: string }): Promise<User | null>;
   getUserById(_: { id: string }): Promise<User | null>;
@@ -642,7 +645,8 @@ export interface Storage {
 
   updateOIDCRestrictions(_: {
     oidcIntegrationId: string;
-    oidcUserAccessOnly: boolean;
+    oidcUserJoinOnly: boolean | null;
+    oidcUserAccessOnly: boolean | null;
   }): Promise<OIDCIntegration>;
 
   updateOIDCDefaultMemberRole(_: {

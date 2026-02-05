@@ -27,8 +27,8 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/components/ui/use-toast';
 import { UserMenu } from '@/components/ui/user-menu';
-import { graphql, useFragment } from '@/gql';
-import { AuthProviderType, ProjectType } from '@/gql/graphql';
+import { graphql } from '@/gql';
+import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
@@ -51,36 +51,27 @@ export enum Page {
   Support = 'support',
   Subscription = 'subscription',
 }
-
-const OrganizationLayout_OrganizationFragment = graphql(`
-  fragment OrganizationLayout_OrganizationFragment on Organization {
-    id
-    slug
-    viewerCanCreateProject
-    viewerCanManageSupportTickets
-    viewerCanDescribeBilling
-    viewerCanSeeMembers
-    ...ProPlanBilling_OrganizationFragment
-    ...RateLimitWarn_OrganizationFragment
-  }
-`);
-
 const OrganizationLayoutQuery = graphql(`
-  query OrganizationLayoutQuery($organizationSlug: String!) {
+  query OrganizationLayoutQuery($organizationSlug: String!, $minimal: Boolean!) {
     me {
       id
       provider
       ...UserMenu_MeFragment
     }
-    organizationBySlug(organizationSlug: $organizationSlug) {
+    organizationBySlug(organizationSlug: $organizationSlug) @skip(if: $minimal) {
       id
+      slug
+      viewerCanCreateProject
+      viewerCanManageSupportTickets
+      viewerCanDescribeBilling
+      viewerCanSeeMembers
+      ...UserMenu_OrganizationFragment
+      ...ProPlanBilling_OrganizationFragment
+      ...RateLimitWarn_OrganizationFragment
     }
     organizations {
       ...OrganizationSelector_OrganizationConnectionFragment
       ...UserMenu_OrganizationConnectionFragment
-      nodes {
-        ...OrganizationLayout_OrganizationFragment
-      }
     }
   }
 `);
@@ -93,6 +84,7 @@ export function OrganizationLayout({
 }: {
   page?: Page;
   className?: string;
+  minimal?: boolean;
   organizationSlug: string;
   children: ReactNode;
 }): ReactElement | null {
@@ -101,18 +93,12 @@ export function OrganizationLayout({
     query: OrganizationLayoutQuery,
     variables: {
       organizationSlug: props.organizationSlug,
+      minimal: props.minimal ?? false,
     },
     requestPolicy: 'cache-first',
   });
 
-  const organizationExists = query.data?.organizationBySlug;
-
-  const organizations = useFragment(
-    OrganizationLayout_OrganizationFragment,
-    query.data?.organizations.nodes,
-  );
-  const currentOrganization = organizations?.find(org => org.slug === props.organizationSlug);
-
+  const currentOrganization = query.data?.organizationBySlug;
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   if (query.error) {
@@ -121,7 +107,7 @@ export function OrganizationLayout({
 
   // Only show the null state state if the query has finished fetching and data is not stale
   // This prevents showing null state when switching between orgs with cached data
-  const shouldShowNoOrg = !query.fetching && !query.stale && !organizationExists;
+  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization && !props.minimal;
 
   return (
     <>
@@ -129,14 +115,13 @@ export function OrganizationLayout({
         <div className="flex flex-row items-center gap-4">
           <HiveLink className="size-8" />
           <OrganizationSelector
-            isOIDCUser={query.data?.me.provider === AuthProviderType.Oidc}
             currentOrganizationSlug={props.organizationSlug}
             organizations={query.data?.organizations ?? null}
           />
         </div>
         <UserMenu
           me={query.data?.me ?? null}
-          currentOrganizationSlug={props.organizationSlug}
+          currentOrganization={query.data?.organizationBySlug ?? null}
           organizations={query.data?.organizations ?? null}
         />
       </Header>

@@ -1,3 +1,4 @@
+import { AccessError } from '../../../../shared/errors';
 import { Session } from '../../../auth/lib/authz';
 import { OIDCIntegrationsProvider } from '../../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../../shared/providers/id-translator';
@@ -9,29 +10,12 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
   { previouslyVisitedOrganizationId: previouslyVisitedOrganizationSlug },
   { injector },
 ) => {
-  const user = await injector.get(Session).getViewer();
-  const organizationManager = injector.get(OrganizationManager);
-
-  // For an OIDC Integration User we want to return the linked organization
-  if (user?.oidcIntegrationId) {
-    const oidcIntegration = await injector.get(OIDCIntegrationsProvider).getOIDCIntegrationById({
-      oidcIntegrationId: user.oidcIntegrationId,
-    });
-    if (oidcIntegration.type === 'ok') {
-      const org = await organizationManager.getOrganization({
-        organizationId: oidcIntegration.organizationId,
-      });
-
-      return {
-        selector: {
-          organizationSlug: org.slug,
-        },
-        organization: org,
-      };
-    }
-
-    return null;
+  const actor = await injector.get(Session).getActor();
+  if (actor.type !== 'user') {
+    throw new AccessError('Only authenticated users can perform this action.');
   }
+  const organizationManager = injector.get(OrganizationManager);
+  const oidcManager = injector.get(OIDCIntegrationsProvider);
 
   // This is the organization that got stored as an cookie
   // We make sure it actually exists before directing to it.
@@ -54,17 +38,41 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
     }
   }
 
-  if (user?.id) {
+  if (actor.user?.id) {
     const allOrganizations = await organizationManager.getOrganizations();
+    const orgsWithOIDCConfig = await Promise.all(
+      allOrganizations.map(async org => ({
+        ...org,
+        oidcIntegration: await oidcManager.getOIDCIntegrationForOrganization({
+          organizationId: org.id,
+          skipAccessCheck: true,
+        }),
+      })),
+    ).then(arr => arr.filter(v => v != null));
 
-    if (allOrganizations.length > 0) {
-      const firstOrg = allOrganizations[0];
-
+    const getPriority = (org: (typeof orgsWithOIDCConfig)[number]) => {
+      // prioritize user's own organization
+      if (org.ownerId === actor.user.id) {
+        return 2;
+      }
+      if (actor.oidcIntegrationId) {
+        // prioritize OIDC connected organization when user is authenticated with SSO
+        if (org.oidcIntegration?.id === actor.oidcIntegrationId) {
+          return 1;
+        }
+      } else if (org.oidcIntegration?.oidcUserAccessOnly) {
+        // deprioritize OIDC forced organizations when user is not authenticated with SSO
+        return 4;
+      }
+      return 3;
+    };
+    const selectedOrg = orgsWithOIDCConfig.toSorted((a, b) => getPriority(a) - getPriority(b))[0];
+    if (selectedOrg) {
       return {
         selector: {
-          organizationSlug: firstOrg.slug,
+          organizationSlug: selectedOrg.slug,
         },
-        organization: firstOrg,
+        organization: selectedOrg,
       };
     }
   }
