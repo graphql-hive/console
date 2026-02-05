@@ -53,12 +53,12 @@ export const myDefaultOrganization: NonNullable<QueryResolvers['myDefaultOrganiz
     const getPriority = (org: (typeof orgsWithOIDCConfig)[number]) => {
       // prioritize user's own organization
       if (org.ownerId === actor.user.id) {
-        return 1;
+        return 2;
       }
       if (actor.oidcIntegrationId) {
         // prioritize OIDC connected organization when user is authenticated with SSO
         if (org.oidcIntegration?.id === actor.oidcIntegrationId) {
-          return 2;
+          return 1;
         }
       } else if (org.oidcIntegration?.oidcUserAccessOnly) {
         // deprioritize OIDC forced organizations when user is not authenticated with SSO
