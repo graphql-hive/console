@@ -2,14 +2,21 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type SubPageNavigationLinkProps = {
+  dataCy?: string;
   isActive: boolean;
   onClick: () => void;
   title: string;
 };
 
-export function SubPageNavigationLink({ isActive, onClick, title }: SubPageNavigationLinkProps) {
+export function SubPageNavigationLink({
+  dataCy,
+  isActive,
+  onClick,
+  title,
+}: SubPageNavigationLinkProps) {
   return (
     <Button
+      data-cy={dataCy}
       variant="ghost"
       className={cn(
         isActive

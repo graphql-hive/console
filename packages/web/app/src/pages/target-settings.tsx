@@ -1867,7 +1867,7 @@ function TargetSettingsContent(props: {
           return (
             <SubPageNavigationLink
               key={subPage.key}
-              data-cy={`target-settings-${subPage.key}-link`}
+              dataCy={`target-settings-${subPage.key}-link`}
               isActive={resolvedPage.key === subPage.key}
               onClick={() => {
                 void router.navigate({
