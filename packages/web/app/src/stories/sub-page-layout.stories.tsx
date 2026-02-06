@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import type { Meta, StoryObj } from '@storybook/react';
 
@@ -28,18 +28,12 @@ const Template: StoryObj<typeof PageLayout> = {
         <NavLayout>
           {subPages.map(subPage => {
             return (
-              <Button
+              <SubPageNavigationLink
                 key={subPage.key}
-                variant="ghost"
+                isActive={page === subPage.key}
                 onClick={() => setPage(subPage.key)}
-                className={
-                  page === subPage.key
-                    ? 'bg-neutral-3 hover:bg-neutral-3'
-                    : 'hover:bg-transparent hover:underline'
-                }
-              >
-                {subPage.title}
-              </Button>
+                title={subPage.title}
+              />
             );
           })}
         </NavLayout>

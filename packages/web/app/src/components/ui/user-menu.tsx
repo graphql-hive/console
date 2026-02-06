@@ -189,7 +189,7 @@ export function UserMenu(props: {
               </DropdownMenuSub>
               <DropdownMenuItem asChild>
                 <a
-                  href="https://cal.com/team/the-guild/hive?duration=15"
+                  href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3KSfa5HXLUJKSoxdziqD_2rWPlDevQgWHeSNGEUN5GqafDw7ezvWlvKYjmxOo5_0hcB4_8W8G2"
                   target="_blank"
                   rel="noreferrer"
                 >

@@ -345,7 +345,7 @@ function SchemaCoordinateView(props: {
                         <div key={operation.id} className="flex items-center">
                           <p className="truncate text-sm font-medium">
                             <Link
-                              className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
+                              className="text-neutral-11 hover:text-neutral-11 hover:underline hover:underline-offset-2"
                               to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                               params={{
                                 organizationSlug: props.organizationSlug,
@@ -389,7 +389,7 @@ function SchemaCoordinateView(props: {
                         <div key={client.name} className="flex items-center">
                           <p className="truncate text-sm font-medium">
                             <Link
-                              className="text-neutral-2 hover:text-neutral-2 hover:underline hover:underline-offset-2"
+                              className="text-neutral-11 hover:text-neutral-11 hover:underline hover:underline-offset-2"
                               to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                               params={{
                                 organizationSlug: props.organizationSlug,

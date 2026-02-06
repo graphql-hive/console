@@ -7,7 +7,7 @@ import 'graphiql/style.css';
 
 export function DevPage() {
   return (
-    <div className="size-full">
+    <div className="h-screen w-full">
       <Helmet>
         <style key="dev">
           {`

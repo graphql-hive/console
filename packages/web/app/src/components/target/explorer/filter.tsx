@@ -289,16 +289,25 @@ export function SchemaVariantFilter(props: {
   return (
     <TooltipProvider>
       <Tabs defaultValue={props.variant}>
-        <TabsList>
+        <TabsList className="bg-neutral-5">
           {variants.map(variant => (
             <Tooltip key={variant.value}>
               <TooltipTrigger asChild>
                 {props.variant === variant.value ? (
                   <div>
-                    <TabsTrigger value={variant.value}>{variant.label}</TabsTrigger>
+                    <TabsTrigger
+                      className="dark:data-[state=active]:bg-neutral-7 data-[state=active]:text-neutral-12"
+                      value={variant.value}
+                    >
+                      {variant.label}
+                    </TabsTrigger>
                   </div>
                 ) : (
-                  <TabsTrigger value={variant.value} asChild>
+                  <TabsTrigger
+                    className="text-neutral-9 hover:text-neutral-11"
+                    value={variant.value}
+                    asChild
+                  >
                     <Link
                       to={variant.pathname}
                       params={{
