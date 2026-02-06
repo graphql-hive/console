@@ -64,8 +64,6 @@ describe('oidc', () => {
       cy.get('button[value="login"]').click();
 
       cy.get(`a[href="/${slug}"]`).should('exist');
-      // Organization picker should not be visible
-      cy.get('[data-cy="organization-picker-current"]').should('not.exist');
     });
   });
 
@@ -149,6 +147,57 @@ describe('oidc', () => {
     cy.get(`a[href="/${slug}"]`).should('exist');
     // Check if the user has the Admin role by checking if the Members tab is visible
     cy.get(`a[href^="/${slug}/view/members"]`).should('exist');
+  });
+
+  it('emailpassword account linking with existing oidc user', () => {
+    const organizationAdminUser = getUserData();
+    cy.visit('/');
+    cy.signup(organizationAdminUser);
+
+    const slug = generateRandomSlug();
+    cy.createOIDCIntegration(slug).then(({ organizationSlug }) => {
+      cy.visit('/logout');
+      cy.clearAllCookies();
+      cy.clearAllLocalStorage();
+      cy.clearAllSessionStorage();
+      cy.get('a[href^="/auth/sso"]').click();
+
+      // Select organization
+      cy.get('input[name="slug"]').type(organizationSlug);
+      cy.get('button[type="submit"]').click();
+
+      cy.get('input[id="Input_Username"]').type('test-user-2');
+      cy.get('input[id="Input_Password"]').type('password');
+      cy.get('button[value="login"]').click();
+
+      cy.get(`a[href="/${slug}"]`).should('exist');
+
+      cy.visit('/logout');
+      cy.clearAllCookies();
+      cy.clearAllLocalStorage();
+      cy.clearAllSessionStorage();
+
+      // Sign up/in through emailpassword, with email address used previously in OIDC
+      const memberData = {
+        ...getUserData(),
+        email: 'tom.sailor@gmail.com', // see docker/configs/oidc-server-mock/users-config.json
+      };
+      cy.visit('/auth/sign-up');
+      cy.fillSignUpFormAndSubmit(memberData);
+      cy.wait(500);
+
+      // Sign up can fail if the account already exists (due to using a fixed email address)
+      // Therefore sign out and re-sign in
+      cy.visit('/logout');
+      cy.clearAllCookies();
+      cy.clearAllLocalStorage();
+      cy.clearAllSessionStorage();
+      cy.visit('/auth/sign-in');
+      cy.fillSignInFormAndSubmit(memberData);
+      cy.wait(500);
+
+      cy.get(`a[href="/${slug}"]`).should('exist');
+    });
   });
 
   it('oidc login for invalid url shows correct error message', () => {

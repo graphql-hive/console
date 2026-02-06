@@ -6,7 +6,7 @@ import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-i
 import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
 import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization } from '../../../shared/entities';
-import { HiveError } from '../../../shared/errors';
+import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
@@ -103,13 +103,21 @@ export class OrganizationManager {
       return null;
     }
 
-    const canAccess = await this.session.canPerformAction({
-      action: 'organization:describe',
-      organizationId: organization.id,
-      params: {
+    const canAccess = await this.session
+      .assertPerformAction({
+        action: 'organization:describe',
         organizationId: organization.id,
-      },
-    });
+        params: {
+          organizationId: organization.id,
+        },
+      })
+      .then(() => true)
+      .catch(err => {
+        if (err instanceof AccessError && !(err instanceof OIDCRequiredError)) {
+          return false;
+        }
+        return Promise.reject(err);
+      });
 
     if (canAccess === false) {
       return null;
@@ -299,19 +307,10 @@ export class OrganizationManager {
     user: {
       id: string;
       superTokensUserId: string | null;
-      oidcIntegrationId: string | null;
     };
   }) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
-
-    if (user.oidcIntegrationId) {
-      this.logger.debug(
-        'Failed to create organization as oidc user is not allowed to do so (input=%o)',
-        input,
-      );
-      throw new HiveError('Cannot create organization with OIDC user.');
-    }
 
     const result = await this.storage.createOrganization({
       slug,
@@ -656,13 +655,9 @@ export class OrganizationManager {
   async joinOrganization({ code }: { code: string }): Promise<Organization | { message: string }> {
     this.logger.info('Joining an organization (code=%s)', code);
 
-    const user = await this.session.getViewer();
-    const isOIDCUser = user.oidcIntegrationId !== null;
-
-    if (isOIDCUser) {
-      return {
-        message: `You cannot join an organization with an OIDC account.`,
-      };
+    const actor = await this.session.getActor();
+    if (actor.type !== 'user') {
+      throw new Error('Only users can join organizations');
     }
 
     const organization = await this.getOrganizationByInviteCode({
@@ -678,9 +673,10 @@ export class OrganizationManager {
         organizationId: organization.id,
       });
 
-      if (oidcIntegration?.oidcUserAccessOnly && !isOIDCUser) {
+      if (oidcIntegration?.oidcUserJoinOnly && actor.oidcIntegrationId !== oidcIntegration.id) {
         return {
-          message: 'Non-OIDC users are not allowed to join this organization.',
+          message:
+            'The user is not authorized through the OIDC integration required for the organization',
         };
       }
     }
@@ -689,7 +685,7 @@ export class OrganizationManager {
 
     await this.storage.addOrganizationMemberViaInvitationCode({
       code,
-      userId: user.id,
+      userId: actor.user.id,
       organizationId: organization.id,
     });
 
@@ -705,7 +701,7 @@ export class OrganizationManager {
         eventType: 'USER_JOINED',
         organizationId: organization.id,
         metadata: {
-          inviteeEmail: user.email,
+          inviteeEmail: actor.user.email,
         },
       }),
     ]);

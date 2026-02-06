@@ -6,7 +6,8 @@ export const updateOIDCRestrictions: NonNullable<
 > = async (_, { input }, { injector }) => {
   const result = await injector.get(OIDCIntegrationsProvider).updateOIDCRestrictions({
     oidcIntegrationId: input.oidcIntegrationId,
-    oidcUserAccessOnly: input.oidcUserAccessOnly,
+    oidcUserJoinOnly: input.oidcUserJoinOnly ?? null,
+    oidcUserAccessOnly: input.oidcUserAccessOnly ?? null,
   });
 
   if (result.type === 'ok') {

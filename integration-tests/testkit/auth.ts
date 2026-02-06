@@ -57,10 +57,17 @@ const signUpUserViaEmail = async (
   }
 };
 
-const createSessionPayload = (superTokensUserId: string, email: string) => ({
-  version: '1',
-  superTokensUserId,
-  email,
+const createSessionPayload = (payload: {
+  superTokensUserId: string;
+  userId: string;
+  oidcIntegrationId: string | null;
+  email: string;
+}) => ({
+  version: '2',
+  superTokensUserId: payload.superTokensUserId,
+  userId: payload.userId,
+  oidcIntegrationId: payload.oidcIntegrationId,
+  email: payload.email,
 });
 
 const CreateSessionModel = z.object({
@@ -89,7 +96,7 @@ const createSession = async (
       ],
     });
 
-    await internalApi.ensureUser.mutate({
+    const { user } = await internalApi.ensureUser.mutate({
       superTokensUserId,
       email,
       oidcIntegrationId,
@@ -97,7 +104,12 @@ const createSession = async (
       lastName: null,
     });
 
-    const sessionData = createSessionPayload(superTokensUserId, email);
+    const sessionData = createSessionPayload({
+      superTokensUserId,
+      userId: user.id,
+      oidcIntegrationId,
+      email,
+    });
     const payload = {
       enableAntiCsrf: false,
       userId: superTokensUserId,

@@ -38,6 +38,13 @@ jobs:
         with:
           cmd: yq -i 'del(.services.*.volumes)' docker/docker-compose.community.yml
 
+      - name: disable rate limiting
+        uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
+        with:
+          cmd:
+            yq -i '.services.server.environment.SUPERTOKENS_RATE_LIMIT = "0"'
+            docker/docker-compose.community.yml
+
       - name: run containers
         timeout-minutes: 10
         run: |
