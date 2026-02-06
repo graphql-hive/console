@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { HTTPError } from 'got';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
@@ -318,28 +319,46 @@ export class SupportManager {
         input.organizationId,
         input.userId,
       );
-      // connect user to organization
-      await this.httpClient.post(
-        `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
-        {
-          username: this.config.username,
-          password: this.config.password,
-          responseType: 'json',
-          context: {
-            logger: this.logger,
-          },
-          headers: {
-            // v2 post fix is for idemopotency key cache busting.
-            'idempotency-key': input.userId + '|v2',
-          },
-          json: {
-            organization_membership: {
-              user_id: parseInt(user.zendeskId, 10),
-              organization_id: parseInt(organizationZendeskId, 10),
+
+      // attempt connect user to organization
+      try {
+        await this.httpClient.post(
+          `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
+          {
+            username: this.config.username,
+            password: this.config.password,
+            responseType: 'json',
+            context: {
+              logger: this.logger,
+            },
+            headers: {
+              // v2 post fix is for idemopotency key cache busting.
+              'idempotency-key': input.userId + '|v2',
+            },
+            json: {
+              organization_membership: {
+                user_id: parseInt(user.zendeskId, 10),
+                organization_id: parseInt(organizationZendeskId, 10),
+              },
             },
           },
-        },
-      );
+        );
+      } catch (err) {
+        if (err instanceof HTTPError) {
+          switch (err.code) {
+            // This user is already a member of this organization.
+            case '422': {
+              break;
+            }
+            default: {
+              throw err;
+            }
+          }
+        } else {
+          throw err;
+        }
+      }
+
       await this.storage.setZendeskOrganizationUserConnection({
         userId: input.userId,
         organizationId: input.organizationId,
