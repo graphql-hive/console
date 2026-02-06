@@ -190,6 +190,15 @@ export function TargetProposalsSinglePage(props: {
   );
 }
 
+const extensionToDefinitionKindMap = {
+  [Kind.OBJECT_TYPE_EXTENSION]: Kind.OBJECT_TYPE_DEFINITION,
+  [Kind.INPUT_OBJECT_TYPE_EXTENSION]: Kind.INPUT_OBJECT_TYPE_DEFINITION,
+  [Kind.INTERFACE_TYPE_EXTENSION]: Kind.INTERFACE_TYPE_DEFINITION,
+  [Kind.UNION_TYPE_EXTENSION]: Kind.UNION_TYPE_DEFINITION,
+  [Kind.ENUM_TYPE_EXTENSION]: Kind.ENUM_TYPE_DEFINITION,
+  [Kind.SCALAR_TYPE_EXTENSION]: Kind.SCALAR_TYPE_DEFINITION,
+} as const;
+
 function addTypeForExtensions(ast: DocumentNode) {
   const trackTypeDefs = new Map<
     string,
@@ -200,7 +209,6 @@ function addTypeForExtensions(ast: DocumentNode) {
         state: 'EXTENSION_ONLY' | 'VALID_EXTENSION';
         kind:
           | Kind.OBJECT_TYPE_EXTENSION
-          | Kind.SCHEMA_EXTENSION
           | Kind.ENUM_TYPE_EXTENSION
           | Kind.UNION_TYPE_EXTENSION
           | Kind.SCALAR_TYPE_EXTENSION
@@ -231,8 +239,9 @@ function addTypeForExtensions(ast: DocumentNode) {
   const astCopy = visit(ast, {});
   for (const [name, entry] of trackTypeDefs) {
     if (entry.state === 'EXTENSION_ONLY') {
+      console.log('FOUND EXTENSION: ', name, entry.kind);
       (astCopy.definitions as DefinitionNode[]).push({
-        kind: entry.kind,
+        kind: extensionToDefinitionKindMap[entry.kind],
         name: {
           kind: Kind.NAME,
           value: name,
