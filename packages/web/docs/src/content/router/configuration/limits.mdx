@@ -77,7 +77,7 @@ limit on the number of aliases.
 
 - **Type:** `integer`
 
-The maximum allowed number of aliases in incoming GraphQL queries.
+The maximum allowed number of aliases in incoming GraphQL operations.
 
 ## Examples
 
@@ -89,7 +89,7 @@ limits:
     n: 2
 ```
 
-In that example, any incoming GraphQL query that exceeds a depth of 2 will be rejected with an
+In that example, any incoming GraphQL operation that exceeds a depth of 2 will be rejected with an
 error.
 
 ```graphql
@@ -114,7 +114,7 @@ limits:
     n: 5
 ```
 
-In that example, any incoming GraphQL query that contains more than 5 directives will be rejected
+In that example, any incoming GraphQL operation that contains more than 5 directives will be rejected
 with an error.
 
 ```graphql
@@ -129,7 +129,7 @@ query {
 }
 ```
 
-The above query contains 4 directives, so it would be accepted. If a query contained more than 5
+The above query contains 4 directives, so it would be accepted. If an operation contained more than 5
 directives, it would be rejected.
 
 ### Limit Tokens to 10
@@ -140,7 +140,7 @@ limits:
     n: 10
 ```
 
-In that example, any incoming GraphQL query that contains more than 10 tokens will be rejected with
+In that example, any incoming GraphQL operation that contains more than 10 tokens will be rejected with
 an error.
 
 ```graphql
@@ -152,7 +152,7 @@ query {
 }
 ```
 
-The above query contains 8 tokens, so it would be accepted. If a query contained more than 10
+The above operation contains 8 tokens, so it would be accepted. If an operation contained more than 10
 tokens, it would be rejected.
 
 ### Limit Aliases to 3
@@ -163,7 +163,7 @@ limits:
     n: 3
 ```
 
-In that example, any incoming GraphQL query that contains more than 3 aliases will be rejected with
+In that example, any incoming GraphQL operation that contains more than 3 aliases will be rejected with
 an error.
 
 ```graphql
@@ -177,7 +177,7 @@ query {
 }
 ```
 
-The above query contains 2 aliases (`user1` and `user2`), so it would be accepted. If a query
+The above operation contains 2 aliases (`user1` and `user2`), so it would be accepted. If an operation
 contained more than 3 aliases, it would be rejected.
 
 ```graphql
