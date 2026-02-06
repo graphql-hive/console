@@ -114,8 +114,8 @@ limits:
     n: 5
 ```
 
-In that example, any incoming GraphQL operation that contains more than 5 directives will be rejected
-with an error.
+In that example, any incoming GraphQL operation that contains more than 5 directives will be
+rejected with an error.
 
 ```graphql
 query {
@@ -129,8 +129,8 @@ query {
 }
 ```
 
-The above query contains 4 directives, so it would be accepted. If an operation contained more than 5
-directives, it would be rejected.
+The above query contains 4 directives, so it would be accepted. If an operation contained more than
+5 directives, it would be rejected.
 
 ### Limit Tokens to 10
 
@@ -140,8 +140,8 @@ limits:
     n: 10
 ```
 
-In that example, any incoming GraphQL operation that contains more than 10 tokens will be rejected with
-an error.
+In that example, any incoming GraphQL operation that contains more than 10 tokens will be rejected
+with an error.
 
 ```graphql
 query {
@@ -152,8 +152,8 @@ query {
 }
 ```
 
-The above operation contains 8 tokens, so it would be accepted. If an operation contained more than 10
-tokens, it would be rejected.
+The above operation contains 8 tokens, so it would be accepted. If an operation contained more than
+10 tokens, it would be rejected.
 
 ### Limit Aliases to 3
 
@@ -163,8 +163,8 @@ limits:
     n: 3
 ```
 
-In that example, any incoming GraphQL operation that contains more than 3 aliases will be rejected with
-an error.
+In that example, any incoming GraphQL operation that contains more than 3 aliases will be rejected
+with an error.
 
 ```graphql
 query {
@@ -177,8 +177,8 @@ query {
 }
 ```
 
-The above operation contains 2 aliases (`user1` and `user2`), so it would be accepted. If an operation
-contained more than 3 aliases, it would be rejected.
+The above operation contains 2 aliases (`user1` and `user2`), so it would be accepted. If an
+operation contained more than 3 aliases, it would be rejected.
 
 ```graphql
 query {
