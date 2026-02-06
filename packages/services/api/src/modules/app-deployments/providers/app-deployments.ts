@@ -1580,9 +1580,7 @@ export class AppDeployments {
         batches.push(deploymentIds.slice(i, i + BATCH_SIZE));
       }
       const batchResults = await Promise.all(
-        batches.map(batchIds =>
-          this.getLastUsedForAppDeployments({ appDeploymentIds: batchIds }),
-        ),
+        batches.map(batchIds => this.getLastUsedForAppDeployments({ appDeploymentIds: batchIds })),
       );
       usageData = batchResults.flat();
     } catch (error) {
