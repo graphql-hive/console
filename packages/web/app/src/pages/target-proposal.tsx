@@ -191,32 +191,48 @@ export function TargetProposalsSinglePage(props: {
 }
 
 function addTypeForExtensions(ast: DocumentNode) {
-  const trackTypeDefs = new Map<string, 'TYPE_ONLY' | 'EXTENSION_ONLY' | 'VALID_EXTENSION'>();
+  const trackTypeDefs = new Map<
+    string,
+    | {
+        state: 'TYPE_ONLY';
+      }
+    | {
+        state: 'EXTENSION_ONLY' | 'VALID_EXTENSION';
+        kind:
+          | Kind.OBJECT_TYPE_EXTENSION
+          | Kind.SCHEMA_EXTENSION
+          | Kind.ENUM_TYPE_EXTENSION
+          | Kind.UNION_TYPE_EXTENSION
+          | Kind.SCALAR_TYPE_EXTENSION
+          | Kind.INTERFACE_TYPE_EXTENSION
+          | Kind.INPUT_OBJECT_TYPE_EXTENSION;
+      }
+  >();
   for (const node of ast.definitions) {
-    if ('name' in node && node.name !== undefined) {
-      const name = node.name?.value;
-      const state = trackTypeDefs.get(name);
+    if ('name' in node && node.name) {
+      const name = node.name.value;
+      const entry = trackTypeDefs.get(name);
       if (isTypeExtensionNode(node)) {
-        if (!state) {
-          trackTypeDefs.set(name, 'EXTENSION_ONLY');
-        } else if (state === 'TYPE_ONLY') {
-          trackTypeDefs.set(name, 'VALID_EXTENSION');
+        if (!entry) {
+          trackTypeDefs.set(name, { state: 'EXTENSION_ONLY', kind: node.kind });
+        } else if (entry.state === 'TYPE_ONLY') {
+          trackTypeDefs.set(name, { kind: node.kind, state: 'VALID_EXTENSION' });
         }
       } else if (isTypeDefinitionNode(node)) {
-        if (!state) {
-          trackTypeDefs.set(name, 'TYPE_ONLY');
-        } else if (state === 'EXTENSION_ONLY') {
-          trackTypeDefs.set(name, 'VALID_EXTENSION');
+        if (!entry) {
+          trackTypeDefs.set(name, { state: 'TYPE_ONLY' });
+        } else if (entry.state === 'EXTENSION_ONLY') {
+          trackTypeDefs.set(name, { ...entry, state: 'VALID_EXTENSION' });
         }
       }
     }
   }
 
   const astCopy = visit(ast, {});
-  for (const [name, state] of trackTypeDefs) {
-    if (state === 'EXTENSION_ONLY') {
+  for (const [name, entry] of trackTypeDefs) {
+    if (entry.state === 'EXTENSION_ONLY') {
       (astCopy.definitions as DefinitionNode[]).push({
-        kind: Kind.OBJECT_TYPE_DEFINITION,
+        kind: entry.kind,
         name: {
           kind: Kind.NAME,
           value: name,
