@@ -5,7 +5,7 @@ title: 'limits'
 # limits
 
 The `limits` configuration allows you to set various limits on incoming GraphQL requests to prevent
-too large queries that could lead to overfetching or DOS attacks.
+too large operations that could lead to overfetching or DOS attacks.
 
 [Learn more about operation complexity and why limiting it is important](../security/operation-complexity).
 
@@ -21,7 +21,7 @@ depth.
 
 - **Type:** `integer`
 
-The maximum allowed depth for incoming GraphQL queries.
+The maximum allowed depth for incoming GraphQL operations.
 
 #### `disable_introspection`
 
@@ -41,31 +41,43 @@ to explore the schema.
 
 When set to `true`, the depth calculation will consider fragment spreads as if they were inlined.
 This provides a more accurate depth measurement, especially when fragments are used extensively in
-queries.
+operations.
 
 ### `max_directives`
 
-This option allows you to set a maximum number of directives allowed in incoming GraphQL queries.
-Queries that exceed this number will be rejected with an error. If not specified, there is no limit
-on the number of directives.
+This option allows you to set a maximum number of directives allowed in incoming GraphQL operations.
+Operations that exceed this number will be rejected with an error. If not specified, there is no
+limit on the number of directives.
 
 #### `n`
 
 - **Type:** `integer`
 
-The maximum allowed number of directives in incoming GraphQL queries.
+The maximum allowed number of directives in incoming GraphQL operations.
 
 ### `max_tokens`
 
-This option allows you to set a maximum number of tokens allowed in incoming GraphQL queries.
-Queries that exceed this number will be rejected with an error. If not specified, there is no limit
-on the number of tokens.
+This option allows you to set a maximum number of tokens allowed in incoming GraphQL operations.
+Operations that exceed this number will be rejected with an error. If not specified, there is no
+limit on the number of tokens.
 
 #### `n`
 
 - **Type:** `integer`
 
-The maximum allowed number of tokens in incoming GraphQL queries.
+The maximum allowed number of tokens in incoming GraphQL operations.
+
+### `max_aliases`
+
+This option allows you to set a maximum number of aliases allowed in incoming GraphQL operations.
+Operations that exceed this number will be rejected with an error. If not specified, there is no
+limit on the number of aliases.
+
+#### `n`
+
+- **Type:** `integer`
+
+The maximum allowed number of aliases in incoming GraphQL queries.
 
 ## Examples
 
@@ -142,3 +154,48 @@ query {
 
 The above query contains 8 tokens, so it would be accepted. If a query contained more than 10
 tokens, it would be rejected.
+
+### Limit Aliases to 3
+
+```yaml filename="router.config.yaml"
+limits:
+  max_aliases:
+    n: 3
+```
+
+In that example, any incoming GraphQL query that contains more than 3 aliases will be rejected with
+an error.
+
+```graphql
+query {
+  user1: user {
+    id
+  }
+  user2: user {
+    name
+  }
+}
+```
+
+The above query contains 2 aliases (`user1` and `user2`), so it would be accepted. If a query
+contained more than 3 aliases, it would be rejected.
+
+```graphql
+query {
+  user1: user {
+    id
+  }
+  user2: user {
+    name
+  }
+  user3: user {
+    email
+  }
+  user4: user {
+    age
+  }
+}
+```
+
+The above query contains 4 aliases (`user1`, `user2`, `user3`, and `user4`), so it would be
+rejected.
