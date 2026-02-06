@@ -1571,12 +1571,18 @@ export class AppDeployments {
     }
 
     // Get lastUsed data from clickhouse for all active deployment IDs
+    // Batch to avoid clickhouse Cloud's HTTP form field size limit
     const deploymentIds = activeDeployments.map(d => d.id);
     let usageData;
     try {
-      usageData = await this.getLastUsedForAppDeployments({
-        appDeploymentIds: deploymentIds,
-      });
+      const batches = [];
+      for (let i = 0; i < deploymentIds.length; i += BATCH_SIZE) {
+        batches.push(deploymentIds.slice(i, i + BATCH_SIZE));
+      }
+      const batchResults = await Promise.all(
+        batches.map(batchIds => this.getLastUsedForAppDeployments({ appDeploymentIds: batchIds })),
+      );
+      usageData = batchResults.flat();
     } catch (error) {
       this.logger.error(
         'Failed to query lastUsed data from ClickHouse (targetId=%s, deploymentCount=%d): %s',
