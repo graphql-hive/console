@@ -997,6 +997,7 @@ const targetProposalsSingleRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/$proposalId',
   validateSearch: z.object({
+    ts: z.number().optional(),
     page: z
       .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
       .optional()
@@ -1006,7 +1007,7 @@ const targetProposalsSingleRoute = createRoute({
   component: function TargetProposalRoute() {
     const { organizationSlug, projectSlug, targetSlug, proposalId } =
       targetProposalsSingleRoute.useParams();
-    const { page, version } = targetProposalsSingleRoute.useSearch();
+    const { page, version, ts } = targetProposalsSingleRoute.useSearch();
     return (
       <TargetProposalsSinglePage
         organizationSlug={organizationSlug}
@@ -1015,6 +1016,7 @@ const targetProposalsSingleRoute = createRoute({
         proposalId={proposalId}
         tab={page ?? (ProposalTab.DETAILS as string)}
         version={version}
+        timestamp={ts}
       />
     );
   },

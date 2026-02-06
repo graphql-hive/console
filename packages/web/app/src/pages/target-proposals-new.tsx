@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { buildSchema } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
@@ -11,6 +11,11 @@ import {
   Service,
   ServiceTab,
 } from '@/components/target/proposals/editor';
+import {
+  SaveProposalContext,
+  SaveProposalModal,
+  SaveProposalProvider,
+} from '@/components/target/proposals/save-proposal-modal';
 import { schemaTitle } from '@/components/target/proposals/util';
 import { Button } from '@/components/ui/button';
 import { Callout } from '@/components/ui/callout';
@@ -28,10 +33,10 @@ import { graphql } from '@/gql';
 import { cn } from '@/lib/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 
 const ProposeChangesMutation = graphql(`
-  mutation Proposals_ProposeChanges($input: CreateSchemaProposalInput!) {
+  mutation ProposalsNew_ProposeChanges($input: CreateSchemaProposalInput!) {
     createSchemaProposal(input: $input) {
       ok {
         schemaProposal {
@@ -109,7 +114,9 @@ export function TargetProposalsNewPage(props: {
         className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
       >
         <ProposalsNewHeading {...props} />
-        <ProposalsNewContent {...props} />
+        <SaveProposalProvider>
+          <ProposalsNewContent {...props} />
+        </SaveProposalProvider>
       </TargetLayout>
     </>
   );
@@ -205,8 +212,7 @@ function ConfirmationModal(props: {
       <Table>
         <THead>
           <Th className="px-0 text-center">confirm</Th>
-          <Th>schema</Th>
-          <Th>explanation</Th>
+          <Th colSpan={2}>schema</Th>
         </THead>
         <TBody>
           {props.confirmations.map((c, idx) => {
@@ -250,7 +256,6 @@ function ConfirmationModal(props: {
 function ProposalsNewContent(
   props: Parameters<typeof TargetProposalsNewPage>[0] & { page?: string },
 ) {
-  const navigate = useNavigate();
   const [query] = useQuery({
     query: ProposalsNewProposalQuery,
     variables: {
@@ -264,14 +269,7 @@ function ProposalsNewContent(
     },
   });
   const [_, proposeChanges] = useMutation(ProposeChangesMutation);
-  // const [_, updateProposedChanges] = useMutation(UpdateProposedChangesMutation);
-  // updateProposedChanges({
-  //   input: {
-  //     schemaProposalId: '', // @todo
-  //   }
-  // })
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // overview error
   const [overviewError, setOverviewError] = useState('');
   const [editorError, setEditorError] = useState('');
   const existingServices = useMemo(() => {
@@ -282,13 +280,14 @@ function ProposalsNewContent(
   const [page, setPage] = useState('overview');
   const [confirmations, setConfirmations] = useState<Array<Confirmation>>([]);
   const [changedServices, setChangedServices] = useState<Array<ServiceTab>>([]);
-  // @todo consider calculating from the supergraph?
   const [serviceDiff, setServiceDiff] = useState<Array<{
     title: string;
     changes: Change[];
     error?: string;
     type: 'CompositeSchema' | 'SingleSchema';
   }> | null>(null);
+  const { saveChanges } = useContext(SaveProposalContext);
+
   const onSubmitProposal = useCallback(() => {
     setIsSubmitting(true);
     setTimeout(async () => {
@@ -380,19 +379,24 @@ function ProposalsNewContent(
               description: payload?.description,
               isDraft: true,
               author: query.data.me.displayName,
-              initialChecks: changedServices.map(s => ({
-                sdl: s.source,
-                service: s.__typename === 'CompositeSchema' ? s.service : '',
-                meta: {
-                  author: query.data!.me.displayName,
-                  commit: '',
-                },
-                url: s.__typename === 'CompositeSchema' ? s.url : undefined,
-                // @todo url, meta, etc...
-                // and set author in backend?...
-              })),
             },
           });
+
+          const schemaProposalId = data?.createSchemaProposal.ok?.schemaProposal.id;
+          if (schemaProposalId) {
+            try {
+              await saveChanges({
+                author: query.data.me.displayName ?? null,
+                changes: changedServices,
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+                schemaProposalId,
+              });
+            } catch (e) {
+              setEditorError(e instanceof Error ? e.message : 'Something went wrong.');
+            }
+          }
           setIsSubmitting(false);
           if (error) {
             setEditorError(error?.message ?? 'An error occurred when submitting the proposal.');
@@ -410,15 +414,6 @@ function ProposalsNewContent(
             setPage('overview');
             return;
           }
-          await navigate({
-            to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
-            params: {
-              organizationSlug: props.organizationSlug,
-              projectSlug: props.projectSlug,
-              targetSlug: props.targetSlug,
-              proposalId: data.createSchemaProposal.ok.schemaProposal.id,
-            },
-          });
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e);
           setEditorError(message);
@@ -427,6 +422,8 @@ function ProposalsNewContent(
       }
     });
   }, [changedServices, title, description, existingServices, serviceDiff]);
+
+  // Live verify the title and description inputs
   useEffect(() => {
     if (overviewError) {
       try {
@@ -440,12 +437,8 @@ function ProposalsNewContent(
     }
   }, [title, description]);
 
+  // Live update the list of changes locally
   useEffect(() => {
-    // @todo only run when we have to show changes
-    // but also run on submit???? for the approval??
-    // if (page !== 'changes') {
-    //   return;
-    // }
     const resultPromises = changedServices.map(
       (
         changedService,
@@ -546,6 +539,7 @@ function ProposalsNewContent(
 
   return (
     <>
+      <SaveProposalModal />
       <ConfirmationModal confirmations={confirmations} setConfirmations={setConfirmations} />
       <Tabs orientation="vertical" className="flex" value={page} onValueChange={setPage}>
         <TabsList
@@ -568,7 +562,7 @@ function ProposalsNewContent(
           <div className="mt-6">
             <Button
               variant="ghost"
-              className="mt-2 w-full justify-center px-3 font-bold"
+              className="mb-10 mt-2 w-full justify-center px-3 font-bold"
               disabled={query.fetching || isSubmitting}
               onClick={onSubmitProposal}
             >
