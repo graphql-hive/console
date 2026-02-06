@@ -1575,22 +1575,16 @@ export class AppDeployments {
     const deploymentIds = activeDeployments.map(d => d.id);
     let usageData;
     try {
-      if (deploymentIds.length <= BATCH_SIZE) {
-        usageData = await this.getLastUsedForAppDeployments({
-          appDeploymentIds: deploymentIds,
-        });
-      } else {
-        const batches = [];
-        for (let i = 0; i < deploymentIds.length; i += BATCH_SIZE) {
-          batches.push(deploymentIds.slice(i, i + BATCH_SIZE));
-        }
-        const batchResults = await Promise.all(
-          batches.map(batchIds =>
-            this.getLastUsedForAppDeployments({ appDeploymentIds: batchIds }),
-          ),
-        );
-        usageData = batchResults.flat();
+      const batches = [];
+      for (let i = 0; i < deploymentIds.length; i += BATCH_SIZE) {
+        batches.push(deploymentIds.slice(i, i + BATCH_SIZE));
       }
+      const batchResults = await Promise.all(
+        batches.map(batchIds =>
+          this.getLastUsedForAppDeployments({ appDeploymentIds: batchIds }),
+        ),
+      );
+      usageData = batchResults.flat();
     } catch (error) {
       this.logger.error(
         'Failed to query lastUsed data from ClickHouse (targetId=%s, deploymentCount=%d): %s',
