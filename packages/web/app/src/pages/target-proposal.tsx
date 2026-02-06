@@ -1,5 +1,16 @@
 import { useMemo } from 'react';
-import { buildSchema, GraphQLSchema } from 'graphql';
+import {
+  buildASTSchema,
+  buildSchema,
+  DefinitionNode,
+  DocumentNode,
+  GraphQLSchema,
+  isTypeDefinitionNode,
+  isTypeExtensionNode,
+  Kind,
+  parse,
+  visit,
+} from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
@@ -179,6 +190,68 @@ export function TargetProposalsSinglePage(props: {
   );
 }
 
+const extensionToDefinitionKindMap = {
+  [Kind.OBJECT_TYPE_EXTENSION]: Kind.OBJECT_TYPE_DEFINITION,
+  [Kind.INPUT_OBJECT_TYPE_EXTENSION]: Kind.INPUT_OBJECT_TYPE_DEFINITION,
+  [Kind.INTERFACE_TYPE_EXTENSION]: Kind.INTERFACE_TYPE_DEFINITION,
+  [Kind.UNION_TYPE_EXTENSION]: Kind.UNION_TYPE_DEFINITION,
+  [Kind.ENUM_TYPE_EXTENSION]: Kind.ENUM_TYPE_DEFINITION,
+  [Kind.SCALAR_TYPE_EXTENSION]: Kind.SCALAR_TYPE_DEFINITION,
+} as const;
+
+function addTypeForExtensions(ast: DocumentNode) {
+  const trackTypeDefs = new Map<
+    string,
+    | {
+        state: 'TYPE_ONLY';
+      }
+    | {
+        state: 'EXTENSION_ONLY' | 'VALID_EXTENSION';
+        kind:
+          | Kind.OBJECT_TYPE_EXTENSION
+          | Kind.ENUM_TYPE_EXTENSION
+          | Kind.UNION_TYPE_EXTENSION
+          | Kind.SCALAR_TYPE_EXTENSION
+          | Kind.INTERFACE_TYPE_EXTENSION
+          | Kind.INPUT_OBJECT_TYPE_EXTENSION;
+      }
+  >();
+  for (const node of ast.definitions) {
+    if ('name' in node && node.name) {
+      const name = node.name.value;
+      const entry = trackTypeDefs.get(name);
+      if (isTypeExtensionNode(node)) {
+        if (!entry) {
+          trackTypeDefs.set(name, { state: 'EXTENSION_ONLY', kind: node.kind });
+        } else if (entry.state === 'TYPE_ONLY') {
+          trackTypeDefs.set(name, { kind: node.kind, state: 'VALID_EXTENSION' });
+        }
+      } else if (isTypeDefinitionNode(node)) {
+        if (!entry) {
+          trackTypeDefs.set(name, { state: 'TYPE_ONLY' });
+        } else if (entry.state === 'EXTENSION_ONLY') {
+          trackTypeDefs.set(name, { ...entry, state: 'VALID_EXTENSION' });
+        }
+      }
+    }
+  }
+
+  const astCopy = visit(ast, {});
+  for (const [name, entry] of trackTypeDefs) {
+    if (entry.state === 'EXTENSION_ONLY') {
+      console.log('FOUND EXTENSION: ', name, entry.kind);
+      (astCopy.definitions as DefinitionNode[]).push({
+        kind: extensionToDefinitionKindMap[entry.kind],
+        name: {
+          kind: Kind.NAME,
+          value: name,
+        },
+      });
+    }
+  }
+  return astCopy;
+}
+
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
   // fetch main page details
   const [query, refreshProposal] = useQuery({
@@ -252,9 +325,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
 
-          const beforeSchema = existingSchema?.length
-            ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
-            : null;
+          let beforeSchema: GraphQLSchema | null = null;
+          if (existingSchema?.length) {
+            const ast = addTypeForExtensions(parse(existingSchema));
+            beforeSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+          }
+
           // @todo better handle pagination
           const allChanges =
             proposalVersion.schemaChanges?.edges
