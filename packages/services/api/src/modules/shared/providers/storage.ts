@@ -27,7 +27,11 @@ import type {
   OrganizationInvitation,
   PaginatedDocumentCollectionOperations,
   PaginatedDocumentCollections,
+  PaginatedSavedFilters,
   Project,
+  SavedFilter,
+  SavedFilterType,
+  SavedFilterVisibility,
   Schema,
   SchemaLog,
   SchemaPolicy,
@@ -861,6 +865,42 @@ export interface Storage {
     targetId: string;
     nativeComposition: boolean;
   }): Promise<Target>;
+
+  /** Saved Filters */
+  getSavedFilter(_: { id: string }): Promise<SavedFilter | null>;
+
+  getPaginatedSavedFiltersForProject(_: {
+    projectId: string;
+    type: SavedFilterType;
+    userId: string;
+    visibility: SavedFilterVisibility | null;
+    search: string | null;
+    first: number | null;
+    cursor: string | null;
+  }): Promise<PaginatedSavedFilters>;
+
+  createSavedFilter(_: {
+    projectId: string;
+    type: SavedFilterType;
+    createdByUserId: string;
+    name: string;
+    description: string | null;
+    filters: unknown;
+    visibility: SavedFilterVisibility;
+  }): Promise<SavedFilter>;
+
+  updateSavedFilter(_: {
+    id: string;
+    updatedByUserId: string;
+    name: string | null;
+    description: string | null;
+    filters: unknown | null;
+    visibility: SavedFilterVisibility | null;
+  }): Promise<SavedFilter | null>;
+
+  deleteSavedFilter(_: { id: string }): Promise<string | null>;
+
+  incrementSavedFilterViews(_: { id: string }): Promise<void>;
 }
 
 @Injectable()

@@ -295,6 +295,38 @@ export type PaginatedDocumentCollectionOperations = Readonly<{
   }>;
 }>;
 
+export type SavedFilterType = 'INSIGHTS';
+
+export type SavedFilterVisibility = 'private' | 'shared';
+
+export interface SavedFilter {
+  id: string;
+  projectId: string;
+  type: SavedFilterType;
+  createdByUserId: string;
+  updatedByUserId: string | null;
+  name: string;
+  description: string | null;
+  filters: unknown;
+  visibility: SavedFilterVisibility;
+  viewsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PaginatedSavedFilters = Readonly<{
+  edges: ReadonlyArray<{
+    node: SavedFilter;
+    cursor: string;
+  }>;
+  pageInfo: Readonly<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>;
+}>;
+
 export interface Project {
   id: string;
   slug: string;

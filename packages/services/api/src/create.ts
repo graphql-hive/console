@@ -14,6 +14,7 @@ import { cdnModule } from './modules/cdn';
 import { AwsClient } from './modules/cdn/providers/aws';
 import { CDN_CONFIG, CDNConfig } from './modules/cdn/providers/tokens';
 import { collectionModule } from './modules/collection';
+import { savedFiltersModule } from './modules/saved-filters';
 import { commerceModule } from './modules/commerce';
 import {
   CommerceConfig,
@@ -88,6 +89,7 @@ const modules = [
   oidcIntegrationsModule,
   schemaPolicyModule,
   collectionModule,
+  savedFiltersModule,
   appDeploymentsModule,
   auditLogsModule,
   proposalsModule,
