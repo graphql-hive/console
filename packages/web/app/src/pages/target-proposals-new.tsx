@@ -1,5 +1,5 @@
 import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { buildSchema } from 'graphql';
+import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
@@ -30,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox, Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { graphql } from '@/gql';
+import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { cn } from '@/lib/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
@@ -452,16 +453,17 @@ function ProposalsNewContent(
           );
           if (existingService) {
             try {
-              const existingSchema = buildSchema(existingService.source, {
-                assumeValid: true,
-                assumeValidSDL: true,
-              });
-              const proposedSchema = buildSchema(changedService.source, {
-                // @todo consider not assuming valid...
-                // this is a workaround for missing federation directive definitions
-                assumeValid: true,
-                assumeValidSDL: true,
-              });
+              let existingSchema: GraphQLSchema | null = null;
+              if (existingService.source.length) {
+                const ast = addTypeForExtensions(parse(existingService.source));
+                existingSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+              }
+
+              let proposedSchema: GraphQLSchema | null = null;
+              if (changedService.source.length) {
+                const ast = addTypeForExtensions(parse(changedService.source));
+                proposedSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+              }
 
               return diff(existingSchema, proposedSchema)
                 .then(result => ({
