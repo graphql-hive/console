@@ -12,6 +12,14 @@ import {
   UpdateOperationMutation,
   UpdatePreflightScriptMutation,
 } from './collections';
+import {
+  CreateSavedFilterMutation,
+  DeleteSavedFilterMutation,
+  GetSavedFilterQuery,
+  GetSavedFiltersQuery,
+  TrackSavedFilterViewMutation,
+  UpdateSavedFilterMutation,
+} from './saved-filters';
 import { ensureEnv } from './env';
 import {
   addAlert,
@@ -477,6 +485,181 @@ export function initSeed() {
                   }).then(r => r.expectNoGraphQLErrors());
 
                   return result.updateOperationInDocumentCollection;
+                },
+                async getSavedFilter({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: GetSavedFilterQuery,
+                    variables: {
+                      id: filterId,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.target?.savedFilter;
+                },
+                async getSavedFilters({
+                  type,
+                  first = 20,
+                  after,
+                  visibility,
+                  search,
+                  token = ownerToken,
+                }: {
+                  type: GraphQLSchema.SavedFilterType;
+                  first?: number;
+                  after?: string;
+                  visibility?: GraphQLSchema.SavedFilterVisibility;
+                  search?: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: GetSavedFiltersQuery,
+                    variables: {
+                      type,
+                      first,
+                      after,
+                      visibility,
+                      search,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return {
+                    savedFilters: result.target?.savedFilters,
+                    viewerCanCreateSavedFilter: result.target?.viewerCanCreateSavedFilter,
+                  };
+                },
+                async createSavedFilter({
+                  name,
+                  description,
+                  type,
+                  visibility,
+                  insightsFilter,
+                  token = ownerToken,
+                }: {
+                  name: string;
+                  description?: string;
+                  type: GraphQLSchema.SavedFilterType;
+                  visibility: GraphQLSchema.SavedFilterVisibility;
+                  insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: CreateSavedFilterMutation,
+                    variables: {
+                      input: {
+                        name,
+                        description,
+                        type,
+                        visibility,
+                        insightsFilter,
+                      },
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.createSavedFilter;
+                },
+                async updateSavedFilter({
+                  filterId,
+                  name,
+                  description,
+                  visibility,
+                  insightsFilter,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  name?: string;
+                  description?: string;
+                  visibility?: GraphQLSchema.SavedFilterVisibility;
+                  insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: UpdateSavedFilterMutation,
+                    variables: {
+                      id: filterId,
+                      input: {
+                        name,
+                        description,
+                        visibility,
+                        insightsFilter,
+                      },
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.updateSavedFilter;
+                },
+                async deleteSavedFilter({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: DeleteSavedFilterMutation,
+                    variables: {
+                      id: filterId,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.deleteSavedFilter;
+                },
+                async trackSavedFilterView({
+                  filterId,
+                  token = ownerToken,
+                }: {
+                  filterId: string;
+                  token?: string;
+                }) {
+                  const result = await execute({
+                    document: TrackSavedFilterViewMutation,
+                    variables: {
+                      id: filterId,
+                      selector: {
+                        organizationSlug: organization.slug,
+                        projectSlug: project.slug,
+                        targetSlug: target.slug,
+                      },
+                    },
+                    authToken: token,
+                  }).then(r => r.expectNoGraphQLErrors());
+
+                  return result.trackSavedFilterView;
                 },
                 async addAlert(
                   input: {
