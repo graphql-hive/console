@@ -22,6 +22,8 @@ export function YoutubeIframe({
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
       sandbox="allow-scripts allow-presentation allow-same-origin allow-popups"
+      // this is required for the iframe to work in prod, doesn't matter on localhost
+      referrerPolicy="strict-origin-when-cross-origin"
     />
   );
 }
