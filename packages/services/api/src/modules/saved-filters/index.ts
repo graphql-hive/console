@@ -2,6 +2,7 @@ import { createModule } from 'graphql-modules';
 import { AuditLogManager } from '../audit-logs/providers/audit-logs-manager';
 import { typeDefs } from './module.graphql';
 import { SavedFiltersProvider } from './providers/saved-filters.provider';
+import { SavedFiltersStorage } from './providers/saved-filters-storage';
 import { resolvers } from './resolvers.generated';
 
 export const savedFiltersModule = createModule({
@@ -9,5 +10,5 @@ export const savedFiltersModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [SavedFiltersProvider, AuditLogManager],
+  providers: [SavedFiltersProvider, SavedFiltersStorage, AuditLogManager],
 });

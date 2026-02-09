@@ -11,7 +11,7 @@ import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder'
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
-import { Storage } from '../../shared/providers/storage';
+import { SavedFiltersStorage } from './saved-filters-storage';
 
 const InsightsFilterConfigurationModel = zod.object({
   operationIds: zod.array(zod.string()).max(100).optional().default([]),
@@ -51,7 +51,7 @@ export class SavedFiltersProvider {
 
   constructor(
     logger: Logger,
-    private storage: Storage,
+    private savedFiltersStorage: SavedFiltersStorage,
     private session: Session,
     private idTranslator: IdTranslator,
     private auditLog: AuditLogRecorder,
@@ -73,7 +73,7 @@ export class SavedFiltersProvider {
       return null;
     }
 
-    const filter = await this.storage.getSavedFilter({ id: filterId });
+    const filter = await this.savedFiltersStorage.getSavedFilter({ id: filterId });
 
     if (!filter || filter.projectId !== target.projectId) {
       return null;
@@ -107,7 +107,7 @@ export class SavedFiltersProvider {
 
     const currentUser = await this.session.getViewer();
 
-    return this.storage.getPaginatedSavedFiltersForProject({
+    return this.savedFiltersStorage.getPaginatedSavedFiltersForProject({
       projectId: target.projectId,
       type,
       userId: currentUser.id,
@@ -177,7 +177,7 @@ export class SavedFiltersProvider {
           }
         : {};
 
-    const savedFilter = await this.storage.createSavedFilter({
+    const savedFilter = await this.savedFiltersStorage.createSavedFilter({
       projectId,
       type: data.type as SavedFilterType,
       createdByUserId: currentUser.id,
@@ -243,7 +243,7 @@ export class SavedFiltersProvider {
       };
     }
 
-    const existingFilter = await this.storage.getSavedFilter({ id: filterId });
+    const existingFilter = await this.savedFiltersStorage.getSavedFilter({ id: filterId });
 
     if (!existingFilter || existingFilter.projectId !== projectId) {
       return {
@@ -279,7 +279,7 @@ export class SavedFiltersProvider {
         }
       : null;
 
-    const savedFilter = await this.storage.updateSavedFilter({
+    const savedFilter = await this.savedFiltersStorage.updateSavedFilter({
       id: filterId,
       updatedByUserId: currentUser.id,
       name: data.name ?? null,
@@ -346,7 +346,7 @@ export class SavedFiltersProvider {
       };
     }
 
-    const existingFilter = await this.storage.getSavedFilter({ id: filterId });
+    const existingFilter = await this.savedFiltersStorage.getSavedFilter({ id: filterId });
 
     if (!existingFilter || existingFilter.projectId !== projectId) {
       return {
@@ -365,7 +365,7 @@ export class SavedFiltersProvider {
       };
     }
 
-    const deletedId = await this.storage.deleteSavedFilter({ id: filterId });
+    const deletedId = await this.savedFiltersStorage.deleteSavedFilter({ id: filterId });
 
     if (!deletedId) {
       return {
@@ -419,7 +419,7 @@ export class SavedFiltersProvider {
       };
     }
 
-    const existingFilter = await this.storage.getSavedFilter({ id: filterId });
+    const existingFilter = await this.savedFiltersStorage.getSavedFilter({ id: filterId });
 
     if (!existingFilter || existingFilter.projectId !== projectId) {
       return {
@@ -441,10 +441,10 @@ export class SavedFiltersProvider {
       };
     }
 
-    await this.storage.incrementSavedFilterViews({ id: filterId });
+    await this.savedFiltersStorage.incrementSavedFilterViews({ id: filterId });
 
     // Fetch the updated filter
-    const savedFilter = await this.storage.getSavedFilter({ id: filterId });
+    const savedFilter = await this.savedFiltersStorage.getSavedFilter({ id: filterId });
 
     if (!savedFilter) {
       return {
