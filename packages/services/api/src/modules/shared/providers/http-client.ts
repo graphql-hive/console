@@ -15,6 +15,9 @@ interface HttpClientOptions extends OptionsOfJSONResponseBody {
 type HttpOptions = Omit<HttpClientOptions, 'method' | 'throwHttpErrors' | 'resolveBodyOnly'>;
 
 const gotInstance = got.extend({
+  headers: {
+    'user-agent': '',
+  },
   hooks: {
     beforeError: [
       error => {
@@ -99,17 +102,27 @@ export class HttpClient {
           );
           span.setAttribute('error.message', details || '');
 
-          logger.error(error);
+          logger.error('HTTP request failed (message=%s, code=%s)', error.message, error.code);
           Sentry.captureException(error, {
             extra: {
               details,
             },
           });
-          return Promise.reject(error);
+          return Promise.reject(new HiveHttpClientError(error.message, error.code));
         },
       )
       .finally(() => {
         span.end();
       });
+  }
+}
+
+class HiveHttpClientError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+  ) {
+    super(message);
+    this.name = 'HiveHttpClientError';
   }
 }
