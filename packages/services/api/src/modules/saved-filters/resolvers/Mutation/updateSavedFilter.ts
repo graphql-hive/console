@@ -6,10 +6,9 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
   args,
   { injector },
 ) => {
-  const result = await injector.get(SavedFiltersProvider).updateSavedFilter(
-    args.selector,
-    args.id,
-    {
+  const result = await injector
+    .get(SavedFiltersProvider)
+    .updateSavedFilter(args.selector, args.id, {
       name: args.input.name ?? null,
       description: args.input.description,
       visibility: args.input.visibility ?? null,
@@ -25,8 +24,7 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
               })) ?? null,
           }
         : null,
-    },
-  );
+    });
 
   if (result.type === 'error') {
     return {

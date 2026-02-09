@@ -76,82 +76,80 @@ describe('Saved Filters', () => {
       expect(deletedFilter).toBeNull();
     });
 
-    test.concurrent(
-      'list saved filters with pagination and filtering',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject } = await createOrg();
-        const { createSavedFilter, getSavedFilters } = await createProject(ProjectType.Single);
+    test.concurrent('list saved filters with pagination and filtering', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter, getSavedFilters } = await createProject(ProjectType.Single);
 
-        // Create multiple filters
-        await createSavedFilter({
-          name: 'Private Filter 1',
-          type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Private,
-          insightsFilter: { operationIds: ['op1'] },
-        });
+      // Create multiple filters
+      await createSavedFilter({
+        name: 'Private Filter 1',
+        type: SavedFilterType.Insights,
+        visibility: SavedFilterVisibility.Private,
+        insightsFilter: { operationIds: ['op1'] },
+      });
 
-        await createSavedFilter({
-          name: 'Private Filter 2',
-          type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Private,
-          insightsFilter: { operationIds: ['op2'] },
-        });
+      await createSavedFilter({
+        name: 'Private Filter 2',
+        type: SavedFilterType.Insights,
+        visibility: SavedFilterVisibility.Private,
+        insightsFilter: { operationIds: ['op2'] },
+      });
 
-        await createSavedFilter({
-          name: 'Shared Filter 1',
-          type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Shared,
-          insightsFilter: { operationIds: ['op3'] },
-        });
+      await createSavedFilter({
+        name: 'Shared Filter 1',
+        type: SavedFilterType.Insights,
+        visibility: SavedFilterVisibility.Shared,
+        insightsFilter: { operationIds: ['op3'] },
+      });
 
-        // List all filters (private + shared for owner)
-        const allFilters = await getSavedFilters({
-          type: SavedFilterType.Insights,
-          first: 10,
-        });
+      // List all filters (private + shared for owner)
+      const allFilters = await getSavedFilters({
+        type: SavedFilterType.Insights,
+        first: 10,
+      });
 
-        expect(allFilters.savedFilters?.edges.length).toBe(3);
-        expect(allFilters.viewerCanCreateSavedFilter).toBe(true);
+      expect(allFilters.savedFilters?.edges.length).toBe(3);
+      expect(allFilters.viewerCanCreateSavedFilter).toBe(true);
 
-        // List only private filters
-        const privateFilters = await getSavedFilters({
-          type: SavedFilterType.Insights,
-          first: 10,
-          visibility: SavedFilterVisibility.Private,
-        });
+      // List only private filters
+      const privateFilters = await getSavedFilters({
+        type: SavedFilterType.Insights,
+        first: 10,
+        visibility: SavedFilterVisibility.Private,
+      });
 
-        expect(privateFilters.savedFilters?.edges.length).toBe(2);
-        expect(
-          privateFilters.savedFilters?.edges.every(e => e.node.visibility === 'PRIVATE'),
-        ).toBe(true);
+      expect(privateFilters.savedFilters?.edges.length).toBe(2);
+      expect(privateFilters.savedFilters?.edges.every(e => e.node.visibility === 'PRIVATE')).toBe(
+        true,
+      );
 
-        // List only shared filters
-        const sharedFilters = await getSavedFilters({
-          type: SavedFilterType.Insights,
-          first: 10,
-          visibility: SavedFilterVisibility.Shared,
-        });
+      // List only shared filters
+      const sharedFilters = await getSavedFilters({
+        type: SavedFilterType.Insights,
+        first: 10,
+        visibility: SavedFilterVisibility.Shared,
+      });
 
-        expect(sharedFilters.savedFilters?.edges.length).toBe(1);
-        expect(sharedFilters.savedFilters?.edges[0].node.visibility).toBe('SHARED');
+      expect(sharedFilters.savedFilters?.edges.length).toBe(1);
+      expect(sharedFilters.savedFilters?.edges[0].node.visibility).toBe('SHARED');
 
-        // Search by name
-        const searchResults = await getSavedFilters({
-          type: SavedFilterType.Insights,
-          first: 10,
-          search: 'Private',
-        });
+      // Search by name
+      const searchResults = await getSavedFilters({
+        type: SavedFilterType.Insights,
+        first: 10,
+        search: 'Private',
+      });
 
-        expect(searchResults.savedFilters?.edges.length).toBe(2);
-      },
-    );
+      expect(searchResults.savedFilters?.edges.length).toBe(2);
+    });
 
     test.concurrent('track filter views', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const { createSavedFilter, trackSavedFilterView, getSavedFilter } =
-        await createProject(ProjectType.Single);
+      const { createSavedFilter, trackSavedFilterView, getSavedFilter } = await createProject(
+        ProjectType.Single,
+      );
 
       // Create a filter
       const createResult = await createSavedFilter({
@@ -179,52 +177,51 @@ describe('Saved Filters', () => {
   });
 
   describe('Visibility and Permissions', () => {
-    test.concurrent(
-      'private filters should only be visible to the creator',
-      async ({ expect }) => {
-        const { createOrg, ownerToken } = await initSeed().createOwner();
-        const { createProject, inviteAndJoinMember } = await createOrg();
-        const { createSavedFilter, getSavedFilter, getSavedFilters } =
-          await createProject(ProjectType.Single);
+    test.concurrent('private filters should only be visible to the creator', async ({ expect }) => {
+      const { createOrg, ownerToken } = await initSeed().createOwner();
+      const { createProject, inviteAndJoinMember } = await createOrg();
+      const { createSavedFilter, getSavedFilter, getSavedFilters } = await createProject(
+        ProjectType.Single,
+      );
 
-        // Create a private filter as owner
-        const createResult = await createSavedFilter({
-          name: 'Owner Private Filter',
-          type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Private,
-          insightsFilter: { operationIds: ['op1'] },
-        });
+      // Create a private filter as owner
+      const createResult = await createSavedFilter({
+        name: 'Owner Private Filter',
+        type: SavedFilterType.Insights,
+        visibility: SavedFilterVisibility.Private,
+        insightsFilter: { operationIds: ['op1'] },
+      });
 
-        const filterId = createResult.ok?.savedFilter.id!;
+      const filterId = createResult.ok?.savedFilter.id!;
 
-        // Invite and join a member
-        const { memberToken } = await inviteAndJoinMember();
+      // Invite and join a member
+      const { memberToken } = await inviteAndJoinMember();
 
-        // Owner can see the filter
-        const ownerFilter = await getSavedFilter({ filterId, token: ownerToken });
-        expect(ownerFilter?.id).toBe(filterId);
+      // Owner can see the filter
+      const ownerFilter = await getSavedFilter({ filterId, token: ownerToken });
+      expect(ownerFilter?.id).toBe(filterId);
 
-        // Member cannot see private filter
-        const memberFilter = await getSavedFilter({ filterId, token: memberToken });
-        expect(memberFilter).toBeNull();
+      // Member cannot see private filter
+      const memberFilter = await getSavedFilter({ filterId, token: memberToken });
+      expect(memberFilter).toBeNull();
 
-        // Member cannot see private filter in list
-        const memberFilters = await getSavedFilters({
-          type: SavedFilterType.Insights,
-          first: 10,
-          token: memberToken,
-        });
-        expect(memberFilters.savedFilters?.edges.length).toBe(0);
-      },
-    );
+      // Member cannot see private filter in list
+      const memberFilters = await getSavedFilters({
+        type: SavedFilterType.Insights,
+        first: 10,
+        token: memberToken,
+      });
+      expect(memberFilters.savedFilters?.edges.length).toBe(0);
+    });
 
     test.concurrent(
       'shared filters should be visible to all project members',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { createProject, inviteAndJoinMember } = await createOrg();
-        const { createSavedFilter, getSavedFilter, getSavedFilters } =
-          await createProject(ProjectType.Single);
+        const { createSavedFilter, getSavedFilter, getSavedFilters } = await createProject(
+          ProjectType.Single,
+        );
 
         // Create a shared filter as owner
         const createResult = await createSavedFilter({
@@ -259,8 +256,9 @@ describe('Saved Filters', () => {
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { createProject, inviteAndJoinMember } = await createOrg();
-        const { createSavedFilter, updateSavedFilter, getSavedFilter } =
-          await createProject(ProjectType.Single);
+        const { createSavedFilter, updateSavedFilter, getSavedFilter } = await createProject(
+          ProjectType.Single,
+        );
 
         // Create a shared filter as owner
         const createResult = await createSavedFilter({
@@ -297,8 +295,9 @@ describe('Saved Filters', () => {
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { createProject } = await createOrg();
-        const { createSavedFilter, createTargetAccessToken } =
-          await createProject(ProjectType.Single);
+        const { createSavedFilter, createTargetAccessToken } = await createProject(
+          ProjectType.Single,
+        );
 
         const { secret: readOnlyToken } = await createTargetAccessToken({
           mode: 'readOnly',

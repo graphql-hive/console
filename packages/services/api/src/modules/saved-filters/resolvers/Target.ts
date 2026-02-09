@@ -15,14 +15,16 @@ export const Target: Pick<
   savedFilter: (target, args, { injector }) =>
     injector.get(SavedFiltersProvider).getSavedFilter(target, args.id),
   savedFilters: (target, args, { injector }) =>
-    injector.get(SavedFiltersProvider).getSavedFilters(
-      target,
-      args.type,
-      args.first,
-      args.after,
-      mapVisibility(args.visibility ?? null),
-      args.search ?? null,
-    ),
+    injector
+      .get(SavedFiltersProvider)
+      .getSavedFilters(
+        target,
+        args.type,
+        args.first,
+        args.after,
+        mapVisibility(args.visibility ?? null),
+        args.search ?? null,
+      ),
   viewerCanCreateSavedFilter: (target, _args, { session }) => {
     return session.canPerformAction({
       action: 'project:modifySettings',

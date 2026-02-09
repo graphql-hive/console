@@ -865,7 +865,6 @@ export interface Storage {
     targetId: string;
     nativeComposition: boolean;
   }): Promise<Target>;
-
 }
 
 @Injectable()
