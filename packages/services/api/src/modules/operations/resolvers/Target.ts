@@ -64,6 +64,11 @@ export const Target: Pick<
         // TODO: figure out if the mapping should actually happen here :thinking:
         args.filter?.clientNames?.map(clientName => (clientName === 'unknown' ? '' : clientName)) ??
         [],
+      clientVersionFilters:
+        args.filter?.clientVersionFilters?.map(f => ({
+          clientName: f.clientName === 'unknown' ? '' : f.clientName,
+          versions: [...f.versions],
+        })) ?? [],
     };
   },
   schemaCoordinateStats: async (target, args, _ctx) => {
