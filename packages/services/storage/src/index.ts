@@ -697,41 +697,46 @@ export async function createStorage(
             }
           }
 
-          const oidcConfig =
-            oidcIntegration &&
-            (await this.getOIDCIntegrationById({ oidcIntegrationId: oidcIntegration.id }));
-          const invitation =
-            oidcConfig &&
-            (await t
-              .maybeOne<unknown>(
-                sql`
-                  DELETE FROM "organization_invitations" AS "oi"
-                  WHERE
-                    "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
-                    AND "oi"."email" = ${email}
-                    AND "oi"."expires_at" > now()
-                  RETURNING
-                    "oi"."organization_id" "organizationId"
-                    , "oi"."code" "code"
-                    , "oi"."email" "email"
-                    , "oi"."created_at" "createdAt"
-                    , "oi"."expires_at" "expiresAt"
-                    , "oi"."role_id" "roleId"
-                    , "oi"."assigned_resources" "assignedResources"
-                `,
-              )
-              .then(v => OrganizationInvitationModel.nullable().parse(v)));
+          let invitation: OrganizationInvitation | null = null;
 
-          if (oidcConfig?.requireInvitation && !invitation) {
-            const member =
-              internalUser &&
-              (await this.getOrganizationMember({
-                organizationId: oidcConfig.linkedOrganizationId,
-                userId: internalUser.id,
-              }));
+          if (oidcIntegration) {
+            const oidcConfig = await this.getOIDCIntegrationById({
+              oidcIntegrationId: oidcIntegration.id,
+            });
 
-            if (!member) {
-              throw 'User is not invited to the organization.';
+            if (oidcConfig?.requireInvitation) {
+              invitation = await t
+                .maybeOne<unknown>(
+                  sql`
+                    DELETE FROM "organization_invitations" AS "oi"
+                    WHERE
+                      "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
+                      AND "oi"."email" = ${email}
+                      AND "oi"."expires_at" > now()
+                    RETURNING
+                      "oi"."organization_id" "organizationId"
+                      , "oi"."code" "code"
+                      , "oi"."email" "email"
+                      , "oi"."created_at" "createdAt"
+                      , "oi"."expires_at" "expiresAt"
+                      , "oi"."role_id" "roleId"
+                      , "oi"."assigned_resources" "assignedResources"
+                  `,
+                )
+                .then(v => OrganizationInvitationModel.nullable().parse(v));
+
+              if (!invitation) {
+                const member = internalUser
+                  ? await this.getOrganizationMember({
+                      organizationId: oidcConfig.linkedOrganizationId,
+                      userId: internalUser.id,
+                    })
+                  : null;
+
+                if (!member) {
+                  throw 'User is not invited to the organization.';
+                }
+              }
             }
           }
 
