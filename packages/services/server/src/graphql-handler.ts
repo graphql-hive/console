@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyBaseLogger, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
-import { GraphQLError, print, ValidationContext, ValidationRule } from 'graphql';
+import { GraphQLError, print, ValidationContext, ValidationRule, type DocumentNode } from 'graphql';
 import {
   createYoga,
   Plugin,
@@ -73,14 +73,20 @@ function hasFastifyRequest(ctx: unknown): ctx is {
 }
 
 export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plugin {
-  return useErrorHandler(({ errors, context }): void => {
+  return useErrorHandler(({ errors, context: unsafeContest }): void => {
     // Not sure what changed, but the `context` is now an object with a contextValue property.
     // We previously relied on the `context` being the `contextValue` itself.
-    const ctx = ('contextValue' in context ? context.contextValue : context) as Context;
+    const context: {
+      operationName: string | null;
+      variableValues: Record<string, unknown> | null | undefined;
+      document: DocumentNode;
+      contextValue: Context;
+    } = unsafeContest as any;
 
-    function reportError(error: GraphQLError | Error) {
+    function reportError(error: Error) {
       withScope(scope => {
-        const userId = (ctx.session as SuperTokensCookieBasedSession | null)?.userId;
+        const userId = (context.contextValue.session as SuperTokensCookieBasedSession | null)
+          ?.userId;
 
         scope.setTransactionName(context.operationName ?? 'unknown graphql operation');
         scope.setContext('Extra Info', {
@@ -95,14 +101,24 @@ export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plug
         });
 
         scope.setTags({
-          supertokens_user_id: (ctx.session as SuperTokensCookieBasedSession | null)
-            ?.superTokensUserId,
+          supertokens_user_id: (
+            context.contextValue.session as SuperTokensCookieBasedSession | null
+          )?.superTokensUserId,
           hive_user_id: userId,
-          request_id: ctx.requestId,
+          request_id: context.contextValue.requestId,
         });
 
-        captureException((error as any).originalError ?? error, {
-          originalException: (error as any).originalError ?? error,
+        if (error instanceof GraphQLError) {
+          const path = error.path?.join(' > ') ?? '';
+
+          captureException(error.originalError ?? error, {
+            fingerprint: ['graphql', path],
+          });
+          return;
+        }
+
+        captureException(error, {
+          fingerprint: ['graphql'],
         });
       });
     }
@@ -115,7 +131,7 @@ export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plug
         // If the original error is a graphql error, we don't need to report it
         // it is an expected error
         if (!isGraphQLError(error.originalError)) {
-          reportError(error as any as GraphQLError);
+          reportError(error as unknown as GraphQLError);
         }
         continue;
       } else {
@@ -123,11 +139,7 @@ export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plug
         reportError(error);
       }
 
-      if (hasFastifyRequest(ctx)) {
-        ctx.req.log.error(error);
-      } else {
-        fallbackHandler(error);
-      }
+      context.contextValue.req.log.error(error);
     }
   });
 }
