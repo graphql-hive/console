@@ -31,7 +31,6 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@hive/workflows": "workspace:*",
-    "@sentry/integrations": "7.114.0",
     "@sentry/node": "7.120.2",
     "@swc/core": "1.13.5",
     "@theguild/federation-composition": "0.21.3",

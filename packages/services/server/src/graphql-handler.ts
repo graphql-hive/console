@@ -72,7 +72,7 @@ function hasFastifyRequest(ctx: unknown): ctx is {
   return !!ctx && typeof ctx === 'object' && 'req' in ctx;
 }
 
-export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plugin {
+export function useHiveErrorHandler(): Plugin {
   return useErrorHandler(({ errors, context: unsafeContest }): void => {
     // Not sure what changed, but the `context` is now an object with a contextValue property.
     // We previously relied on the `context` being the `contextValue` itself.
@@ -188,9 +188,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
     logging: options.logger,
     plugins: [
       useArmor(),
-      useHiveErrorHandler(error => {
-        server.logger.error(error);
-      }),
+      useHiveErrorHandler(),
       useExtendContext(async context => ({
         session: await options.authN.authenticate(context),
       })),

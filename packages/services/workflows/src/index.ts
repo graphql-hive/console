@@ -9,7 +9,6 @@ import {
   startHeartbeats,
   startMetrics,
 } from '@hive/service-common';
-import * as Sentry from '@sentry/node';
 import { Context } from './context.js';
 import { env } from './environment.js';
 import { createEmailProvider } from './lib/emails/providers.js';

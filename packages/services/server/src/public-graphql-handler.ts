@@ -47,9 +47,7 @@ export const createPublicGraphQLHandler = (
       useExtendContext(async context => ({
         session: await args.authN.authenticate(context),
       })),
-      useHiveErrorHandler(error => {
-        server.logger.error(error);
-      }),
+      useHiveErrorHandler(),
       useHive({
         debug: true,
         enabled: !!args.hiveUsageConfig,

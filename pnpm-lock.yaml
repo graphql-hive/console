@@ -1269,9 +1269,6 @@ importers:
       '@hive/workflows':
         specifier: workspace:*
         version: link:../workflows
-      '@sentry/integrations':
-        specifier: 7.114.0
-        version: 7.114.0
       '@sentry/node':
         specifier: 7.120.2
         version: 7.120.2
@@ -1378,6 +1375,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: 1.38.0
         version: 1.38.0
+      '@sentry/integrations':
+        specifier: 7.114.0
+        version: 7.114.0
       '@sentry/node':
         specifier: 7.120.2
         version: 7.120.2
