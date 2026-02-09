@@ -48,7 +48,7 @@ export default gql`
     ): TestExternalSchemaCompositionResult!
   }
 
-  input SchemaCompositionConfigurationExternalMethodInput @tag(name: "public") {
+  input SchemaCompositionExternalMethodInput @tag(name: "public") {
     endpoint: String!
     secret: String!
   }
@@ -61,7 +61,7 @@ export default gql`
     """
     Use an external schema composition endpoint.
     """
-    external: SchemaCompositionConfigurationExternalMethodInput
+    external: SchemaCompositionExternalMethodInput
     """
     Use the legacy federation v1 schema composition.
     legacy: Boolean
