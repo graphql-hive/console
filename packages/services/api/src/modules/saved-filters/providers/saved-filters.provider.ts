@@ -36,9 +36,9 @@ const CreateSavedFilterInputModel = zod.object({
 });
 
 const UpdateSavedFilterInputModel = zod.object({
-  name: zod.string().min(1).max(100).nullable().optional(),
+  name: zod.string().min(1).max(100).optional(),
   description: zod.string().max(500).nullable().optional(),
-  visibility: zod.enum(['private', 'shared']).nullable().optional(),
+  visibility: zod.enum(['private', 'shared']).optional(),
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
 
