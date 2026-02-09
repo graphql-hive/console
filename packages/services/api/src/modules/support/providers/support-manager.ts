@@ -320,6 +320,9 @@ export class SupportManager {
         input.userId,
       );
 
+      const zendeskUserId = parseInt(user.zendeskId, 10);
+      const zendeskOrganizationId = parseInt(organizationZendeskId, 10);
+
       // attempt connect user to organization
       try {
         await this.httpClient.post(
@@ -337,24 +340,31 @@ export class SupportManager {
             },
             json: {
               organization_membership: {
-                user_id: parseInt(user.zendeskId, 10),
-                organization_id: parseInt(organizationZendeskId, 10),
+                user_id: zendeskUserId,
+                organization_id: zendeskOrganizationId,
               },
             },
           },
         );
       } catch (err) {
-        if (err instanceof HTTPError) {
-          switch (err.code) {
-            // This user is already a member of this organization.
-            case '422': {
-              break;
-            }
-            default: {
-              throw err;
-            }
-          }
+        if (err instanceof HTTPError && err.code === '422') {
+          // This user is already a member of this organization.
+          this.logger.debug(
+            'The user was already connected to the zendesk organization. (organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            input.organizationId,
+            input.userId,
+            zendeskUserId,
+            zendeskOrganizationId,
+          );
         } else {
+          this.logger.debug(
+            'An unexpected error occured while connecting the user to the zendesk organization. (err=%s, organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            String(err),
+            input.organizationId,
+            input.userId,
+            zendeskUserId,
+            zendeskOrganizationId,
+          );
           throw err;
         }
       }
