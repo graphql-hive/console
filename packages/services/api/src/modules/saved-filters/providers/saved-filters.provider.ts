@@ -27,18 +27,24 @@ const InsightsFilterConfigurationModel = zod.object({
     .default([]),
 });
 
+// Transform GraphQL uppercase enum values to lowercase for database storage
+const visibilityEnum = zod
+  .enum(['PRIVATE', 'SHARED'])
+  .transform(v => v.toLowerCase() as 'private' | 'shared');
+
 const CreateSavedFilterInputModel = zod.object({
   name: zod.string().min(1).max(100),
   description: zod.string().max(500).nullable().optional(),
-  visibility: zod.enum(['private', 'shared']),
+  visibility: visibilityEnum,
   type: zod.enum(['INSIGHTS']),
-  insightsFilter: InsightsFilterConfigurationModel.optional(),
+  // nullable() needed because GraphQL sends null when field is not provided
+  insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
 
 const UpdateSavedFilterInputModel = zod.object({
   name: zod.string().min(1).max(100).optional(),
   description: zod.string().max(500).nullable().optional(),
-  visibility: zod.enum(['private', 'shared']).optional(),
+  visibility: visibilityEnum.optional(),
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
 
