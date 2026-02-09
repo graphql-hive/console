@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
-import { FaUserLock } from 'react-icons/fa';
+import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
+import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import {
@@ -32,6 +33,31 @@ import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
 
+export const authProviderToIconAndTextMap: Record<
+  GraphQLSchema.AuthProviderType,
+  {
+    icon: IconType;
+    text: string;
+  }
+> = {
+  [GraphQLSchema.AuthProviderType.Google]: {
+    icon: FaGoogle,
+    text: 'Google OAuth 2.0',
+  },
+  [GraphQLSchema.AuthProviderType.Github]: {
+    icon: FaGithub,
+    text: 'GitHub OAuth 2.0',
+  },
+  [GraphQLSchema.AuthProviderType.Oidc]: {
+    icon: FaOpenid,
+    text: 'OpenID Connect',
+  },
+  [GraphQLSchema.AuthProviderType.UsernamePassword]: {
+    icon: FaUserLock,
+    text: 'Email & Password',
+  },
+};
+
 const OrganizationMemberRow_DeleteMember = graphql(`
   mutation OrganizationMemberRow_DeleteMember($input: OrganizationMemberInput!) {
     deleteOrganizationMember(input: $input) {
@@ -54,7 +80,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     id
     user {
       id
-      provider
+      providers
       displayName
       email
     }
@@ -76,6 +102,9 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
+  const providerTexts = member.user.providers.map(
+    provider => authProviderToIconAndTextMap[provider].text,
+  );
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -135,9 +164,21 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
       </AlertDialog>
       <tr key={member.id}>
         <td className="w-12">
-          <div>
-            <FaUserLock className="mx-auto size-5" />
-          </div>
+          <TooltipProvider>
+            <Tooltip delayDuration={100}>
+              <TooltipTrigger asChild>
+                <div className="mx-3 flex gap-1">
+                  {member.user.providers.map(provider => {
+                    const Icon = authProviderToIconAndTextMap[provider].icon;
+                    return <Icon key={provider} className="mx-auto size-5" />;
+                  })}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                User's authentication methods: {providerTexts.join(', ')}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </td>
         <td className="grow overflow-hidden py-3 text-sm font-medium">
           <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
