@@ -14,7 +14,12 @@ import { Logger } from '../../shared/providers/logger';
 import { SavedFiltersStorage } from './saved-filters-storage';
 
 const InsightsFilterConfigurationModel = zod.object({
-  operationIds: zod.array(zod.string()).max(100).optional().default([]),
+  // Use nullish() + transform because the resolver may pass null instead of undefined
+  operationIds: zod
+    .array(zod.string())
+    .max(100)
+    .nullish()
+    .transform(v => v ?? []),
   clientFilters: zod
     .array(
       zod.object({
@@ -23,8 +28,8 @@ const InsightsFilterConfigurationModel = zod.object({
       }),
     )
     .max(50)
-    .optional()
-    .default([]),
+    .nullish()
+    .transform(v => v ?? []),
 });
 
 // Transform GraphQL uppercase enum values to lowercase for database storage
@@ -44,7 +49,8 @@ const CreateSavedFilterInputModel = zod.object({
 const UpdateSavedFilterInputModel = zod.object({
   name: zod.string().min(1).max(100).optional(),
   description: zod.string().max(500).nullable().optional(),
-  visibility: visibilityEnum.optional(),
+  // nullish() because resolver passes null when visibility is not provided
+  visibility: visibilityEnum.nullish(),
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
 

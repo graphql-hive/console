@@ -252,7 +252,7 @@ describe('Saved Filters', () => {
     );
 
     test.concurrent(
-      'shared filters should be updatable by any project member',
+      'shared filters should be updatable by any project member with modifySettings permission',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { createProject, inviteAndJoinMember } = await createOrg();
@@ -270,8 +270,18 @@ describe('Saved Filters', () => {
 
         const filterId = createResult.ok?.savedFilter.id!;
 
-        // Invite and join a member
-        const { memberToken } = await inviteAndJoinMember();
+        // First invite a member to get access to createMemberRole
+        const { createMemberRole } = await inviteAndJoinMember();
+
+        // Create a role with project:modifySettings permission
+        const role = await createMemberRole([
+          'organization:describe',
+          'project:describe',
+          'project:modifySettings',
+        ]);
+
+        // Invite and join a member with the modifySettings role
+        const { memberToken } = await inviteAndJoinMember({ memberRoleId: role.id });
 
         // Member can see the filter
         const memberView = await getSavedFilter({ filterId, token: memberToken });
