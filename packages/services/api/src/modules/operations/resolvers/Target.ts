@@ -1,7 +1,11 @@
+import { GraphQLError } from 'graphql';
 import { parseDateRangeInput } from '../../../shared/helpers';
 import { OperationsManager } from '../providers/operations-manager';
 import { Traces } from '../providers/traces';
 import type { TargetResolvers } from './../../../__generated__/types';
+
+const MAX_CLIENT_VERSION_FILTERS = 50;
+const MAX_VERSIONS_PER_FILTER = 100;
 
 export const Target: Pick<
   TargetResolvers,
@@ -54,6 +58,23 @@ export const Target: Pick<
     };
   },
   operationsStats: async (target, args, _ctx) => {
+    // Validate clientVersionFilters size limits to prevent DoS via large SQL IN clauses
+    const clientVersionFilters = args.filter?.clientVersionFilters;
+    if (clientVersionFilters) {
+      if (clientVersionFilters.length > MAX_CLIENT_VERSION_FILTERS) {
+        throw new GraphQLError(
+          `clientVersionFilters must contain at most ${MAX_CLIENT_VERSION_FILTERS} elements`,
+        );
+      }
+      for (const filter of clientVersionFilters) {
+        if (filter.versions.length > MAX_VERSIONS_PER_FILTER) {
+          throw new GraphQLError(
+            `Each clientVersionFilter.versions must contain at most ${MAX_VERSIONS_PER_FILTER} elements`,
+          );
+        }
+      }
+    }
+
     return {
       period: parseDateRangeInput(args.period),
       organization: target.orgId,
@@ -65,7 +86,7 @@ export const Target: Pick<
         args.filter?.clientNames?.map(clientName => (clientName === 'unknown' ? '' : clientName)) ??
         [],
       clientVersionFilters:
-        args.filter?.clientVersionFilters?.map(f => ({
+        clientVersionFilters?.map(f => ({
           clientName: f.clientName === 'unknown' ? '' : f.clientName,
           versions: [...f.versions],
         })) ?? [],
