@@ -40,18 +40,25 @@ test.concurrent('call an external service to compose and validate services', asy
   // enable external composition
   const externalCompositionResult = await updateSchemaComposition(
     {
-      external: {
-        endpoint: `http://${dockerAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+      project: {
+        bySelector: {
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
+      },
+      method: {
+        external: {
+          endpoint: `http://${dockerAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+        },
       },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    externalCompositionResult.updateSchemaComposition.ok?.externalSchemaComposition?.endpoint,
+    externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
+      ?.endpoint,
   ).toBe(`http://${dockerAddress}/compose`);
   // Disable Native Federation v2 composition to allow the external composition to take place
   await setNativeFederation(false);
