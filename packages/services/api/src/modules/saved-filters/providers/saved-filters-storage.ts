@@ -77,6 +77,19 @@ export class SavedFiltersStorage {
       cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
     }
 
+    // Build visibility condition based on requested filter
+    // When a specific visibility is requested, we can use a simpler condition
+    // that allows better index usage than OR conditions
+    const visibilityCondition =
+      args.visibility === 'shared'
+        ? sql`"visibility" = 'shared'`
+        : args.visibility === 'private'
+          ? sql`"visibility" = 'private' AND "created_by_user_id" = ${args.userId}`
+          : sql`(
+              "visibility" = 'shared'
+              OR ("visibility" = 'private' AND "created_by_user_id" = ${args.userId})
+            )`;
+
     const result = await this.pool.any(sql`/* getPaginatedSavedFiltersForProject */
       SELECT
         "id"
@@ -96,11 +109,7 @@ export class SavedFiltersStorage {
       WHERE
         "project_id" = ${args.projectId}
         AND "type" = ${args.type}
-        AND (
-          "visibility" = 'shared'
-          OR ("visibility" = 'private' AND "created_by_user_id" = ${args.userId})
-        )
-        ${args.visibility ? sql`AND "visibility" = ${args.visibility}` : sql``}
+        AND ${visibilityCondition}
         ${
           args.search
             ? sql`
