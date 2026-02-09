@@ -64,6 +64,7 @@ export default gql`
     external: SchemaCompositionExternalMethodInput
     """
     Use the legacy federation v1 schema composition.
+    """
     legacy: Boolean
   }
 
