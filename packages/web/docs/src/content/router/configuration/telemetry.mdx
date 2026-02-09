@@ -1,18 +1,39 @@
 ---
-title: 'usage_reporting'
+title: 'telemetry'
 ---
 
-# usage_reporting
+# telemetry
 
-The `usage_reporting` configuration object allows you to control over how the Hive Router does
-[usage reporting](../../schema-registry/usage-reporting) to Hive Console.
+## client_identification
 
-> For additional information about the usage reporting process in Hive Router, see the
-> [Usage Reporting page](../observability/usage_reporting).
+### name_header
 
-## Options
+- **Type:** `string`
+- **Default:** `graphql-client-name`
 
-### `access_token`
+The name of the HTTP header from which to read the client name for usage reporting. This is useful
+if you want to identify different clients consuming your GraphQL API.
+
+### version_header
+
+- **Type:** `string`
+- **Default:** `graphql-client-version`
+
+The name of the HTTP header from which to read the client version for usage reporting. This is
+useful if you want to identify different versions of clients consuming your GraphQL API.
+
+## hive
+
+Hive-specific telemetry options.
+
+### endpoint
+
+- **Type:** `string` or expression
+- **Default:** `https://api.graphql-hive.com/otel/v1/traces`
+
+Hive traces ingestion endpoint.
+
+### token
 
 - **Type:** `string`
 
@@ -22,7 +43,7 @@ with write permission.
 
 Alternatively, you can set the `HIVE_ACCESS_TOKEN` environment variable to provide the token.
 
-### `target_id`
+### target
 
 - **Type:** `string`
 
@@ -31,16 +52,29 @@ A target ID, this can either be a slug following the format
 `a0f4c605-6541-4350-8cfe-b31f21a4bf80`). To be used when the token is configured with an
 organization access token.
 
-Alternatively, you can set the `HIVE_TARGET` environment variable to provide the target ID.
+### usage_reporting
 
-### `endpoint`
+The `usage_reporting` configuration object allows you to control over how the Hive Router does
+[usage reporting](/docs/schema-registry/usage-reporting) to Hive Console.
+
+> For additional information about the usage reporting process in Hive Router, see the
+> [Usage Reporting page](/docs/router/observability/usage_reporting).
+
+#### enabled
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Explicitly enables usage reporting. Credentials (`token`/`target`) alone are not enough.
+
+#### endpoint
 
 - **Type:** `string`
 - **Default:** `https://app.graphql-hive.com/usage`
 
 For self-hosting, you can override `/usage` endpoint of your Hive instance.
 
-### `sample_rate`
+#### sample_rate
 
 - **Type:** `string`
 - **Default:** `100%`
@@ -49,7 +83,7 @@ A percentage value between `0%` and `100%` that indicates the percentage of requ
 For example, a value of `10%` means that approximately 10% of requests will be reported, while a
 value of `100%` means that all requests will be reported.
 
-### `exclude`
+#### exclude
 
 - **Type:** `string[]`
 - **Default:** `[]`
@@ -57,23 +91,7 @@ value of `100%` means that all requests will be reported.
 A list of operations (by name) to be ignored by Hive. For example, if you want to exclude
 introspection queries, you can add `IntrospectionQuery` to this list.
 
-### `client_name_header`
-
-- **Type:** `string`
-- **Default:** `graphql-client-name`
-
-The name of the HTTP header from which to read the client name for usage reporting. This is useful
-if you want to identify different clients consuming your GraphQL API.
-
-### `client_version_header`
-
-- **Type:** `string`
-- **Default:** `graphql-client-version`
-
-The name of the HTTP header from which to read the client version for usage reporting. This is
-useful if you want to identify different versions of clients consuming your GraphQL API.
-
-### `buffer_size`
+#### buffer_size
 
 - **Type:** `integer`
 - **Default:** `1000`
@@ -81,7 +99,7 @@ useful if you want to identify different versions of clients consuming your Grap
 A maximum number of operations to hold in a buffer before sending to Hive Console. When the buffer
 reaches this size, it will be flushed and sent to Hive Console.
 
-### `accept_invalid_certs`
+#### accept_invalid_certs
 
 - **Type:** `boolean`
 - **Default:** `false`
@@ -89,7 +107,7 @@ reaches this size, it will be flushed and sent to Hive Console.
 If set to `true`, the Hive Router will accept invalid SSL certificates when sending usage reports.
 This can be useful for self-hosted Hive instances using self-signed certificates.
 
-### `connect_timeout`
+#### connect_timeout
 
 - **Type:** `string`
 - **Default:** `5s`
@@ -97,14 +115,14 @@ This can be useful for self-hosted Hive instances using self-signed certificates
 A timeout for only the connect phase of a request to Hive Console, in duration format (e.g., `5s`
 for 5 seconds).
 
-### `request_timeout`
+#### request_timeout
 
 - **Type:** `string`
 - **Default:** `15s`
 
 A timeout for the entire request to Hive Console, in duration format (e.g., `15s` for 15 seconds).
 
-### `flush_interval`
+#### flush_interval
 
 - **Type:** `string`
 - **Default:** `5s`
