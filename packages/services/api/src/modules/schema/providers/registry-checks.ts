@@ -25,7 +25,13 @@ import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import { CompositeSchemaInput, extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
+import {
+  addTypeForExtensions,
+  CompositeSchemaInput,
+  extendWithBase,
+  SchemaHelper,
+  SchemaInput,
+} from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
@@ -426,6 +432,8 @@ export class RegistryChecks {
   /**
    * Intended to be used for subgraph/service schemas only. This does not check conditional breaking changes
    * or policy logic. This function strictly calculates the diff between two SDL and returns the list of changes.
+   * This also handles raw SDL which might include type extensions -- which cannot be used by themselves to build
+   * a schema and therefore must have the type definition added
    */
   async serviceDiff(args: {
     /** The existing SDL */
@@ -436,23 +444,26 @@ export class RegistryChecks {
     let existingSchema: GraphQLSchema | null;
     let incomingSchema: GraphQLSchema | null;
 
-    try {
-      existingSchema = args.existing
-        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.existing))
-        : null;
+    const createSchema = (sdl: Pick<SchemaInput, 'sdl'>) => {
+      const obj = this.helper.createSchemaObject(sdl);
+      obj.document = addTypeForExtensions(obj.document);
+      return buildSortedSchemaFromSchemaObject(obj);
+    };
 
-      incomingSchema = args.incoming
-        ? buildSortedSchemaFromSchemaObject(this.helper.createSchemaObject(args.incoming))
-        : null;
+    try {
+      existingSchema = args.existing ? createSchema(args.existing) : null;
+      incomingSchema = args.incoming ? createSchema(args.incoming) : null;
     } catch (error) {
-      this.logger.error('Failed to build schema for diff. Skip diff check.');
+      this.logger.error('Failed to build schema for serviceDiff. Skip serviceDiff check.');
       return {
         status: 'skipped',
       } satisfies CheckResult;
     }
 
     if (!existingSchema || !incomingSchema) {
-      this.logger.debug('Skip diff check due to either existing or incoming SDL being absent.');
+      this.logger.debug(
+        'Skip serviceDiff check due to either existing or incoming SDL being absent.',
+      );
       return {
         status: 'skipped',
       } satisfies CheckResult;

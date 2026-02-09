@@ -161,9 +161,14 @@ export function NativeCompositionSettings(props: {
     setIsMutating(true);
     try {
       const result = await props.onMutate({
-        native: {
-          organizationSlug: organization.slug,
-          projectSlug: project.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          native: true,
         },
       });
 
