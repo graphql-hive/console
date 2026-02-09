@@ -653,6 +653,8 @@ export async function createStorage(
         id: string;
       };
     }) {
+      class EnsureUserExistsError extends Error {}
+
       try {
         return await tracedTransaction('ensureUserExists', pool, async t => {
           let action: 'created' | 'no_action' = 'no_action';
@@ -734,7 +736,7 @@ export async function createStorage(
                   : null;
 
                 if (!member) {
-                  throw 'User is not invited to the organization.';
+                  throw new EnsureUserExistsError('User is not invited to the organization.');
                 }
               }
             }
@@ -775,7 +777,7 @@ export async function createStorage(
           };
         });
       } catch (e) {
-        if (typeof e === 'string') {
+        if (e instanceof EnsureUserExistsError) {
           return {
             ok: false,
             reason: e,
