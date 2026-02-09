@@ -1,69 +1,54 @@
-import { Callout, Cards, Tabs } from '@theguild/components'
+import { Callout } from '#components/callout'
 
 # Usage Reporting
 
-Hive Router can send usage reports to Hive Console to provide insights into the operations being
-executed against your GraphQL API. This includes details such as operation names, client
-information, and field-level usage statistics.
-
-The Hive Router can report usage metrics to the Hive schema registry, giving you
+Hive Router can report usage metrics to the Hive schema registry, giving you
 [insights for executed GraphQL operations](/docs/dashboard/insights), and
 [field level usage information](/docs/dashboard/explorer), but also enabling
 [conditional breaking changes](/docs/management/targets#conditional-breaking-changes).
 
+
+## Getting Started
+
 Before proceeding, make sure you have
-[created a registry token with write permissions on the Hive dashboard](/docs/management/targets#registry-access-tokens).
+[created a registry token with write permissions on the Hive dashboard](/docs/schema-registry/management/targets#registry-access-tokens).
 
-You can either provide the usage reporting configuration via environment variables or the
-`router.config.yaml` file.
-
-<Tabs items={["Environment Variables", "Configuration File"]}>
-
-{/* Environment Variables */}
-
-<Tabs.Tab>
-
-- `HIVE_TARGET`: The target ID, this can either be a slug following the format
-  `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`) or an UUID
-  (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`). To be used when the token is configured with an
-  organization access token.
+Next, set both environment variables:
 
 - `HIVE_ACCESS_TOKEN`: Your
-  [Registry Access Token](https://the-guild.dev/graphql/hive/docs/management/targets#registry-access-tokens)
+  [Registry Access Token](/docs/schema-registry/management/access-tokens)
   with write permission.
+- `HIVE_TARGET`: Target reference, either:
+  - slug: `$organizationSlug/$projectSlug/$targetSlug` (for example `the-guild/graphql-hive/staging`)
+  - UUID: `a0f4c605-6541-4350-8cfe-b31f21a4bf80`
 
-```sh filename="Run Hive Router with Usage Reporting enabled."
-HIVE_ACCESS_TOKEN="<hive_usage_access_token>" \
-  HIVE_TARGET="<hive_usage_target>" \
-  hive-router
-```
+To send usage reports, set `telemetry.hive.usage_reporting.enabled: true` in
+`router.config.yaml`.
 
-</Tabs.Tab>
-
-{/* Configuration File */}
-
-<Tabs.Tab>
-
-Alternatively, you can provide the usage reporting configuration via the `router.config.yaml` file.
+Example configuration:
 
 ```yaml filename="router.config.yaml"
-usage_reporting:
-  # The registry token provided by Hive Registry
-  token: '<hive_usage_access_token>'
-  # The registry target which the usage data should be reported to defaulting to process.env.HIVE_USAGE_TARGET
-  # This can either be a slug following the format `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`)
-  # or an UUID (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`).
-  target_id: '<hive_usage_target>'
-
-  # Endpoint override for self-hosting
-  # endpoint: 'https://my-hive-instance.com/usage'
+telemetry:
+  hive:
+    usage_reporting:
+      enabled: true
+      # Optional: override endpoint for self-hosted Hive
+      # endpoint: "https://my-hive/usage"
 ```
 
-</Tabs.Tab>
+## Client identification
 
-</Tabs>
+To identify who's calling your GraphQL API and view traffic distribution and operation volume per client in Hive Console, set up client identification in `router.config.yaml`.
 
-If you want to control the usage reporting to the Hive Console like `client_name_header`,
-`client_version_header` or `sample_rate` etc, please look at the configuration documentation to
-learn more about other options.
-[See more in the configuration reference](/docs/router/configuration/usage_reporting).
+```yaml filename="router.config.yaml"
+telemetry:
+  client_identification:
+    name_header: "graphql-client-name"       # default value
+    version_header: "graphql-client-version" # default value
+```
+
+
+## Configuration reference
+
+See the [telemetry configuration reference](/docs/router/configuration/telemetry#hive)
+for all options and defaults under `telemetry.hive`.
