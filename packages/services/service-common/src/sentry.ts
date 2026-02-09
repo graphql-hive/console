@@ -40,6 +40,14 @@ export function sentryInit(args: {
       if (event.message) {
         event.message = scrubBasicAuth(event.message);
       }
+
+      if (event.exception?.values) {
+        event.exception.values = event.exception.values.map(value => ({
+          ...value,
+          value: value.value ? scrubBasicAuth(value.value) : value.value,
+        }));
+      }
+
       return event;
     },
     beforeBreadcrumb(breadcrumb) {
