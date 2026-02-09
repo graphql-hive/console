@@ -780,7 +780,7 @@ export async function createStorage(
         if (e instanceof EnsureUserExistsError) {
           return {
             ok: false,
-            reason: e,
+            reason: e.message,
           };
         }
         throw e;
