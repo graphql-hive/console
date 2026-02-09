@@ -18,7 +18,7 @@ export function ServiceHeading(props: {
   return (
     <div
       className={cn(
-        'flex flex-row items-center border-b-2 px-4 py-2 text-base font-semibold',
+        'flex flex-row items-center border-b-2 px-4 pb-2 pt-4 text-base font-semibold',
         props.onClick !== undefined && 'cursor-pointer',
       )}
       onClick={props.onClick}

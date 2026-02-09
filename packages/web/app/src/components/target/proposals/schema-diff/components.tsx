@@ -108,14 +108,14 @@ export function ChangeRow(props: {
             'bg-neutral-2 px-2',
             props.className,
             props.type === 'removal' && 'bg-[#561c1d]',
-            props.type === 'addition' && 'bg-[#11362b]',
+            props.type === 'addition' && 'bg-green-600 dark:bg-[#11362b]',
           )}
         >
           <span
             className={cn(
               'bg-neutral-2',
               props.type === 'removal' && 'bg-[#561c1d] line-through decoration-[#998c8b]',
-              props.type === 'addition' && 'bg-[#11362b]',
+              props.type === 'addition' && 'bg-green-600 dark:bg-[#11362b]',
             )}
           >
             {!!props.indent &&
@@ -178,7 +178,14 @@ function Addition(props: { children: ReactNode; className?: string }): ReactNode
     }
   }, [change.addition]);
   return (
-    <span className={cn('bg-neutral-3 hover:bg-green-900', props.className)}>{props.children}</span>
+    <span
+      className={cn(
+        'bg-green-600 hover:bg-green-700 dark:bg-[#11362b] dark:hover:bg-green-900',
+        props.className,
+      )}
+    >
+      {props.children}
+    </span>
   );
 }
 

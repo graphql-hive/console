@@ -1,6 +1,17 @@
 import { useMemo } from 'react';
-import { buildSchema, GraphQLSchema } from 'graphql';
-import { useMutation, useQuery, UseQueryExecute } from 'urql';
+import {
+  buildASTSchema,
+  buildSchema,
+  DefinitionNode,
+  DocumentNode,
+  GraphQLSchema,
+  isTypeDefinitionNode,
+  isTypeExtensionNode,
+  Kind,
+  parse,
+  visit,
+} from 'graphql';
+import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -8,6 +19,7 @@ import {
   Proposal_ReviewsFragment,
   toUpperSnakeCase,
 } from '@/components/target/proposals';
+import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import {
   ProposalQuery_VersionsListFragment,
@@ -160,6 +172,7 @@ export function TargetProposalsSinglePage(props: {
   proposalId: string;
   tab?: string;
   version?: string;
+  timestamp?: number;
 }) {
   return (
     <>
@@ -175,6 +188,68 @@ export function TargetProposalsSinglePage(props: {
       </TargetLayout>
     </>
   );
+}
+
+const extensionToDefinitionKindMap = {
+  [Kind.OBJECT_TYPE_EXTENSION]: Kind.OBJECT_TYPE_DEFINITION,
+  [Kind.INPUT_OBJECT_TYPE_EXTENSION]: Kind.INPUT_OBJECT_TYPE_DEFINITION,
+  [Kind.INTERFACE_TYPE_EXTENSION]: Kind.INTERFACE_TYPE_DEFINITION,
+  [Kind.UNION_TYPE_EXTENSION]: Kind.UNION_TYPE_DEFINITION,
+  [Kind.ENUM_TYPE_EXTENSION]: Kind.ENUM_TYPE_DEFINITION,
+  [Kind.SCALAR_TYPE_EXTENSION]: Kind.SCALAR_TYPE_DEFINITION,
+} as const;
+
+function addTypeForExtensions(ast: DocumentNode) {
+  const trackTypeDefs = new Map<
+    string,
+    | {
+        state: 'TYPE_ONLY';
+      }
+    | {
+        state: 'EXTENSION_ONLY' | 'VALID_EXTENSION';
+        kind:
+          | Kind.OBJECT_TYPE_EXTENSION
+          | Kind.ENUM_TYPE_EXTENSION
+          | Kind.UNION_TYPE_EXTENSION
+          | Kind.SCALAR_TYPE_EXTENSION
+          | Kind.INTERFACE_TYPE_EXTENSION
+          | Kind.INPUT_OBJECT_TYPE_EXTENSION;
+      }
+  >();
+  for (const node of ast.definitions) {
+    if ('name' in node && node.name) {
+      const name = node.name.value;
+      const entry = trackTypeDefs.get(name);
+      if (isTypeExtensionNode(node)) {
+        if (!entry) {
+          trackTypeDefs.set(name, { state: 'EXTENSION_ONLY', kind: node.kind });
+        } else if (entry.state === 'TYPE_ONLY') {
+          trackTypeDefs.set(name, { kind: node.kind, state: 'VALID_EXTENSION' });
+        }
+      } else if (isTypeDefinitionNode(node)) {
+        if (!entry) {
+          trackTypeDefs.set(name, { state: 'TYPE_ONLY' });
+        } else if (entry.state === 'EXTENSION_ONLY') {
+          trackTypeDefs.set(name, { ...entry, state: 'VALID_EXTENSION' });
+        }
+      }
+    }
+  }
+
+  const astCopy = visit(ast, {});
+  for (const [name, entry] of trackTypeDefs) {
+    if (entry.state === 'EXTENSION_ONLY') {
+      console.log('FOUND EXTENSION: ', name, entry.kind);
+      (astCopy.definitions as DefinitionNode[]).push({
+        kind: extensionToDefinitionKindMap[entry.kind],
+        name: {
+          kind: Kind.NAME,
+          value: name,
+        },
+      });
+    }
+  }
+  return astCopy;
 }
 
 const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]) => {
@@ -197,16 +272,21 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
       },
       id: props.proposalId,
       version: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
     },
     requestPolicy: 'cache-and-network',
   });
 
   // fetch all proposed changes for the selected version
-  const [changesQuery, refreshChanges] = useQuery({
+  const [changesQuery] = useQuery({
     query: ProposalChangesQuery,
     variables: {
       id: props.proposalId,
       v: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
+
       // @todo deal with pagination
     },
     // don't cache this because caching can make it behave strangely --
@@ -245,9 +325,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
 
-          const beforeSchema = existingSchema?.length
-            ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
-            : null;
+          let beforeSchema: GraphQLSchema | null = null;
+          if (existingSchema?.length) {
+            const ast = addTypeForExtensions(parse(existingSchema));
+            beforeSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+          }
+
           // @todo better handle pagination
           const allChanges =
             proposalVersion.schemaChanges?.edges
@@ -368,10 +451,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         proposal={proposal}
         target={query.data.target}
         me={query.data.me}
-        refreshData={(...args) => {
-          refreshProposal(args);
-          refreshChanges(args);
-        }}
       />
     );
   }, [
@@ -431,7 +510,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   <StageTransitionSelect
                     stage={proposal.stage}
                     onSelect={async stage => {
-                      const review = await reviewSchemaProposal({
+                      const _review = await reviewSchemaProposal({
                         input: {
                           schemaProposalId: props.proposalId,
                           stageTransition: stage,
@@ -439,7 +518,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           serviceName: '',
                         },
                       });
-                      console.log('@todo ', review);
+                      // @todo use urqlCache to invalidate the proposal and refresh?
                       refreshProposal();
                     }}
                   />
@@ -476,7 +555,6 @@ function TabbedContent(props: {
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
-  refreshData: UseQueryExecute;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
@@ -586,7 +664,9 @@ function TabbedContent(props: {
       </TabsContent>
       <TabsContent value={Tab.EDIT} variant="content" className="w-full">
         <div className="flex grow flex-row">
-          <TargetProposalEditPage {...props} />
+          <SaveProposalProvider>
+            <TargetProposalEditPage {...props} />
+          </SaveProposalProvider>
         </div>
       </TabsContent>
     </Tabs>

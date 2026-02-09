@@ -49,6 +49,7 @@ import { OrganizationIndexRouteSearch, OrganizationPage } from './pages/organiza
 import { JoinOrganizationPage } from './pages/organization-join';
 import { OrganizationMembersPage } from './pages/organization-members';
 import { NewOrgPage } from './pages/organization-new';
+import { OrganizationOIDCRequestPage } from './pages/organization-oidc-request';
 import {
   OrganizationSettingsPage,
   OrganizationSettingsPageEnum,
@@ -367,6 +368,29 @@ const organizationRoute = createRoute({
   path: '$organizationSlug',
   notFoundComponent: NotFound,
   errorComponent: ErrorComponent,
+});
+
+const OrganizationOIDCRequestRouteSearch = z.object({
+  id: z.string({ required_error: 'OIDC ID is required' }),
+  redirectToPath: z.string().optional().default('/'),
+});
+const organizationOIDCRequestRoute = createRoute({
+  getParentRoute: () => organizationRoute,
+  path: 'oidc-request',
+  validateSearch(search) {
+    return OrganizationOIDCRequestRouteSearch.parse(search);
+  },
+  component: function OrganizationOIDCRequestRoute() {
+    const { organizationSlug } = organizationRoute.useParams();
+    const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
+    return (
+      <OrganizationOIDCRequestPage
+        organizationSlug={organizationSlug}
+        oidcId={id}
+        redirectToPath={redirectToPath}
+      />
+    );
+  },
 });
 
 const organizationIndexRoute = createRoute({
@@ -997,6 +1021,7 @@ const targetProposalsSingleRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'proposals/$proposalId',
   validateSearch: z.object({
+    ts: z.number().optional(),
     page: z
       .enum(Object.values(ProposalTab).map(s => s.toLowerCase()) as [string, ...string[]])
       .optional()
@@ -1006,7 +1031,7 @@ const targetProposalsSingleRoute = createRoute({
   component: function TargetProposalRoute() {
     const { organizationSlug, projectSlug, targetSlug, proposalId } =
       targetProposalsSingleRoute.useParams();
-    const { page, version } = targetProposalsSingleRoute.useSearch();
+    const { page, version, ts } = targetProposalsSingleRoute.useSearch();
     return (
       <TargetProposalsSinglePage
         organizationSlug={organizationSlug}
@@ -1015,6 +1040,7 @@ const targetProposalsSingleRoute = createRoute({
         proposalId={proposalId}
         tab={page ?? (ProposalTab.DETAILS as string)}
         version={version}
+        timestamp={ts}
       />
     );
   },
@@ -1065,6 +1091,7 @@ const routeTree = root.addChildren([
       organizationIndexRoute,
       joinOrganizationRoute,
       transferOrganizationRoute,
+      organizationOIDCRequestRoute,
       organizationSupportRoute,
       organizationSupportTicketRoute,
       organizationSubscriptionRoute,

@@ -223,6 +223,7 @@ export interface OIDCIntegration {
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   additionalScopes: string[];
+  oidcUserJoinOnly: boolean;
   oidcUserAccessOnly: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
@@ -380,7 +381,6 @@ export interface User {
   provider: AuthProviderType;
   superTokensUserId: string | null;
   isAdmin: boolean;
-  oidcIntegrationId: string | null;
   zendeskId: string | null;
 }
 

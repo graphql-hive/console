@@ -100,7 +100,7 @@ export class EmailVerification {
       userIdentityId: string;
       resend?: boolean;
     },
-    ipAddress: string,
+    ipAddress: string | null,
   ): Promise<
     | { ok: true; expiresAt: Date }
     | {
@@ -109,13 +109,15 @@ export class EmailVerification {
         emailAlreadyVerified: boolean;
       }
   > {
-    await this.rateLimiter.check(
-      'sendVerificationEmail',
-      ipAddress,
-      60_000,
-      3,
-      `Exceeded rate limit for sending verification emails.`,
-    );
+    if (ipAddress) {
+      await this.rateLimiter.check(
+        'sendVerificationEmail',
+        ipAddress,
+        60_000,
+        3,
+        `Exceeded rate limit for sending verification emails.`,
+      );
+    }
 
     const superTokensUser = await this.pool
       .maybeOne(

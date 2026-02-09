@@ -462,32 +462,62 @@ export async function createStorage(
 
       return UserModel.parse(record);
     },
+    getUserById: batchBy(
+      (item: { id: string; connection: Connection }) => item.connection,
+      async input => {
+        const userIds = input.map(i => i.id);
+        const records = await input[0].connection.any<unknown>(sql`/* getUserById */
+          SELECT
+            ${userFields(sql`"users".`, sql`"stu".`)}
+          FROM
+            "users"
+          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+            ON ("stu"."user_id" = "users"."supertoken_user_id")
+          WHERE
+            "users"."id" = ANY(${sql.array(userIds, 'uuid')})
+        `);
+
+        const mappings = new Map<string, UserType>();
+        for (const record of records) {
+          const user = UserModel.parse(record);
+          mappings.set(user.id, user);
+        }
+
+        return userIds.map(async id => mappings.get(id) ?? null);
+      },
+    ),
     async createUser(
       {
-        superTokensUserId,
         email,
         fullName,
         displayName,
+        superTokensUserId,
         oidcIntegrationId,
       }: {
-        superTokensUserId: string;
         email: string;
         fullName: string;
         displayName: string;
+        superTokensUserId: string;
         oidcIntegrationId: string | null;
       },
-      connection: Connection,
+      connection: DatabaseTransactionConnection,
     ) {
-      await connection.query<unknown>(
+      const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "supertoken_user_id", "full_name", "display_name", "oidc_integration_id")
+            ("email", "full_name", "display_name", "supertoken_user_id", "oidc_integration_id")
           VALUES
-            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${oidcIntegrationId})
+            (${email}, ${fullName}, ${displayName}, ${superTokensUserId}, ${oidcIntegrationId})
+          RETURNING id
         `,
       );
 
-      const user = await this.getUserBySuperTokenId({ superTokensUserId }, connection);
+      await connection.query(sql`
+        INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+        VALUES (${id}, ${superTokensUserId})
+      `);
+
+      const user = await shared.getUserById({ id, connection });
       if (!user) {
         throw new Error('Something went wrong.');
       }
@@ -577,11 +607,11 @@ export async function createStorage(
   };
 
   function buildUserData(input: {
-    superTokensUserId: string;
     email: string;
-    oidcIntegrationId: string | null;
     firstName: string | null;
     lastName: string | null;
+    superTokensUserId: string;
+    oidcIntegrationId: string | null;
   }) {
     const { firstName, lastName } = input;
     const name =
@@ -590,10 +620,10 @@ export async function createStorage(
         : input.email.split('@')[0].slice(0, 25).padEnd(2, '1');
 
     return {
-      superTokensUserId: input.superTokensUserId,
       email: input.email,
       displayName: name,
       fullName: name,
+      superTokensUserId: input.superTokensUserId,
       oidcIntegrationId: input.oidcIntegrationId,
     };
   }
@@ -627,16 +657,60 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        let internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
 
+        // try searching existing user first
+        let internalUser = await t
+          .maybeOne<unknown>(
+            sql`
+              SELECT
+                ${userFields(sql`"users".`, sql`"stu".`)}
+              FROM "users"
+              LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                ON ("stu"."user_id" = "users"."supertoken_user_id")
+              WHERE
+                "users"."supertoken_user_id" = ${superTokensUserId}
+                OR EXISTS (
+                  SELECT 1 FROM "users_linked_identities" "uli"
+                  WHERE "uli"."user_id" = "users"."id"
+                  AND "uli"."identity_id" = ${superTokensUserId}
+                )
+            `,
+          )
+          .then(v => UserModel.nullable().parse(v));
+
+        if (!internalUser) {
+          // try automatic account linking
+          const sameEmailUsers = await t
+            .any<unknown>(
+              sql`/* ensureUserExists */
+                SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+                FROM "users"
+                LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                  ON ("stu"."user_id" = "users"."supertoken_user_id")
+                WHERE "users"."email" = ${email}
+                ORDER BY "users"."created_at";
+              `,
+            )
+            .then(users => users.map(user => UserModel.parse(user)));
+
+          if (sameEmailUsers.length === 1) {
+            internalUser = sameEmailUsers[0];
+            await t.query(sql`
+              INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+              VALUES (${internalUser.id}, ${superTokensUserId})
+            `);
+          }
+        }
+
+        // either user is brand new or user is not linkable (multiple accounts with the same email exist)
         if (!internalUser) {
           internalUser = await shared.createUser(
             buildUserData({
-              superTokensUserId,
               email,
-              oidcIntegrationId: oidcIntegration?.id ?? null,
               firstName,
               lastName,
+              superTokensUserId,
+              oidcIntegrationId: oidcIntegration?.id ?? null,
             }),
             t,
           );
@@ -655,33 +729,18 @@ export async function createStorage(
           );
         }
 
-        return action;
+        return {
+          user: internalUser,
+          action,
+        };
       });
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
       return shared.getUserBySuperTokenId({ superTokensUserId }, pool);
     },
-    getUserById: batch(async input => {
-      const userIds = input.map(i => i.id);
-      const records = await pool.any<unknown>(sql`/* getUserById */
-        SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
-        FROM
-          "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
-        WHERE
-          "users"."id" = ANY(${sql.array(userIds, 'uuid')})
-      `);
-
-      const mappings = new Map<string, UserType>();
-      for (const record of records) {
-        const user = UserModel.parse(record);
-        mappings.set(user.id, user);
-      }
-
-      return userIds.map(async id => mappings.get(id) ?? null);
-    }),
+    async getUserById({ id }) {
+      return shared.getUserById({ id, connection: pool });
+    },
     async updateUser({ id, displayName, fullName }) {
       await pool.query<users>(sql`/* updateUser */
         UPDATE "users"
@@ -3132,6 +3191,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3149,8 +3209,8 @@ export async function createStorage(
       return decodeOktaIntegrationRecord(result);
     },
 
-    async getOIDCIntegrationForOrganization({ organizationId }) {
-      const result = await pool.maybeOne<unknown>(sql`/* getOIDCIntegrationForOrganization */
+    getOIDCIntegrationForOrganization: batch(async selectors => {
+      const result = await pool.query<unknown>(sql`/* getOIDCIntegrationForOrganization */
         SELECT
           "id"
           , "linked_organization_id"
@@ -3161,22 +3221,27 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
-          "linked_organization_id" = ${organizationId}
-        LIMIT 1
+          "linked_organization_id" = ANY(${sql.array(
+            selectors.map(s => s.organizationId),
+            'uuid',
+          )})
       `);
+      const integrations = new Map(
+        result.rows.map(row => {
+          const integration = decodeOktaIntegrationRecord(row);
+          return [integration.linkedOrganizationId, integration] as const;
+        }),
+      );
 
-      if (result === null) {
-        return null;
-      }
-
-      return decodeOktaIntegrationRecord(result);
-    },
+      return selectors.map(async s => integrations.get(s.organizationId) ?? null);
+    }),
 
     async getOIDCIntegrationIdForOrganizationSlug({ slug }) {
       const id = await pool.maybeOneFirst<string>(sql`/* getOIDCIntegrationIdForOrganizationSlug */
@@ -3228,6 +3293,7 @@ export async function createStorage(
             , "userinfo_endpoint"
             , "authorization_endpoint"
             , "additional_scopes"
+            , "oidc_user_join_only"
             , "oidc_user_access_only"
             , "default_role_id"
             , "default_assigned_resources"
@@ -3286,6 +3352,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3298,7 +3365,8 @@ export async function createStorage(
       const result = await pool.one(sql`/* updateOIDCRestrictions */
           UPDATE "oidc_integrations"
           SET
-            "oidc_user_access_only" = ${args.oidcUserAccessOnly}
+            "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
+            , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? sql`"oidc_user_access_only"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -3311,6 +3379,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3336,6 +3405,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "additional_scopes"
           , "default_role_id"
@@ -3378,6 +3448,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -5135,6 +5206,7 @@ const OktaIntegrationBaseModel = zod.object({
     .array(zod.string())
     .nullable()
     .transform(value => (value === null ? [] : value)),
+  oidc_user_join_only: zod.boolean(),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
@@ -5172,6 +5244,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       additionalScopes: rawRecord.additional_scopes,
+      oidcUserJoinOnly: rawRecord.oidc_user_join_only,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
@@ -5187,6 +5260,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
     additionalScopes: rawRecord.additional_scopes,
+    oidcUserJoinOnly: rawRecord.oidc_user_join_only,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,
@@ -5846,7 +5920,7 @@ export const UserModel = zod.object({
   createdAt: zod.string(),
   displayName: zod.string(),
   fullName: zod.string(),
-  superTokensUserId: zod.string(),
+  superTokensUserId: zod.string().nullable(),
   isAdmin: zod
     .boolean()
     .nullable()

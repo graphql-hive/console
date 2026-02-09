@@ -176,7 +176,11 @@ export const urqlClient = createClient({
     }),
     networkStatusExchange,
     authExchange(async () => {
-      let action: 'NEEDS_REFRESH' | 'VERIFY_EMAIL' | 'UNAUTHENTICATED' = 'UNAUTHENTICATED';
+      let action:
+        | { type: 'NEEDS_REFRESH' | 'VERIFY_EMAIL' | 'UNAUTHENTICATED' }
+        | { type: 'NEEDS_OIDC'; organizationSlug: string; oidcIntegrationId: string } = {
+        type: 'UNAUTHENTICATED',
+      };
 
       return {
         addAuthToOperation(operation) {
@@ -187,28 +191,41 @@ export const urqlClient = createClient({
         },
         didAuthError(error) {
           if (error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED')) {
-            action = 'UNAUTHENTICATED';
+            action = { type: 'UNAUTHENTICATED' };
             return true;
           }
 
           if (error.graphQLErrors.some(e => e.extensions?.code === 'VERIFY_EMAIL')) {
-            action = 'VERIFY_EMAIL';
+            action = { type: 'VERIFY_EMAIL' };
             return true;
           }
 
           if (error.graphQLErrors.some(e => e.extensions?.code === 'NEEDS_REFRESH')) {
-            action = 'NEEDS_REFRESH';
+            action = { type: 'NEEDS_REFRESH' };
+            return true;
+          }
+
+          const oidcError = error.graphQLErrors.find(e => e.extensions?.code === 'NEEDS_OIDC');
+          if (oidcError) {
+            action = {
+              type: 'NEEDS_OIDC',
+              organizationSlug: oidcError.extensions?.organizationSlug as string,
+              oidcIntegrationId: oidcError.extensions?.oidcIntegrationId as string,
+            };
             return true;
           }
 
           return false;
         },
         async refreshAuth() {
-          if (action === 'NEEDS_REFRESH' && (await Session.attemptRefreshingSession())) {
+          if (action.type === 'NEEDS_REFRESH' && (await Session.attemptRefreshingSession())) {
             location.reload();
-          } else if (action === 'VERIFY_EMAIL') {
+          } else if (action.type === 'VERIFY_EMAIL') {
             window.location.href = '/auth/verify-email';
+          } else if (action.type === 'NEEDS_OIDC') {
+            window.location.href = `/${action.organizationSlug}/oidc-request?id=${action.oidcIntegrationId}&redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           } else {
+            await Session.signOut();
             window.location.href = `/auth?redirectToPath=${encodeURIComponent(window.location.pathname)}`;
           }
         },

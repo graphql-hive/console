@@ -480,7 +480,7 @@ function DefaultSchemaView(props: {
   return (
     <>
       <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-        <TabsList className="bg-neutral-3 border-neutral-3 w-full justify-start rounded-none border-x border-b">
+        <TabsList className="bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
           {items.map(item => (
             <TabsTrigger key={item.value} value={item.value} disabled={item.isDisabled}>
               {item.icon}
@@ -489,7 +489,7 @@ function DefaultSchemaView(props: {
           ))}
         </TabsList>
       </Tabs>
-      <div className="border-neutral-3 min-h-[850px] rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
@@ -693,7 +693,7 @@ function ContractCheckView(props: {
           ))}
         </TabsList>
       </Tabs>
-      <div className="border-neutral-3 min-h-[850px] rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractCheck.schemaCompositionErrors && (
@@ -874,8 +874,11 @@ function SchemaChecksView(props: {
         value={selectedItem}
         onValueChange={value => setSelectedItem(value)}
       >
-        <TabsList className="w-full justify-start rounded-b-none px-2 py-0">
-          <TabsTrigger value="default" className="mt-1 py-2 data-[state=active]:rounded-b-none">
+        <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
+          <TabsTrigger
+            value="default"
+            className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
+          >
             <span>Default Graph</span>
             <TooltipProvider>
               <Tooltip>

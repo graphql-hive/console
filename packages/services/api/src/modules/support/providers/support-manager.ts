@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { HTTPError } from 'got';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { Organization, SupportTicketPriority, SupportTicketStatus } from '../../../shared/entities';
@@ -318,28 +319,56 @@ export class SupportManager {
         input.organizationId,
         input.userId,
       );
-      // connect user to organization
-      await this.httpClient.post(
-        `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
-        {
-          username: this.config.username,
-          password: this.config.password,
-          responseType: 'json',
-          context: {
-            logger: this.logger,
-          },
-          headers: {
-            // v2 post fix is for idemopotency key cache busting.
-            'idempotency-key': input.userId + '|v2',
-          },
-          json: {
-            organization_membership: {
-              user_id: parseInt(user.zendeskId, 10),
-              organization_id: parseInt(organizationZendeskId, 10),
+
+      const zendeskUserId = parseInt(user.zendeskId, 10);
+      const zendeskOrganizationId = parseInt(organizationZendeskId, 10);
+
+      // attempt connect user to organization
+      try {
+        await this.httpClient.post(
+          `https://${this.config.subdomain}.zendesk.com/api/v2/organization_memberships`,
+          {
+            username: this.config.username,
+            password: this.config.password,
+            responseType: 'json',
+            context: {
+              logger: this.logger,
+            },
+            headers: {
+              // v2 post fix is for idemopotency key cache busting.
+              'idempotency-key': input.userId + '|v2',
+            },
+            json: {
+              organization_membership: {
+                user_id: zendeskUserId,
+                organization_id: zendeskOrganizationId,
+              },
             },
           },
-        },
-      );
+        );
+      } catch (err) {
+        if (err instanceof HTTPError && err.code === '422') {
+          // This user is already a member of this organization.
+          this.logger.debug(
+            'The user was already connected to the zendesk organization. (organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            input.organizationId,
+            input.userId,
+            zendeskUserId,
+            zendeskOrganizationId,
+          );
+        } else {
+          this.logger.debug(
+            'An unexpected error occured while connecting the user to the zendesk organization. (err=%s, organization: %s, user: %s, zendeskUserId: %d, zendeskOrganizationId: %d)',
+            String(err),
+            input.organizationId,
+            input.userId,
+            zendeskUserId,
+            zendeskOrganizationId,
+          );
+          throw err;
+        }
+      }
+
       await this.storage.setZendeskOrganizationUserConnection({
         userId: input.userId,
         organizationId: input.organizationId,

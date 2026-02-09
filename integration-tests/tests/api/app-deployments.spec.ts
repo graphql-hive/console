@@ -2030,6 +2030,72 @@ test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
   expect(result.target?.activeAppDeployments.edges[0].node.createdAt).toBeTruthy();
 });
 
+test('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // seed 1,200 app deployments
+  const apps = ['web-app', 'mobile-app', 'admin-dashboard', 'cli-tool'];
+  const appDeployments = apps.flatMap((app, minor) =>
+    Array.from({ length: 300 }).map((_, patch) => ({
+      appName: app,
+      appVersion: [1, minor, patch].join('.'),
+    })),
+  );
+
+  for (const { appName, appVersion } of appDeployments) {
+    // Create and activate an app deployment
+    await execute({
+      document: CreateAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion,
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: ActivateAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion,
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+  }
+
+  // Query for deployments never used and created before tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  for (let page = 0; page < Math.ceil(1200 / 20); page++) {
+    const result = await execute({
+      document: GetActiveAppDeployments,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        first: 20,
+        filter: {
+          neverUsedAndCreatedBefore: tomorrow.toISOString(),
+        },
+      },
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
+    // all should be full pages
+    expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
+  }
+});
+
 test('activeAppDeployments filters by name', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
