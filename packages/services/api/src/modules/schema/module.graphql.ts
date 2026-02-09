@@ -53,7 +53,7 @@ export default gql`
     secret: String!
   }
 
-  input SchemaCompositionConfigurationMethodInput @oneOf @tag(name: "public") {
+  input SchemaCompositionMethodInput @oneOf @tag(name: "public") {
     """
     Use the native federation schema composition. This is the default method for new projects.
     """
@@ -76,7 +76,7 @@ export default gql`
     """
     The composition method that should be set for the project.
     """
-    method: SchemaCompositionConfigurationMethodInput!
+    method: SchemaCompositionMethodInput!
   }
 
   type UpdateSchemaCompositionResultOk @tag(name: "public") {
