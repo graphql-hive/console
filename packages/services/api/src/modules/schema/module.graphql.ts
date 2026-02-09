@@ -63,8 +63,7 @@ export default gql`
     """
     external: SchemaCompositionConfigurationExternalMethodInput
     """
-    Use an external schema composition endpoint.
-    """
+    Use the legacy federation v1 schema composition.
     legacy: Boolean
   }
 
