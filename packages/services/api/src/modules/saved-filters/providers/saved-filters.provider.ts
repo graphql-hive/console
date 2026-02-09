@@ -19,7 +19,7 @@ const InsightsFilterConfigurationModel = zod.object({
     .array(
       zod.object({
         name: zod.string().min(1).max(100),
-        versions: zod.array(zod.string()).nullable().optional(),
+        versions: zod.array(zod.string()).max(100).nullable().optional(),
       }),
     )
     .max(50)
