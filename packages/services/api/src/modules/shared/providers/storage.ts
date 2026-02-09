@@ -97,7 +97,10 @@ export interface Storage {
   updateUser(_: { id: string; fullName: string; displayName: string }): Promise<User | never>;
 
   getOrganizationId(_: { organizationSlug: string }): Promise<string | null>;
-  getOrganizationByInviteCode(_: { inviteCode: string }): Promise<Organization | null>;
+  getOrganizationByInviteCode(_: {
+    inviteCode: string;
+    email: string;
+  }): Promise<Organization | null>;
   getOrganizationBySlug(_: { slug: string }): Promise<Organization | null>;
   getOrganizationByGitHubInstallationId(_: {
     installationId: string;

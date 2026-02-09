@@ -1519,12 +1519,15 @@ export async function createStorage(
 
       return results.rows.map(transformOrganization);
     },
-    async getOrganizationByInviteCode({ inviteCode }) {
+    async getOrganizationByInviteCode({ inviteCode, email }) {
       const result = await pool.maybeOne<Slonik<organizations>>(
         sql`/* getOrganizationByInviteCode */
           SELECT o.* FROM organizations as o
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
-          WHERE i.code = ${inviteCode} AND i.expires_at > NOW()
+          WHERE
+            i.code = ${inviteCode}
+            AND i.email = ${email}
+            AND i.expires_at > NOW()
           GROUP BY o.id
           LIMIT 1
         `,

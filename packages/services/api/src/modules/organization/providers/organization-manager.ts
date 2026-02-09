@@ -5,7 +5,7 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
 import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
 import * as GraphQLSchema from '../../../__generated__/types';
-import { Organization } from '../../../shared/entities';
+import { Organization, User } from '../../../shared/entities';
 import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
@@ -225,17 +225,30 @@ export class OrganizationManager {
 
   async getOrganizationByInviteCode({
     code,
+    user: maybeUser,
   }: {
     code: string;
+    user?: User;
   }): Promise<Organization | { message: string } | never> {
     this.logger.debug('Fetching organization (inviteCode=%s)', code);
+
+    let user = maybeUser;
+    if (!user) {
+      const actor = await this.session.getActor();
+      if (actor.type !== 'user') {
+        throw new Error('Only users can fetch organization by invite code');
+      }
+      user = actor.user;
+    }
+
     const organization = await this.storage.getOrganizationByInviteCode({
       inviteCode: code,
+      email: user.email,
     });
 
     if (!organization) {
       return {
-        message: 'Invitation expired',
+        message: 'Invitation is invalid or expired',
       };
     }
 
@@ -662,6 +675,7 @@ export class OrganizationManager {
 
     const organization = await this.getOrganizationByInviteCode({
       code,
+      user: actor.user,
     });
 
     if ('message' in organization) {
