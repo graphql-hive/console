@@ -91,7 +91,6 @@ export function useHiveErrorHandler(): Plugin {
         scope.setTransactionName(context.operationName ?? 'unknown graphql operation');
         scope.setContext('Extra Info', {
           operationName: context.operationName,
-          variables: JSON.stringify(context.variableValues),
           operation: print(context.document),
           userId,
         });
