@@ -688,10 +688,11 @@ export class OrganizationManager {
       });
 
       if (oidcIntegration?.oidcUserJoinOnly && actor.oidcIntegrationId !== oidcIntegration.id) {
-        return {
-          message:
-            'The user is not authorized through the OIDC integration required for the organization',
-        };
+        throw new OIDCRequiredError(
+          organization.slug,
+          oidcIntegration.id,
+          'The user should be authenticated through the OIDC provider linked to the organization',
+        );
       }
     }
 
