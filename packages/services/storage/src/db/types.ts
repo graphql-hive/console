@@ -170,6 +170,7 @@ export interface oidc_integrations {
   linked_organization_id: string;
   oauth_api_url: string | null;
   oidc_user_access_only: boolean;
+  oidc_user_join_only: boolean;
   token_endpoint: string | null;
   updated_at: Date;
   userinfo_endpoint: string | null;
@@ -266,6 +267,21 @@ export interface projects {
   org_id: string;
   type: string;
   validation_url: string | null;
+}
+
+export interface saved_filters {
+  created_at: Date;
+  created_by_user_id: string;
+  description: string | null;
+  filters: any;
+  id: string;
+  name: string;
+  project_id: string;
+  type: string;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+  views_count: number;
+  visibility: string;
 }
 
 export interface schema_change_approvals {
@@ -473,6 +489,12 @@ export interface users {
   zendesk_user_id: string | null;
 }
 
+export interface users_linked_identities {
+  created_at: Date;
+  identity_id: string;
+  user_id: string;
+}
+
 export interface version_commit {
   commit_id: string;
   url: string | null;
@@ -512,6 +534,7 @@ export interface DBTables {
   organizations: organizations;
   organizations_billing: organizations_billing;
   projects: projects;
+  saved_filters: saved_filters;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;
   schema_coordinate_status: schema_coordinate_status;
@@ -528,6 +551,7 @@ export interface DBTables {
   targets: targets;
   tokens: tokens;
   users: users;
+  users_linked_identities: users_linked_identities;
   version_commit: version_commit;
   versions: versions;
 }
