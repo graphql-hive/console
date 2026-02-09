@@ -233,7 +233,6 @@ function buildConfig() {
 
 export const env = buildConfig();
 
-// TODO: I don't like this here, but it seems like it makes most sense here :)
 Sentry.init({
   serverName: 'app',
   dist: 'app',
@@ -243,10 +242,4 @@ Sentry.init({
   dsn: env.sentry?.dsn,
   release: env.release,
   environment: env.environment,
-  integrations: [
-    // HTTP integration is only available on the server
-    new Integrations.Http({
-      tracing: false,
-    }),
-  ],
 });

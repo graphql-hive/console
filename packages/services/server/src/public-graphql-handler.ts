@@ -11,7 +11,6 @@ import { type HiveUsageConfig } from './environment';
 import {
   reqIdGenerate,
   useHiveErrorHandler,
-  useHiveSentry,
   useHiveTracing,
   type Context,
 } from './graphql-handler';
@@ -43,7 +42,6 @@ export const createPublicGraphQLHandler = (
     },
     plugins: [
       useArmor(),
-      useHiveSentry(),
       useGraphQLModules(args.registry),
       useSchema(publicSchema),
       useExtendContext(async context => ({

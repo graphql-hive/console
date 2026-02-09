@@ -10,7 +10,6 @@ import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
-import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
@@ -38,23 +37,13 @@ import {
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
-import {
-  contextLinesIntegration,
-  dedupeIntegration,
-  extraErrorDataIntegration,
-} from '@sentry/integrations';
-import {
-  captureException,
-  httpIntegration,
-  init,
-  linkedErrorsIntegration,
-  SeverityLevel,
-} from '@sentry/node';
+import { captureException, SeverityLevel } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
 import { AuthN } from '../../api/src/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
@@ -92,33 +81,15 @@ export async function main() {
     tracing.setup();
   }
 
-  init({
-    serverName: hostname(),
-    dist: 'server',
-    enabled: !!env.sentry,
-    environment: env.environment,
-    dsn: env.sentry?.dsn,
-    enableTracing: false,
-    tracesSampleRate: 1,
-    ignoreTransactions: [
-      'POST /graphql', // Transaction created for a cached response (@graphql-yoga/plugin-response-cache)
-    ],
-    release: env.release,
-    integrations: [
-      httpIntegration({ tracing: false }),
-      contextLinesIntegration({
-        frameContextLines: 0,
-      }),
-      linkedErrorsIntegration(),
-      extraErrorDataIntegration({
-        depth: 2,
-      }),
-      dedupeIntegration(),
-    ],
-    maxBreadcrumbs: 10,
-    defaultIntegrations: false,
-    autoSessionTracking: false,
-  });
+  if (env.sentry) {
+    sentryInit({
+      dist: 'server',
+      enabled: !!env.sentry,
+      environment: env.environment,
+      dsn: env.sentry.dsn,
+      release: env.release,
+    });
+  }
 
   const server = await createServer({
     name: 'graphql-api',
