@@ -94,6 +94,11 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Manage CDN access tokens',
         description: 'Allow managing access tokens for the CDN.',
       },
+      {
+        id: 'targetAccessToken:modify',
+        title: 'Manage registry access tokens',
+        description: 'Create and delete registry access tokens for targets.',
+      },
     ],
   },
   {
