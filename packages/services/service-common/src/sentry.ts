@@ -5,6 +5,7 @@ import {
   extraErrorDataIntegration,
 } from '@sentry/integrations';
 import { httpIntegration, init, linkedErrorsIntegration } from '@sentry/node';
+import { scrubBasicAuth } from './scrub';
 
 /**
  * Initialize Sentry SDK with our commong configuration options.
@@ -57,8 +58,4 @@ export function sentryInit(args: {
       return breadcrumb;
     },
   });
-}
-
-function scrubBasicAuth(value: string) {
-  return value.replace(/\bhttps?:\/\/([^:@\/]+):([^@\/]+)@/gi, 'https://[Filtered]:[Filtered]@');
 }

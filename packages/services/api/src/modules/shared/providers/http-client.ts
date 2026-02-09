@@ -1,7 +1,7 @@
 import type { OptionsOfJSONResponseBody } from 'got';
 import { got, HTTPError, TimeoutError } from 'got';
 import { Injectable } from 'graphql-modules';
-import { SpanKind, trace, type Span } from '@hive/service-common';
+import { scrubBasicAuth, SpanKind, trace, type Span } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import type { Logger } from './logger';
 
@@ -13,6 +13,17 @@ interface HttpClientOptions extends OptionsOfJSONResponseBody {
 }
 
 type HttpOptions = Omit<HttpClientOptions, 'method' | 'throwHttpErrors' | 'resolveBodyOnly'>;
+
+const gotInstance = got.extend({
+  hooks: {
+    beforeError: [
+      error => {
+        error.message = scrubBasicAuth(error.message);
+        return error;
+      },
+    ],
+  },
+});
 
 @Injectable()
 export class HttpClient {
@@ -51,7 +62,7 @@ export class HttpClient {
         },
       });
 
-    const request = got<T>(url, {
+    const request = gotInstance<T>(url, {
       ...opts,
       throwHttpErrors: true,
     });
