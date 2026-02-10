@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
-import { FaGithub, FaGoogle, FaOpenid, FaUserLock } from 'react-icons/fa';
+import { FaGithub, FaGoogle, FaOpenid, FaUser, FaUserLock } from 'react-icons/fa';
 import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
@@ -164,24 +164,29 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
       </AlertDialog>
       <tr key={member.id}>
         <td className="w-12">
-          <TooltipProvider>
-            <Tooltip delayDuration={100}>
-              <TooltipTrigger asChild>
-                <div className="mx-3 flex gap-1">
-                  {member.user.providers.map(provider => {
-                    const Icon = authProviderToIconAndTextMap[provider].icon;
-                    return <Icon key={provider} className="mx-auto size-5" />;
-                  })}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                User's authentication methods: {providerTexts.join(', ')}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div>
+            <FaUser className="mx-auto size-5" />
+          </div>
         </td>
         <td className="grow overflow-hidden py-3 text-sm font-medium">
-          <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
+            <TooltipProvider>
+              <Tooltip delayDuration={100}>
+                <TooltipTrigger asChild>
+                  <div className="flex gap-1">
+                    {member.user.providers.map(provider => {
+                      const Icon = authProviderToIconAndTextMap[provider].icon;
+                      return <Icon key={provider} className="size-4" />;
+                    })}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  User's authentication methods: {providerTexts.join(', ')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
         <td className="relative py-3 text-center text-sm">
