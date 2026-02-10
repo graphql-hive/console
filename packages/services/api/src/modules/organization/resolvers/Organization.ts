@@ -55,7 +55,7 @@ export const Organization: Pick<
     });
 
     if (!member) {
-      throw new Error('Could not find member.');
+      return null;
     }
 
     return member;
