@@ -61,6 +61,7 @@ const AffectedDeploymentsQuery = graphql(`
                       activatedAt
                       status
                       retiredAt
+                      lastUsed
                     }
                   }
                   totalCount
@@ -91,6 +92,7 @@ const AffectedDeploymentsQuery = graphql(`
                       activatedAt
                       status
                       retiredAt
+                      lastUsed
                     }
                   }
                   totalCount
@@ -117,6 +119,7 @@ type AffectedDeployment = {
   activatedAt: string | null;
   status: string;
   retiredAt: string | null;
+  lastUsed: string | null;
 };
 
 const PAGE_SIZE = 20;
@@ -182,10 +185,11 @@ function TargetChecksAffectedDeploymentsContent(props: {
               name: edge.node.name,
               version: edge.node.version,
               totalOperations: edge.node.totalAffectedOperations,
-              createdAt: edge.node.createdAt,
+              createdAt: edge.node.createdAt ?? null,
               activatedAt: edge.node.activatedAt ?? null,
               status: edge.node.status,
               retiredAt: edge.node.retiredAt ?? null,
+              lastUsed: edge.node.lastUsed ?? null,
             }),
           ) ?? [];
 
@@ -299,6 +303,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                     <TableHead>Status</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Activated</TableHead>
+                    <TableHead>Last Used</TableHead>
                     <TableHead className="text-right">Total Operations</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -345,6 +350,15 @@ function TargetChecksAffectedDeploymentsContent(props: {
                         {deployment.activatedAt ? (
                           <span className="text-xs">
                             <DateWithTimeAgo date={deployment.activatedAt} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {deployment.lastUsed ? (
+                          <span className="text-xs">
+                            <DateWithTimeAgo date={deployment.lastUsed} />
                           </span>
                         ) : (
                           <span className="text-neutral-10 text-xs">—</span>

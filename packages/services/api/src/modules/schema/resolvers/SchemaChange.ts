@@ -79,9 +79,7 @@ export const SchemaChange: Pick<
         retiredAt: d.retiredAt ?? null,
         status: d.retiredAt
           ? ('retired' as const)
-          : d.activatedAt
-            ? ('active' as const)
-            : ('pending' as const),
+          : ('active' as const),
         operations: d.affectedOperations,
         totalOperations: d.affectedOperations.length,
       },

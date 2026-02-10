@@ -621,6 +621,10 @@ export default gql`
     """
     retiredAt: DateTime @tag(name: "public")
     """
+    The last time a GraphQL request that used the app deployment was reported.
+    """
+    lastUsed: DateTime @tag(name: "public")
+    """
     The operations within this app deployment that use the affected schema coordinate.
     """
     affectedOperations(

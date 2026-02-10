@@ -11,7 +11,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { Heading } from '@/components/ui/heading';
 import { PulseIcon } from '@/components/ui/icon';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
@@ -101,6 +104,10 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
           id
           name
           version
+          status
+          createdAt
+          activatedAt
+          lastUsed
           affectedOperations(first: 5) {
             edges {
               cursor
@@ -425,13 +432,17 @@ function ChangeItem(
                     Affected App Deployments
                   </h4>
                   <p className="text-neutral-10 mb-2 text-sm">
-                    Top 5 active app deployments that have operations using this schema coordinate.
+                    Top 5 active app deployments that have operations using this schema coordinate (snapshot from when the check was run).
                   </p>
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[200px]">App Name</TableHead>
                         <TableHead>Version</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Activated</TableHead>
+                        <TableHead className="text-end">Last Used</TableHead>
                         <TableHead className="text-right">Affected Operations</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -455,6 +466,49 @@ function ChangeItem(
                             </Link>
                           </TableCell>
                           <TableCell>{deployment.version}</TableCell>
+                          <TableCell>
+                            <Badge className="text-xs" variant="secondary">
+                              <DeploymentStatusLabel status={deployment.status} />
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {deployment.createdAt ? (
+                              <span className="text-neutral-11 cursor-help text-xs">
+                                <TimeAgo date={deployment.createdAt} />
+                              </span>
+                            ) : (
+                              <span className="text-neutral-10 text-xs">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {deployment.activatedAt ? (
+                              <span className="text-neutral-11 cursor-help text-xs">
+                                <TimeAgo date={deployment.activatedAt} />
+                              </span>
+                            ) : (
+                              <span className="text-neutral-10 text-xs">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-end">
+                            {deployment.lastUsed ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <span className="text-neutral-11 cursor-help text-xs">
+                                      <TimeAgo date={deployment.lastUsed} />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="text-neutral-10 text-xs">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Popover>
                               <PopoverTrigger asChild>
@@ -523,13 +577,17 @@ function ChangeItem(
             <div>
               <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
               <p className="text-neutral-10 mb-2 text-sm">
-                Top 5 active app deployments that have operations using this schema coordinate.
+                Top 5 active app deployments that have operations using this schema coordinate (snapshot from when the check was run).
               </p>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Activated</TableHead>
+                    <TableHead className="text-end">Last Used</TableHead>
                     <TableHead className="text-right">Affected Operations</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -553,6 +611,49 @@ function ChangeItem(
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
+                      <TableCell>
+                        <Badge className="text-xs" variant="secondary">
+                          <DeploymentStatusLabel status={deployment.status} />
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {deployment.createdAt ? (
+                          <span className="text-neutral-11 cursor-help text-xs">
+                            <TimeAgo date={deployment.createdAt} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {deployment.activatedAt ? (
+                          <span className="text-neutral-11 cursor-help text-xs">
+                            <TimeAgo date={deployment.activatedAt} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {deployment.lastUsed ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <span className="text-neutral-11 cursor-help text-xs">
+                                  <TimeAgo date={deployment.lastUsed} />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Popover>
                           <PopoverTrigger asChild>
