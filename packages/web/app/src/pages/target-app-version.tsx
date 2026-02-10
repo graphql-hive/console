@@ -7,6 +7,7 @@ import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
@@ -341,12 +341,10 @@ function TargetAppVersionContent(props: {
                   <div className="text-xs">Created</div>
                   <div className="text-neutral-12 text-sm font-semibold">
                     {appDeployment?.createdAt ? (
-                      <>
-                        {format(appDeployment.createdAt, 'MMM d, yyyy HH:mm:ss')}{' '}
-                        <span className="text-neutral-10 font-normal">
-                          (<TimeAgo date={appDeployment.createdAt} />)
-                        </span>
-                      </>
+                      <DateWithTimeAgo
+                        date={appDeployment.createdAt}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
                     ) : (
                       '...'
                     )}
@@ -356,12 +354,10 @@ function TargetAppVersionContent(props: {
                   <div className="text-xs">Activated</div>
                   <div className="text-neutral-12 text-sm font-semibold">
                     {appDeployment?.activatedAt ? (
-                      <>
-                        {format(appDeployment.activatedAt, 'MMM d, yyyy HH:mm:ss')}{' '}
-                        <span className="text-neutral-10 font-normal">
-                          (<TimeAgo date={appDeployment.activatedAt} />)
-                        </span>
-                      </>
+                      <DateWithTimeAgo
+                        date={appDeployment.activatedAt}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
                     ) : (
                       <span className="text-neutral-10 font-normal">—</span>
                     )}
@@ -373,12 +369,10 @@ function TargetAppVersionContent(props: {
                     {data.fetching ? (
                       '...'
                     ) : appDeployment?.lastUsed ? (
-                      <>
-                        {format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}{' '}
-                        <span className="text-neutral-10 font-normal">
-                          (<TimeAgo date={appDeployment.lastUsed} />)
-                        </span>
-                      </>
+                      <DateWithTimeAgo
+                        date={appDeployment.lastUsed}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
                     ) : (
                       <span className="text-neutral-10 font-normal">No Usage Data</span>
                     )}

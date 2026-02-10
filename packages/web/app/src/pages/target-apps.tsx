@@ -6,6 +6,8 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
+import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -145,29 +147,22 @@ function AppTableRow(props: {
       </TableCell>
       <TableCell className="hidden text-center sm:table-cell">
         <Badge className="text-xs" variant="secondary">
-          {appDeployment.status === 'retired' && appDeployment.retiredAt ? (
-            <span>retired ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>
-          ) : (
-            appDeployment.status
-          )}
+          <DeploymentStatusLabel
+            status={appDeployment.status}
+            retiredAt={appDeployment.retiredAt}
+          />
         </Badge>
       </TableCell>
       <TableCell className="text-center">{appDeployment.totalDocumentCount}</TableCell>
       <TableCell className="hidden text-center sm:table-cell">
         <span className="text-xs">
-          {format(appDeployment.createdAt, 'MMM d, yyyy')}{' '}
-          <span className="text-neutral-10">
-            (<TimeAgo date={appDeployment.createdAt} />)
-          </span>
+          <DateWithTimeAgo date={appDeployment.createdAt} />
         </span>
       </TableCell>
       <TableCell className="hidden text-center sm:table-cell">
         {appDeployment.activatedAt ? (
           <span className="text-xs">
-            {format(appDeployment.activatedAt, 'MMM d, yyyy')}{' '}
-            <span className="text-neutral-10">
-              (<TimeAgo date={appDeployment.activatedAt} />)
-            </span>
+            <DateWithTimeAgo date={appDeployment.activatedAt} />
           </span>
         ) : (
           <span className="text-neutral-10 text-xs">—</span>

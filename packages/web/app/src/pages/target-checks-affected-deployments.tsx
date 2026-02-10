@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { format } from 'date-fns';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
+import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -17,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
 import { Link } from '@tanstack/react-router';
 
@@ -326,28 +326,21 @@ function TargetChecksAffectedDeploymentsContent(props: {
                       <TableCell>{deployment.version}</TableCell>
                       <TableCell>
                         <Badge className="text-xs" variant="secondary">
-                          {deployment.status === 'retired' && deployment.retiredAt ? (
-                            <span>retired ({format(deployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>
-                          ) : (
-                            deployment.status
-                          )}
+                          <DeploymentStatusLabel
+                            status={deployment.status}
+                            retiredAt={deployment.retiredAt}
+                          />
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs">
-                          {format(deployment.createdAt, 'MMM d, yyyy')}{' '}
-                          <span className="text-neutral-10">
-                            (<TimeAgo date={deployment.createdAt} />)
-                          </span>
+                          <DateWithTimeAgo date={deployment.createdAt} />
                         </span>
                       </TableCell>
                       <TableCell>
                         {deployment.activatedAt ? (
                           <span className="text-xs">
-                            {format(deployment.activatedAt, 'MMM d, yyyy')}{' '}
-                            <span className="text-neutral-10">
-                              (<TimeAgo date={deployment.activatedAt} />)
-                            </span>
+                            <DateWithTimeAgo date={deployment.activatedAt} />
                           </span>
                         ) : (
                           <span className="text-neutral-10 text-xs">—</span>
