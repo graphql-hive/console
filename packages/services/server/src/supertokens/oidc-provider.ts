@@ -335,15 +335,6 @@ export function describeOIDCSignInError(error: unknown): string {
     return 'Your OIDC provider rejected the requested scopes. Please review the additional scopes configured in your OIDC integration settings.';
   }
 
-  if (
-    message.includes('ECONNREFUSED') ||
-    message.includes('ENOTFOUND') ||
-    message.includes('ETIMEDOUT') ||
-    message.includes('fetch failed')
-  ) {
-    return 'Could not connect to your OIDC provider. Please verify the endpoint URLs in your OIDC integration settings are correct and the server is accessible.';
-  }
-
   if (message.includes('Could not find OIDC integration')) {
     return 'The OIDC integration could not be found. It may have been removed or misconfigured. Please contact your organization administrator.';
   }
@@ -358,6 +349,15 @@ export function describeOIDCSignInError(error: unknown): string {
 
   if (message.includes('Could not parse profile info')) {
     return "Your OIDC provider's user info endpoint did not return the required fields (sub, email). Please verify your OIDC provider is configured to include these claims.";
+  }
+
+  if (
+    message.includes('ECONNREFUSED') ||
+    message.includes('ENOTFOUND') ||
+    message.includes('ETIMEDOUT') ||
+    message.includes('fetch failed')
+  ) {
+    return 'Could not connect to your OIDC provider. Please verify the endpoint URLs in your OIDC integration settings are correct and the server is accessible.';
   }
 
   return 'An unexpected error occurred while authenticating with your OIDC provider. Please verify your OIDC integration configuration or contact your administrator.';
