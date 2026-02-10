@@ -123,22 +123,23 @@ export function useHiveErrorHandler(): Plugin {
     }
 
     for (const error of errors) {
-      if (isGraphQLError(error)) {
-        console.error(error);
-        console.error(error.originalError);
+      // always log the error (this is always the unmasked error)
+      context.contextValue.req.log.error(error);
 
-        // If the original error is a graphql error, we don't need to report it
-        // it is an expected error
-        if (!isGraphQLError(error.originalError)) {
-          reportError(error as unknown as GraphQLError);
+      if (isGraphQLError(error)) {
+        // in this case it is a GraphQL validation error
+        // or an expected error we do not need to log/report
+        if (!error.originalError || isGraphQLError(error.originalError)) {
+          continue;
         }
+
+        context.contextValue.req.log.error(error.originalError);
+        reportError(error);
         continue;
       } else {
-        console.error(error);
+        // if the error is not a GraphQL error we should always report.
         reportError(error);
       }
-
-      context.contextValue.req.log.error(error);
     }
   });
 }
