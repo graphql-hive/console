@@ -341,7 +341,7 @@ export function describeOIDCSignInError(error: unknown): string {
     message.includes('ETIMEDOUT') ||
     message.includes('fetch failed')
   ) {
-    return "Could not connect to your OIDC provider. Please verify the endpoint URLs in your OIDC integration settings are correct and the server is accessible.";
+    return 'Could not connect to your OIDC provider. Please verify the endpoint URLs in your OIDC integration settings are correct and the server is accessible.';
   }
 
   if (message.includes('Could not find OIDC integration')) {
