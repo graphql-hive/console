@@ -13,7 +13,6 @@ __snapshots__/
 /packages/web/app/src/graphql/index.ts
 /packages/web/app/next.config.mjs
 /packages/migrations/test/utils/testkit.ts
-/packages/web/app/storybook-static
 /packages/web/docs/out/
 /packages/web/docs/public/privacy-policy.html
 
