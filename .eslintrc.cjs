@@ -46,6 +46,7 @@ module.exports = {
     'rules',
     'out',
     '.hive',
+    'packages/web/app/.ladle/**',
     'public',
     'packages/web/app/src/graphql/index.ts',
     'packages/libraries/cli/src/sdk.ts',
