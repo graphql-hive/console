@@ -58,20 +58,26 @@ describe('describeOIDCSignInError', () => {
   });
 
   test('network error: ECONNREFUSED', () => {
-    const error = new Error('request to https://login.example.com/token failed, reason: connect ECONNREFUSED 127.0.0.1:443');
+    const error = new Error(
+      'request to https://login.example.com/token failed, reason: connect ECONNREFUSED 127.0.0.1:443',
+    );
     const message = describeOIDCSignInError(error);
     expect(message).toContain('Could not connect');
     expect(message).toContain('endpoint URLs');
   });
 
   test('network error: ENOTFOUND', () => {
-    const error = new Error('request to https://nonexistent.example.com/token failed, reason: getaddrinfo ENOTFOUND nonexistent.example.com');
+    const error = new Error(
+      'request to https://nonexistent.example.com/token failed, reason: getaddrinfo ENOTFOUND nonexistent.example.com',
+    );
     const message = describeOIDCSignInError(error);
     expect(message).toContain('Could not connect');
   });
 
   test('network error: ETIMEDOUT', () => {
-    const error = new Error('request to https://slow.example.com/token failed, reason: connect ETIMEDOUT');
+    const error = new Error(
+      'request to https://slow.example.com/token failed, reason: connect ETIMEDOUT',
+    );
     const message = describeOIDCSignInError(error);
     expect(message).toContain('Could not connect');
   });
@@ -90,7 +96,9 @@ describe('describeOIDCSignInError', () => {
   });
 
   test('userinfo endpoint returned non-200 status', () => {
-    const error = new Error("Received invalid status code. Could not retrieve user's profile info.");
+    const error = new Error(
+      "Received invalid status code. Could not retrieve user's profile info.",
+    );
     const message = describeOIDCSignInError(error);
     expect(message).toContain('user info endpoint returned an error');
     expect(message).toContain('verify the user info endpoint URL');
