@@ -46,7 +46,7 @@ export type AffectedAppDeployment = {
     id: string;
     name: string;
     version: string;
-    createdAt: string;
+    createdAt: string | null;
     activatedAt: string | null;
     retiredAt: string | null;
   };

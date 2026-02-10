@@ -1098,22 +1098,33 @@ export class AppDeployments {
     );
 
     const deploymentIds = activeDeployments.map(d => d.appDeploymentId);
-    const timestampsResult = await this.pool.query<{
-      id: string;
-      createdAt: string;
-      activatedAt: string | null;
-      retiredAt: string | null;
-    }>(
-      sql`
-        SELECT
-          "id",
-          to_json("created_at") AS "createdAt",
-          to_json("activated_at") AS "activatedAt",
-          to_json("retired_at") AS "retiredAt"
-        FROM "app_deployments"
-        WHERE "id" = ANY(${sql.array(deploymentIds, 'uuid')})
-      `,
-    );
+    let timestampsResult;
+    try {
+      timestampsResult = await this.pool.query<{
+        id: string;
+        createdAt: string;
+        activatedAt: string | null;
+        retiredAt: string | null;
+      }>(
+        sql`
+          SELECT
+            "id",
+            to_json("created_at") AS "createdAt",
+            to_json("activated_at") AS "activatedAt",
+            to_json("retired_at") AS "retiredAt"
+          FROM "app_deployments"
+          WHERE "id" = ANY(${sql.array(deploymentIds, 'uuid')})
+        `,
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to fetch deployment timestamps from postgres (targetId=%s, deploymentCount=%d): %s',
+        args.targetId,
+        deploymentIds.length,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
 
     const deploymentTimestamps = new Map(
       timestampsResult.rows.map(row => [
@@ -1390,7 +1401,7 @@ export class AppDeployments {
             id: deploymentId,
             name: info.name,
             version: info.version,
-            createdAt: timestamps?.createdAt ?? '',
+            createdAt: timestamps?.createdAt ?? null,
             activatedAt: timestamps?.activatedAt ?? null,
             retiredAt: timestamps?.retiredAt ?? null,
           },

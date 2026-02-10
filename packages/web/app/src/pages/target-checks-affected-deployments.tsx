@@ -113,7 +113,7 @@ type AffectedDeployment = {
   name: string;
   version: string;
   totalOperations: number;
-  createdAt: string;
+  createdAt: string | null;
   activatedAt: string | null;
   status: string;
   retiredAt: string | null;
@@ -333,9 +333,13 @@ function TargetChecksAffectedDeploymentsContent(props: {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-xs">
-                          <DateWithTimeAgo date={deployment.createdAt} />
-                        </span>
+                        {deployment.createdAt ? (
+                          <span className="text-xs">
+                            <DateWithTimeAgo date={deployment.createdAt} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {deployment.activatedAt ? (

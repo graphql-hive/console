@@ -315,7 +315,7 @@ export type SchemaChangeAffectedAppDeploymentMapper = {
   id: string;
   name: string;
   version: string;
-  createdAt: string;
+  createdAt: string | null;
   activatedAt: string | null;
   retiredAt: string | null;
   status: 'pending' | 'active' | 'retired';

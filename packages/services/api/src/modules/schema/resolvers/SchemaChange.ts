@@ -74,7 +74,7 @@ export const SchemaChange: Pick<
         id: d.id,
         name: d.name,
         version: d.version,
-        createdAt: d.createdAt ?? new Date(0).toISOString(),
+        createdAt: d.createdAt ?? null,
         activatedAt: d.activatedAt ?? null,
         retiredAt: d.retiredAt ?? null,
         status: d.retiredAt
