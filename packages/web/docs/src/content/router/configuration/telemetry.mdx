@@ -26,16 +26,9 @@ useful if you want to identify different versions of clients consuming your Grap
 
 Hive-specific telemetry options.
 
-### endpoint
-
-- **Type:** `string` or expression
-- **Default:** `https://api.graphql-hive.com/otel/v1/traces`
-
-Hive traces ingestion endpoint.
-
 ### token
 
-- **Type:** `string`
+- **Type:** `string` or `{ expression }`
 
 Your [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.
 
@@ -43,7 +36,7 @@ Alternatively, you can set the `HIVE_ACCESS_TOKEN` environment variable to provi
 
 ### target
 
-- **Type:** `string`
+- **Type:** `string` or `{ expression }`
 
 A target ID, this can either be a slug following the format
 `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`) or an UUID (e.g.
@@ -127,3 +120,18 @@ A timeout for the entire request to Hive Console, in duration format (e.g., `15s
 
 The interval in seconds at which the usage report buffer is flushed and sent to Hive Console. In
 duration format (e.g., `5s` for 5 seconds).
+
+
+### tracing
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+If set to `true`, the Hive Router will send traces to Hive Console.
+
+#### endpoint
+
+- **Type:** `string` or `{ expression }`
+- **Default:** `https://api.graphql-hive.com/otel/v1/traces`
+
+Hive Console's traces ingestion endpoint.
