@@ -280,7 +280,7 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-neutral-2 hover:underline"
+              className="text-orange-500 hover:underline"
             >
               Clear filter
             </Link>

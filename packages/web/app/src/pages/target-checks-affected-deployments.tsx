@@ -250,7 +250,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   targetSlug: props.targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
-                className="text-neutral-2 hover:underline"
+                className="text-orange-500 hover:underline"
               >
                 Schema Check
               </Link>
