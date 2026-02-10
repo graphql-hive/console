@@ -29,6 +29,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
+import { cn } from '@/lib/utils';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
@@ -105,6 +106,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const providerTexts = member.user.providers.map(
     provider => authProviderToIconAndTextMap[provider].text,
   );
+  const oidcAccessOnly = organization.oidcIntegration?.oidcUserAccessOnly && !member.isOwner;
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -177,12 +179,22 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                   <div className="flex gap-1">
                     {member.user.providers.map(provider => {
                       const Icon = authProviderToIconAndTextMap[provider].icon;
-                      return <Icon key={provider} className="size-4" />;
+                      return (
+                        <Icon
+                          key={provider}
+                          className={cn(
+                            'size-4',
+                            oidcAccessOnly && provider !== 'OIDC' && 'text-neutral-7',
+                          )}
+                        />
+                      );
                     })}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>
-                  User's authentication methods: {providerTexts.join(', ')}
+                <TooltipContent className="text-center">
+                  {oidcAccessOnly
+                    ? 'Non-OIDC authentication methods are disabled in the OIDC settings'
+                    : `User's authentication methods: ${providerTexts.join(', ')}`}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -315,6 +327,9 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       }
     }
     viewerCanManageInvitations
+    oidcIntegration {
+      oidcUserAccessOnly
+    }
     ...MemberInvitationForm_OrganizationFragment
     ...MemberRole_OrganizationFragment
   }
