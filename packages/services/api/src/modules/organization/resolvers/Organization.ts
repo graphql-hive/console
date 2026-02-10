@@ -54,10 +54,6 @@ export const Organization: Pick<
       userId: me.id,
     });
 
-    if (!member) {
-      return null;
-    }
-
     return member;
   },
   members: (organization, args, { injector }) => {
