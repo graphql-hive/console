@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
@@ -61,6 +62,8 @@ const TargetAppsVersionQuery = graphql(`
         name
         version
         createdAt
+        activatedAt
+        retiredAt
         lastUsed
         totalDocumentCount
         status
@@ -320,7 +323,12 @@ function TargetAppVersionContent(props: {
                       appDeployment?.status === AppDeploymentStatus.Pending && 'text-neutral-11',
                     )}
                   >
-                    {appDeployment?.status.toUpperCase() ?? '...'}
+                    {appDeployment?.status === AppDeploymentStatus.Retired &&
+                    appDeployment?.retiredAt ? (
+                      <span>RETIRED ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>
+                    ) : (
+                      (appDeployment?.status.toUpperCase() ?? '...')
+                    )}
                   </div>
                 </div>
                 <div className="min-w-0">
@@ -329,20 +337,52 @@ function TargetAppVersionContent(props: {
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
-                <div className="min-w-0 text-xs">
-                  Created{' '}
-                  {appDeployment?.createdAt ? <TimeAgo date={appDeployment.createdAt} /> : '...'}
+                <div className="min-w-0">
+                  <div className="text-xs">Created</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {appDeployment?.createdAt ? (
+                      <>
+                        {format(appDeployment.createdAt, 'MMM d, yyyy HH:mm:ss')}{' '}
+                        <span className="text-neutral-10 font-normal">
+                          (<TimeAgo date={appDeployment.createdAt} />)
+                        </span>
+                      </>
+                    ) : (
+                      '...'
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0 text-xs">
-                  {data.fetching ? (
-                    '...'
-                  ) : appDeployment?.lastUsed ? (
-                    <>
-                      Last Used <TimeAgo date={appDeployment.lastUsed} />
-                    </>
-                  ) : (
-                    'No Usage Data'
-                  )}
+                <div className="min-w-0">
+                  <div className="text-xs">Activated</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {appDeployment?.activatedAt ? (
+                      <>
+                        {format(appDeployment.activatedAt, 'MMM d, yyyy HH:mm:ss')}{' '}
+                        <span className="text-neutral-10 font-normal">
+                          (<TimeAgo date={appDeployment.activatedAt} />)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-neutral-10 font-normal">—</span>
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Last Used</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {data.fetching ? (
+                      '...'
+                    ) : appDeployment?.lastUsed ? (
+                      <>
+                        {format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}{' '}
+                        <span className="text-neutral-10 font-normal">
+                          (<TimeAgo date={appDeployment.lastUsed} />)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-neutral-10 font-normal">No Usage Data</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

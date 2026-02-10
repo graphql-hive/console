@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { format } from 'date-fns';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -15,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
 import { Link } from '@tanstack/react-router';
 
@@ -54,6 +57,10 @@ const AffectedDeploymentsQuery = graphql(`
                       name
                       version
                       totalAffectedOperations
+                      createdAt
+                      activatedAt
+                      status
+                      retiredAt
                     }
                   }
                   totalCount
@@ -80,6 +87,10 @@ const AffectedDeploymentsQuery = graphql(`
                       name
                       version
                       totalAffectedOperations
+                      createdAt
+                      activatedAt
+                      status
+                      retiredAt
                     }
                   }
                   totalCount
@@ -102,6 +113,10 @@ type AffectedDeployment = {
   name: string;
   version: string;
   totalOperations: number;
+  createdAt: string;
+  activatedAt: string | null;
+  status: string;
+  retiredAt: string | null;
 };
 
 const PAGE_SIZE = 20;
@@ -167,6 +182,10 @@ function TargetChecksAffectedDeploymentsContent(props: {
               name: edge.node.name,
               version: edge.node.version,
               totalOperations: edge.node.totalAffectedOperations,
+              createdAt: edge.node.createdAt,
+              activatedAt: edge.node.activatedAt ?? null,
+              status: edge.node.status,
+              retiredAt: edge.node.retiredAt ?? null,
             }),
           ) ?? [];
 
@@ -277,6 +296,9 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Activated</TableHead>
                     <TableHead className="text-right">Total Operations</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -302,6 +324,35 @@ function TargetChecksAffectedDeploymentsContent(props: {
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
+                      <TableCell>
+                        <Badge className="text-xs" variant="secondary">
+                          {deployment.status === 'retired' && deployment.retiredAt ? (
+                            <span>retired ({format(deployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>
+                          ) : (
+                            deployment.status
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs">
+                          {format(deployment.createdAt, 'MMM d, yyyy')}{' '}
+                          <span className="text-neutral-10">
+                            (<TimeAgo date={deployment.createdAt} />)
+                          </span>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {deployment.activatedAt ? (
+                          <span className="text-xs">
+                            {format(deployment.activatedAt, 'MMM d, yyyy')}{' '}
+                            <span className="text-neutral-10">
+                              (<TimeAgo date={deployment.activatedAt} />)
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="link" className="h-auto p-0" asChild>
                           <Link

@@ -1097,6 +1097,35 @@ export class AppDeployments {
       activeDeployments.map(d => [d.appDeploymentId, { name: d.appName, version: d.appVersion }]),
     );
 
+    const deploymentIds = activeDeployments.map(d => d.appDeploymentId);
+    const timestampsResult = await this.pool.query<{
+      id: string;
+      createdAt: string;
+      activatedAt: string | null;
+      retiredAt: string | null;
+    }>(
+      sql`
+        SELECT
+          "id",
+          to_json("created_at") AS "createdAt",
+          to_json("activated_at") AS "activatedAt",
+          to_json("retired_at") AS "retiredAt"
+        FROM "app_deployments"
+        WHERE "id" = ANY(${sql.array(deploymentIds, 'uuid')})
+      `,
+    );
+
+    const deploymentTimestamps = new Map(
+      timestampsResult.rows.map(row => [
+        row.id,
+        {
+          createdAt: row.createdAt,
+          activatedAt: row.activatedAt,
+          retiredAt: row.retiredAt,
+        },
+      ]),
+    );
+
     // Count total affected deployments
     let countResult;
     try {
@@ -1355,11 +1384,15 @@ export class AppDeployments {
           }
         }
 
+        const timestamps = deploymentTimestamps.get(deploymentId);
         deployments.push({
           appDeployment: {
             id: deploymentId,
             name: info.name,
             version: info.version,
+            createdAt: timestamps?.createdAt ?? '',
+            activatedAt: timestamps?.activatedAt ?? null,
+            retiredAt: timestamps?.retiredAt ?? null,
           },
           affectedOperationsByCoordinate: operations,
           countByCoordinate: coordCounts ? Object.fromEntries(coordCounts) : {},

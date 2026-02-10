@@ -315,6 +315,10 @@ export type SchemaChangeAffectedAppDeploymentMapper = {
   id: string;
   name: string;
   version: string;
+  createdAt: string;
+  activatedAt: string | null;
+  retiredAt: string | null;
+  status: 'pending' | 'active' | 'retired';
   operations: Array<{
     hash: string;
     name: string | null;

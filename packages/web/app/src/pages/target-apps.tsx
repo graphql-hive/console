@@ -33,6 +33,9 @@ const AppTableRow_AppDeploymentFragment = graphql(`
     version
     status
     totalDocumentCount
+    createdAt
+    activatedAt
+    retiredAt
     lastUsed
   }
 `);
@@ -142,23 +145,46 @@ function AppTableRow(props: {
       </TableCell>
       <TableCell className="hidden text-center sm:table-cell">
         <Badge className="text-xs" variant="secondary">
-          {appDeployment.status}
+          {appDeployment.status === 'retired' && appDeployment.retiredAt ? (
+            <span>retired ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>
+          ) : (
+            appDeployment.status
+          )}
         </Badge>
       </TableCell>
       <TableCell className="text-center">{appDeployment.totalDocumentCount}</TableCell>
+      <TableCell className="hidden text-center sm:table-cell">
+        <span className="text-xs">
+          {format(appDeployment.createdAt, 'MMM d, yyyy')}{' '}
+          <span className="text-neutral-10">
+            (<TimeAgo date={appDeployment.createdAt} />)
+          </span>
+        </span>
+      </TableCell>
+      <TableCell className="hidden text-center sm:table-cell">
+        {appDeployment.activatedAt ? (
+          <span className="text-xs">
+            {format(appDeployment.activatedAt, 'MMM d, yyyy')}{' '}
+            <span className="text-neutral-10">
+              (<TimeAgo date={appDeployment.activatedAt} />)
+            </span>
+          </span>
+        ) : (
+          <span className="text-neutral-10 text-xs">—</span>
+        )}
+      </TableCell>
       <TableCell className="text-end">
         {appDeployment.lastUsed ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                <TimeAgo date={appDeployment.lastUsed} className="cursor-help text-xs" />{' '}
+                <Badge className="cursor-help text-xs" variant="outline">
+                  <TimeAgo date={appDeployment.lastUsed} />
+                </Badge>
               </TooltipTrigger>
               <TooltipContent>
                 <p>
-                  {'Last operation reported on '}
-                  {format(appDeployment.lastUsed, 'dd.MM.yyyy')}
-                  {' at '}
-                  {format(appDeployment.lastUsed, 'HH:mm')}
+                  {format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -281,6 +307,8 @@ function TargetAppsView(props: {
                   <TableHead className="hidden text-center sm:table-cell">
                     Amount of Documents
                   </TableHead>
+                  <TableHead className="hidden text-center sm:table-cell">Created</TableHead>
+                  <TableHead className="hidden text-center sm:table-cell">Activated</TableHead>
                   <TableHead className="hidden text-end sm:table-cell">
                     <TooltipProvider>
                       <Tooltip>
