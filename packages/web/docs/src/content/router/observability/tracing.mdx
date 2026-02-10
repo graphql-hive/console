@@ -154,8 +154,9 @@ overwhelming storage or blowing up costs.
 
 ## Batching and throughput tuning
 
-Batching settings control how traces move from the
-router to your OTLP endpoint. You're able to tune these settings to control delivery latency of traces, resilience during traffic spikes and memory pressure on the router.
+Batching settings control how traces move from the router to your OTLP endpoint. You're able to tune
+these settings to control delivery latency of traces, resilience during traffic spikes and memory
+pressure on the router.
 
 | Field                    | You'd usually increase this when                                  | Tradeoff                         |
 | ------------------------ | ----------------------------------------------------------------- | -------------------------------- |
@@ -165,9 +166,10 @@ router to your OTLP endpoint. You're able to tune these settings to control deli
 | `max_export_timeout`     | Your OTLP endpoint or network is occasionally slow                | Longer waits on blocked exports  |
 | `max_concurrent_exports` | Your OTLP endpoint can handle more parallel uploads               | Higher downstream pressure       |
 
-As a quick rule: 
+As a quick rule:
+
 - if traces arrive late, lower `scheduled_delay`.
-- if traces drop under burst load, increase `max_queue_size` first. 
+- if traces drop under burst load, increase `max_queue_size` first.
 - if your OTLP collector has headroom, raise `max_concurrent_exports`.
 
 ## Propagation
@@ -177,13 +179,17 @@ most modern OpenTelemetry setups, `trace_context` is the safest default.
 
 You should only enable `b3` or `jaeger` when those formats are required by other components.
 
-If clients send custom tracing headers, make sure your [CORS configuration](/docs/router/security/cors) allows those headers through.
+If clients send custom tracing headers, make sure your
+[CORS configuration](/docs/router/security/cors) allows those headers through.
 
 ## Compliance with OpenTelemetry Semantic Conventions
 
-OpenTelemetry has standardized attribute names used on spans. Those conventions ensure that telemetry produced by different services, libraries, and vendors is consistent and understandable across tools.
+OpenTelemetry has standardized attribute names used on spans. Those conventions ensure that
+telemetry produced by different services, libraries, and vendors is consistent and understandable
+across tools.
 
-The behavior is controlled by `telemetry.tracing.instrumentation.spans.mode`, which selects which attribute set is written to spans:
+The behavior is controlled by `telemetry.tracing.instrumentation.spans.mode`, which selects which
+attribute set is written to spans:
 
 - `spec_compliant` (default) - emits only the stable attributes
 - `deprecated` - emits only the deprecated attributes
@@ -197,21 +203,25 @@ telemetry:
         mode: spec_compliant
 ```
 
-Most teams should stay on `spec_compliant`. The other modes are primarily useful when migrating legacy dashboards that still expect deprecated attributes.
+Most teams should stay on `spec_compliant`. The other modes are primarily useful when migrating
+legacy dashboards that still expect deprecated attributes.
 
 ## Troubleshooting
 
-When traces are missing or incomplete, think in layers: 
+When traces are missing or incomplete, think in layers:
+
 - exporter setup
 - sampling behavior
 - propagation
 - transport
 
-If no traces appear at all, verify if the exporter is enabled, the endpoint is reachable, and credentials are valid.
+If no traces appear at all, verify if the exporter is enabled, the endpoint is reachable, and
+credentials are valid.
 
 If spans show up but links are broken, propagation formats are usually misaligned between services.
 
-If under high load, traces are delayed or dropped, then often it's a batch processor issue. In that case [tune the batch processor settings](#batching-and-throughput-tuning) and observe.
+If under high load, traces are delayed or dropped, then often it's a batch processor issue. In that
+case [tune the batch processor settings](#batching-and-throughput-tuning) and observe.
 
 ## Configuration reference
 

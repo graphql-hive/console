@@ -9,29 +9,34 @@ tracing behavior in Hive Router.
 
 ## client_identification
 
-| Field | Type | Notes |
-| ----- | ---- | ----- |
+Configure how Hive Router identifies calling clients in telemetry, based on request headers.
+
+| Field            | Type     | Notes                                                        |
+| ---------------- | -------- | ------------------------------------------------------------ |
 | `name_header`    | `string` | HTTP header used to read client name for usage reporting.    |
 | `version_header` | `string` | HTTP header used to read client version for usage reporting. |
 
 ```yaml filename="router.config.yaml"
 telemetry:
   client_identification:
-    name_header: graphql-client-name        # default
-    version_header: graphql-client-version  # default
+    name_header: graphql-client-name # default
+    version_header: graphql-client-version # default
 ```
 
 ## resource
 
-| Field | Type  | Default | Notes |
-| ----- | ----- | ------- | ----- |
-| `attributes` | `object` | `{}` | Additional OpenTelemetry resource attributes |
+Attach OpenTelemetry resource attributes that describe this router instance, such as service name,
+version, or environment.
+
+| Field        | Type     | Default | Notes                                        |
+| ------------ | -------- | ------- | -------------------------------------------- |
+| `attributes` | `object` | `{}`    | Additional OpenTelemetry resource attributes |
 
 ```yaml filename="router.config.yaml"
 telemetry:
   resource:
     attributes:
-      service.name: 
+      service.name:
         expression: env("SERVICE_NAME")
       service.version: 1.0.0
 ```
@@ -43,16 +48,17 @@ Hive-specific telemetry options.
 <details>
   <summary>Show hive configuration</summary>
 
-| Field | Type | Notes |
-| ----- | ---- | ----- |
-| `token`  | `StringOrExpression` | Your [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.<br />You can also set `HIVE_ACCESS_TOKEN`.                                                                       |
-| `target` | `StringOrExpression` | Target ID as slug (`the-guild/graphql-hive/staging`) or UUID (`a0f4c605-6541-4350-8cfe-b31f21a4bf80`).<br />You can also set `HIVE_TARGET`. |
+| Field    | Type                 | Notes                                                                                                                                           |
+| -------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`  | `StringOrExpression` | Your [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.<br />You can also set `HIVE_ACCESS_TOKEN`. |
+| `target` | `StringOrExpression` | Target ID as slug (`the-guild/graphql-hive/staging`) or UUID (`a0f4c605-6541-4350-8cfe-b31f21a4bf80`).<br />You can also set `HIVE_TARGET`.     |
 
 <div id="usage_reporting" style={{marginTop: 10}}>
 <details>
   <summary>usage_reporting</summary>
 
-Allows you to control how the Hive Router does [usage reporting](/docs/schema-registry/usage-reporting) to Hive Console.
+Allows you to control how the Hive Router does
+[usage reporting](/docs/schema-registry/usage-reporting) to Hive Console.
 
 > For additional information about the usage reporting process in Hive Router, see the
 > [Usage Reporting page](/docs/router/observability/usage_reporting).
@@ -74,7 +80,7 @@ telemetry:
   hive:
     usage_reporting:
       enabled: true
-      exclude: ["IntrospectionQuery"]
+      exclude: ['IntrospectionQuery']
 ```
 
 </details>
@@ -86,11 +92,11 @@ telemetry:
 
 This configuration object controls sending traces to Hive Console.
 
-| Field             | Type                         | Default                                       | Notes                                                         |
-| ----------------- | ---------------------------- | --------------------------------------------- | ------------------------------------------------------------- |
-| `enabled`         | `boolean`                    | `false`                                       | If `true`, the Hive Router sends traces to Hive Console.      |
+| Field             | Type                 | Default                                       | Notes                                                         |
+| ----------------- | -------------------- | --------------------------------------------- | ------------------------------------------------------------- |
+| `enabled`         | `boolean`            | `false`                                       | If `true`, the Hive Router sends traces to Hive Console.      |
 | `endpoint`        | `StringOrExpression` | `https://api.graphql-hive.com/otel/v1/traces` | Hive Console traces ingestion endpoint.                       |
-| `batch_processor` | `object`                     | -                                             | See [`batch_processor`](#hive-tracing-batch-processor) below. |
+| `batch_processor` | `object`             | -                                             | See [`batch_processor`](#hive-tracing-batch-processor) below. |
 
 <div id="hive-tracing-batch-processor"></div>
 
@@ -138,6 +144,9 @@ Top-level OpenTelemetry tracing configuration.
 
 `propagation` - Incoming and outgoing trace context propagation formats.
 
+These settings apply to both extracting trace context from incoming requests and injecting trace
+context into outgoing requests.
+
 | Field           | Type      | Default | Notes                                 |
 | --------------- | --------- | ------- | ------------------------------------- |
 | `trace_context` | `boolean` | `true`  | Enable W3C Trace Context propagation. |
@@ -157,14 +166,17 @@ Top-level OpenTelemetry tracing configuration.
 
 List of exporters used to send traces.
 
+Each item in this array defines one exporter instance, so you can configure multiple OTLP
+destinations if needed.
+
 This reference documents the OTLP exporter configuration.
 
-| Field             | Type                         | Default | Notes                                                                        |
-| ----------------- | ---------------------------- | ------- | ---------------------------------------------------------------------------- |
-| `kind`            | `string`                     | -       | Exporter kind. Supported value: `otlp`.                                      |
-| `enabled`         | `boolean`                    | `true`  | Enables or disables this exporter.                                           |
+| Field             | Type                 | Default | Notes                                                                        |
+| ----------------- | -------------------- | ------- | ---------------------------------------------------------------------------- |
+| `kind`            | `string`             | -       | Exporter kind. Supported value: `otlp`.                                      |
+| `enabled`         | `boolean`            | `true`  | Enables or disables this exporter.                                           |
 | `endpoint`        | `StringOrExpression` | -       | OTLP endpoint. Must be set explicitly.                                       |
-| `batch_processor` | `object`                     | -       | See [`batch_processor`](#telemetry-tracing-exporters-batch-processor) below. |
+| `batch_processor` | `object`             | -       | See [`batch_processor`](#telemetry-tracing-exporters-batch-processor) below. |
 
 <div id="telemetry-tracing-exporters-batch-processor"></div>
 
@@ -189,7 +201,7 @@ OTLP over HTTP:
 telemetry:
   tracing:
     exporters:
-      - kind: "otlp"
+      - kind: 'otlp'
         enabled: true
         protocol: http
         http:
@@ -212,7 +224,7 @@ OTLP over gRPC:
 telemetry:
   tracing:
     exporters:
-      - kind: "otlp"
+      - kind: 'otlp'
         enabled: true
         protocol: grpc
         grpc:
