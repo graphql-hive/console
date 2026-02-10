@@ -80,13 +80,20 @@ export function useHiveErrorHandler(): Plugin {
       operationName: string | null;
       variableValues: Record<string, unknown> | null | undefined;
       document: DocumentNode;
-      contextValue: Context;
+      // context value is undefined if the context was never built.
+      // this is the case if parsing or validating the GraphQL query failed
+      contextValue?: Context;
+      requestId: string;
+      req: FastifyRequest;
     } = unsafeContest as any;
 
     function reportError(error: Error) {
       withScope(scope => {
-        const userId = (context.contextValue.session as SuperTokensCookieBasedSession | null)
-          ?.userId;
+        // Note: `context.contextValue` is probably never undefined
+        // if this part of the code is reached - but it is better to be safe...
+        const userId = (
+          context.contextValue?.session as SuperTokensCookieBasedSession | null | undefined
+        )?.userId;
 
         scope.setTransactionName(context.operationName ?? 'unknown graphql operation');
         scope.setContext('Extra Info', {
@@ -101,10 +108,10 @@ export function useHiveErrorHandler(): Plugin {
 
         scope.setTags({
           supertokens_user_id: (
-            context.contextValue.session as SuperTokensCookieBasedSession | null
+            context.contextValue?.session as SuperTokensCookieBasedSession | null | undefined
           )?.superTokensUserId,
           hive_user_id: userId,
-          request_id: context.contextValue.requestId,
+          request_id: context.requestId,
         });
 
         if (error instanceof GraphQLError) {
@@ -124,7 +131,7 @@ export function useHiveErrorHandler(): Plugin {
 
     for (const error of errors) {
       // always log the error (this is always the unmasked error)
-      context.contextValue.req.log.error(error);
+      context.req.log.error(error);
 
       if (isGraphQLError(error)) {
         // in this case it is a GraphQL validation error
@@ -133,7 +140,7 @@ export function useHiveErrorHandler(): Plugin {
           continue;
         }
 
-        context.contextValue.req.log.error(error.originalError);
+        context.req.log.error(error.originalError);
         reportError(error);
         continue;
       } else {
