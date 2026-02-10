@@ -16,6 +16,7 @@ import { createInternalApiCaller } from './api';
 import { env } from './environment';
 import {
   createOIDCSuperTokensProvider,
+  describeOIDCSignInError,
   getLoggerFromUserContext,
   getOIDCSuperTokensOverrides,
   type BroadcastOIDCIntegrationLog,
@@ -368,7 +369,6 @@ const getEnsureUserOverrides = (
         }
         return null;
       }
-
       try {
         const response = await originalImplementation.thirdPartySignInUpPOST(input);
 
@@ -403,6 +403,14 @@ const getEnsureUserOverrides = (
           return {
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: e.reason,
+          };
+        }
+        if (input.provider.id === 'oidc') {
+          const logger = getLoggerFromUserContext(input.userContext);
+          logger.error(e, 'OIDC sign-in/sign-up failed');
+          return {
+            status: 'GENERAL_ERROR' as const,
+            message: describeOIDCSignInError(e),
           };
         }
         throw e;

@@ -303,6 +303,66 @@ async function getOIDCConfigFromInput(
   return resolvedConfig;
 }
 
+/**
+ * Classify an OIDC sign-in error into a user-safe description.
+ * Avoids leaking sensitive details (app IDs, trace IDs, internal URLs)
+ * while still pointing administrators toward the likely cause.
+ */
+export function describeOIDCSignInError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes('invalid_client')) {
+    return 'Authentication with your OIDC provider failed due to invalid client credentials. This commonly happens when the client secret has expired or the client ID is incorrect. Please review your OIDC integration settings.';
+  }
+
+  if (message.includes('invalid_grant')) {
+    return 'The authorization could not be completed. This can happen if the authorization code has expired. Please try signing in again.';
+  }
+
+  if (message.includes('unauthorized_client')) {
+    return 'Your OIDC provider rejected the client authorization. Please verify your OIDC integration configuration.';
+  }
+
+  if (message.includes('invalid_request')) {
+    return 'Your OIDC provider rejected the token request as malformed. This may indicate a misconfigured token endpoint URL. Please review your OIDC integration settings.';
+  }
+
+  if (message.includes('unsupported_grant_type')) {
+    return 'Your OIDC provider does not support the authorization code grant type. Please verify the provider supports the OAuth 2.0 authorization code flow.';
+  }
+
+  if (message.includes('invalid_scope')) {
+    return 'Your OIDC provider rejected the requested scopes. Please review the additional scopes configured in your OIDC integration settings.';
+  }
+
+  if (
+    message.includes('ECONNREFUSED') ||
+    message.includes('ENOTFOUND') ||
+    message.includes('ETIMEDOUT') ||
+    message.includes('fetch failed')
+  ) {
+    return "Could not connect to your OIDC provider. Please verify the endpoint URLs in your OIDC integration settings are correct and the server is accessible.";
+  }
+
+  if (message.includes('Could not find OIDC integration')) {
+    return 'The OIDC integration could not be found. It may have been removed or misconfigured. Please contact your organization administrator.';
+  }
+
+  if (message.includes("Could not retrieve user's profile info")) {
+    return "Your OIDC provider's user info endpoint returned an error. Please verify the user info endpoint URL in your OIDC integration settings is correct.";
+  }
+
+  if (message.includes('Could not parse JSON response')) {
+    return "Your OIDC provider's user info endpoint returned an invalid response. Please verify the user info endpoint URL in your OIDC integration settings is correct.";
+  }
+
+  if (message.includes('Could not parse profile info')) {
+    return "Your OIDC provider's user info endpoint did not return the required fields (sub, email). Please verify your OIDC provider is configured to include these claims.";
+  }
+
+  return 'An unexpected error occurred while authenticating with your OIDC provider. Please verify your OIDC integration configuration or contact your administrator.';
+}
+
 const fetchOIDCConfig = async (
   internalApi: InternalApiCaller,
   logger: FastifyBaseLogger,
