@@ -68,33 +68,36 @@ test.concurrent(
   },
 );
 
-test.concurrent('valid monolith schema ignores the schema composition auto fix', async () => {
-  const { createOrg } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
-  const { createTargetAccessToken } = await createProject(ProjectType.Single);
-  const token = await createTargetAccessToken({});
+test.concurrent(
+  'valid monolith schema ignores the schema composition auto fix',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
 
-  const sdl = /* GraphQL */ `
-    schema {
-      query: RootQueryType
-    }
+    const sdl = /* GraphQL */ `
+      schema {
+        query: RootQueryType
+      }
 
-    type Link {
-      link: String
-    }
+      type Link {
+        link: String
+      }
 
-    type RootQueryType {
-      foo: Link
-    }
-  `;
+      type RootQueryType {
+        foo: Link
+      }
+    `;
 
-  await token
-    .publishSchema({
-      sdl,
-    })
-    .then(r => r.expectNoGraphQLErrors());
+    await token
+      .publishSchema({
+        sdl,
+      })
+      .then(r => r.expectNoGraphQLErrors());
 
-  const schema = await token.fetchLatestValidSchema();
+    const schema = await token.fetchLatestValidSchema();
 
-  expect(schema.latestValidVersion?.sdl).toMatchInlineSnapshot(sdl);
-});
+    expect(schema.latestValidVersion?.sdl).toMatchInlineSnapshot(sdl);
+  },
+);
