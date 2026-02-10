@@ -151,7 +151,7 @@ export function OIDCIntegrationSection(props: { organizationSlug: string }): Rea
   );
   if (!organization) return <Spinner />;
 
-  const isAdmin = organization.me.role.name === 'Admin';
+  const isAdmin = organization.me?.role.name === 'Admin';
 
   return (
     <>
