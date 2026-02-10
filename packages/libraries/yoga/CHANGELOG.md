@@ -1,5 +1,15 @@
 # @graphql-hive/yoga
 
+## 0.47.3
+
+### Patch Changes
+
+- [#7605](https://github.com/graphql-hive/console/pull/7605)
+  [`efa0772`](https://github.com/graphql-hive/console/commit/efa077294bd759e5814f03dab9edac1d3141cea8)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix 500 error when malformed document
+  IDs are passed to persisted documents. Now returns a proper GraphQL error with
+  `INVALID_DOCUMENT_ID` code.
+
 ## 0.47.2
 
 ### Patch Changes
