@@ -243,7 +243,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="bg-neutral-5 text-red-400 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
                       <PulseIcon className="h-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -263,7 +263,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-500 text-neutral-1 px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -511,7 +511,7 @@ function ChangeItem(
                         schemaCheckId: props.schemaCheckId,
                       }}
                       search={{ coordinate: change.path?.join('.') }}
-                      className="text-neutral-2 mt-2 block text-sm hover:underline"
+                      className="text-orange-500 mt-2 block text-sm hover:underline"
                     >
                       View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                     </Link>
@@ -606,7 +606,7 @@ function ChangeItem(
                     schemaCheckId: props.schemaCheckId,
                   }}
                   search={{ coordinate: change.path?.join('.') }}
-                  className="text-neutral-2 mt-2 block text-sm hover:underline"
+                  className="text-orange-500 mt-2 block text-sm hover:underline"
                 >
                   View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                 </Link>
