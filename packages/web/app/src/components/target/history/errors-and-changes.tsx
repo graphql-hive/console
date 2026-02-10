@@ -612,7 +612,11 @@ function ChangeItem(
                 </Link>
               )}
             </div>
-          ) : null}
+          ) : change.severityLevel === SeverityLevelType.Breaking ? (
+            <>{change.severityReason ?? 'No details available for this breaking change.'}</>
+          ) : (
+            <>No details available for this change.</>
+          )}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
