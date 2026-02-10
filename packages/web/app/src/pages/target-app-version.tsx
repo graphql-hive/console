@@ -325,7 +325,9 @@ function TargetAppVersionContent(props: {
                   >
                     {appDeployment?.status === AppDeploymentStatus.Retired &&
                     appDeployment?.retiredAt ? (
-                      <span>RETIRED ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>
+                      <span>
+                        RETIRED ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})
+                      </span>
                     ) : (
                       (appDeployment?.status.toUpperCase() ?? '...')
                     )}

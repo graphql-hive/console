@@ -178,9 +178,7 @@ function AppTableRow(props: {
                 </Badge>
               </TooltipTrigger>
               <TooltipContent>
-                <p>
-                  {format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
-                </p>
+                <p>{format(appDeployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

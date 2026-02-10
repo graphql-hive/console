@@ -77,9 +77,7 @@ export const SchemaChange: Pick<
         createdAt: d.createdAt ?? null,
         activatedAt: d.activatedAt ?? null,
         retiredAt: d.retiredAt ?? null,
-        status: d.retiredAt
-          ? ('retired' as const)
-          : ('active' as const),
+        status: d.retiredAt ? ('retired' as const) : ('active' as const),
         operations: d.affectedOperations,
         totalOperations: d.affectedOperations.length,
       },

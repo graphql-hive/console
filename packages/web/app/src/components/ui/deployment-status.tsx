@@ -7,7 +7,11 @@ export function DeploymentStatusLabel(props: {
   const { status, retiredAt } = props;
 
   if (status === 'retired' && retiredAt) {
-    return <span>{status} ({format(retiredAt, 'MMM d, yyyy HH:mm:ss')})</span>;
+    return (
+      <span>
+        {status} ({format(retiredAt, 'MMM d, yyyy HH:mm:ss')})
+      </span>
+    );
   }
 
   return <>{status}</>;

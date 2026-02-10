@@ -250,7 +250,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 text-red-400 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold text-red-400">
                       <PulseIcon className="h-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -270,7 +270,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-500 text-neutral-1 px-2 py-1 align-middle font-bold">
+                    <span className="text-neutral-1 inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -432,7 +432,8 @@ function ChangeItem(
                     Affected App Deployments
                   </h4>
                   <p className="text-neutral-10 mb-2 text-sm">
-                    Top 5 active app deployments that have operations using this schema coordinate (snapshot from when the check was run).
+                    Top 5 active app deployments that have operations using this schema coordinate
+                    (snapshot from when the check was run).
                   </p>
                   <Table>
                     <TableHeader>
@@ -499,9 +500,7 @@ function ChangeItem(
                                     </span>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>
-                                      {format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
-                                    </p>
+                                    <p>{format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -565,7 +564,7 @@ function ChangeItem(
                         schemaCheckId: props.schemaCheckId,
                       }}
                       search={{ coordinate: change.path?.join('.') }}
-                      className="text-orange-500 mt-2 block text-sm hover:underline"
+                      className="mt-2 block text-sm text-orange-500 hover:underline"
                     >
                       View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                     </Link>
@@ -577,7 +576,8 @@ function ChangeItem(
             <div>
               <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
               <p className="text-neutral-10 mb-2 text-sm">
-                Top 5 active app deployments that have operations using this schema coordinate (snapshot from when the check was run).
+                Top 5 active app deployments that have operations using this schema coordinate
+                (snapshot from when the check was run).
               </p>
               <Table>
                 <TableHeader>
@@ -644,9 +644,7 @@ function ChangeItem(
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>
-                                  {format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}
-                                </p>
+                                <p>{format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -707,7 +705,7 @@ function ChangeItem(
                     schemaCheckId: props.schemaCheckId,
                   }}
                   search={{ coordinate: change.path?.join('.') }}
-                  className="text-orange-500 mt-2 block text-sm hover:underline"
+                  className="mt-2 block text-sm text-orange-500 hover:underline"
                 >
                   View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                 </Link>
