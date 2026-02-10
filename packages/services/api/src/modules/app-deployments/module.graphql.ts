@@ -64,6 +64,10 @@ export default gql`
 
   input AppDeploymentDocumentsFilterInput {
     operationName: String
+    """
+    Filter documents that use any of the specified schema coordinates.
+    """
+    schemaCoordinates: [String!]
   }
 
   """
@@ -122,26 +126,76 @@ export default gql`
       input: AddDocumentsToAppDeploymentInput!
     ): AddDocumentsToAppDeploymentResult!
     activateAppDeployment(input: ActivateAppDeploymentInput!): ActivateAppDeploymentResult!
-    retireAppDeployment(input: RetireAppDeploymentInput!): RetireAppDeploymentResult!
+    retireAppDeployment(
+      input: RetireAppDeploymentInput! @tag(name: "public")
+    ): RetireAppDeploymentResult! @tag(name: "public")
   }
 
   input RetireAppDeploymentInput {
-    target: TargetReferenceInput
-    appName: String!
-    appVersion: String!
+    """
+    If using an organization access token, then a target must be provided.
+    If using a target's access token, then this should be null.
+    """
+    target: TargetReferenceInput @tag(name: "public")
+
+    """
+    The identifying application name
+    """
+    appName: String! @tag(name: "public")
+
+    """
+    The exact version of the application to retire
+    """
+    appVersion: String! @tag(name: "public")
+
+    """
+    Force retirement even if protection rules would prevent it. Disabled by default.
+    """
+    force: Boolean! = false @tag(name: "public")
+  }
+
+  """
+  Details about why protection prevented retirement.
+  """
+  type AppDeploymentProtectionBlockDetails {
+    """
+    The last time the app deployment was used.
+    """
+    lastUsed: DateTime @tag(name: "public")
+    """
+    Days since the app deployment was last used.
+    """
+    daysSinceLastUsed: Int @tag(name: "public")
+    """
+    Required minimum days of inactivity.
+    """
+    requiredMinDaysInactive: Int! @tag(name: "public")
+    """
+    Current traffic percentage of this app deployment.
+    """
+    currentTrafficPercentage: Float @tag(name: "public")
+    """
+    Maximum traffic percentage allowed for retirement.
+    """
+    maxTrafficPercentage: Float! @tag(name: "public")
   }
 
   type RetireAppDeploymentError implements Error {
-    message: String!
+    message: String! @tag(name: "public")
+    """
+    Details about why protection prevented retirement.
+    Only present when retirement was blocked due to protection rules.
+    """
+    protectionDetails: AppDeploymentProtectionBlockDetails @tag(name: "public")
   }
 
   type RetireAppDeploymentOk {
-    retiredAppDeployment: AppDeployment!
+    retiredAppDeployment: AppDeployment! @tag(name: "public")
   }
 
   type RetireAppDeploymentResult {
-    error: RetireAppDeploymentError
-    ok: RetireAppDeploymentOk
+    error: RetireAppDeploymentError @tag(name: "public")
+    ok: RetireAppDeploymentOk @tag(name: "public")
   }
 
   input CreateAppDeploymentInput {

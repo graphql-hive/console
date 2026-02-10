@@ -45,6 +45,13 @@ export async function schemaPublish(args: string[]) {
   );
 }
 
+export async function appRetire(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+  return await exec(
+    ['app:retire', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
 export async function schemaCheck(args: string[], env?: Record<string, string>) {
   const registryAddress = await getServiceHost('server', 8082);
 
@@ -77,6 +84,22 @@ async function dev(args: string[]) {
 
   return await exec(
     ['dev', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
+export async function appCreate(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:create', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
+  );
+}
+
+export async function appPublish(args: string[]) {
+  const registryAddress = await getServiceHost('server', 8082);
+
+  return await exec(
+    ['app:publish', `--registry.endpoint`, `http://${registryAddress}/graphql`, ...args].join(' '),
   );
 }
 

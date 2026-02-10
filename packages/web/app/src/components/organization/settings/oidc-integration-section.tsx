@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { useFormik } from 'formik';
 import { useForm } from 'react-hook-form';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
-import { useClient, useMutation } from 'urql';
+import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { z } from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -73,8 +73,16 @@ const classes = {
 };
 
 function FormError({ children }: { children: React.ReactNode }) {
-  return <div className="text-destructive text-sm">{children}</div>;
+  return <div className="text-sm text-red-500">{children}</div>;
 }
+
+const OrganizationSettingsOIDCIntegrationSectionQuery = graphql(`
+  query OrganizationSettingsOIDCIntegrationSectionQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      ...OIDCIntegrationSection_OrganizationFragment
+    }
+  }
+`);
 
 const OIDCIntegrationSection_OrganizationFragment = graphql(`
   fragment OIDCIntegrationSection_OrganizationFragment on Organization {
@@ -112,12 +120,14 @@ function extractDomain(rawUrl: string) {
   return url.host;
 }
 
-export function OIDCIntegrationSection(props: {
-  organization: FragmentType<typeof OIDCIntegrationSection_OrganizationFragment>;
-}): ReactElement {
+export function OIDCIntegrationSection(props: { organizationSlug: string }): ReactElement {
   const router = useRouter();
-  const organization = useFragment(OIDCIntegrationSection_OrganizationFragment, props.organization);
-  const isAdmin = organization.me.role.name === 'Admin';
+  const [query] = useQuery({
+    query: OrganizationSettingsOIDCIntegrationSectionQuery,
+    variables: {
+      organizationSlug: props.organizationSlug,
+    },
+  });
 
   const hash = router.latestLocation.hash;
   const openCreateModalHash = 'create-oidc-integration';
@@ -134,6 +144,14 @@ export function OIDCIntegrationSection(props: {
       hash: undefined,
     });
   };
+
+  const organization = useFragment(
+    OIDCIntegrationSection_OrganizationFragment,
+    query.data?.organization,
+  );
+  if (!organization) return <Spinner />;
+
+  const isAdmin = organization.me.role.name === 'Admin';
 
   return (
     <>
@@ -488,7 +506,7 @@ function CreateOIDCIntegrationForm(props: {
         </DialogDescription>
       </DialogHeader>
       <div className="space-y-2">
-        <div className="bg-muted border-border rounded-md border p-3">
+        <div className="bg-neutral-3 border-neutral-5 rounded-md border p-3">
           <OIDCMetadataFetcher
             onEndpointChange={endpoints => {
               void formik.setFieldValue('tokenEndpoint', endpoints.token);
@@ -851,6 +869,7 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     clientId
     clientSecretPreview
     additionalScopes
+    oidcUserJoinOnly
     oidcUserAccessOnly
     defaultMemberRole {
       id
@@ -901,6 +920,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
       ok {
         updatedOIDCIntegration {
           id
+          oidcUserJoinOnly
           oidcUserAccessOnly
         }
       }
@@ -964,7 +984,10 @@ function UpdateOIDCIntegrationForm(props: {
     },
   });
 
-  const onOidcUserAccessOnlyChange = async (oidcUserAccessOnly: boolean) => {
+  const onOidcRestrictionChange = async (
+    name: 'oidcUserJoinOnly' | 'oidcUserAccessOnly',
+    value: boolean,
+  ) => {
     if (oidcRestrictionsMutation.fetching) {
       return;
     }
@@ -977,16 +1000,21 @@ function UpdateOIDCIntegrationForm(props: {
       const result = await oidcRestrictionsMutate({
         input: {
           oidcIntegrationId: props.oidcIntegration.id,
-          oidcUserAccessOnly,
+          [name]: value,
         },
       });
 
       if (result.data?.updateOIDCRestrictions.ok) {
         toast({
           title: 'OIDC restrictions updated successfully',
-          description: oidcUserAccessOnly
-            ? 'Only OIDC users can now access the organization'
-            : 'Access to the organization is no longer restricted to OIDC users',
+          description: {
+            oidcUserJoinOnly: value
+              ? 'Only OIDC users can now join the organization'
+              : 'Joining the organization is no longer restricted to OIDC users',
+            oidcUserAccessOnly: value
+              ? 'Only OIDC users can now access the organization'
+              : 'Access to the organization is no longer restricted to OIDC users',
+          }[name],
         });
       } else {
         toast({
@@ -1008,13 +1036,13 @@ function UpdateOIDCIntegrationForm(props: {
     <Dialog open={props.isOpen} onOpenChange={props.close}>
       <DialogContent className="flex max-h-[100vh] w-[960px] max-w-[100%] overflow-y-auto">
         <div className={classes.container}>
-          <div className="bg-border grid grid-cols-1 gap-[1px] md:grid-cols-2">
-            <div className="bg-background py-4 pr-4 md:pt-0">
+          <div className="bg-neutral-5 grid grid-cols-1 gap-[1px] md:grid-cols-2">
+            <div className="bg-neutral-3 py-4 pr-4 md:pt-0">
               <div className="flex flex-col gap-y-5">
                 <div className={cn(classes.container, 'flex flex-col gap-y-4')}>
                   <div>
                     <div className="text-lg font-medium">OIDC Provider Instructions</div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-neutral-10 text-sm">
                       Configure your OIDC provider with the following settings
                     </p>
                   </div>
@@ -1047,18 +1075,41 @@ function UpdateOIDCIntegrationForm(props: {
                   <div className="space-y-5">
                     <div className="flex items-center justify-between space-x-4">
                       <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
-                        <p>OIDC-Only Access</p>
-                        <p className="text-muted-foreground text-xs font-normal leading-snug">
-                          Restricts organization access to only authenticated OIDC accounts.
+                        <p>Require OIDC to Join</p>
+                        <p className="text-neutral-10 text-xs font-normal leading-snug">
+                          Restricts new accounts joining the organization to be authenticated via
+                          OIDC.
                           <br />
-                          <span className="font-medium">
+                          <span className="font-bold">
                             Existing non-OIDC members will keep their access.
                           </span>
                         </p>
                       </div>
                       <Switch
+                        checked={props.oidcIntegration.oidcUserJoinOnly}
+                        onCheckedChange={checked =>
+                          onOidcRestrictionChange('oidcUserJoinOnly', checked)
+                        }
+                        disabled={oidcRestrictionsMutation.fetching}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between space-x-4">
+                      <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                        <p>Require OIDC to Access</p>
+                        <p className="text-neutral-10 text-xs font-normal leading-snug">
+                          Prompt users to authenticate with OIDC before accessing the organization.
+                          <br />
+                          <span className="font-bold">
+                            Existing users without OIDC credentials will not be able to access the
+                            organization.
+                          </span>
+                        </p>
+                      </div>
+                      <Switch
                         checked={props.oidcIntegration.oidcUserAccessOnly}
-                        onCheckedChange={onOidcUserAccessOnlyChange}
+                        onCheckedChange={checked =>
+                          onOidcRestrictionChange('oidcUserAccessOnly', checked)
+                        }
                         disabled={oidcRestrictionsMutation.fetching}
                       />
                     </div>
@@ -1071,7 +1122,7 @@ function UpdateOIDCIntegrationForm(props: {
                       <p>Default Member Role</p>
                       <div className="flex items-start justify-between space-x-4">
                         <div className="flex basis-2/3 flex-col md:basis-1/2">
-                          <p className="text-muted-foreground text-xs font-normal leading-snug">
+                          <p className="text-neutral-10 text-xs font-normal leading-snug">
                             This role is assigned to new members who sign in via OIDC.{' '}
                             <span className="font-medium">
                               Only members with the Admin role can modify it.
@@ -1098,12 +1149,12 @@ function UpdateOIDCIntegrationForm(props: {
               onSubmit={formik.handleSubmit}
               className={cn(
                 classes.container,
-                'bg-background order-first pb-4 md:order-none md:pl-4',
+                'bg-neutral-3 order-first pb-4 md:order-none md:pl-4',
               )}
             >
               <div>
                 <div className="text-lg font-medium">Properties</div>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-neutral-10 text-sm">
                   Configure your OIDC provider with the following settings
                 </p>
               </div>
@@ -1223,7 +1274,7 @@ function UpdateOIDCIntegrationForm(props: {
           </div>
           <div className="space-y-1 text-sm font-medium leading-none">
             <p>Default Resource Assignments</p>
-            <p className="text-muted-foreground text-xs font-normal leading-snug">
+            <p className="text-neutral-10 text-xs font-normal leading-snug">
               This permitted resources for new members who sign in via OIDC.{' '}
               <span className="font-medium">Only members with the Admin role can modify it.</span>
             </p>

@@ -366,9 +366,16 @@ export async function createStorage(
       | 'validation_percentage'
       | 'validation_period'
       | 'validation_excluded_clients'
+      | 'validation_excluded_app_deployments'
       | 'validation_request_count'
       | 'validation_breaking_change_formula'
       | 'fail_diff_on_dangerous_change'
+      | 'app_deployment_protection_enabled'
+      | 'app_deployment_protection_min_days_inactive'
+      | 'app_deployment_protection_max_traffic_percentage'
+      | 'app_deployment_protection_traffic_period_days'
+      | 'app_deployment_protection_rule_logic'
+      | 'app_deployment_protection_min_days_since_creation'
     > & {
       targets: target_validation['destination_target_id'][] | null;
     },
@@ -385,6 +392,17 @@ export async function createStorage(
         excludedClients: Array.isArray(row.validation_excluded_clients)
           ? row.validation_excluded_clients.filter(isDefined)
           : [],
+        excludedAppDeployments: Array.isArray(row.validation_excluded_app_deployments)
+          ? row.validation_excluded_app_deployments.filter(isDefined)
+          : [],
+      },
+      appDeploymentProtection: {
+        isEnabled: row.app_deployment_protection_enabled,
+        minDaysInactive: row.app_deployment_protection_min_days_inactive,
+        minDaysSinceCreation: row.app_deployment_protection_min_days_since_creation,
+        maxTrafficPercentage: Number(row.app_deployment_protection_max_traffic_percentage),
+        trafficPeriodDays: row.app_deployment_protection_traffic_period_days,
+        ruleLogic: row.app_deployment_protection_rule_logic as 'AND' | 'OR',
       },
     };
   }
@@ -444,32 +462,62 @@ export async function createStorage(
 
       return UserModel.parse(record);
     },
+    getUserById: batchBy(
+      (item: { id: string; connection: Connection }) => item.connection,
+      async input => {
+        const userIds = input.map(i => i.id);
+        const records = await input[0].connection.any<unknown>(sql`/* getUserById */
+          SELECT
+            ${userFields(sql`"users".`, sql`"stu".`)}
+          FROM
+            "users"
+          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+            ON ("stu"."user_id" = "users"."supertoken_user_id")
+          WHERE
+            "users"."id" = ANY(${sql.array(userIds, 'uuid')})
+        `);
+
+        const mappings = new Map<string, UserType>();
+        for (const record of records) {
+          const user = UserModel.parse(record);
+          mappings.set(user.id, user);
+        }
+
+        return userIds.map(async id => mappings.get(id) ?? null);
+      },
+    ),
     async createUser(
       {
-        superTokensUserId,
         email,
         fullName,
         displayName,
+        superTokensUserId,
         oidcIntegrationId,
       }: {
-        superTokensUserId: string;
         email: string;
         fullName: string;
         displayName: string;
+        superTokensUserId: string;
         oidcIntegrationId: string | null;
       },
-      connection: Connection,
+      connection: DatabaseTransactionConnection,
     ) {
-      await connection.query<unknown>(
+      const { id } = await connection.one<{ id: string }>(
         sql`/* createUser */
           INSERT INTO users
-            ("email", "supertoken_user_id", "full_name", "display_name", "oidc_integration_id")
+            ("email", "full_name", "display_name", "supertoken_user_id", "oidc_integration_id")
           VALUES
-            (${email}, ${superTokensUserId}, ${fullName}, ${displayName}, ${oidcIntegrationId})
+            (${email}, ${fullName}, ${displayName}, ${superTokensUserId}, ${oidcIntegrationId})
+          RETURNING id
         `,
       );
 
-      const user = await this.getUserBySuperTokenId({ superTokensUserId }, connection);
+      await connection.query(sql`
+        INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+        VALUES (${id}, ${superTokensUserId})
+      `);
+
+      const user = await shared.getUserById({ id, connection });
       if (!user) {
         throw new Error('Something went wrong.');
       }
@@ -559,11 +607,11 @@ export async function createStorage(
   };
 
   function buildUserData(input: {
-    superTokensUserId: string;
     email: string;
-    oidcIntegrationId: string | null;
     firstName: string | null;
     lastName: string | null;
+    superTokensUserId: string;
+    oidcIntegrationId: string | null;
   }) {
     const { firstName, lastName } = input;
     const name =
@@ -572,10 +620,10 @@ export async function createStorage(
         : input.email.split('@')[0].slice(0, 25).padEnd(2, '1');
 
     return {
-      superTokensUserId: input.superTokensUserId,
       email: input.email,
       displayName: name,
       fullName: name,
+      superTokensUserId: input.superTokensUserId,
       oidcIntegrationId: input.oidcIntegrationId,
     };
   }
@@ -609,19 +657,64 @@ export async function createStorage(
     }) {
       return tracedTransaction('ensureUserExists', pool, async t => {
         let action: 'created' | 'no_action' = 'no_action';
-        let internalUser = await shared.getUserBySuperTokenId({ superTokensUserId }, t);
 
+        // try searching existing user first
+        let internalUser = await t
+          .maybeOne<unknown>(
+            sql`
+              SELECT
+                ${userFields(sql`"users".`, sql`"stu".`)}
+              FROM "users"
+              LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                ON ("stu"."user_id" = "users"."supertoken_user_id")
+              WHERE
+                "users"."supertoken_user_id" = ${superTokensUserId}
+                OR EXISTS (
+                  SELECT 1 FROM "users_linked_identities" "uli"
+                  WHERE "uli"."user_id" = "users"."id"
+                  AND "uli"."identity_id" = ${superTokensUserId}
+                )
+            `,
+          )
+          .then(v => UserModel.nullable().parse(v));
+
+        if (!internalUser) {
+          // try automatic account linking
+          const sameEmailUsers = await t
+            .any<unknown>(
+              sql`/* ensureUserExists */
+                SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+                FROM "users"
+                LEFT JOIN "supertokens_thirdparty_users" AS "stu"
+                  ON ("stu"."user_id" = "users"."supertoken_user_id")
+                WHERE "users"."email" = ${email}
+                ORDER BY "users"."created_at";
+              `,
+            )
+            .then(users => users.map(user => UserModel.parse(user)));
+
+          if (sameEmailUsers.length === 1) {
+            internalUser = sameEmailUsers[0];
+            await t.query(sql`
+              INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+              VALUES (${internalUser.id}, ${superTokensUserId})
+            `);
+          }
+        }
+
+        // either user is brand new or user is not linkable (multiple accounts with the same email exist)
         if (!internalUser) {
           internalUser = await shared.createUser(
             buildUserData({
-              superTokensUserId,
               email,
-              oidcIntegrationId: oidcIntegration?.id ?? null,
               firstName,
               lastName,
+              superTokensUserId,
+              oidcIntegrationId: oidcIntegration?.id ?? null,
             }),
             t,
           );
+
           action = 'created';
         }
 
@@ -636,33 +729,18 @@ export async function createStorage(
           );
         }
 
-        return action;
+        return {
+          user: internalUser,
+          action,
+        };
       });
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
       return shared.getUserBySuperTokenId({ superTokensUserId }, pool);
     },
-    getUserById: batch(async input => {
-      const userIds = input.map(i => i.id);
-      const records = await pool.any<unknown>(sql`/* getUserById */
-        SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
-        FROM
-          "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
-        WHERE
-          "users"."id" = ANY(${sql.array(userIds, 'uuid')})
-      `);
-
-      const mappings = new Map<string, UserType>();
-      for (const record of records) {
-        const user = UserModel.parse(record);
-        mappings.set(user.id, user);
-      }
-
-      return userIds.map(async id => mappings.get(id) ?? null);
-    }),
+    async getUserById({ id }) {
+      return shared.getUserById({ id, connection: pool });
+    },
     async updateUser({ id, displayName, fullName }) {
       await pool.query<users>(sql`/* updateUser */
         UPDATE "users"
@@ -1848,9 +1926,16 @@ export async function createStorage(
           | 'validation_percentage'
           | 'validation_period'
           | 'validation_excluded_clients'
+          | 'validation_excluded_app_deployments'
           | 'validation_request_count'
           | 'validation_breaking_change_formula'
           | 'fail_diff_on_dangerous_change'
+          | 'app_deployment_protection_enabled'
+          | 'app_deployment_protection_min_days_inactive'
+          | 'app_deployment_protection_max_traffic_percentage'
+          | 'app_deployment_protection_traffic_period_days'
+          | 'app_deployment_protection_rule_logic'
+          | 'app_deployment_protection_min_days_since_creation'
         > & {
           targets: target_validation['destination_target_id'][];
         }
@@ -1860,10 +1945,17 @@ export async function createStorage(
           t.validation_percentage,
           t.validation_period,
           t.validation_excluded_clients,
+          t.validation_excluded_app_deployments,
           t.validation_request_count,
           t.validation_breaking_change_formula,
           array_agg(tv.destination_target_id) as targets,
-          t.fail_diff_on_dangerous_change
+          t.fail_diff_on_dangerous_change,
+          t.app_deployment_protection_enabled,
+          t.app_deployment_protection_min_days_inactive,
+          t.app_deployment_protection_min_days_since_creation,
+          t.app_deployment_protection_max_traffic_percentage,
+          t.app_deployment_protection_traffic_period_days,
+          t.app_deployment_protection_rule_logic
         FROM targets AS t
         LEFT JOIN target_validation AS tv ON (tv.target_id = t.id)
         WHERE t.id = ${target} AND t.project_id = ${project}
@@ -1894,7 +1986,7 @@ export async function createStorage(
               LIMIT 1
             ) ret
             WHERE t.id = ret.id
-            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change;
+            RETURNING t.id, t.validation_enabled, t.validation_percentage, t.validation_period, t.validation_excluded_clients, t.validation_excluded_app_deployments, ret.targets, t.validation_request_count, t.validation_breaking_change_formula, t.fail_diff_on_dangerous_change, t.app_deployment_protection_enabled, t.app_deployment_protection_min_days_inactive, t.app_deployment_protection_max_traffic_percentage, t.app_deployment_protection_traffic_period_days, t.app_deployment_protection_rule_logic;
           `);
         }),
       );
@@ -1906,6 +1998,7 @@ export async function createStorage(
       period,
       targets,
       excludedClients,
+      excludedAppDeployments,
       breakingChangeFormula,
       requestCount,
       isEnabled,
@@ -1951,6 +2044,7 @@ export async function createStorage(
               validation_percentage = COALESCE(${percentage ?? null}, validation_percentage)
               , validation_period = COALESCE(${period ?? null}, validation_period)
               , validation_excluded_clients = COALESCE(${excludedClients?.length ? sql.array(excludedClients, 'text') : null}, validation_excluded_clients)
+              , validation_excluded_app_deployments = COALESCE(${excludedAppDeployments?.length ? sql.array(excludedAppDeployments, 'text') : null}, validation_excluded_app_deployments)
               , validation_request_count = COALESCE(${requestCount ?? null}, validation_request_count)
               , validation_breaking_change_formula = COALESCE(${breakingChangeFormula ?? null}, validation_breaking_change_formula)
               , validation_enabled = COALESCE(${isEnabled ?? null}, validation_enabled)
@@ -1975,13 +2069,72 @@ export async function createStorage(
               , t.validation_percentage
               , t.validation_period
               , t.validation_excluded_clients
+              , t.validation_excluded_app_deployments
               , ret.targets
               , t.validation_request_count
               , t.validation_breaking_change_formula
               , t.fail_diff_on_dangerous_change
+              , t.app_deployment_protection_enabled
+              , t.app_deployment_protection_min_days_inactive
+              , t.app_deployment_protection_max_traffic_percentage
+              , t.app_deployment_protection_traffic_period_days
+              , t.app_deployment_protection_rule_logic
           `);
         }),
       ).validation;
+    },
+
+    async updateTargetAppDeploymentProtectionSettings({
+      targetId: target,
+      projectId: project,
+      isEnabled,
+      minDaysInactive,
+      minDaysSinceCreation,
+      maxTrafficPercentage,
+      trafficPeriodDays,
+      ruleLogic,
+    }: {
+      targetId: string;
+      projectId: string;
+      isEnabled?: boolean | null;
+      minDaysInactive?: number | null;
+      minDaysSinceCreation?: number | null;
+      maxTrafficPercentage?: number | null;
+      trafficPeriodDays?: number | null;
+      ruleLogic?: 'AND' | 'OR' | null;
+    }) {
+      return transformTargetSettings(
+        await pool.one(sql`/* updateTargetAppDeploymentProtectionSettings */
+            UPDATE
+              targets
+            SET
+              app_deployment_protection_enabled = COALESCE(${isEnabled ?? null}, app_deployment_protection_enabled)
+              , app_deployment_protection_min_days_inactive = COALESCE(${minDaysInactive ?? null}, app_deployment_protection_min_days_inactive)
+              , app_deployment_protection_max_traffic_percentage = COALESCE(${maxTrafficPercentage ?? null}, app_deployment_protection_max_traffic_percentage)
+              , app_deployment_protection_traffic_period_days = COALESCE(${trafficPeriodDays ?? null}, app_deployment_protection_traffic_period_days)
+              , app_deployment_protection_min_days_since_creation = COALESCE(${minDaysSinceCreation ?? null}, app_deployment_protection_min_days_since_creation)
+              , app_deployment_protection_rule_logic = COALESCE(${ruleLogic ?? null}, app_deployment_protection_rule_logic)
+            WHERE
+              id = ${target}
+              AND project_id = ${project}
+            RETURNING
+              id
+              , validation_enabled
+              , validation_percentage
+              , validation_period
+              , validation_excluded_clients
+              , null as targets
+              , validation_request_count
+              , validation_breaking_change_formula
+              , fail_diff_on_dangerous_change
+              , app_deployment_protection_enabled
+              , app_deployment_protection_min_days_inactive
+              , app_deployment_protection_max_traffic_percentage
+              , app_deployment_protection_traffic_period_days
+              , app_deployment_protection_rule_logic
+              , app_deployment_protection_min_days_since_creation
+          `),
+      ).appDeploymentProtection;
     },
 
     async countSchemaVersionsOfProject({ projectId: project, period }) {
@@ -2115,36 +2268,6 @@ export async function createStorage(
       }
 
       return SchemaVersionModel.parse(version);
-    },
-    async getLatestSchemas({ projectId: project, targetId: target, onlyComposable }) {
-      const latest = await pool.maybeOne<
-        Pick<schema_versions, 'id' | 'is_composable'>
-      >(sql`/* getLatestSchemas */
-        SELECT sv.id, sv.is_composable
-        FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        LEFT JOIN schema_log as sl ON (sl.id = sv.action_id)
-        WHERE t.id = ${target} AND t.project_id = ${project} AND ${
-          onlyComposable ? sql`sv.is_composable IS TRUE` : true
-        }
-        ORDER BY sv.created_at DESC
-        LIMIT 1
-      `);
-
-      if (!latest) {
-        return null;
-      }
-
-      const schemas = await storage.getSchemasOfVersion({
-        versionId: latest.id,
-        includeMetadata: true,
-      });
-
-      return {
-        versionId: latest.id,
-        valid: latest.is_composable,
-        schemas,
-      };
     },
     async getSchemaByNameOfVersion(args) {
       const result = await pool.maybeOne<
@@ -3068,6 +3191,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3085,8 +3209,8 @@ export async function createStorage(
       return decodeOktaIntegrationRecord(result);
     },
 
-    async getOIDCIntegrationForOrganization({ organizationId }) {
-      const result = await pool.maybeOne<unknown>(sql`/* getOIDCIntegrationForOrganization */
+    getOIDCIntegrationForOrganization: batch(async selectors => {
+      const result = await pool.query<unknown>(sql`/* getOIDCIntegrationForOrganization */
         SELECT
           "id"
           , "linked_organization_id"
@@ -3097,22 +3221,27 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
         FROM
           "oidc_integrations"
         WHERE
-          "linked_organization_id" = ${organizationId}
-        LIMIT 1
+          "linked_organization_id" = ANY(${sql.array(
+            selectors.map(s => s.organizationId),
+            'uuid',
+          )})
       `);
+      const integrations = new Map(
+        result.rows.map(row => {
+          const integration = decodeOktaIntegrationRecord(row);
+          return [integration.linkedOrganizationId, integration] as const;
+        }),
+      );
 
-      if (result === null) {
-        return null;
-      }
-
-      return decodeOktaIntegrationRecord(result);
-    },
+      return selectors.map(async s => integrations.get(s.organizationId) ?? null);
+    }),
 
     async getOIDCIntegrationIdForOrganizationSlug({ slug }) {
       const id = await pool.maybeOneFirst<string>(sql`/* getOIDCIntegrationIdForOrganizationSlug */
@@ -3164,6 +3293,7 @@ export async function createStorage(
             , "userinfo_endpoint"
             , "authorization_endpoint"
             , "additional_scopes"
+            , "oidc_user_join_only"
             , "oidc_user_access_only"
             , "default_role_id"
             , "default_assigned_resources"
@@ -3222,6 +3352,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3234,7 +3365,8 @@ export async function createStorage(
       const result = await pool.one(sql`/* updateOIDCRestrictions */
           UPDATE "oidc_integrations"
           SET
-            "oidc_user_access_only" = ${args.oidcUserAccessOnly}
+            "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
+            , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? sql`"oidc_user_access_only"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -3247,6 +3379,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3272,6 +3405,7 @@ export async function createStorage(
           , "token_endpoint"
           , "userinfo_endpoint"
           , "authorization_endpoint"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "additional_scopes"
           , "default_role_id"
@@ -3314,6 +3448,7 @@ export async function createStorage(
           , "userinfo_endpoint"
           , "authorization_endpoint"
           , "additional_scopes"
+          , "oidc_user_join_only"
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
@@ -3961,6 +4096,7 @@ export async function createStorage(
             , "has_contract_schema_changes"
             , "conditional_breaking_change_metadata"
             , "schema_proposal_id"
+            , "schema_proposal_changes"
           )
           VALUES (
               ${schemaSDLHash}
@@ -3991,6 +4127,7 @@ export async function createStorage(
             }
             , ${jsonify(InsertConditionalBreakingChangeMetadataModel.parse(args.conditionalBreakingChangeMetadata))}
             , ${args.schemaProposalId ?? null}
+            , ${jsonify(args.schemaProposalChanges?.map(toSerializableSchemaChange))}
           )
           RETURNING
             "id"
@@ -4837,6 +4974,7 @@ const OktaIntegrationBaseModel = zod.object({
     .array(zod.string())
     .nullable()
     .transform(value => (value === null ? [] : value)),
+  oidc_user_join_only: zod.boolean(),
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
@@ -4874,6 +5012,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       userinfoEndpoint: `${rawRecord.oauth_api_url}/userinfo`,
       authorizationEndpoint: `${rawRecord.oauth_api_url}/authorize`,
       additionalScopes: rawRecord.additional_scopes,
+      oidcUserJoinOnly: rawRecord.oidc_user_join_only,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
@@ -4889,6 +5028,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     userinfoEndpoint: rawRecord.userinfo_endpoint,
     authorizationEndpoint: rawRecord.authorization_endpoint,
     additionalScopes: rawRecord.additional_scopes,
+    oidcUserJoinOnly: rawRecord.oidc_user_join_only,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,
@@ -4921,7 +5061,6 @@ const decodeCDNAccessTokenRecord = (result: unknown): CDNAccessToken => {
 
 const FeatureFlagsModel = zod
   .object({
-    compareToPreviousComposableVersion: zod.boolean().default(false),
     forceLegacyCompositionInTargets: zod.array(zod.string()).default([]),
     /** whether app deployments are enabled for the given organization */
     appDeployments: zod.boolean().default(false),
@@ -4935,7 +5074,6 @@ const FeatureFlagsModel = zod
   .transform(
     val =>
       val ?? {
-        compareToPreviousComposableVersion: false,
         forceLegacyCompositionInTargets: [],
         appDeployments: false,
         otelTracing: false,
@@ -5325,6 +5463,15 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
       count: number;
     }>;
   };
+  affectedAppDeployments: null | Array<{
+    id: string;
+    name: string;
+    version: string;
+    affectedOperations: Array<{
+      hash: string;
+      name: string | null;
+    }>;
+  }>;
 } {
   return {
     id: change.id,
@@ -5333,6 +5480,7 @@ export function toSerializableSchemaChange(change: SchemaChangeType): {
     isSafeBasedOnUsage: change.isSafeBasedOnUsage,
     approvalMetadata: change.approvalMetadata,
     usageStatistics: change.usageStatistics,
+    affectedAppDeployments: change.affectedAppDeployments,
   };
 }
 
@@ -5363,6 +5511,7 @@ const schemaCheckSQLFields = sql`
   , c."context_id" as "contextId"
   , c."conditional_breaking_change_metadata" as "conditionalBreakingChangeMetadata"
   , c."schema_proposal_id" as "schemaProposalId"
+  , c."schema_proposal_changes" as "schemaProposalChanges"
 `;
 
 const schemaVersionSQLFields = (t = sql``) => sql`
@@ -5524,7 +5673,7 @@ export const UserModel = zod.object({
   createdAt: zod.string(),
   displayName: zod.string(),
   fullName: zod.string(),
-  superTokensUserId: zod.string(),
+  superTokensUserId: zod.string().nullable(),
   isAdmin: zod
     .boolean()
     .nullable()

@@ -1925,12 +1925,8 @@ describe.concurrent(
   () => {
     test.concurrent('native federation', async () => {
       const { createOrg } = await initSeed().createOwner();
-      const { createProject, setFeatureFlag } = await createOrg();
-      const { createTargetAccessToken, setNativeFederation } = await createProject(
-        ProjectType.Federation,
-      );
-      await setFeatureFlag('compareToPreviousComposableVersion', true);
-      await setNativeFederation(true);
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken } = await createProject(ProjectType.Federation);
 
       const token = await createTargetAccessToken({});
 
@@ -1976,11 +1972,10 @@ describe.concurrent(
 
     test.concurrent('legacy fed composition', async () => {
       const { createOrg } = await initSeed().createOwner();
-      const { createProject, setFeatureFlag } = await createOrg();
+      const { createProject } = await createOrg();
       const { createTargetAccessToken, setNativeFederation } = await createProject(
         ProjectType.Federation,
       );
-      await setFeatureFlag('compareToPreviousComposableVersion', false);
       await setNativeFederation(false);
 
       const token = await createTargetAccessToken({});
@@ -2020,58 +2015,6 @@ describe.concurrent(
         }),
       });
     });
-
-    test.concurrent(
-      'legacy fed composition with compareToPreviousComposableVersion=true',
-      async () => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject, setFeatureFlag } = await createOrg();
-        const { createTargetAccessToken, setNativeFederation } = await createProject(
-          ProjectType.Federation,
-        );
-        await setFeatureFlag('compareToPreviousComposableVersion', true);
-        await setNativeFederation(false);
-
-        const token = await createTargetAccessToken({});
-
-        // @key(fields:) is invalid - should trigger a composition error
-        const sdl = /* GraphQL */ `
-          type Query {
-            ping: String
-            pong: String
-            foo: User
-          }
-
-          type User @key(fields: "uuid") {
-            id: ID!
-          }
-        `;
-
-        // Publish schema with write rights
-        await token
-          .publishSchema({
-            sdl,
-            service: 'serviceA',
-            url: 'http://localhost:4000',
-          })
-          .then(r => r.expectNoGraphQLErrors());
-
-        const result = await token
-          .checkSchema(sdl, 'serviceA')
-          .then(r => r.expectNoGraphQLErrors());
-
-        expect(result.schemaCheck).toMatchObject({
-          valid: false,
-          __typename: 'SchemaCheckError',
-          changes: expect.objectContaining({
-            total: 0,
-          }),
-          errors: expect.objectContaining({
-            total: 1,
-          }),
-        });
-      },
-    );
   },
 );
 
@@ -2189,17 +2132,6 @@ test.concurrent(
       metadataAttributes: null,
     });
     await storage.destroy();
-
-    const validSdl = /* GraphQL */ `
-      type Query {
-        a(b: B!): String
-      }
-
-      input B {
-        a: String @deprecated(reason: "This field is deprecated")
-        b: String!
-      }
-    `;
 
     const sdl = /* GraphQL */ `
       type Query {

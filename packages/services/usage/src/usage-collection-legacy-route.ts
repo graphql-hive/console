@@ -171,7 +171,7 @@ export function registerUsageCollectionLegacyRoute(args: {
         activeSpan?.addEvent('rate-limited');
         droppedReports.labels({ targetId: tokenInfo.target, orgId: tokenInfo.organization }).inc();
         authenticatedRequestLogger.debug(
-          'Rate limited',
+          'Rate limited (token=%s, target=%s, organization=%s)',
           maskedToken,
           tokenInfo.target,
           tokenInfo.organization,

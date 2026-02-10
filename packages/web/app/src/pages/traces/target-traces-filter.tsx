@@ -60,7 +60,7 @@ export const FilterInput = forwardRef<HTMLInputElement, FilterInputProps>(
       <input
         type={type}
         className={cn(
-          'border-input placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50',
+          'border-neutral-5 placeholder:text-neutral-10 focus-visible:ring-ring flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50',
           className,
         )}
         ref={ref}
@@ -91,7 +91,7 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
   return (
     <SidebarGroupLabel
       asChild
-      className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full text-sm"
+      className="group/label text-neutral-11 hover:bg-neutral-5 hover:text-neutral-11 w-full text-sm"
     >
       <CollapsibleTrigger>
         <ChevronRightIcon className="mr-2 transition-transform group-data-[state=open]/collapsible:rotate-90" />
@@ -100,7 +100,7 @@ export function FilterTitle(props: { children: ReactNode; changes?: number; onRe
           <Button
             variant="secondary"
             size="sm"
-            className="hover:bg-secondary group ml-auto h-6 w-8 px-1 py-0 text-xs text-gray-500"
+            className="hover:bg-neutral-2 text-neutral-10 group ml-auto h-6 w-8 px-1 py-0 text-xs"
             onClick={e => {
               e.preventDefault();
               props.onReset();
@@ -192,11 +192,11 @@ export const MultiInputFilter = memo(
             <SidebarMenuButton
               key={value}
               onClick={() => props.onChange(props.selectedValues.filter(val => val !== value))}
-              className="group/trace-id hover:bg-sidebar-accent/50"
+              className="group/trace-id hover:bg-neutral-5/50"
             >
               <div
                 data-active
-                className="text-sidebar-primary-foreground border-sidebar-primary bg-sidebar-primary group-hover/trace-id:border-sidebar-border flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border group-hover/trace-id:bg-transparent"
+                className="text-neutral-12 border-neutral-11 group-hover/trace-id:border-neutral-5 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border bg-blue-500 group-hover/trace-id:bg-transparent"
               >
                 <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
                 <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
@@ -261,7 +261,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
           <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
         )}
         {filteredOptions.length === 0 ? (
-          <div className="text-center text-sm text-gray-600">No option available</div>
+          <div className="text-neutral-8 text-center text-sm">No option available</div>
         ) : (
           filteredOptions.map((option, index) => (
             <FilterOption
@@ -277,7 +277,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
               }}
             >
               {option.label === '' ? (
-                <span className="text-gray-400">{'<unknown>'}</span>
+                <span className="text-neutral-10">{'<unknown>'}</span>
               ) : (
                 option.label
               )}
@@ -298,12 +298,12 @@ function FilterOption(props: {
   return (
     <SidebarMenuButton
       onClick={props.onClick}
-      className="hover:bg-sidebar-accent/50 flex-row items-center justify-between"
+      className="hover:bg-neutral-5/50 flex-row items-center justify-between"
     >
       <div className="flex items-center gap-2 overflow-hidden">
         <div
           data-active={props.selected}
-          className="group/filter-item border-sidebar-border text-sidebar-primary-foreground data-[active=true]:border-sidebar-primary data-[active=true]:bg-sidebar-primary flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
+          className="group/filter-item border-neutral-5 text-neutral-12 data-[active=true]:border-neutral-11 data-[active=true]:bg-neutral-11 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
         >
           <CheckIcon className="hidden size-3 group-data-[active=true]/filter-item:block" />
         </div>
@@ -338,13 +338,13 @@ const DoubleSlider = forwardRef<
     className={cn('relative flex w-full touch-none select-none items-center', className)}
     {...props}
   >
-    <SliderPrimitive.Track className="relative h-1 w-full grow overflow-hidden rounded-full bg-gray-800">
-      <SliderPrimitive.Range className="absolute h-full bg-gray-400" />
+    <SliderPrimitive.Track className="bg-neutral-5 relative h-1 w-full grow overflow-hidden rounded-full">
+      <SliderPrimitive.Range className="bg-neutral-10 absolute h-full" />
     </SliderPrimitive.Track>
     {props.value?.map((_, index) => (
       <SliderPrimitive.Thumb
         key={index}
-        className="block size-4 rounded-full border border-gray-700 bg-gray-800 transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+        className="bg-neutral-5 border-neutral-2 block size-4 rounded-full border transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
       />
     ))}
   </SliderPrimitive.Root>
@@ -419,7 +419,7 @@ export const DurationFilter = memo(
                     type="number"
                     value={values[0]}
                     onChange={handleMinInputChange}
-                    className="h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono text-white"
+                    className="text-neutral-12 h-7 border-zinc-800 bg-transparent px-2 pr-8 font-mono"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
                     ms
@@ -433,9 +433,9 @@ export const DurationFilter = memo(
                     type="number"
                     value={values[1]}
                     onChange={handleMaxInputChange}
-                    className="h-7 border-gray-800 bg-transparent px-2 pr-8 font-mono text-white"
+                    className="border-neutral-5 text-neutral-12 h-7 bg-transparent px-2 pr-8 font-mono"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400">
+                  <span className="text-neutral-10 absolute right-2 top-1/2 -translate-y-1/2 font-mono text-xs">
                     ms
                   </span>
                 </div>
@@ -448,7 +448,7 @@ export const DurationFilter = memo(
               step={1}
               value={values}
               onValueChange={handleSliderChange}
-              className="[&_[role=slider]]:size-4"
+              className="**:[[role=slider]]:size-4"
             />
           </div>
         </FilterContent>
@@ -549,7 +549,7 @@ export const TimelineFilter = memo(
                 }
               }}
             >
-              <SelectTrigger className="bg-background w-full">
+              <SelectTrigger className="bg-neutral-3 w-full">
                 <SelectValue placeholder="Select time period" />
               </SelectTrigger>
               <SelectContent>
@@ -585,9 +585,9 @@ export const TimelineFilter = memo(
                       numberOfMonths={1}
                       className="p-2 pb-0"
                     />
-                    <div className="border-border mt-4 space-y-2 border-t p-2">
+                    <div className="border-neutral-5 mt-4 space-y-2 border-t p-2">
                       <div>
-                        <Label className="text-sm font-normal text-gray-500">Start</Label>
+                        <Label className="text-neutral-10 text-sm font-normal">Start</Label>
                         <div className="flex items-center gap-x-2">
                           <Input
                             className="h-8 w-[152px] py-0"
@@ -619,7 +619,7 @@ export const TimelineFilter = memo(
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-normal text-gray-500">End</Label>
+                        <Label className="text-neutral-10 text-sm font-normal">End</Label>
                         <div className="flex items-center gap-x-2">
                           <Input
                             className="h-8 w-[152px] py-0"

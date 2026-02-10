@@ -1,0 +1,232 @@
+import NextImage from 'next/image'
+import historyImage from '../../../public/docs/pages/new-laboratory/history.png'
+
+# History
+
+The History feature tracks all your GraphQL operation executions, allowing you to review past
+requests, debug issues, and understand API behavior over time.
+
+<NextImage src={historyImage} alt="History" />
+
+## What is History?
+
+History automatically records:
+
+- **Operation details** - The query, variables, headers, and extensions used
+- **Response data** - The complete response from the server
+- **Response headers** - All HTTP headers returned
+- **Timing information** - Request duration and response size
+- **Status codes** - HTTP status codes (200, 400, 500, etc.)
+- **Preflight logs** - Logs from preflight scripts (if used)
+- **Timestamps** - When each operation was executed
+
+## Accessing History
+
+To view your operation history:
+
+1. Click the History icon in the left sidebar
+2. The History panel opens showing all past executions
+3. History is organized by date for easy navigation
+
+## Viewing History Items
+
+### History List
+
+The History panel shows:
+
+- **Grouped by date** - Operations are organized by execution date
+- **Time stamps** - Each operation shows the time it was executed
+- **Operation names** - The name of the operation (or "Untitled")
+- **Status indicators** - Color-coded icons showing success/error status
+  - Green - Successful (2xx status codes)
+  - Red - Errors (4xx, 5xx, or GraphQL errors)
+  - Indigo - Other statuses
+
+### Opening History Items
+
+To view a past execution:
+
+1. Click on any history item in the History panel
+2. It opens in a new tab showing:
+   - The original operation (read-only)
+   - The response received
+   - Response headers
+   - Preflight logs (if applicable)
+   - Timing and size information
+
+### History Details
+
+When viewing a history item, you'll see:
+
+#### Response Tab
+
+- **Formatted JSON** - Pretty-printed response data
+- **Error information** - GraphQL errors if any occurred
+- **Status badge** - Visual indicator of success/failure
+- **Duration badge** - Request duration in milliseconds
+- **Size badge** - Response size in kilobytes
+
+#### Headers Tab
+
+- **All HTTP headers** - Complete list of response headers
+- **Formatted display** - Easy-to-read JSON format
+- **Status code** - HTTP status code
+- **Content-Type** - Response content type
+
+#### Preflight Tab
+
+- **Preflight logs** - All log messages from preflight scripts
+- **Color-coded logs** - Different colors for info, warnings, errors
+- **Timestamps** - When each log entry was created
+- **Log levels** - INFO, LOG, WARN, ERROR, SYSTEM
+
+## Managing History
+
+### Deleting History Items
+
+To delete a single history item:
+
+1. Hover over the history item
+2. Click the delete icon that appears
+3. Confirm the deletion
+
+### Deleting by Date
+
+To delete all history for a specific date:
+
+1. Expand the date group
+2. Hover over the date header
+3. Click the delete icon
+4. Confirm the deletion
+
+**Warning:** This deletes all operations executed on that date.
+
+### Clearing All History
+
+To delete all history:
+
+1. Click the delete icon in the History panel header
+2. Confirm that you want to delete all history
+
+**Warning:** This action cannot be undone. All history will be permanently deleted.
+
+## History Organization
+
+### By Date
+
+History is automatically organized by date:
+
+- **Today** - Operations executed today
+- **Yesterday** - Operations from yesterday
+- **Date groups** - Older operations grouped by date (e.g., "15 Jan 2024")
+
+### Chronological Order
+
+Within each date group, operations are sorted:
+
+- **Most recent first** - Latest executions appear at the top
+- **Time-based** - Sorted by execution timestamp
+
+## Using History for Debugging
+
+### Reviewing Failed Requests
+
+When an operation fails:
+
+1. Check the History panel for the failed execution
+2. Review the error message in the response
+3. Check preflight logs for script issues
+4. Compare with successful executions
+
+### Comparing Responses
+
+To see how responses change over time:
+
+1. Find multiple executions of the same operation
+2. Open each one to compare responses
+3. Look for differences in data or structure
+
+### Understanding API Behavior
+
+Use history to:
+
+- **Track changes** - See how API responses evolve
+- **Identify patterns** - Notice recurring errors or issues
+- **Performance analysis** - Compare request durations
+- **Debug issues** - Review what was sent and received
+
+## History and Subscriptions
+
+For subscription operations, history shows:
+
+- **Subscription status** - Whether the subscription is active
+- **Multiple responses** - All messages received from the subscription
+- **Real-time updates** - New messages appear as they arrive
+- **Response timeline** - Messages ordered by timestamp
+
+## Best Practices
+
+### Regular Cleanup
+
+- **Delete old history** - Remove history you no longer need
+- **Keep important runs** - Don't delete history for operations you're debugging
+- **Organize by date** - Use date-based deletion to clean up old data
+
+### Using History Effectively
+
+1. **Name your operations** - Named operations are easier to find in history
+2. **Review before deleting** - Make sure you don't need history before clearing it
+3. **Compare responses** - Use history to see how API responses change
+4. **Debug systematically** - Review history when troubleshooting issues
+
+### Privacy and Security
+
+- **Sensitive data** - History contains all request and response data
+- **Local storage** - History is stored locally in your browser
+- **Clear when needed** - Delete history when working with sensitive information
+- **Team sharing** - Be aware of what history is visible to your team (if applicable)
+
+## Keyboard Shortcuts
+
+- `⌘J` / `Ctrl+J` - Open Command Palette (can access history)
+
+## Troubleshooting
+
+### History Not Appearing
+
+If history items don't appear:
+
+1. Make sure you've executed at least one operation
+2. Check that the History panel is open
+3. Refresh the Laboratory if needed
+
+### History Not Saving
+
+If history isn't being saved:
+
+1. Check browser storage permissions
+2. Ensure you have enough storage space
+3. Check browser console for errors
+
+### Missing History Items
+
+If history items are missing:
+
+1. Check if they were deleted
+2. Verify browser storage hasn't been cleared
+3. Check if you're looking at the correct date range
+
+### Performance Issues
+
+If history is slow to load:
+
+1. Delete old history items
+2. Clear history for very old dates
+3. Keep history manageable in size
+
+## Limitations
+
+- **Browser storage** - History is stored locally and limited by browser storage quotas
+- **No cloud sync** - History is not synced across devices (unless using organization features)
+- **Session-based** - History persists until browser data is cleared
+- **Size limits** - Very large responses may impact performance

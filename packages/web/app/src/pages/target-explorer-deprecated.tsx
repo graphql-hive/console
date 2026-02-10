@@ -97,7 +97,7 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
           <PartyPopperIcon className="size-10 text-emerald-500" />
 
           <h3 className="mt-4 text-lg font-semibold">No deprecations found</h3>
-          <p className="text-muted-foreground mb-4 mt-2 text-sm">
+          <p className="text-neutral-10 mb-4 mt-2 text-sm">
             It looks like you are maintaining your schema well, congratulations!
           </p>
         </div>
@@ -123,8 +123,8 @@ const DeprecatedSchemaView = memo(function _DeprecatedSchemaView(props: {
                   className={cn(
                     'rounded-none px-2 py-1',
                     letter === selectedLetter
-                      ? 'text-orange-500'
-                      : 'text-gray-500 hover:text-orange-500',
+                      ? 'text-neutral-2'
+                      : 'text-neutral-10 hover:text-neutral-2',
                   )}
                   key={letter}
                 >

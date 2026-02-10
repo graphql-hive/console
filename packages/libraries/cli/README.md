@@ -81,7 +81,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -108,7 +108,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -117,10 +117,11 @@ retire an app deployment
 ```
 USAGE
   $ hive app:retire --name <value> --version <value> [--debug] [--registry.endpoint <value>]
-    [--registry.accessToken <value>] [--target <value>]
+    [--registry.accessToken <value>] [--target <value>] [--force]
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
+  --force                         Force retirement even if protection rules would block it
   --name=<value>                  (required) app name
   --registry.accessToken=<value>  registry access token
   --registry.endpoint=<value>     registry endpoint
@@ -135,7 +136,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -159,7 +160,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -202,7 +203,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -213,7 +214,7 @@ USAGE
   $ hive help [COMMAND...] [-n]
 
 ARGUMENTS
-  COMMAND...  Command to show help for.
+  [COMMAND...]  Command to show help for.
 
 FLAGS
   -n, --nested-commands  Include all nested commands in the output.
@@ -223,7 +224,7 @@ DESCRIPTION
 ```
 
 _See code:
-[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.0.22/src/commands/help.ts)_
+[@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.36/src/commands/help.ts)_
 
 ## `hive introspect LOCATION`
 
@@ -246,7 +247,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -305,7 +306,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -350,7 +351,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -382,7 +383,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -394,7 +395,7 @@ USAGE
     [--registry.accessToken <value>] [--type <value>] [--write <value>] [--outputFile <value>] [--target <value>]
 
 ARGUMENTS
-  COMMIT  commit SHA, or it can be any external ID that references the schema
+  [COMMIT]  commit SHA, or it can be any external ID that references the schema
 
 FLAGS
   --debug                         Whether debug output for HTTP calls and similar should be enabled.
@@ -415,7 +416,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/schema/fetch.ts)_
 
 ## `hive schema:publish FILE`
 
@@ -459,7 +460,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/schema/publish.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -467,10 +468,11 @@ update the hive CLI
 
 ```
 USAGE
-  $ hive update [CHANNEL] [-a] [--force] [-i | -v <value>]
+  $ hive update [CHANNEL] [--force |  | [-a | -v <value> | -i]] [-b ]
 
 FLAGS
   -a, --available        See available versions.
+  -b, --verbose          Show more details about the available versions.
   -i, --interactive      Interactively select version to install. This is ignored if a channel is provided.
   -v, --version=<value>  Install a specific version.
       --force            Force a re-download of the requested version.
@@ -497,7 +499,7 @@ EXAMPLES
 ```
 
 _See code:
-[@oclif/plugin-update](https://github.com/oclif/plugin-update/blob/v4.2.13/src/commands/update.ts)_
+[@oclif/plugin-update](https://github.com/oclif/plugin-update/blob/v4.7.16/src/commands/update.ts)_
 
 ## `hive whoami`
 
@@ -521,7 +523,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.57.1/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/platform/blob/v0.58.0/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 

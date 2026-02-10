@@ -56,7 +56,7 @@ export async function createStorage(
     try {
       await db.touchTokens({ tokens });
     } catch (error) {
-      serverLogger.error('Failed to touch tokens', error);
+      serverLogger.error('Failed to touch tokens (error=%s)', error);
     }
   });
   const cache = new LRUCache<
@@ -379,7 +379,7 @@ function handleStorageError(params: {
   tier: 'redis' | 'redis-stale' | 'db';
   action: 'fetch' | 'set';
 }) {
-  params.logger.error(params.logMsg, params.error);
+  params.logger.error(`${params.logMsg} (error=%s)`, params.error);
   captureException(params.error, {
     tags: {
       storageTier: params.tier,

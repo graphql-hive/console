@@ -53,9 +53,14 @@ export function LegacyCompositionSettings(props: {
     const previousCompositionMode = props.activeCompositionMode;
     try {
       const result = await props.onMutate({
-        legacy: {
-          organizationSlug: organization.slug,
-          projectSlug: project.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          legacy: true,
         },
       });
 
@@ -100,7 +105,7 @@ export function LegacyCompositionSettings(props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-neutral-10 text-sm">
           Not recommended. Migrate towards using Native Federation v2.
         </p>
         <ProductUpdatesLink href="2023-10-10-native-federation-2">

@@ -31,7 +31,7 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
         </>
       }
     >
-      <MetadataIcon className="my-[5px] cursor-pointer text-white" />
+      <MetadataIcon className="text-neutral-12 my-[5px] cursor-pointer" />
     </Tooltip>
   );
 }
@@ -56,7 +56,7 @@ function SubgraphChip(props: {
         service: props.text,
       }}
       style={{ backgroundColor: stringToHslColor(props.text) }}
-      className="my-[2px] ml-[6px] inline-block h-[22px] max-w-[100px] cursor-pointer items-center justify-between truncate rounded-[16px] py-0 pl-[8px] pr-[6px] text-[10px] font-normal normal-case leading-loose text-[#4f4f4f] drop-shadow-md"
+      className="my-[2px] ml-[6px] inline-block h-[22px] max-w-[100px] cursor-pointer items-center justify-between truncate rounded-[16px] py-0 pl-[8px] pr-[6px] text-[10px] font-normal normal-case leading-loose text-[#4f4f4f]"
     >
       {props.text}
       <PackageIcon size={10} className="ml-1 inline-block" />
@@ -216,7 +216,7 @@ export function SupergraphMetadataList(props: {
           }
           contentProps={{ className: 'z-10' }}
         >
-          <span className="flex cursor-pointer items-center pl-1 text-xs font-bold text-white">
+          <span className="text-neutral-12 flex cursor-pointer items-center pl-1 text-xs font-bold">
             + {allItems.length - previewItems.length} more
           </span>
         </Tooltip>

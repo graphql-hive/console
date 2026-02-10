@@ -3,7 +3,6 @@ import type Redis from 'ioredis';
 import { CryptoProvider } from 'packages/services/api/src/modules/shared/providers/crypto';
 import { OverrideableBuilder } from 'supertokens-js-override/lib/build/index.js';
 import supertokens from 'supertokens-node';
-import EmailVerification from 'supertokens-node/recipe/emailverification/index.js';
 import SessionNode from 'supertokens-node/recipe/session/index.js';
 import type { ProviderInput } from 'supertokens-node/recipe/thirdparty/types';
 import ThirdPartyEmailPasswordNode from 'supertokens-node/recipe/thirdpartyemailpassword/index.js';
@@ -12,7 +11,6 @@ import type { TypeInput } from 'supertokens-node/types';
 import zod from 'zod';
 import { type Storage } from '@hive/api';
 import { TaskScheduler } from '@hive/workflows/kit';
-import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { createInternalApiCaller } from './api';
 import { env } from './environment';
@@ -24,13 +22,15 @@ import {
 } from './supertokens/oidc-provider';
 import { createThirdPartyEmailPasswordNodeOktaProvider } from './supertokens/okta-provider';
 
-const SuperTokenAccessTokenModel = zod.object({
-  version: zod.literal('1'),
+const SuperTokensSessionPayloadV2Model = zod.object({
+  version: zod.literal('2'),
   superTokensUserId: zod.string(),
   email: zod.string(),
+  userId: zod.string(),
+  oidcIntegrationId: zod.string().nullable(),
 });
 
-export type SupertokensSession = zod.TypeOf<typeof SuperTokenAccessTokenModel>;
+type SuperTokensSessionPayload = zod.TypeOf<typeof SuperTokensSessionPayloadV2Model>;
 
 export const backendConfig = (requirements: {
   storage: Storage;
@@ -154,26 +154,6 @@ export const backendConfig = (requirements: {
           env.auth.organizationOIDC ? getOIDCSuperTokensOverrides() : null,
         ]),
       }),
-      EmailVerification.init({
-        mode: env.auth.requireEmailVerification ? 'REQUIRED' : 'OPTIONAL',
-        emailDelivery: {
-          override: originalImplementation => ({
-            ...originalImplementation,
-            async sendEmail(input) {
-              if (input.type === 'EMAIL_VERIFICATION') {
-                await requirements.taskScheduler.scheduleTask(EmailVerificationTask, {
-                  user: {
-                    id: input.user.id,
-                    email: input.user.email,
-                  },
-                  emailVerifyLink: input.emailVerifyLink,
-                });
-                return Promise.resolve();
-              }
-            },
-          }),
-        },
-      }),
       SessionNode.init({
         override: {
           functions: originalImplementation => ({
@@ -189,17 +169,23 @@ export const backendConfig = (requirements: {
                 );
               }
 
-              input.accessTokenPayload = {
-                version: '1',
+              const internalUser = await internalApi.ensureUser({
+                superTokensUserId: user.id,
+                email: user.emails[0],
+                oidcIntegrationId: input.userContext['oidcId'] ?? null,
+                firstName: null,
+                lastName: null,
+              });
+              const payload: SuperTokensSessionPayload = {
+                version: '2',
                 superTokensUserId: input.userId,
+                userId: internalUser.user.id,
+                oidcIntegrationId: input.userContext['oidcId'] ?? null,
                 email: user.emails[0],
               };
 
-              input.sessionDataInDatabase = {
-                version: '1',
-                superTokensUserId: input.userId,
-                email: user.emails[0],
-              };
+              input.accessTokenPayload = structuredClone(payload);
+              input.sessionDataInDatabase = structuredClone(payload);
 
               return originalImplementation.createNewSession(input);
             },
@@ -212,14 +198,23 @@ export const backendConfig = (requirements: {
 };
 
 function extractIPFromUserContext(userContext: unknown): string {
+  const defaultIp = (userContext as any)._default.request.original.ip;
+  if (!env.supertokens?.rateLimit) {
+    return defaultIp;
+  }
+
   return (
-    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimitIPHeaderName) ||
-    (userContext as any)._default.request.original.ip
+    (userContext as any)._default.request.getHeaderValue(env.supertokens.rateLimit.ipHeaderName) ??
+    defaultIp
   );
 }
 
 function createRedisRateLimiter(redis: Redis, windowSeconds = 5 * 60, maxRequests = 10) {
   async function isRateLimited(action: string, ip: string): Promise<boolean> {
+    if (env.supertokens.rateLimit === null) {
+      return false;
+    }
+
     const key = `supertokens-rate-limit:${action}:${ip}`;
     const current = await redis.incr(key);
     if (current === 1) {

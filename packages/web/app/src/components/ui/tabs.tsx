@@ -8,8 +8,8 @@ const tabsListVariants = cva('relative flex items-center', {
   variants: {
     variant: {
       default:
-        'bg-muted text-muted-foreground inline-flex h-10 items-center justify-center rounded-md p-1',
-      menu: 'text-gray-700',
+        'bg-neutral-3 text-neutral-10 inline-flex h-10 items-center justify-center rounded-md p-1',
+      menu: 'text-neutral-2',
       content: 'm-0 block h-auto rounded-none border-b p-0',
     },
   },
@@ -19,24 +19,27 @@ const tabsListVariants = cva('relative flex items-center', {
 });
 
 // Define variants for TabsTrigger
-const tabsTriggerVariants = cva('cursor-pointer !appearance-none text-sm font-medium transition', {
-  variants: {
-    variant: {
-      default:
-        'ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 data-[state=active]:shadow-sm disabled:cursor-not-allowed active:disabled:pointer-events-none',
-      menu: 'text-white data-[state=active]:border-b-orange-500 border-b-2 border-b-transparent px-4 py-3 hover:border-b-orange-900',
-      content:
-        'mb-[-1px] rounded-none border-b first:pl-1 py-1 px-2 text-white data-[state=active]:border-orange-500 data-[state=active]:text-orange-500',
+const tabsTriggerVariants = cva(
+  'cursor-pointer appearance-none! text-sm font-medium transition hover:text-neutral-12',
+  {
+    variants: {
+      variant: {
+        default:
+          'ring-offset-neutral-2 focus-visible:ring-ring dark:data-[state=active]:bg-neutral-5 data-[state=active]:text-neutral-12 inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 data-[state=active]:bg-neutral-3 disabled:cursor-not-allowed active:disabled:pointer-events-none focus-visible:z-1',
+        menu: 'text-neutral-12 data-[state=active]:border-b-accent border-b-2 border-b-transparent px-4 py-3 hover:border-b-accent_80',
+        content:
+          'mb-[-1px] rounded-none border-b first:pl-1 py-1 px-2 text-neutral-12 data-[state=active]:border-accent data-[state=active]:text-accent',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
     },
   },
-  defaultVariants: {
-    variant: 'default',
-  },
-});
+);
 
 // Define variants for TabsContent
 const tabsContentVariants = cva(
-  'ring-offset-background focus-visible:ring-ring mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  'ring-offset-neutral-2 focus-visible:ring-ring mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
   {
     variants: {
       variant: {

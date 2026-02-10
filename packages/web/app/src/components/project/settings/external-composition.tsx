@@ -57,8 +57,10 @@ const ExternalCompositionSettings_ProjectFragment = graphql(`
 const ExternalCompositionSettings_UpdateResultFragment = graphql(`
   fragment ExternalCompositionSettings_UpdateResultFragment on UpdateSchemaCompositionResult {
     ok {
-      externalSchemaComposition {
-        endpoint
+      updatedProject {
+        externalSchemaComposition {
+          endpoint
+        }
       }
     }
     error {
@@ -127,7 +129,7 @@ const ExternalCompositionStatus = ({
         <Tooltip>
           <TooltipTrigger>
             <UpdateIcon
-              className="size-5 animate-spin cursor-default text-gray-500"
+              className="text-neutral-10 size-5 animate-spin cursor-default"
               onClick={e => e.preventDefault()}
             />
           </TooltipTrigger>
@@ -232,11 +234,17 @@ export const ExternalCompositionSettings = (props: {
     setIsMutating(true);
     void props
       .onMutate({
-        external: {
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
-          endpoint: values.endpoint,
-          secret: values.secret,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: values.endpoint,
+            secret: values.secret,
+          },
         },
       })
       .then(result => {
@@ -252,7 +260,7 @@ export const ExternalCompositionSettings = (props: {
             result,
           );
           if (updateResult.ok) {
-            const endpoint = updateResult.ok.externalSchemaComposition?.endpoint;
+            const endpoint = updateResult.ok.updatedProject.externalSchemaComposition?.endpoint;
 
             notify('External composition enabled.', 'success');
 
@@ -295,7 +303,7 @@ export const ExternalCompositionSettings = (props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-muted-foreground max-w-2xl text-sm">
+        <p className="text-neutral-10 max-w-2xl text-sm">
           For advanced users, you can configure an endpoint for external schema compositions. This
           can be used to implement custom composition logic.
         </p>

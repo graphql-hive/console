@@ -17,7 +17,7 @@ export const Heading = ({
   return (
     <HeadingLevel
       className={clsx(
-        'cursor-default text-white',
+        'text-neutral-12 cursor-default',
         {
           lg: 'text-lg font-bold',
           xl: 'text-xl font-bold',

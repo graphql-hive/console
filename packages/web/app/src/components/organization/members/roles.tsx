@@ -633,7 +633,7 @@ function OrganizationMemberRoleRow(props: {
                   <TooltipContent side="right">
                     <div className="flex flex-col items-start gap-y-2 p-2">
                       <div className="font-medium">This role is locked</div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-neutral-10 text-sm">
                         Locked roles are created by the system and cannot be modified or deleted.
                       </div>
                     </div>
@@ -652,7 +652,7 @@ function OrganizationMemberRoleRow(props: {
                   <TooltipContent side="right">
                     <div className="flex flex-col items-start gap-y-2 p-2">
                       <div className="font-medium">Default role for new members</div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-neutral-10 text-sm">
                         <p>New members will be assigned to this role by default.</p>
                         {props.canChangeOIDCDefaultRole ? (
                           <p>
@@ -681,7 +681,7 @@ function OrganizationMemberRoleRow(props: {
           ) : null}
         </div>
       </td>
-      <td className="break-words py-3 text-sm text-gray-400" title={role.description}>
+      <td className="text-neutral-10 break-words py-3 text-sm" title={role.description}>
         {role.description}
       </td>
       <td className="py-3 text-center text-sm">
@@ -690,7 +690,7 @@ function OrganizationMemberRoleRow(props: {
       <td className="py-3 text-right text-sm">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="data-[state=open]:bg-muted flex size-8 p-0">
+            <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
               <MoreHorizontalIcon className="size-4" />
               <span className="sr-only">Open menu</span>
             </Button>
@@ -929,7 +929,7 @@ export function OrganizationMemberRoles(props: {
         >
           <OrganizationMemberRoleCreateButton organization={organization} />
         </SubPageLayoutHeader>
-        <table className="w-full table-auto divide-y-[1px] divide-gray-500/20">
+        <table className="divide-neutral-10/20 w-full table-auto divide-y-[1px]">
           <thead>
             <tr>
               <th className="min-w-[200px] py-3 text-left text-sm font-semibold">Name</th>
@@ -938,7 +938,7 @@ export function OrganizationMemberRoles(props: {
               <th className="w-12 py-3 text-right text-sm font-semibold" />
             </tr>
           </thead>
-          <tbody className="divide-y-[1px] divide-gray-500/20">
+          <tbody className="divide-neutral-10/20 divide-y-[1px]">
             {organization.memberRoles?.edges.map(({ node: role }) => (
               <OrganizationMemberRoleRow
                 organizationSlug={organization.slug}

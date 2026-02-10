@@ -1,0 +1,76 @@
+---
+title: Introducing the New Laboratory
+description:
+  A redesigned GraphQL laboratory focused on a familiar, editor-driven developer experience.
+date: 2026-01-28
+authors: [michael]
+---
+
+import NextImage from 'next/image'
+import { YoutubeIframe } from '#components/youtube-iframe'
+import operationImage from '../../../../../public/docs/pages/new-laboratory/operation.png'
+import preflightImage from '../../../../../public/docs/pages/new-laboratory/preflight.png'
+
+We’re introducing a new Hive Laboratory, which replaces the existing GraphQL Playground.
+
+This update focuses primarily on the user experience. The new Laboratory is designed around
+interaction patterns developers already know from modern code editors, with the goal of making
+GraphQL exploration feel immediately familiar and predictable.
+
+Rather than expanding scope, this release concentrates on improving how day-to-day work in the
+laboratory feels.
+
+<YoutubeIframe
+  src="https://www.youtube.com/embed/SAr-eyeENSg"
+  title="Introducing the New Laboratory"
+/>
+
+## A Focused Laboratory Experience
+
+- [Overview](/docs/new-laboratory)
+- [Operations](/docs/new-laboratory/operations)
+- [Schema Support](/docs/new-laboratory/schema-support)
+- [Collections](/docs/new-laboratory/collections)
+- [Preflight Scripts](/docs/new-laboratory/preflight)
+- [Environment Variables](/docs/new-laboratory/environment-variables)
+- [History](/docs/new-laboratory/history)
+
+Each section covers a core part of the workflow, from writing and organizing operations to managing
+execution context and debugging behavior.
+
+## A Familiar Way to Work with GraphQL
+
+The new Laboratory is structured around common development workflows:
+
+- **Operations**: Write and execute queries, mutations, and subscriptions in a schema-aware editor
+  with validation and auto-completion.
+- **Collections**: Group related operations together to keep shared workflows organized and easy to
+  reuse.
+- **History**: Review previous executions, including responses and timing, to better understand how
+  an API behaves over time.
+
+The interface borrows heavily from modern editors so that navigation, editing, and execution feel
+natural without additional learning.
+
+<br />
+<NextImage src={operationImage} alt="Operation" />
+
+## Configuration That Matches Real Environments
+
+The Laboratory includes tools to reflect real-world setups more accurately:
+
+- **Preflight Scripts** allow running JavaScript before execution to prepare headers, handle
+  authentication, or apply custom logic.
+- **Environment Variables** make it easier to switch between environments without modifying
+  operations.
+
+This helps position the Laboratory as a practical workspace rather than a standalone testing
+surface.
+
+<br />
+<NextImage src={preflightImage} alt="Preflight Scripts" />
+
+---
+
+The new Laboratory is available now in the Hive Console.  
+For details, see the [Laboratory documentation](/docs/new-laboratory).

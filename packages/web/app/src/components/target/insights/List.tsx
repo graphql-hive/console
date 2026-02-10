@@ -236,7 +236,7 @@ function OperationsTable({
   return (
     <div
       className={clsx(
-        'overflow-x-scroll rounded-md border border-gray-800 bg-gray-900/50 p-5',
+        'border-neutral-5 bg-neutral-2/50 overflow-x-scroll rounded-md border p-5',
         className,
       )}
     >
@@ -271,7 +271,7 @@ function OperationsTable({
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <InfoIcon className="size-4 text-gray-400" />
+                            <InfoIcon className="text-neutral-10 size-4" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-[300px] text-left text-sm">
                             <p className="mb-4">

@@ -333,10 +333,10 @@ const TracesList = memo(function TracesList(
                   targetSlug: targetRef.targetSlug,
                   traceId,
                 }}
-                className="group block w-[6ch] overflow-hidden whitespace-nowrap text-white"
+                className="text-neutral-12 group block w-[6ch] overflow-hidden whitespace-nowrap"
               >
                 <span>
-                  <span className="underline decoration-gray-800 decoration-2 underline-offset-2 group-hover:decoration-white">
+                  <span className="decoration-neutral-5 group-hover:decoration-neutral-12 underline decoration-2 underline-offset-2">
                     {traceId.substring(0, 8)}
                   </span>
                   <span
@@ -360,7 +360,7 @@ const TracesList = memo(function TracesList(
           return (
             <Button
               variant="link"
-              className="text-muted-foreground"
+              className="text-neutral-10"
               onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             >
               Timestamp
@@ -389,7 +389,7 @@ const TracesList = memo(function TracesList(
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="cursor-auto overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                  className="text-neutral-11 cursor-auto overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
                   onClick={e => {
                     // Prevent the click event from bubbling up to the row,
                     // which would trigger the sheet with trace details to open
@@ -425,26 +425,26 @@ const TracesList = memo(function TracesList(
       {
         accessorKey: 'operationName',
         header: () => {
-          return <div className="text-muted-foreground px-4">Operation Name</div>;
+          return <div className="text-neutral-10 px-4">Operation Name</div>;
         },
         cell: ({ row }) => (
           <TooltipProvider>
             <Tooltip disableHoverableContent delayDuration={100}>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 px-4 text-xs">
-                  <span className="bg-muted text-muted-foreground inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
+                  <span className="bg-neutral-3 text-neutral-10 inline-flex items-center rounded-sm px-1 py-0.5 uppercase">
                     {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                   </span>
                   <span>
                     {row.getValue('operationName') ?? (
-                      <span className="text-gray-400">{'<unknown>'}</span>
+                      <span className="text-neutral-10">{'<unknown>'}</span>
                     )}
                   </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent
                 side="bottom"
-                className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
               >
                 <GridTable
                   rows={[
@@ -474,7 +474,7 @@ const TracesList = memo(function TracesList(
             <div>
               <Button
                 variant="link"
-                className="text-muted-foreground"
+                className="text-neutral-10"
                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
               >
                 Duration
@@ -531,7 +531,7 @@ const TracesList = memo(function TracesList(
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
-                  className="overflow-hidden rounded-lg p-2 text-xs text-gray-100 shadow-lg sm:min-w-[150px]"
+                  className="text-neutral-11 overflow-hidden rounded-lg p-2 text-xs shadow-lg sm:min-w-[150px]"
                 >
                   <GridTable
                     rows={[
@@ -584,7 +584,7 @@ const TracesList = memo(function TracesList(
 
   return (
     <>
-      <div className="rounded-lg border bg-gray-900/50 shadow-sm">
+      <div className="bg-neutral-2/50 rounded-lg border shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
@@ -617,7 +617,7 @@ const TracesList = memo(function TracesList(
                   data-state={row.getIsSelected() && 'selected'}
                   className={cn(
                     'cursor-pointer',
-                    props.selectedTraceId === row.original.id ? 'bg-white/10' : '',
+                    props.selectedTraceId === row.original.id ? 'bg-neutral-12/10' : '',
                   )}
                   onClick={ev => {
                     ev.preventDefault();
@@ -776,7 +776,7 @@ function Filters(
 
   return (
     <>
-      <SidebarGroupLabel className="flex items-center justify-between">
+      <SidebarGroupLabel className="text-neutral-12 flex items-center justify-between">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
@@ -926,14 +926,14 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
   const trace = queryResult.data?.target?.trace;
 
   return (
-    <SheetContent className="border-l border-gray-800 bg-black p-0 text-white md:max-w-[50%]">
-      <SheetHeader className="relative border-b border-gray-800 p-4">
+    <SheetContent className="border-neutral-5 text-neutral-12 bg-neutral-1 border-l p-0 md:max-w-[50%]">
+      <SheetHeader className="border-neutral-5 relative border-b p-4">
         <div className="flex items-center justify-between">
-          <SheetTitle className="text-lg font-medium text-white">
+          <SheetTitle className="text-neutral-12 text-lg font-medium">
             {trace ? (
               <>
-                {trace.operationName ?? <span className="text-gray-400">{'<unknown>'}</span>}
-                <span className="text-muted-foreground ml-2 font-mono font-normal">
+                {trace.operationName ?? <span className="text-neutral-10">{'<unknown>'}</span>}
+                <span className="text-neutral-10 ml-2 font-mono font-normal">
                   {trace.id.substring(0, 4)}
                 </span>
               </>
@@ -942,7 +942,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
             )}
           </SheetTitle>
         </div>
-        <SheetDescription className="mt-1 text-xs text-gray-400">
+        <SheetDescription className="text-neutral-10 mt-1 text-xs">
           Trace ID:{' '}
           {trace?.id ? (
             <>
@@ -957,8 +957,8 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           {trace ? (
             <>
               <div className="flex items-center gap-1">
-                <Clock className="size-3 text-gray-400" />
-                <span className="text-gray-300">{formatNanoseconds(BigInt(trace.duration))}</span>
+                <Clock className="text-neutral-10 size-3" />
+                <span className="text-neutral-11">{formatNanoseconds(BigInt(trace.duration))}</span>
               </div>
               <Badge
                 variant="outline"
@@ -969,7 +969,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               >
                 {trace.success ? 'Ok' : 'Error'}
               </Badge>
-              <span className="font-mono uppercase text-gray-300">
+              <span className="text-neutral-11 font-mono uppercase">
                 {trace ? formatDate(trace.timestamp, 'MMM dd HH:mm:ss') : null}
               </span>
             </>
@@ -1431,7 +1431,7 @@ function GridTable(props: {
     <div className="grid grid-cols-[auto,1fr] gap-x-6 gap-y-2">
       {props.rows.map(row => (
         <Fragment key={row.key}>
-          <div className="font-sans text-gray-400">{row.key}</div>
+          <div className="text-neutral-10 font-sans">{row.key}</div>
           <div className="text-right font-mono">{row.value}</div>
         </Fragment>
       ))}

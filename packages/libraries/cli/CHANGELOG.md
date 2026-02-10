@@ -1,5 +1,43 @@
 # @graphql-hive/cli
 
+## 0.58.0
+
+### Minor Changes
+
+- [#7432](https://github.com/graphql-hive/console/pull/7432)
+  [`f8e49ae`](https://github.com/graphql-hive/console/commit/f8e49ae53f743a50e104fba216bd4545fb4abdd6)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add app deployment retirement
+  protection settings. When enabled, prevents retiring app deployments that were recently created or
+  are still actively used, based on configurable inactivity period, creation age, and traffic
+  thresholds.
+
+## 0.57.4
+
+### Patch Changes
+
+- Updated dependencies
+  [[`1f824a7`](https://github.com/graphql-hive/console/commit/1f824a7d503c39d8675fb44e899da275d5ac7045)]:
+  - @graphql-hive/core@0.20.2
+
+## 0.57.3
+
+### Patch Changes
+
+- Updated dependencies
+  [[`8bbbfb8`](https://github.com/graphql-hive/console/commit/8bbbfb8aa6aa4c59b9ad515dfbbe12616931f82d)]:
+  - @graphql-hive/core@0.20.1
+
+## 0.57.2
+
+### Patch Changes
+
+- [#7485](https://github.com/graphql-hive/console/pull/7485)
+  [`e3006e2`](https://github.com/graphql-hive/console/commit/e3006e22bbe38e673c27b94b080be5f57f3d095d)
+  Thanks [@kamilkisiela](https://github.com/kamilkisiela)! - Fixes a bug in Federation composition
+  and validation where an error was incorrectly reported for interfaces implementing another
+  interface with a `@key`. The validation now correctly applies only to object types implementing
+  the interface.
+
 ## 0.57.1
 
 ### Patch Changes

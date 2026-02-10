@@ -13,7 +13,7 @@ export type ObservabilityConfig =
         username: Output<string> | string;
         password: Output<string>;
       };
-      prom: {
+      otlpMetrics: {
         endpoint: Output<string> | string;
         username: Output<string> | string;
         password: Output<string>;
@@ -26,7 +26,7 @@ export type ObservabilityConfig =
     };
 
 // prettier-ignore
-export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.111.2');
+export const OTLP_COLLECTOR_CHART = helmChart('https://open-telemetry.github.io/opentelemetry-helm-charts', 'opentelemetry-collector', '0.143.1');
 // prettier-ignore
 export const VECTOR_HELM_CHART = helmChart('https://helm.vector.dev', 'vector', '0.35.0');
 
@@ -54,20 +54,27 @@ export class Observability {
                 password: this.config.tempo.password,
               },
             },
+            'basicauth/grafana_cloud_metrics': {
+              client_auth: {
+                username: this.config.otlpMetrics.username,
+                password: this.config.otlpMetrics.password,
+              },
+            },
           };
 
     const exporters =
       this.config === 'local'
         ? {}
         : {
-            prometheusremotewrite: {
-              endpoint: interpolate`https://${this.config.prom.username}:${this.config.prom.password}@${this.config.prom.endpoint}`,
-            },
             'otlp/grafana_cloud_traces': {
               endpoint: this.config.tempo.endpoint,
               auth: {
                 authenticator: 'basicauth/grafana_cloud_traces',
               },
+            },
+            'otlphttp/grafana_cloud_metrics': {
+              endpoint: this.config.otlpMetrics.endpoint,
+              auth: { authenticator: 'basicauth/grafana_cloud_metrics' },
             },
           };
 
@@ -187,26 +194,46 @@ export class Observability {
             spike_limit_mib: 128,
           },
           // Filter OpenTelemetry traces that are not needed for debugging.
-          'filter/traces': {
-            error_mode: 'ignore',
-            traces: {
-              span: [
-                // Ignore all HEAD/OPTIONS requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "HEAD"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "OPTIONS"',
-                // Ignore health checks
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_readiness"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/_health"',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["http.url"], ".*/_health") == true',
-                // Ignore Contour/Envoy traces for /usage requests
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/usage" and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
-                // Ignore metrics scraping
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
-                // Ignore webapp HTTP calls
-                'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
-                'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and IsMatch(attributes["upstream_cluster.name"], "default_app-.*") == true',
-              ],
-            },
+          tail_sampling: {
+            decision_wait: '10s',
+            num_traces: 10000,
+            policies: [
+              {
+                name: 'drop-traces',
+                type: 'drop',
+                drop: {
+                  drop_sub_policy: [
+                    {
+                      name: 'drop-proxy-noise',
+                      type: 'ottl_condition',
+                      ottl_condition: {
+                        error_mode: 'ignore',
+                        span: [
+                          // Ignore HEAD/OPTIONS
+                          'attributes["component"] == "proxy" and (attributes["http.method"] == "HEAD" or attributes["http.method"] == "OPTIONS")',
+                          //Ignore health checks
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and (attributes["http.url"] == "/_readiness" or attributes["http.url"] == "/_health" or IsMatch(attributes["http.url"], ".*/_health"))',
+                          //Ignore /usage requests (200 or 429)
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and (attributes["http.url"] == "/usage" or IsMatch(attributes["http.url"], "/usage/.*")) and (attributes["http.status_code"] == "200" or attributes["http.status_code"] == "429")',
+                          // Ignore metrics scraping
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "GET" and attributes["http.url"] == "/metrics"',
+                          // Ignore webapp HTTP calls via upstream cluster name
+                          'attributes["component"] == "proxy" and (attributes["http.method"] == "POST" or attributes["http.method"] == "GET") and IsMatch(attributes["upstream_cluster.name"], "default_app-.*")',
+                          // Hive Tracing is using these endpoints and they don't have any added value for us when monitored
+                          'attributes["component"] == "proxy" and attributes["http.method"] == "POST" and attributes["http.url"] == "/otel/v1/traces"',
+                          // Internal /usage calls can also be filtered out
+                          'resource.attributes["service.name"] == "usage" and attributes["http.status_code"] == 200 and IsRootSpan() == true',
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+              {
+                name: 'keep-all-others',
+                type: 'always_sample',
+              },
+            ],
           },
           // Remove raw trace information that we don't really need and exposed by default.
           'attributes/trace_filter': {
@@ -356,7 +383,11 @@ export class Observability {
           extensions:
             this.config === 'local'
               ? ['health_check']
-              : ['health_check', 'basicauth/grafana_cloud_traces'],
+              : [
+                  'health_check',
+                  'basicauth/grafana_cloud_traces',
+                  'basicauth/grafana_cloud_metrics',
+                ],
           pipelines: {
             traces: {
               receivers: ['otlp'],
@@ -364,14 +395,15 @@ export class Observability {
                 'resource/trace_cleanup',
                 'attributes/trace_filter',
                 'transform/patch_envoy_spans',
-                'filter/traces',
+                'tail_sampling',
                 'batch',
               ],
               exporters:
                 this.config === 'local' ? ['debug'] : ['debug', 'otlp/grafana_cloud_traces'],
             },
             metrics: {
-              exporters: this.config === 'local' ? ['debug'] : ['debug', 'prometheusremotewrite'],
+              exporters:
+                this.config === 'local' ? ['debug'] : ['debug', 'otlphttp/grafana_cloud_metrics'],
               processors: ['memory_limiter', 'batch'],
               receivers: ['prometheus'],
             },

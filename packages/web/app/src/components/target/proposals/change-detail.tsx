@@ -22,7 +22,7 @@ export function ProposalChangeDetail(props: {
     <Accordion type="single">
       <AccordionItem value="item-1">
         <AccordionHeader className="flex">
-          <AccordionTrigger className="py-3 text-gray-600 hover:no-underline dark:text-white">
+          <AccordionTrigger className="text-neutral-8 py-3 hover:no-underline">
             <div className="flex w-full flex-row items-center text-left">
               <div>{labelize(props.change.message)}</div>
               <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
@@ -49,12 +49,12 @@ export function ChangeBlock(props: {
   return (
     props.changes.length !== 0 && (
       <>
-        <h2 className="mb-2 mt-6 flex items-center font-bold text-gray-900 dark:text-white">
+        <h2 className="text-neutral-10 mb-2 mt-6 flex items-center font-bold">
           {props.title}
           {props.info && <ChangesBlockTooltip info={props.info} />}
         </h2>
         <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
-          {props.changes.map(({ change, error, mergeStatus }) => {
+          {props.changes.map(({ change, error, mergeStatus }, i) => {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
@@ -65,7 +65,7 @@ export function ChangeBlock(props: {
               );
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
-                <span className="flex items-center justify-end pl-4 text-gray-400">
+                <span className="text-neutral-10 flex items-center justify-end pl-4">
                   <ComponentNoneIcon className="mr-2" /> NO CHANGE
                 </span>
               );
@@ -74,7 +74,7 @@ export function ChangeBlock(props: {
               <ProposalChangeDetail
                 icon={icon}
                 change={change}
-                key={`${change.type}-${change.path}`}
+                key={`${change.type}-${change.path}-${i}`}
                 error={error}
               />
             );
@@ -90,7 +90,7 @@ function ChangesBlockTooltip(props: { info: string }) {
     <TooltipProvider>
       <Tooltip delayDuration={200}>
         <TooltipTrigger>
-          <Button variant="ghost" size="icon-sm" className="ml-1 text-gray-400">
+          <Button variant="ghost" size="icon-sm" className="text-neutral-10 ml-1">
             <InfoCircledIcon className="size-4" />
           </Button>
         </TooltipTrigger>

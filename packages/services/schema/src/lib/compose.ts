@@ -479,7 +479,7 @@ async function callExternalService(
       }
     }
 
-    logger?.error('encountered an unexpected error, throwing. error=%o', error);
+    logger?.error('encountered an unexpected error, throwing. error=%s', error);
 
     throw error;
   } finally {

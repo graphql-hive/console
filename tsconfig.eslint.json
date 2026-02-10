@@ -15,7 +15,6 @@
     ".eslintrc.cjs",
     "vitest.config.ts",
     "scripts/serializer.ts",
-    "packages/web/app/.babelrc.cjs",
     "configs",
     "codegen.mts"
   ],

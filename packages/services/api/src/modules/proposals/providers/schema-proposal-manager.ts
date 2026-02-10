@@ -3,11 +3,9 @@
  */
 import { Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
-import { SchemaChangeType } from '@hive/storage';
-import { SchemaProposalCheckInput, SchemaProposalStage } from '../../../__generated__/types';
+import type { SchemaProposalStage } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
-import { SchemaPublisher } from '../../schema/providers/schema-publisher';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
@@ -25,7 +23,6 @@ export class SchemaProposalManager {
     private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
-    private schemaPublisher: SchemaPublisher,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalsManager' });
   }
@@ -36,7 +33,6 @@ export class SchemaProposalManager {
     description: string;
     isDraft: boolean;
     author: string;
-    initialChecks: ReadonlyArray<SchemaProposalCheckInput>;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
     if (selector === null) {
@@ -57,51 +53,6 @@ export class SchemaProposalManager {
     }
 
     const proposal = createProposalResult.proposal;
-    const changes: SchemaChangeType[] = [];
-    const checkPromises = args.initialChecks.map(async check => {
-      const result = await this.schemaPublisher.check({
-        ...check,
-        service: check.service?.toLowerCase(),
-        target: { byId: selector.targetId },
-        schemaProposalId: proposal.id,
-      });
-      if ('changes' in result && result.changes) {
-        changes.push(...result.changes);
-        return {
-          ...result,
-          changes: result.changes,
-          errors:
-            result.errors?.map(error => ({
-              ...error,
-              path: 'path' in error ? error.path?.split('.') : null,
-            })) ?? [],
-        };
-      }
-    });
-
-    // @todo roll back the proposal creation... Or run checks first and then associate them with the proposal
-    const checksResult = await Promise.all(checkPromises);
-    const errorResult = checksResult.find(check => check?.errors.length);
-    if (errorResult !== undefined) {
-      // has errors
-      return {
-        type: 'error' as const,
-        error: {
-          message:
-            errorResult.message ?? errorResult.errors.map(e => `- ${e.message}`).join('\n') ?? '',
-          details: {
-            title: null,
-            description: null,
-          },
-        },
-      };
-    }
-
-    // @todo consider mapping this here vs using the nested resolver... This is more efficient but riskier bc logic lives in two places.
-    // const checkEdges = checks.map(check => ({
-    //   node: check,
-    //   cursor: 'schemaCheck' in check && encodeCreatedAtAndUUIDIdBasedCursor({ id: check.schemaCheck!.id, createdAt: check.schemaCheck!.createdAt} ) || undefined,
-    // })) as any; // @todo
     return {
       type: 'ok' as const,
       schemaProposal: {
@@ -114,17 +65,15 @@ export class SchemaProposalManager {
         targetId: proposal.targetId,
         reviews: null,
         author: args.author,
-        // checks: {
-        //   edges: checkEdges,
-        //   pageInfo: {
-        //     hasNextPage: false,
-        //     hasPreviousPage: false,
-        //     startCursor: checkEdges[0]?.cursor || '',
-        //     endCursor: checkEdges[checkEdges.length -1]?.cursor || '',
-        //   },
-        // },
-        // rebasedSchemaSDL(checkId: ID): [SubgraphSchema!]
-        // rebasedSupergraphSDL(versionId: ID): String
+        checks: {
+          edges: [],
+          pageInfo: {
+            hasNextPage: false,
+            hasPreviousPage: false,
+            startCursor: '',
+            endCursor: '',
+          },
+        },
       },
     };
   }

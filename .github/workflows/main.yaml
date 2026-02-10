@@ -79,11 +79,6 @@ jobs:
     uses: ./.github/workflows/website.yaml
     secrets: inherit
 
-  # Deploy Storybook to CloudFlare Pages
-  storybook:
-    uses: ./.github/workflows/storybook.yaml
-    secrets: inherit
-
   # GraphQL Schema Publish
   graphql-schema:
     uses: ./.github/workflows/graphql-schema-publish.yaml

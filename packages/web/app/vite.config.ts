@@ -2,6 +2,8 @@ import { resolve } from 'node:path';
 import type { Plugin, UserConfig } from 'vite';
 import monacoEditor from 'vite-plugin-monaco-editor';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import viteFastify from '@fastify/vite/plugin';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -25,7 +27,9 @@ export default {
   root: __dirname,
   plugins: [
     tsconfigPaths(),
+    viteFastify({ spa: true, useRelativePaths: true }),
     react(),
+    tailwindcss(),
     reactScanPlugin,
     // @ts-expect-error temp
     monacoEditor.default({
@@ -39,13 +43,11 @@ export default {
     }),
   ],
   build: {
+    outDir: 'dist',
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),
         ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),
-      },
-      output: {
-        entryFileNames: '[name].js',
       },
     },
   },

@@ -22,6 +22,7 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
+import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -156,7 +157,10 @@ export async function main() {
       return res.status(403).send(err.message);
     }
 
-    return supertokensErrorHandler()(err, req, res);
+    // We can not upgrade Supertokens Node as it removed some APIs we rely on for
+    // our SSO flow. This the as `any` cast here.
+    // The code is still compatible and purely a type error.
+    return supertokensErrorHandler()(err, req, res as any);
   });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
@@ -182,6 +186,7 @@ export async function main() {
           'Content-Type',
           'graphql-client-version',
           'graphql-client-name',
+          'ignore-session',
           'x-request-id',
           ...supertokens.getAllCORSHeaders(),
         ],
@@ -290,6 +295,7 @@ export async function main() {
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
+            rateLimit: env.supertokens.rateLimit,
           }
         : null,
       tokens: {
@@ -413,6 +419,9 @@ export async function main() {
                 new OrganizationMemberRoles(storage.pool, logger),
                 logger,
               ),
+              emailVerification: env.auth.requireEmailVerification
+                ? registry.injector.get(EmailVerification)
+                : null,
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>

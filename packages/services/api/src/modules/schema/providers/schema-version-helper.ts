@@ -17,7 +17,7 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
-import { ensureCompositeSchemas, SchemaHelper } from './schema-helper';
+import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 
 @Injectable({
@@ -69,7 +69,13 @@ export class SchemaVersionHelper {
 
     const validation = await this.compositionOrchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
-      schemas.map(s => this.schemaHelper.createSchemaObject(s)),
+      schemas.map(s =>
+        this.schemaHelper.createSchemaObject({
+          sdl: s.sdl,
+          serviceName: s.kind === 'composite' ? s.service_name : null,
+          serviceUrl: s.kind === 'composite' ? s.service_url : null,
+        }),
+      ),
       {
         external: project.externalComposition,
         native: this.schemaManager.checkProjectNativeFederationSupport({
@@ -99,12 +105,17 @@ export class SchemaVersionHelper {
 
   async getCompositeSchemaSdl(schemaVersion: SchemaVersion) {
     if (schemaVersion.hasPersistedSchemaChanges) {
+      if (!schemaVersion.supergraphSDL) {
+        return schemaVersion.compositeSchemaSDL;
+      }
+
       return schemaVersion.compositeSchemaSDL
         ? this.autoFixCompositeSchemaSdl(schemaVersion.compositeSchemaSDL, schemaVersion.id)
         : null;
     }
 
     const composition = await this.composeSchemaVersion(schemaVersion);
+
     if (composition === null) {
       return null;
     }
@@ -128,6 +139,7 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getCompositeSchemaAst(schemaVersion: SchemaVersion) {
     const compositeSchemaSdl = await this.getCompositeSchemaSdl(schemaVersion);
+
     if (compositeSchemaSdl === null) {
       return null;
     }
@@ -237,13 +249,14 @@ export class SchemaVersionHelper {
       existingSdl,
       incomingSdl,
       includeUrlChanges: {
-        schemasBefore: ensureCompositeSchemas(schemaBefore),
-        schemasAfter: ensureCompositeSchemas(schemasAfter),
+        schemasBefore: ensureCompositeSchemas(schemaBefore).map(toCompositeSchemaInput),
+        schemasAfter: ensureCompositeSchemas(schemasAfter).map(toCompositeSchemaInput),
       },
       filterOutFederationChanges: project.type === ProjectType.FEDERATION,
       conditionalBreakingChangeConfig: null,
       failDiffOnDangerousChange,
       filterNestedChanges: true,
+      getAffectedAppDeployments: null,
     });
 
     if (diffCheck.status === 'skipped') {
@@ -268,7 +281,7 @@ export class SchemaVersionHelper {
       return null;
     }
 
-    return await this.schemaManager.getVersionBeforeVersionId({
+    return await this.schemaManager.getComposableVersionBeforeVersionId({
       organization: schemaVersion.organizationId,
       project: schemaVersion.projectId,
       target: schemaVersion.targetId,

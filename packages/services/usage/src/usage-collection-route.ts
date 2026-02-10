@@ -150,7 +150,12 @@ export function registerUsageCollectionRoute(args: {
     if (isRateLimited) {
       activeSpan?.addEvent('rate-limited');
       droppedReports.labels({ targetId: target.id, orgId: target.orgId }).inc();
-      authenticatedRequestLogger.debug('Rate limited', maskedToken, target.id, target.orgId);
+      authenticatedRequestLogger.debug(
+        'Rate limited (token=%s, target=%s, organization=%s)',
+        maskedToken,
+        target.id,
+        target.orgId,
+      );
       await reply.status(429).send();
       return;
     }

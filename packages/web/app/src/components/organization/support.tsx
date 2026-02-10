@@ -7,7 +7,7 @@ const statusVariants = cva('inline-flex items-center text-sm font-semibold', {
   variants: {
     variant: {
       [SupportTicketStatus.Open]: 'text-yellow-400',
-      [SupportTicketStatus.Solved]: 'text-gray-500',
+      [SupportTicketStatus.Solved]: 'text-neutral-10',
     },
   },
   defaultVariants: {
@@ -38,12 +38,9 @@ const priorityVariants = cva(
   {
     variants: {
       variant: {
-        [SupportTicketPriority.Normal]:
-          'border-transparent bg-destructive/40 text-destructive-foreground',
-        [SupportTicketPriority.High]:
-          'border-transparent bg-destructive/60 text-destructive-foreground',
-        [SupportTicketPriority.Urgent]:
-          'border-transparent bg-destructive/80 text-destructive-foreground',
+        [SupportTicketPriority.Normal]: 'border-transparent bg-red-400 text-neutral-12',
+        [SupportTicketPriority.High]: 'border-transparent bg-red-600 text-neutral-12',
+        [SupportTicketPriority.Urgent]: 'border-transparent bg-red-800 text-neutral-12',
       },
     },
     defaultVariants: {

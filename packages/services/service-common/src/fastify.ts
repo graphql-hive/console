@@ -56,14 +56,19 @@ export async function createServer(options: {
   const server = fastify({
     disableRequestLogging: true,
     bodyLimit: options.bodyLimit ?? 30e6, // 30mb by default
-    logger:
-      options.log instanceof Logger
-        ? bridgeHiveLoggerToFastifyLogger(options.log)
-        : {
+    ...(options.log instanceof Logger
+      ? {
+          loggerInstance: bridgeHiveLoggerToFastifyLogger(options.log),
+        }
+      : {
+          logger: {
             level: options.log.level,
             redact: ['request.options', 'options', 'request.headers.authorization'],
           },
-    maxParamLength: 5000,
+        }),
+    routerOptions: {
+      maxParamLength: 5000,
+    },
     requestIdHeader: 'x-request-id',
     trustProxy: true,
   });

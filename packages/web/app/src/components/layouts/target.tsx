@@ -1,6 +1,8 @@
 import { createContext, ReactElement, ReactNode, useContext, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -112,6 +114,7 @@ const TargetLayoutQuery = graphql(`
           }
         }
       }
+      ...UserMenu_OrganizationFragment
     }
   }
 `);
@@ -156,26 +159,24 @@ export const TargetLayout = ({
       projectSlug={props.projectSlug}
       targetSlug={props.targetSlug}
     >
-      <header>
-        <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <TargetSelector
-              organizations={query.data?.organizations ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              currentTargetSlug={props.targetSlug}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <TargetSelector
+            organizations={query.data?.organizations ?? null}
+            currentOrganizationSlug={props.organizationSlug}
+            currentProjectSlug={props.projectSlug}
+            currentTargetSlug={props.targetSlug}
+          />
         </div>
-      </header>
+        <div>
+          <UserMenu
+            me={me ?? null}
+            currentOrganization={currentOrganization ?? null}
+            organizations={query.data?.organizations ?? null}
+          />
+        </div>
+      </Header>
 
       {query.fetching === false &&
       query.stale === false &&
@@ -183,7 +184,7 @@ export const TargetLayout = ({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
+          <SecondaryNavigation>
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject && currentTarget ? (
                 <Tabs className="flex h-full grow flex-col" value={page}>
@@ -323,9 +324,9 @@ export const TargetLayout = ({
                 </Tabs>
               ) : (
                 <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
                 </div>
               )}
               {currentTarget && isCDNEnabled && (
@@ -333,7 +334,7 @@ export const TargetLayout = ({
                   <Button
                     onClick={toggleModalOpen}
                     variant="link"
-                    className="hidden whitespace-nowrap text-orange-500 md:flex"
+                    className="hidden whitespace-nowrap md:flex"
                   >
                     <LinkIcon size={16} className="mr-2" />
                     Connect to CDN
@@ -348,10 +349,8 @@ export const TargetLayout = ({
                 </>
               )}
             </div>
-          </div>
-          <div className={cn('container min-h-[var(--content-height)] pb-7', className)}>
-            {children}
-          </div>
+          </SecondaryNavigation>
+          <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
         </>
       )}
     </TargetReferenceProvider>
@@ -596,8 +595,14 @@ function FederationModalContent(props: {
         <TabsTrigger value="hive-gateway" variant="content">
           Hive Gateway
         </TabsTrigger>
+        <TabsTrigger value="hive-router" variant="content">
+          Hive Router
+        </TabsTrigger>
         <TabsTrigger value="apollo-router" variant="content">
           Apollo Router
+        </TabsTrigger>
+        <TabsTrigger value="grafbase-gateway" variant="content">
+          Grafbase Gateway
         </TabsTrigger>
         <TabsTrigger value="cdn" variant="content">
           Custom / HTTP
@@ -620,21 +625,52 @@ function FederationModalContent(props: {
         </div>
         <p>
           For more information please refer to our{' '}
-          <UiLink variant="primary" target="_blank" rel="noreferrer" to={getDocsUrl('/gateway')}>
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/gateway/usage-reporting')}
+          >
             Hive Gateway documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="hive-router" variant="content">
+        <p>
+          Start up a Hive Router instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name hive-router --rm -p 4000:4000 \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
+  ghcr.io/graphql-hive/router`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/router/observability/usage_reporting')}
+          >
+            Hive Router documentation
           </UiLink>
           .
         </p>
       </TabsContent>
       <TabsContent value="apollo-router" variant="content">
         <p>
-          Start up a Hive Gateway instance polling the supergraph from the Hive CDN using the
+          Start up a Apollo Router instance polling the supergraph from the Hive CDN using the
           following command.
         </p>
         {authenticateSection}
         <InputCopy
           multiline
-          value={`docker run --name hive-gateway --rm \\
+          value={`docker run --name apollo-router -p 4000:4000 --rm \\
   --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
   --env HIVE_CDN_KEY="<hive_cdn_access_key>"
   ghcr.io/graphql-hive/apollo-router`}
@@ -648,6 +684,32 @@ function FederationModalContent(props: {
             to={getDocsUrl('/other-integrations/apollo-router')}
           >
             Apollo Router documentation
+          </UiLink>
+          .
+        </p>
+      </TabsContent>
+      <TabsContent value="grafbase-gateway" variant="content">
+        <p>
+          Start up a Grafbase Gateway instance polling the supergraph from the Hive CDN using the
+          following command.
+        </p>
+        {authenticateSection}
+        <InputCopy
+          multiline
+          value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
+  --env HIVE_CDN_ENDPOINT="${props.cdnUrl}" \\
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>"
+  ghcr.io/grafbase/gateway`}
+        />
+        <p>
+          For more information please refer to our{' '}
+          <UiLink
+            variant="primary"
+            target="_blank"
+            rel="noreferrer"
+            to={getDocsUrl('/other-integrations/grafbase-gateway')}
+          >
+            Grafbase Gateway documentation
           </UiLink>
           .
         </p>

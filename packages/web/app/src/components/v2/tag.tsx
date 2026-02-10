@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 const colors = {
   green: 'bg-green-500/10 text-green-500',
   yellow: 'bg-yellow-500/10 text-yellow-500',
-  gray: 'bg-gray-500/10 text-gray-500',
-  orange: 'bg-orange-500/10 text-orange-500',
+  gray: 'bg-neutral-10/10 text-neutral-10',
+  orange: 'bg-neutral-2/10 text-neutral-2',
   red: 'bg-red-500/10 text-red-500',
 } as const;
 

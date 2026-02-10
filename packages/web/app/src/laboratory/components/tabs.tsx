@@ -36,16 +36,16 @@ export const Tabs = ({ children, suffix }: TabsProps) => {
 
   return (
     <div className="grid size-full grid-rows-[auto_1fr] pb-0">
-      <div className="bg-background relative z-10 flex h-12 w-full items-center overflow-hidden">
-        <div className="bg-border absolute bottom-0 left-0 -z-10 h-px w-full" />
+      <div className="bg-neutral-3 relative z-10 flex h-12 w-full items-center overflow-hidden">
+        <div className="bg-neutral-5 absolute bottom-0 left-0 -z-10 h-px w-full" />
         <div className="flex h-full w-max items-stretch">
           {Children.map(filteredChildren, child => (
             <Fragment key={child?.props.label}>
               <div
                 className={cn(
-                  'text-muted-foreground hover:text-foreground group relative flex cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 font-medium transition-all',
+                  'text-neutral-10 hover:text-neutral-11 group relative flex cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 font-medium transition-all',
                   {
-                    'border-primary bg-card text-foreground-primary':
+                    'border-neutral-11 bg-neutral-2 text-neutral-11':
                       activeTab === child.props.label,
                   },
                 )}
@@ -53,7 +53,7 @@ export const Tabs = ({ children, suffix }: TabsProps) => {
               >
                 {child.props.label}
               </div>
-              <div className="bg-border mb-px w-px" />
+              <div className="bg-neutral-5 mb-px w-px" />
             </Fragment>
           ))}
         </div>

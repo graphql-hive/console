@@ -80,9 +80,10 @@ const ProjectCard = (props: {
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
   return (
-    <Card className="h-full self-start bg-gray-900/50 p-5 px-0 pt-4 hover:bg-gray-800/40 hover:shadow-md hover:shadow-gray-800/50">
+    <Card className="hover:bg-neutral-4 hover:shadow-neutral-3/50 h-full self-start p-5 px-0 pt-4 hover:shadow-md">
       <Link
         to="/$organizationSlug/$projectSlug"
+        disabled={props.cleanOrganizationId == null || project?.slug == null}
         params={{
           organizationSlug: props.cleanOrganizationId ?? 'unknown-yet',
           projectSlug: project?.slug ?? 'unknown-yet',
@@ -167,12 +168,12 @@ const ProjectCard = (props: {
                 {project ? (
                   <div>
                     <h4 className="line-clamp-2 text-lg font-bold">{project.slug}</h4>
-                    <p className="text-xs text-gray-300">{projectTypeFullNames[project.type]}</p>
+                    <p className="text-neutral-11 text-xs">{projectTypeFullNames[project.type]}</p>
                   </div>
                 ) : (
                   <div>
-                    <div className="mb-4 h-4 w-48 animate-pulse rounded-full bg-gray-800 py-2" />
-                    <div className="h-2 w-24 animate-pulse rounded-full bg-gray-800" />
+                    <div className="bg-neutral-5 mb-4 h-4 w-48 animate-pulse rounded-full py-2" />
+                    <div className="bg-neutral-5 h-2 w-24 animate-pulse rounded-full" />
                   </div>
                 )}
                 <div className="flex flex-col gap-y-2 py-1">
@@ -181,7 +182,7 @@ const ProjectCard = (props: {
                       <Tooltip>
                         <TooltipTrigger>
                           <div className="flex flex-row items-center gap-x-2">
-                            <Globe className="size-4 text-gray-500" />
+                            <Globe className="text-neutral-10 size-4" />
                             <div className="text-xs">
                               {requestsInDateRange}{' '}
                               {pluralize(totalNumberOfRequests, 'request', 'requests')}
@@ -195,7 +196,7 @@ const ProjectCard = (props: {
                       <Tooltip>
                         <TooltipTrigger>
                           <div className="flex flex-row items-center gap-x-2">
-                            <History className="size-4 text-gray-500" />
+                            <History className="text-neutral-10 size-4" />
                             <div className="text-xs">
                               {schemaVersionsInDateRange}{' '}
                               {pluralize(totalNumberOfVersions, 'commit', 'commits')}
@@ -209,8 +210,8 @@ const ProjectCard = (props: {
                     </>
                   ) : (
                     <>
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
-                      <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-gray-800" />
+                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
+                      <div className="bg-neutral-5 my-1 h-2 w-16 animate-pulse rounded-full" />
                     </>
                   )}
                 </div>
@@ -408,18 +409,18 @@ function OrganizationPageContent(
             <div>
               <div className="flex flex-row items-center gap-x-2">
                 <div className="relative">
-                  <SearchIcon className="text-muted-foreground absolute left-2.5 top-2.5 size-4" />
+                  <SearchIcon className="text-neutral-10 absolute left-2.5 top-2.5 size-4" />
                   <Input
                     type="search"
                     placeholder="Search..."
                     defaultValue={props.search}
                     onChange={onSearchChange}
-                    className="bg-background w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
+                    className="dark:bg-neutral-3 bg-neutral-2 w-full rounded-lg pl-8 md:w-[200px] lg:w-[336px]"
                   />
                 </div>
                 <Separator orientation="vertical" className="mx-4 h-8" />
                 <Select value={props.sortBy ?? 'requests'} onValueChange={onRequestsValueChange}>
-                  <SelectTrigger className="hover:bg-accent bg-transparent">
+                  <SelectTrigger>
                     {props.sortBy === 'versions'
                       ? 'Schema Versions'
                       : props.sortBy === 'name'
@@ -428,20 +429,20 @@ function OrganizationPageContent(
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="requests">
-                      <div className="font-bold">Requests</div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="font-medium">Requests</div>
+                      <div className="text-neutral-10 text-xs">
                         GraphQL requests made in the last {days} days.
                       </div>
                     </SelectItem>
                     <SelectItem value="versions">
-                      <div className="font-bold">Schema Versions</div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="font-medium">Schema Versions</div>
+                      <div className="text-neutral-10 text-xs">
                         Schemas published in last {days} days.
                       </div>
                     </SelectItem>
                     <SelectItem value="name">
-                      <div className="font-bold">Name</div>
-                      <div className="text-muted-foreground text-xs">Sort by project name.</div>
+                      <div className="font-medium">Name</div>
+                      <div className="text-neutral-10 text-xs">Sort by project name.</div>
                     </SelectItem>
                   </SelectContent>
                 </Select>

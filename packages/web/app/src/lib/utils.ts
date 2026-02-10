@@ -1,21 +1,41 @@
+import { useLayoutEffect, useState } from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useTheme } from '@/components/theme/theme-provider';
 
 // Style-related
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const darkChartStyles = {
-  backgroundColor: 'transparent',
-  textStyle: { color: '#fff' },
-  legend: {
-    textStyle: { color: '#fff' },
-  },
-};
+function getNeutralColor() {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-neutral-12').trim();
+}
 
 export function useChartStyles() {
-  return darkChartStyles;
+  const { resolvedTheme } = useTheme();
+  const [textColor, setTextColor] = useState(() => {
+    // Read CSS variable on initial mount
+    return getNeutralColor();
+  });
+
+  useLayoutEffect(() => {
+    // Use requestAnimationFrame to ensure DOM updates are complete
+    const rafId = requestAnimationFrame(() => {
+      const color = getNeutralColor();
+      setTextColor(color);
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [resolvedTheme]);
+
+  return {
+    backgroundColor: 'transparent',
+    textStyle: { color: textColor },
+    legend: {
+      textStyle: { color: textColor },
+    },
+  };
 }
 
 // Strings

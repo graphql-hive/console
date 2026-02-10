@@ -2,26 +2,39 @@ import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
-import { AccessError, HiveError } from '../../../shared/errors';
+import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
+import { EmailVerification } from '../providers/email-verification';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  /**
+   * The properties `userId` and `oidcIntegrationId` are nullable for backwards compatibility.
+   * In the future, when all still active sessions are using the new format, we can remove the nullability.
+   */
+  public userId: string | null = null;
+  public oidcIntegrationId: string | null = null;
 
   constructor(
-    args: { superTokensUserId: string; email: string },
+    sessionPayload: SuperTokensSessionPayload,
     deps: { organizationMembers: OrganizationMembers; storage: Storage; logger: Logger },
   ) {
     super({ logger: deps.logger });
-    this.superTokensUserId = args.superTokensUserId;
+    this.superTokensUserId = sessionPayload.superTokensUserId;
+
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+
+    if (sessionPayload.version === '2') {
+      this.userId = sessionPayload.userId;
+      this.oidcIntegrationId = sessionPayload.oidcIntegrationId;
+    }
   }
 
   get id(): string {
@@ -54,7 +67,12 @@ export class SuperTokensCookieBasedSession extends Session {
       user.id,
       organizationId,
     );
-    const organization = await this.storage.getOrganization({ organizationId });
+    const [organization, oidcIntegration] = await Promise.all([
+      this.storage.getOrganization({ organizationId }),
+      this.storage.getOIDCIntegrationForOrganization({
+        organizationId,
+      }),
+    ]);
     const organizationMembership = await this.organizationMembers.findOrganizationMembership({
       organization,
       userId: user.id,
@@ -99,6 +117,10 @@ export class SuperTokensCookieBasedSession extends Session {
       ];
     }
 
+    if (oidcIntegration?.oidcUserAccessOnly && this.oidcIntegrationId !== oidcIntegration.id) {
+      throw new OIDCRequiredError(organization.slug, oidcIntegration.id);
+    }
+
     this.logger.debug(
       'Translate organization role assignments to policy statements. (userId=%s, organizationId=%s)',
       user.id,
@@ -109,9 +131,9 @@ export class SuperTokensCookieBasedSession extends Session {
   }
 
   public async getActor(): Promise<UserActor> {
-    const user = await this.storage.getUserBySuperTokenId({
-      superTokensUserId: this.superTokensUserId,
-    });
+    const user = this.userId
+      ? await this.storage.getUserById({ id: this.userId })
+      : await this.storage.getUserBySuperTokenId({ superTokensUserId: this.superTokensUserId });
 
     if (!user) {
       throw new AccessError('User not found');
@@ -120,6 +142,7 @@ export class SuperTokensCookieBasedSession extends Session {
     return {
       type: 'user',
       user,
+      oidcIntegrationId: this.oidcIntegrationId,
     };
   }
 
@@ -132,20 +155,32 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  private emailVerification: EmailVerification | null;
 
   constructor(deps: {
     logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
+    emailVerification: EmailVerification | null;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
+    this.emailVerification = deps.emailVerification;
   }
 
-  private async verifySuperTokensSession(args: { req: FastifyRequest; reply: FastifyReply }) {
+  private async verifySuperTokensSession(args: {
+    req: FastifyRequest;
+    reply: FastifyReply;
+  }): Promise<SuperTokensSessionPayload | null> {
     this.logger.debug('Attempt verifying SuperTokens session');
+
+    if (args.req.headers['ignore-session']) {
+      this.logger.debug('Ignoring session due to header');
+      return null;
+    }
+
     let session: SessionNode.SessionContainer | undefined;
 
     try {
@@ -158,15 +193,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     } catch (error) {
       this.logger.debug('Session resolution failed');
       if (SessionNode.Error.isErrorFromSuperTokens(error)) {
-        // Check whether the email is already verified.
-        // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
-        if (error.type === SessionNode.Error.INVALID_CLAIMS) {
-          throw new HiveError('Your account is not verified. Please verify your email address.', {
-            extensions: {
-              code: 'VERIFY_EMAIL',
-            },
-          });
-        } else if (
+        if (
           error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
           error.type === SessionNode.Error.UNAUTHORISED
         ) {
@@ -197,7 +224,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    const result = SuperTokenAccessTokenModel.safeParse(payload);
+    const result = SuperTokensSessionPayloadModel.safeParse(payload);
 
     if (result.success === false) {
       this.logger.error('SuperTokens session payload is invalid');
@@ -206,7 +233,27 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
         'SuperTokens session parsing errors: %s',
         JSON.stringify(result.error.flatten().fieldErrors),
       );
-      throw new HiveError(`Invalid access token provided`);
+      throw new HiveError('Invalid access token provided', {
+        extensions: {
+          code: 'UNAUTHENTICATED',
+        },
+      });
+    }
+
+    if (this.emailVerification) {
+      // Check whether the email is already verified.
+      // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
+      const { verified } = await this.emailVerification.checkUserEmailVerified({
+        userIdentityId: session.getUserId(),
+        email: result.data.email,
+      });
+      if (!verified) {
+        throw new HiveError('Your account is not verified. Please verify your email address.', {
+          extensions: {
+            code: 'VERIFY_EMAIL',
+          },
+        });
+      }
     }
 
     this.logger.debug('SuperTokens session resolved.');
@@ -217,29 +264,43 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     req: FastifyRequest;
     reply: FastifyReply;
   }): Promise<SuperTokensCookieBasedSession | null> {
-    const session = await this.verifySuperTokensSession(args);
-    if (!session) {
+    const sessionPayload = await this.verifySuperTokensSession(args);
+    if (!sessionPayload) {
       return null;
     }
 
     this.logger.debug('SuperTokens session resolved successfully');
 
-    return new SuperTokensCookieBasedSession(
-      {
-        superTokensUserId: session.superTokensUserId,
-        email: session.email,
-      },
-      {
-        storage: this.storage,
-        organizationMembers: this.organizationMembers,
-        logger: args.req.log,
-      },
-    );
+    return new SuperTokensCookieBasedSession(sessionPayload, {
+      storage: this.storage,
+      organizationMembers: this.organizationMembers,
+      logger: args.req.log,
+    });
   }
 }
 
-const SuperTokenAccessTokenModel = zod.object({
+/**
+ * This is the legacy format that is no longer issued for new logins.
+ * In the future, when all sessions using this access token payload format are expired
+ * we can remove it from here.
+ */
+const SuperTokensSessionPayloadV1Model = zod.object({
   version: zod.literal('1'),
   superTokensUserId: zod.string(),
   email: zod.string(),
 });
+
+const SuperTokensSessionPayloadV2Model = zod.object({
+  version: zod.literal('2'),
+  superTokensUserId: zod.string(),
+  email: zod.string(),
+  userId: zod.string(),
+  oidcIntegrationId: zod.string().nullable(),
+});
+
+const SuperTokensSessionPayloadModel = zod.union([
+  SuperTokensSessionPayloadV1Model,
+  SuperTokensSessionPayloadV2Model,
+]);
+
+type SuperTokensSessionPayload = zod.TypeOf<typeof SuperTokensSessionPayloadModel>;

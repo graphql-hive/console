@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
-import { buildSchema, GraphQLSchema } from 'graphql';
-import { useMutation, useQuery, UseQueryExecute } from 'urql';
+import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
+import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
-  ProposalOverview_ChangeFragment,
-  ProposalOverview_ReviewsFragment,
+  Proposal_ChangeFragment,
+  Proposal_ReviewsFragment,
   toUpperSnakeCase,
 } from '@/components/target/proposals';
+import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import {
   ProposalQuery_VersionsListFragment,
@@ -24,9 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
+import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
-import { NoopError } from '@graphql-inspector/patch/errors';
+import { NoopError, ValueMismatchError } from '@graphql-inspector/patch/errors';
 import { ListBulletIcon, PieChartIcon } from '@radix-ui/react-icons';
 import { Link } from '@tanstack/react-router';
 import {
@@ -85,7 +87,7 @@ const ProposalQuery = graphql(/* GraphQL  */ `
         ...ProposalOverview_ChecksFragment
       }
       reviews {
-        ...ProposalOverview_ReviewsFragment
+        ...Proposal_ReviewsFragment
       }
       ...Proposals_EditProposalProposalFragment
     }
@@ -119,17 +121,17 @@ const ProposalChangesQuery = graphql(/* GraphQL */ `
         edges {
           node {
             id
-            ... on FailedSchemaCheck {
-              compositionErrors {
-                ...CompositionErrorsSection_SchemaErrorConnection
-              }
-            }
+            # ... on FailedSchemaCheck {
+            #   compositionErrors {
+            #     ...CompositionErrorsSection_SchemaErrorConnection
+            #   }
+            # }
             schemaSDL
             serviceName
-            schemaChanges {
+            schemaChanges: schemaProposalChanges {
               edges {
                 node {
-                  ...ProposalOverview_ChangeFragment
+                  ...Proposal_ChangeFragment
                 }
               }
             }
@@ -160,6 +162,7 @@ export function TargetProposalsSinglePage(props: {
   proposalId: string;
   tab?: string;
   version?: string;
+  timestamp?: number;
 }) {
   return (
     <>
@@ -169,7 +172,7 @@ export function TargetProposalsSinglePage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Proposals}
-        className="flex h-[--content-height] min-h-[300px] flex-col pb-0"
+        className="h-(--content-height) flex min-h-[300px] flex-col pb-0"
       >
         <ProposalsContent {...props} />
       </TargetLayout>
@@ -197,16 +200,21 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
       },
       id: props.proposalId,
       version: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
     },
     requestPolicy: 'cache-and-network',
   });
 
   // fetch all proposed changes for the selected version
-  const [changesQuery, refreshChanges] = useQuery({
+  const [changesQuery] = useQuery({
     query: ProposalChangesQuery,
     variables: {
       id: props.proposalId,
       v: props.version,
+      // pass the timestamp to force a refresh when proposals are updated
+      timestamp: props.timestamp,
+
       // @todo deal with pagination
     },
     // don't cache this because caching can make it behave strangely --
@@ -233,9 +241,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           let compositionErrors:
             | FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>
             | undefined;
-          if (proposalVersion.__typename === 'FailedSchemaCheck') {
-            compositionErrors = proposalVersion.compositionErrors ?? undefined;
-          }
+          // if (proposalVersion.__typename === 'FailedSchemaCheck') {
+          //   compositionErrors = proposalVersion.compositionErrors ?? undefined;
+          // }
 
           const existingSchema = query.data?.latestValidVersion?.schemas.edges.find(
             ({ node: latestSchema }) =>
@@ -245,9 +253,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 (proposalVersion.serviceName == null || proposalVersion.serviceName === '') */,
           )?.node.source;
 
-          const beforeSchema = existingSchema?.length
-            ? buildSchema(existingSchema, { assumeValid: true, assumeValidSDL: true })
-            : null;
+          let beforeSchema: GraphQLSchema | null = null;
+          if (existingSchema?.length) {
+            const ast = addTypeForExtensions(parse(existingSchema));
+            beforeSchema = buildASTSchema(ast, { assumeValid: true, assumeValidSDL: true });
+          }
+
           // @todo better handle pagination
           const allChanges =
             proposalVersion.schemaChanges?.edges
@@ -255,7 +266,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               ?.map(({ node: change }): Change<any> => {
                 // @todo don't useFragment here...
                 // eslint-disable-next-line react-hooks/rules-of-hooks
-                const c = useFragment(ProposalOverview_ChangeFragment, change);
+                const c = useFragment(Proposal_ChangeFragment, change);
                 return {
                   criticality: {
                     // isSafeBasedOnUsage: ,
@@ -268,6 +279,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   path: c.path?.join('.'),
                 };
               }) ?? [];
+
           const conflictingChanges: Array<{ change: Change; error: Error }> = [];
           const ignoredChanges: Array<{ change: Change; error: Error }> = [];
           let buildError: Error | null = null;
@@ -277,8 +289,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               onError(error, change) {
                 if (error instanceof NoopError) {
                   ignoredChanges.push({ change, error });
+                } else if (!(error instanceof ValueMismatchError)) {
+                  // totally ignore value mismatches
+                  conflictingChanges.push({ change, error });
                 }
-                conflictingChanges.push({ change, error });
                 return errors.looseErrorHandler(error, change);
               },
             });
@@ -365,10 +379,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         proposal={proposal}
         target={query.data.target}
         me={query.data.me}
-        refreshData={(...args) => {
-          refreshProposal(args);
-          refreshChanges(args);
-        }}
       />
     );
   }, [
@@ -389,7 +399,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
             subPageTitle={
               <span className="flex items-center">
                 <Link
-                  className="text-white"
+                  className="text-neutral-12"
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
                     organizationSlug: props.organizationSlug,
@@ -399,7 +409,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="inline-block px-2 italic text-gray-500">/</span>{' '}
+                <span className="text-neutral-10 inline-block px-2 italic">/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
@@ -416,7 +426,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded bg-gray-900/50 p-4">
+      <div className="bg-neutral-2/50 flex w-full grow flex-col rounded-sm p-4">
         {query.fetching ? (
           <Spinner />
         ) : (
@@ -428,7 +438,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   <StageTransitionSelect
                     stage={proposal.stage}
                     onSelect={async stage => {
-                      const review = await reviewSchemaProposal({
+                      const _review = await reviewSchemaProposal({
                         input: {
                           schemaProposalId: props.proposalId,
                           stageTransition: stage,
@@ -436,15 +446,15 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                           serviceName: '',
                         },
                       });
-                      console.log('@todo ', review);
+                      // @todo use urqlCache to invalidate the proposal and refresh?
                       refreshProposal();
                     }}
                   />
                 </div>
               </div>
               <div className="p-4 py-8">
-                <Title className="text-orange-500">{proposal.title}</Title>
-                <div className="text-xs text-gray-400">
+                <Title className="text-neutral-2">{proposal.title}</Title>
+                <div className="text-neutral-10 text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
                 <div className="w-full p-2 pt-4">{proposal.description}</div>
@@ -466,14 +476,13 @@ function TabbedContent(props: {
   version?: string;
   page?: string;
   services: ServiceProposalDetails[];
-  reviews: FragmentType<typeof ProposalOverview_ReviewsFragment>;
+  reviews: FragmentType<typeof Proposal_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
   versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
   isDistributedGraph: boolean;
-  refreshData: UseQueryExecute;
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
@@ -583,7 +592,9 @@ function TabbedContent(props: {
       </TabsContent>
       <TabsContent value={Tab.EDIT} variant="content" className="w-full">
         <div className="flex grow flex-row">
-          <TargetProposalEditPage {...props} />
+          <SaveProposalProvider>
+            <TargetProposalEditPage {...props} />
+          </SaveProposalProvider>
         </div>
       </TabsContent>
     </Tabs>

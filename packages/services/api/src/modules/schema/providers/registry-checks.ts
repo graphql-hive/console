@@ -20,21 +20,48 @@ import type {
   DateRange,
   Organization,
   Project,
-  PushedCompositeSchema,
-  SingleSchema,
 } from './../../../shared/entities';
 import { Logger } from './../../shared/providers/logger';
 import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import { extendWithBase, isCompositeSchema, SchemaHelper } from './schema-helper';
+import {
+  addTypeForExtensions,
+  CompositeSchemaInput,
+  extendWithBase,
+  SchemaHelper,
+  SchemaInput,
+} from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
   requestCountThreshold: number;
   targetIds: string[];
   excludedClientNames: string[] | null;
+  excludedAppDeploymentNames: string[] | null;
 };
+
+export type AffectedAppDeployment = {
+  appDeployment: {
+    id: string;
+    name: string;
+    version: string;
+  };
+  affectedOperationsByCoordinate: Record<string, Array<{ hash: string; name: string | null }>>;
+  countByCoordinate: Record<string, number>;
+  totalOperationsByCoordinate: number;
+};
+
+export type AffectedAppDeploymentsResult = {
+  deployments: AffectedAppDeployment[];
+  totalDeployments: number;
+};
+
+export type GetAffectedAppDeployments = (
+  schemaCoordinates: string[],
+  firstDeployments?: number,
+  firstOperations?: number,
+) => Promise<AffectedAppDeploymentsResult>;
 
 // The reason why I'm using `result` and `reason` instead of just `data` for both:
 // https://bit.ly/hive-check-result-data
@@ -51,8 +78,6 @@ export type CheckResult<C = unknown, F = unknown, S = unknown> =
       status: 'skipped';
       data?: S;
     };
-
-type Schemas = [SingleSchema] | PushedCompositeSchema[];
 
 type CompositionValidationError = {
   message: string;
@@ -182,11 +207,11 @@ export class RegistryChecks {
    */
   async checksum(args: {
     incoming: {
-      schema: SingleSchema | PushedCompositeSchema;
+      schema: SchemaInput;
       contractNames: null | Array<string>;
     };
     existing: null | {
-      schema: SingleSchema | PushedCompositeSchema;
+      schema: SchemaInput;
       contractNames: null | Array<string>;
     };
   }) {
@@ -253,7 +278,7 @@ export class RegistryChecks {
     targetId: string;
     project: Project;
     organization: Organization;
-    schemas: Schemas;
+    schemas: Array<SchemaInput>;
     baseSchema: string | null;
     contracts: null | ContractsInputType;
   }) {
@@ -314,7 +339,7 @@ export class RegistryChecks {
     version: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: Schemas;
+      schemas: Array<SchemaInput>;
     } | null;
     organization: Organization;
     project: Project;
@@ -403,6 +428,60 @@ export class RegistryChecks {
     } satisfies CheckResult;
   }
 
+  @traceFn('RegistryChecks.serviceDiff')
+  /**
+   * Intended to be used for subgraph/service schemas only. This does not check conditional breaking changes
+   * or policy logic. This function strictly calculates the diff between two SDL and returns the list of changes.
+   * This also handles raw SDL which might include type extensions -- which cannot be used by themselves to build
+   * a schema and therefore must have the type definition added
+   */
+  async serviceDiff(args: {
+    /** The existing SDL */
+    existing: Pick<SchemaInput, 'sdl'> | null;
+    /** The incoming SDL */
+    incoming: Pick<SchemaInput, 'sdl'> | null;
+  }) {
+    let existingSchema: GraphQLSchema | null;
+    let incomingSchema: GraphQLSchema | null;
+
+    const createSchema = (sdl: Pick<SchemaInput, 'sdl'>) => {
+      const obj = this.helper.createSchemaObject(sdl);
+      obj.document = addTypeForExtensions(obj.document);
+      return buildSortedSchemaFromSchemaObject(obj);
+    };
+
+    try {
+      existingSchema = args.existing ? createSchema(args.existing) : null;
+      incomingSchema = args.incoming ? createSchema(args.incoming) : null;
+    } catch (error) {
+      this.logger.error('Failed to build schema for serviceDiff. Skip serviceDiff check.');
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
+    }
+
+    if (!existingSchema || !incomingSchema) {
+      this.logger.debug(
+        'Skip serviceDiff check due to either existing or incoming SDL being absent.',
+      );
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
+    }
+    if (!incomingSchema) {
+      return {
+        status: 'failed',
+        reason: 'Incoming schema is invalid.',
+      } satisfies CheckResult;
+    }
+    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
+
+    return {
+      status: 'completed',
+      result: inspectorChanges,
+    } satisfies CheckResult;
+  }
+
   /**
    * Diff incoming and existing SDL and generate a list of changes.
    * Uses usage stats to determine whether a change is safe or not (if available).
@@ -416,8 +495,8 @@ export class RegistryChecks {
     includeUrlChanges:
       | false
       | {
-          schemasBefore: [SingleSchema] | PushedCompositeSchema[];
-          schemasAfter: [SingleSchema] | PushedCompositeSchema[];
+          schemasBefore: CompositeSchemaInput[];
+          schemasAfter: CompositeSchemaInput[];
         };
     /** Whether Federation directive related changes should be filtered out from the list of changes. These would only show up due to an internal bug. */
     filterOutFederationChanges: boolean;
@@ -431,6 +510,8 @@ export class RegistryChecks {
      * Use false for schema proposals in order to capture every single change record for the patch function.
      */
     filterNestedChanges: boolean;
+    /** Function to fetch affected app deployments. Called with breaking change coordinates after diff is computed. */
+    getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }) {
     let existingSchema: GraphQLSchema | null = null;
     let incomingSchema: GraphQLSchema | null = null;
@@ -440,6 +521,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.existingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -448,6 +531,8 @@ export class RegistryChecks {
         ? buildSortedSchemaFromSchemaObject(
             this.helper.createSchemaObject({
               sdl: args.incomingSdl,
+              serviceName: null,
+              serviceUrl: null,
             }),
           )
         : null;
@@ -577,11 +662,83 @@ export class RegistryChecks {
       this.logger.debug('No conditional breaking change settings available');
     }
 
+    // Check against active app deployments if function is provided
+    if (args.getAffectedAppDeployments) {
+      // Collect all coordinates from breaking changes and initialize affectedAppDeployments to []
+      const breakingCoordinates = new Set<string>();
+      for (const change of inspectorChanges) {
+        if (change.criticality === CriticalityLevel.Breaking) {
+          // Initialize affectedAppDeployments to empty array for all breaking changes
+          change.affectedAppDeployments = [];
+
+          const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+          if (coordinate) {
+            breakingCoordinates.add(coordinate);
+          }
+        }
+      }
+
+      if (breakingCoordinates.size > 0) {
+        this.logger.debug(
+          'Checking affected app deployments for %d breaking schema coordinates',
+          breakingCoordinates.size,
+        );
+
+        try {
+          const result = await args.getAffectedAppDeployments(Array.from(breakingCoordinates));
+          const affectedAppDeployments = result.deployments;
+
+          if (affectedAppDeployments.length > 0) {
+            this.logger.debug(
+              '%d app deployments affected by breaking changes (total: %d)',
+              affectedAppDeployments.length,
+              result.totalDeployments,
+            );
+
+            // Mark changes as unsafe if they affect active app deployments
+            for (const change of inspectorChanges) {
+              if (change.criticality === CriticalityLevel.Breaking) {
+                const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
+                if (coordinate) {
+                  // Check if any deployment is affected by this specific coordinate
+                  const deploymentsForCoordinate = affectedAppDeployments.filter(
+                    d => d.affectedOperationsByCoordinate[coordinate]?.length > 0,
+                  );
+
+                  if (deploymentsForCoordinate.length > 0) {
+                    // Override usage-based safety: change is NOT safe if app deployments are affected
+                    change.isSafeBasedOnUsage = false;
+
+                    // Update affected app deployments for this change
+                    change.affectedAppDeployments = deploymentsForCoordinate.map(d => ({
+                      id: d.appDeployment.id,
+                      name: d.appDeployment.name,
+                      version: d.appDeployment.version,
+                      affectedOperations: d.affectedOperationsByCoordinate[coordinate],
+                    }));
+                  }
+                }
+              }
+            }
+          } else {
+            this.logger.debug('No app deployments affected by breaking changes');
+          }
+        } catch (error) {
+          this.logger.error(
+            'Failed to check affected app deployments (coordinateCount=%d): %s',
+            breakingCoordinates.size,
+            error instanceof Error ? error.stack : String(error),
+          );
+          throw error;
+        }
+      }
+    }
+
     if (args.includeUrlChanges) {
       inspectorChanges.push(
         ...detectUrlChanges(
-          args.includeUrlChanges.schemasBefore.filter(isCompositeSchema),
-          args.includeUrlChanges.schemasAfter.filter(isCompositeSchema),
+          args.includeUrlChanges.schemasBefore,
+          args.includeUrlChanges.schemasAfter,
         ),
       );
     }
@@ -658,23 +815,6 @@ export class RegistryChecks {
     } satisfies SchemaDiffSuccess;
   }
 
-  async serviceName(service: { name: string | null }) {
-    if (!service.name) {
-      this.logger.debug('No service name');
-      return {
-        status: 'failed',
-        reason: 'Service name is required',
-      } satisfies CheckResult;
-    }
-
-    this.logger.debug('Service name is defined');
-
-    return {
-      status: 'completed',
-      result: null,
-    } satisfies CheckResult;
-  }
-
   private isValidURL(url: string): boolean {
     try {
       new URL(url);
@@ -685,21 +825,35 @@ export class RegistryChecks {
     }
   }
 
-  async serviceUrl(
-    service: { url: string | null },
-    existingService: { url: string | null } | null,
-  ) {
-    if (!service.url) {
-      this.logger.debug('No service url');
+  async serviceUrl(newServiceUrl: string | null, existingServiceUrl: string | null) {
+    if (newServiceUrl === null) {
+      if (existingServiceUrl) {
+        return {
+          status: 'completed',
+          result: {
+            status: 'unchanged' as const,
+            serviceUrl: existingServiceUrl,
+          },
+        } satisfies CheckResult;
+      }
+
       return {
         status: 'failed',
         reason: 'Service url is required',
       } satisfies CheckResult;
     }
 
-    this.logger.debug('Service url is defined');
+    if (newServiceUrl === existingServiceUrl) {
+      return {
+        status: 'completed',
+        result: {
+          status: 'unchanged' as const,
+          serviceUrl: existingServiceUrl,
+        },
+      } satisfies CheckResult;
+    }
 
-    if (!this.isValidURL(service.url)) {
+    if (!this.isValidURL(newServiceUrl)) {
       return {
         status: 'failed',
         reason: 'Invalid service URL provided',
@@ -708,19 +862,13 @@ export class RegistryChecks {
 
     return {
       status: 'completed',
-      result:
-        existingService && service.url !== existingService.url
-          ? {
-              before: existingService.url,
-              after: service.url,
-              message: service.url
-                ? `New service url: ${service.url} (previously: ${existingService.url ?? 'none'})`
-                : `Service url removed (previously: ${existingService.url ?? 'none'})`,
-              status: 'modified' as const,
-            }
-          : {
-              status: 'unchanged' as const,
-            },
+      result: {
+        message: `New service url: ${newServiceUrl} (previously: ${existingServiceUrl ?? 'none'})`,
+        status: 'modified' as const,
+        before: existingServiceUrl,
+        after: newServiceUrl,
+        serviceUrl: newServiceUrl,
+      },
     } satisfies CheckResult;
   }
 
@@ -794,8 +942,8 @@ export class RegistryChecks {
 }
 
 type SubgraphDefinition = {
-  service_name: string;
-  service_url: string | null;
+  serviceName: string;
+  serviceUrl: string | null;
 };
 
 export function detectUrlChanges(
@@ -810,49 +958,49 @@ export function detectUrlChanges(
     return [];
   }
 
-  const nameToCompositeSchemaMap = new Map(subgraphsBefore.map(s => [s.service_name, s]));
+  const nameToCompositeSchemaMap = new Map(subgraphsBefore.map(s => [s.serviceName, s]));
   const changes: Array<RegistryServiceUrlChangeSerializableChange> = [];
 
   for (const schema of subgraphsAfter) {
-    const before = nameToCompositeSchemaMap.get(schema.service_name);
+    const before = nameToCompositeSchemaMap.get(schema.serviceName);
 
-    if (before && before.service_url !== schema.service_url) {
-      if (before.service_url != null && schema.service_url != null) {
+    if (before && before.serviceUrl !== schema.serviceUrl) {
+      if (before.serviceUrl != null && schema.serviceUrl != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
-              old: before.service_url,
-              new: schema.service_url,
+              old: before.serviceUrl,
+              new: schema.serviceUrl,
             },
           },
         });
-      } else if (before.service_url != null && schema.service_url == null) {
+      } else if (before.serviceUrl != null && schema.serviceUrl == null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
-              old: before.service_url,
+              old: before.serviceUrl,
               new: null,
             },
           },
         });
-      } else if (before.service_url == null && schema.service_url != null) {
+      } else if (before.serviceUrl == null && schema.serviceUrl != null) {
         changes.push({
           type: 'REGISTRY_SERVICE_URL_CHANGED',
           meta: {
-            serviceName: schema.service_name,
+            serviceName: schema.serviceName,
             serviceUrls: {
               old: null,
-              new: schema.service_url,
+              new: schema.serviceUrl,
             },
           },
         });
       } else {
         throw new Error(
-          `This shouldn't happen (before.service_url=${JSON.stringify(before.service_url)}, schema.service_url=${JSON.stringify(schema.service_url)}).`,
+          `This shouldn't happen (before.serviceUrl=${JSON.stringify(before.serviceUrl)}, schema.serviceUrl=${JSON.stringify(schema.serviceUrl)}).`,
         );
       }
     }

@@ -30,9 +30,9 @@ function FirstComposableVersion() {
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
         <CheckCircledIcon className="h-4 w-auto text-emerald-500" />
-        <h2 className="text-base font-medium text-white">First composable version</h2>
+        <h2 className="text-neutral-12 text-base font-medium">First composable version</h2>
       </div>
-      <p className="text-muted-foreground text-xs">
+      <p className="text-neutral-10 text-xs">
         Congratulations! This is the first version of the schema that is composable.
       </p>
     </div>
@@ -92,12 +92,12 @@ function SchemaVersionView(props: {
         <Subtitle>Detailed view of the schema version</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="grid items-center justify-between gap-x-4 gap-y-2 rounded-md border border-gray-800 p-4 font-medium text-gray-400 md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
+        <div className="border-neutral-5 text-neutral-10 grid items-center justify-between gap-x-4 gap-y-2 rounded-md border p-4 font-medium md:grid-flow-col md:grid-rows-2 lg:grid-rows-1">
           <div className="min-w-0">
             <div className="text-xs">Status</div>
             <div
               className={cn(
-                'truncate text-sm font-semibold text-white',
+                'text-neutral-12 truncate text-sm font-semibold',
                 !schemaVersion.isComposable && 'text-red-600',
               )}
             >
@@ -108,7 +108,7 @@ function SchemaVersionView(props: {
             <div className="min-w-0">
               <div className="text-xs">Service</div>
               <div
-                className="truncate text-sm font-semibold text-white"
+                className="text-neutral-12 truncate text-sm font-semibold"
                 title={schemaVersion.log.service}
               >
                 {schemaVersion.log.service}
@@ -121,7 +121,7 @@ function SchemaVersionView(props: {
                 Triggered <TimeAgo date={schemaVersion.log.date} />
               </div>
               {'author' in schemaVersion.log && schemaVersion.log.author && (
-                <div className="truncate text-sm text-white" title={schemaVersion.log.author}>
+                <div className="text-neutral-12 truncate text-sm" title={schemaVersion.log.author}>
                   by {schemaVersion.log.author}
                 </div>
               )}
@@ -131,7 +131,7 @@ function SchemaVersionView(props: {
             <div className="min-w-0">
               <div className="text-xs">Commit</div>
               <div
-                className="truncate text-sm font-semibold text-white"
+                className="text-neutral-12 truncate text-sm font-semibold"
                 title={schemaVersion.log.commit}
               >
                 <CopyText>{schemaVersion.log.commit}</CopyText>
@@ -147,8 +147,11 @@ function SchemaVersionView(props: {
           value={selectedItem}
           onValueChange={value => setSelectedItem(value)}
         >
-          <TabsList className="w-full justify-start rounded-b-none px-2 py-0">
-            <TabsTrigger value="default" className="mt-1 py-2 data-[state=active]:rounded-b-none">
+          <TabsList className="w-full justify-start rounded-b-none bg-transparent px-2 py-0">
+            <TabsTrigger
+              value="default"
+              className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
+            >
               <span>Default Graph</span>
               <TooltipProvider>
                 <Tooltip>
@@ -181,7 +184,7 @@ function SchemaVersionView(props: {
               <TabsTrigger
                 value={edge.node.id}
                 key={edge.node.id}
-                className="mt-1 py-2 data-[state=active]:rounded-b-none"
+                className="data-[state=active]:bg-neutral-5 dark:data-[state=active]:bg-neutral-3 border-neutral-5 dark:border-neutral-3 mt-1 rounded-b-none border py-2"
               >
                 {edge.node.contractName}
                 <TooltipProvider>
@@ -346,7 +349,7 @@ function DefaultSchemaVersionView(props: {
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
           <TabsList
             className={cn(
-              'bg-background border-muted w-full justify-start rounded-none border-x border-b',
+              'bg-neutral-5 dark:bg-neutral-3 border-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b',
               !props.hasContracts && 'rounded-t border-t',
             )}
           >
@@ -370,7 +373,7 @@ function DefaultSchemaVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-muted grow rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {schemaVersion.isFirstComposableVersion ? (
@@ -522,7 +525,7 @@ function ContractVersionView(props: {
     <>
       <TooltipProvider>
         <Tabs value={selectedView} onValueChange={value => setSelectedView(value)}>
-          <TabsList className="bg-background border-muted w-full justify-start rounded-none border-x border-b">
+          <TabsList className="dark:bg-neutral-3 bg-neutral-5 dark:border-neutral-3 w-full justify-start rounded-none border-x border-b">
             {availableViews.map(item => (
               <Tooltip key={item.value}>
                 <TooltipTrigger>
@@ -543,7 +546,7 @@ function ContractVersionView(props: {
           </TabsList>
         </Tabs>
       </TooltipProvider>
-      <div className="border-muted grow rounded-md rounded-t-none border border-t-0">
+      <div className="dark:border-neutral-3 border-neutral-5 grow rounded-md rounded-t-none border border-t-0">
         {selectedView === 'details' && (
           <div className="my-4 px-4">
             {contractVersion.isFirstComposableVersion ? (
@@ -666,7 +669,7 @@ function ActiveSchemaVersion(props: {
 
   if (isLoading || !projectType) {
     return (
-      <div className="flex size-full flex-col items-center justify-center self-center text-sm text-gray-500">
+      <div className="text-neutral-10 flex size-full flex-col items-center justify-center self-center text-sm">
         <Spinner className="mb-3 size-8" />
         Loading schema version...
       </div>
@@ -689,12 +692,12 @@ function ActiveSchemaVersion(props: {
       <div className="m-3 rounded-lg bg-red-500/20 p-8">
         <div className="mb-3 flex items-center gap-3">
           <CrossCircledIcon className="h-6 w-auto text-red-500" />
-          <h2 className="text-lg font-medium text-white">Failed to compare schemas</h2>
+          <h2 className="text-neutral-12 text-lg font-medium">Failed to compare schemas</h2>
         </div>
-        <p className="text-base text-gray-500">
+        <p className="text-neutral-10 text-base">
           Previous or current schema is most likely incomplete and was force published
         </p>
-        <pre className="mt-5 whitespace-pre-wrap rounded-lg bg-red-900 p-3 text-xs text-white">
+        <pre className="text-neutral-12 mt-5 whitespace-pre-wrap rounded-lg bg-red-900 p-3 text-xs">
           {error.graphQLErrors?.[0]?.message ?? error.networkError?.message}
         </pre>
       </div>

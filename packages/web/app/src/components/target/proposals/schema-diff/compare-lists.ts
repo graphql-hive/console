@@ -1,4 +1,4 @@
-import type { NameNode } from 'graphql';
+import { type ConstDirectiveNode, type NameNode } from 'graphql';
 
 export function keyMap<T>(list: readonly T[], keyFn: (item: T) => string): Record<string, T> {
   return list.reduce((map, item) => {
@@ -65,7 +65,6 @@ function extractName(name: string | NameNode): string {
   return name.value;
 }
 
-/** @todo support repeat directives */
 export function compareLists<T extends { name: string | NameNode }>(
   oldList: readonly T[],
   newList: readonly T[],
@@ -97,6 +96,91 @@ export function compareLists<T extends { name: string | NameNode }>(
   for (const newItem of newList) {
     if (oldMap[extractName(newItem.name)] === undefined) {
       added.push(newItem);
+    }
+  }
+
+  if (callbacks) {
+    if (callbacks.onAdded) {
+      for (const item of added) {
+        callbacks.onAdded(item);
+      }
+    }
+    if (callbacks.onRemoved) {
+      for (const item of removed) {
+        callbacks.onRemoved(item);
+      }
+    }
+    if (callbacks.onMutual) {
+      for (const item of mutual) {
+        callbacks.onMutual(item);
+      }
+    }
+  }
+
+  return {
+    added,
+    removed,
+    mutual,
+  };
+}
+
+export function keyMapList<T>(list: readonly T[], keyFn: (item: T) => string): Record<string, T[]> {
+  return list.reduce(
+    (map, item) => {
+      const key = keyFn(item);
+      if (map[key]) {
+        map[key].push(item);
+      } else {
+        map[key] = [item];
+      }
+      return map;
+    },
+    Object.create(null) as Record<string, T[]>,
+  );
+}
+
+export function compareDirectiveLists(
+  oldList: readonly ConstDirectiveNode[],
+  newList: readonly ConstDirectiveNode[],
+  callbacks?: {
+    onAdded?(t: ConstDirectiveNode): void;
+    onRemoved?(t: ConstDirectiveNode): void;
+    onMutual?(t: { newVersion: ConstDirectiveNode; oldVersion: ConstDirectiveNode }): void;
+  },
+) {
+  const oldMap = keyMapList(oldList, ({ name }) => extractName(name));
+  const newMap = keyMapList(newList, ({ name }) => extractName(name));
+
+  const added: ConstDirectiveNode[] = [];
+  const removed: ConstDirectiveNode[] = [];
+  const mutual: Array<{ newVersion: ConstDirectiveNode; oldVersion: ConstDirectiveNode }> = [];
+
+  for (const itemName of Object.keys(oldMap).sort()) {
+    const newItems = newMap[itemName];
+    const oldItems = oldMap[itemName];
+    for (let i = 0; i < oldItems?.length; i++) {
+      const oldItem = oldItems[i];
+      const newItem = newItems?.[i];
+      if (newItem === undefined) {
+        removed.push(oldItem);
+      } else {
+        mutual.push({
+          newVersion: newItem,
+          oldVersion: oldItem,
+        });
+      }
+    }
+  }
+
+  for (const itemName of Object.keys(newMap).sort()) {
+    const newItems = newMap[itemName];
+    const oldItems = oldMap[itemName];
+    for (let i = (oldItems ?? []).length; i < (newItems ?? []).length; i++) {
+      const oldItem = oldItems?.[i];
+      const newItem = newItems[i];
+      if (oldItem === undefined) {
+        added.push(newItem);
+      }
     }
   }
 

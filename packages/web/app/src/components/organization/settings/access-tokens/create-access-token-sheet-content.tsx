@@ -300,7 +300,7 @@ export function CreateAccessTokenSheetContent(
                     'step-4-confirmation': () => (
                       <>
                         <Heading>Confirm and create Access Token</Heading>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-neutral-10 text-sm">
                           Please please review the selected permissions and resources to ensure they
                           align with your intended access needs.
                         </p>
@@ -320,7 +320,7 @@ export function CreateAccessTokenSheetContent(
                                   <>Granted on all {permissionLevelToResourceName(group.level)}</>
                                 ) : (
                                   <>
-                                    <p className="text-gray-400">
+                                    <p className="text-neutral-10">
                                       Granted on {permissionLevelToResourceName(group.level)}:
                                     </p>
                                     <ul className="flex list-none flex-wrap gap-1">
@@ -337,7 +337,7 @@ export function CreateAccessTokenSheetContent(
                                       {resolvedResources[group.level].map(id => (
                                         <li key={id}>
                                           <Badge
-                                            className="px-3 py-1 font-mono text-xs text-gray-300"
+                                            className="text-neutral-11 px-3 py-1 font-mono text-xs"
                                             variant="outline"
                                           >
                                             {id}

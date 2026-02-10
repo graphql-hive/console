@@ -32,7 +32,7 @@ export const PolicyEnumSelect = (props: {
           <div>{props.title}</div>
           {props.tooltip ? (
             <Tooltip content={props.tooltip}>
-              <InfoIcon className="ml-2 size-4 text-orange-500" />
+              <InfoIcon className="text-neutral-2 ml-2 size-4" />
             </Tooltip>
           ) : null}
         </div>
@@ -47,7 +47,7 @@ export const PolicyEnumSelect = (props: {
         }}
         value={currentValue}
         type="single"
-        className="bg-gray-900/50 text-gray-500"
+        className="text-neutral-10 bg-neutral-2/50"
       >
         {props.options.map(option => (
           <ToggleGroupItem
@@ -55,8 +55,8 @@ export const PolicyEnumSelect = (props: {
             value={option.value}
             title={option.label}
             className={clsx(
-              'text-xs hover:text-white',
-              currentValue === option.value && 'bg-gray-800 text-white',
+              'hover:text-neutral-12 text-xs',
+              currentValue === option.value && 'bg-neutral-5 text-neutral-12',
             )}
           >
             {option.label}

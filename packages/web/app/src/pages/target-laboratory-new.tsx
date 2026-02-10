@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import clsx from 'clsx';
+import { buildSchema, introspectionFromSchema } from 'graphql';
 import { throttle } from 'lodash';
+import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
@@ -14,6 +16,7 @@ import {
   Laboratory,
   LaboratoryCollection,
   LaboratoryCollectionOperation,
+  LaboratoryEnv,
   LaboratoryHistory,
   LaboratoryOperation,
   LaboratoryPreflight,
@@ -31,6 +34,7 @@ import {
   DialogTitle,
 } from '@/laboratory/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
@@ -299,6 +303,7 @@ function useLaboratoryState(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  defaultEndpoint: string | null;
 }): Partial<LaboratoryApi> & { fetching: boolean } {
   const [{ data, fetching }] = useQuery({
     query: LaboratoryQuery,
@@ -480,6 +485,14 @@ function useLaboratoryState(props: {
           enabled: getLocalStorageState('preflightEnabled', true),
         }
       : null,
+    defaultEnv: getLocalStorageState('env', {}),
+    onEnvChange: (env: LaboratoryEnv | null) => {
+      setLocalStorageState('env', env);
+    },
+    defaultPluginsState: getLocalStorageState('pluginsState', {}),
+    onPluginsStateChange: (pluginsState: Record<string, any>) => {
+      setLocalStorageState('pluginsState', pluginsState);
+    },
     onOperationsChange: (operations: LaboratoryOperation[]) => {
       setLocalStorageState('operations', operations);
     },
@@ -548,12 +561,6 @@ function LaboratoryPageContent(props: {
   defaultLaboratoryTab: 'graphiql' | 'hive-laboratory';
   onLaboratoryTabChange: (tab: 'graphiql' | 'hive-laboratory') => void;
 }) {
-  const laboratoryState = useLaboratoryState({
-    organizationSlug: props.organizationSlug,
-    projectSlug: props.projectSlug,
-    targetSlug: props.targetSlug,
-  });
-
   const [query] = useQuery({
     query: TargetLaboratoryPageQuery,
     variables: {
@@ -562,8 +569,6 @@ function LaboratoryPageContent(props: {
       targetSlug: props.targetSlug,
     },
   });
-
-  const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   const [actualSelectedApiEndpoint, setEndpointType] = useApiTabValueState(
     query.data?.target?.graphqlEndpointUrl ?? null,
@@ -575,6 +580,15 @@ function LaboratoryPageContent(props: {
     (actualSelectedApiEndpoint === 'linkedApi'
       ? query.data?.target?.graphqlEndpointUrl
       : undefined) ?? mockEndpoint;
+
+  const laboratoryState = useLaboratoryState({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+    defaultEndpoint: url ?? null,
+  });
+
+  const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   useRedirect({
     canAccess: query.data?.target?.viewerCanViewLaboratory === true,
@@ -590,6 +604,23 @@ function LaboratoryPageContent(props: {
     },
     entity: query.data?.target,
   });
+
+  const sdl = query.data?.target?.latestSchemaVersion?.sdl;
+
+  const introspection = useMemo(() => {
+    if (!sdl) {
+      return null;
+    }
+
+    try {
+      return introspectionFromSchema(buildSchema(sdl));
+    } catch (err) {
+      toast.error('Failed to fetch schema', {
+        description: err instanceof Error ? err.message : 'Unknown error',
+      });
+      return null;
+    }
+  }, [sdl]);
 
   if (laboratoryState.fetching) {
     return null;
@@ -608,7 +639,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="h-4 w-px bg-gray-800" />
+              <div className="bg-neutral-5 h-4 w-px" />
               <Tabs
                 defaultValue={props.defaultLaboratoryTab}
                 onValueChange={value =>
@@ -621,7 +652,7 @@ function LaboratoryPageContent(props: {
                   </TabsTrigger>
                   <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                     Hive Laboratory
-                    <div className="size-2 rounded-full bg-orange-500" />
+                    <div className="bg-neutral-2 size-2 rounded-full" />
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -630,10 +661,7 @@ function LaboratoryPageContent(props: {
               Explore your GraphQL schema and run queries against your GraphQL API.
             </Subtitle>
             <p>
-              <DocsLink
-                className="text-muted-foreground text-sm"
-                href="/schema-registry/laboratory"
-              >
+              <DocsLink className="text-neutral-10 text-sm" href="/schema-registry/laboratory">
                 Learn more about the Laboratory
               </DocsLink>
             </p>
@@ -668,17 +696,17 @@ function LaboratoryPageContent(props: {
                 }}
                 value="mock"
                 type="single"
-                className="bg-gray-900/50 text-gray-500"
+                className="text-neutral-10 bg-neutral-2/50"
               >
                 <ToggleGroupItem
                   key="mockApi"
                   value="mockApi"
                   title="Use Mock Schema"
                   className={clsx(
-                    'text-xs hover:text-white',
+                    'hover:text-neutral-12 text-xs',
                     !query.fetching &&
                       actualSelectedApiEndpoint === 'mockApi' &&
-                      'bg-gray-800 text-white',
+                      'bg-neutral-5 text-neutral-12',
                   )}
                   disabled={query.fetching}
                 >
@@ -689,10 +717,10 @@ function LaboratoryPageContent(props: {
                   value="linkedApi"
                   title="Use API endpoint"
                   className={cn(
-                    'text-xs hover:text-white',
+                    'hover:text-neutral-12 text-xs',
                     !query.fetching &&
                       actualSelectedApiEndpoint === 'linkedApi' &&
-                      'bg-gray-800 text-white',
+                      'bg-neutral-5 text-neutral-12',
                   )}
                   disabled={!query.data?.target?.graphqlEndpointUrl || query.fetching}
                 >
@@ -703,7 +731,19 @@ function LaboratoryPageContent(props: {
           </div>
         </div>
         <div className="flex-1 overflow-hidden rounded-lg border">
-          <Laboratory key={url} defaultEndpoint={url} {...laboratoryState} />
+          <Laboratory
+            key={url}
+            defaultEndpoint={url}
+            defaultSchemaIntrospection={introspection}
+            {...laboratoryState}
+            plugins={[
+              TargetEnvPlugin({
+                organizationSlug: props.organizationSlug,
+                projectSlug: props.projectSlug,
+                targetSlug: props.targetSlug,
+              }),
+            ]}
+          />
         </div>
       </div>
     </>
@@ -760,7 +800,7 @@ export function TargetLaboratoryPage(props: {
         projectSlug={props.projectSlug}
         targetSlug={props.targetSlug}
         page={Page.Laboratory}
-        className="flex h-[--content-height] flex-col pb-0"
+        className="h-(--content-height) flex flex-col pb-0"
       >
         <LaboratoryPageContent {...props} />
       </TargetLayout>

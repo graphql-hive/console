@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
+import { Text } from '@/components/ui/text';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
@@ -46,16 +47,17 @@ export function SignInButton(props: {
         <TooltipTrigger asChild>
           <Slot
             className={cn(
-              'animate-shimmer bg-[length:200%_100%] transition-colors',
-              props.variant === 'outline'
-                ? 'bg-[linear-gradient(110deg,transparent,48%,#202020,52%,transparent)]'
-                : 'bg-[linear-gradient(110deg,transparent,30%,#a9a9a9,70%,transparent)]',
+              'animate-shimmer bg-size-[200%_100%] transition-colors',
+              'bg-[linear-gradient(110deg,transparent,30%,hsl(var(--neutral-6)),70%,transparent)]',
             )}
           >
             {props.children}
           </Slot>
         </TooltipTrigger>
-        <TooltipContent className={cn('text-muted bg-white', props.tooltipClassName)} side="top">
+        <TooltipContent
+          className={cn('text-neutral-3 bg-neutral-12', props.tooltipClassName)}
+          side="top"
+        >
           You signed in with it last time.
         </TooltipContent>
       </Tooltip>
@@ -314,18 +316,20 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
               ) : null}
             </TooltipProvider>
           </AuthCardStack>
-          <div className="mt-4 text-center text-sm">
-            Don't have an account?{' '}
-            <Link
-              to="/auth/sign-up"
-              search={{
-                redirectToPath: props.redirectToPath,
-              }}
-              data-auth-link="sign-up"
-              className="underline"
-            >
-              Sign up
-            </Link>
+          <div className="mt-4">
+            <Text arrangement="block" align="center" size="small" color="secondary">
+              Don't have an account?{' '}
+              <Link
+                to="/auth/sign-up"
+                search={{
+                  redirectToPath: props.redirectToPath,
+                }}
+                data-auth-link="sign-up"
+                className="underline"
+              >
+                Sign up
+              </Link>
+            </Text>
           </div>
         </AuthCardContent>
       </AuthCard>

@@ -100,19 +100,19 @@ function Task({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        'relative block rounded-lg border border-gray-800 bg-gray-900 p-4 hover:bg-gray-800',
+        'border-neutral-5 hover:bg-neutral-5 bg-neutral-4 relative block rounded-lg border p-4',
         completed ? 'opacity-70' : null,
       )}
     >
       <div className="flex items-start space-x-3">
         {completed ? (
-          <CircleCheck className="size-5 text-orange-500" />
+          <CircleCheck className="text-accent size-5" />
         ) : (
-          <Circle className="size-5 text-orange-500" />
+          <Circle className="text-neutral-2 size-5" />
         )}
         <div className="w-0 flex-1">
-          <p className="font-medium leading-5 text-white">{title}</p>
-          <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+          <p className="text-neutral-12 font-medium leading-5">{title}</p>
+          <p className="text-neutral-10 mt-1 text-sm">{description}</p>
         </div>
       </div>
     </a>

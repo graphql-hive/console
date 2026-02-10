@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, UseQueryExecute } from 'urql';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { OrganizationInvitations } from '@/components/organization/members/invitations';
 import { OrganizationMembers } from '@/components/organization/members/list';
 import { OrganizationMemberRoles } from '@/components/organization/members/roles';
-import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { NavLayout, PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
-import { cn } from '@/lib/utils';
 import { organizationMembersRoute } from '../router';
 
 const OrganizationMembersPage_OrganizationFragment = graphql(`
@@ -72,23 +71,14 @@ function PageContent(props: {
   return (
     <PageLayout>
       <NavLayout>
-        {filteredSubPages.map(subPage => {
-          return (
-            <Button
-              key={subPage.key}
-              variant="ghost"
-              className={cn(
-                props.page === subPage.key
-                  ? 'bg-muted hover:bg-muted'
-                  : 'hover:bg-transparent hover:underline',
-                'justify-start',
-              )}
-              onClick={() => props.onPageChange(subPage.key)}
-            >
-              {subPage.title}
-            </Button>
-          );
-        })}
+        {filteredSubPages.map(subPage => (
+          <SubPageNavigationLink
+            key={subPage.key}
+            isActive={props.page === subPage.key}
+            onClick={() => props.onPageChange(subPage.key)}
+            title={subPage.title}
+          />
+        ))}
       </NavLayout>
       <PageLayoutContent>
         {props.page === 'list' ? (

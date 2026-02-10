@@ -136,6 +136,16 @@ export interface document_preflight_scripts {
   updated_at: Date;
 }
 
+export interface email_verifications {
+  created_at: Date;
+  email: string;
+  expires_at: Date | null;
+  id: string;
+  token_hash: string | null;
+  user_identity_id: string;
+  verified_at: Date | null;
+}
+
 export interface graphile_worker_deduplication {
   dedupe_key: string;
   expires_at: Date;
@@ -160,6 +170,7 @@ export interface oidc_integrations {
   linked_organization_id: string;
   oauth_api_url: string | null;
   oidc_user_access_only: boolean;
+  oidc_user_join_only: boolean;
   token_endpoint: string | null;
   updated_at: Date;
   userinfo_endpoint: string | null;
@@ -288,6 +299,7 @@ export interface schema_checks {
   schema_composition_errors: any | null;
   schema_policy_errors: any | null;
   schema_policy_warnings: any | null;
+  schema_proposal_changes: any | null;
   schema_proposal_id: string | null;
   schema_sdl: string | null;
   schema_sdl_store_id: string | null;
@@ -412,6 +424,12 @@ export interface target_validation {
 }
 
 export interface targets {
+  app_deployment_protection_enabled: boolean;
+  app_deployment_protection_max_traffic_percentage: number;
+  app_deployment_protection_min_days_inactive: number;
+  app_deployment_protection_min_days_since_creation: number;
+  app_deployment_protection_rule_logic: string;
+  app_deployment_protection_traffic_period_days: number;
   base_schema: string | null;
   clean_id: string;
   created_at: Date;
@@ -422,6 +440,7 @@ export interface targets {
   project_id: string;
   validation_breaking_change_formula: breaking_change_formula;
   validation_enabled: boolean;
+  validation_excluded_app_deployments: Array<string> | null;
   validation_excluded_clients: Array<string> | null;
   validation_percentage: number;
   validation_period: number;
@@ -455,6 +474,12 @@ export interface users {
   zendesk_user_id: string | null;
 }
 
+export interface users_linked_identities {
+  created_at: Date;
+  identity_id: string;
+  user_id: string;
+}
+
 export interface version_commit {
   commit_id: string;
   url: string | null;
@@ -483,6 +508,7 @@ export interface DBTables {
   document_collection_documents: document_collection_documents;
   document_collections: document_collections;
   document_preflight_scripts: document_preflight_scripts;
+  email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
   oidc_integrations: oidc_integrations;
@@ -509,6 +535,7 @@ export interface DBTables {
   targets: targets;
   tokens: tokens;
   users: users;
+  users_linked_identities: users_linked_identities;
   version_commit: version_commit;
   versions: versions;
 }

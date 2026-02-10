@@ -8,7 +8,12 @@ export default gql`
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
-    updateSchemaComposition(input: UpdateSchemaCompositionInput!): UpdateSchemaCompositionResult!
+    """
+    Update the schema composition configuration of a federation project.
+    """
+    updateSchemaComposition(
+      input: UpdateSchemaCompositionInput! @tag(name: "public")
+    ): UpdateSchemaCompositionResult! @tag(name: "public")
     """
     Approve a failed schema check with breaking changes.
     """
@@ -43,55 +48,70 @@ export default gql`
     ): TestExternalSchemaCompositionResult!
   }
 
-  input UpdateSchemaCompositionInput @oneOf {
-    native: UpdateSchemaCompositionNativeInput
-    external: UpdateSchemaCompositionExternalInput
-    legacy: UpdateSchemaCompositionLegacyInput
-  }
-
-  input UpdateSchemaCompositionNativeInput {
-    organizationSlug: String!
-    projectSlug: String!
-  }
-
-  input UpdateSchemaCompositionExternalInput {
-    organizationSlug: String!
-    projectSlug: String!
+  input SchemaCompositionExternalMethodInput @tag(name: "public") {
     endpoint: String!
     secret: String!
   }
 
-  input UpdateSchemaCompositionLegacyInput {
-    organizationSlug: String!
-    projectSlug: String!
+  input SchemaCompositionMethodInput @oneOf @tag(name: "public") {
+    """
+    Use the native federation schema composition. This is the default method for new projects.
+    """
+    native: Boolean
+    """
+    Use an external schema composition endpoint.
+    """
+    external: SchemaCompositionExternalMethodInput
+    """
+    Use the legacy federation v1 schema composition.
+    """
+    legacy: Boolean
+  }
+
+  input UpdateSchemaCompositionInput @tag(name: "public") {
+    """
+    Reference to the project on which the schema composition should be applied.
+    """
+    project: ProjectReferenceInput!
+    """
+    The composition method that should be set for the project.
+    """
+    method: SchemaCompositionMethodInput!
+  }
+
+  type UpdateSchemaCompositionResultOk @tag(name: "public") {
+    updatedProject: Project!
   }
 
   """
   @oneOf
   """
-  type UpdateSchemaCompositionResult {
-    ok: Project
+  type UpdateSchemaCompositionResult @tag(name: "public") {
+    ok: UpdateSchemaCompositionResultOk
     error: UpdateSchemaCompositionError
   }
 
-  interface UpdateSchemaCompositionError implements Error {
+  interface UpdateSchemaCompositionError @tag(name: "public") {
     message: String!
   }
 
-  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError & Error {
+  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
     message: String!
   }
 
-  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError & Error {
+  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
     message: String!
   }
 
-  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError & Error {
+  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
     message: String!
     inputErrors: UpdateSchemaCompositionExternalInputErrors
   }
 
-  type UpdateSchemaCompositionExternalInputErrors {
+  type UpdateSchemaCompositionExternalInputErrors @tag(name: "public") {
     endpoint: String
     secret: String
   }
@@ -485,6 +505,26 @@ export default gql`
     The usage statistics are only available for breaking changes and only represent a snapshot of the usage data at the time of the schema check/schema publish.
     """
     usageStatistics: SchemaChangeUsageStatistics @tag(name: "public")
+    """
+    List of active app deployments that would be affected by this breaking change.
+    Only populated for breaking changes when app deployments are enabled.
+    """
+    affectedAppDeployments(
+      first: Int
+      after: String
+      firstOperations: Int
+    ): SchemaChangeAffectedAppDeploymentsConnection @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentsConnection {
+    edges: [SchemaChangeAffectedAppDeploymentEdge!]! @tag(name: "public")
+    totalCount: Int! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentEdge {
+    cursor: String! @tag(name: "public")
+    node: SchemaChangeAffectedAppDeployment! @tag(name: "public")
   }
 
   type SchemaChangeUsageStatistics {
@@ -546,6 +586,59 @@ export default gql`
     Human readable percentage value.
     """
     percentageFormatted: String!
+  }
+
+  """
+  An app deployment that is affected by a breaking schema change.
+  """
+  type SchemaChangeAffectedAppDeployment {
+    """
+    The unique identifier of the app deployment.
+    """
+    id: ID! @tag(name: "public")
+    """
+    The name of the app deployment.
+    """
+    name: String! @tag(name: "public")
+    """
+    The version of the app deployment.
+    """
+    version: String! @tag(name: "public")
+    """
+    The operations within this app deployment that use the affected schema coordinate.
+    """
+    affectedOperations(
+      first: Int
+      after: String
+    ): SchemaChangeAffectedAppDeploymentOperationsConnection! @tag(name: "public")
+    """
+    Total count of operations within this app deployment that use the affected schema coordinate.
+    """
+    totalAffectedOperations: Int! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentOperationsConnection {
+    edges: [SchemaChangeAffectedAppDeploymentOperationEdge!]! @tag(name: "public")
+    pageInfo: PageInfo! @tag(name: "public")
+  }
+
+  type SchemaChangeAffectedAppDeploymentOperationEdge {
+    cursor: String! @tag(name: "public")
+    node: SchemaChangeAffectedAppDeploymentOperation! @tag(name: "public")
+  }
+
+  """
+  An operation within an app deployment that is affected by a breaking schema change.
+  """
+  type SchemaChangeAffectedAppDeploymentOperation {
+    """
+    The hash of the operation document.
+    """
+    hash: String! @tag(name: "public")
+    """
+    The name of the operation (if named).
+    """
+    name: String @tag(name: "public")
   }
 
   type SchemaChangeApproval {
@@ -629,6 +722,7 @@ export default gql`
     retentionInDays: Int! @tag(name: "public")
     percentage: Float! @tag(name: "public")
     excludedClientNames: [String!] @tag(name: "public")
+    excludedAppDeploymentNames: [String!] @tag(name: "public")
     targets: [BreakingChangeMetadataTarget!]! @tag(name: "public")
   }
 
@@ -653,6 +747,11 @@ export default gql`
     valid: Boolean!
     initial: Boolean!
     changes: SchemaChangeConnection
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
     warnings: SchemaWarningConnection
     schemaCheck: SchemaCheck
   }
@@ -666,6 +765,11 @@ export default gql`
 
   type SchemaCheckError {
     valid: Boolean!
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
     changes: SchemaChangeConnection
     errors: SchemaErrorConnection!
     warnings: SchemaWarningConnection
@@ -1261,6 +1365,12 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
     schemaChanges: SchemaChangeConnection @tag(name: "public")
     breakingSchemaChanges: SchemaChangeConnection
     safeSchemaChanges: SchemaChangeConnection
@@ -1412,6 +1522,12 @@ export default gql`
     """
     hasSchemaChanges: Boolean!
 
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
+
     schemaChanges: SchemaChangeConnection @tag(name: "public")
     """
     Breaking changes can exist in an successful schema check if the check was manually approved.
@@ -1508,6 +1624,12 @@ export default gql`
     Whether this schema check has any schema changes.
     """
     hasSchemaChanges: Boolean!
+
+    """
+    If the check is associated with a schema proposal, then this contains an unfiltered list of changes
+    to the SDL.
+    """
+    schemaProposalChanges: SchemaChangeConnection
 
     schemaChanges: SchemaChangeConnection @tag(name: "public")
     breakingSchemaChanges: SchemaChangeConnection

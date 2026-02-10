@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useCallback, useMemo } from 'react';
+import React, { ChangeEvent, useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { FilterIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { Button } from '@/components/ui/button';
@@ -148,6 +148,8 @@ export function TypeFilter(props: {
   };
 }) {
   const router = useRouter();
+  const [inputValue, setInputValue] = useState('');
+  const deferredInputValue = useDeferredValue(inputValue);
   const [query] = useQuery({
     query: TypeFilter_AllTypes,
     variables: {
@@ -168,6 +170,29 @@ export function TypeFilter(props: {
       })) || [],
     [allNamedTypes],
   );
+
+  const sortedTypes = useMemo(() => {
+    if (!deferredInputValue) return types;
+
+    const search = deferredInputValue.toLowerCase();
+    return [...types].sort((a, b) => {
+      const aName = a.label.toLowerCase();
+      const bName = b.label.toLowerCase();
+
+      // Exact match gets highest priority
+      const aExact = aName === search;
+      const bExact = bName === search;
+      if (aExact !== bExact) return aExact ? -1 : 1;
+
+      // Prefix match gets second priority
+      const aPrefix = aName.startsWith(search);
+      const bPrefix = bName.startsWith(search);
+      if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
+
+      // Alphabetical within same relevance
+      return aName.localeCompare(bName);
+    });
+  }, [types, deferredInputValue]);
 
   const onChange = useCallback(
     (option: SelectOption | null) => {
@@ -194,8 +219,9 @@ export function TypeFilter(props: {
       className="min-w-[200px] grow cursor-text"
       placeholder="Search for a type"
       defaultValue={defaultValue}
-      options={types}
+      options={sortedTypes}
       onChange={onChange}
+      onInputChange={setInputValue}
       loading={query.fetching}
     />
   );
@@ -355,7 +381,7 @@ export function DescriptionsVisibilityFilter() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="bg-secondary flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
+          <div className="bg-neutral-2 flex h-[40px] flex-row items-center gap-x-4 rounded-md border px-3">
             <div>
               <Label htmlFor="filter-toggle-descriptions" className="text-sm font-normal">
                 Show descriptions
@@ -413,16 +439,25 @@ export function SchemaVariantFilter(props: {
   return (
     <TooltipProvider>
       <Tabs defaultValue={props.variant}>
-        <TabsList>
+        <TabsList className="bg-neutral-5">
           {variants.map(variant => (
             <Tooltip key={variant.value}>
               <TooltipTrigger asChild>
                 {props.variant === variant.value ? (
                   <div>
-                    <TabsTrigger value={variant.value}>{variant.label}</TabsTrigger>
+                    <TabsTrigger
+                      className="dark:data-[state=active]:bg-neutral-7 data-[state=active]:text-neutral-12"
+                      value={variant.value}
+                    >
+                      {variant.label}
+                    </TabsTrigger>
                   </div>
                 ) : (
-                  <TabsTrigger value={variant.value} asChild>
+                  <TabsTrigger
+                    className="text-neutral-9 hover:text-neutral-11"
+                    value={variant.value}
+                    asChild
+                  >
                     <Link
                       to={variant.pathname}
                       params={{
@@ -462,7 +497,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" className="data-[state=open]:bg-muted">
+        <Button variant="secondary" className="data-[state=open]:bg-neutral-3">
           <FilterIcon className="size-4" />
           &nbsp;Metadata
           <span className="sr-only">Open menu to filter by metadata.</span>
@@ -476,7 +511,7 @@ export function MetadataFilter(props: { options: Array<{ name: string; values: s
           <React.Fragment key={name}>
             {i > 0 && <DropdownMenuSeparator />}
             <DropdownMenuGroup
-              className="flex cursor-pointer overflow-x-hidden text-sm text-gray-400 hover:underline"
+              className="text-neutral-10 flex cursor-pointer overflow-x-hidden text-sm hover:underline"
               onClick={() => {
                 const isChecked = !values.every(value => hasMetadataFilter(name, value));
                 if (isChecked) {

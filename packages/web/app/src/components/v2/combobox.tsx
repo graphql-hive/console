@@ -42,24 +42,26 @@ export function Combobox(
         ),
         NoOptionsMessage: compProps => (
           <components.NoOptionsMessage {...compProps}>
-            <div className="text-xs text-gray-500">
+            <div className="text-neutral-10 text-xs">
               {props.creatable ? 'Start typing to add values' : 'No options'}
             </div>
           </components.NoOptionsMessage>
         ),
       }}
       classNames={{
-        control: () => clsx('bg-gray-800 border-gray-800 hover:border-orange-800 shadow-none'),
-        valueContainer: () => clsx('bg-gray-800 rounded-xl'),
-        indicatorsContainer: () => clsx('bg-gray-800 rounded-xl'),
-        container: () => clsx('bg-gray-800 rounded-xl shadow-lg text-sm'),
-        menu: () => clsx('bg-gray-800 rounded-xl shadow-lg text-xs'),
-        menuList: () => clsx('bg-gray-800 rounded-lg text-xs'),
-        option: () => clsx('bg-gray-800 hover:bg-gray-700 text-xs cursor-pointer'),
-        placeholder: () => clsx('text-gray-500 text-xs'),
-        input: () => clsx('text-gray-500 text-xs'),
-        multiValue: () => clsx('text-gray-500 text-xs bg-gray-200 font-bold'),
-        multiValueRemove: () => clsx('text-gray-500 text-xs hover:bg-gray-300 hover:text-gray-700'),
+        control: () =>
+          clsx('bg-neutral-5! border-neutral-5! hover:border-orange-400! shadow-none!'),
+        valueContainer: () => clsx('bg-neutral-5! rounded-xl!'),
+        indicatorsContainer: () => clsx('bg-neutral-5! rounded-xl!'),
+        container: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-sm!'),
+        menu: () => clsx('bg-neutral-5! rounded-xl! shadow-lg! text-xs!'),
+        menuList: () => clsx('bg-neutral-5! rounded-lg! text-xs!'),
+        option: () => clsx('bg-neutral-5! hover:bg-neutral-2! text-xs! cursor-pointer!'),
+        placeholder: () => clsx('text-neutral-10! text-xs!'),
+        input: () => clsx('text-neutral-10! text-xs!'),
+        multiValue: () => clsx('text-neutral-10! text-xs! bg-neutral-10! font-bold!'),
+        multiValueRemove: () =>
+          clsx('text-neutral-6 text-xs! hover:bg-neutral-11! hover:text-neutral-2!'),
       }}
       closeMenuOnSelect={false}
       value={props.value}

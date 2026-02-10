@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
+import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
 import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
@@ -39,7 +40,6 @@ import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useRedirect } from '@/lib/access/common';
 import { useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 
@@ -184,7 +184,6 @@ const SettingsPageRenderer_OrganizationFragment = graphql(`
     viewerCanModifySlackIntegration
     viewerCanModifyGitHubIntegration
     viewerCanExportAuditLogs
-    ...OIDCIntegrationSection_OrganizationFragment
     ...TransferOrganizationOwnershipModal_OrganizationFragment
     ...GitHubIntegrationSection_OrganizationFragment
     ...SlackIntegrationSection_OrganizationFragment
@@ -282,7 +281,7 @@ const OrganizationSettingsContent = (props: {
                     </CardDescription>
                     <CardDescription>
                       <DocsLink
-                        className="text-muted-foreground text-sm"
+                        className="text-neutral-10 text-sm"
                         href="/management/organizations#change-slug-of-organization"
                       >
                         You can read more about it in the documentation
@@ -298,7 +297,7 @@ const OrganizationSettingsContent = (props: {
                   <FormItem>
                     <FormControl>
                       <div className="flex items-center">
-                        <div className="border-input text-muted-foreground h-10 rounded-md rounded-r-none border-y border-l bg-gray-900 px-3 py-2 text-sm">
+                        <div className="border-neutral-5 text-neutral-10 bg-neutral-2 h-10 rounded-md rounded-r-none border-y border-l px-3 py-2 text-sm">
                           {env.appBaseUrl.replace(/https?:\/\//i, '')}/
                         </div>
                         <Input placeholder="slug" className="w-48 rounded-l-none" {...field} />
@@ -328,7 +327,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/sso-oidc-provider"
                   >
                     Instructions for connecting your provider.
@@ -337,8 +336,8 @@ const OrganizationSettingsContent = (props: {
               </>
             }
           />
-          <div className="text-gray-500">
-            <OIDCIntegrationSection organization={organization} />
+          <div className="text-neutral-10">
+            <OIDCIntegrationSection organizationSlug={organization.slug} />
           </div>
         </SubPageLayout>
       )}
@@ -354,7 +353,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#slack"
                   >
                     Learn more.
@@ -376,7 +375,7 @@ const OrganizationSettingsContent = (props: {
                 <CardDescription>Link your Hive organization with GitHub.</CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#github"
                   >
                     Learn more.
@@ -401,7 +400,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#transfer-ownership"
                   >
                     Learn more about the process
@@ -433,7 +432,7 @@ const OrganizationSettingsContent = (props: {
                 </CardDescription>
                 <CardDescription>
                   <DocsLink
-                    className="text-muted-foreground text-sm"
+                    className="text-neutral-10 text-sm"
                     href="/management/organizations#delete-an-organization"
                   >
                     <span>
@@ -466,7 +465,7 @@ const OrganizationSettingsContent = (props: {
                   View a history of changes made to the organization settings.
                 </CardDescription>
                 <CardDescription>
-                  <DocsLink className="text-muted-foreground text-sm" href="/management/audit-logs">
+                  <DocsLink className="text-neutral-10 text-sm" href="/management/audit-logs">
                     Learn more.
                   </DocsLink>
                 </CardDescription>
@@ -550,7 +549,7 @@ function OrganizationPolicySettings(props: {
             <br />
             At the project level, policies can be overridden or extended.
             <br />
-            <DocsLink className="text-muted-foreground" href="/features/schema-policy">
+            <DocsLink className="text-neutral-10" href="/features/schema-policy">
               Learn more
             </DocsLink>
           </CardDescription>
@@ -603,7 +602,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={newValue => form.setFieldValue('allowOverrides', newValue)}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-gray-300">
+            <label htmlFor="allowOverrides" className="text-neutral-11 ml-2 inline-block text-sm">
               Allow projects to override or disable rules
             </label>
           </div>
@@ -715,10 +714,9 @@ function SettingsPageContent(props: {
         <NavLayout>
           {subPages.map(subPage => {
             return (
-              <Button
+              <SubPageNavigationLink
                 key={subPage.key}
-                data-cy={`target-settings-${subPage.key}-link`}
-                variant="ghost"
+                isActive={resolvedPage.key === subPage.key}
                 onClick={() => {
                   void router.navigate({
                     search: {
@@ -726,15 +724,8 @@ function SettingsPageContent(props: {
                     },
                   });
                 }}
-                className={cn(
-                  resolvedPage.key === subPage.key
-                    ? 'bg-muted hover:bg-muted'
-                    : 'hover:bg-transparent hover:underline',
-                  'w-full justify-start text-left',
-                )}
-              >
-                {subPage.title}
-              </Button>
+                title={subPage.title}
+              />
             );
           })}
         </NavLayout>
@@ -944,7 +935,7 @@ function AuditLogsOrganizationModal(props: {
 
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[520px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
         <Form {...form}>
           <form className="space-y-8" onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
@@ -967,7 +958,7 @@ function AuditLogsOrganizationModal(props: {
                 )}
               />
               <div className="mt-2">
-                <ArrowRightIcon className="text-muted-foreground size-6" />
+                <ArrowRightIcon className="text-neutral-10 size-6" />
               </div>
               <FormField
                 control={form.control}

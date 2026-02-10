@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
+import { Header } from '@/components/navigation/header';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -52,6 +54,7 @@ const ProjectLayoutQuery = graphql(`
         viewerCanCreateTarget
         viewerCanModifyAlerts
       }
+      ...UserMenu_OrganizationFragment
     }
   }
 `);
@@ -86,32 +89,30 @@ export function ProjectLayout({
 
   return (
     <>
-      <header>
-        <div className="container flex h-[--header-height] items-center justify-between">
-          <div className="flex flex-row items-center gap-4">
-            <HiveLink className="size-8" />
-            <ProjectSelector
-              currentOrganizationSlug={props.organizationSlug}
-              currentProjectSlug={props.projectSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
-          <div>
-            <UserMenu
-              me={me ?? null}
-              currentOrganizationSlug={props.organizationSlug}
-              organizations={query.data?.organizations ?? null}
-            />
-          </div>
+      <Header>
+        <div className="flex flex-row items-center gap-4">
+          <HiveLink className="size-8" />
+          <ProjectSelector
+            currentOrganizationSlug={props.organizationSlug}
+            currentProjectSlug={props.projectSlug}
+            organizations={query.data?.organizations ?? null}
+          />
         </div>
-      </header>
+        <div>
+          <UserMenu
+            me={me ?? null}
+            currentOrganization={currentOrganization ?? null}
+            organizations={query.data?.organizations ?? null}
+          />
+        </div>
+      </Header>
       {query.fetching === false &&
       query.stale === false &&
       (currentProject === null || currentOrganization === null) ? (
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <div className="relative h-[--tabs-navbar-height] border-b border-gray-800">
+          <SecondaryNavigation>
             <div className="container flex items-center justify-between">
               {currentOrganization && currentProject ? (
                 <Tabs value={page}>
@@ -155,13 +156,13 @@ export function ProjectLayout({
                 </Tabs>
               ) : (
                 <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
-                  <div className="h-5 w-12 animate-pulse rounded-full bg-gray-800" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
                 </div>
               )}
               {currentProject?.viewerCanCreateTarget ? (
-                <Button onClick={toggleModalOpen} variant="link" className="text-orange-500">
+                <Button onClick={toggleModalOpen} variant="link">
                   <PlusIcon size={16} className="mr-2" />
                   New target
                 </Button>
@@ -173,8 +174,8 @@ export function ProjectLayout({
                 toggleModalOpen={toggleModalOpen}
               />
             </div>
-          </div>
-          <div className="container min-h-[var(--content-height)] pb-7">
+          </SecondaryNavigation>
+          <div className="min-h-(--content-height) container pb-7">
             <div className={className}>{children}</div>
           </div>
         </>
@@ -298,7 +299,7 @@ export function CreateTargetModalContent(props: {
 }) {
   return (
     <Dialog open={props.isOpen} onOpenChange={props.toggleModalOpen}>
-      <DialogContent className="container w-4/5 max-w-[520px] md:w-3/5">
+      <DialogContent className="w-4/5 max-w-[520px] md:w-3/5">
         <Form {...props.form}>
           <form className="space-y-8" onSubmit={props.form.handleSubmit(props.onSubmit)}>
             <DialogHeader>

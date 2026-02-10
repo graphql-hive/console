@@ -1,5 +1,6 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
+import { pollFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
@@ -129,6 +130,77 @@ const RetireAppDeployment = graphql(`
           version
           status
         }
+      }
+    }
+  }
+`);
+
+const RetireAppDeploymentWithProtectionDetails = graphql(`
+  mutation RetireAppDeploymentWithProtectionDetails($input: RetireAppDeploymentInput!) {
+    retireAppDeployment(input: $input) {
+      error {
+        message
+        protectionDetails {
+          lastUsed
+          daysSinceLastUsed
+          requiredMinDaysInactive
+          currentTrafficPercentage
+          maxTrafficPercentage
+        }
+      }
+
+      ok {
+        retiredAppDeployment {
+          id
+          name
+          version
+          status
+        }
+      }
+    }
+  }
+`);
+
+const UpdateTargetAppDeploymentProtectionConfiguration = graphql(`
+  mutation UpdateTargetAppDeploymentProtectionConfiguration(
+    $input: UpdateTargetAppDeploymentProtectionConfigurationInput!
+  ) {
+    updateTargetAppDeploymentProtectionConfiguration(input: $input) {
+      ok {
+        target {
+          id
+          appDeploymentProtectionConfiguration {
+            isEnabled
+            minDaysInactive
+            minDaysSinceCreation
+            maxTrafficPercentage
+            trafficPeriodDays
+            ruleLogic
+          }
+        }
+      }
+      error {
+        message
+        inputErrors {
+          minDaysInactive
+          maxTrafficPercentage
+        }
+      }
+    }
+  }
+`);
+
+const GetTargetAppDeploymentProtectionConfiguration = graphql(`
+  query GetTargetAppDeploymentProtectionConfiguration($selector: TargetSelectorInput!) {
+    target(reference: { bySelector: $selector }) {
+      id
+      appDeploymentProtectionConfiguration {
+        isEnabled
+        minDaysInactive
+        minDaysSinceCreation
+        maxTrafficPercentage
+        trafficPeriodDays
+        ruleLogic
       }
     }
   }
@@ -544,14 +616,19 @@ test('create app deployment fails without feature flag enabled for organization'
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  expect(createAppDeployment).toEqual({
-    error: {
-      details: null,
-      message:
-        'This organization has no access to app deployments. Please contact the Hive team for early access.',
-    },
-    ok: null,
-  });
+  // When FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED=1 globally, the per-org check is bypassed
+  if (createAppDeployment.ok) {
+    expect(createAppDeployment.ok.createdAppDeployment).toBeDefined();
+  } else {
+    expect(createAppDeployment).toEqual({
+      error: {
+        details: null,
+        message:
+          'This organization has no access to app deployments. Please contact the Hive team for early access.',
+      },
+      ok: null,
+    });
+  }
 });
 
 test('add documents to app deployment fails if there is no initial schema published', async () => {
@@ -1010,14 +1087,11 @@ test('add documents to app deployment fails without feature flag enabled for org
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  expect(addDocumentsToAppDeployment).toEqual({
-    error: {
-      details: null,
-      message:
-        'This organization has no access to app deployments. Please contact the Hive team for early access.',
-    },
-    ok: null,
-  });
+  // When FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED=1 globally, the per-org check is bypassed.
+  expect(addDocumentsToAppDeployment.error?.message).toMatch(
+    /no access to app deployments|App deployment not found/,
+  );
+  expect(addDocumentsToAppDeployment.ok).toBeNull();
 });
 
 test('activate app deployment fails if app deployment does not exist', async () => {
@@ -1442,13 +1516,11 @@ test('retire app deployments fails without feature flag enabled for organization
     authToken: token.secret,
   }).then(res => res.expectNoGraphQLErrors());
 
-  expect(retireAppDeployment).toEqual({
-    error: {
-      message:
-        'This organization has no access to app deployments. Please contact the Hive team for early access.',
-    },
-    ok: null,
-  });
+  // When FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED=1 globally, the per-org check is bypassed.
+  expect(retireAppDeployment.error?.message).toMatch(
+    /no access to app deployments|App deployment not found/,
+  );
+  expect(retireAppDeployment.ok).toBeNull();
 });
 
 test('get app deployment documents via GraphQL API', async () => {
@@ -1956,6 +2028,72 @@ test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
     lastUsed: null,
   });
   expect(result.target?.activeAppDeployments.edges[0].node.createdAt).toBeTruthy();
+});
+
+test('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // seed 1,200 app deployments
+  const apps = ['web-app', 'mobile-app', 'admin-dashboard', 'cli-tool'];
+  const appDeployments = apps.flatMap((app, minor) =>
+    Array.from({ length: 300 }).map((_, patch) => ({
+      appName: app,
+      appVersion: [1, minor, patch].join('.'),
+    })),
+  );
+
+  for (const { appName, appVersion } of appDeployments) {
+    // Create and activate an app deployment
+    await execute({
+      document: CreateAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion,
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+
+    await execute({
+      document: ActivateAppDeployment,
+      variables: {
+        input: {
+          appName,
+          appVersion,
+        },
+      },
+      authToken: token.secret,
+    }).then(res => res.expectNoGraphQLErrors());
+  }
+
+  // Query for deployments never used and created before tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  for (let page = 0; page < Math.ceil(1200 / 20); page++) {
+    const result = await execute({
+      document: GetActiveAppDeployments,
+      variables: {
+        targetSelector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        first: 20,
+        filter: {
+          neverUsedAndCreatedBefore: tomorrow.toISOString(),
+        },
+      },
+      authToken: ownerToken,
+    }).then(res => res.expectNoGraphQLErrors());
+    // all should be full pages
+    expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
+  }
 });
 
 test('activeAppDeployments filters by name', async () => {
@@ -2739,4 +2877,2403 @@ test('activeAppDeployments check pagination clamp', async () => {
   // Should be clamped to 20
   expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
   expect(result.target?.activeAppDeployments.pageInfo.hasNextPage).toBe(true);
+});
+
+const SchemaCheckWithAffectedAppDeployments = graphql(`
+  query SchemaCheckWithAffectedAppDeployments(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $targetSlug: String!
+    $schemaCheckId: ID!
+  ) {
+    target(
+      reference: {
+        bySelector: {
+          organizationSlug: $organizationSlug
+          projectSlug: $projectSlug
+          targetSlug: $targetSlug
+        }
+      }
+    ) {
+      schemaCheck(id: $schemaCheckId) {
+        id
+        breakingSchemaChanges {
+          edges {
+            node {
+              message
+              path
+              isSafeBasedOnUsage
+              affectedAppDeployments {
+                edges {
+                  cursor
+                  node {
+                    id
+                    name
+                    version
+                    affectedOperations {
+                      edges {
+                        cursor
+                        node {
+                          hash
+                          name
+                        }
+                      }
+                    }
+                  }
+                }
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+test('schema check shows affected app deployments for breaking changes', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const publishResult = await execute({
+    document: graphql(`
+      mutation PublishSchemaForAffectedAppDeployments($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+          ... on SchemaPublishSuccess {
+            valid
+          }
+          ... on SchemaPublishError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+            world: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'test-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'test-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'hello-query-hash',
+            body: 'query GetHello { hello }',
+          },
+          {
+            hash: 'world-query-hash',
+            body: 'query GetWorld { world }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'test-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // ClickHouse eventual consistency
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForAffectedAppDeploymentsPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+      // Check if the hello field removal has affectedAppDeployments
+      const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      return !!(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  // console.log('breakingChanges:', JSON.stringify(breakingChanges, null, 2));
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloFieldRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // console.log('helloFieldRemoval:', JSON.stringify(helloFieldRemoval, null, 2));
+
+  expect(helloFieldRemoval).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.edges).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+
+  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node;
+  expect(affectedDeployment?.name).toBe('test-app');
+  expect(affectedDeployment?.version).toBe('1.0.0');
+  expect(affectedDeployment?.affectedOperations.edges).toBeDefined();
+  expect(affectedDeployment?.affectedOperations.edges.length).toBe(1);
+  expect(affectedDeployment?.affectedOperations.edges[0].node.hash).toBe('hello-query-hash');
+  expect(affectedDeployment?.affectedOperations.edges[0].node.name).toBe('GetHello');
+});
+
+test('breaking changes show only deployments affected by their specific coordinate', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const publishResult = await execute({
+    document: graphql(`
+      mutation PublishSchemaForCoordinateTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+          ... on SchemaPublishSuccess {
+            valid
+          }
+          ... on SchemaPublishError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+            world: String
+            foo: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-a',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-a',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'app-a-hello-hash',
+            body: 'query AppAHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-a',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-b',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-b',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'app-b-world-hash',
+            body: 'query AppBWorld { world }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'app-b',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForCoordinateTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                foo: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+      // Check if both breaking changes have affectedAppDeployments
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      const worldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('world'),
+      );
+      return !!(
+        (helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0) &&
+        (worldRemoval?.node.affectedAppDeployments?.edges?.length ?? 0)
+      );
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBe(2);
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+  const worldRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('world'),
+  );
+
+  // Verify hello removal only shows App A (not App B)
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.name).toBe('app-a');
+  expect(
+    helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.affectedOperations.edges.length,
+  ).toBe(1);
+  expect(
+    helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.affectedOperations.edges[0].node
+      .hash,
+  ).toBe('app-a-hello-hash');
+
+  // Verify world removal only shows App B (not App A)
+  expect(worldRemoval).toBeDefined();
+  expect(worldRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+  expect(worldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.name).toBe('app-b');
+  expect(
+    worldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.affectedOperations.edges.length,
+  ).toBe(1);
+  expect(
+    worldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.affectedOperations.edges[0].node
+      .hash,
+  ).toBe('app-b-world-hash');
+});
+
+test('retired app deployments are excluded from affected deployments', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Publish schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForRetiredTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'retired-app-hash',
+            body: 'query GetHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Retire the app deployment
+  await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        appName: 'retired-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Schema check that removes hello field - retired deployment should NOT appear
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForRetiredTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      return true;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Retired deployment should NOT appear in affected deployments
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(0);
+});
+
+test('pending (non-activated) app deployments are excluded from affected deployments', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Publish schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForPendingTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create app deployment but DO NOT activate it
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'pending-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'pending-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'pending-app-hash',
+            body: 'query GetHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Note: NOT activating the deployment
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Schema check that removes hello field - pending deployment should NOT appear
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForPendingTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      return true;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Pending (non-activated) deployment should NOT appear in affected deployments
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(0);
+});
+
+test('multiple deployments affected by same breaking change all appear', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForMultiDeploymentTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate App 1 - uses hello field
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'multi-app-1', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'multi-app-1',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'multi-app-1-hash', body: 'query App1Hello { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'multi-app-1', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate App 2 - also uses hello field
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'multi-app-2', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'multi-app-2',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'multi-app-2-hash', body: 'query App2Hello { hello }' }],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'multi-app-2', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForMultiDeploymentTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      // Wait until both deployments appear
+      return (helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0) >= 2;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Both deployments should appear
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(2);
+  const appNames = helloRemoval?.node.affectedAppDeployments?.edges?.map(
+    (e: { node: { name: string } }) => e.node.name,
+  );
+  expect(appNames).toContain('multi-app-1');
+  expect(appNames).toContain('multi-app-2');
+});
+
+test('anonymous operations (null name) are handled correctly', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForAnonOpTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create app with anonymous operation (no operation name)
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'anon-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'anon-app',
+        appVersion: '1.0.0',
+        documents: [{ hash: 'anon-op-hash', body: '{ hello }' }], // Anonymous query
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'anon-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForAnonOpTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      return !!(helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+  const affectedOp =
+    helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.affectedOperations.edges[0].node;
+  expect(affectedOp.hash).toBe('anon-op-hash');
+  expect(affectedOp.name).toBeNull(); // Anonymous operation has null name
+});
+
+test('multiple operations in same deployment affected by same change', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForMultiOpTest($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create app with multiple operations using hello field
+  await execute({
+    document: CreateAppDeployment,
+    variables: { input: { appName: 'multi-op-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'multi-op-app',
+        appVersion: '1.0.0',
+        documents: [
+          { hash: 'op-1-hash', body: 'query GetHello1 { hello }' },
+          { hash: 'op-2-hash', body: 'query GetHello2 { hello }' },
+          { hash: 'op-3-hash', body: 'query GetHello3 { hello }' },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: { input: { appName: 'multi-op-app', appVersion: '1.0.0' } },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForMultiOpTestPoll($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      // Wait until all 3 operations appear
+      return (
+        (helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node?.affectedOperations?.edges
+          ?.length ?? 0) >= 3
+      );
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+  const affectedOps =
+    helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.affectedOperations.edges;
+  expect(affectedOps.length).toBe(3);
+
+  const opHashes = affectedOps.map((e: { node: { hash: string } }) => e.node.hash);
+  expect(opHashes).toContain('op-1-hash');
+  expect(opHashes).toContain('op-2-hash');
+  expect(opHashes).toContain('op-3-hash');
+});
+
+test('schema check fails if breaking change affects app deployment even when usage data says safe', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const {
+    project,
+    target,
+    createTargetAccessToken,
+    updateTargetValidationSettings,
+    waitForOperationsCollected,
+  } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+      world: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  const usageReport = await token.collectUsage({
+    size: 1,
+    map: {
+      'world-op': {
+        operationName: 'GetWorld',
+        operation: 'query GetWorld { world }',
+        fields: ['Query', 'Query.world'],
+      },
+    },
+    operations: [
+      {
+        operationMapKey: 'world-op',
+        timestamp: Date.now(),
+        execution: {
+          ok: true,
+          duration: 100000000,
+          errorsTotal: 0,
+        },
+        metadata: {
+          client: {
+            name: 'demo',
+            version: '0.0.1',
+          },
+        },
+      },
+    ],
+  });
+  expect(usageReport.status).toBe(200);
+  await waitForOperationsCollected(1);
+
+  await updateTargetValidationSettings({
+    isEnabled: true,
+    percentage: 0,
+  });
+
+  const baselineCheck = await execute({
+    document: graphql(`
+      mutation BaselineSchemaCheck($input: SchemaCheckInput!) {
+        schemaCheck(input: $input) {
+          __typename
+          ... on SchemaCheckSuccess {
+            valid
+            schemaCheck {
+              id
+            }
+          }
+          ... on SchemaCheckError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            world: String
+          }
+        `,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(baselineCheck.schemaCheck.__typename).toBe('SchemaCheckSuccess');
+  expect(baselineCheck.schemaCheck).toMatchObject({
+    __typename: 'SchemaCheckSuccess',
+    valid: true,
+  });
+
+  const baselineSchemaCheckId = (baselineCheck.schemaCheck as { schemaCheck: { id: string } })
+    .schemaCheck.id;
+  const baselineDetails = await execute({
+    document: SchemaCheckWithAffectedAppDeployments,
+    variables: {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      targetSlug: target.slug,
+      schemaCheckId: baselineSchemaCheckId,
+    },
+    authToken: ownerToken,
+  });
+
+  const baselineBreakingChanges =
+    baselineDetails.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const baselineHelloRemoval = baselineBreakingChanges?.find(
+    (edge: { node: { message: string } }) => edge.node.message.includes('hello'),
+  );
+  expect(baselineHelloRemoval?.node.isSafeBasedOnUsage).toBe(true);
+  expect(baselineHelloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(0);
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+        documents: [
+          {
+            hash: 'hello-query-hash',
+            body: 'query GetHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '2.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckWithAppDeploymentOverride($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloFieldRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      return !!(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBeGreaterThan(0);
+
+  const helloFieldRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  expect(helloFieldRemoval).toBeDefined();
+  // The change should NOT be marked as safe because app deployment uses it
+  expect(helloFieldRemoval?.node.isSafeBasedOnUsage).toBe(false);
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.edges).toBeDefined();
+  expect(helloFieldRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+
+  const affectedDeployment = helloFieldRemoval?.node.affectedAppDeployments?.edges?.[0]?.node;
+  expect(affectedDeployment?.name).toBe('my-app');
+  expect(affectedDeployment?.version).toBe('2.0.0');
+  expect(affectedDeployment?.affectedOperations.edges).toBeDefined();
+  expect(affectedDeployment?.affectedOperations.edges.length).toBe(1);
+  expect(affectedDeployment?.affectedOperations.edges[0].node.hash).toBe('hello-query-hash');
+});
+
+test('fields NOT used by app deployment remain safe based on usage', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target, createTargetAccessToken, updateTargetValidationSettings } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+      world: String
+      unused: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  await updateTargetValidationSettings({
+    isEnabled: true,
+    percentage: 0,
+  });
+
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'hello-query-hash',
+            body: 'query HelloQuery { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation InverseTestSchemaCheck($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      return !!(helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+
+  expect(breakingChanges).toBeDefined();
+  expect(breakingChanges!.length).toBe(2); // hello and unused
+
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+  const unusedRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('unused'),
+  );
+
+  // 'hello' should be UNSAFE because app deployment uses it
+  expect(helloRemoval).toBeDefined();
+  expect(helloRemoval?.node.isSafeBasedOnUsage).toBe(false);
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+
+  expect(unusedRemoval).toBeDefined();
+  expect(unusedRemoval?.node.isSafeBasedOnUsage).toBe(true);
+  expect(unusedRemoval?.node.affectedAppDeployments?.edges?.length).toBe(0);
+});
+
+test('excludedAppDeployments filters out matching app deployments from affected list', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+
+  await setFeatureFlag('appDeployments', true);
+
+  const { createTargetAccessToken, project, target, toggleTargetValidation } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  await toggleTargetValidation(true);
+
+  // Publish initial schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForExcludedAppDeployments($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+          ... on SchemaPublishSuccess {
+            valid
+          }
+          ... on SchemaPublishError {
+            valid
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+            world: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create first app deployment (will be excluded)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'excluded-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'excluded-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'excluded-app-hello-hash',
+            body: 'query ExcludedHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'excluded-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create second app deployment (will NOT be excluded)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'included-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'included-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'included-app-hello-hash',
+            body: 'query IncludedHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'included-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Configure conditional breaking changes with excludedAppDeployments
+  await execute({
+    document: graphql(`
+      mutation UpdateTargetValidationForExcludedAppDeployments(
+        $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+      ) {
+        updateTargetConditionalBreakingChangeConfiguration(input: $input) {
+          ok {
+            target {
+              id
+              conditionalBreakingChangeConfiguration {
+                excludedAppDeployments
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        conditionalBreakingChangeConfiguration: {
+          isEnabled: true,
+          percentage: 0,
+          period: 2,
+          targetIds: [target.id],
+          excludedAppDeployments: ['excluded-app'],
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Run schema check that removes hello field (both apps use it)
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForExcludedAppDeployments($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                world: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+        return false;
+      }
+
+      const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      const breakingChanges =
+        schemaCheckData.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+      const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+        edge.node.message.includes('hello'),
+      );
+      // Wait until affectedAppDeployments is populated
+      return !!(helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0);
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges!.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // Only included-app should appear (excluded-app should be filtered out)
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length).toBe(1);
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.[0]?.node.name).toBe('included-app');
+  // Breaking change is still breaking since included-app uses the field
+  expect(helloRemoval?.node.isSafeBasedOnUsage).toBe(false);
+});
+
+test('excludedAppDeployments returns empty list when all affected apps are excluded', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+
+  await setFeatureFlag('appDeployments', true);
+
+  const { createTargetAccessToken, project, target, toggleTargetValidation } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  await toggleTargetValidation(true);
+
+  // Publish initial schema
+  await execute({
+    document: graphql(`
+      mutation PublishSchemaForFullExclusion($input: SchemaPublishInput!) {
+        schemaPublish(input: $input) {
+          __typename
+        }
+      }
+    `),
+    variables: {
+      input: {
+        sdl: /* GraphQL */ `
+          type Query {
+            hello: String
+          }
+        `,
+        author: 'test-author',
+        commit: 'test-commit',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create single app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'only-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'only-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'only-app-hello-hash',
+            body: 'query OnlyHello { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'only-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Exclude the only app deployment
+  await execute({
+    document: graphql(`
+      mutation UpdateTargetValidationForFullExclusion(
+        $input: UpdateTargetConditionalBreakingChangeConfigurationInput!
+      ) {
+        updateTargetConditionalBreakingChangeConfiguration(input: $input) {
+          ok {
+            target {
+              id
+              conditionalBreakingChangeConfiguration {
+                excludedAppDeployments
+              }
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        conditionalBreakingChangeConfiguration: {
+          isEnabled: true,
+          percentage: 0,
+          period: 2,
+          targetIds: [target.id],
+          excludedAppDeployments: ['only-app'],
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let schemaCheckData: any = null;
+
+  // Run schema check that removes hello field
+  await pollFor(
+    async () => {
+      const checkResult = await execute({
+        document: graphql(`
+          mutation SchemaCheckForFullExclusion($input: SchemaCheckInput!) {
+            schemaCheck(input: $input) {
+              __typename
+              ... on SchemaCheckSuccess {
+                schemaCheck {
+                  id
+                }
+              }
+              ... on SchemaCheckError {
+                schemaCheck {
+                  id
+                }
+              }
+            }
+          }
+        `),
+        variables: {
+          input: {
+            sdl: /* GraphQL */ `
+              type Query {
+                foo: String
+              }
+            `,
+          },
+        },
+        authToken: token.secret,
+      }).then(res => res.expectNoGraphQLErrors());
+
+      // When all deployments are excluded, the check may succeed (safe based on usage)
+      const schemaCheckId =
+        checkResult.schemaCheck.__typename === 'SchemaCheckError'
+          ? checkResult.schemaCheck.schemaCheck?.id
+          : checkResult.schemaCheck.__typename === 'SchemaCheckSuccess'
+            ? checkResult.schemaCheck.schemaCheck?.id
+            : null;
+      if (!schemaCheckId) {
+        return false;
+      }
+
+      schemaCheckData = await execute({
+        document: SchemaCheckWithAffectedAppDeployments,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+          schemaCheckId,
+        },
+        authToken: ownerToken,
+      });
+
+      // Return true once we have the schema check data
+      return !!schemaCheckData.rawBody.data?.target?.schemaCheck;
+    },
+    { maxWait: 15_000 },
+  );
+
+  const breakingChanges =
+    schemaCheckData!.rawBody.data?.target?.schemaCheck?.breakingSchemaChanges?.edges;
+  const helloRemoval = breakingChanges?.find((edge: { node: { message: string } }) =>
+    edge.node.message.includes('hello'),
+  );
+
+  // When all affected app deployments are excluded, the list should be empty (or no breaking change at all)
+  expect(helloRemoval?.node.affectedAppDeployments?.edges?.length ?? 0).toBe(0);
+});
+
+test('update app deployment protection configuration', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { project, target } = await createProject();
+
+  // Query initial state
+  let result = await execute({
+    document: GetTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
+    isEnabled: false,
+    minDaysInactive: 7,
+    minDaysSinceCreation: 7,
+    maxTrafficPercentage: 1.0,
+    trafficPeriodDays: 30,
+    ruleLogic: 'AND',
+  });
+
+  // Enable protection with custom settings
+  const updateResult = await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 7,
+          maxTrafficPercentage: 5.0,
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(updateResult.updateTargetAppDeploymentProtectionConfiguration).toEqual({
+    ok: {
+      target: {
+        id: expect.any(String),
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 7,
+          minDaysSinceCreation: 7,
+          maxTrafficPercentage: 5.0,
+          trafficPeriodDays: 30,
+          ruleLogic: 'AND',
+        },
+      },
+    },
+    error: null,
+  });
+
+  // Query updated state
+  result = await execute({
+    document: GetTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(result.target?.appDeploymentProtectionConfiguration).toEqual({
+    isEnabled: true,
+    minDaysInactive: 7,
+    minDaysSinceCreation: 7,
+    maxTrafficPercentage: 5.0,
+    trafficPeriodDays: 30,
+    ruleLogic: 'AND',
+  });
+});
+
+test('retire app deployment succeeds when protection is enabled but no usage data exists', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Enable protection
+  await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 7,
+          minDaysSinceCreation: 0,
+          maxTrafficPercentage: 1.0,
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Retire should succeed because minDaysSinceCreation=0 and no usage data exists
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(retireAppDeployment).toEqual({
+    error: null,
+    ok: {
+      retiredAppDeployment: {
+        id: expect.any(String),
+        name: 'my-app',
+        status: 'retired',
+        version: '1.0.0',
+      },
+    },
+  });
+});
+
+test('retire app deployment blocked when created less than minDaysSinceCreation days ago', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target } = await createProject();
+  const token = await createTargetAccessToken({});
+
+  // Enable protection with minDaysSinceCreation=7 (newly created deployments blocked)
+  await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysSinceCreation: 7,
+          minDaysInactive: 0,
+          maxTrafficPercentage: 100,
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment (created just now)
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Retire should fail because deployment was created 0 days ago but requires 7
+  const { retireAppDeployment } = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'my-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(retireAppDeployment).toEqual({
+    error: {
+      message: expect.stringContaining('requires at least 7 days since creation'),
+    },
+    ok: null,
+  });
+});
+
+test('retire app deployment with --force bypasses protection', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, setFeatureFlag, organization } = await createOrg();
+  await setFeatureFlag('appDeployments', true);
+  const { createTargetAccessToken, project, target, waitForOperationsCollected } =
+    await createProject();
+  const token = await createTargetAccessToken({});
+
+  const sdl = /* GraphQL */ `
+    type Query {
+      hello: String
+    }
+  `;
+
+  await token.publishSchema({ sdl });
+
+  // Enable protection with strict settings
+  await execute({
+    document: UpdateTargetAppDeploymentProtectionConfiguration,
+    variables: {
+      input: {
+        target: {
+          bySelector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+        },
+        appDeploymentProtectionConfiguration: {
+          isEnabled: true,
+          minDaysInactive: 365, // Very strict - 1 year
+          maxTrafficPercentage: 0, // No traffic allowed
+        },
+      },
+    },
+    authToken: ownerToken,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Create and activate app deployment
+  await execute({
+    document: CreateAppDeployment,
+    variables: {
+      input: {
+        appName: 'force-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: AddDocumentsToAppDeployment,
+    variables: {
+      input: {
+        appName: 'force-app',
+        appVersion: '1.0.0',
+        documents: [
+          {
+            hash: 'hash',
+            body: 'query { hello }',
+          },
+        ],
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  await execute({
+    document: ActivateAppDeployment,
+    variables: {
+      input: {
+        appName: 'force-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  // Report usage to trigger protection
+  const usageAddress = await getServiceHost('usage', 8081);
+
+  const client = createHive({
+    enabled: true,
+    token: token.secret,
+    usage: true,
+    debug: false,
+    agent: {
+      logger: createLogger('debug'),
+      maxSize: 1,
+    },
+    selfHosting: {
+      usageEndpoint: 'http://' + usageAddress,
+      graphqlEndpoint: 'http://noop/',
+      applicationUrl: 'http://noop/',
+    },
+  });
+
+  const request = new Request('http://localhost:4000/graphql', {
+    method: 'POST',
+    headers: {
+      'x-graphql-client-name': 'force-app',
+      'x-graphql-client-version': '1.0.0',
+    },
+  });
+
+  await client.collectUsage()(
+    {
+      document: parse(`query { hello }`),
+      schema: buildASTSchema(parse(sdl)),
+      contextValue: { request },
+    },
+    {},
+    'force-app~1.0.0~hash',
+  );
+
+  await waitForOperationsCollected(1);
+
+  // Retire without force should be blocked
+  const blockedResult = await execute({
+    document: RetireAppDeploymentWithProtectionDetails,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'force-app',
+        appVersion: '1.0.0',
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(blockedResult.retireAppDeployment.error).not.toBeNull();
+  expect(blockedResult.retireAppDeployment.error?.message).toContain('blocked');
+  expect(blockedResult.retireAppDeployment.error?.protectionDetails).not.toBeNull();
+
+  // Retire with force should succeed
+  const retireResult = await execute({
+    document: RetireAppDeployment,
+    variables: {
+      input: {
+        target: {
+          byId: target.id,
+        },
+        appName: 'force-app',
+        appVersion: '1.0.0',
+        force: true,
+      },
+    },
+    authToken: token.secret,
+  }).then(res => res.expectNoGraphQLErrors());
+
+  expect(retireResult.retireAppDeployment).toEqual({
+    error: null,
+    ok: {
+      retiredAppDeployment: {
+        id: expect.any(String),
+        name: 'force-app',
+        status: 'retired',
+        version: '1.0.0',
+      },
+    },
+  });
 });

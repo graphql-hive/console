@@ -1,7 +1,8 @@
 import cookies from 'js-cookie';
 import { LifeBuoyIcon } from 'lucide-react';
-import { FaGithub, FaGoogle, FaKey, FaUsersSlash } from 'react-icons/fa';
+import { FaUsersSlash } from 'react-icons/fa';
 import { useMutation } from 'urql';
+import { ThemeSwitcher } from '@/components/theme/theme-switcher';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -37,7 +38,6 @@ import { Avatar } from '@/components/v2';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { AuthProviderType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle } from '@/lib/hooks';
 import { useNotifications } from '@/lib/hooks/use-notifications';
@@ -53,13 +53,20 @@ const UserMenu_OrganizationConnectionFragment = graphql(`
     nodes {
       id
       slug
-      me {
-        id
-        ...UserMenu_MemberFragment
-      }
-      getStarted {
-        ...GetStartedWizard_GetStartedProgress
-      }
+    }
+  }
+`);
+
+const UserMenu_OrganizationFragment = graphql(`
+  fragment UserMenu_OrganizationFragment on Organization {
+    id
+    slug
+    me {
+      id
+      canLeaveOrganization
+    }
+    getStarted {
+      ...GetStartedWizard_GetStartedProgress
     }
   }
 `);
@@ -75,16 +82,10 @@ const UserMenu_MeFragment = graphql(`
   }
 `);
 
-const UserMenu_MemberFragment = graphql(`
-  fragment UserMenu_MemberFragment on Member {
-    canLeaveOrganization
-  }
-`);
-
 export function UserMenu(props: {
   me: FragmentType<typeof UserMenu_MeFragment> | null;
   organizations: FragmentType<typeof UserMenu_OrganizationConnectionFragment> | null;
-  currentOrganizationSlug: string;
+  currentOrganization: FragmentType<typeof UserMenu_OrganizationFragment> | null;
 }) {
   const docsUrl = getDocsUrl();
   const me = useFragment(UserMenu_MeFragment, props.me);
@@ -92,14 +93,9 @@ export function UserMenu(props: {
     UserMenu_OrganizationConnectionFragment,
     props.organizations,
   )?.nodes;
+  const currentOrganization = useFragment(UserMenu_OrganizationFragment, props.currentOrganization);
   const [isUserSettingsModalOpen, toggleUserSettingsModalOpen] = useToggle();
   const [isLeaveOrganizationModalOpen, toggleLeaveOrganizationModalOpen] = useToggle();
-  const currentOrganization = organizations?.find(
-    org => org.slug === props.currentOrganizationSlug,
-  );
-  const meInOrg = useFragment(UserMenu_MemberFragment, currentOrganization?.me);
-
-  const canLeaveOrganization = !!currentOrganization && meInOrg?.canLeaveOrganization === true;
 
   return (
     <>
@@ -107,7 +103,7 @@ export function UserMenu(props: {
         toggleModalOpen={toggleUserSettingsModalOpen}
         isOpen={isUserSettingsModalOpen}
       />
-      {canLeaveOrganization ? (
+      {currentOrganization?.me.canLeaveOrganization ? (
         <LeaveOrganizationModal
           toggleModalOpen={toggleLeaveOrganizationModalOpen}
           isOpen={isLeaveOrganizationModalOpen}
@@ -125,7 +121,7 @@ export function UserMenu(props: {
               className={cn('cursor-pointer', currentOrganization ? '' : 'animate-pulse')}
               data-cy="user-menu-trigger"
             >
-              <Avatar shape="circle" className="border-2 border-orange-900/50" />
+              <Avatar shape="circle" className="border-accent_80 border-2" />
             </div>
           </DropdownMenuTrigger>
 
@@ -134,18 +130,9 @@ export function UserMenu(props: {
               <DropdownMenuLabel className="flex items-center justify-between">
                 <div className="flex flex-col space-y-1">
                   <div className="truncate text-sm font-medium leading-none">{me?.displayName}</div>
-                  <div className="text-muted-foreground truncate text-xs font-normal leading-none">
+                  <div className="text-neutral-10 truncate text-xs font-normal leading-none">
                     {me?.email}
                   </div>
-                </div>
-                <div>
-                  {me?.provider === AuthProviderType.Google ? (
-                    <FaGoogle title="Signed in using Google" />
-                  ) : me?.provider === AuthProviderType.Github ? (
-                    <FaGithub title="Signed in using Github" />
-                  ) : (
-                    <FaKey title="Signed in using username and password" />
-                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -188,7 +175,7 @@ export function UserMenu(props: {
               </DropdownMenuSub>
               <DropdownMenuItem asChild>
                 <a
-                  href="https://cal.com/team/the-guild/hive?duration=15"
+                  href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3KSfa5HXLUJKSoxdziqD_2rWPlDevQgWHeSNGEUN5GqafDw7ezvWlvKYjmxOo5_0hcB4_8W8G2"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -205,6 +192,8 @@ export function UserMenu(props: {
                 <SettingsIcon className="mr-2 size-4" />
                 Profile settings
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <ThemeSwitcher />
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <a href={docsUrl} target="_blank" rel="noreferrer">
@@ -248,7 +237,7 @@ export function UserMenu(props: {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              {canLeaveOrganization ? (
+              {currentOrganization?.me.canLeaveOrganization ? (
                 <DropdownMenuItem
                   onClick={() => {
                     toggleLeaveOrganizationModalOpen();
@@ -341,7 +330,7 @@ export function LeaveOrganizationModalContent(props: {
             Are you sure you want to leave this organization?
             <br />
             You will lose access to{' '}
-            <span className="font-semibold text-white">{props.organizationSlug}</span>.
+            <span className="text-neutral-12 font-semibold">{props.organizationSlug}</span>.
           </DialogDescription>
           <DialogDescription className="font-bold">This action is irreversible!</DialogDescription>
         </DialogHeader>

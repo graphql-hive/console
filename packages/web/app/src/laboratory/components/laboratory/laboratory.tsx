@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
 import * as z from 'zod';
+import { Markdown } from '@/components/v2/markdown';
 import { Collections } from '@/laboratory/components/laboratory/collections';
 import { Command } from '@/laboratory/components/laboratory/command';
 import {
@@ -44,7 +45,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/laboratory/components/ui/empty';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/laboratory/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/laboratory/components/ui/field';
 import { Input } from '@/laboratory/components/ui/input';
 import {
   ResizableHandle,
@@ -58,9 +65,10 @@ import { useEndpoint } from '@/laboratory/lib/endpoint';
 import { useEnv } from '@/laboratory/lib/env';
 import { useHistory } from '@/laboratory/lib/history';
 import { useOperations } from '@/laboratory/lib/operations';
+import { LaboratoryPluginTab, usePlugins } from '@/laboratory/lib/plugins';
 import { usePreflight } from '@/laboratory/lib/preflight';
 import { useSettings } from '@/laboratory/lib/settings';
-import { useTabs } from '@/laboratory/lib/tabs';
+import { LaboratoryTabCustom, useTabs } from '@/laboratory/lib/tabs';
 import { useTests } from '@/laboratory/lib/tests';
 import { cn } from '@/laboratory/lib/utils';
 import { useForm } from '@tanstack/react-form';
@@ -80,7 +88,9 @@ const addTestFormSchema = z.object({
 const PreflightPromptModal = (props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  placeholder: string;
+  title?: string;
+  description?: string;
+  placeholder?: string;
   defaultValue?: string;
   onSubmit?: (value: string | null) => void;
 }) => {
@@ -115,7 +125,6 @@ const PreflightPromptModal = (props: {
         <DialogHeader>
           <DialogTitle>Preflight prompt</DialogTitle>
         </DialogHeader>
-        <DialogDescription>Enter values for the preflight script.</DialogDescription>
         <form
           id="preflight-prompt-form"
           onSubmit={e => {
@@ -127,8 +136,15 @@ const PreflightPromptModal = (props: {
             <form.Field name="value">
               {field => {
                 const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
                 return (
                   <Field data-invalid={isInvalid}>
+                    <FieldLabel htmlFor={field.name}>{props.title}</FieldLabel>
+                    {props.description && (
+                      <FieldDescription>
+                        <Markdown content={props.description} />
+                      </FieldDescription>
+                    )}
                     <Input
                       id={field.name}
                       name={field.name}
@@ -163,8 +179,20 @@ const PreflightPromptModal = (props: {
 };
 
 const LaboratoryContent = () => {
-  const { activeTab, addOperation, collections, addTab, setActiveTab, preflight, tabs, env } =
-    useLaboratory();
+  const {
+    activeTab,
+    addOperation,
+    collections,
+    addTab,
+    setActiveTab,
+    preflight,
+    tabs,
+    env,
+    plugins,
+    pluginsState,
+    setPluginsState,
+  } = useLaboratory();
+  const laboratory = useLaboratory();
   const [activePanel, setActivePanel] = useState<
     'collections' | 'history' | 'tests' | 'settings' | null
   >(collections.length > 0 ? 'collections' : null);
@@ -182,12 +210,35 @@ const LaboratoryContent = () => {
         return <HistoryItem />;
       case 'settings':
         return <Settings />;
-      default:
+      default: {
+        let pluginId: string | null = null;
+        let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
+
+        for (const plugin of plugins) {
+          for (const tab of plugin.tabs ?? []) {
+            if (tab.type === activeTab?.type) {
+              customTab = tab;
+              pluginId = plugin.id;
+              break;
+            }
+          }
+        }
+
+        if (customTab && pluginId) {
+          return customTab.component(
+            activeTab as LaboratoryTabCustom,
+            laboratory,
+            pluginsState[pluginId] ?? {},
+            (state: Record<string, unknown>) =>
+              setPluginsState({ ...pluginsState, [pluginId]: state }),
+          );
+        }
+
         return (
-          <Empty className="w-full !px-0">
+          <Empty className="px-0! w-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <FileIcon className="text-muted-foreground size-6" />
+                <FileIcon className="text-neutral-10 size-6" />
               </EmptyMedia>
               <EmptyTitle>No operation selected</EmptyTitle>
               <EmptyDescription>
@@ -220,6 +271,7 @@ const LaboratoryContent = () => {
             </EmptyContent>
           </Empty>
         );
+      }
     }
   }, [activeTab?.type, addOperation, addTab, setActiveTab]);
 
@@ -233,7 +285,7 @@ const LaboratoryContent = () => {
               className={cn(
                 'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  'border-primary': activePanel === 'collections',
+                  'border-neutral-11': activePanel === 'collections',
                 },
               )}
             >
@@ -241,8 +293,8 @@ const LaboratoryContent = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActivePanel(activePanel === 'collections' ? null : 'collections')}
-                className={cn('text-muted-foreground hover:text-foreground', {
-                  'text-foreground': activePanel === 'collections',
+                className={cn('text-neutral-10 hover:text-neutral-11', {
+                  'text-neutral-11': activePanel === 'collections',
                 })}
               >
                 <FoldersIcon className="size-5" />
@@ -257,7 +309,7 @@ const LaboratoryContent = () => {
               className={cn(
                 'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  'border-primary': activePanel === 'history',
+                  'border-neutral-11': activePanel === 'history',
                 },
               )}
             >
@@ -265,8 +317,8 @@ const LaboratoryContent = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
-                className={cn('text-muted-foreground hover:text-foreground', {
-                  'text-foreground': activePanel === 'history',
+                className={cn('text-neutral-10 hover:text-neutral-11', {
+                  'text-neutral-11': activePanel === 'history',
                 })}
               >
                 <HistoryIcon className="size-5" />
@@ -279,7 +331,7 @@ const LaboratoryContent = () => {
           className={cn(
             'relative z-10 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
-              'border-primary': activePanel === 'settings',
+              'border-neutral-11': activePanel === 'settings',
             },
           )}
         >
@@ -291,8 +343,8 @@ const LaboratoryContent = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
-                    className={cn('text-muted-foreground hover:text-foreground', {
-                      'text-foreground': activePanel === 'history',
+                    className={cn('text-neutral-10 hover:text-neutral-11', {
+                      'text-neutral-11': activePanel === 'history',
                     })}
                   >
                     <SettingsIcon className="size-5" />
@@ -335,7 +387,7 @@ const LaboratoryContent = () => {
                 >
                   Preflight Script
                 </DropdownMenuItem>
-                {/* <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
@@ -349,7 +401,7 @@ const LaboratoryContent = () => {
                   }}
                 >
                   Settings
-                </DropdownMenuItem> */}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <TooltipContent side="right">Settings</TooltipContent>
@@ -366,7 +418,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="flex-1 overflow-hidden">{contentNode}</div>
+          <div className="bg-neutral-3 flex-1 overflow-hidden">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -413,6 +465,9 @@ export const Laboratory = (
     | 'onSettingsChange'
     | 'defaultTests'
     | 'onTestsChange'
+    | 'plugins'
+    | 'defaultPluginsState'
+    | 'onPluginsStateChange'
   >,
 ) => {
   const checkPermissions = useCallback(
@@ -430,13 +485,54 @@ export const Laboratory = (
     [props.permissions],
   );
 
+  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
+
+  const [preflightPromptModalProps, setPreflightPromptModalProps] = useState<{
+    title?: string;
+    description?: string;
+    placeholder?: string;
+    defaultValue?: string;
+    onSubmit?: (value: string | null) => void;
+  }>({
+    title: undefined,
+    description: undefined,
+    placeholder: undefined,
+    defaultValue: undefined,
+    onSubmit: undefined,
+  });
+
+  const openPreflightPromptModal = useCallback(
+    (props: {
+      title?: string;
+      description?: string;
+      placeholder?: string;
+      defaultValue?: string;
+      onSubmit?: (value: string | null) => void;
+    }) => {
+      setPreflightPromptModalProps({
+        title: props.title,
+        description: props.description,
+        placeholder: props.placeholder,
+        defaultValue: props.defaultValue,
+        onSubmit: props.onSubmit,
+      });
+
+      setTimeout(() => {
+        setIsPreflightPromptModalOpen(true);
+      }, 200);
+    },
+    [],
+  );
+
   const settingsApi = useSettings(props);
   const envApi = useEnv(props);
   const preflightApi = usePreflight({
     ...props,
     envApi,
+    openPreflightPromptModal,
   });
 
+  const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
   const endpointApi = useEndpoint(props);
@@ -452,6 +548,7 @@ export const Laboratory = (
     envApi,
     preflightApi,
     settingsApi,
+    pluginsApi,
     checkPermissions,
   });
 
@@ -516,37 +613,6 @@ export const Laboratory = (
     },
   });
 
-  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
-
-  const [preflightPromptModalProps, setPreflightPromptModalProps] = useState<{
-    placeholder: string;
-    defaultValue?: string;
-    onSubmit?: (value: string | null) => void;
-  }>({
-    placeholder: '',
-    defaultValue: undefined,
-    onSubmit: undefined,
-  });
-
-  const openPreflightPromptModal = useCallback(
-    (props: {
-      placeholder: string;
-      defaultValue?: string;
-      onSubmit?: (value: string | null) => void;
-    }) => {
-      setIsPreflightPromptModalOpen(true);
-
-      setPreflightPromptModalProps({
-        placeholder: props.placeholder,
-        defaultValue: props.defaultValue,
-        onSubmit: props.onSubmit,
-      });
-
-      setIsPreflightPromptModalOpen(true);
-    },
-    [],
-  );
-
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -561,9 +627,14 @@ export const Laboratory = (
 
   return (
     <div
-      className={cn('hive-laboratory bg-background size-full', {
+      className={cn('hive-laboratory bg-neutral-3 size-full', {
         'fixed inset-0 z-50': isFullScreen,
       })}
+      style={
+        {
+          '--color-primary': 'var(--color-orange-500)',
+        } as React.CSSProperties
+      }
       ref={containerRef}
     >
       <Toaster richColors closeButton position="top-right" />
@@ -723,6 +794,7 @@ export const Laboratory = (
         {...props}
         {...testsApi}
         {...settingsApi}
+        {...pluginsApi}
         {...envApi}
         {...preflightApi}
         {...tabsApi}

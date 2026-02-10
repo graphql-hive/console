@@ -165,6 +165,98 @@ test('persisted document not found (GraphQL over HTTP "documentId")', async () =
   });
 });
 
+test('malformed document ID returns validation error instead of 500 (GraphQL over HTTP "documentId")', async () => {
+  const yoga = createYoga({
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          hi: String
+        }
+      `,
+    }),
+    plugins: [
+      useHive({
+        enabled: false,
+        experimental__persistedDocuments: {
+          cdn: {
+            endpoint: 'http://artifacts-cdn.localhost',
+            accessToken: 'foo',
+          },
+          async fetch() {
+            throw new Error('CDN fetch should not be called for malformed document IDs');
+          },
+        },
+        agent: {
+          logger,
+        },
+      }),
+    ],
+  });
+
+  const response = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      documentId: 'whatever',
+    }),
+  });
+
+  expect(response.status).toBe(200);
+  const json = await response.json();
+  expect(json.errors).toBeDefined();
+  expect(json.errors).toHaveLength(1);
+  expect(json.errors[0].extensions.code).toBe('INVALID_DOCUMENT_ID');
+  expect(json.errors[0].message).toContain('Expected format');
+});
+
+test('document ID with wrong number of parts returns validation error', async () => {
+  const yoga = createYoga({
+    schema: createSchema({
+      typeDefs: /* GraphQL */ `
+        type Query {
+          hi: String
+        }
+      `,
+    }),
+    plugins: [
+      useHive({
+        enabled: false,
+        experimental__persistedDocuments: {
+          cdn: {
+            endpoint: 'http://artifacts-cdn.localhost',
+            accessToken: 'foo',
+          },
+          async fetch() {
+            throw new Error('CDN fetch should not be called for malformed document IDs');
+          },
+        },
+        agent: {
+          logger,
+        },
+      }),
+    ],
+  });
+
+  const response = await yoga.fetch('http://localhost/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      documentId: 'client-name~client-version',
+    }),
+  });
+
+  expect(response.status).toBe(200);
+  const json = await response.json();
+  expect(json.errors).toBeDefined();
+  expect(json.errors).toHaveLength(1);
+  expect(json.errors[0].extensions.code).toBe('INVALID_DOCUMENT_ID');
+  expect(json.errors[0].message).toContain('Expected format');
+});
+
 test('arbitrary options are rejected with allowArbitraryDocuments=false (GraphQL over HTTP)', async () => {
   const yoga = createYoga({
     schema: createSchema({

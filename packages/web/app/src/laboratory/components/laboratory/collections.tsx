@@ -64,13 +64,13 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
-          className="bg-background group sticky top-0 w-full justify-start px-2"
+          className="bg-neutral-3 group sticky top-0 w-full justify-start px-2"
           size="sm"
         >
           {isOpen ? (
-            <FolderOpenIcon className="text-muted-foreground size-4" />
+            <FolderOpenIcon className="text-neutral-10 size-4" />
           ) : (
-            <FolderIcon className="text-muted-foreground size-4" />
+            <FolderIcon className="text-neutral-10 size-4" />
           )}
           {props.collection.name}
           {checkPermissions?.('collections:delete') && (
@@ -80,7 +80,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="link"
-                      className="text-muted-foreground hover:text-destructive ml-auto !p-1 !pr-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                       onClick={e => {
                         e.stopPropagation();
                       }}
@@ -120,7 +120,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
           )}
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
+      <CollapsibleContent className={cn('border-neutral-5 ml-4 flex flex-col gap-1 border-l pl-2')}>
         {isOpen &&
           props.collection.operations.map(operation => {
             const isActive = activeOperation?.id === operation.id;
@@ -130,7 +130,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                 key={operation.name}
                 variant="ghost"
                 className={cn('group w-full justify-start gap-2 px-2', {
-                  'bg-accent dark:bg-accent/50': isActive,
+                  'bg-accent_80': isActive,
                 })}
                 size="sm"
                 onClick={() => {
@@ -156,7 +156,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="link"
-                            className="text-muted-foreground hover:text-destructive ml-auto !p-1 !pr-0 opacity-0 transition-opacity group-hover:opacity-100"
+                            className="text-neutral-10 p-1! pr-0! ml-auto opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                             onClick={e => {
                               e.stopPropagation();
                             }}
@@ -219,7 +219,7 @@ export const CollectionsSearchResult = (props: { items: CollectionsSearchResultI
             key={operation.name}
             variant="ghost"
             className={cn('group w-full justify-start gap-2 px-2', {
-              'bg-accent dark:bg-accent/50': isActive,
+              'bg-accent_80': isActive,
             })}
             size="sm"
             onClick={() => {
@@ -237,8 +237,8 @@ export const CollectionsSearchResult = (props: { items: CollectionsSearchResultI
             }}
           >
             <GraphQLIcon className="size-4 text-pink-500" />
-            <span className="text-muted-foreground truncate">{operation.parent.name}</span>
-            <span className="text-muted-foreground">{' / '}</span>
+            <span className="text-neutral-10 truncate">{operation.parent.name}</span>
+            <span className="text-neutral-10">{' / '}</span>
             {operation.name}
           </Button>
         );
@@ -279,10 +279,10 @@ export const Collections = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="size-6 rounded-sm !p-1"
+                    className="p-1! size-6 rounded-sm"
                     onClick={openAddCollectionDialog}
                   >
-                    <FolderPlusIcon className="text-primary size-4" />
+                    <FolderPlusIcon className="text-neutral-11 size-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Add collection</TooltipContent>
@@ -290,8 +290,8 @@ export const Collections = () => {
             )}
           </div>
         </div>
-        <div className="border-border relative border-b p-3">
-          <SearchIcon className="text-muted-foreground absolute left-5 top-1/2 size-4 -translate-y-1/2" />
+        <div className="border-neutral-5 relative border-b p-3">
+          <SearchIcon className="text-neutral-10 absolute left-5 top-1/2 size-4 -translate-y-1/2" />
           <Input
             type="text"
             placeholder="Search..."
@@ -303,10 +303,10 @@ export const Collections = () => {
             <Button
               variant="ghost"
               size="icon-sm"
-              className="absolute right-5 top-1/2 size-6 -translate-y-1/2 rounded-sm !p-1"
+              className="p-1! absolute right-5 top-1/2 size-6 -translate-y-1/2 rounded-sm"
               onClick={() => setSearch('')}
             >
-              <XIcon className="text-muted-foreground size-4" />
+              <XIcon className="text-neutral-10 size-4" />
             </Button>
           )}
         </div>
@@ -318,10 +318,10 @@ export const Collections = () => {
               searchResults.length > 0 ? (
                 <CollectionsSearchResult items={searchResults} />
               ) : (
-                <Empty className="w-full !px-0">
+                <Empty className="px-0! w-full">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <SearchIcon className="text-muted-foreground size-6" />
+                      <SearchIcon className="text-neutral-10 size-6" />
                     </EmptyMedia>
                     <EmptyTitle className="text-base">No results found</EmptyTitle>
                     <EmptyDescription className="text-xs">
@@ -333,10 +333,10 @@ export const Collections = () => {
             ) : collections.length > 0 ? (
               collections.map(item => <CollectionItem key={item.id} collection={item} />)
             ) : (
-              <Empty className="w-full !px-0">
+              <Empty className="px-0! w-full">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <FolderIcon className="text-muted-foreground size-6" />
+                    <FolderIcon className="text-neutral-10 size-6" />
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No collections yet</EmptyTitle>
                   <EmptyDescription className="text-xs">

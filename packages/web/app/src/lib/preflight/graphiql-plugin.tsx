@@ -558,7 +558,7 @@ function PreflightContent() {
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4 text-white">
+          <div className="text-neutral-12 absolute inset-0 z-20 flex items-center justify-center bg-[#030711]/90 p-4">
             <div className="rounded-md bg-[#0f1520] p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
@@ -816,7 +816,7 @@ const LOG_COLORS = {
   error: 'text-red-400',
   info: 'text-emerald-400',
   warn: 'text-yellow-400',
-  log: 'text-gray-400',
+  log: 'text-neutral-10',
 };
 
 export function LogLine({ log }: { log: LogRecord }) {

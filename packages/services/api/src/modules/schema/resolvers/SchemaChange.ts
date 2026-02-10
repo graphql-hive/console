@@ -20,6 +20,7 @@ const severityMap: Record<CriticalityLevelEnum, SeverityLevelType> = {
 
 export const SchemaChange: Pick<
   SchemaChangeResolvers,
+  | 'affectedAppDeployments'
   | 'approval'
   | 'criticality'
   | 'criticalityReason'
@@ -44,4 +45,51 @@ export const SchemaChange: Pick<
     injector.get(BreakingSchemaChangeUsageHelper).getUsageDataForBreakingSchemaChange(change),
   severityLevel: change => severityMap[change.criticality],
   severityReason: change => change.reason,
+  affectedAppDeployments: (change, args) => {
+    if (!change.affectedAppDeployments) {
+      return null;
+    }
+
+    const allDeployments = change.affectedAppDeployments;
+    const totalCount = allDeployments.length;
+
+    // Apply cursor-based pagination
+    let startIndex = 0;
+    if (args.after) {
+      const afterIndex = allDeployments.findIndex(d => d.id === args.after);
+      if (afterIndex !== -1) {
+        startIndex = afterIndex + 1;
+      }
+    }
+
+    const limit = args.first;
+    const paginatedDeployments =
+      limit != null
+        ? allDeployments.slice(startIndex, startIndex + limit)
+        : allDeployments.slice(startIndex);
+
+    const edges = paginatedDeployments.map(d => ({
+      cursor: d.id,
+      node: {
+        id: d.id,
+        name: d.name,
+        version: d.version,
+        operations: d.affectedOperations,
+        totalOperations: d.affectedOperations.length,
+      },
+    }));
+
+    const hasNextPage = limit != null ? startIndex + limit < totalCount : false;
+
+    return {
+      edges,
+      totalCount,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: startIndex > 0,
+        startCursor: edges[0]?.cursor ?? '',
+        endCursor: edges[edges.length - 1]?.cursor ?? '',
+      },
+    };
+  },
 };
