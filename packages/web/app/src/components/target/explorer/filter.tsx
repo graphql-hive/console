@@ -60,6 +60,27 @@ const ServiceNameFilter_ServiceNames = graphql(`
             supergraphMetadata {
               ownedByServiceNames
             }
+            ... on GraphQLObjectType {
+              fields {
+                supergraphMetadata {
+                  ownedByServiceNames
+                }
+              }
+            }
+            ... on GraphQLInterfaceType {
+              fields {
+                supergraphMetadata {
+                  ownedByServiceNames
+                }
+              }
+            }
+            ... on GraphQLInputObjectType {
+              fields {
+                supergraphMetadata {
+                  ownedByServiceNames
+                }
+              }
+            }
           }
         }
       }
@@ -242,7 +263,7 @@ export function ServiceNameFilter(props: {
   };
   metadataAttributes?: Array<{ name: string; values: string[] }> | null;
 }) {
-  const { setMetadataFilter, unsetMetadataFilter, hasMetadataFilter, clearMetadataFilter } =
+  const { setMetadataFilter, unsetMetadataFilter, hasMetadataFilter } =
     useSchemaExplorerContext();
 
   // Query to get service names from types
@@ -263,11 +284,25 @@ export function ServiceNameFilter(props: {
 
     const serviceNameSet = new Set<string>();
 
-    allTypes.forEach(type => {
-      type.supergraphMetadata?.ownedByServiceNames?.forEach((serviceName: string) => {
-        serviceNameSet.add(serviceName);
-      });
-    });
+    for (const type of allTypes) {
+      // Add service names from type-level metadata
+      if (type.supergraphMetadata?.ownedByServiceNames) {
+        for (const serviceName of type.supergraphMetadata.ownedByServiceNames) {
+          serviceNameSet.add(serviceName);
+        }
+      }
+
+      // Add service names from field-level metadata
+      if ('fields' in type && Array.isArray(type.fields)) {
+        for (const field of type.fields) {
+          if (field.supergraphMetadata?.ownedByServiceNames) {
+            for (const serviceName of field.supergraphMetadata.ownedByServiceNames) {
+              serviceNameSet.add(serviceName);
+            }
+          }
+        }
+      }
+    }
 
     const extracted = Array.from(serviceNameSet).sort();
 
@@ -287,7 +322,6 @@ export function ServiceNameFilter(props: {
         align="end"
         className="max-h-[300px] min-w-[160px] max-w-[300px] flex-wrap overflow-y-auto"
       >
-        <DropdownMenuSeparator />
         {serviceNames.length > 0 ? (
           serviceNames.map(serviceName => (
             <DropdownMenuCheckboxItem
