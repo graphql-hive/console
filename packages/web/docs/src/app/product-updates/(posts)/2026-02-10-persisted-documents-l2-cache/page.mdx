@@ -71,6 +71,7 @@ persistedDocuments: {
   cacheNotFoundTtlSeconds: 60
 }
 ```
+[Learn more about cache configuration](https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance)
 
 Or via CLI:
 
@@ -88,7 +89,7 @@ hive-gateway supergraph \
 | `notFoundTtlSeconds` / `cacheNotFoundTtlSeconds` | TTL for not-found documents (negative caching). Default: 60s |
 | `waitUntil`                                      | Register cache writes in serverless environments             |
 
-- Apollo Server automatically uses `ctx.cache` as the L2 cache when available.
+- Apollo Server automatically uses server's [cache backend](https://www.apollographql.com/docs/apollo-server/performance/cache-backends) as the L2 cache when available.
 - Hive Gateway automatically uses the gateway cache when TTL options are provided.
 
 ---
