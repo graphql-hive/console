@@ -4,134 +4,223 @@ title: 'telemetry'
 
 # telemetry
 
+The `telemetry` configuration controls client identification, Hive reporting, and OpenTelemetry
+tracing behavior in Hive Router.
+
 ## client_identification
 
-### name_header
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `name_header`    | `string` | HTTP header used to read client name for usage reporting.    |
+| `version_header` | `string` | HTTP header used to read client version for usage reporting. |
 
-- **Type:** `string`
-- **Default:** `graphql-client-name`
+```yaml filename="router.config.yaml"
+telemetry:
+  client_identification:
+    name_header: graphql-client-name        # default
+    version_header: graphql-client-version  # default
+```
 
-The name of the HTTP header from which to read the client name for usage reporting. This is useful
-if you want to identify different clients consuming your GraphQL API.
+## resource
 
-### version_header
+| Field | Type  | Default | Notes |
+| ----- | ----- | ------- | ----- |
+| `attributes` | `object` | `{}` | Additional OpenTelemetry resource attributes |
 
-- **Type:** `string`
-- **Default:** `graphql-client-version`
-
-The name of the HTTP header from which to read the client version for usage reporting. This is
-useful if you want to identify different versions of clients consuming your GraphQL API.
+```yaml filename="router.config.yaml"
+telemetry:
+  resource:
+    attributes:
+      service.name: 
+        expression: env("SERVICE_NAME")
+      service.version: 1.0.0
+```
 
 ## hive
 
 Hive-specific telemetry options.
 
-### token
+<details>
+  <summary>Show hive configuration</summary>
 
-- **Type:** `string` or `{ expression }`
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `token`  | `StringOrExpression` | Your [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.<br />You can also set `HIVE_ACCESS_TOKEN`.                                                                       |
+| `target` | `StringOrExpression` | Target ID as slug (`the-guild/graphql-hive/staging`) or UUID (`a0f4c605-6541-4350-8cfe-b31f21a4bf80`).<br />You can also set `HIVE_TARGET`. |
 
-Your [Registry Access Token](/docs/management/targets#registry-access-tokens) with write permission.
+<div id="usage_reporting" style={{marginTop: 10}}>
+<details>
+  <summary>usage_reporting</summary>
 
-Alternatively, you can set the `HIVE_ACCESS_TOKEN` environment variable to provide the token.
-
-### target
-
-- **Type:** `string` or `{ expression }`
-
-A target ID, this can either be a slug following the format
-`$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`) or an UUID (e.g.
-`a0f4c605-6541-4350-8cfe-b31f21a4bf80`). To be used when the token is configured with an
-organization access token.
-
-### usage_reporting
-
-The `usage_reporting` configuration object allows you to control over how the Hive Router does
-[usage reporting](/docs/schema-registry/usage-reporting) to Hive Console.
+Allows you to control how the Hive Router does [usage reporting](/docs/schema-registry/usage-reporting) to Hive Console.
 
 > For additional information about the usage reporting process in Hive Router, see the
 > [Usage Reporting page](/docs/router/observability/usage_reporting).
 
-#### enabled
+| Field                  | Type       | Default                              | Notes                                                         |
+| ---------------------- | ---------- | ------------------------------------ | ------------------------------------------------------------- |
+| `enabled`              | `boolean`  | `false`                              | Explicitly enable or disable usage reporting.                 |
+| `endpoint`             | `string`   | `https://app.graphql-hive.com/usage` | Override for self-hosted Hive.                                |
+| `sample_rate`          | `string`   | `100%`                               | Percentage between `0%` and `100%`.                           |
+| `exclude`              | `string[]` | `[]`                                 | Operation names to ignore (for example `IntrospectionQuery`). |
+| `buffer_size`          | `integer`  | `1000`                               | Buffer size before flush.                                     |
+| `accept_invalid_certs` | `boolean`  | `false`                              | Accept invalid SSL certificates for usage reporting.          |
+| `connect_timeout`      | `string`   | `5s`                                 | Timeout for connect phase only.                               |
+| `request_timeout`      | `string`   | `15s`                                | Timeout for the full request.                                 |
+| `flush_interval`       | `string`   | `5s`                                 | Buffer flush interval.                                        |
 
-- **Type:** `boolean`
-- **Default:** `false`
+```yaml filename="router.config.yaml"
+telemetry:
+  hive:
+    usage_reporting:
+      enabled: true
+      exclude: ["IntrospectionQuery"]
+```
 
-Explicitly enables usage reporting. Credentials (`token`/`target`) alone are not enough.
+</details>
+</div>
 
-#### endpoint
+<div id="hive-tracing" style={{marginTop: 10}}>
+<details>
+  <summary>tracing</summary>
 
-- **Type:** `string`
-- **Default:** `https://app.graphql-hive.com/usage`
+This configuration object controls sending traces to Hive Console.
 
-For self-hosting, you can override `/usage` endpoint of your Hive instance.
+| Field             | Type                         | Default                                       | Notes                                                         |
+| ----------------- | ---------------------------- | --------------------------------------------- | ------------------------------------------------------------- |
+| `enabled`         | `boolean`                    | `false`                                       | If `true`, the Hive Router sends traces to Hive Console.      |
+| `endpoint`        | `StringOrExpression` | `https://api.graphql-hive.com/otel/v1/traces` | Hive Console traces ingestion endpoint.                       |
+| `batch_processor` | `object`                     | -                                             | See [`batch_processor`](#hive-tracing-batch-processor) below. |
 
-#### sample_rate
+<div id="hive-tracing-batch-processor"></div>
 
-- **Type:** `string`
-- **Default:** `100%`
+Batching settings for traces sent to Hive Console:
 
-A percentage value between `0%` and `100%` that indicates the percentage of requests to be reported.
-For example, a value of `10%` means that approximately 10% of requests will be reported, while a
-value of `100%` means that all requests will be reported.
+| Field                    | Type      | Default | Notes                                         |
+| ------------------------ | --------- | ------- | --------------------------------------------- |
+| `max_traces_in_memory`   | `integer` | `30000` | Maximum number of traces in memory.           |
+| `max_spans_per_trace`    | `integer` | `1000`  | Maximum spans buffered per trace.             |
+| `max_export_timeout`     | `string`  | `5s`    | Maximum time to wait for batch export.        |
+| `max_queue_size`         | `integer` | `20000` | Capacity of the internal queue before export. |
+| `max_export_batch_size`  | `integer` | `500`   | Maximum traces per single export batch.       |
+| `scheduled_delay`        | `string`  | `5s`    | Maximum delay before exporting ready traces.  |
+| `max_concurrent_exports` | `integer` | `1`     | Maximum number of concurrent export tasks.    |
 
-#### exclude
+```yaml filename="router.config.yaml"
+telemetry:
+  hive:
+    tracing:
+      enabled: true
+```
 
-- **Type:** `string[]`
-- **Default:** `[]`
+</details>
+</div>
 
-A list of operations (by name) to be ignored by Hive. For example, if you want to exclude
-introspection queries, you can add `IntrospectionQuery` to this list.
+</details>
 
-#### buffer_size
+## tracing
 
-- **Type:** `integer`
-- **Default:** `1000`
+Top-level OpenTelemetry tracing configuration.
 
-A maximum number of operations to hold in a buffer before sending to Hive Console. When the buffer
-reaches this size, it will be flushed and sent to Hive Console.
+<details>
+  <summary>Show tracing configuration</summary>
 
-#### accept_invalid_certs
+`collect` - Collection and sampling limits for spans.
 
-- **Type:** `boolean`
-- **Default:** `false`
+| Field                      | Type      | Default | Notes                                        |
+| -------------------------- | --------- | ------- | -------------------------------------------- |
+| `max_events_per_span`      | `integer` | `128`   | Maximum events to record per span.           |
+| `max_attributes_per_span`  | `integer` | `128`   | Maximum attributes to record per span.       |
+| `max_attributes_per_event` | `integer` | `16`    | Maximum attributes to record per span event. |
+| `max_attributes_per_link`  | `integer` | `32`    | Maximum attributes to record per span link.  |
+| `sampling`                 | `number`  | `1.0`   | Sampling ratio between `0.0` and `1.0`.      |
+| `parent_based_sampler`     | `boolean` | `false` | Inherit sampling decisions from parent span. |
 
-If set to `true`, the Hive Router will accept invalid SSL certificates when sending usage reports.
-This can be useful for self-hosted Hive instances using self-signed certificates.
+`propagation` - Incoming and outgoing trace context propagation formats.
 
-#### connect_timeout
+| Field           | Type      | Default | Notes                                 |
+| --------------- | --------- | ------- | ------------------------------------- |
+| `trace_context` | `boolean` | `true`  | Enable W3C Trace Context propagation. |
+| `baggage`       | `boolean` | `false` | Enable W3C Baggage propagation.       |
+| `b3`            | `boolean` | `false` | Enable B3 propagation.                |
+| `jaeger`        | `boolean` | `false` | Enable Jaeger propagation.            |
 
-- **Type:** `string`
-- **Default:** `5s`
+`instrumentation` - Instrumentation behavior for spans.
 
-A timeout for only the connect phase of a request to Hive Console, in duration format (e.g., `5s`
-for 5 seconds).
+| Field        | Type     | Default          | Allowed values                                        | Notes                                                     |
+| ------------ | -------- | ---------------- | ----------------------------------------------------- | --------------------------------------------------------- |
+| `spans.mode` | `string` | `spec_compliant` | `spec_compliant`, `deprecated`, `spec_and_deprecated` | Controls which semantic conventions are emitted on spans. |
 
-#### request_timeout
+<div id="exporters" style={{marginTop: 10}}>
+<details>
+  <summary>`exporters`</summary>
 
-- **Type:** `string`
-- **Default:** `15s`
+List of exporters used to send traces.
 
-A timeout for the entire request to Hive Console, in duration format (e.g., `15s` for 15 seconds).
+This reference documents the OTLP exporter configuration.
 
-#### flush_interval
+| Field             | Type                         | Default | Notes                                                                        |
+| ----------------- | ---------------------------- | ------- | ---------------------------------------------------------------------------- |
+| `kind`            | `string`                     | -       | Exporter kind. Supported value: `otlp`.                                      |
+| `enabled`         | `boolean`                    | `true`  | Enables or disables this exporter.                                           |
+| `endpoint`        | `StringOrExpression` | -       | OTLP endpoint. Must be set explicitly.                                       |
+| `batch_processor` | `object`                     | -       | See [`batch_processor`](#telemetry-tracing-exporters-batch-processor) below. |
 
-- **Type:** `string`
-- **Default:** `5s`
+<div id="telemetry-tracing-exporters-batch-processor"></div>
 
-The interval in seconds at which the usage report buffer is flushed and sent to Hive Console. In
-duration format (e.g., `5s` for 5 seconds).
+`batch_processor` settings for this exporter:
 
+| Field                    | Type      | Default |
+| ------------------------ | --------- | ------- |
+| `max_concurrent_exports` | `integer` | `1`     |
+| `max_export_batch_size`  | `integer` | `512`   |
+| `max_queue_size`         | `integer` | `2048`  |
+| `max_export_timeout`     | `string`  | `5s`    |
+| `scheduled_delay`        | `string`  | `5s`    |
 
-### tracing
+OTLP over HTTP:
 
-- **Type:** `boolean`
-- **Default:** `true`
+| Field          | Type     | Value / Default | Notes                                                         |
+| -------------- | -------- | --------------- | ------------------------------------------------------------- |
+| `protocol`     | `string` | `http`          | OTLP transport protocol.                                      |
+| `http.headers` | `object` | `{}`            | Map of header names to values (`string` or `{ expression }`). |
 
-If set to `true`, the Hive Router will send traces to Hive Console.
+```yaml filename="router.config.yaml"
+telemetry:
+  tracing:
+    exporters:
+      - kind: "otlp"
+        enabled: true
+        protocol: http
+        http:
+          headers:
+            x-otlp-header: value
+```
 
-#### endpoint
+OTLP over gRPC:
 
-- **Type:** `string` or `{ expression }`
-- **Default:** `https://api.graphql-hive.com/otel/v1/traces`
+| Field                  | Type     | Value / Default | Notes                                                                        |
+| ---------------------- | -------- | --------------- | ---------------------------------------------------------------------------- |
+| `protocol`             | `string` | `grpc`          | OTLP transport protocol.                                                     |
+| `grpc.metadata`        | `object` | `{}`            | Map of metadata keys to values (`string` or `{ expression }`).               |
+| `grpc.tls.domain_name` | `string` | -               | Domain name used to verify the server certificate.                           |
+| `grpc.tls.key`         | `string` | -               | Path to the client private key file.                                         |
+| `grpc.tls.cert`        | `string` | -               | Path to the client certificate file (PEM).                                   |
+| `grpc.tls.ca`          | `string` | -               | Path to the CA certificate file (PEM) used to verify the server certificate. |
 
-Hive Console's traces ingestion endpoint.
+```yaml filename="router.config.yaml"
+telemetry:
+  tracing:
+    exporters:
+      - kind: "otlp"
+        enabled: true
+        protocol: grpc
+        grpc:
+          metadata:
+            x-api-key: key
+```
+
+</details>
+</div>
+
+</details>
