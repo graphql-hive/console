@@ -1102,3 +1102,44 @@ test.concurrent(
     }
   },
 );
+
+test.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject, organization } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken, project, target } = await createProject();
+  const { secret, latestSchema } = await createTargetAccessToken({});
+
+  const targetSlug = [organization.slug, project.slug, target.slug].join('/');
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Kamil',
+      '--target',
+      targetSlug,
+      'fixtures/whitespace-oddity.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+      stdout--------------------------------------------:
+      ✔ Published initial schema.
+      ℹ Available at http://__URL__
+    `);
+
+  const latest = await latestSchema();
+  expect((await latestSchema()).latestVersion?.schemas.nodes?.[0]?.source).toMatchInlineSnapshot(`
+    type Query {
+      status: Status
+    }
+
+    enum Status {
+      ACTIVE
+      INACTIVE
+      PENDING
+    }
+  `);
+});
