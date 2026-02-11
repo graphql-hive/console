@@ -37,24 +37,24 @@ import { MemberRolePicker } from './member-role-picker';
 export const authProviderToIconAndTextMap: Record<
   GraphQLSchema.AuthProviderType,
   {
-    icon: IconType;
+    Icon: IconType;
     text: string;
   }
 > = {
   [GraphQLSchema.AuthProviderType.Google]: {
-    icon: FaGoogle,
+    Icon: FaGoogle,
     text: 'Google OAuth 2.0',
   },
   [GraphQLSchema.AuthProviderType.Github]: {
-    icon: FaGithub,
+    Icon: FaGithub,
     text: 'GitHub OAuth 2.0',
   },
   [GraphQLSchema.AuthProviderType.Oidc]: {
-    icon: FaOpenid,
+    Icon: FaOpenid,
     text: 'OpenID Connect',
   },
   [GraphQLSchema.AuthProviderType.UsernamePassword]: {
-    icon: FaUserLock,
+    Icon: FaUserLock,
     text: 'Email & Password',
   },
 };
@@ -81,9 +81,12 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     id
     user {
       id
-      providers
       displayName
       email
+    }
+    authProviders {
+      type
+      disabledReason
     }
     role {
       id
@@ -103,10 +106,6 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [deleteMemberState, deleteMember] = useMutation(OrganizationMemberRow_DeleteMember);
-  const providerTexts = member.user.providers.map(
-    provider => authProviderToIconAndTextMap[provider].text,
-  );
-  const oidcAccessOnly = organization.oidcIntegration?.oidcUserAccessOnly && !member.isOwner;
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
@@ -173,31 +172,27 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
         <td className="grow overflow-hidden py-3 text-sm font-medium">
           <div className="flex items-center gap-2">
             <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
-            <TooltipProvider>
-              <Tooltip delayDuration={100}>
-                <TooltipTrigger asChild>
-                  <div className="flex gap-1">
-                    {member.user.providers.map(provider => {
-                      const Icon = authProviderToIconAndTextMap[provider].icon;
-                      return (
-                        <Icon
-                          key={provider}
-                          className={cn(
-                            'size-4',
-                            oidcAccessOnly && provider !== 'OIDC' && 'text-neutral-7',
-                          )}
+            {member.authProviders.map(provider => {
+              const providerDisplay = authProviderToIconAndTextMap[provider.type];
+              return (
+                <TooltipProvider key={provider.type}>
+                  <Tooltip delayDuration={100}>
+                    <TooltipTrigger asChild>
+                      <div className="flex gap-1">
+                        <providerDisplay.Icon
+                          className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
                         />
-                      );
-                    })}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="text-center">
-                  {oidcAccessOnly
-                    ? 'Non-OIDC authentication methods are disabled in the OIDC settings'
-                    : `User's authentication methods: ${providerTexts.join(', ')}`}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="text-center">
+                      {provider.disabledReason
+                        ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
+                        : providerDisplay.text}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
           </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
@@ -327,9 +322,6 @@ const OrganizationMembers_OrganizationFragment = graphql(`
       }
     }
     viewerCanManageInvitations
-    oidcIntegration {
-      oidcUserAccessOnly
-    }
     ...MemberInvitationForm_OrganizationFragment
     ...MemberRole_OrganizationFragment
   }
