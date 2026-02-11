@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from 'lucide-react';
-import { FaUserLock } from 'react-icons/fa';
+import { FaGithub, FaGoogle, FaOpenid, FaUser, FaUserLock } from 'react-icons/fa';
+import { IconType } from 'react-icons/lib';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import {
@@ -28,9 +29,35 @@ import { useToast } from '@/components/ui/use-toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
+import { cn } from '@/lib/utils';
 import { organizationMembersRoute } from '../../../router';
 import { MemberInvitationButton } from './invitations';
 import { MemberRolePicker } from './member-role-picker';
+
+export const authProviderToIconAndTextMap: Record<
+  GraphQLSchema.AuthProviderType,
+  {
+    Icon: IconType;
+    text: string;
+  }
+> = {
+  [GraphQLSchema.AuthProviderType.Google]: {
+    Icon: FaGoogle,
+    text: 'Google OAuth 2.0',
+  },
+  [GraphQLSchema.AuthProviderType.Github]: {
+    Icon: FaGithub,
+    text: 'GitHub OAuth 2.0',
+  },
+  [GraphQLSchema.AuthProviderType.Oidc]: {
+    Icon: FaOpenid,
+    text: 'OpenID Connect',
+  },
+  [GraphQLSchema.AuthProviderType.UsernamePassword]: {
+    Icon: FaUserLock,
+    text: 'Email & Password',
+  },
+};
 
 const OrganizationMemberRow_DeleteMember = graphql(`
   mutation OrganizationMemberRow_DeleteMember($input: OrganizationMemberInput!) {
@@ -54,9 +81,12 @@ const OrganizationMemberRow_MemberFragment = graphql(`
     id
     user {
       id
-      provider
       displayName
       email
+    }
+    authProviders {
+      type
+      disabledReason
     }
     role {
       id
@@ -136,11 +166,34 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
       <tr key={member.id}>
         <td className="w-12">
           <div>
-            <FaUserLock className="mx-auto size-5" />
+            <FaUser className="mx-auto size-5" />
           </div>
         </td>
         <td className="grow overflow-hidden py-3 text-sm font-medium">
-          <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="line-clamp-1 font-medium">{member.user.displayName}</h3>
+            {member.authProviders.map(provider => {
+              const providerDisplay = authProviderToIconAndTextMap[provider.type];
+              return (
+                <TooltipProvider key={provider.type}>
+                  <Tooltip delayDuration={100}>
+                    <TooltipTrigger asChild>
+                      <div className="flex gap-1">
+                        <providerDisplay.Icon
+                          className={cn('size-4', provider.disabledReason && 'text-neutral-7')}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="text-center">
+                      {provider.disabledReason
+                        ? `${providerDisplay.text} (Disabled - ${provider.disabledReason})`
+                        : providerDisplay.text}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+          </div>
           <h4 className="text-neutral-10 text-xs">{member.user.email}</h4>
         </td>
         <td className="relative py-3 text-center text-sm">

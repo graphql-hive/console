@@ -91,6 +91,7 @@ export default gql`
     fullName: String!
     displayName: String! @tag(name: "public")
     provider: AuthProviderType! @tag(name: "public")
+    providers: [AuthProviderType!]!
     isAdmin: Boolean!
   }
 
