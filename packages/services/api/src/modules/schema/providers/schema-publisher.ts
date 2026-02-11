@@ -1047,6 +1047,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckError',
         valid: false,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [
           ...(checkResult.state.schemaChanges?.all ?? []),
           ...(checkResult.state.contracts?.flatMap(contract => [
@@ -1096,6 +1097,7 @@ export class SchemaPublisher {
       return {
         __typename: 'SchemaCheckSuccess',
         valid: true,
+        schemaProposalChanges: schemaCheck.schemaProposalChanges,
         changes: [],
         warnings: [],
         initial: false,
@@ -1111,6 +1113,7 @@ export class SchemaPublisher {
     return {
       __typename: 'SchemaCheckError',
       valid: false,
+      schemaProposalChanges: schemaCheck.schemaProposalChanges,
       changes: [],
       warnings: [],
       errors: [

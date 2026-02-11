@@ -346,7 +346,7 @@ export interface User {
   email: string;
   fullName: string;
   displayName: string;
-  provider: AuthProviderType;
+  providers: AuthProviderType[];
   superTokensUserId: string | null;
   isAdmin: boolean;
   zendeskId: string | null;

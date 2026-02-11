@@ -8,7 +8,12 @@ export default gql`
     schemaCompose(input: SchemaComposeInput!): SchemaComposePayload!
 
     updateBaseSchema(input: UpdateBaseSchemaInput!): UpdateBaseSchemaResult!
-    updateSchemaComposition(input: UpdateSchemaCompositionInput!): UpdateSchemaCompositionResult!
+    """
+    Update the schema composition configuration of a federation project.
+    """
+    updateSchemaComposition(
+      input: UpdateSchemaCompositionInput! @tag(name: "public")
+    ): UpdateSchemaCompositionResult! @tag(name: "public")
     """
     Approve a failed schema check with breaking changes.
     """
@@ -43,55 +48,70 @@ export default gql`
     ): TestExternalSchemaCompositionResult!
   }
 
-  input UpdateSchemaCompositionInput @oneOf {
-    native: UpdateSchemaCompositionNativeInput
-    external: UpdateSchemaCompositionExternalInput
-    legacy: UpdateSchemaCompositionLegacyInput
-  }
-
-  input UpdateSchemaCompositionNativeInput {
-    organizationSlug: String!
-    projectSlug: String!
-  }
-
-  input UpdateSchemaCompositionExternalInput {
-    organizationSlug: String!
-    projectSlug: String!
+  input SchemaCompositionExternalMethodInput @tag(name: "public") {
     endpoint: String!
     secret: String!
   }
 
-  input UpdateSchemaCompositionLegacyInput {
-    organizationSlug: String!
-    projectSlug: String!
+  input SchemaCompositionMethodInput @oneOf @tag(name: "public") {
+    """
+    Use the native federation schema composition. This is the default method for new projects.
+    """
+    native: Boolean
+    """
+    Use an external schema composition endpoint.
+    """
+    external: SchemaCompositionExternalMethodInput
+    """
+    Use the legacy federation v1 schema composition.
+    """
+    legacy: Boolean
+  }
+
+  input UpdateSchemaCompositionInput @tag(name: "public") {
+    """
+    Reference to the project on which the schema composition should be applied.
+    """
+    project: ProjectReferenceInput!
+    """
+    The composition method that should be set for the project.
+    """
+    method: SchemaCompositionMethodInput!
+  }
+
+  type UpdateSchemaCompositionResultOk @tag(name: "public") {
+    updatedProject: Project!
   }
 
   """
   @oneOf
   """
-  type UpdateSchemaCompositionResult {
-    ok: Project
+  type UpdateSchemaCompositionResult @tag(name: "public") {
+    ok: UpdateSchemaCompositionResultOk
     error: UpdateSchemaCompositionError
   }
 
-  interface UpdateSchemaCompositionError implements Error {
+  interface UpdateSchemaCompositionError @tag(name: "public") {
     message: String!
   }
 
-  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError & Error {
+  type UpdateSchemaCompositionNativeError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
     message: String!
   }
 
-  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError & Error {
+  type UpdateSchemaCompositionLegacyError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
     message: String!
   }
 
-  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError & Error {
+  type UpdateSchemaCompositionExternalError implements UpdateSchemaCompositionError
+    @tag(name: "public") {
     message: String!
     inputErrors: UpdateSchemaCompositionExternalInputErrors
   }
 
-  type UpdateSchemaCompositionExternalInputErrors {
+  type UpdateSchemaCompositionExternalInputErrors @tag(name: "public") {
     endpoint: String
     secret: String
   }

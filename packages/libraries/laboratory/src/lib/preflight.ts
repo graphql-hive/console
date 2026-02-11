@@ -1,20 +1,16 @@
-import { useCallback, useState } from "react";
-import cryptoJsSource from "crypto-js/crypto-js.js?raw";
-import type {
-  LaboratoryEnv,
-  LaboratoryEnvActions,
-  LaboratoryEnvState,
-} from "@/lib/env";
-import { LaboratoryPlugin } from "@/lib/plugins";
+import { useCallback, useState } from 'react';
+import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
+import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
+import { LaboratoryPlugin } from '@/lib/plugins';
 
 export interface LaboratoryPreflightLog {
-  level: "log" | "warn" | "error" | "info" | "system";
+  level: 'log' | 'warn' | 'error' | 'info' | 'system';
   message: unknown[];
   createdAt: string;
 }
 
 export interface LaboratoryPreflightResult {
-  status: "success" | "error";
+  status: 'success' | 'error';
   error?: string;
   logs: LaboratoryPreflightLog[];
   env: LaboratoryEnv;
@@ -36,7 +32,7 @@ export interface LaboratoryPreflightActions {
   setPreflight: (preflight: LaboratoryPreflight) => void;
   runPreflight: (
     plugins?: LaboratoryPlugin[],
-    pluginsState?: Record<string, any>
+    pluginsState?: Record<string, any>,
   ) => Promise<LaboratoryPreflightResult | null>;
   setLastTestResult: (result: LaboratoryPreflightResult | null) => void;
 }
@@ -48,7 +44,7 @@ export const usePreflight = (props: {
 }): LaboratoryPreflightState & LaboratoryPreflightActions => {
   // eslint-disable-next-line react/hook-use-state
   const [preflight, _setPreflight] = useState<LaboratoryPreflight | null>(
-    props.defaultPreflight ?? null
+    props.defaultPreflight ?? null,
   );
 
   const setPreflight = useCallback(
@@ -56,14 +52,11 @@ export const usePreflight = (props: {
       _setPreflight(preflight);
       props.onPreflightChange?.(preflight);
     },
-    [props]
+    [props],
   );
 
   const runPreflight = useCallback(
-    async (
-      plugins?: LaboratoryPlugin[],
-      pluginsState?: Record<string, any>
-    ) => {
+    async (plugins?: LaboratoryPlugin[], pluginsState?: Record<string, any>) => {
       if (!preflight?.enabled) {
         return null;
       }
@@ -73,24 +66,24 @@ export const usePreflight = (props: {
         props.envApi?.env ?? { variables: {} },
         undefined,
         plugins,
-        pluginsState
+        pluginsState,
       );
     },
-    [preflight, props.envApi.env]
+    [preflight, props.envApi.env],
   );
 
   const setLastTestResult = useCallback(
     (result: LaboratoryPreflightResult | null) => {
       _setPreflight({
-        ...(preflight ?? { script: "", enabled: true }),
+        ...(preflight ?? { script: '', enabled: true }),
         lastTestResult: result,
       });
       props.onPreflightChange?.({
-        ...(preflight ?? { script: "", enabled: true }),
+        ...(preflight ?? { script: '', enabled: true }),
         lastTestResult: result,
       });
     },
-    [preflight, props]
+    [preflight, props],
   );
 
   return {
@@ -104,26 +97,22 @@ export const usePreflight = (props: {
 export async function runIsolatedLabScript(
   script: string,
   env: LaboratoryEnv,
-  prompt?: (
-    placeholder: string,
-    defaultValue: string
-  ) => Promise<string | null>,
+  prompt?: (placeholder: string, defaultValue: string) => Promise<string | null>,
   plugins: LaboratoryPlugin[] = [],
-  pluginsState: Record<string, any> = {}
+  pluginsState: Record<string, any> = {},
 ): Promise<LaboratoryPreflightResult> {
   const pluginsObjects = plugins
-    .filter((plugin) => plugin.preflight?.lab?.object)
-    .map((plugin) => plugin.preflight?.lab?.object);
+    .filter(plugin => plugin.preflight?.lab?.object)
+    .map(plugin => plugin.preflight?.lab?.object);
 
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const blob = new Blob(
       [
-        cryptoJsSource.replace(
-          "}(this, function () {",
-          "}(self, function () {"
-        ),
+        cryptoJsSource.replace('}(this, function () {', '}(self, function () {'),
         /* javascript */ `
-        const env = ${JSON.stringify(env)};
+        const env =  {
+          variables: ${JSON.stringify(env?.variables)} || {},
+        };
 
         let promptResolve = null;
 
@@ -176,18 +165,14 @@ export async function runIsolatedLabScript(
                 },
                 plugins: {
                   ${pluginsObjects
-                    .map((obj) => obj?.toString())
-                    .map((obj) =>
-                      obj?.startsWith("object")
-                        ? `function${obj.slice(6)}`
-                        : obj
-                    )
+                    .map(obj => obj?.toString())
+                    .map(obj => (obj?.startsWith('object') ? `function${obj.slice(6)}` : obj))
                     .map(
                       (obj, i) => `
                    ...(${obj})(${JSON.stringify(plugins[i].preflight?.lab?.props ?? {})}, state['${plugins[i].id}'] ?? {}, (newState) => setState('${plugins[i].id}', newState))  
-                  `
+                  `,
                     )
-                    .join(",")}
+                    .join(',')}
                 }
               });
   
@@ -204,21 +189,21 @@ export async function runIsolatedLabScript(
         };
       `,
       ],
-      { type: "application/javascript" }
+      { type: 'application/javascript' },
     );
 
     const logs: LaboratoryPreflightLog[] = [];
     const headers: Record<string, string> = {};
 
-    const worker = new Worker(URL.createObjectURL(blob), { type: "module" });
+    const worker = new Worker(URL.createObjectURL(blob), { type: 'module' });
 
     worker.onmessage = ({ data }) => {
-      if (data.type === "result") {
+      if (data.type === 'result') {
         worker.terminate();
 
         if (data.error) {
           resolve({
-            status: "error",
+            status: 'error',
             error: data.error,
             logs,
             env,
@@ -228,64 +213,64 @@ export async function runIsolatedLabScript(
         } else {
           if (Object.keys(data.headers).length > 0) {
             logs.push({
-              level: "system",
+              level: 'system',
               message: [`Headers:\n${JSON.stringify(data.headers, null, 2)}`],
               createdAt: new Date().toISOString(),
             });
           }
 
           resolve({
-            status: "success",
+            status: 'success',
             logs,
             env: data.env,
             headers: data.headers,
             pluginsState: data.pluginsState,
           });
         }
-      } else if (data.type === "log") {
-        if (data.level === "log") {
+      } else if (data.type === 'log') {
+        if (data.level === 'log') {
           logs.push({
-            level: "log",
+            level: 'log',
             message: data.message,
             createdAt: new Date().toISOString(),
           });
-        } else if (data.level === "warn") {
+        } else if (data.level === 'warn') {
           logs.push({
-            level: "warn",
+            level: 'warn',
             message: data.message,
             createdAt: new Date().toISOString(),
           });
-        } else if (data.level === "error") {
+        } else if (data.level === 'error') {
           logs.push({
-            level: "error",
+            level: 'error',
             message: data.message,
             createdAt: new Date().toISOString(),
           });
-        } else if (data.level === "info") {
+        } else if (data.level === 'info') {
           logs.push({
-            level: "info",
+            level: 'info',
             message: data.message,
             createdAt: new Date().toISOString(),
           });
         }
-      } else if (data.type === "header") {
+      } else if (data.type === 'header') {
         headers[data.name] = data.value;
 
         logs.push({
-          level: "system",
+          level: 'system',
           message: [`Header ${data.name} set to ${data.value}`],
           createdAt: new Date().toISOString(),
         });
-      } else if (data.type === "prompt") {
-        void prompt?.(data.placeholder, data.defaultValue).then((value) => {
-          worker.postMessage({ type: "prompt:result", value });
+      } else if (data.type === 'prompt') {
+        void prompt?.(data.placeholder, data.defaultValue).then(value => {
+          worker.postMessage({ type: 'prompt:result', value });
         });
       }
     };
 
-    worker.onerror = (error) => {
+    worker.onerror = error => {
       resolve({
-        status: "error",
+        status: 'error',
         error: error.message,
         logs,
         env,
@@ -294,6 +279,6 @@ export async function runIsolatedLabScript(
       });
     };
 
-    worker.postMessage({ type: "init", script });
+    worker.postMessage({ type: 'init', script });
   });
 }

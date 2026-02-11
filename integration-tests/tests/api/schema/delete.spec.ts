@@ -239,12 +239,18 @@ test.concurrent(
 
       await updateSchemaComposition(
         {
-          external: {
-            endpoint: `http://${await getServiceHost('composition_federation_2', 3069, false)}/compose`,
-            // eslint-disable-next-line no-process-env
-            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-            projectSlug: project.slug,
-            organizationSlug: organization.slug,
+          project: {
+            bySelector: {
+              projectSlug: project.slug,
+              organizationSlug: organization.slug,
+            },
+          },
+          method: {
+            external: {
+              endpoint: `http://${await getServiceHost('composition_federation_2', 3069, false)}/compose`,
+              // eslint-disable-next-line no-process-env
+              secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+            },
           },
         },
         ownerToken,

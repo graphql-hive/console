@@ -89,12 +89,6 @@ jobs:
     if: ${{ !github.event.pull_request.head.repo.fork }}
     secrets: inherit
 
-  # Deploy Storybook preview to CloudFlare Pages
-  storybook-preview:
-    uses: ./.github/workflows/storybook.yaml
-    if: ${{ !github.event.pull_request.head.repo.fork }}
-    secrets: inherit
-
   # Release alpha version on NPM for Hive libraries
   alpha:
     uses: ./.github/workflows/release-alpha.yaml

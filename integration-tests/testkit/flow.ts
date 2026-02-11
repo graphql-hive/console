@@ -1527,9 +1527,11 @@ export async function updateSchemaComposition(input: UpdateSchemaCompositionInpu
       mutation updateSchemaComposition($input: UpdateSchemaCompositionInput!) {
         updateSchemaComposition(input: $input) {
           ok {
-            id
-            externalSchemaComposition {
-              endpoint
+            updatedProject {
+              id
+              externalSchemaComposition {
+                endpoint
+              }
             }
           }
           error {

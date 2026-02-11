@@ -666,20 +666,24 @@ export class SchemaManager {
     switch (input.mode) {
       case 'native': {
         return {
-          ok: await this.storage.updateNativeSchemaComposition({
-            projectId: input.projectId,
-            organizationId: input.organizationId,
-            enabled: true,
-          }),
+          ok: {
+            updatedProject: await this.storage.updateNativeSchemaComposition({
+              projectId: input.projectId,
+              organizationId: input.organizationId,
+              enabled: true,
+            }),
+          },
         };
       }
       case 'legacy': {
         return {
-          ok: await this.storage.updateNativeSchemaComposition({
-            projectId: input.projectId,
-            organizationId: input.organizationId,
-            enabled: false,
-          }),
+          ok: {
+            updatedProject: await this.storage.updateNativeSchemaComposition({
+              projectId: input.projectId,
+              organizationId: input.organizationId,
+              enabled: false,
+            }),
+          },
         };
       }
       case 'external': {
@@ -702,12 +706,14 @@ export class SchemaManager {
         }
 
         return {
-          ok: await this.storage.enableExternalSchemaComposition({
-            projectId: input.projectId,
-            organizationId: input.organizationId,
-            endpoint: parseResult.data.endpoint.trim(),
-            encryptedSecret: this.crypto.encrypt(parseResult.data.secret),
-          }),
+          ok: {
+            updatedProject: await this.storage.enableExternalSchemaComposition({
+              projectId: input.projectId,
+              organizationId: input.organizationId,
+              endpoint: parseResult.data.endpoint.trim(),
+              encryptedSecret: this.crypto.encrypt(parseResult.data.secret),
+            }),
+          },
         };
       }
       default: {

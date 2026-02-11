@@ -57,8 +57,10 @@ const ExternalCompositionSettings_ProjectFragment = graphql(`
 const ExternalCompositionSettings_UpdateResultFragment = graphql(`
   fragment ExternalCompositionSettings_UpdateResultFragment on UpdateSchemaCompositionResult {
     ok {
-      externalSchemaComposition {
-        endpoint
+      updatedProject {
+        externalSchemaComposition {
+          endpoint
+        }
       }
     }
     error {
@@ -232,11 +234,17 @@ export const ExternalCompositionSettings = (props: {
     setIsMutating(true);
     void props
       .onMutate({
-        external: {
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
-          endpoint: values.endpoint,
-          secret: values.secret,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: values.endpoint,
+            secret: values.secret,
+          },
         },
       })
       .then(result => {
@@ -252,7 +260,7 @@ export const ExternalCompositionSettings = (props: {
             result,
           );
           if (updateResult.ok) {
-            const endpoint = updateResult.ok.externalSchemaComposition?.endpoint;
+            const endpoint = updateResult.ok.updatedProject.externalSchemaComposition?.endpoint;
 
             notify('External composition enabled.', 'success');
 

@@ -365,6 +365,8 @@ export const useOperations = (
         env = props.envApi?.env ?? { variables: {} };
       }
 
+      console.log(pluginsState);
+
       const parsedHeaders = activeOperation.headers
         ? JSON.parse(
             handleTemplate(activeOperation.headers, {
