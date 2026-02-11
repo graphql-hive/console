@@ -30,12 +30,6 @@ async function main() {
       level: env.log.level,
       requests: env.log.requests,
     },
-    // If a connection is idle for 350 seconds or more, the connection times out.
-    // The default for fastify is 72_000, but this is meant for more dynamic clients.
-    // The usage-ingestor has relatively stable clients and benefits from a longer
-    // idle connection timeout. This also helps reduce the likelihood of
-    // 503 upstream disconnect errors.
-    keepAliveTimeout: 350_000,
   });
 
   try {

@@ -52,7 +52,6 @@ export async function createServer(options: {
     | Logger;
   cors?: boolean;
   bodyLimit?: number;
-  keepAliveTimeout?: number;
 }) {
   const server = fastify({
     disableRequestLogging: true,
@@ -72,7 +71,16 @@ export async function createServer(options: {
     },
     requestIdHeader: 'x-request-id',
     trustProxy: true,
-    keepAliveTimeout: options.keepAliveTimeout,
+    // If a connection is idle for 905 seconds or more, the connection times out.
+    // The default for fastify is 72_000, but this is meant for more dynamic clients.
+    // Requests to Hive's services are proxied through Cloudflare, which has a 900s
+    // idle connection timeout. By setting our keepAliveTimeout slightly longer than
+    // Cloudflare's, we guarantee Cloudflare won't encounter the race condition where
+    // the server terminates the connection but the client has not yet -- which results
+    // in a 503 upstream disconnect error. Setting the keepAliveTimeout longer also allows
+    // Cloudflare to maintain connections longer and therefore increases performance in
+    // most cases.
+    keepAliveTimeout: 905_000,
   });
 
   server.addHook('onReady', async () => {
