@@ -48,7 +48,7 @@ export const createPublicGraphQLHandler = (
         session: await args.authN.authenticate(context),
       })),
       useHiveErrorHandler(err => {
-        options.logger.error(err, 'Unexpected error occured while handling exception.');
+        args.logger.error(err, 'Unexpected error occured while handling exception.');
       }),
       useHive({
         debug: true,
