@@ -487,7 +487,7 @@ function ChangeItem(
                                       appVersion: deployment.version,
                                     }}
                                     search={{ coordinates: change.path?.join('.') }}
-                                    className="text-neutral-2 block pt-2 text-sm hover:underline"
+                                    className="text-accent block pt-2 text-sm hover:underline"
                                   >
                                     Show all ({deployment.totalAffectedOperations}) affected
                                     operations
@@ -583,7 +583,7 @@ function ChangeItem(
                                   appVersion: deployment.version,
                                 }}
                                 search={{ coordinates: change.path?.join('.') }}
-                                className="text-neutral-2 block pt-2 text-sm hover:underline"
+                                className="text-accent block pt-2 text-sm hover:underline"
                               >
                                 Show all ({deployment.totalAffectedOperations}) affected operations
                               </Link>
