@@ -288,9 +288,14 @@ function schemaDefinitionDiff({
   builder.newLine({ type: changeType });
   builder.write(keyword('schema'));
 
+  // Merge schema extensions into the schema definition to be sure to collect all directives applied to the schema definition.
   diffDirectiveUsages({
-    oldDirectives: oldSchema?.astNode?.directives ?? [],
-    newDirectives: newSchema?.astNode?.directives ?? [],
+    oldDirectives: (oldSchema?.astNode?.directives ?? []).concat(
+      ...(oldSchema?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
+    newDirectives: (newSchema?.astNode?.directives ?? []).concat(
+      ...(newSchema?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
     builder,
     path: ['.'],
   });

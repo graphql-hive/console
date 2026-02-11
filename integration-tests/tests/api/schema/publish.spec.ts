@@ -3397,12 +3397,18 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
     await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${serviceAddress}/compose`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
@@ -3520,12 +3526,18 @@ test('Composition Network Failure (Federation 2)', async () => {
 
     await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${serviceAddress}/compose`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
@@ -3563,11 +3575,18 @@ test('Composition Network Failure (Federation 2)', async () => {
 
     await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${serviceAddress}/no_compose`,
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${serviceAddress}/no_compose`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,

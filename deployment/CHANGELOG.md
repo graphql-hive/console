@@ -1,5 +1,59 @@
 # hive
 
+## 9.4.0
+
+### Minor Changes
+
+- [#7635](https://github.com/graphql-hive/console/pull/7635)
+  [`6c6f5ab`](https://github.com/graphql-hive/console/commit/6c6f5ab5f25a19ca5f2a7f1016ae1bd967542bc8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add `Mutation.updateSchemaComposition` to the
+  public GraphQL API schema.
+
+- [#7642](https://github.com/graphql-hive/console/pull/7642)
+  [`a65b0bc`](https://github.com/graphql-hive/console/commit/a65b0bc7721c2b84417d6ba1052ffd03a34b556d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add Mutation.retireAppDeployments to the public API
+
+### Patch Changes
+
+- [#7614](https://github.com/graphql-hive/console/pull/7614)
+  [`e853916`](https://github.com/graphql-hive/console/commit/e85391651342ab23c0b19b03a93501a4f9abe2d2)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Fix for schema sdl resolver to ignore
+  auto fix composite schema execution in case of monolith
+
+- [#7624](https://github.com/graphql-hive/console/pull/7624)
+  [`8afab7d`](https://github.com/graphql-hive/console/commit/8afab7d822527e4eb5d20b59c33d58881afefa3f)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix stale app deployments query
+  returning empty results for targets with >1000 deployments
+
+- [#7628](https://github.com/graphql-hive/console/pull/7628)
+  [`c15775a`](https://github.com/graphql-hive/console/commit/c15775a7dcca75d3c82f438baa721f19de79351b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add created at, last used, and total docs to app
+  deployment view
+
+- [#7622](https://github.com/graphql-hive/console/pull/7622)
+  [`d79d9f1`](https://github.com/graphql-hive/console/commit/d79d9f139e319734ed40c1f886531bcfa20d76b6)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix exception raised when performing an email
+  invite.
+
+- [#7653](https://github.com/graphql-hive/console/pull/7653)
+  [`8857722`](https://github.com/graphql-hive/console/commit/88577222d2fa39fa37af363a80b69cafcddb4679)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Fix Clickhouse "Field value too long"
+  error when querying stale app deployments on targets with 1000+ deployments
+
+- [#7667](https://github.com/graphql-hive/console/pull/7667)
+  [`0803ced`](https://github.com/graphql-hive/console/commit/0803cedb3ac585d0e84c2e251f520a5baee36aa1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Update dependency `axios` to `1.13.5`, to address
+  vulnerability `CVE-2026-25639`.
+
+- [#7619](https://github.com/graphql-hive/console/pull/7619)
+  [`a0e4bbf`](https://github.com/graphql-hive/console/commit/a0e4bbfa5d6109dbee01f6f15b1eaf0a7735887d)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove initialChecks from schema proposal creation
+  mutation; Show proposal schema check updates in a dialog box
+
+- [#7592](https://github.com/graphql-hive/console/pull/7592)
+  [`6709e71`](https://github.com/graphql-hive/console/commit/6709e719c14ca097761f9eb1f81115c69dc369d4)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - added light mode to console
+
 ## 9.3.0
 
 ### Minor Changes

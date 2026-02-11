@@ -45,18 +45,25 @@ test.concurrent('call an external service to compose and validate services', asy
   // enable external composition
   const externalCompositionResult = await updateSchemaComposition(
     {
-      external: {
-        endpoint: `http://${dockerAddress}/compose`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+      project: {
+        bySelector: {
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
+      },
+      method: {
+        external: {
+          endpoint: `http://${dockerAddress}/compose`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+        },
       },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    externalCompositionResult.updateSchemaComposition.ok?.externalSchemaComposition?.endpoint,
+    externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
+      ?.endpoint,
   ).toBe(`http://${dockerAddress}/compose`);
 
   // set native federation to false to force external composition
@@ -129,18 +136,25 @@ test.concurrent(
     // enable external composition
     const externalCompositionResult = await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${dockerAddress}/fail_on_signature`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${dockerAddress}/fail_on_signature`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     expect(
-      externalCompositionResult.updateSchemaComposition.ok?.externalSchemaComposition?.endpoint,
+      externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
+        ?.endpoint,
     ).toBe(`http://${dockerAddress}/fail_on_signature`);
 
     // set native federation to false to force external composition
@@ -229,18 +243,25 @@ test.concurrent(
     // enable external composition
     const externalCompositionResult = await updateSchemaComposition(
       {
-        external: {
-          endpoint: `http://${dockerAddress}/non-existing-endpoint`,
-          // eslint-disable-next-line no-process-env
-          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-          projectSlug: project.slug,
-          organizationSlug: organization.slug,
+        project: {
+          bySelector: {
+            projectSlug: project.slug,
+            organizationSlug: organization.slug,
+          },
+        },
+        method: {
+          external: {
+            endpoint: `http://${dockerAddress}/non-existing-endpoint`,
+            // eslint-disable-next-line no-process-env
+            secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+          },
         },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
     expect(
-      externalCompositionResult.updateSchemaComposition.ok?.externalSchemaComposition?.endpoint,
+      externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
+        ?.endpoint,
     ).toBe(`http://${dockerAddress}/non-existing-endpoint`);
     // set native federation to false to force external composition
     await setNativeFederation(false);
@@ -326,18 +347,25 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
   // enable external composition
   const externalCompositionResult = await updateSchemaComposition(
     {
-      external: {
-        endpoint: `http://${dockerAddress}/timeout`,
-        // eslint-disable-next-line no-process-env
-        secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
-        projectSlug: project.slug,
-        organizationSlug: organization.slug,
+      project: {
+        bySelector: {
+          projectSlug: project.slug,
+          organizationSlug: organization.slug,
+        },
+      },
+      method: {
+        external: {
+          endpoint: `http://${dockerAddress}/timeout`,
+          // eslint-disable-next-line no-process-env
+          secret: process.env.EXTERNAL_COMPOSITION_SECRET!,
+        },
       },
     },
     ownerToken,
   ).then(r => r.expectNoGraphQLErrors());
   expect(
-    externalCompositionResult.updateSchemaComposition.ok?.externalSchemaComposition?.endpoint,
+    externalCompositionResult.updateSchemaComposition.ok?.updatedProject.externalSchemaComposition
+      ?.endpoint,
   ).toBe(`http://${dockerAddress}/timeout`);
   // set native federation to false to force external composition
   await setNativeFederation(false);

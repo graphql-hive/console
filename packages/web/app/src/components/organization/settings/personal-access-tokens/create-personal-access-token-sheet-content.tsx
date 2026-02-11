@@ -250,7 +250,8 @@ export function CreatePersonalAccessTokenSheetContent(
                               <Form.FormControl>
                                 <PermissionSelector
                                   permissionGroups={
-                                    organization.me.availablePersonalAccessTokenPermissionGroups
+                                    organization.me?.availablePersonalAccessTokenPermissionGroups ??
+                                    []
                                   }
                                   selectedPermissionIds={new Set(form.getValues()['permissions'])}
                                   onSelectedPermissionsChange={selectedPermissionIds => {
@@ -303,7 +304,7 @@ export function CreatePersonalAccessTokenSheetContent(
                           <SelectedPermissionOverview
                             activePermissionIds={form.getValues().permissions}
                             permissionsGroups={
-                              organization.me.availablePersonalAccessTokenPermissionGroups
+                              organization.me?.availablePersonalAccessTokenPermissionGroups ?? []
                             }
                             showOnlyAllowedPermissions
                             isExpanded
