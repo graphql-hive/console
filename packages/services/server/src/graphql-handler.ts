@@ -52,6 +52,10 @@ export interface Context extends RegistryContext {
   req: FastifyRequest;
   reply: FastifyReply;
   session: Session;
+  params?: {
+    query: string;
+    operationName?: string | null;
+  };
 }
 
 const NoIntrospection: ValidationRule = (context: ValidationContext) => ({
@@ -74,36 +78,27 @@ function hasFastifyRequest(ctx: unknown): ctx is {
 
 export function useHiveErrorHandler(unexpectedErrorLogger: (err: unknown) => void): Plugin {
   return useErrorHandler(({ errors, context: unsafeContest, phase }): void => {
-    // these are not errors we need to report ever
+    // these are not errors we need to report ever, the user send wrong input
     if (phase === 'parse' || phase === 'validate') {
       return;
     }
 
-    // Not sure what changed, but the `context` is now an object with a contextValue property.
-    // We previously relied on the `context` being the `contextValue` itself.
-    const context: {
-      operationName: string | null;
-      variableValues: Record<string, unknown> | null | undefined;
-      document: DocumentNode;
-      // context value is undefined if the context was never built.
-      // this is the case if parsing or validating the GraphQL query failed
-      contextValue?: Context;
-      requestId: string;
-      req: FastifyRequest;
-    } = unsafeContest as any;
+    // `contextValue` is present if the error comes up during execution, otherwise the context itself is the context :D
+    const context: Context = (unsafeContest.contextValue ?? unsafeContest) as any;
+
+    console.log(context.params);
 
     function reportError(error: Error) {
       withScope(scope => {
         // Note: `context.contextValue` is probably never undefined
         // if this part of the code is reached - but it is better to be safe...
-        const userId = (
-          context.contextValue?.session as SuperTokensCookieBasedSession | null | undefined
-        )?.userId;
+        const userId = (context?.session as SuperTokensCookieBasedSession | null | undefined)
+          ?.userId;
 
-        scope.setTransactionName(context.operationName ?? 'unknown graphql operation');
+        scope.setTransactionName(context.params?.operationName ?? 'unknown graphql operation');
         scope.setContext('Extra Info', {
-          operationName: context.operationName,
-          operation: print(context.document),
+          operationName: context.params?.operationName,
+          operation: context.params?.query,
           userId,
         });
 
@@ -113,7 +108,7 @@ export function useHiveErrorHandler(unexpectedErrorLogger: (err: unknown) => voi
 
         scope.setTags({
           supertokens_user_id: (
-            context.contextValue?.session as SuperTokensCookieBasedSession | null | undefined
+            context?.session as SuperTokensCookieBasedSession | null | undefined
           )?.superTokensUserId,
           hive_user_id: userId,
           request_id: context.requestId,

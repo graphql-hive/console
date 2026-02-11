@@ -10,6 +10,7 @@ export const createToken: NonNullable<MutationResolvers['createToken']> = async 
   { input },
   { injector },
 ) => {
+  throw new Error('BUBUBUBBU');
   const CreateTokenInputModel = z.object({
     name: TokenNameModel,
   });
