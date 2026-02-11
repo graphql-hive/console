@@ -20,6 +20,7 @@ export default gql`
     additionalScopes: [String!]!
     oidcUserJoinOnly: Boolean!
     oidcUserAccessOnly: Boolean!
+    requireInvitation: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
   }
@@ -167,6 +168,7 @@ export default gql`
     """
     oidcUserJoinOnly: Boolean
     oidcUserAccessOnly: Boolean
+    requireInvitation: Boolean
   }
 
   """

@@ -225,6 +225,7 @@ export interface OIDCIntegration {
   additionalScopes: string[];
   oidcUserJoinOnly: boolean;
   oidcUserAccessOnly: boolean;
+  requireInvitation: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
