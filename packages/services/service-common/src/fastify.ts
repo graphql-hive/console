@@ -52,6 +52,7 @@ export async function createServer(options: {
     | Logger;
   cors?: boolean;
   bodyLimit?: number;
+  keepAliveTimeout?: number;
 }) {
   const server = fastify({
     disableRequestLogging: true,
@@ -71,12 +72,7 @@ export async function createServer(options: {
     },
     requestIdHeader: 'x-request-id',
     trustProxy: true,
-    // If a connection is idle for 350 seconds or more, the connection times out.
-    // The default for fastify is 72_000, but this is meant for more dynamic clients.
-    // The usage-ingestor has relatively stable clients and benefits from a longer
-    // idle connection timeout. This also helps reduce the likelihood of
-    // 503 upstream disconnect errors.
-    keepAliveTimeout: 350_000,
+    keepAliveTimeout: options.keepAliveTimeout,
   });
 
   server.addHook('onReady', async () => {
