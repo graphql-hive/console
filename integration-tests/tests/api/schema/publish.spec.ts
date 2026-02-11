@@ -116,7 +116,10 @@ test.concurrent(
     expect(firstNode).toEqual(
       expect.objectContaining({
         commit: '2',
-        source: expect.stringContaining('type Query { ping: String @auth pong: String }'),
+        source: `type Query {
+  ping: String @auth
+  pong: String
+}`,
       }),
     );
     expect(firstNode).not.toEqual(
@@ -158,9 +161,14 @@ test.concurrent('directives should not be removed (federation)', async () => {
   expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
     expect.objectContaining({
       commit: 'abc123',
-      source: expect.stringContaining(
-        `type Query { me: User } type User @key(fields: "id") { id: ID! name: String }`,
-      ),
+      source: `type Query {
+  me: User
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  name: String
+}`,
     }),
   );
 });
@@ -194,9 +202,14 @@ test.concurrent('directives should not be removed (stitching)', async () => {
   expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
     expect.objectContaining({
       commit: 'abc123',
-      source: expect.stringContaining(
-        `type Query { me: User } type User @key(selectionSet: "{ id }") { id: ID! name: String }`,
-      ),
+      source: `type Query {
+  me: User
+}
+
+type User @key(selectionSet: "{ id }") {
+  id: ID!
+  name: String
+}`,
     }),
   );
 });
@@ -229,9 +242,16 @@ test.concurrent('directives should not be removed (single)', async () => {
   expect(latestResult.latestVersion?.schemas.nodes[0]).toEqual(
     expect.objectContaining({
       commit: 'abc123',
-      source: expect.stringContaining(
-        `directive @auth on FIELD_DEFINITION type Query { me: User @auth } type User { id: ID! name: String }`,
-      ),
+      source: `directive @auth on FIELD_DEFINITION
+
+type Query {
+  me: User @auth
+}
+
+type User {
+  id: ID!
+  name: String
+}`,
     }),
   );
 });

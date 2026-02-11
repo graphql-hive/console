@@ -326,7 +326,7 @@ function runArtifactsCDNTests(
         `artifact/${target.id}/services`,
       );
       expect(artifactContents.body).toMatchInlineSnapshot(
-        '[{"name":"ping","sdl":"type Query { ping: String }","url":"http://ping.com"}]',
+        `[{"name":"ping","sdl":"type Query {\\n  ping: String\\n}","url":"http://ping.com"}]`,
       );
 
       const cdnAccessResult = await createCdnAccess();
@@ -343,7 +343,7 @@ function runArtifactsCDNTests(
       expect(response.status).toBe(200);
       const body = await response.text();
       expect(body).toMatchInlineSnapshot(
-        '[{"name":"ping","sdl":"type Query { ping: String }","url":"http://ping.com"}]',
+        `[{"name":"ping","sdl":"type Query {\\n  ping: String\\n}","url":"http://ping.com"}]`,
       );
     });
 
@@ -375,7 +375,7 @@ function runArtifactsCDNTests(
         `artifact/${target.id}/services`,
       );
       expect(artifactContents.body).toMatchInlineSnapshot(
-        '[{"name":"ping","sdl":"type Query { ping: String }","url":"http://ping.com"}]',
+        `[{"name":"ping","sdl":"type Query {\\n  ping: String\\n}","url":"http://ping.com"}]`,
       );
 
       const cdnAccessResult = await createCdnAccess();
@@ -720,7 +720,7 @@ function runArtifactsCDNTests(
       expect(versionedResponse.headers.get('content-type')).toContain('application/json');
       const servicesBody = await versionedResponse.text();
       expect(servicesBody).toMatchInlineSnapshot(
-        '[{"name":"ping","sdl":"type Query { ping: String }","url":"http://ping.com"}]',
+        `[{"name":"ping","sdl":"type Query {\\n  ping: String\\n}","url":"http://ping.com"}]`,
       );
 
       // Verify the versioned S3 key exists
