@@ -1257,6 +1257,7 @@ export default gql`
   type Member {
     id: ID!
     user: User! @tag(name: "public")
+    authProviders: [MemberAuthProvider!]!
     isOwner: Boolean! @tag(name: "public")
     canLeaveOrganization: Boolean!
     role: MemberRole! @tag(name: "public")
@@ -1382,6 +1383,11 @@ export default gql`
   type ResourceAssignment {
     mode: ResourceAssignmentModeType! @tag(name: "public")
     projects: [ProjectResourceAssignment!] @tag(name: "public")
+  }
+
+  type MemberAuthProvider {
+    type: AuthProviderType!
+    disabledReason: String
   }
 
   extend type Project {

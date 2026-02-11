@@ -446,11 +446,9 @@ export async function createStorage(
     ) {
       const record = await connection.maybeOne<unknown>(sql`/* getUserBySuperTokenId */
         SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
+          ${userFields(sql`"users".`)}
         FROM
           "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
         WHERE
           "users"."supertoken_user_id" = ${superTokensUserId}
         LIMIT 1
@@ -468,11 +466,9 @@ export async function createStorage(
         const userIds = input.map(i => i.id);
         const records = await input[0].connection.any<unknown>(sql`/* getUserById */
           SELECT
-            ${userFields(sql`"users".`, sql`"stu".`)}
+            ${userFields(sql`"users".`)}
           FROM
             "users"
-          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-            ON ("stu"."user_id" = "users"."supertoken_user_id")
           WHERE
             "users"."id" = ANY(${sql.array(userIds, 'uuid')})
         `);
@@ -663,10 +659,8 @@ export async function createStorage(
           .maybeOne<unknown>(
             sql`
               SELECT
-                ${userFields(sql`"users".`, sql`"stu".`)}
+                ${userFields(sql`"users".`)}
               FROM "users"
-              LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-                ON ("stu"."user_id" = "users"."supertoken_user_id")
               WHERE
                 "users"."supertoken_user_id" = ${superTokensUserId}
                 OR EXISTS (
@@ -683,10 +677,8 @@ export async function createStorage(
           const sameEmailUsers = await t
             .any<unknown>(
               sql`/* ensureUserExists */
-                SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+                SELECT ${userFields(sql`"users".`)}
                 FROM "users"
-                LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-                  ON ("stu"."user_id" = "users"."supertoken_user_id")
                 WHERE "users"."email" = ${email}
                 ORDER BY "users"."created_at";
               `,
@@ -933,7 +925,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationOwner */
         SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
+          ${userFields(sql`"u".`)},
           omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
@@ -946,7 +938,6 @@ export async function createStorage(
         LEFT JOIN users as u ON (u.id = o.user_id)
         LEFT JOIN organization_member as om ON (om.user_id = u.id AND om.organization_id = o.id)
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
         WHERE o.id = ANY(${sql.array(organizations, 'uuid')})`,
       );
 
@@ -983,7 +974,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationMember */
           SELECT
-            ${userFields(sql`"u".`, sql`"stu".`)},
+            ${userFields(sql`"u".`)},
             omr.scopes as scopes,
             om.organization_id,
             om.connected_to_zendesk,
@@ -997,7 +988,6 @@ export async function createStorage(
           LEFT JOIN organizations as o ON (o.id = om.organization_id)
           LEFT JOIN users as u ON (u.id = om.user_id)
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-          LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
           WHERE (om.organization_id, om.user_id) IN ((${sql.join(
             selectors.map(s => sql`${s.organizationId}, ${s.userId}`),
             sql`), (`,
@@ -5651,10 +5641,7 @@ export type PaginatedOrganizationInvitationConnection = Readonly<{
   }>;
 }>;
 
-export const userFields = (
-  user: TaggedTemplateLiteralInvocation,
-  superTokensThirdParty: TaggedTemplateLiteralInvocation,
-) => sql`
+export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
   ${user}"id"
   , ${user}"email"
   , to_json(${user}"created_at") AS "createdAt"
@@ -5664,7 +5651,19 @@ export const userFields = (
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
-  , ${superTokensThirdParty}"third_party_id" AS "provider"
+  , (
+      SELECT ARRAY_AGG(DISTINCT "sub_stu"."third_party_id")
+      FROM (
+        SELECT ${user}"supertoken_user_id"::text "id"
+        WHERE ${user}"supertoken_user_id" IS NOT NULL
+        UNION
+        SELECT "sub_uli"."identity_id"::text "id"
+        FROM "users_linked_identities" "sub_uli"
+        WHERE "sub_uli"."user_id" = ${user}"id"
+      ) "sub_ids"
+      LEFT JOIN "supertokens_thirdparty_users" "sub_stu"
+      ON "sub_stu"."user_id" = "sub_ids"."id"
+    ) AS "providers"
 `;
 
 export const UserModel = zod.object({
@@ -5680,21 +5679,23 @@ export const UserModel = zod.object({
     .transform(value => value ?? false),
   oidcIntegrationId: zod.string().nullable(),
   zendeskId: zod.string().nullable(),
-  provider: zod
-    .string()
-    .nullable()
-    .transform(provider => {
-      if (provider === 'oidc') {
-        return 'OIDC' as const;
-      }
-      if (provider === 'google') {
-        return 'GOOGLE' as const;
-      }
-      if (provider === 'github') {
-        return 'GITHUB' as const;
-      }
-      return 'USERNAME_PASSWORD' as const;
-    }),
+  providers: zod.array(
+    zod
+      .string()
+      .nullable()
+      .transform(provider => {
+        if (provider === 'oidc') {
+          return 'OIDC' as const;
+        }
+        if (provider === 'google') {
+          return 'GOOGLE' as const;
+        }
+        if (provider === 'github') {
+          return 'GITHUB' as const;
+        }
+        return 'USERNAME_PASSWORD' as const;
+      }),
+  ),
 });
 
 type UserType = zod.TypeOf<typeof UserModel>;
