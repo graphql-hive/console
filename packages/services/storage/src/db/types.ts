@@ -171,6 +171,7 @@ export interface oidc_integrations {
   oauth_api_url: string | null;
   oidc_user_access_only: boolean;
   oidc_user_join_only: boolean;
+  require_invitation: boolean;
   token_endpoint: string | null;
   updated_at: Date;
   userinfo_endpoint: string | null;
