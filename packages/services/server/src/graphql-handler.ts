@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyBaseLogger, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
-import { GraphQLError, print, ValidationContext, ValidationRule, type DocumentNode } from 'graphql';
+import { GraphQLError, ValidationContext, ValidationRule } from 'graphql';
 import {
   createYoga,
   Plugin,
