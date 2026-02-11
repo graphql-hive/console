@@ -18,7 +18,6 @@ export type {
   OrganizationBilling,
   OrganizationInvitation,
 } from './shared/entities';
-export { minifySchema } from './shared/schema';
 export { HiveError } from './shared/errors';
 export { ProjectType } from './__generated__/types';
 export type { AuthProviderType } from './__generated__/types';

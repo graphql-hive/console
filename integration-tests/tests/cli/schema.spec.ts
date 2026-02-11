@@ -1132,6 +1132,12 @@ test.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
 
   const latest = await latestSchema();
   expect((await latestSchema()).latestVersion?.schemas.nodes?.[0]?.source).toMatchInlineSnapshot(`
+    """
+    Multi line comment:
+    1. Foo
+    2. Bar
+    3. Should stay in a list format
+    """
     type Query {
       status: Status
     }
