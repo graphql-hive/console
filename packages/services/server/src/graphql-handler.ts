@@ -72,8 +72,13 @@ function hasFastifyRequest(ctx: unknown): ctx is {
   return !!ctx && typeof ctx === 'object' && 'req' in ctx;
 }
 
-export function useHiveErrorHandler(): Plugin {
-  return useErrorHandler(({ errors, context: unsafeContest }): void => {
+export function useHiveErrorHandler(unexpectedErrorLogger: (err: unknown) => void): Plugin {
+  return useErrorHandler(({ errors, context: unsafeContest, phase }): void => {
+    // these are not errors we need to report ever
+    if (phase === 'parse' || phase === 'validate') {
+      return;
+    }
+
     // Not sure what changed, but the `context` is now an object with a contextValue property.
     // We previously relied on the `context` being the `contextValue` itself.
     const context: {
@@ -129,24 +134,32 @@ export function useHiveErrorHandler(): Plugin {
       });
     }
 
-    for (const error of errors) {
-      // always log the error (this is always the unmasked error)
-      context.req.log.error(error);
+    try {
+      for (const error of errors) {
+        // always log the error (this is always the unmasked error)
+        context.req.log.error(error);
 
-      if (isGraphQLError(error)) {
-        // in this case it is a GraphQL validation error
-        // or an expected error we do not need to log/report
-        if (!error.originalError || isGraphQLError(error.originalError)) {
+        if (isGraphQLError(error)) {
+          // in this case it is a GraphQL validation error
+          // or an expected error we do not need to log/report
+          if (!error.originalError || isGraphQLError(error.originalError)) {
+            continue;
+          }
+
+          context.req.log.error(error.originalError);
+          reportError(error);
           continue;
+        } else {
+          // if the error is not a GraphQL error we should always report.
+          reportError(error);
         }
-
-        context.req.log.error(error.originalError);
-        reportError(error);
-        continue;
-      } else {
-        // if the error is not a GraphQL error we should always report.
-        reportError(error);
       }
+    } catch (err) {
+      // this should never never happen - but in case it does we better capture it :)
+      captureException(err);
+      // in case contextual logging (based on request) is not possible
+      unexpectedErrorLogger(err);
+      throw err;
     }
   });
 }
@@ -195,7 +208,9 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
     logging: options.logger,
     plugins: [
       useArmor(),
-      useHiveErrorHandler(),
+      useHiveErrorHandler(err => {
+        options.logger.error(err, 'Unexpected error occured while handling exception.');
+      }),
       useExtendContext(async context => ({
         session: await options.authN.authenticate(context),
       })),
