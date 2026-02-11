@@ -19,11 +19,6 @@ export function BlogPostPicture({
     return <video className={className} src={image} autoPlay muted loop playsInline />;
   }
 
-  image =
-    typeof image === 'object' && !('width' in image) && 'src' in image
-      ? (image as { src: string }).src
-      : image;
-
   return (
     <Image
       width={1392}
