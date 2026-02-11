@@ -12,18 +12,16 @@ import { type Observability } from './observability';
 import { type OTELCollector } from './otel-collector';
 
 /**
- * Hive Gateway Docker Image Version
- * Bump this to update the used gateway version.
+ * Hive Router Docker Image Version
  */
-const dockerImage = 'ghcr.io/graphql-hive/gateway:2.1.19';
-
-const gatewayConfigDirectory = path.resolve(__dirname, '..', 'config', 'public-graphql-api');
+const dockerImage = 'ghcr.io/graphql-hive/router:0.0.37';
+const configDirectory = path.resolve(__dirname, '..', 'config', 'public-graphql-api');
 
 // On global scope to fail early in case of a read error
-const gatewayConfigPath = path.join(gatewayConfigDirectory, 'gateway.config.ts');
-const gwConfigFile = fs.readFileSync(gatewayConfigPath, 'utf-8');
+const configPath = path.join(configDirectory, 'router.config.yaml');
+const routerConfigFile = fs.readFileSync(configPath, 'utf-8');
 
-export function deployPublicGraphQLAPIGateway(args: {
+export function deployPublicGraphQLAPIRouter(args: {
   environment: Environment;
   graphql: GraphQL;
   docker: Docker;
@@ -41,25 +39,25 @@ export function deployPublicGraphQLAPIGateway(args: {
   }
 
   const hiveConfig = new pulumi.Config('hive');
-  const hiveConfigSecrets = new ServiceSecret('hive-secret', {
+  const hiveConfigSecrets = new ServiceSecret('hive-router-tracing-secret', {
     otelTraceAccessToken: hiveConfig.requireSecret('otelTraceAccessToken'),
   });
 
   const supergraphEndpoint = cdnEndpoint + '/contracts/public';
 
   // Note: The persisted documents access key is also valid for reading the supergraph
-  const publicGraphQLAPISecret = new ServiceSecret('public-graphql-api-secret', {
+  const publicGraphQLAPISecret = new ServiceSecret('public-graphql-api-router-secret', {
     cdnAccessKeyId: apiConfig.requireSecret('hivePersistedDocumentsCdnAccessKeyId'),
   });
 
-  const configMap = new kx.ConfigMap('public-graphql-api-gateway-config', {
+  const configMap = new kx.ConfigMap('public-graphql-api-router-config', {
     data: {
-      'gateway.config.ts': gwConfigFile,
+      'router.yaml': routerConfigFile,
     },
   });
 
   return new ServiceDeployment(
-    'public-graphql-api-gateway',
+    'public-graphql-api-router',
     {
       imagePullSecret: args.docker.secret,
       image: dockerImage,
@@ -69,15 +67,9 @@ export function deployPublicGraphQLAPIGateway(args: {
         GRAPHQL_SERVICE_ENDPOINT: serviceLocalEndpoint(args.graphql.service).apply(
           value => `${value}/graphql-public`,
         ),
-        SUPERGRAPH_ENDPOINT: supergraphEndpoint,
+        HIVE_CDN_ENDPOINT: supergraphEndpoint,
+        HIVE_TARGET: hiveConfig.require('target'),
         OPENTELEMETRY_COLLECTOR_ENDPOINT: args.observability.tracingEndpoint ?? '',
-
-        // Hive Console OTEL Tracing configuration
-        HIVE_HIVE_TRACE_ENDPOINT: serviceLocalEndpoint(args.otelCollector.service).apply(
-          value => `${value}/v1/traces`,
-        ),
-        HIVE_HIVE_TARGET: hiveConfig.require('target'),
-        // HIVE_TRACE_ACCESS_TOKEN is a secret
       },
       port: 4000,
       args: ['-c', '/config/gateway.config.ts', 'supergraph'],
@@ -108,9 +100,9 @@ export function deployPublicGraphQLAPIGateway(args: {
     },
     [args.graphql.deployment, args.graphql.service],
   )
-    .withSecret('HIVE_CDN_ACCESS_TOKEN', publicGraphQLAPISecret, 'cdnAccessKeyId')
-    .withSecret('HIVE_HIVE_TRACE_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
+    .withSecret('HIVE_CDN_KEY', publicGraphQLAPISecret, 'cdnAccessKeyId')
+    .withSecret('HIVE_TRACING_ACCESS_TOKEN', hiveConfigSecrets, 'otelTraceAccessToken')
     .deploy();
 }
 
-export type PublicGraphQLAPIGateway = ReturnType<typeof deployPublicGraphQLAPIGateway>;
+export type PublicGraphQLAPIRouter = ReturnType<typeof deployPublicGraphQLAPIRouter>;

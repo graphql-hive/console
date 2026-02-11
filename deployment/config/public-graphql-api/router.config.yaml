@@ -1,0 +1,3 @@
+# yaml-language-server: $schema=https://github.com/graphql-hive/router/releases/download/hive-router%2Fv0.0.37/router-config.schema.json
+telemetry:
+  hive:

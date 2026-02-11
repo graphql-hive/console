@@ -6,6 +6,15 @@ import { helmChart } from './helm';
 // prettier-ignore
 export const CONTOUR_CHART = helmChart('https://raw.githubusercontent.com/bitnami/charts/refs/heads/index/bitnami/', 'contour', '20.0.3');
 
+type SingleUpstream = k8s.core.v1.Service;
+type WeightBasedUpstream = Array<{ upstream: k8s.core.v1.Service; weight: number }>;
+
+function isWeightBasedUpstream(
+  upstream: SingleUpstream | WeightBasedUpstream,
+): upstream is WeightBasedUpstream {
+  return Array.isArray(upstream);
+}
+
 export class Proxy {
   private lbService: Output<k8s.core.v1.Service> | null = null;
 
@@ -80,7 +89,7 @@ export class Proxy {
     routes: {
       name: string;
       path: string;
-      service: k8s.core.v1.Service;
+      service: SingleUpstream | WeightBasedUpstream;
       requestTimeout?: `${number}s` | 'infinity';
       idleTimeout?: `${number}s`;
       retriable?: boolean;
@@ -147,12 +156,18 @@ export class Proxy {
                 prefix: route.path,
               },
             ],
-            services: [
-              {
-                name: route.service.metadata.name,
-                port: route.service.spec.ports[0].port,
-              },
-            ],
+            services: isWeightBasedUpstream(route.service)
+              ? route.service.map(serviceDef => ({
+                  name: serviceDef.service.metadata.name,
+                  port: serviceDef.service.spec.ports[0].port,
+                  weight: serviceDef.weight,
+                }))
+              : [
+                  {
+                    name: route.service.metadata.name,
+                    port: route.service.spec.ports[0].port,
+                  },
+                ],
             // https://projectcontour.io/docs/1.29/config/request-routing/#session-affinity
             loadBalancerPolicy: {
               strategy: 'Cookie',
