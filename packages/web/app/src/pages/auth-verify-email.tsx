@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
@@ -42,12 +42,14 @@ function AuthVerifyEmail() {
   const session = useSessionContext();
   const navigate = useNavigate();
 
-  const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
+  const [, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
+  const [resendDisabled, setResendDisabled] = useState(true);
 
   const sendEmail = useCallback(
     async (resend?: boolean) => {
       if (session.loading) return;
+      setResendDisabled(true);
 
       const result = await sendEmailImpl(
         {
@@ -69,6 +71,7 @@ function AuthVerifyEmail() {
           title: 'Verification email sent',
           description: 'Please check your email inbox.',
         });
+        await new Promise(resolve => setTimeout(resolve, 3000));
       } else if (result.data?.sendVerificationEmail.error?.emailAlreadyVerified) {
         void navigate({ to: '/' });
       } else {
@@ -80,6 +83,8 @@ function AuthVerifyEmail() {
             'An unknown error occurred.',
         });
       }
+
+      setResendDisabled(false);
     },
     [session.loading, sendEmailImpl, toast],
   );
@@ -117,11 +122,7 @@ function AuthVerifyEmail() {
           <AuthCardContent>
             <AuthCardStack>
               <p>There was an unexpected error when verifying your email address.</p>
-              <Button
-                className="w-full"
-                disabled={sendEmailMutation.fetching}
-                onClick={() => sendEmail(true)}
-              >
+              <Button className="w-full" disabled={resendDisabled} onClick={() => sendEmail(true)}>
                 Resend verification email
               </Button>
               <Button asChild className="w-full" variant="outline">
@@ -198,7 +199,7 @@ function AuthVerifyEmail() {
           <Button
             type="button"
             className="w-full"
-            disabled={sendEmailMutation.fetching}
+            disabled={resendDisabled}
             onClick={() => sendEmail(true)}
           >
             Resend verification email
