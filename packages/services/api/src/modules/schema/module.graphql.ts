@@ -615,7 +615,7 @@ export default gql`
     """
     The current status of the app deployment.
     """
-    status: AppDeploymentStatus! @tag(name: "public")
+    status: AppDeploymentStatus!
     """
     The timestamp when the app deployment was retired. Only present for retired deployments.
     """

@@ -34,10 +34,10 @@ export default gql`
     isAppDeploymentsEnabled: Boolean!
   }
 
-  enum AppDeploymentStatus @tag(name: "public") {
-    pending @tag(name: "public")
-    active @tag(name: "public")
-    retired @tag(name: "public")
+  enum AppDeploymentStatus {
+    pending
+    active
+    retired
   }
 
   type GraphQLDocumentConnection {
