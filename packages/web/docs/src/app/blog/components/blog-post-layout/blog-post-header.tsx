@@ -21,17 +21,15 @@ export function BlogPostHeader({ className }: { className?: string }) {
       <header
         className={cn(
           'flex flex-col rounded-3xl bg-[rgb(var(--nextra-bg))] px-1 pb-6 pt-4 sm:items-center md:px-12 md:pb-16 md:pt-12 xl:w-[888px]',
-          image && '-mt-20 max-sm:mx-6',
+          image && '-mt-16 max-sm:mx-6',
           className,
         )}
       >
         <div className="flex items-center gap-2">
           <Anchor href="/blog" className="flex items-center gap-2 text-sm font-medium">
             <ArrowIcon className="text-beige-1000 mr-1 size-4 rotate-180" />
-            <span className="text-beige-800">
-              Blog
-              {tag && <span> /</span>}
-            </span>
+            <span className="text-beige-800">Blog</span>
+            {tag && <span className="text-beige-800"> /</span>}
           </Anchor>
           {tag && <BlogTagChip tag={tag} colorScheme="default" />}
         </div>
