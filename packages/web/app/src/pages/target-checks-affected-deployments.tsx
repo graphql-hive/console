@@ -1,10 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
-import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -58,7 +56,6 @@ const AffectedDeploymentsQuery = graphql(`
                       version
                       totalAffectedOperations
                       activatedAt
-                      status
                       retiredAt
                       lastUsed
                     }
@@ -88,7 +85,6 @@ const AffectedDeploymentsQuery = graphql(`
                       version
                       totalAffectedOperations
                       activatedAt
-                      status
                       retiredAt
                       lastUsed
                     }
@@ -114,7 +110,6 @@ type AffectedDeployment = {
   version: string;
   totalOperations: number;
   activatedAt: string | null;
-  status: string;
   retiredAt: string | null;
   lastUsed: string | null;
 };
@@ -183,7 +178,6 @@ function TargetChecksAffectedDeploymentsContent(props: {
               version: edge.node.version,
               totalOperations: edge.node.totalAffectedOperations,
               activatedAt: edge.node.activatedAt ?? null,
-              status: edge.node.status,
               retiredAt: edge.node.retiredAt ?? null,
               lastUsed: edge.node.lastUsed ?? null,
             }),
@@ -296,7 +290,6 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Activated</TableHead>
                     <TableHead>Last Used</TableHead>
                     <TableHead className="text-right">Total Operations</TableHead>
@@ -324,14 +317,6 @@ function TargetChecksAffectedDeploymentsContent(props: {
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
-                      <TableCell>
-                        <Badge className="text-xs" variant="secondary">
-                          <DeploymentStatusLabel
-                            status={deployment.status}
-                            retiredAt={deployment.retiredAt}
-                          />
-                        </Badge>
-                      </TableCell>
                       <TableCell>
                         {deployment.activatedAt ? (
                           <span className="text-xs">

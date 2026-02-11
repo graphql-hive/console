@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DeploymentStatusLabel } from '@/components/ui/deployment-status';
 import { Heading } from '@/components/ui/heading';
 import { PulseIcon } from '@/components/ui/icon';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -104,7 +103,6 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
           id
           name
           version
-          status
           activatedAt
           lastUsed
           affectedOperations(first: 5) {
@@ -439,7 +437,6 @@ function ChangeItem(
                       <TableRow>
                         <TableHead className="w-[200px]">App Name</TableHead>
                         <TableHead>Version</TableHead>
-                        <TableHead>Status</TableHead>
                         <TableHead>Activated</TableHead>
                         <TableHead className="text-end">Last Used</TableHead>
                         <TableHead className="text-right">Affected Operations</TableHead>
@@ -465,11 +462,6 @@ function ChangeItem(
                             </Link>
                           </TableCell>
                           <TableCell>{deployment.version}</TableCell>
-                          <TableCell>
-                            <Badge className="text-xs" variant="secondary">
-                              <DeploymentStatusLabel status={deployment.status} />
-                            </Badge>
-                          </TableCell>
                           <TableCell>
                             {deployment.activatedAt ? (
                               <span className="text-neutral-11 cursor-help text-xs">
@@ -573,7 +565,6 @@ function ChangeItem(
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead>Activated</TableHead>
                     <TableHead className="text-end">Last Used</TableHead>
                     <TableHead className="text-right">Affected Operations</TableHead>
@@ -599,11 +590,6 @@ function ChangeItem(
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
-                      <TableCell>
-                        <Badge className="text-xs" variant="secondary">
-                          <DeploymentStatusLabel status={deployment.status} />
-                        </Badge>
-                      </TableCell>
                       <TableCell>
                         {deployment.activatedAt ? (
                           <span className="text-neutral-11 cursor-help text-xs">
