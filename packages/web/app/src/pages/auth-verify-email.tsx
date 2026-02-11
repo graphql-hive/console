@@ -44,7 +44,7 @@ function AuthVerifyEmail() {
 
   const [, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
-  const [resendDisabled, setResendDisabled] = useState(true);
+  const [resendDisabled, setResendDisabled] = useState(!search.userIdentityId);
 
   const sendEmail = useCallback(
     async (resend?: boolean) => {
@@ -74,6 +74,7 @@ function AuthVerifyEmail() {
         await new Promise(resolve => setTimeout(resolve, 3000));
       } else if (result.data?.sendVerificationEmail.error?.emailAlreadyVerified) {
         void navigate({ to: '/' });
+        return;
       } else {
         toast({
           title: 'Failed to send verification email',
