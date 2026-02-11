@@ -57,7 +57,6 @@ const AffectedDeploymentsQuery = graphql(`
                       name
                       version
                       totalAffectedOperations
-                      createdAt
                       activatedAt
                       status
                       retiredAt
@@ -88,7 +87,6 @@ const AffectedDeploymentsQuery = graphql(`
                       name
                       version
                       totalAffectedOperations
-                      createdAt
                       activatedAt
                       status
                       retiredAt
@@ -115,7 +113,6 @@ type AffectedDeployment = {
   name: string;
   version: string;
   totalOperations: number;
-  createdAt: string | null;
   activatedAt: string | null;
   status: string;
   retiredAt: string | null;
@@ -185,7 +182,6 @@ function TargetChecksAffectedDeploymentsContent(props: {
               name: edge.node.name,
               version: edge.node.version,
               totalOperations: edge.node.totalAffectedOperations,
-              createdAt: edge.node.createdAt ?? null,
               activatedAt: edge.node.activatedAt ?? null,
               status: edge.node.status,
               retiredAt: edge.node.retiredAt ?? null,
@@ -301,7 +297,6 @@ function TargetChecksAffectedDeploymentsContent(props: {
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
                     <TableHead>Activated</TableHead>
                     <TableHead>Last Used</TableHead>
                     <TableHead className="text-right">Total Operations</TableHead>
@@ -336,15 +331,6 @@ function TargetChecksAffectedDeploymentsContent(props: {
                             retiredAt={deployment.retiredAt}
                           />
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {deployment.createdAt ? (
-                          <span className="text-xs">
-                            <DateWithTimeAgo date={deployment.createdAt} />
-                          </span>
-                        ) : (
-                          <span className="text-neutral-10 text-xs">—</span>
-                        )}
                       </TableCell>
                       <TableCell>
                         {deployment.activatedAt ? (

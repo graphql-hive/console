@@ -105,7 +105,6 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
           name
           version
           status
-          createdAt
           activatedAt
           lastUsed
           affectedOperations(first: 5) {
@@ -441,7 +440,6 @@ function ChangeItem(
                         <TableHead className="w-[200px]">App Name</TableHead>
                         <TableHead>Version</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
                         <TableHead>Activated</TableHead>
                         <TableHead className="text-end">Last Used</TableHead>
                         <TableHead className="text-right">Affected Operations</TableHead>
@@ -471,15 +469,6 @@ function ChangeItem(
                             <Badge className="text-xs" variant="secondary">
                               <DeploymentStatusLabel status={deployment.status} />
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {deployment.createdAt ? (
-                              <span className="text-neutral-11 cursor-help text-xs">
-                                <TimeAgo date={deployment.createdAt} />
-                              </span>
-                            ) : (
-                              <span className="text-neutral-10 text-xs">—</span>
-                            )}
                           </TableCell>
                           <TableCell>
                             {deployment.activatedAt ? (
@@ -585,7 +574,6 @@ function ChangeItem(
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
                     <TableHead>Activated</TableHead>
                     <TableHead className="text-end">Last Used</TableHead>
                     <TableHead className="text-right">Affected Operations</TableHead>
@@ -615,15 +603,6 @@ function ChangeItem(
                         <Badge className="text-xs" variant="secondary">
                           <DeploymentStatusLabel status={deployment.status} />
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {deployment.createdAt ? (
-                          <span className="text-neutral-11 cursor-help text-xs">
-                            <TimeAgo date={deployment.createdAt} />
-                          </span>
-                        ) : (
-                          <span className="text-neutral-10 text-xs">—</span>
-                        )}
                       </TableCell>
                       <TableCell>
                         {deployment.activatedAt ? (
