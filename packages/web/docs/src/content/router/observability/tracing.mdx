@@ -1,0 +1,229 @@
+---
+title: 'OpenTelemetry Tracing'
+---
+
+import { Tabs } from '@theguild/components'
+
+# OpenTelemetry Tracing
+
+Hive Router supports distributed tracing so you can follow requests across the gateway and your
+subgraphs.
+
+This guide explains how to configure tracing in a practical, developer-friendly way: where to send
+traces, how to configure OTLP, how to tune throughput, and how to debug missing traces.
+
+## Choose your tracing destination
+
+Hive Router supports two common tracing paths. You can send traces directly to Hive Console through
+`telemetry.hive.tracing`, or you can send them to an OTLP-compatible backend through
+`telemetry.tracing.exporters`.
+
+In practice, teams already running OpenTelemetry infrastructure (Jaeger, Tempo, Datadog, Honeycomb,
+and others) usually prefer OTLP because it fits into existing telemetry pipelines and backend
+routing rules.
+
+## Send traces to Hive Console
+
+If you are already using Hive, sending traces to Console is usually the smoothest starting point. It
+keeps tracing data close to schema and usage insights, so it is easier to move from "this request is
+slow" to "which operation and field caused it".
+
+To make this work, Hive Router needs two pieces of information:
+[an access token](/docs/schema-registry/management/access-tokens) with permission to send traces,
+and [a target](/docs/schema-registry/management/targets) reference. The target can be either a
+human-readable slug (`$organizationSlug/$projectSlug/$targetSlug`) or a target UUID
+(`a0f4c605-6541-4350-8cfe-b31f21a4bf80`).
+
+With those values available as environment variables (`HIVE_TARGET` and `HIVE_ACCESS_TOKEN`), enable
+Hive tracing in the config file:
+
+```yaml filename="router.config.yaml"
+telemetry:
+  hive:
+    tracing:
+      enabled: true
+      # Optional for self-hosted Hive:
+      # endpoint: https://api.graphql-hive.com/otel/v1/traces
+```
+
+After enabling tracing, send a few GraphQL queries through your router and open that same target's
+Traces view in Hive Console. You should start seeing new traces for recent requests.
+
+If traces do not appear, it usually means one of four things: tracing is not enabled, the token does
+not have necessary permissions, the configured target reference points to a different target, or the
+self-hosted endpoint is not reachable from the router runtime.
+
+## Send traces to OTLP-compatible backends
+
+If your observability platform already supports OTLP ingestion, Hive Router can push traces straight
+to that OTLP endpoint. The destination can be an OpenTelemetry Collector or any system that natively
+understands OTLP.
+
+<Tabs items={["OTLP over HTTP", "OTLP over gRPC"]}>
+
+<Tabs.Tab>
+
+```yaml filename="router.config.yaml"
+telemetry:
+  tracing:
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: http
+        endpoint: https://otel-collector.example.com/v1/traces
+        http:
+          headers:
+            authorization:
+              expression: |
+                "Bearer " + env("OTLP_TOKEN")
+```
+
+Once configured, send normal requests through the router and check your backend for fresh traces.
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```yaml filename="router.config.yaml"
+telemetry:
+  tracing:
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: grpc
+        endpoint: https://otel-collector.example.com:4317
+        grpc:
+          metadata:
+            x-api-key:
+              expression: env("OTEL_API_KEY")
+          tls:
+            # Optional SNI/verification override
+            domain_name: otel-collector.example.com
+            # Optional custom CA bundle
+            ca: /etc/certs/ca.pem
+            # Optional client cert for mTLS
+            cert: /etc/certs/client.pem
+            # Optional client key for mTLS
+            key: /etc/certs/client.key
+```
+
+If gRPC export fails, metadata credentials and TLS files are usually the first places to inspect.
+
+</Tabs.Tab>
+
+</Tabs>
+
+## Production baseline
+
+For production workloads, define a clear service identity, begin with conservative sampling rates,
+and use a single primary propagation format.
+
+```yaml filename="router.config.yaml"
+telemetry:
+  resource:
+    attributes:
+      service.name: hive-router
+      service.namespace: your-platform
+      deployment.environment:
+        expression: env("ENVIRONMENT")
+  tracing:
+    collect:
+      # Trace about 10% of requests
+      sampling: 0.1
+      # Respect upstream sampling decisions
+      parent_based_sampler: true
+    propagation:
+      # Recommended default
+      trace_context: true
+      baggage: false
+      b3: false
+      jaeger: false
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: grpc
+        endpoint: https://otel-collector.example.com:4317
+```
+
+This configuration is designed to be a safe, predictable starting point. It gives each deployment a
+clear identity in your telemetry backend, keeps trace volume under control, and sticks to a single
+propagation format.
+
+In practice, this means you'll see enough traces to understand real production behavior without
+overwhelming storage or blowing up costs.
+
+## Batching and throughput tuning
+
+Batching settings control how traces move from the router to your OTLP endpoint. You're able to tune
+these settings to control delivery latency of traces, resilience during traffic spikes and memory
+pressure on the router.
+
+| Field                    | You'd usually increase this when                                  | Tradeoff                         |
+| ------------------------ | ----------------------------------------------------------------- | -------------------------------- |
+| `max_queue_size`         | Traces are dropped during traffic spikes                          | Higher memory usage              |
+| `max_export_batch_size`  | You want better export throughput per flush                       | Potentially higher burst latency |
+| `scheduled_delay`        | You want fewer export calls (`higher`) or lower latency (`lower`) | Throughput vs latency            |
+| `max_export_timeout`     | Your OTLP endpoint or network is occasionally slow                | Longer waits on blocked exports  |
+| `max_concurrent_exports` | Your OTLP endpoint can handle more parallel uploads               | Higher downstream pressure       |
+
+As a quick rule:
+
+- if traces arrive late, lower `scheduled_delay`.
+- if traces drop under burst load, increase `max_queue_size` first.
+- if your OTLP collector has headroom, raise `max_concurrent_exports`.
+
+## Propagation
+
+Propagation settings control how trace context flows between clients, the router, and subgraphs. In
+most modern OpenTelemetry setups, `trace_context` is the safest default.
+
+You should only enable `b3` or `jaeger` when those formats are required by other components.
+
+If clients send custom tracing headers, make sure your
+[CORS configuration](/docs/router/security/cors) allows those headers through.
+
+## Compliance with OpenTelemetry Semantic Conventions
+
+OpenTelemetry has standardized attribute names used on spans. Those conventions ensure that
+telemetry produced by different services, libraries, and vendors is consistent and understandable
+across tools.
+
+The behavior is controlled by `telemetry.tracing.instrumentation.spans.mode`, which selects which
+attribute set is written to spans:
+
+- `spec_compliant` (default) - emits only the stable attributes
+- `deprecated` - emits only the deprecated attributes
+- `spec_and_deprecated` - emits both stable and deprecated attributes
+
+```yaml filename="router.config.yaml"
+telemetry:
+  tracing:
+    instrumentation:
+      spans:
+        mode: spec_compliant
+```
+
+Most teams should stay on `spec_compliant`. The other modes are primarily useful when migrating
+legacy dashboards that still expect deprecated attributes.
+
+## Troubleshooting
+
+When traces are missing or incomplete, think in layers:
+
+- exporter setup
+- sampling behavior
+- propagation
+- transport
+
+If no traces appear at all, verify if the exporter is enabled, the endpoint is reachable, and
+credentials are valid.
+
+If spans show up but links are broken, propagation formats are usually misaligned between services.
+
+If under high load, traces are delayed or dropped, then often it's a batch processor issue. In that
+case [tune the batch processor settings](#batching-and-throughput-tuning) and observe.
+
+## Configuration reference
+
+For all options and defaults, see
+[telemetry configuration reference](/docs/router/configuration/telemetry).

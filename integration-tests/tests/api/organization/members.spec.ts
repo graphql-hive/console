@@ -187,12 +187,12 @@ test.concurrent(
     const { inviteMember, joinMemberUsingCode } = await createOrg();
 
     // Invite
-    const invitationResult = await inviteMember();
+    const extra = seed.generateEmail();
+    const invitationResult = await inviteMember(extra);
     const inviteCode = invitationResult.ok!.createdOrganizationInvitation.code;
     expect(inviteCode).toBeDefined();
 
     // Join
-    const extra = seed.generateEmail();
     const { access_token: member_access_token } = await seed.authenticate(extra);
     const joinResult = await (
       await joinMemberUsingCode(inviteCode, member_access_token)

@@ -767,25 +767,28 @@ describe('restrictions', () => {
 
       expect(refetchedOrg.organization?.oidcIntegration?.oidcUserJoinOnly).toEqual(true);
 
-      const invitation = await inviteMember('example@example.com');
+      const email = userEmail('non-oidc-user');
+      const invitation = await inviteMember(email);
       const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
       if (!invitationCode) {
         throw new Error('No invitation code');
       }
 
-      const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
+      const nonOidcAccount = await seed.authenticate(email);
       const joinResult = await joinMemberUsingCode(
         invitationCode,
         nonOidcAccount.access_token,
-      ).then(r => r.expectNoGraphQLErrors());
+      ).then(r => r.expectGraphQLErrors());
 
-      expect(joinResult.joinOrganization).toEqual(
-        expect.objectContaining({
-          __typename: 'OrganizationInvitationError',
-          message:
-            'The user is not authorized through the OIDC integration required for the organization',
-        }),
+      expect(joinResult).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            extensions: expect.objectContaining({
+              code: 'NEEDS_OIDC',
+            }),
+          }),
+        ]),
       );
     },
   );
@@ -837,14 +840,15 @@ describe('restrictions', () => {
       orgAfterDisablingOidcRestrictions.organization?.oidcIntegration?.oidcUserJoinOnly,
     ).toEqual(false);
 
-    const invitation = await inviteMember('example@example.com');
+    const email = userEmail('non-oidc-user');
+    const invitation = await inviteMember(email);
     const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
     if (!invitationCode) {
       throw new Error('No invitation code');
     }
 
-    const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
+    const nonOidcAccount = await seed.authenticate(email);
     const joinResult = await joinMemberUsingCode(invitationCode, nonOidcAccount.access_token).then(
       r => r.expectNoGraphQLErrors(),
     );
@@ -859,14 +863,15 @@ describe('restrictions', () => {
       const { ownerToken, createOrg } = await seed.createOwner();
       const { organization, inviteMember, joinMemberUsingCode } = await createOrg();
 
-      const invitation = await inviteMember('example@example.com');
+      const email = userEmail('non-oidc-user');
+      const invitation = await inviteMember(email);
       const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
       if (!invitationCode) {
         throw new Error('No invitation code');
       }
 
-      const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
+      const nonOidcAccount = await seed.authenticate(email);
       const joinResult = await joinMemberUsingCode(
         invitationCode,
         nonOidcAccount.access_token,
@@ -898,14 +903,15 @@ describe('restrictions', () => {
       const { ownerToken, createOrg } = await seed.createOwner();
       const { organization, inviteMember, joinMemberUsingCode } = await createOrg();
 
-      const invitation = await inviteMember('example@example.com');
+      const email = userEmail('non-oidc-user');
+      const invitation = await inviteMember(email);
       const invitationCode = invitation.ok?.createdOrganizationInvitation.code;
 
       if (!invitationCode) {
         throw new Error('No invitation code');
       }
 
-      const nonOidcAccount = await seed.authenticate(userEmail('non-oidc-user'));
+      const nonOidcAccount = await seed.authenticate(email);
       const joinResult = await joinMemberUsingCode(
         invitationCode,
         nonOidcAccount.access_token,

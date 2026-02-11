@@ -36,6 +36,26 @@ export const Member: MemberResolvers = {
     }
     return user;
   },
+  authProviders: async (member, _arg, { injector }) => {
+    const storage = injector.get(Storage);
+    const [user, oidcIntegration] = await Promise.all([
+      storage.getUserById({ id: member.userId }),
+      storage.getOIDCIntegrationForOrganization({ organizationId: member.organizationId }),
+    ]);
+    if (!user) {
+      throw new Error('User not found.');
+    }
+
+    const nonOIDCProvidersDisabled = oidcIntegration?.oidcUserAccessOnly && !member.isOwner;
+
+    return user.providers.map(provider => ({
+      type: provider,
+      disabledReason:
+        nonOIDCProvidersDisabled && provider !== 'OIDC'
+          ? 'OIDC authentication is enforced in the organization OIDC configuration'
+          : null,
+    }));
+  },
   resourceAssignment: async (member, _arg, { injector }) => {
     return injector.get(ResourceAssignments).resolveGraphQLMemberResourceAssignment({
       organizationId: member.organizationId,

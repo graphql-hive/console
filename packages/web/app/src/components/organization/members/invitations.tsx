@@ -283,7 +283,7 @@ export function MemberInvitationButton(props: {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="ml-4 min-w-[140px]">
+        <Button className="ml-4 min-w-[140px]" data-cy="send-invite-trigger">
           <MailIcon size={14} className="mr-2" /> Send Invite
         </Button>
       </DialogTrigger>

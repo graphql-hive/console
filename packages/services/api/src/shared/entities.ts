@@ -225,6 +225,7 @@ export interface OIDCIntegration {
   additionalScopes: string[];
   oidcUserJoinOnly: boolean;
   oidcUserAccessOnly: boolean;
+  requireInvitation: boolean;
   defaultMemberRoleId: string | null;
   defaultResourceAssignment: ResourceAssignmentGroup | null;
 }
@@ -346,7 +347,7 @@ export interface User {
   email: string;
   fullName: string;
   displayName: string;
-  provider: AuthProviderType;
+  providers: AuthProviderType[];
   superTokensUserId: string | null;
   isAdmin: boolean;
   zendeskId: string | null;
