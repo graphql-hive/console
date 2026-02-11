@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@envelop/core": "5.0.2",
+    "@envelop/core": "5.5.1",
     "@envelop/graphql-jit": "8.0.3",
     "@envelop/graphql-modules": "9.1.0",
     "@envelop/opentelemetry": "6.3.1",
