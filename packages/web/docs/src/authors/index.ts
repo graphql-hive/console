@@ -276,7 +276,7 @@ export const authors = {
     name: 'Iha Shin',
     link: 'https://github.com/XiNiHa',
     github: 'XiNiHa',
-  }
+  },
 } satisfies Record<string, Author>;
 
 export type AuthorId = keyof typeof authors;
