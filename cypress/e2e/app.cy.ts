@@ -247,10 +247,12 @@ describe('oidc', () => {
     it('oidc user can join the org with an invitation', () => {
       const { slug } = getOrgPrepared();
 
-      // Send an invite for the SSO user
+      // Send an invite for the SSO user, with admin role specified
       cy.visit(`/${slug}/view/members?page=invitations`);
       cy.get('button[data-cy="send-invite-trigger"]').click();
       cy.get('input[name="email"]').type('tom.sailor@gmail.com');
+      cy.get('button[data-cy="role-selector-trigger"]').click();
+      cy.contains('[data-cy="role-selector-item"]', 'Admin').click();
       cy.get('button[type="submit"]').click();
       cy.get('.container table').contains('tom.sailor@gmail.com');
 
@@ -271,6 +273,10 @@ describe('oidc', () => {
       // Check if user joined successfully
       cy.get(`a[href="/${slug}"]`).should('exist');
       cy.contains('not invited').should('not.exist');
+
+      // Check if user has admin role
+      cy.visit(`/${slug}/view/members?page=list`);
+      cy.contains('tr', 'tom.sailor@gmail.com').contains('Admin');
     });
   });
 });
