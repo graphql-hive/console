@@ -86,12 +86,8 @@ export function useHiveErrorHandler(unexpectedErrorLogger: (err: unknown) => voi
     // `contextValue` is present if the error comes up during execution, otherwise the context itself is the context :D
     const context: Context = (unsafeContest.contextValue ?? unsafeContest) as any;
 
-    console.log(context.params);
-
     function reportError(error: Error) {
       withScope(scope => {
-        // Note: `context.contextValue` is probably never undefined
-        // if this part of the code is reached - but it is better to be safe...
         const userId = (context?.session as SuperTokensCookieBasedSession | null | undefined)
           ?.userId;
 
