@@ -1,9 +1,11 @@
 import { buildASTSchema, parse } from 'graphql';
 import { createLogger } from 'graphql-yoga';
+import { sql } from 'slonik';
 import { pollFor } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
+import { clickHouseInsert, clickHouseQuery } from '../../testkit/clickhouse';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 
@@ -2030,49 +2032,57 @@ test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
   expect(result.target?.activeAppDeployments.edges[0].node.createdAt).toBeTruthy();
 });
 
-// Skipped because this test takes too long to complete for CI
 test('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
+  const seed = await initSeed();
+  const conn = await seed.createDbConnection();
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
   await setFeatureFlag('appDeployments', true);
-  const { createTargetAccessToken, project, target } = await createProject();
-  const token = await createTargetAccessToken({});
+  const { project, target } = await createProject();
 
   // seed 1,200 app deployments
   const apps = ['web-app', 'mobile-app', 'admin-dashboard', 'cli-tool'];
-  const appDeployments = apps.flatMap((app, minor) =>
-    Array.from({ length: 300 }).map((_, patch) => ({
-      appName: app,
-      appVersion: [1, minor, patch].join('.'),
-    })),
+  const now = new Date().toISOString();
+  const appDeploymentRows = apps.flatMap((app, minor) =>
+    Array.from({ length: 300 }).map(
+      (_, patch) =>
+        [
+          target.id, // target_id
+          app, // name
+          [1, minor, patch].join('.'), // version
+          now, // activated_at
+        ] as const,
+    ),
   );
 
-  const appDeployPromises = appDeployments.map(async ({ appName, appVersion }) => {
-    // Create and activate an app deployment
-    await execute({
-      document: CreateAppDeployment,
-      variables: {
-        input: {
-          appName,
-          appVersion,
-        },
-      },
-      authToken: token.secret,
-    }).then(res => res.expectNoGraphQLErrors());
+  // insert into postgres
+  const result = await conn.pool.query(sql`
+    INSERT INTO app_deployments ("target_id", "name", "version", "activated_at")
+    SELECT * FROM ${sql.unnest(appDeploymentRows, ['uuid', 'text', 'text', 'timestamptz'])}
+    RETURNING "id", "target_id", "name", "version"
+  `);
+  expect(result.rowCount).toBe(1200);
 
-    await execute({
-      document: ActivateAppDeployment,
-      variables: {
-        input: {
-          appName,
-          appVersion,
-        },
-      },
-      authToken: token.secret,
-    }).then(res => res.expectNoGraphQLErrors());
-  });
-
-  await Promise.all(appDeployPromises);
+  // insert into clickhouse and activate
+  const query = `INSERT INTO app_deployments (
+    "target_id"
+    ,"app_deployment_id"
+    ,"app_name"
+    ,"app_version"
+    ,"is_active"
+  ) VALUES
+${result.rows
+  .map(
+    r => `(
+    '${r['target_id']}'
+    , '${r['id']}'
+    , '${r['name']}'
+    , '${r['version']}'
+    , True
+  )`,
+  )
+  .join(',')};`;
+  await clickHouseInsert(query);
 
   // Query for deployments never used and created before tomorrow
   const tomorrow = new Date();
