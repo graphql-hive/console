@@ -1298,10 +1298,24 @@ export class SchemaPublisher {
         },
       )
       .catch((error: unknown) => {
-        if (error instanceof MutexResourceLockedError && input.supportsRetry === true) {
+        if (error instanceof MutexResourceLockedError) {
+          if (input.supportsRetry === true) {
+            return {
+              __typename: 'SchemaPublishRetry',
+              reason: 'Another schema publish is currently in progress.',
+            } satisfies PublishResult;
+          }
+
           return {
-            __typename: 'SchemaPublishRetry',
-            reason: 'Another schema publish is currently in progress.',
+            __typename: 'SchemaPublishError',
+            valid: false,
+            changes: [],
+            errors: [
+              {
+                message:
+                  'Another schema publish is currently in progress. Please retry the publish.',
+              },
+            ],
           } satisfies PublishResult;
         }
 
