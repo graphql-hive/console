@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthCardStack } from '@/components/auth';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
+import { useTimed } from '@/lib/hooks/use-timed';
 import { authVerifyEmailRoute } from '@/router';
 import { Link, useNavigate } from '@tanstack/react-router';
 
@@ -42,14 +43,13 @@ function AuthVerifyEmail() {
   const session = useSessionContext();
   const navigate = useNavigate();
 
-  const [, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
+  const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
-  const [resendDisabled, setResendDisabled] = useState(!search.userIdentityId);
+  const [emailSent, startEmailSentTimer] = useTimed(3000);
 
   const sendEmail = useCallback(
     async (resend?: boolean) => {
       if (session.loading) return;
-      setResendDisabled(true);
 
       const result = await sendEmailImpl(
         {
@@ -71,7 +71,7 @@ function AuthVerifyEmail() {
           title: 'Verification email sent',
           description: 'Please check your email inbox.',
         });
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        startEmailSentTimer();
       } else if (result.data?.sendVerificationEmail.error?.emailAlreadyVerified) {
         void navigate({ to: '/' });
         return;
@@ -84,8 +84,6 @@ function AuthVerifyEmail() {
             'An unknown error occurred.',
         });
       }
-
-      setResendDisabled(false);
     },
     [session.loading, sendEmailImpl, toast],
   );
@@ -123,7 +121,11 @@ function AuthVerifyEmail() {
           <AuthCardContent>
             <AuthCardStack>
               <p>There was an unexpected error when verifying your email address.</p>
-              <Button className="w-full" disabled={resendDisabled} onClick={() => sendEmail(true)}>
+              <Button
+                className="w-full"
+                disabled={sendEmailMutation.fetching || emailSent}
+                onClick={() => sendEmail(true)}
+              >
                 Resend verification email
               </Button>
               <Button asChild className="w-full" variant="outline">
@@ -200,7 +202,7 @@ function AuthVerifyEmail() {
           <Button
             type="button"
             className="w-full"
-            disabled={resendDisabled}
+            disabled={sendEmailMutation.fetching || emailSent}
             onClick={() => sendEmail(true)}
           >
             Resend verification email
