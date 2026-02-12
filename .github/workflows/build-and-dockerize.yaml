@@ -122,8 +122,8 @@ jobs:
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
         with:
           registry: ${{ inputs.registry }}
-          username: theguild-bot
-          password: ${{ secrets.BOT_GITHUB_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: frabert/replace-string-action@b6828c5a4cb6371753ff873b0d1c4c4fbd9a63cb # v2.5
         id: branch_name_fix
@@ -216,8 +216,8 @@ jobs:
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
         with:
           registry: ${{ inputs.registry }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: theguild-bot
+          password: ${{ secrets.BOT_GITHUB_TOKEN }}
 
       - name: 'publish docker multiarch manifest (tag: ${{ inputs.imageTag }})'
         run: |
