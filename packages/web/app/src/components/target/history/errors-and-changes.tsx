@@ -11,7 +11,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { PulseIcon } from '@/components/ui/icon';
