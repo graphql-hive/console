@@ -1,6 +1,12 @@
+import { AppDeploymentsManager } from '../../app-deployments/providers/app-deployments-manager';
 import type { SchemaChangeAffectedAppDeploymentResolvers } from './../../../__generated__/types';
 
 export const SchemaChangeAffectedAppDeployment: SchemaChangeAffectedAppDeploymentResolvers = {
+  lastUsed: async (deployment, _, { injector }) => {
+    return injector
+      .get(AppDeploymentsManager)
+      .getLastUsedForAppDeployment({ id: deployment.id } as any);
+  },
   affectedOperations: (deployment, args) => {
     const allOperations = (deployment.operations ?? []).map(op => ({
       hash: op.hash,

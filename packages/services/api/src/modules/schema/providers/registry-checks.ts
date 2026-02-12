@@ -46,6 +46,9 @@ export type AffectedAppDeployment = {
     id: string;
     name: string;
     version: string;
+    createdAt: string | null;
+    activatedAt: string | null;
+    retiredAt: string | null;
   };
   affectedOperationsByCoordinate: Record<string, Array<{ hash: string; name: string | null }>>;
   countByCoordinate: Record<string, number>;
@@ -714,6 +717,9 @@ export class RegistryChecks {
                       id: d.appDeployment.id,
                       name: d.appDeployment.name,
                       version: d.appDeployment.version,
+                      createdAt: d.appDeployment.createdAt,
+                      activatedAt: d.appDeployment.activatedAt,
+                      retiredAt: d.appDeployment.retiredAt,
                       affectedOperations: d.affectedOperationsByCoordinate[coordinate],
                     }));
                   }

@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons';
@@ -101,6 +102,8 @@ const ChangesBlock_SchemaChangeWithUsageFragment = graphql(`
           id
           name
           version
+          activatedAt
+          lastUsed
           affectedOperations(first: 5) {
             edges {
               cursor
@@ -243,7 +246,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="bg-neutral-5 inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold text-red-400">
                       <PulseIcon className="h-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -263,7 +266,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
+                    <span className="text-neutral-1 inline-flex items-center space-x-1 rounded-sm bg-orange-500 px-2 py-1 align-middle font-bold">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -425,13 +428,16 @@ function ChangeItem(
                     Affected App Deployments
                   </h4>
                   <p className="text-neutral-10 mb-2 text-sm">
-                    Top 5 active app deployments that have operations using this schema coordinate.
+                    Top 5 active app deployments that have operations using this schema coordinate
+                    (snapshot from when the check was run).
                   </p>
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[200px]">App Name</TableHead>
                         <TableHead>Version</TableHead>
+                        <TableHead>Activated</TableHead>
+                        <TableHead className="text-end">Last Used</TableHead>
                         <TableHead className="text-right">Affected Operations</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -455,6 +461,33 @@ function ChangeItem(
                             </Link>
                           </TableCell>
                           <TableCell>{deployment.version}</TableCell>
+                          <TableCell>
+                            {deployment.activatedAt ? (
+                              <span className="text-neutral-11 cursor-help text-xs">
+                                <TimeAgo date={deployment.activatedAt} />
+                              </span>
+                            ) : (
+                              <span className="text-neutral-10 text-xs">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-end">
+                            {deployment.lastUsed ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <span className="text-neutral-11 cursor-help text-xs">
+                                      <TimeAgo date={deployment.lastUsed} />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <span className="text-neutral-10 text-xs">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Popover>
                               <PopoverTrigger asChild>
@@ -511,7 +544,7 @@ function ChangeItem(
                         schemaCheckId: props.schemaCheckId,
                       }}
                       search={{ coordinate: change.path?.join('.') }}
-                      className="text-neutral-2 mt-2 block text-sm hover:underline"
+                      className="mt-2 block text-sm text-orange-500 hover:underline"
                     >
                       View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                     </Link>
@@ -523,13 +556,16 @@ function ChangeItem(
             <div>
               <h4 className="text-neutral-12 mb-1 text-sm font-medium">Affected App Deployments</h4>
               <p className="text-neutral-10 mb-2 text-sm">
-                Top 5 active app deployments that have operations using this schema coordinate.
+                Top 5 active app deployments that have operations using this schema coordinate
+                (snapshot from when the check was run).
               </p>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
+                    <TableHead>Activated</TableHead>
+                    <TableHead className="text-end">Last Used</TableHead>
                     <TableHead className="text-right">Affected Operations</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -553,6 +589,33 @@ function ChangeItem(
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
+                      <TableCell>
+                        {deployment.activatedAt ? (
+                          <span className="text-neutral-11 cursor-help text-xs">
+                            <TimeAgo date={deployment.activatedAt} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {deployment.lastUsed ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <span className="text-neutral-11 cursor-help text-xs">
+                                  <TimeAgo date={deployment.lastUsed} />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{format(deployment.lastUsed, 'MMM d, yyyy HH:mm:ss')}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Popover>
                           <PopoverTrigger asChild>
@@ -606,7 +669,7 @@ function ChangeItem(
                     schemaCheckId: props.schemaCheckId,
                   }}
                   search={{ coordinate: change.path?.join('.') }}
-                  className="text-neutral-2 mt-2 block text-sm hover:underline"
+                  className="mt-2 block text-sm text-orange-500 hover:underline"
                 >
                   View all ({change.affectedAppDeployments.totalCount}) affected app deployments
                 </Link>
