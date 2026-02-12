@@ -231,12 +231,12 @@ export class Proxy {
       replicas?: number;
       memory?: string;
       cpu?: string;
+      timeouts?: {
+        idleTimeout?: number;
+      };
     };
     tracing?: {
       collectorService: Output<k8s.core.v1.Service>;
-    };
-    timeouts?: {
-      idleTimeout?: number;
     };
   }) {
     const ns = new k8s.core.v1.Namespace('contour', {
@@ -304,10 +304,10 @@ export class Proxy {
                 customTags: [],
               }
             : undefined,
-        ...(options.timeouts?.idleTimeout
+        ...(options.envoy.timeouts?.idleTimeout
           ? {
               timeouts: {
-                'connection-idle-timeout': `${options.timeouts.idleTimeout}s`,
+                'connection-idle-timeout': `${options.envoy.timeouts.idleTimeout}s`,
               },
             }
           : {}),
