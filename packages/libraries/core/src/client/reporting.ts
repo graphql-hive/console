@@ -12,7 +12,7 @@ import { version } from '../version.js';
 import type { SchemaPublishMutation } from './__generated__/types.js';
 import { http } from './http-client.js';
 import type { HiveInternalPluginOptions } from './types.js';
-import { logIf } from './utils.js';
+import { logIf, isLegacyAccessToken } from './utils.js';
 
 export interface SchemaReporter {
   report(args: { schema: GraphQLSchema }): void;
@@ -47,6 +47,11 @@ export function createReporting(pluginOptions: HiveInternalPluginOptions): Schem
     '[hive][reporting] token is missing',
     logger.error,
   );
+  logIf(
+    !!reportingOptions.target && isLegacyAccessToken(pluginOptions.token),
+    '[hive][reporting] using the "target" option requires using an organization access token (starting with "hvo1/").',
+    logger.error,
+  );
 
   const endpoint =
     selfHostingOptions?.graphqlEndpoint ??
@@ -70,6 +75,7 @@ export function createReporting(pluginOptions: HiveInternalPluginOptions): Schem
                 service: reportingOptions.serviceName ?? null,
                 url: reportingOptions.serviceUrl ?? null,
                 force: true,
+                target: reportingOptions.target,
               },
             },
           }),
