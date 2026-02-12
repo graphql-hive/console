@@ -369,6 +369,7 @@ const getEnsureUserOverrides = (
         }
         return null;
       }
+      
       try {
         const response = await originalImplementation.thirdPartySignInUpPOST(input);
 
