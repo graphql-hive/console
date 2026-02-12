@@ -79,10 +79,17 @@ export interface Storage {
     };
     firstName: string | null;
     lastName: string | null;
-  }): Promise<{
-    user: User;
-    action: 'created' | 'no_action';
-  }>;
+  }): Promise<
+    | {
+        ok: true;
+        user: User;
+        action: 'created' | 'no_action';
+      }
+    | {
+        ok: false;
+        reason: string;
+      }
+  >;
 
   getUserBySuperTokenId(_: { superTokensUserId: string }): Promise<User | null>;
   getUserById(_: { id: string }): Promise<User | null>;
@@ -90,7 +97,10 @@ export interface Storage {
   updateUser(_: { id: string; fullName: string; displayName: string }): Promise<User | never>;
 
   getOrganizationId(_: { organizationSlug: string }): Promise<string | null>;
-  getOrganizationByInviteCode(_: { inviteCode: string }): Promise<Organization | null>;
+  getOrganizationByInviteCode(_: {
+    inviteCode: string;
+    email: string;
+  }): Promise<Organization | null>;
   getOrganizationBySlug(_: { slug: string }): Promise<Organization | null>;
   getOrganizationByGitHubInstallationId(_: {
     installationId: string;
@@ -647,6 +657,7 @@ export interface Storage {
     oidcIntegrationId: string;
     oidcUserJoinOnly: boolean | null;
     oidcUserAccessOnly: boolean | null;
+    requireInvitation: boolean | null;
   }): Promise<OIDCIntegration>;
 
   updateOIDCDefaultMemberRole(_: {

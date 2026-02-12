@@ -9,11 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@envelop/core": "5.0.2",
+    "@envelop/core": "5.5.1",
     "@envelop/graphql-jit": "8.0.3",
     "@envelop/graphql-modules": "9.1.0",
     "@envelop/opentelemetry": "6.3.1",
-    "@envelop/sentry": "7.1.1",
     "@envelop/types": "5.0.0",
     "@escape.tech/graphql-armor-max-aliases": "2.6.2",
     "@escape.tech/graphql-armor-max-depth": "2.4.2",
@@ -32,7 +31,6 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@hive/workflows": "workspace:*",
-    "@sentry/integrations": "7.114.0",
     "@sentry/node": "7.120.2",
     "@swc/core": "1.13.5",
     "@theguild/federation-composition": "0.21.3",

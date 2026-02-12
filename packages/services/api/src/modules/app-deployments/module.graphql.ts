@@ -17,6 +17,14 @@ export default gql`
     """
     createdAt: DateTime! @tag(name: "public")
     """
+    The timestamp when the app deployment was activated.
+    """
+    activatedAt: DateTime @tag(name: "public")
+    """
+    The timestamp when the app deployment was retired. Only present for retired deployments.
+    """
+    retiredAt: DateTime @tag(name: "public")
+    """
     The last time a GraphQL request that used the app deployment was reported.
     """
     lastUsed: DateTime @tag(name: "public")

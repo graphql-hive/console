@@ -10,6 +10,9 @@ const commonAuthorFields = z.object({
 
 export const staticImageDataSchema = z.object({
   src: z.string(),
+  width: z.number(),
+  height: z.number(),
+  blurDataURL: z.string().optional(),
 }) as unknown as z.ZodType<StaticImageData>;
 
 export const Author = z.intersection(
