@@ -1467,23 +1467,25 @@ function DebugOIDCIntegrationModal(props: {
             Here you can listen to the live logs for debugging your OIDC integration.
           </DialogDescription>
         </DialogHeader>
-        <Virtuoso
-          ref={ref}
-          className="h-[300px]"
-          initialTopMostItemIndex={logs.length - 1}
-          followOutput
-          data={logs}
-          itemContent={(_, logRow) => {
-            return (
-              <div className="flex px-2 pb-1 font-mono text-xs">
-                <time dateTime={logRow.timestamp} className="pr-4">
-                  {format(logRow.timestamp, 'HH:mm:ss')}
-                </time>
-                {logRow.message}
-              </div>
-            );
-          }}
-        />
+        <div className="border-neutral-5 bg-neutral-2 h-[300px] overflow-hidden rounded-sm border">
+          <Virtuoso
+            ref={ref}
+            style={{ height: '100%' }}
+            initialTopMostItemIndex={logs.length - 1}
+            followOutput
+            data={logs}
+            itemContent={(_, logRow) => {
+              return (
+                <div className="flex px-2 pb-1 font-mono text-xs">
+                  <time dateTime={logRow.timestamp} className="text-neutral-11 shrink-0 pr-4">
+                    {format(logRow.timestamp, 'HH:mm:ss')}
+                  </time>
+                  <span className="text-neutral-12">{logRow.message}</span>
+                </div>
+              );
+            }}
+          />
+        </div>
         <DialogFooter>
           <Button type="button" onClick={props.close} tabIndex={0} variant="destructive">
             Close
