@@ -1307,7 +1307,7 @@ export class SchemaPublisher {
           }
 
           return {
-            __typename: 'SchemaPublishError' as const,
+            __typename: 'SchemaPublishError',
             valid: false,
             changes: [],
             errors: [
@@ -1316,7 +1316,7 @@ export class SchemaPublisher {
                   'Another schema publish is currently in progress. Please retry the publish.',
               },
             ],
-          };
+          } satisfies PublishResult;
         }
 
         if (error instanceof HiveError === false) {
