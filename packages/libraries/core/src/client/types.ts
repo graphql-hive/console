@@ -176,7 +176,7 @@ export interface HiveReportingPluginOptions {
    */
   serviceName?: string;
   /**
-   * The target to which the usage data should be reported to.
+   * The target to which the schema should be reported to.
    * This can either be a slug following the format `$organizationSlug/$projectSlug/$targetSlug` (e.g `the-guild/graphql-hive/staging`)
    * or an UUID (e.g. `a0f4c605-6541-4350-8cfe-b31f21a4bf80`).
    */
