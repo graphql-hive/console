@@ -147,6 +147,10 @@ export class ResourceSelector {
       return null;
     }
 
+    if (target.projectId !== project.projectId) {
+      return null;
+    }
+
     return {
       ...project,
       targetId: target.id,
