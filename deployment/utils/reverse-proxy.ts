@@ -158,8 +158,8 @@ export class Proxy {
             ],
             services: isWeightBasedUpstream(route.service)
               ? route.service.map(serviceDef => ({
-                  name: serviceDef.service.metadata.name,
-                  port: serviceDef.service.spec.ports[0].port,
+                  name: serviceDef.upstream.metadata.name,
+                  port: serviceDef.upstream.spec.ports[0].port,
                   weight: serviceDef.weight,
                 }))
               : [
