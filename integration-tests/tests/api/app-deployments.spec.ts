@@ -2031,7 +2031,7 @@ test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
 });
 
 // Skipped because this test takes too long to complete for CI
-test.skip('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
+test('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
   await setFeatureFlag('appDeployments', true);
@@ -2047,7 +2047,7 @@ test.skip('activeAppDeployments works for > 1000 records with a date filter (nev
     })),
   );
 
-  for (const { appName, appVersion } of appDeployments) {
+  const appDeployPromises = appDeployments.map(async ({ appName, appVersion }) => {
     // Create and activate an app deployment
     await execute({
       document: CreateAppDeployment,
@@ -2070,7 +2070,9 @@ test.skip('activeAppDeployments works for > 1000 records with a date filter (nev
       },
       authToken: token.secret,
     }).then(res => res.expectNoGraphQLErrors());
-  }
+  });
+
+  await Promise.all(appDeployPromises);
 
   // Query for deployments never used and created before tomorrow
   const tomorrow = new Date();
