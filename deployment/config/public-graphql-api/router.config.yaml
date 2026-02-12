@@ -1,3 +1,21 @@
-# yaml-language-server: $schema=https://github.com/graphql-hive/router/releases/download/hive-router%2Fv0.0.37/router-config.schema.json
+# yaml-language-server: $schema=https://github.com/graphql-hive/router/releases/download/hive-router%2Fv0.0.39/router-config.schema.json
+override_subgraph_urls:
+  graphql:
+    url:
+      expression: env("INTERNAL_GRAPHQL_URL")
 telemetry:
   hive:
+    token:
+      expression: env("HIVE_ACCESS_TOKEN")
+    target:
+      expression: env("HIVE_TARGET")
+    tracing:
+      enabled: true
+      endpoint: env("HIVE_TRACE_ENDPOINT")
+  tracing:
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: http
+        endpoint:
+          expression: env("OPENTELEMETRY_COLLECTOR_ENDPOINT")
