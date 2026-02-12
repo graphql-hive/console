@@ -235,6 +235,9 @@ export class Proxy {
     tracing?: {
       collectorService: Output<k8s.core.v1.Service>;
     };
+    timeouts?: {
+      idleTimeout?: number;
+    };
   }) {
     const ns = new k8s.core.v1.Namespace('contour', {
       metadata: {
@@ -301,6 +304,13 @@ export class Proxy {
                 customTags: [],
               }
             : undefined,
+        ...(options.timeouts?.idleTimeout
+          ? {
+              timeouts: {
+                'connection-idle-timeout': `${options.timeouts.idleTimeout}s`,
+              },
+            }
+          : {}),
       },
       // Needed because we override the `contour.image.repository` field.
       global: {

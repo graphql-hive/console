@@ -55,6 +55,7 @@ export function prepareEnvironment(input: {
         replicas: isProduction || isStaging ? 3 : 1,
         cpuLimit: isProduction ? '1500m' : '120m',
         memoryLimit: isProduction ? '2Gi' : '200Mi',
+        idleTimeout: 905,
       },
       schemaService: {
         memoryLimit: isProduction || isStaging ? '3584Mi' : '1Gi',
