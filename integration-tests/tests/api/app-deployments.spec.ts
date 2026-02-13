@@ -2034,7 +2034,7 @@ test('activeAppDeployments filters by neverUsedAndCreatedBefore', async () => {
 
 test('activeAppDeployments works for > 1000 records with a date filter (neverUsedAndCreatedBefore) set', async () => {
   const seed = await initSeed();
-  const conn = await seed.createDbConnection();
+  await using conn = await seed.createDbConnection();
   const { createOrg, ownerToken } = await seed.createOwner();
   const { createProject, setFeatureFlag, organization } = await createOrg();
   await setFeatureFlag('appDeployments', true);
