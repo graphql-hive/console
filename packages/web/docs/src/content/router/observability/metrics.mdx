@@ -340,7 +340,9 @@ HTTP server metrics capture inbound client traffic processed by the router.
         'network.protocol.name',
         'network.protocol.version',
         'url.scheme',
-        'error.type'
+        'error.type',
+        'graphql.operation.name',
+        'graphql.operation.type'
       ]
     },
     {
@@ -355,7 +357,9 @@ HTTP server metrics capture inbound client traffic processed by the router.
         'network.protocol.name',
         'network.protocol.version',
         'url.scheme',
-        'error.type'
+        'error.type',
+        'graphql.operation.name',
+        'graphql.operation.type'
       ]
     },
     {
@@ -370,7 +374,9 @@ HTTP server metrics capture inbound client traffic processed by the router.
         'network.protocol.name',
         'network.protocol.version',
         'url.scheme',
-        'error.type'
+        'error.type',
+        'graphql.operation.name',
+        'graphql.operation.type'
       ]
     },
     {
@@ -430,6 +436,20 @@ HTTP server metrics capture inbound client traffic processed by the router.
       meaning: 'Error classification for failed requests',
       typicalValues: ['status code >= 400'],
       notes: 'Only set for failed requests'
+    },
+    {
+      name: 'graphql.operation.name',
+      meaning: 'GraphQL operation name associated with the HTTP request',
+      typicalValues: ['UsersQuery', 'IntrospectionQuery', 'UNKNOWN'],
+      notes:
+        'Used by http.server.request.duration, http.server.request.body.size, and http.server.response.body.size'
+    },
+    {
+      name: 'graphql.operation.type',
+      meaning: 'GraphQL operation type',
+      typicalValues: ['query', 'mutation', 'subscription'],
+      notes:
+        'Used by http.server.request.duration, http.server.request.body.size, and http.server.response.body.size. Omitted when unknown'
     }
   ]}
 />
