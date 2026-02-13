@@ -471,8 +471,12 @@ function diffUnion({
     type(name, lineToWordChange(changeType)),
   );
   diffDirectiveUsages({
-    newDirectives: newUnion?.astNode?.directives ?? [],
-    oldDirectives: oldUnion?.astNode?.directives ?? [],
+    newDirectives: (newUnion?.astNode?.directives ?? []).concat(
+      ...(newUnion?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
+    oldDirectives: (oldUnion?.astNode?.directives ?? []).concat(
+      ...(oldUnion?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
     builder,
     path,
   });
@@ -529,7 +533,6 @@ function diffInputField({
   const changeType = determineChangeType(oldField, newField);
   const name = newField?.name ?? oldField?.name ?? '';
   const path = [...parentPath, name];
-  builder.newLine({ type: changeType, indent: 1 });
   diffDescription({
     newNode: newField!,
     oldNode: oldField!,
@@ -582,8 +585,12 @@ function diffInputObject({
   builder.newLine({ type: changeType });
   builder.write(keyword('input'), SPACE, type(name, name));
   diffDirectiveUsages({
-    newDirectives: newInput?.astNode?.directives ?? [],
-    oldDirectives: oldInput?.astNode?.directives ?? [],
+    newDirectives: (newInput?.astNode?.directives ?? []).concat(
+      ...(newInput?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
+    oldDirectives: (oldInput?.astNode?.directives ?? []).concat(
+      ...(oldInput?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
     builder,
     path,
   });
@@ -758,8 +765,12 @@ function diffObject({
   builder.newLine({ type: changeType });
   builder.write(keyword(isInterfaceType(newObject) ? 'interface' : 'type'), SPACE, typeName(name));
   diffDirectiveUsages({
-    newDirectives: newObject?.astNode?.directives ?? [],
-    oldDirectives: oldObject?.astNode?.directives ?? [],
+    newDirectives: (newObject?.astNode?.directives ?? []).concat(
+      ...(newObject?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
+    oldDirectives: (oldObject?.astNode?.directives ?? []).concat(
+      ...(oldObject?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
     builder,
     path,
   });
@@ -824,8 +835,12 @@ function diffScalar({
   builder.newLine({ type: changeType });
   builder.write(keyword('scalar'), SPACE, typeName(name, lineToWordChange(changeType)));
   diffDirectiveUsages({
-    newDirectives: newScalar?.astNode?.directives ?? [],
-    oldDirectives: oldScalar?.astNode?.directives ?? [],
+    newDirectives: (newScalar?.astNode?.directives ?? []).concat(
+      ...(newScalar?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
+    oldDirectives: (oldScalar?.astNode?.directives ?? []).concat(
+      ...(oldScalar?.extensionASTNodes.map(n => n.directives ?? []) ?? []),
+    ),
     builder,
     path: [name],
   });
