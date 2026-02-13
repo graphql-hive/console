@@ -1,0 +1,637 @@
+---
+title: 'OpenTelemetry Metrics'
+---
+
+import { Callout } from '#components/callout'
+import { MetricsSection } from '#components/otel-metrics/metrics-section'
+import { Tabs } from '@theguild/components'
+
+# OpenTelemetry Metrics
+
+Hive Router exposes OpenTelemetry metrics for gateway traffic, subgraph traffic, cache behavior,
+supergraph lifecycle, and GraphQL errors.
+
+This guide explains where to export metrics, how to configure OTLP and Prometheus, how to customize
+instruments, and what each metric/label means in practice.
+
+## Choose your metrics destination
+
+Hive Router supports two common metrics paths:
+
+- OTLP-compatible backends
+- Prometheus scraping
+
+In practice, teams with existing OpenTelemetry pipelines usually choose OTLP. Teams with existing
+Prometheus/Grafana stacks usually choose Prometheus.
+
+### Send metrics to OTLP-compatible backends
+
+Hive Router can export metrics directly to any OTLP-compatible destination, including OpenTelemetry
+Collector and vendor backends that support OTLP ingestion, either through HTTP or gRPC.
+
+After enabling the exporter, send traffic through the router and verify that new metric series
+appear in your backend (for example HTTP server/client duration, cache metrics, and supergraph
+metrics). If metrics are missing, start by validating endpoint reachability and auth credentials,
+then check exporter protocol alignment (HTTP vs gRPC).
+
+<Tabs items={["OTLP over HTTP", "OTLP over gRPC"]}>
+
+<Tabs.Tab>
+
+```yaml filename="router.config.yaml"
+telemetry:
+  metrics:
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: http
+        endpoint: https://otel-collector.example.com/v1/metrics
+        interval: 30s
+        max_export_timeout: 5s
+        http:
+          headers:
+            authorization:
+              expression: |
+                "Bearer " + env("OTLP_TOKEN")
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+
+```yaml filename="router.config.yaml"
+telemetry:
+  metrics:
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: grpc
+        endpoint: https://otel-collector.example.com:4317
+        interval: 30s
+        max_export_timeout: 5s
+        grpc:
+          metadata:
+            x-api-key:
+              expression: env("OTEL_API_KEY")
+          tls:
+            domain_name: otel-collector.example.com
+            ca: /etc/certs/ca.pem
+            cert: /etc/certs/client.pem
+            key: /etc/certs/client.key
+```
+
+</Tabs.Tab>
+
+</Tabs>
+
+### Expose metrics for Prometheus scraping
+
+If your observability stack is Prometheus-first, Hive Router can expose a scrape endpoint that
+Prometheus polls on a schedule.
+
+The `port` and `path` settings define where Router serves metrics. Prometheus must be able to reach
+that address from its runtime environment (local network, Kubernetes service, or VM network path).
+
+<Callout type="note">
+  If `port` is not set, or is the same as the main HTTP server port, the Router exposes metrics
+  through the same HTTP server that serves the GraphQL API. If the port is different, the Router
+  starts a separate HTTP server dedicated solely to the Prometheus metrics endpoint.
+</Callout>
+
+In production, make sure this endpoint is reachable only by trusted scrapers and that any ingress or
+firewall policy allows Prometheus access. Once configured, confirm the target appears as healthy
+(`UP`) in Prometheus and then verify expected series are present (for example
+`http.server.request.duration`, `http.client.request.duration`, and `hive.router.*` cache/supergraph
+metrics).
+
+```yaml filename="router.config.yaml"
+telemetry:
+  metrics:
+    exporters:
+      - kind: prometheus
+        enabled: true
+        port: 9090
+        path: /metrics
+```
+
+## Production baseline
+
+For production workloads, start with one primary exporter, a clear service identity, and default
+instrument settings.
+
+```yaml filename="router.config.yaml"
+telemetry:
+  resource:
+    attributes:
+      service.name: hive-router
+      service.namespace: your-platform
+      deployment.environment:
+        expression: env("ENVIRONMENT")
+  metrics:
+    exporters:
+      - kind: otlp
+        enabled: true
+        protocol: grpc
+        endpoint: https://otel-collector.example.com:4317
+        interval: 30s
+        max_export_timeout: 5s
+```
+
+This is a safe baseline and works well before introducing instrumentation-level customization. By
+default, all metrics and labels are exposed.
+
+## Instrument customization
+
+You can override behavior per metric under `telemetry.metrics.instrumentation.instruments`.
+
+- `false` disables a metric.
+- `true` keeps default behavior.
+- object form enables metric + optional attribute overrides.
+
+```yaml filename="router.config.yaml"
+telemetry:
+  metrics:
+    instrumentation:
+      instruments:
+        # Disable HTTP server request duration metric
+        http.server.request.duration: false
+        http.client.request.duration:
+          attributes:
+            # Disable the label
+            subgraph.name: false
+            # Enable the label (labels are enabled by default)
+            http.response.status_code: true
+```
+
+Attribute override behavior:
+
+- `false` - drop label from that metric
+- `true` - keep label (all labels are enabled by default)
+
+## Metrics reference
+
+### GraphQL
+
+GraphQL metrics focus on validation, parsing and execution-time errors surfaced by the router.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'hive.router.graphql.errors_total',
+      type: 'Counter',
+      unit: '{error}',
+      description:
+        'Total count of GraphQL errors encountered during query processing and execution, categorized by error code.',
+      labels: ['code']
+    }
+  ]}
+  labels={[
+    {
+      name: 'code',
+      meaning: 'GraphQL error code',
+      typicalValues: ['GRAPHQL_PARSE_FAILED', 'GRAPHQL_VALIDATION_FAILED', 'PLAN_EXECUTION_FAILED', 'UNKNOWN', '...'],
+      notes:
+        `Uses "extensions.code" values and router's error codes. "UNKNOWN" is used when no code is available.`
+    }
+  ]}
+/>
+
+### Supergraph
+
+Supergraph metrics cover polling and processing lifecycle of schema updates.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'hive.router.supergraph.poll.total',
+      type: 'Counter',
+      description: 'Total number of supergraph polling attempts, categorized by poll result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.supergraph.poll.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of supergraph polling attempts, categorized by poll result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.supergraph.process.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Time spent processing supergraph updates, categorized by status.',
+      labels: ['status']
+    }
+  ]}
+  labels={[
+    {
+      name: 'result',
+      meaning: 'Result of the poll',
+      typicalValues: ['updated', 'not_modified', 'error'],
+      notes: 'Used by "hive.router.supergraph.poll.*" metrics only'
+    },
+    {
+      name: 'status',
+      meaning: 'Supergraph processing status',
+      typicalValues: ['ok', 'error'],
+      notes: 'Used by "hive.router.supergraph.process.*" metrics only'
+    }
+  ]}
+/>
+
+### HTTP server
+
+HTTP server metrics describe inbound client traffic handled by the router.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'http.server.request.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of inbound HTTP requests handled by the router.',
+      labels: [
+        'http.request.method',
+        'http.response.status_code',
+        'http.route',
+        'network.protocol.name',
+        'network.protocol.version',
+        'url.scheme',
+        'error.type'
+      ]
+    },
+    {
+      name: 'http.server.request.body.size',
+      type: 'Histogram',
+      unit: 'Bytes',
+      description: 'Size of inbound HTTP request bodies handled by the router.',
+      labels: [
+        'http.request.method',
+        'http.response.status_code',
+        'http.route',
+        'network.protocol.name',
+        'network.protocol.version',
+        'url.scheme',
+        'error.type'
+      ]
+    },
+    {
+      name: 'http.server.response.body.size',
+      type: 'Histogram',
+      unit: 'Bytes',
+      description: 'Size of outbound HTTP response bodies returned by the router.',
+      labels: [
+        'http.request.method',
+        'http.response.status_code',
+        'http.route',
+        'network.protocol.name',
+        'network.protocol.version',
+        'url.scheme',
+        'error.type'
+      ]
+    },
+    {
+      name: 'http.server.active_requests',
+      type: 'UpDownCounter',
+      unit: '{request}',
+      description: 'Current number of in-flight inbound HTTP requests.',
+      labels: ['http.request.method', 'network.protocol.name', 'url.scheme']
+    }
+  ]}
+  labels={[
+    {
+      name: 'http.request.method',
+      meaning: 'HTTP method',
+      typicalValues: [
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+        'HEAD',
+        'OPTIONS',
+        'CONNECT',
+        'TRACE',
+        'QUERY',
+        '_OTHER'
+      ],
+      notes: '_OTHER is fallback for unknown methods'
+    },
+    {
+      name: 'http.response.status_code',
+      meaning: 'Response status code',
+      typicalValues: ['200', '400', '500', '...']
+    },
+    {
+      name: 'http.route',
+      meaning: 'Normalized router path',
+      typicalValues: ['/graphql']
+    },
+    {
+      name: 'network.protocol.name',
+      meaning: 'Protocol name',
+      typicalValues: ['http']
+    },
+    {
+      name: 'network.protocol.version',
+      meaning: 'Protocol version',
+      typicalValues: ['0.9', '1.0', '1.1', '2', '3']
+    },
+    {
+      name: 'url.scheme',
+      meaning: 'URL scheme',
+      typicalValues: ['http', 'https']
+    },
+    {
+      name: 'error.type',
+      meaning: 'Error classification for failed requests',
+      typicalValues: ['status code >= 400'],
+      notes: 'Only set for failed requests'
+    }
+  ]}
+/>
+
+### HTTP client
+
+HTTP client metrics describe outbound requests to the subgraphs, made by the router.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'http.client.request.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of outbound HTTP requests sent from router to subgraphs.',
+      labels: [
+        'http.request.method',
+        'server.address',
+        'server.port',
+        'network.protocol.name',
+        'network.protocol.version',
+        'url.scheme',
+        'subgraph.name',
+        'http.response.status_code',
+        'error.type'
+      ]
+    },
+    {
+      name: 'http.client.request.body.size',
+      type: 'Histogram',
+      unit: 'Bytes',
+      description: 'Size of outbound HTTP request bodies sent to subgraphs.',
+      labels: [
+        'http.request.method',
+        'server.address',
+        'server.port',
+        'network.protocol.name',
+        'network.protocol.version',
+        'url.scheme',
+        'subgraph.name',
+        'http.response.status_code',
+        'error.type'
+      ]
+    },
+    {
+      name: 'http.client.response.body.size',
+      type: 'Histogram',
+      unit: 'Bytes',
+      description: 'Size of HTTP response bodies returned by subgraphs.',
+      labels: [
+        'http.request.method',
+        'server.address',
+        'server.port',
+        'network.protocol.name',
+        'network.protocol.version',
+        'url.scheme',
+        'subgraph.name',
+        'http.response.status_code',
+        'error.type'
+      ]
+    },
+    {
+      name: 'http.client.active_requests',
+      type: 'UpDownCounter',
+      unit: '{request}',
+      description: 'Current number of in-flight outbound HTTP requests to subgraphs.',
+      labels: [
+        'http.request.method',
+        'server.address',
+        'server.port',
+        'url.scheme',
+        'subgraph.name'
+      ]
+    }
+  ]}
+  labels={[
+    {
+      name: 'http.request.method',
+      meaning: 'HTTP method',
+      typicalValues: [
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+        'HEAD',
+        'OPTIONS',
+        'CONNECT',
+        'TRACE',
+        'QUERY',
+        '_OTHER'
+      ],
+      notes: '_OTHER is fallback for unknown methods'
+    },
+    {
+      name: 'http.response.status_code',
+      meaning: 'Response status code',
+      typicalValues: ['200', '400', '500', '...']
+    },
+    {
+      name: 'network.protocol.name',
+      meaning: 'Protocol name',
+      typicalValues: ['http']
+    },
+    {
+      name: 'network.protocol.version',
+      meaning: 'Protocol version',
+      typicalValues: ['0.9', '1.0', '1.1', '2', '3']
+    },
+    {
+      name: 'url.scheme',
+      meaning: 'URL scheme',
+      typicalValues: ['http', 'https']
+    },
+    {
+      name: 'server.address',
+      meaning: 'Subgraph host',
+      typicalValues: ['URI host', 'unknown'],
+      notes: 'URI host, or unknown fallback'
+    },
+    {
+      name: 'server.port',
+      meaning: 'Subgraph port',
+      typicalValues: ['80', '443'],
+      notes: 'Explicit URI port, or fallback 80/443'
+    },
+    {
+      name: 'subgraph.name',
+      meaning: 'Subgraph identifier',
+      typicalValues: ['accounts'],
+      notes: 'Configured names (for example "accounts")'
+    },
+    {
+      name: 'error.type',
+      meaning: 'Error classification',
+      typicalValues: ['400', 'SUBGRAPH_REQUEST_FAILURE', '...'],
+      notes: 'Numeric status code >= 400 or execution error code string'
+    }
+  ]}
+/>
+
+### Cache
+
+Cache metrics track lookup behavior and cache size across router caches.
+
+#### Parsing cache
+
+Parsing cache metrics measure query parse cache hit/miss behavior and cache size.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'hive.router.parse_cache.requests_total',
+      type: 'Counter',
+      description: 'Total number of parsing cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.parse_cache.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of parsing cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.parse_cache.size',
+      type: 'Gauge',
+      description: 'Current number of entries stored in the parsing cache.'
+    }
+  ]}
+/>
+
+#### Validation cache
+
+Validation cache metrics measure query validation cache hit/miss behavior and cache size.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'hive.router.validate_cache.requests_total',
+      type: 'Counter',
+      description: 'Total number of validation cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.validate_cache.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of validation cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.validate_cache.size',
+      type: 'Gauge',
+      description: 'Current number of entries stored in the validation cache.'
+    }
+  ]}
+/>
+
+#### Normalization cache
+
+Normalization cache metrics measure query normalization cache hit/miss behavior and cache size.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'hive.router.normalize_cache.requests_total',
+      type: 'Counter',
+      description: 'Total number of normalization cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.normalize_cache.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of normalization cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.normalize_cache.size',
+      type: 'Gauge',
+      description: 'Current number of entries stored in the normalization cache.'
+    }
+  ]}
+/>
+
+#### Planning cache
+
+Planning cache metrics measure query planning cache hit/miss behavior and cache size.
+
+<MetricsSection
+  metrics={[
+    {
+      name: 'hive.router.plan_cache.requests_total',
+      type: 'Counter',
+      description: 'Total number of planning cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.plan_cache.duration',
+      type: 'Histogram',
+      unit: 'Seconds',
+      description: 'Duration of planning cache lookups, categorized by result.',
+      labels: ['result']
+    },
+    {
+      name: 'hive.router.plan_cache.size',
+      type: 'Gauge',
+      description: 'Current number of entries stored in the planning cache.'
+    }
+  ]}
+/>
+
+#### Labels
+
+These labels are shared by cache lookup counters and duration histograms.
+
+<MetricsSection
+  labels={[
+    {
+      name: 'result',
+      meaning: 'Cache lookup outcome',
+      typicalValues: ['hit', 'miss'],
+      notes: 'Used by cache `requests_total` and `duration` metrics'
+    }
+  ]}
+/>
+
+## Troubleshooting
+
+When metrics are missing or incomplete, check in layers:
+
+- exporter setup
+- instrument overrides
+- label overrides
+- transport reachability
+
+If no metrics appear at all, verify exporter enablement, endpoint reachability, and credentials.
+
+If a configured instrument key is unknown, startup fails with a clear error and valid metric names.
+
+If a configured attribute key is unknown, Router logs a warning and ignores it.
+
+## Configuration reference
+
+For full options and defaults, see:
+
+- [telemetry configuration reference](/docs/router/configuration/telemetry)
