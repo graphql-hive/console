@@ -614,9 +614,7 @@ export class SchemaPublisher {
               existing: latestVersion
                 ? toSingleSchemaInput(ensureSingleSchema(latestVersion.schemas))
                 : null,
-              incoming: {
-                sdl,
-              },
+              incoming: { sdl },
             });
             if ('result' in diffSchema) {
               proposalChanges = diffSchema.result ?? null;
@@ -627,9 +625,7 @@ export class SchemaPublisher {
         }
 
         checkResult = await this.models[ProjectType.SINGLE].check({
-          input: {
-            sdl: input.sdl,
-          },
+          input: { sdl },
           selector,
           latest: latestVersion
             ? {
@@ -1291,6 +1287,7 @@ export class SchemaPublisher {
             executor: () =>
               this.internalPublish({
                 ...input,
+                sdl: tryPrettifySDL(input.sdl),
                 checksum,
                 selector,
               }),
