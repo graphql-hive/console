@@ -2088,6 +2088,7 @@ ${result.rows
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  let cursor: string | undefined;
   for (let page = 0; page < Math.ceil(1200 / 20); page++) {
     const result = await execute({
       document: GetActiveAppDeployments,
@@ -2098,6 +2099,7 @@ ${result.rows
           targetSlug: target.slug,
         },
         first: 20,
+        after: cursor,
         filter: {
           neverUsedAndCreatedBefore: tomorrow.toISOString(),
         },
@@ -2106,6 +2108,7 @@ ${result.rows
     }).then(res => res.expectNoGraphQLErrors());
     // all should be full pages
     expect(result.target?.activeAppDeployments.edges).toHaveLength(20);
+    cursor = result.target?.activeAppDeployments.pageInfo.endCursor;
   }
 });
 
