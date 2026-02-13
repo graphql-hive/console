@@ -17,7 +17,7 @@ overrides:
   ip: npm:neoip@2.1.0
   miniflare@3>undici: ^7.18.2
   tailwindcss: 3.4.17
-  '@hive/laboratory>tailwindcss': 4.1.18
+  '@graphql-hive/laboratory>tailwindcss': 4.1.18
   '@hive/app>tailwindcss': 4.1.18
   '@tailwindcss/node>tailwindcss': 4.1.18
   '@tailwindcss/vite>tailwindcss': 4.1.18
@@ -1980,6 +1980,9 @@ importers:
       '@graphql-codegen/client-preset-swc-plugin':
         specifier: 0.2.0
         version: 0.2.0
+      '@graphql-hive/laboratory':
+        specifier: workspace:*
+        version: link:../../libraries/laboratory
       '@graphql-inspector/core':
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)

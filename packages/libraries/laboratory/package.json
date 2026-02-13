@@ -1,16 +1,18 @@
 {
-  "name": "@hive/laboratory",
+  "name": "@graphql-hive/laboratory",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/hive-laboratory.cjs.js",
   "module": "./dist/hive-laboratory.es.js",
+  "unpkg": "./dist/hive-laboratory.umd.js",
+  "jsdelivr": "./dist/hive-laboratory.umd.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/hive-laboratory.es.js",
       "require": "./dist/hive-laboratory.cjs.js"
     },
-    "./styles": "./dist/hive-laboratory.css"
+    "./umd": "./dist/hive-laboratory.umd.js"
   },
   "types": "./dist/index.d.ts",
   "files": [
@@ -18,10 +20,9 @@
   ],
   "scripts": {
     "build": "vite build",
-    "build:lib": "vite build --config vite.lib.config.ts && node scripts/build-lib-css.mjs && pnpm run emit-types",
+    "build:lib": "vite build --config vite.lib.config.ts && vite build --config vite.umd.config.ts",
     "dev": "vite",
     "dev:electron": "VITE_TARGET=electron concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "emit-types": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "preview": "vite preview"
   },

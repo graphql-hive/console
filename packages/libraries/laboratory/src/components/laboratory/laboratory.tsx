@@ -1,23 +1,25 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from "lucide-react";
-import * as z from "zod";
-import { Collections } from "@/components/laboratory/collections";
-import { Command } from "@/components/laboratory/command";
+import { ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
+import monacoStyles from 'monaco-editor/min/vs/editor/editor.main.css?inline';
+import * as z from 'zod';
+import { Collections } from '@/components/laboratory/collections';
+import { Command } from '@/components/laboratory/command';
 import {
   LaboratoryPermission,
   LaboratoryPermissions,
   LaboratoryProvider,
   useLaboratory,
   type LaboratoryApi,
-} from "@/components/laboratory/context";
-import { Env } from "@/components/laboratory/env";
-import { History } from "@/components/laboratory/history";
-import { HistoryItem } from "@/components/laboratory/history-item";
-import { Operation } from "@/components/laboratory/operation";
-import { Preflight } from "@/components/laboratory/preflight";
-import { Settings } from "@/components/laboratory/settings";
-import { Tabs } from "@/components/laboratory/tabs";
-import { Button } from "@/components/ui/button";
+} from '@/components/laboratory/context';
+import { Env } from '@/components/laboratory/env';
+import { History } from '@/components/laboratory/history';
+import { HistoryItem } from '@/components/laboratory/history-item';
+import { Operation } from '@/components/laboratory/operation';
+import { Preflight } from '@/components/laboratory/preflight';
+import { Settings } from '@/components/laboratory/settings';
+import { Tabs } from '@/components/laboratory/tabs';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -26,7 +28,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Empty,
   EmptyContent,
@@ -43,48 +45,55 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { Toaster } from "@/components/ui/sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useCollections } from "@/lib/collections";
-import { useEndpoint } from "@/lib/endpoint";
-import { useEnv } from "@/lib/env";
-import { useHistory } from "@/lib/history";
-import { useOperations } from "@/lib/operations";
-import { LaboratoryPluginTab, usePlugins } from "@/lib/plugins";
-import { usePreflight } from "@/lib/preflight";
-import { useSettings } from "@/lib/settings";
-import { LaboratoryTabCustom, useTabs } from "@/lib/tabs";
-import { useTests } from "@/lib/tests";
-import { cn } from "@/lib/utils";
-import { useForm } from "@tanstack/react-form";
+} from '@/components/ui/empty';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Toaster } from '@/components/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import laboratoryStyles from '@/index.css?inline';
+import { useCollections } from '@/lib/collections';
+import { useEndpoint } from '@/lib/endpoint';
+import { useEnv } from '@/lib/env';
+import { useHistory } from '@/lib/history';
+import { useOperations } from '@/lib/operations';
+import { LaboratoryPluginTab, usePlugins } from '@/lib/plugins';
+import { usePreflight } from '@/lib/preflight';
+import { useSettings } from '@/lib/settings';
+import { LaboratoryTabCustom, useTabs } from '@/lib/tabs';
+import { useTests } from '@/lib/tests';
+import { cn } from '@/lib/utils';
+import { useForm } from '@tanstack/react-form';
+
+const ShadowRootContainer = (props: { children: ReactNode }) => {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
+
+  useLayoutEffect(() => {
+    if (!hostRef.current || shadowRoot) {
+      return;
+    }
+
+    setShadowRoot(hostRef.current.attachShadow({ mode: 'open' }));
+  }, [shadowRoot]);
+
+  return (
+    <div ref={hostRef} className="hive-laboratory-host size-full">
+      {shadowRoot ? createPortal(props.children, shadowRoot) : null}
+    </div>
+  );
+};
 
 const addCollectionFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, 'Name is required'),
 });
 
 const updateEndpointFormSchema = z.object({
-  endpoint: z.string().min(1, "Endpoint is required"),
+  endpoint: z.string().min(1, 'Endpoint is required'),
 });
 
 const addTestFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, 'Name is required'),
 });
 
 const PreflightPromptModal = (props: {
@@ -100,7 +109,7 @@ const PreflightPromptModal = (props: {
     },
     validators: {
       onSubmit: z.object({
-        value: z.string().min(1, "Value is required").nullable(),
+        value: z.string().min(1, 'Value is required').nullable(),
       }),
     },
     onSubmit: ({ value }) => {
@@ -113,7 +122,7 @@ const PreflightPromptModal = (props: {
   return (
     <Dialog
       open={props.open}
-      onOpenChange={(open) => {
+      onOpenChange={open => {
         if (!form.state.isSubmitted) {
           void form.handleSubmit();
         }
@@ -125,36 +134,31 @@ const PreflightPromptModal = (props: {
         <DialogHeader>
           <DialogTitle>Preflight prompt</DialogTitle>
         </DialogHeader>
-        <DialogDescription>
-          Enter values for the preflight script.
-        </DialogDescription>
+        <DialogDescription>Enter values for the preflight script.</DialogDescription>
         <form
           id="preflight-prompt-form"
-          onSubmit={(e) => {
+          onSubmit={e => {
             e.preventDefault();
             void form.handleSubmit();
           }}
         >
           <FieldGroup>
             <form.Field name="value">
-              {(field) => {
-                const isInvalid =
-                  field.state.meta.isTouched && !field.state.meta.isValid;
+              {field => {
+                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                 return (
                   <Field data-invalid={isInvalid}>
                     <Input
                       id={field.name}
                       name={field.name}
-                      value={field.state.value || ""}
+                      value={field.state.value || ''}
                       onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={e => field.handleChange(e.target.value)}
                       aria-invalid={isInvalid}
                       placeholder={props.placeholder}
                       autoComplete="off"
                     />
-                    {isInvalid && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
+                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                   </Field>
                 );
               }}
@@ -193,26 +197,25 @@ const LaboratoryContent = () => {
   } = useLaboratory();
   const laboratory = useLaboratory();
   const [activePanel, setActivePanel] = useState<
-    "collections" | "history" | "tests" | "settings" | null
-  >(collections.length > 0 ? "collections" : null);
+    'collections' | 'history' | 'tests' | 'settings' | null
+  >(collections.length > 0 ? 'collections' : null);
   const [commandOpen, setCommandOpen] = useState(false);
 
   const contentNode = useMemo(() => {
     switch (activeTab?.type) {
-      case "operation":
+      case 'operation':
         return <Operation />;
-      case "preflight":
+      case 'preflight':
         return <Preflight />;
-      case "env":
+      case 'env':
         return <Env />;
-      case "history":
+      case 'history':
         return <HistoryItem />;
-      case "settings":
+      case 'settings':
         return <Settings />;
       default: {
         let pluginId: string | null = null;
-        let customTab: LaboratoryPluginTab<Record<string, unknown>> | null =
-          null;
+        let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
 
         for (const plugin of plugins) {
           for (const tab of plugin.tabs ?? []) {
@@ -230,7 +233,7 @@ const LaboratoryContent = () => {
             laboratory,
             pluginsState[pluginId] ?? {},
             (state: Record<string, unknown>) =>
-              setPluginsState({ ...pluginsState, [pluginId]: state })
+              setPluginsState({ ...pluginsState, [pluginId]: state }),
           );
         }
 
@@ -242,8 +245,8 @@ const LaboratoryContent = () => {
               </EmptyMedia>
               <EmptyTitle>No operation selected</EmptyTitle>
               <EmptyDescription>
-                You haven't selected any operation yet. Get started by selecting
-                an operation or add a new one.
+                You haven't selected any operation yet. Get started by selecting an operation or add
+                a new one.
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
@@ -251,15 +254,15 @@ const LaboratoryContent = () => {
                 size="sm"
                 onClick={() => {
                   const operation = addOperation({
-                    name: "",
-                    query: "",
-                    variables: "",
-                    headers: "",
-                    extensions: "",
+                    name: '',
+                    query: '',
+                    variables: '',
+                    headers: '',
+                    extensions: '',
                   });
 
                   const tab = addTab({
-                    type: "operation",
+                    type: 'operation',
                     data: operation,
                   });
 
@@ -283,22 +286,18 @@ const LaboratoryContent = () => {
           <TooltipTrigger asChild>
             <div
               className={cn(
-                "relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent",
+                'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  "border-primary": activePanel === "collections",
-                }
+                  'border-primary': activePanel === 'collections',
+                },
               )}
             >
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() =>
-                  setActivePanel(
-                    activePanel === "collections" ? null : "collections"
-                  )
-                }
-                className={cn("text-muted-foreground hover:text-foreground", {
-                  "text-foreground": activePanel === "collections",
+                onClick={() => setActivePanel(activePanel === 'collections' ? null : 'collections')}
+                className={cn('text-muted-foreground hover:text-foreground', {
+                  'text-foreground': activePanel === 'collections',
                 })}
               >
                 <FoldersIcon className="size-5" />
@@ -311,20 +310,18 @@ const LaboratoryContent = () => {
           <TooltipTrigger asChild>
             <div
               className={cn(
-                "relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent",
+                'relative z-10 flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
                 {
-                  "border-primary": activePanel === "history",
-                }
+                  'border-primary': activePanel === 'history',
+                },
               )}
             >
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() =>
-                  setActivePanel(activePanel === "history" ? null : "history")
-                }
-                className={cn("text-muted-foreground hover:text-foreground", {
-                  "text-foreground": activePanel === "history",
+                onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
+                className={cn('text-muted-foreground hover:text-foreground', {
+                  'text-foreground': activePanel === 'history',
                 })}
               >
                 <HistoryIcon className="size-5" />
@@ -335,10 +332,10 @@ const LaboratoryContent = () => {
         </Tooltip>
         <div
           className={cn(
-            "relative z-10 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent",
+            'relative z-10 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
-              "border-primary": activePanel === "settings",
-            }
+              'border-primary': activePanel === 'settings',
+            },
           )}
         >
           <Tooltip>
@@ -348,27 +345,16 @@ const LaboratoryContent = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() =>
-                      setActivePanel(
-                        activePanel === "history" ? null : "history"
-                      )
-                    }
-                    className={cn(
-                      "text-muted-foreground hover:text-foreground",
-                      {
-                        "text-foreground": activePanel === "history",
-                      }
-                    )}
+                    onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
+                    className={cn('text-muted-foreground hover:text-foreground', {
+                      'text-foreground': activePanel === 'history',
+                    })}
                   >
                     <SettingsIcon className="size-5" />
                   </Button>
                 </TooltipTrigger>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="mb-2 w-56"
-                align="start"
-                side="right"
-              >
+              <DropdownMenuContent className="mb-2 w-56" align="start" side="right">
                 <DropdownMenuGroup>
                   <DropdownMenuItem onSelect={() => setCommandOpen(true)}>
                     Command Palette...
@@ -379,9 +365,9 @@ const LaboratoryContent = () => {
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
-                      tabs.find((t) => t.type === "env") ??
+                      tabs.find(t => t.type === 'env') ??
                       addTab({
-                        type: "env",
+                        type: 'env',
                         data: env ?? { variables: {} },
                       });
 
@@ -393,10 +379,10 @@ const LaboratoryContent = () => {
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
-                      tabs.find((t) => t.type === "preflight") ??
+                      tabs.find(t => t.type === 'preflight') ??
                       addTab({
-                        type: "preflight",
-                        data: preflight ?? { script: "" },
+                        type: 'preflight',
+                        data: preflight ?? { script: '' },
                       });
 
                     setActiveTab(tab);
@@ -408,9 +394,9 @@ const LaboratoryContent = () => {
                 <DropdownMenuItem
                   onSelect={() => {
                     const tab =
-                      tabs.find((t) => t.type === "settings") ??
+                      tabs.find(t => t.type === 'settings') ??
                       addTab({
-                        type: "settings",
+                        type: 'settings',
                         data: {},
                       });
 
@@ -426,14 +412,9 @@ const LaboratoryContent = () => {
         </div>
       </div>
       <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
-        <ResizablePanel
-          minSize={10}
-          defaultSize={17}
-          hidden={!activePanel}
-          className="border-l"
-        >
-          {activePanel === "collections" && <Collections />}
-          {activePanel === "history" && <History />}
+        <ResizablePanel minSize={10} defaultSize={17} hidden={!activePanel} className="border-l">
+          {activePanel === 'collections' && <Collections />}
+          {activePanel === 'history' && <History />}
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel minSize={10} defaultSize={83} className="flex flex-col">
@@ -453,52 +434,54 @@ export const Laboratory = (
   props: Partial<
     Pick<
       LaboratoryProps,
-      | "permissions"
-      | "defaultEndpoint"
-      | "onEndpointChange"
-      | "defaultCollections"
-      | "onCollectionsChange"
-      | "onCollectionCreate"
-      | "onCollectionUpdate"
-      | "onCollectionDelete"
-      | "onCollectionOperationCreate"
-      | "onCollectionOperationUpdate"
-      | "onCollectionOperationDelete"
-      | "defaultOperations"
-      | "onOperationsChange"
-      | "defaultActiveOperationId"
-      | "onActiveOperationIdChange"
-      | "onOperationCreate"
-      | "onOperationUpdate"
-      | "onOperationDelete"
-      | "defaultHistory"
-      | "onHistoryChange"
-      | "onHistoryCreate"
-      | "onHistoryUpdate"
-      | "onHistoryDelete"
-      | "defaultTabs"
-      | "onTabsChange"
-      | "defaultPreflight"
-      | "onPreflightChange"
-      | "defaultEnv"
-      | "onEnvChange"
-      | "defaultActiveTabId"
-      | "onActiveTabIdChange"
-      | "defaultSettings"
-      | "onSettingsChange"
-      | "defaultTests"
-      | "onTestsChange"
-      | "plugins"
-      | "defaultPluginsState"
-      | "onPluginsStateChange"
+      | 'permissions'
+      | 'defaultEndpoint'
+      | 'onEndpointChange'
+      | 'defaultCollections'
+      | 'onCollectionsChange'
+      | 'onCollectionCreate'
+      | 'onCollectionUpdate'
+      | 'onCollectionDelete'
+      | 'onCollectionOperationCreate'
+      | 'onCollectionOperationUpdate'
+      | 'onCollectionOperationDelete'
+      | 'defaultOperations'
+      | 'onOperationsChange'
+      | 'defaultActiveOperationId'
+      | 'onActiveOperationIdChange'
+      | 'onOperationCreate'
+      | 'onOperationUpdate'
+      | 'onOperationDelete'
+      | 'defaultHistory'
+      | 'onHistoryChange'
+      | 'onHistoryCreate'
+      | 'onHistoryUpdate'
+      | 'onHistoryDelete'
+      | 'defaultTabs'
+      | 'onTabsChange'
+      | 'defaultPreflight'
+      | 'onPreflightChange'
+      | 'defaultEnv'
+      | 'onEnvChange'
+      | 'defaultActiveTabId'
+      | 'onActiveTabIdChange'
+      | 'defaultSettings'
+      | 'onSettingsChange'
+      | 'defaultTests'
+      | 'onTestsChange'
+      | 'plugins'
+      | 'defaultPluginsState'
+      | 'onPluginsStateChange'
+      | 'theme'
+      | 'defaultSchemaIntrospection'
     >
-  >
+  >,
 ) => {
   const checkPermissions = useCallback(
     (
-      permission: `${keyof LaboratoryPermissions & string}:${keyof LaboratoryPermission & string}`
+      permission: `${keyof LaboratoryPermissions & string}:${keyof LaboratoryPermission & string}`,
     ) => {
-      const [namespace, action] = permission.split(":");
+      const [namespace, action] = permission.split(':');
 
       return (
         props.permissions?.[namespace as keyof LaboratoryPermissions]?.[
@@ -506,7 +489,7 @@ export const Laboratory = (
         ] ?? true
       );
     },
-    [props.permissions]
+    [props.permissions],
   );
 
   const settingsApi = useSettings(props);
@@ -538,11 +521,9 @@ export const Laboratory = (
 
   const historyApi = useHistory(props);
 
-  const [isAddCollectionDialogOpen, setIsAddCollectionDialogOpen] =
-    useState(false);
+  const [isAddCollectionDialogOpen, setIsAddCollectionDialogOpen] = useState(false);
 
-  const [isUpdateEndpointDialogOpen, setIsUpdateEndpointDialogOpen] =
-    useState(false);
+  const [isUpdateEndpointDialogOpen, setIsUpdateEndpointDialogOpen] = useState(false);
 
   const [isAddTestDialogOpen, setIsAddTestDialogOpen] = useState(false);
 
@@ -560,7 +541,7 @@ export const Laboratory = (
 
   const addCollectionForm = useForm({
     defaultValues: {
-      name: "",
+      name: '',
     },
     validators: {
       onSubmit: addCollectionFormSchema,
@@ -575,7 +556,7 @@ export const Laboratory = (
 
   const updateEndpointForm = useForm({
     defaultValues: {
-      endpoint: endpointApi.endpoint ?? "",
+      endpoint: endpointApi.endpoint ?? '',
     },
     validators: {
       onSubmit: updateEndpointFormSchema,
@@ -588,7 +569,7 @@ export const Laboratory = (
 
   const addTestForm = useForm({
     defaultValues: {
-      name: "",
+      name: '',
     },
     validators: {
       onSubmit: addTestFormSchema,
@@ -599,15 +580,14 @@ export const Laboratory = (
     },
   });
 
-  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] =
-    useState(false);
+  const [isPreflightPromptModalOpen, setIsPreflightPromptModalOpen] = useState(false);
 
   const [preflightPromptModalProps, setPreflightPromptModalProps] = useState<{
     placeholder: string;
     defaultValue?: string;
     onSubmit?: (value: string | null) => void;
   }>({
-    placeholder: "",
+    placeholder: '',
     defaultValue: undefined,
     onSubmit: undefined,
   });
@@ -628,7 +608,7 @@ export const Laboratory = (
         setIsPreflightPromptModalOpen(true);
       }, 200);
     },
-    []
+    [],
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -644,205 +624,191 @@ export const Laboratory = (
   }, []);
 
   return (
-    <div
-      className={cn("hive-laboratory bg-background size-full", {
-        "fixed inset-0 z-50": isFullScreen,
-      })}
-      ref={containerRef}
-    >
-      <Toaster richColors closeButton position="top-right" />
-      <Dialog
-        open={isUpdateEndpointDialogOpen}
-        onOpenChange={setIsUpdateEndpointDialogOpen}
+    <ShadowRootContainer>
+      <style>{`${laboratoryStyles}\n${monacoStyles}`}</style>
+      <div
+        className={cn('hive-laboratory bg-background size-full', props.theme, {
+          'fixed inset-0 z-50': isFullScreen,
+        })}
+        ref={containerRef}
       >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Update endpoint</DialogTitle>
-            <DialogDescription>
-              Update the endpoint of your laboratory.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <form
-              id="update-endpoint-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void updateEndpointForm.handleSubmit();
-              }}
-            >
-              <FieldGroup>
-                <updateEndpointForm.Field name="endpoint">
-                  {(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid;
+        <Toaster richColors closeButton position="top-right" />
+        <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Update endpoint</DialogTitle>
+              <DialogDescription>Update the endpoint of your laboratory.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <form
+                id="update-endpoint-form"
+                onSubmit={e => {
+                  e.preventDefault();
+                  void updateEndpointForm.handleSubmit();
+                }}
+              >
+                <FieldGroup>
+                  <updateEndpointForm.Field name="endpoint">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
-                    return (
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        aria-invalid={isInvalid}
-                        placeholder="Enter endpoint"
-                        autoComplete="off"
-                      />
-                    );
-                  }}
-                </updateEndpointForm.Field>
-              </FieldGroup>
-            </form>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit" form="update-endpoint-form">
-              Update endpoint
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <PreflightPromptModal
-        open={isPreflightPromptModalOpen}
-        onOpenChange={setIsPreflightPromptModalOpen}
-        {...preflightPromptModalProps}
-      />
-      <Dialog
-        open={isAddCollectionDialogOpen}
-        onOpenChange={setIsAddCollectionDialogOpen}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add collection</DialogTitle>
-            <DialogDescription>
-              Add a new collection of operations to your laboratory.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <form
-              id="add-collection-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void addCollectionForm.handleSubmit();
-              }}
-            >
-              <FieldGroup>
-                <addCollectionForm.Field name="name">
-                  {(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid;
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                      return (
                         <Input
                           id={field.name}
                           name={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
+                          onChange={e => field.handleChange(e.target.value)}
                           aria-invalid={isInvalid}
-                          placeholder="Enter name of the collection"
+                          placeholder="Enter endpoint"
                           autoComplete="off"
                         />
-                        {isInvalid && (
-                          <FieldError errors={field.state.meta.errors} />
-                        )}
-                      </Field>
-                    );
-                  }}
-                </addCollectionForm.Field>
-              </FieldGroup>
-            </form>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit" form="add-collection-form">
-              Add collection
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add test</DialogTitle>
-            <DialogDescription>
-              Add a new test to your laboratory.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4">
-            <form
-              id="add-test-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void addTestForm.handleSubmit();
-              }}
-            >
-              <FieldGroup>
-                <addTestForm.Field name="name">
-                  {(field) => {
-                    const isInvalid =
-                      field.state.meta.isTouched && !field.state.meta.isValid;
-                    return (
-                      <Field data-invalid={isInvalid}>
-                        <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                        <Input
-                          id={field.name}
-                          name={field.name}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          aria-invalid={isInvalid}
-                          placeholder="Enter name of the test"
-                          autoComplete="off"
-                        />
-                        {isInvalid && (
-                          <FieldError errors={field.state.meta.errors} />
-                        )}
-                      </Field>
-                    );
-                  }}
-                </addTestForm.Field>
-              </FieldGroup>
-            </form>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button type="submit" form="add-test-form">
-              Add test
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                      );
+                    }}
+                  </updateEndpointForm.Field>
+                </FieldGroup>
+              </form>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit" form="update-endpoint-form">
+                Update endpoint
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <PreflightPromptModal
+          open={isPreflightPromptModalOpen}
+          onOpenChange={setIsPreflightPromptModalOpen}
+          {...preflightPromptModalProps}
+        />
+        <Dialog open={isAddCollectionDialogOpen} onOpenChange={setIsAddCollectionDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add collection</DialogTitle>
+              <DialogDescription>
+                Add a new collection of operations to your laboratory.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <form
+                id="add-collection-form"
+                onSubmit={e => {
+                  e.preventDefault();
+                  void addCollectionForm.handleSubmit();
+                }}
+              >
+                <FieldGroup>
+                  <addCollectionForm.Field name="name">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={e => field.handleChange(e.target.value)}
+                            aria-invalid={isInvalid}
+                            placeholder="Enter name of the collection"
+                            autoComplete="off"
+                          />
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      );
+                    }}
+                  </addCollectionForm.Field>
+                </FieldGroup>
+              </form>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit" form="add-collection-form">
+                Add collection
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={isAddTestDialogOpen} onOpenChange={setIsAddTestDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add test</DialogTitle>
+              <DialogDescription>Add a new test to your laboratory.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <form
+                id="add-test-form"
+                onSubmit={e => {
+                  e.preventDefault();
+                  void addTestForm.handleSubmit();
+                }}
+              >
+                <FieldGroup>
+                  <addTestForm.Field name="name">
+                    {field => {
+                      const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                          <Input
+                            id={field.name}
+                            name={field.name}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={e => field.handleChange(e.target.value)}
+                            aria-invalid={isInvalid}
+                            placeholder="Enter name of the test"
+                            autoComplete="off"
+                          />
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      );
+                    }}
+                  </addTestForm.Field>
+                </FieldGroup>
+              </form>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="submit" form="add-test-form">
+                Add test
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <LaboratoryProvider
-        {...props}
-        {...testsApi}
-        {...settingsApi}
-        {...pluginsApi}
-        {...envApi}
-        {...preflightApi}
-        {...tabsApi}
-        {...endpointApi}
-        {...collectionsApi}
-        {...operationsApi}
-        {...historyApi}
-        openAddCollectionDialog={openAddCollectionDialog}
-        openUpdateEndpointDialog={openUpdateEndpointDialog}
-        openAddTestDialog={openAddTestDialog}
-        openPreflightPromptModal={openPreflightPromptModal}
-        goToFullScreen={goToFullScreen}
-        exitFullScreen={exitFullScreen}
-        isFullScreen={isFullScreen}
-        checkPermissions={checkPermissions}
-      >
-        <LaboratoryContent />
-      </LaboratoryProvider>
-    </div>
+        <LaboratoryProvider
+          {...props}
+          {...testsApi}
+          {...settingsApi}
+          {...pluginsApi}
+          {...envApi}
+          {...preflightApi}
+          {...tabsApi}
+          {...endpointApi}
+          {...collectionsApi}
+          {...operationsApi}
+          {...historyApi}
+          openAddCollectionDialog={openAddCollectionDialog}
+          openUpdateEndpointDialog={openUpdateEndpointDialog}
+          openAddTestDialog={openAddTestDialog}
+          openPreflightPromptModal={openPreflightPromptModal}
+          goToFullScreen={goToFullScreen}
+          exitFullScreen={exitFullScreen}
+          isFullScreen={isFullScreen}
+          checkPermissions={checkPermissions}
+        >
+          <LaboratoryContent />
+        </LaboratoryProvider>
+      </div>
+    </ShadowRootContainer>
   );
 };

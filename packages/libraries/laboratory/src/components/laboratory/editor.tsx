@@ -74,9 +74,7 @@ const darkTheme: monaco.editor.IStandaloneThemeData = {
   ],
   colors: {
     'editor.foreground': '#f6f8fa',
-    'editor.background': color(
-      `hsl(${getComputedStyle(document.body).getPropertyValue('--background')})`,
-    ).hex(),
+    'editor.background': '#0f1214',
     'editor.selectionBackground': '#2A2F34',
     'editor.inactiveSelectionBackground': '#2A2F34',
     'editor.lineHighlightBackground': '#2A2F34',
@@ -89,6 +87,15 @@ const darkTheme: monaco.editor.IStandaloneThemeData = {
 };
 
 monaco.editor.defineTheme('hive-laboratory-dark', darkTheme);
+
+const lightTheme: monaco.editor.IStandaloneThemeData = {
+  base: 'vs',
+  inherit: true,
+  rules: [],
+  colors: {},
+};
+
+monaco.editor.defineTheme('hive-laboratory-light', lightTheme);
 
 monaco.languages.setMonarchTokensProvider('dotenv', {
   tokenizer: {
@@ -119,7 +126,7 @@ export const Editor = forwardRef<
 >((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const { introspection, endpoint } = useLaboratory();
+  const { introspection, endpoint, theme } = useLaboratory();
 
   useEffect(() => {
     if (introspection) {
@@ -185,7 +192,7 @@ export const Editor = forwardRef<
       <MonacoEditor
         className="size-full"
         {...props}
-        theme="hive-laboratory-dark"
+        theme={theme === 'dark' ? 'hive-laboratory-dark' : 'hive-laboratory-light'}
         onMount={editor => {
           editorRef.current = editor;
         }}

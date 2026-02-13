@@ -58,9 +58,9 @@ import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
-import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
+import { Tabs, TabsList, TabsTrigger } from '@graphql-hive/laboratory';
 
 const explorer = explorerPlugin();
 

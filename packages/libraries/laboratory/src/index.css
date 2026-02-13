@@ -35,46 +35,127 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
-.dark {
-  --radius: 0.5rem;
-  --background: 220, 21.43%, 5.49%;
-  --foreground: 213 31% 91%;
-
-  --muted: 24 9.8% 10%;
-  --muted-foreground: 25 5.26% 44.71%;
-
-  --popover: 222.86 70% 3.92%;
-  --popover-foreground: 0 0% 98%;
-
-  --card: 224 71% 4%;
-  --card-foreground: 213 31% 91%;
-
-  --border: 12 5% 15%;
-  --input: 12 5% 15%;
-
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 1.2%;
-
-  --secondary: 230 14% 8%;
-  --secondary-foreground: 210 40% 98%;
-
-  --accent: 230 14% 8%;
-  --accent-foreground: 210 40% 98%;
-
-  --destructive: 220 38 38;
-  --destructive-foreground: 210 40% 98%;
-
-  --ring: 216 34% 17%;
-
-  --radius: 0.5rem;
+:host,
+.hive-laboratory {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-@layer base {
+.hive-laboratory {
+  --color-neutral-1: 0 0% 99%;
+  --color-neutral-2: 180 9% 97%;
+  --color-neutral-3: 210 7% 95%;
+  --color-neutral-4: 200 6% 92%;
+  --color-neutral-5: 210 6% 89%;
+  --color-neutral-6: 204 5% 79%;
+  --color-neutral-7: 197 4% 67%;
+  --color-neutral-8: 196 4% 51%;
+  --color-neutral-9: 193 9% 32%;
+  --color-neutral-10: 188 15% 21%;
+  --color-neutral-11: 188 19% 15%;
+  --color-neutral-12: 175 23% 10%;
+
+  --color-accent: 206 96% 35%;
+
+  --color-ring: 216 58% 49%;
+
+  --radius: var(--hive-laboratory-radius, 0.5rem);
+  --background: var(--hive-laboratory-background, var(--color-neutral-2));
+  --foreground: var(--hive-laboratory-foreground, var(--color-neutral-11));
+
+  --muted: var(--hive-laboratory-muted, 24 9.8% 10%);
+  --muted-foreground: var(--hive-laboratory-muted-foreground, var(--color-neutral-11));
+
+  --popover: var(--hive-laboratory-popover, var(--color-neutral-3));
+  --popover-foreground: var(--hive-laboratory-popover-foreground, var(--color-neutral-11));
+
+  --card: var(--hive-laboratory-card, var(--color-neutral-1));
+  --card-foreground: var(--hive-laboratory-card-foreground, var(--color-neutral-11));
+
+  --border: var(--hive-laboratory-border, var(--color-neutral-5));
+  --input: var(--hive-laboratory-input, var(--color-neutral-5));
+
+  --primary: var(--hive-laboratory-primary, var(--color-accent));
+  --primary-foreground: var(--hive-laboratory-primary-foreground, var(--color-neutral-1));
+
+  --secondary: var(--hive-laboratory-secondary, var(--color-neutral-3));
+  --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-11));
+
+  --accent: var(--hive-laboratory-accent, var(--color-accent));
+  --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));
+
+  --destructive: var(--hive-laboratory-destructive, var(--red-500));
+  --destructive-foreground: var(--hive-laboratory-destructive-foreground, var(--color-neutral-1));
+
+  --ring: var(--hive-laboratory-ring, var(--color-ring));
+}
+
+.hive-laboratory.dark {
+  --color-neutral-1: 210 21% 5%;
+  --color-neutral-2: 210 16% 7%;
+  --color-neutral-3: 214 14% 10%;
+  --color-neutral-4: 210 13% 13%;
+  --color-neutral-5: 210 12% 16%;
+  --color-neutral-6: 210 11% 21%;
+  --color-neutral-7: 210 12% 27%;
+  --color-neutral-8: 210 11% 34%;
+  --color-neutral-9: 210 10% 43%;
+  --color-neutral-10: 213 9% 58%;
+  --color-neutral-11: 210 11% 75%;
+  --color-neutral-12: 204 14% 93%;
+
+  --color-accent: 48 100% 83%;
+
+  --radius: var(--hive-laboratory-radius, 0.5rem);
+  --background: var(--hive-laboratory-background, var(--color-neutral-1));
+  --foreground: var(--hive-laboratory-foreground, var(--color-neutral-11));
+
+  --muted: var(--hive-laboratory-muted, var(--color-neutral-3));
+  --muted-foreground: var(--hive-laboratory-muted-foreground, var(--color-neutral-11));
+
+  --popover: var(--hive-laboratory-popover, var(--color-neutral-3));
+  --popover-foreground: var(--hive-laboratory-popover-foreground, var(--color-neutral-11));
+
+  --card: var(--hive-laboratory-card, var(--color-neutral-2));
+  --card-foreground: var(--hive-laboratory-card-foreground, var(--color-neutral-11));
+
+  --border: var(--hive-laboratory-border, var(--color-neutral-5));
+  --input: var(--hive-laboratory-input, var(--color-neutral-5));
+
+  --primary: var(--hive-laboratory-primary, var(--color-accent));
+  --primary-foreground: var(--hive-laboratory-primary-foreground, var(--color-neutral-1));
+
+  --secondary: var(--hive-laboratory-secondary, var(--color-neutral-3));
+  --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-11));
+
+  --accent: var(--hive-laboratory-accent, var(--color-accent));
+  --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));
+
+  --destructive: var(--hive-laboratory-destructive, var(--red-500));
+  --destructive-foreground: var(--hive-laboratory-destructive-foreground, var(--color-neutral-1));
+
+  --ring: var(--hive-laboratory-ring, var(--color-ring));
+}
+
+@layer components {
   * {
-    @apply border-border outline-ring/50;
+    --tw-border-style: solid;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    @apply outline-ring/50;
   }
 
-  body {
+  *,
+  :after,
+  :before,
+  ::backdrop {
+    border: 0 solid hsl(var(--border));
+  }
+}
+
+@layer color {
+  .hive-laboratory {
     @apply bg-background text-foreground;
   }
 }

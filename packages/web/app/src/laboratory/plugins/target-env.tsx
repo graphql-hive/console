@@ -1,6 +1,5 @@
 import { GlobeIcon } from 'lucide-react';
-import { Editor } from '@/laboratory/components/laboratory/editor';
-import { LaboratoryPlugin } from '@/laboratory/lib/plugins';
+import { Editor, LaboratoryPlugin } from '@graphql-hive/laboratory';
 
 export const TargetEnvPlugin = (props: {
   organizationSlug: string;
