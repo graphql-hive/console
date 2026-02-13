@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Activity, BarChart3, Gauge, TrendingUp } from 'lucide-react';
 
 interface MetricCardProps {
@@ -38,15 +39,82 @@ const typeConfig = {
 export function MetricCard({ name, type, unit, description, labels }: MetricCardProps) {
   const config = typeConfig[type];
   const Icon = config.icon;
+  const [isCopied, setIsCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const metricId = `metric-${name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')}`;
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function showCopiedState() {
+    setIsCopied(true);
+
+    if (copiedTimeoutRef.current) {
+      clearTimeout(copiedTimeoutRef.current);
+    }
+
+    copiedTimeoutRef.current = setTimeout(() => {
+      setIsCopied(false);
+    }, 1200);
+  }
+
+  async function copyMetricLink() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const metricUrl = `${window.location.origin}${window.location.pathname}${window.location.search}#${metricId}`;
+
+    try {
+      await navigator.clipboard.writeText(metricUrl);
+      showCopiedState();
+    } catch {
+      window.location.hash = metricId;
+    }
+  }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow duration-200 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-black/30">
+    <div
+      id={metricId}
+      className="group scroll-mt-20 overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow duration-200 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-black/30"
+    >
       <div className="p-5">
         <div className="mb-3 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <code className="break-all text-sm font-semibold text-gray-900 dark:text-slate-100">
-              {name}
-            </code>
+            <div className="flex items-center gap-1.5">
+              <code className="break-all text-sm font-semibold text-gray-900 dark:text-slate-100">
+                {name}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  void copyMetricLink();
+                }}
+                className={`hive-focus inline-flex items-center justify-center rounded font-mono text-sm font-semibold leading-none transition-all duration-200 ${isCopied ? 'translate-y-0 text-gray-500 opacity-100 dark:text-slate-500' : 'translate-y-0 text-gray-500 opacity-0 hover:text-gray-700 focus:text-gray-700 group-focus-within:opacity-100 group-hover:opacity-100 dark:text-slate-500 dark:hover:text-slate-200 dark:focus:text-slate-200'}`}
+                aria-label={`Copy link to ${name}`}
+                title="Copy metric link"
+              >
+                {isCopied ? (
+                  <>
+                    <span>✓</span>
+                    <span className="ml-1 text-xs">copied</span>
+                  </>
+                ) : (
+                  '#'
+                )}
+              </button>
+              <span className="sr-only" aria-live="polite">
+                {isCopied ? `Copied link to ${name}` : ''}
+              </span>
+            </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {unit && (

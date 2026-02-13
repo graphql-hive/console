@@ -604,16 +604,18 @@ Planning cache metrics measure query planning cache hit/miss behavior and cache 
 
 These labels are shared by cache lookup counters and duration histograms.
 
-<MetricsSection
-  labels={[
-    {
-      name: 'result',
-      meaning: 'Cache lookup outcome',
-      typicalValues: ['hit', 'miss'],
-      notes: 'Used by cache `requests_total` and `duration` metrics'
-    }
-  ]}
-/>
+<div className="mt-4">
+    <MetricsSection
+    labels={[
+        {
+        name: 'result',
+        meaning: 'Cache lookup outcome',
+        typicalValues: ['hit', 'miss'],
+        notes: 'Used by cache `requests_total` and `duration` metrics'
+        }
+    ]}
+    />
+</div>
 
 ## Troubleshooting
 
