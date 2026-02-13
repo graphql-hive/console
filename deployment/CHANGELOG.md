@@ -1,5 +1,45 @@
 # hive
 
+## 9.4.1
+
+### Patch Changes
+
+- [#7664](https://github.com/graphql-hive/console/pull/7664)
+  [`ddea09b`](https://github.com/graphql-hive/console/commit/ddea09bbc34f5486fa6ddddf4e60a899fc7f43b5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix service SDL being printed on a single line in
+  check and publish views
+
+- [#7688](https://github.com/graphql-hive/console/pull/7688)
+  [`fb14a99`](https://github.com/graphql-hive/console/commit/fb14a990871456730c7a5da92d157962fb0599a7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix unexpected error when attempting to select
+  resources in a project without app deployments/services
+
+- [#7687](https://github.com/graphql-hive/console/pull/7687)
+  [`c514e23`](https://github.com/graphql-hive/console/commit/c514e237daa125d8e64d350218ea553fbf4e44a3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Gracefully handle error when publish lock
+  acquisition fails for clients not supporting retries.
+
+- [#7670](https://github.com/graphql-hive/console/pull/7670)
+  [`8138a6c`](https://github.com/graphql-hive/console/commit/8138a6cb381f1f92eb514c0c9125d3c15df3e9b3)
+  Thanks [@mskorokhodov](https://github.com/mskorokhodov)! - Hive Lab: Better initial state handling
+  for env variables in preflight script
+
+- [#7672](https://github.com/graphql-hive/console/pull/7672)
+  [`21f3aee`](https://github.com/graphql-hive/console/commit/21f3aeeb2a914f8da4bdc913aead3a9400bf75f4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix "see organization as admin" mode for debugging
+  purposes.
+
+- [#7675](https://github.com/graphql-hive/console/pull/7675)
+  [`30238d7`](https://github.com/graphql-hive/console/commit/30238d700b5b094358ebcd13f13b025b9fb33fe1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add missing message for no details on schema
+  check/push changes
+
+- [#7669](https://github.com/graphql-hive/console/pull/7669)
+  [`a6f5ac4`](https://github.com/graphql-hive/console/commit/a6f5ac4cc61f7c5eee68768c3f82140cb0290dc1)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add `lastUsed`, `createdAt`,
+  `activatedAt`, and `status` columns to app deployments tables. Fix broken text colors on multiple
+  pages after the recent color palette overhaul.
+
 ## 9.4.0
 
 ### Minor Changes
