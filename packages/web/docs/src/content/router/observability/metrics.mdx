@@ -174,17 +174,21 @@ Attribute override behavior:
 - `false` - drop label from that metric
 - `true` - keep label (all labels are enabled by default)
 
-Histogram aggregation can also be customized under `telemetry.metrics.instrumentation.common.histogram`.
+Histogram aggregation can also be customized under
+`telemetry.metrics.instrumentation.common.histogram`.
 
-- `explicit` (default) uses unit-specific bucket sets.
-- `exponential` uses one shared exponential strategy for all histogram metrics.
-- `explicit` lets you configure unit-specific buckets:
+- [`explicit`](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#histogram) (default)
+  uses unit-specific bucket sets. Lets you configure unit-specific buckets:
   - `seconds` for histogram unit `s`
   - `bytes` for histogram unit `By`
+- [`exponential`](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#exponentialhistogram)
+  uses one shared exponential strategy for all histogram metrics.
+- `record_min_max controls whether min and max are reported for histogram points.
 
 Bucket format rules:
 
-- `buckets` can be either all numbers or all strings.
+- [`buckets`](https://opentelemetry.io/docs/specs/otel/metrics/sdk/#explicit-bucket-histogram-aggregation)
+  can be either all numbers or all strings.
 - mixed arrays are not allowed.
 - `seconds.buckets` string values are parsed as durations (for example `"5ms"`, `"1s"`).
 - `bytes.buckets` string values are parsed as human-readable sizes (for example `"1KB"`, `"5MB"`).
@@ -199,10 +203,45 @@ telemetry:
         histogram:
           aggregation: explicit
           seconds:
-            buckets: ["5ms", "10ms", "25ms", "50ms", "75ms", "100ms", "250ms", "500ms", "750ms", "1s", "2.5s", "5s", "7.5s", "10s"]
+            buckets:
+              [
+                '5ms',
+                '10ms',
+                '25ms',
+                '50ms',
+                '75ms',
+                '100ms',
+                '250ms',
+                '500ms',
+                '750ms',
+                '1s',
+                '2.5s',
+                '5s',
+                '7.5s',
+                '10s'
+              ]
             record_min_max: false
           bytes:
-            buckets: ["128B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB", "1MB", "2MB", "3MB", "4MB", "5MB"]
+            buckets:
+              [
+                '128B',
+                '512B',
+                '1KB',
+                '2KB',
+                '4KB',
+                '8KB',
+                '16KB',
+                '32KB',
+                '64KB',
+                '128KB',
+                '256KB',
+                '512KB',
+                '1MB',
+                '2MB',
+                '3MB',
+                '4MB',
+                '5MB'
+              ]
             record_min_max: false
 ```
 

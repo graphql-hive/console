@@ -249,7 +249,7 @@ Metrics are enabled when at least one exporter is configured and enabled.
 
 | Field             | Type     | Default | Notes                                                                                 |
 | ----------------- | -------- | ------- | ------------------------------------------------------------------------------------- |
-| `exporters`       | `array`  | `[]`    | List of exporters used to send metrics.        |
+| `exporters`       | `array`  | `[]`    | List of exporters used to send metrics.                                               |
 | `instrumentation` | `object` | `{}`    | Instrument behavior for metrics (histogram aggregation and per-instrument overrides). |
 
 <div id="telemetry-metrics-exporters" style={{marginTop: 10}}>
@@ -271,17 +271,17 @@ This reference documents OTLP and Prometheus exporter configuration.
 <details>
   <summary>`otlp`</summary>
 
-| Field                | Type                 | Default      | Notes                                                             |
-| -------------------- | -------------------- | ------------ | ----------------------------------------------------------------- |
-| `kind`               | `string`             | -            | Must be `otlp`.                                                   |
-| `enabled`            | `boolean`            | `true`       | Enables or disables this exporter.                                |
-| `endpoint`           | `StringOrExpression` | -            | OTLP endpoint. Must be set explicitly.                            |
-| `protocol`           | `string`             | -            | OTLP transport protocol. Supported values: `http`, `grpc`.        |
-| `interval`           | `string`             | `60s`        | Interval between OTLP export attempts.                            |
-| `temporality`        | `string`             | `cumulative` | Aggregation temporality. Supported values: `cumulative`, `delta`. |
-| `max_export_timeout` | `string`             | `5s`         | Maximum time for one OTLP export attempt.                         |
-| `http`               | `object`             | -            | HTTP-specific OTLP settings (for `protocol: http`).               |
-| `grpc`               | `object`             | -            | gRPC-specific OTLP settings (for `protocol: grpc`).               |
+| Field                                                                                                               | Type                 | Default      | Notes                                                             |
+| ------------------------------------------------------------------------------------------------------------------- | -------------------- | ------------ | ----------------------------------------------------------------- |
+| `kind`                                                                                                              | `string`             | -            | Must be `otlp`.                                                   |
+| `enabled`                                                                                                           | `boolean`            | `true`       | Enables or disables this exporter.                                |
+| `endpoint`                                                                                                          | `StringOrExpression` | -            | OTLP endpoint. Must be set explicitly.                            |
+| `protocol`                                                                                                          | `string`             | -            | OTLP transport protocol. Supported values: `http`, `grpc`.        |
+| `interval`                                                                                                          | `string`             | `60s`        | Interval between OTLP export attempts.                            |
+| [`temporality`](https://opentelemetry.io/docs/specs/otel/metrics/supplementary-guidelines/#aggregation-temporality) | `string`             | `cumulative` | Aggregation temporality. Supported values: `cumulative`, `delta`. |
+| `max_export_timeout`                                                                                                | `string`             | `5s`         | Maximum time for one OTLP export attempt.                         |
+| `http`                                                                                                              | `object`             | -            | HTTP-specific OTLP settings (for `protocol: http`).               |
+| `grpc`                                                                                                              | `object`             | -            | gRPC-specific OTLP settings (for `protocol: grpc`).               |
 
 OTLP over HTTP:
 
@@ -378,39 +378,42 @@ Set aggregation mode with `aggregation`.
 
 `explicit` aggregation (default):
 
-| Field             | Type     | Default | Notes                                                               |
-| ----------------- | -------- | ------- | ------------------------------------------------------------------- |
-| `aggregation`     | `string` | -       | Must be `explicit`.                                                 |
-| `seconds`         | `object` | -       | Explicit histogram config for metrics with unit `s`.                |
-| `bytes`           | `object` | -       | Explicit histogram config for metrics with unit `By`.               |
+| Field         | Type     | Default | Notes                                                 |
+| ------------- | -------- | ------- | ----------------------------------------------------- |
+| `aggregation` | `string` | -       | Must be `explicit`.                                   |
+| `seconds`     | `object` | -       | Explicit histogram config for metrics with unit `s`.  |
+| `bytes`       | `object` | -       | Explicit histogram config for metrics with unit `By`. |
 
 `seconds` and `bytes` fields:
 
-| Field            | Type       | Default | Notes                                                        |
-| ---------------- | ---------- | ------- | ------------------------------------------------------------ |
+| Field            | Type                   | Default | Notes                                                           |
+| ---------------- | ---------------------- | ------- | --------------------------------------------------------------- |
 | `buckets`        | `number[] \| string[]` | varies  | Explicit bucket upper bounds. Must be non-empty and increasing. |
-| `record_min_max` | `boolean`  | `false` | Record min/max values for this unit bucket set.              |
+| `record_min_max` | `boolean`              | `false` | Record min/max values for this unit bucket set.                 |
 
 Default explicit buckets:
 
 - `seconds.buckets`: `[0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10]`
-- `bytes.buckets`: `[128, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 3145728, 4194304, 5242880]`
+- `bytes.buckets`:
+  `[128, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152, 3145728, 4194304, 5242880]`
 
 Bucket format rules:
 
 - `buckets` can be either all numbers or all strings.
 - mixed arrays are not allowed.
 - for `seconds.buckets`, string values are parsed as durations (for example `"5ms"`, `"1s"`).
-- for `bytes.buckets`, string values are parsed as human-readable sizes (for example `"1KB"`, `"5MB"`).
+- for `bytes.buckets`, string values are parsed as human-readable sizes (for example `"1KB"`,
+  `"5MB"`).
 
-`exponential` aggregation:
+[`exponential`](https://opentelemetry.io/docs/specs/otel/metrics/data-model/#exponentialhistogram)
+aggregation:
 
-| Field            | Type      | Default | Notes                           |
-| ---------------- | --------- | ------- | ------------------------------- |
-| `aggregation`    | `string`  | -       | Must be `exponential`.          |
-| `max_size`       | `integer` | -       | Max bucket count. Required.     |
-| `max_scale`      | `integer` | -       | Max scale for bucket precision. Required. |
-| `record_min_max` | `boolean` | `false` | Record min/max values.          |
+| Field                                                                                                               | Type      | Default | Notes                                     |
+| ------------------------------------------------------------------------------------------------------------------- | --------- | ------- | ----------------------------------------- |
+| `aggregation`                                                                                                       | `string`  | -       | Must be `exponential`.                    |
+| [`max_size`](https://opentelemetry.io/docs/specs/otel/metrics/sdk/#base2-exponential-bucket-histogram-aggregation)  | `integer` | -       | Max bucket count. Required.               |
+| [`max_scale`](https://opentelemetry.io/docs/specs/otel/metrics/sdk/#base2-exponential-bucket-histogram-aggregation) | `integer` | -       | Max scale for bucket precision. Required. |
+| `record_min_max`                                                                                                    | `boolean` | `false` | Record min/max values.                    |
 
 </details>
 
@@ -437,10 +440,45 @@ telemetry:
         histogram:
           aggregation: explicit
           seconds:
-            buckets: ["5ms", "10ms", "25ms", "50ms", "75ms", "100ms", "250ms", "500ms", "750ms", "1s", "2.5s", "5s", "7.5s", "10s"]
+            buckets:
+              [
+                '5ms',
+                '10ms',
+                '25ms',
+                '50ms',
+                '75ms',
+                '100ms',
+                '250ms',
+                '500ms',
+                '750ms',
+                '1s',
+                '2.5s',
+                '5s',
+                '7.5s',
+                '10s'
+              ]
             record_min_max: false
           bytes:
-            buckets: ["128B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "64KB", "128KB", "256KB", "512KB", "1MB", "2MB", "3MB", "4MB", "5MB"]
+            buckets:
+              [
+                '128B',
+                '512B',
+                '1KB',
+                '2KB',
+                '4KB',
+                '8KB',
+                '16KB',
+                '32KB',
+                '64KB',
+                '128KB',
+                '256KB',
+                '512KB',
+                '1MB',
+                '2MB',
+                '3MB',
+                '4MB',
+                '5MB'
+              ]
             record_min_max: false
       instruments:
         http.server.request.duration: true
