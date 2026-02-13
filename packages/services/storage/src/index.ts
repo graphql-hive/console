@@ -223,9 +223,11 @@ export async function createStorage(
   ): OrganizationInvitation {
     return {
       get id() {
-        return Buffer.from(
-          [invitation.organization_id, invitation.email, invitation.code].join(':'),
-        ).toString('hex');
+        return getOrganizationInvitationId({
+          organizationId: invitation.organization_id,
+          email: invitation.email,
+          code: invitation.code,
+        });
       },
       email: invitation.email,
       organizationId: invitation.organization_id,
@@ -446,11 +448,9 @@ export async function createStorage(
     ) {
       const record = await connection.maybeOne<unknown>(sql`/* getUserBySuperTokenId */
         SELECT
-          ${userFields(sql`"users".`, sql`"stu".`)}
+          ${userFields(sql`"users".`)}
         FROM
           "users"
-        LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-          ON ("stu"."user_id" = "users"."supertoken_user_id")
         WHERE
           "users"."supertoken_user_id" = ${superTokensUserId}
         LIMIT 1
@@ -468,11 +468,9 @@ export async function createStorage(
         const userIds = input.map(i => i.id);
         const records = await input[0].connection.any<unknown>(sql`/* getUserById */
           SELECT
-            ${userFields(sql`"users".`, sql`"stu".`)}
+            ${userFields(sql`"users".`)}
           FROM
             "users"
-          LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-            ON ("stu"."user_id" = "users"."supertoken_user_id")
           WHERE
             "users"."id" = ANY(${sql.array(userIds, 'uuid')})
         `);
@@ -535,6 +533,7 @@ export async function createStorage(
       args: {
         oidcIntegrationId: string;
         userId: string;
+        invitation: OrganizationInvitation | null;
       },
       connection: Connection,
     ) {
@@ -552,7 +551,7 @@ export async function createStorage(
         return;
       }
 
-      // Add user and assign default role (either Viewer or custom default role)
+      // Add user and assign role (either the invited role, custom default role, or Viewer)
       await connection.query(
         sql`/* addOrganizationMemberViaOIDCIntegrationId */
           INSERT INTO organization_member
@@ -563,23 +562,22 @@ export async function createStorage(
               ${args.userId},
               (
                 COALESCE(
+                  ${args.invitation?.roleId ?? null},
                   (SELECT default_role_id FROM oidc_integrations
                     WHERE id = ${args.oidcIntegrationId}),
                   (SELECT id FROM organization_member_roles
                     WHERE organization_id = ${linkedOrganizationId} AND name = 'Viewer')
                 )
               ),
-              (
-                SELECT
-                  default_assigned_resources
-                FROM
-                  oidc_integrations
-                WHERE
-                  id = ${args.oidcIntegrationId}
-              ),
+              ${
+                args.invitation?.assignedResources
+                  ? sql.jsonb(args.invitation.assignedResources)
+                  : sql`(SELECT default_assigned_resources FROM oidc_integrations
+                      WHERE id = ${args.oidcIntegrationId})`
+              },
               now()
             )
-          ON CONFLICT DO NOTHING
+          ${args.invitation ? sql`` : sql`ON CONFLICT DO NOTHING`}
           RETURNING *
         `,
       );
@@ -655,85 +653,138 @@ export async function createStorage(
         id: string;
       };
     }) {
-      return tracedTransaction('ensureUserExists', pool, async t => {
-        let action: 'created' | 'no_action' = 'no_action';
+      class EnsureUserExistsError extends Error {}
 
-        // try searching existing user first
-        let internalUser = await t
-          .maybeOne<unknown>(
-            sql`
-              SELECT
-                ${userFields(sql`"users".`, sql`"stu".`)}
-              FROM "users"
-              LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-                ON ("stu"."user_id" = "users"."supertoken_user_id")
-              WHERE
-                "users"."supertoken_user_id" = ${superTokensUserId}
-                OR EXISTS (
-                  SELECT 1 FROM "users_linked_identities" "uli"
-                  WHERE "uli"."user_id" = "users"."id"
-                  AND "uli"."identity_id" = ${superTokensUserId}
-                )
-            `,
-          )
-          .then(v => UserModel.nullable().parse(v));
+      try {
+        return await tracedTransaction('ensureUserExists', pool, async t => {
+          let action: 'created' | 'no_action' = 'no_action';
 
-        if (!internalUser) {
-          // try automatic account linking
-          const sameEmailUsers = await t
-            .any<unknown>(
-              sql`/* ensureUserExists */
-                SELECT ${userFields(sql`"users".`, sql`"stu".`)}
+          // try searching existing user first
+          let internalUser = await t
+            .maybeOne<unknown>(
+              sql`
+                SELECT
+                  ${userFields(sql`"users".`)}
                 FROM "users"
-                LEFT JOIN "supertokens_thirdparty_users" AS "stu"
-                  ON ("stu"."user_id" = "users"."supertoken_user_id")
-                WHERE "users"."email" = ${email}
-                ORDER BY "users"."created_at";
+                WHERE
+                  "users"."supertoken_user_id" = ${superTokensUserId}
+                  OR EXISTS (
+                    SELECT 1 FROM "users_linked_identities" "uli"
+                    WHERE "uli"."user_id" = "users"."id"
+                    AND "uli"."identity_id" = ${superTokensUserId}
+                  )
               `,
             )
-            .then(users => users.map(user => UserModel.parse(user)));
+            .then(v => UserModel.nullable().parse(v));
 
-          if (sameEmailUsers.length === 1) {
-            internalUser = sameEmailUsers[0];
-            await t.query(sql`
-              INSERT INTO "users_linked_identities" ("user_id", "identity_id")
-              VALUES (${internalUser.id}, ${superTokensUserId})
-            `);
+          if (!internalUser) {
+            // try automatic account linking
+            const sameEmailUsers = await t
+              .any<unknown>(
+                sql`/* ensureUserExists */
+                  SELECT ${userFields(sql`"users".`)}
+                  FROM "users"
+                  WHERE "users"."email" = ${email}
+                  ORDER BY "users"."created_at";
+                `,
+              )
+              .then(users => users.map(user => UserModel.parse(user)));
+
+            if (sameEmailUsers.length === 1) {
+              internalUser = sameEmailUsers[0];
+              await t.query(sql`
+                INSERT INTO "users_linked_identities" ("user_id", "identity_id")
+                VALUES (${internalUser.id}, ${superTokensUserId})
+              `);
+            }
           }
-        }
 
-        // either user is brand new or user is not linkable (multiple accounts with the same email exist)
-        if (!internalUser) {
-          internalUser = await shared.createUser(
-            buildUserData({
-              email,
-              firstName,
-              lastName,
-              superTokensUserId,
-              oidcIntegrationId: oidcIntegration?.id ?? null,
-            }),
-            t,
-          );
+          let invitation: OrganizationInvitation | null = null;
 
-          action = 'created';
-        }
-
-        if (oidcIntegration !== null) {
-          // Add user to OIDC linked integration
-          await shared.addOrganizationMemberViaOIDCIntegrationId(
-            {
+          if (oidcIntegration) {
+            const oidcConfig = await this.getOIDCIntegrationById({
               oidcIntegrationId: oidcIntegration.id,
-              userId: internalUser.id,
-            },
-            t,
-          );
-        }
+            });
 
-        return {
-          user: internalUser,
-          action,
-        };
-      });
+            if (oidcConfig?.requireInvitation) {
+              invitation = await t
+                .maybeOne<unknown>(
+                  sql`
+                    DELETE FROM "organization_invitations" AS "oi"
+                    WHERE
+                      "oi"."organization_id" = ${oidcConfig.linkedOrganizationId}
+                      AND "oi"."email" = ${email}
+                      AND "oi"."expires_at" > now()
+                    RETURNING
+                      "oi"."organization_id" "organizationId"
+                      , "oi"."code" "code"
+                      , "oi"."email" "email"
+                      , "oi"."created_at" "createdAt"
+                      , "oi"."expires_at" "expiresAt"
+                      , "oi"."role_id" "roleId"
+                      , "oi"."assigned_resources" "assignedResources"
+                  `,
+                )
+                .then(v => OrganizationInvitationModel.nullable().parse(v));
+
+              if (!invitation) {
+                const member = internalUser
+                  ? await this.getOrganizationMember({
+                      organizationId: oidcConfig.linkedOrganizationId,
+                      userId: internalUser.id,
+                    })
+                  : null;
+
+                if (!member) {
+                  throw new EnsureUserExistsError('User is not invited to the organization.');
+                }
+              }
+            }
+          }
+
+          // either user is brand new or user is not linkable (multiple accounts with the same email exist)
+          if (!internalUser) {
+            internalUser = await shared.createUser(
+              buildUserData({
+                email,
+                firstName,
+                lastName,
+                superTokensUserId,
+                oidcIntegrationId: oidcIntegration?.id ?? null,
+              }),
+              t,
+            );
+
+            action = 'created';
+          }
+
+          if (oidcIntegration !== null) {
+            // Add user to OIDC linked integration
+            await shared.addOrganizationMemberViaOIDCIntegrationId(
+              {
+                oidcIntegrationId: oidcIntegration.id,
+                userId: internalUser.id,
+                invitation,
+              },
+              t,
+            );
+          }
+
+          return {
+            ok: true,
+            user: internalUser,
+            action,
+          };
+        });
+      } catch (e) {
+        if (e instanceof EnsureUserExistsError) {
+          return {
+            ok: false,
+            reason: e.message,
+          };
+        }
+        throw e;
+      }
     },
     async getUserBySuperTokenId({ superTokensUserId }) {
       return shared.getUserBySuperTokenId({ superTokensUserId }, pool);
@@ -933,7 +984,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationOwner */
         SELECT
-          ${userFields(sql`"u".`, sql`"stu".`)},
+          ${userFields(sql`"u".`)},
           omr.scopes as scopes,
           om.organization_id,
           om.connected_to_zendesk,
@@ -946,7 +997,6 @@ export async function createStorage(
         LEFT JOIN users as u ON (u.id = o.user_id)
         LEFT JOIN organization_member as om ON (om.user_id = u.id AND om.organization_id = o.id)
         LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-        LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
         WHERE o.id = ANY(${sql.array(organizations, 'uuid')})`,
       );
 
@@ -983,7 +1033,7 @@ export async function createStorage(
       >(
         sql`/* getOrganizationMember */
           SELECT
-            ${userFields(sql`"u".`, sql`"stu".`)},
+            ${userFields(sql`"u".`)},
             omr.scopes as scopes,
             om.organization_id,
             om.connected_to_zendesk,
@@ -997,7 +1047,6 @@ export async function createStorage(
           LEFT JOIN organizations as o ON (o.id = om.organization_id)
           LEFT JOIN users as u ON (u.id = om.user_id)
           LEFT JOIN organization_member_roles as omr ON (omr.organization_id = o.id AND omr.id = om.role_id)
-          LEFT JOIN supertokens_thirdparty_users as stu ON (stu.user_id = u.supertoken_user_id)
           WHERE (om.organization_id, om.user_id) IN ((${sql.join(
             selectors.map(s => sql`${s.organizationId}, ${s.userId}`),
             sql`), (`,
@@ -1470,12 +1519,15 @@ export async function createStorage(
 
       return results.rows.map(transformOrganization);
     },
-    async getOrganizationByInviteCode({ inviteCode }) {
+    async getOrganizationByInviteCode({ inviteCode, email }) {
       const result = await pool.maybeOne<Slonik<organizations>>(
         sql`/* getOrganizationByInviteCode */
           SELECT o.* FROM organizations as o
           LEFT JOIN organization_invitations as i ON (i.organization_id = o.id)
-          WHERE i.code = ${inviteCode} AND i.expires_at > NOW()
+          WHERE
+            i.code = ${inviteCode}
+            AND i.email = ${email}
+            AND i.expires_at > NOW()
           GROUP BY o.id
           LIMIT 1
         `,
@@ -3195,6 +3247,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         FROM
           "oidc_integrations"
         WHERE
@@ -3225,6 +3278,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         FROM
           "oidc_integrations"
         WHERE
@@ -3297,6 +3351,7 @@ export async function createStorage(
             , "oidc_user_access_only"
             , "default_role_id"
             , "default_assigned_resources"
+            , "require_invitation"
         `);
 
         return {
@@ -3356,6 +3411,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3367,6 +3423,7 @@ export async function createStorage(
           SET
             "oidc_user_join_only" = ${args.oidcUserJoinOnly ?? sql`"oidc_user_join_only"`}
             , "oidc_user_access_only" = ${args.oidcUserAccessOnly ?? sql`"oidc_user_access_only"`}
+            , "require_invitation" = ${args.requireInvitation ?? sql`"require_invitation"`}
           WHERE
             "id" = ${args.oidcIntegrationId}
           RETURNING
@@ -3383,6 +3440,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3410,6 +3468,7 @@ export async function createStorage(
           , "additional_scopes"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -3452,6 +3511,7 @@ export async function createStorage(
           , "oidc_user_access_only"
           , "default_role_id"
           , "default_assigned_resources"
+          , "require_invitation"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -4979,6 +5039,7 @@ const OktaIntegrationBaseModel = zod.object({
   oidc_user_access_only: zod.boolean(),
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
+  require_invitation: zod.boolean(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -5015,6 +5076,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       additionalScopes: rawRecord.additional_scopes,
       oidcUserJoinOnly: rawRecord.oidc_user_join_only,
       oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+      requireInvitation: rawRecord.require_invitation,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
     };
@@ -5031,6 +5093,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     additionalScopes: rawRecord.additional_scopes,
     oidcUserJoinOnly: rawRecord.oidc_user_join_only,
     oidcUserAccessOnly: rawRecord.oidc_user_access_only,
+    requireInvitation: rawRecord.require_invitation,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,
   };
@@ -5652,10 +5715,32 @@ export type PaginatedOrganizationInvitationConnection = Readonly<{
   }>;
 }>;
 
-export const userFields = (
-  user: TaggedTemplateLiteralInvocation,
-  superTokensThirdParty: TaggedTemplateLiteralInvocation,
-) => sql`
+const getOrganizationInvitationId = (keys: {
+  organizationId: string;
+  email: string;
+  code: string;
+}) => Buffer.from([keys.organizationId, keys.email, keys.code].join(':')).toString('hex');
+const OrganizationInvitationModel = zod
+  .object({
+    organizationId: zod.string(),
+    code: zod.string(),
+    email: zod.string().email(),
+    createdAt: zod.number().transform(v => new Date(v).toISOString()),
+    expiresAt: zod.number().transform(v => new Date(v).toISOString()),
+    roleId: zod.string(),
+    assignedResources: zod.any(),
+  })
+  .transform(
+    invitation =>
+      ({
+        ...invitation,
+        get id(): string {
+          return getOrganizationInvitationId(this);
+        },
+      }) as OrganizationInvitation,
+  );
+
+export const userFields = (user: TaggedTemplateLiteralInvocation) => sql`
   ${user}"id"
   , ${user}"email"
   , to_json(${user}"created_at") AS "createdAt"
@@ -5665,7 +5750,19 @@ export const userFields = (
   , ${user}"is_admin" AS "isAdmin"
   , ${user}"oidc_integration_id" AS "oidcIntegrationId"
   , ${user}"zendesk_user_id" AS "zendeskId"
-  , ${superTokensThirdParty}"third_party_id" AS "provider"
+  , (
+      SELECT ARRAY_AGG(DISTINCT "sub_stu"."third_party_id")
+      FROM (
+        SELECT ${user}"supertoken_user_id"::text "id"
+        WHERE ${user}"supertoken_user_id" IS NOT NULL
+        UNION
+        SELECT "sub_uli"."identity_id"::text "id"
+        FROM "users_linked_identities" "sub_uli"
+        WHERE "sub_uli"."user_id" = ${user}"id"
+      ) "sub_ids"
+      LEFT JOIN "supertokens_thirdparty_users" "sub_stu"
+      ON "sub_stu"."user_id" = "sub_ids"."id"
+    ) AS "providers"
 `;
 
 export const UserModel = zod.object({
@@ -5681,21 +5778,23 @@ export const UserModel = zod.object({
     .transform(value => value ?? false),
   oidcIntegrationId: zod.string().nullable(),
   zendeskId: zod.string().nullable(),
-  provider: zod
-    .string()
-    .nullable()
-    .transform(provider => {
-      if (provider === 'oidc') {
-        return 'OIDC' as const;
-      }
-      if (provider === 'google') {
-        return 'GOOGLE' as const;
-      }
-      if (provider === 'github') {
-        return 'GITHUB' as const;
-      }
-      return 'USERNAME_PASSWORD' as const;
-    }),
+  providers: zod.array(
+    zod
+      .string()
+      .nullable()
+      .transform(provider => {
+        if (provider === 'oidc') {
+          return 'OIDC' as const;
+        }
+        if (provider === 'google') {
+          return 'GOOGLE' as const;
+        }
+        if (provider === 'github') {
+          return 'GITHUB' as const;
+        }
+        return 'USERNAME_PASSWORD' as const;
+      }),
+  ),
 });
 
 type UserType = zod.TypeOf<typeof UserModel>;

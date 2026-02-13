@@ -137,7 +137,9 @@ export async function runIsolatedLabScript(
       [
         cryptoJsSource.replace('}(this, function () {', '}(self, function () {'),
         /* javascript */ `
-        const env = ${JSON.stringify(env)};
+        const env =  {
+          variables: ${JSON.stringify(env?.variables)} || {},
+        };
 
         let promptResolve = null;
 

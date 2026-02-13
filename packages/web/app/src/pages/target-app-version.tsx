@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/AppFilter';
@@ -6,6 +7,7 @@ import { NotFoundContent } from '@/components/common/not-found-content';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +29,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { TimeAgo } from '@/components/v2';
 import { graphql } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
@@ -61,6 +62,8 @@ const TargetAppsVersionQuery = graphql(`
         name
         version
         createdAt
+        activatedAt
+        retiredAt
         lastUsed
         totalDocumentCount
         status
@@ -277,7 +280,7 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-neutral-2 hover:underline"
+              className="text-orange-500 hover:underline"
             >
               Clear filter
             </Link>
@@ -320,7 +323,14 @@ function TargetAppVersionContent(props: {
                       appDeployment?.status === AppDeploymentStatus.Pending && 'text-neutral-11',
                     )}
                   >
-                    {appDeployment?.status.toUpperCase() ?? '...'}
+                    {appDeployment?.status === AppDeploymentStatus.Retired &&
+                    appDeployment?.retiredAt ? (
+                      <span>
+                        RETIRED ({format(appDeployment.retiredAt, 'MMM d, yyyy HH:mm:ss')})
+                      </span>
+                    ) : (
+                      (appDeployment?.status.toUpperCase() ?? '...')
+                    )}
                   </div>
                 </div>
                 <div className="min-w-0">
@@ -329,20 +339,46 @@ function TargetAppVersionContent(props: {
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
-                <div className="min-w-0 text-xs">
-                  Created{' '}
-                  {appDeployment?.createdAt ? <TimeAgo date={appDeployment.createdAt} /> : '...'}
+                <div className="min-w-0">
+                  <div className="text-xs">Created</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {appDeployment?.createdAt ? (
+                      <DateWithTimeAgo
+                        date={appDeployment.createdAt}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
+                    ) : (
+                      '...'
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0 text-xs">
-                  {data.fetching ? (
-                    '...'
-                  ) : appDeployment?.lastUsed ? (
-                    <>
-                      Last Used <TimeAgo date={appDeployment.lastUsed} />
-                    </>
-                  ) : (
-                    'No Usage Data'
-                  )}
+                <div className="min-w-0">
+                  <div className="text-xs">Activated</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {appDeployment?.activatedAt ? (
+                      <DateWithTimeAgo
+                        date={appDeployment.activatedAt}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
+                    ) : (
+                      <span className="text-neutral-10 font-normal">—</span>
+                    )}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs">Last Used</div>
+                  <div className="text-neutral-12 text-sm font-semibold">
+                    {data.fetching ? (
+                      '...'
+                    ) : appDeployment?.lastUsed ? (
+                      <DateWithTimeAgo
+                        date={appDeployment.lastUsed}
+                        dateFormatStr="MMM d, yyyy HH:mm:ss"
+                      />
+                    ) : (
+                      <span className="text-neutral-10 font-normal">No Usage Data</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

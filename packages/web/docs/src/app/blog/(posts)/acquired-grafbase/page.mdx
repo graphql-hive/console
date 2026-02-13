@@ -1,13 +1,34 @@
----
-title: The Guild has acquired Grafbase
-description:
-  We're open sourcing the Grafbase stack and uniting the best GraphQL Federation Routers under Hive
-  Platform.
-date: 2026-02-10
-authors: uri
-tags: [company, platform]
-featured: true
----
+import { metadata as rootMetadata } from '../../../layout'
+
+import image from './header-image.webp'
+
+export const metadata = {
+  title: 'The Guild has acquired Grafbase',
+  description:
+    "We're open sourcing the Grafbase stack and uniting the best GraphQL Federation Routers under Hive Platform.",
+  tags: ['company', 'platform'],
+  authors: ['uri'],
+  date: '2026-02-10',
+  featured: true,
+  image,
+  openGraph: {
+    ...rootMetadata.openGraph,
+    url: '/blog/acquired-grafbase',
+    /**
+     * We currently have `metadataBase` which includes `basePath`,
+     * so the opengraph-image.png file convention results in a
+     * duplicate `basePath` in the OG Image URL.
+     *
+     * Remove this workaround when we have a fix upstream.
+     * Do not extract this workaround to a separate file, as it will stop working.
+     */
+    images: [
+      new URL('./opengraph-image.png', import.meta.url)
+        .toString()
+        .replace(process.env.NEXT_BASE_PATH || '', '')
+    ]
+  }
+}
 
 Today, we are very happy to announce that The Guild has acquired Grafbase.
 
@@ -15,12 +36,12 @@ This step is part of our long-term goal to build a stable, long-lasting home for
 infrastructure — tools and platforms that teams can depend on for many years, regardless of market
 shifts or vendor changes. We’ve followed a similar approach in the past with the
 [Stellate acquisition](https://the-guild.dev/graphql/hive/blog/stellate-acquisition) and when we
-welcomed Inigo’s enterprise customers and engineering team into the Hive Platform.
+welcomed Inigo’s enterprise customers and engineering team into the [Hive Platform](/).
 
 Grafbase has been at the forefront of GraphQL Federation, building a high performance Rust Router
 and a powerful cloud platform behind it. We’re now open sourcing the entire stack. Bringing the best
-GraphQL Federation Routers and platform under one roof makes Hive Platform a natural first choice
-for teams using GraphQL today.
+GraphQL Federation Routers and platform under one roof makes [Hive Platform](/) a natural first
+choice for teams using GraphQL today.
 
 We always had a good relationship and great respect for the Grafbase team, led by Fredrik Björk. We
 admired their engineering and valued their competition: open, honest, the kind that pushes both
@@ -28,22 +49,22 @@ teams to improve. It's a rare thing to find in a competitor, and I thank them fo
 
 We are happy to welcome Grafbase users to The Guild’s ecosystem:
 
-We’ve already started the work of integrating Grafbase dashboard into Hive Console and Grafbase
-Router into Hive Router. Grafbase users can safely continue using the Grafbase platform and Grafbase
-Rust Router. We’ll keep them running till all users have successfully migrated to our integrated
-platform, at their own pace.
+We’ve already started the work of integrating Grafbase dashboard into [Hive Console](/) and Grafbase
+Router into [Hive Router](/blog/welcome-hive-router). Grafbase users can safely continue using the
+Grafbase platform and Grafbase Rust Router. We’ll keep them running till all users have successfully
+migrated to our integrated platform, at their own pace.
 
-We already added support for using Hive Console as the schema registry and analytics platform to
-Grafbase Router (which now supports all of the GraphQL Routers in the ecosystem), to make the
+We already added support for using [Hive Console](/) as the schema registry and analytics platform
+to Grafbase Router (which now supports all of the GraphQL Routers in the ecosystem), to make the
 transition as smooth as possible.
 
 For most users the transition can be concluded in just two steps:
 
-1. Migrate from Grafbase Dashboard to Hive Console
-2. Migrate from Grafbase Router to Hive Router
+1. Migrate from Grafbase Dashboard to [Hive Console](/)
+2. Migrate from Grafbase Router to [Hive Router](/blog/welcome-hive-router)
 
 While the latter step is considered to be the more complicated step, we will make sure that every
 user has enough time and support to complete the migration.
 
-The Hive Platform is the best GraphQL Federation Platform out there. For everything GraphQL, we have
-you covered. Now and for many years to come.
+The [Hive Platform](/) is the best [GraphQL Federation Platform](/federation) out there. For
+everything GraphQL, we have you covered. Now and for many years to come.

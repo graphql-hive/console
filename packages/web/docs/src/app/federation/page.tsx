@@ -1,4 +1,5 @@
 import { ReactElement, ReactNode } from 'react';
+import { Metadata } from 'next';
 import Image from 'next/image';
 import { Anchor, CallToAction, cn, ContactButton, Heading, InfoCard } from '@theguild/components';
 import { ArrowIcon } from '../../components/arrow-icon';
@@ -13,7 +14,7 @@ import subgraphsProductsImage from '../../../public/federation/subgraphs-product
 import subgraphsReviewsImage from '../../../public/federation/subgraphs-reviews.png';
 import supergraphSchemaImage from '../../../public/federation/supergraph-schema.png';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'What is GraphQL Federation?',
   description:
     'Discover what GraphQL Federation is, how it unifies multiple APIs into a Supergraph, its core benefits, and the building blocks like subgraphs, schema composition and gateway.',
@@ -31,7 +32,6 @@ export const metadata = {
     images: [
       new URL('./opengraph-image.png', import.meta.url)
         .toString()
-
         .replace(process.env.NEXT_BASE_PATH || '', ''),
     ],
   },

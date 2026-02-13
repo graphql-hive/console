@@ -1,0 +1,13 @@
+"""
+Multi line comment:
+1. Foo
+2. Bar
+3. Should stay in a list format
+"""
+type Query { status: Status }
+
+# Another comment here
+enum Status {
+  ACTIVE INACTIVE
+  PENDING
+}

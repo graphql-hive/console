@@ -1102,3 +1102,74 @@ test.concurrent(
     }
   },
 );
+
+test.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { inviteAndJoinMember, createProject, organization } = await createOrg();
+  await inviteAndJoinMember();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Federation);
+  const { secret, latestSchema } = await createTargetAccessToken({});
+
+  const targetSlug = [organization.slug, project.slug, target.slug].join('/');
+
+  await expect(
+    schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Kamil',
+      '--target',
+      targetSlug,
+      '--service',
+      'whitespace',
+      '--url',
+      'https://example.graphql-hive.com/graphql',
+      'fixtures/whitespace-oddity.graphql',
+    ]),
+  ).resolves.toMatchInlineSnapshot(`
+      :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
+
+      stdout--------------------------------------------:
+      ✔ Published initial schema.
+      ℹ Available at http://__URL__
+    `);
+
+  const latest = await latestSchema();
+  expect(latest.latestVersion?.schemas.nodes?.[0]?.source).toMatchInlineSnapshot(`
+    """
+    Multi line comment:
+    1. Foo
+    2. Bar
+    3. Should stay in a list format
+    """
+    type Query {
+      status: Status
+    }
+
+    enum Status {
+      ACTIVE
+      INACTIVE
+      PENDING
+    }
+  `);
+
+  // API Schema maintains formatting
+  expect(latest.latestVersion?.sdl).toEqual(
+    expect.stringContaining(`"""
+Multi line comment:
+1. Foo
+2. Bar
+3. Should stay in a list format
+"""`),
+  );
+
+  // Supergraph maintains formatting
+  expect(latest.latestVersion?.supergraph).toEqual(
+    expect.stringContaining(`"""
+Multi line comment:
+1. Foo
+2. Bar
+3. Should stay in a list format
+"""`),
+  );
+});
