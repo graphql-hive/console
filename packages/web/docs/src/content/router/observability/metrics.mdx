@@ -16,23 +16,28 @@ instruments, and what each metric/label means in practice.
 
 ## Choose your metrics destination
 
-Hive Router supports two common metrics paths:
+Hive Router exposes metrics through two widely used integration patterns:
 
-- OTLP-compatible backends
-- Prometheus scraping
+- OTLP-based observability backends
+- Prometheus scrape endpoints
 
-In practice, teams with existing OpenTelemetry pipelines usually choose OTLP. Teams with existing
-Prometheus/Grafana stacks usually choose Prometheus.
+Most teams already running an OpenTelemetry pipeline tend to integrate via OTLP, while teams built
+around Prometheus and Grafana typically stick with Prometheus scraping.
 
 ### Send metrics to OTLP-compatible backends
 
-Hive Router can export metrics directly to any OTLP-compatible destination, including OpenTelemetry
-Collector and vendor backends that support OTLP ingestion, either through HTTP or gRPC.
+Hive Router can export metrics using OTLP to standard OpenTelemetry pipelines, including the
+OpenTelemetry Collector and vendor backends that support OTLP ingestion over HTTP or gRPC.
 
-After enabling the exporter, send traffic through the router and verify that new metric series
-appear in your backend (for example HTTP server/client duration, cache metrics, and supergraph
-metrics). If metrics are missing, start by validating endpoint reachability and auth credentials,
-then check exporter protocol alignment (HTTP vs gRPC).
+After enabling the exporter, generate some traffic through the router and confirm that new metric
+series appear in your backend (for example HTTP server/client latency, cache metrics, and supergraph
+execution metrics).
+
+If metrics do not appear, verify:
+
+- Endpoint reachability (network, DNS, TLS)
+- Authentication credentials or headers
+- Exporter protocol matches the backend (OTLP/HTTP vs OTLP/gRPC)
 
 <Tabs items={["OTLP over HTTP", "OTLP over gRPC"]}>
 
@@ -86,11 +91,12 @@ telemetry:
 
 ### Expose metrics for Prometheus scraping
 
-If your observability stack is Prometheus-first, Hive Router can expose a scrape endpoint that
-Prometheus polls on a schedule.
+If your observability stack is Prometheus-first, Hive Router can expose an HTTP endpoint that
+Prometheus scrapes at its configured interval.
 
-The `port` and `path` settings define where Router serves metrics. Prometheus must be able to reach
-that address from its runtime environment (local network, Kubernetes service, or VM network path).
+The `port` and `path` settings define the address where the Router exposes metrics. Prometheus must
+be able to reach that address from its runtime environment (local network, Kubernetes service, or VM
+network path).
 
 <Callout type="note">
   If `port` is not set, or is the same as the main HTTP server port, the Router exposes metrics
@@ -98,11 +104,10 @@ that address from its runtime environment (local network, Kubernetes service, or
   starts a separate HTTP server dedicated solely to the Prometheus metrics endpoint.
 </Callout>
 
-In production, make sure this endpoint is reachable only by trusted scrapers and that any ingress or
-firewall policy allows Prometheus access. Once configured, confirm the target appears as healthy
-(`UP`) in Prometheus and then verify expected series are present (for example
-`http.server.request.duration`, `http.client.request.duration`, and `hive.router.*` cache/supergraph
-metrics).
+In production, make sure this endpoint is reachable only by trusted scrapers (for example via
+network policy, firewall rules, or private ingress). Once configured, confirm the target appears as
+healthy in Prometheus and then verify expected series are present (for example
+`http.server.request.duration`, `http.client.request.duration`).
 
 ```yaml filename="router.config.yaml"
 telemetry:
@@ -116,8 +121,8 @@ telemetry:
 
 ## Production baseline
 
-For production workloads, start with one primary exporter, a clear service identity, and default
-instrument settings.
+For production workloads, start with a single primary exporter, define a clear service identity, and
+keep default instrumentation settings.
 
 ```yaml filename="router.config.yaml"
 telemetry:
@@ -137,8 +142,9 @@ telemetry:
         max_export_timeout: 5s
 ```
 
-This is a safe baseline and works well before introducing instrumentation-level customization. By
-default, all metrics and labels are exposed.
+This is a safe baseline and works well before introducing instrumentation-level customization.
+Additional exporters can be added later, but starting with one simplifies validation and
+troubleshooting.
 
 ## Customize instrumentation
 
@@ -172,7 +178,8 @@ Attribute override behavior:
 
 ### GraphQL
 
-GraphQL metrics focus on validation, parsing and execution-time errors surfaced by the router.
+GraphQL metrics capture errors surfaced by the router across all stages of a GraphQL request
+lifecycle.
 
 <MetricsSection
   metrics={[
@@ -246,7 +253,7 @@ Supergraph metrics cover polling and processing lifecycle of schema updates.
 
 ### HTTP server
 
-HTTP server metrics describe inbound client traffic handled by the router.
+HTTP server metrics capture inbound client traffic processed by the router.
 
 <MetricsSection
   metrics={[
@@ -358,7 +365,7 @@ HTTP server metrics describe inbound client traffic handled by the router.
 
 ### HTTP client
 
-HTTP client metrics describe outbound requests to the subgraphs, made by the router.
+HTTP client metrics capture outbound requests the router makes to subgraphs.
 
 <MetricsSection
   metrics={[
@@ -495,7 +502,8 @@ HTTP client metrics describe outbound requests to the subgraphs, made by the rou
 
 ### Cache
 
-Cache metrics track lookup behavior and cache size across router caches.
+Cache metrics track lookup behavior and cache size across router caches used during request
+preparation and planning stages.
 
 #### Parsing cache
 
@@ -624,17 +632,17 @@ These labels are shared by cache lookup counters and duration histograms.
 
 ## What to monitor in production
 
-The examples below show what to monitor in production and how to break metrics down so you can
-quickly detect and isolate API, subgraph, cache, and GraphQL issues.
+The examples below show which signals to monitor in production and how to break them down so you can
+quickly isolate API, subgraph, cache, and GraphQL issues.
 
-### Monitor latency of your GraphQL API
+### Monitor end-to-end latency of your GraphQL API
 
 Use [`http.server.request.duration`](#metric-http-server-request-duration) as your primary latency
 signal.
 
 In production, break this metric down by `http.route`, `http.request.method`, and
-`http.response.status_code`, then track p95 and p99 per route and method. Keep successful and failed
-responses separated so error-path latency does not get hidden by healthy traffic.
+`http.response.status_code`, then track p95 and p99 latency per route and method. Keep successful
+and failed responses separated so error-path latency does not get hidden by healthy traffic.
 
 ### Monitor health of your subgraphs
 
@@ -647,15 +655,15 @@ identify which subgraph is driving tail latency or error spikes.
 
 ### Monitor cache effectiveness and planning pressure
 
-Use the cache metrics to evaluate cache behavior over time.
+Use the cache metrics to evaluate cache hit ratio, miss cost, and pressure over time.
 
 For request and duration metrics, split by `result` (`hit` and `miss`) so you can track hit ratio
-and miss latency per cache tier.
+and miss latency per cache kind.
 
 ### Monitor GraphQL errors over time
 
 Use [`hive.router.graphql.errors_total`](#metric-hive-router-graphql-errors-total) and break it down
-by `code` to track both volume and error shape.
+by `code` to track both volume and error distribution.
 
 In production, monitor how error-code distribution changes over time, not only total count, so you
 can separate validation issues from execution failures.
