@@ -1,22 +1,20 @@
-import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import { Check, Minus } from 'lucide-react';
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';
 
 const checkboxVariants = cva(
-  'inline-flex shrink-0 items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-500 disabled:cursor-not-allowed disabled:opacity-50',
+  'inline-flex shrink-0 items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       size: {
         sm: 'size-3.5',
         md: 'size-4',
-        lg: 'size-5',
       },
       variant: {
         default: [
           'border-neutral-7 dark:border-neutral-7',
-          'data-[checked]:bg-yellow-500 data-[checked]:border-yellow-500 data-[checked]:text-neutral-1',
-          'data-[indeterminate]:bg-yellow-500 data-[indeterminate]:border-yellow-500 data-[indeterminate]:text-neutral-1',
+          'data-[checked]:bg-accent data-[checked]:border-accent data-[checked]:text-neutral-1',
+          'data-[indeterminate]:bg-accent data-[indeterminate]:border-accent data-[indeterminate]:text-neutral-1',
         ],
       },
     },
@@ -27,28 +25,37 @@ const checkboxVariants = cva(
   },
 );
 
-const Checkbox = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentPropsWithoutRef<typeof BaseCheckbox.Root> & VariantProps<typeof checkboxVariants>
->(({ className, size, variant, ...props }, ref) => (
-  <BaseCheckbox.Root
-    ref={ref}
-    className={cn(checkboxVariants({ size, variant }), className)}
-    {...props}
-  />
-));
-Checkbox.displayName = 'Checkbox';
+const iconSizeMap = {
+  sm: 'size-2.5',
+  md: 'size-3',
+} as const;
 
-const CheckboxIndicator = React.forwardRef<
-  HTMLSpanElement,
-  React.ComponentPropsWithoutRef<typeof BaseCheckbox.Indicator>
->(({ className, ...props }, ref) => (
-  <BaseCheckbox.Indicator
-    ref={ref}
-    className={cn('flex items-center justify-center text-current', className)}
-    {...props}
-  />
-));
-CheckboxIndicator.displayName = 'CheckboxIndicator';
-
-export { Checkbox, CheckboxIndicator, checkboxVariants };
+export function Checkbox({
+  size = 'md',
+  variant,
+  visual,
+  ...props
+}: Omit<BaseCheckbox.Root.Props, 'children' | 'className'> &
+  VariantProps<typeof checkboxVariants> & {
+    /** When true, the checkbox is a non-interactive visual indicator (sets pointer-events: none, tabIndex: -1, aria-hidden) */
+    visual?: boolean;
+  }) {
+  const iconClass = iconSizeMap[size ?? 'md'];
+  return (
+    <BaseCheckbox.Root
+      className={checkboxVariants({ size, variant })}
+      {...(visual
+        ? { tabIndex: -1, 'aria-hidden': true, style: { pointerEvents: 'none' as const } }
+        : {})}
+      {...props}
+    >
+      <BaseCheckbox.Indicator className="flex items-center justify-center text-current">
+        {props.indeterminate ? (
+          <Minus className={iconClass} strokeWidth={3} />
+        ) : (
+          <Check className={iconClass} strokeWidth={3} />
+        )}
+      </BaseCheckbox.Indicator>
+    </BaseCheckbox.Root>
+  );
+}
