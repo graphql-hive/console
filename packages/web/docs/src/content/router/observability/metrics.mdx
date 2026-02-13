@@ -140,7 +140,7 @@ telemetry:
 This is a safe baseline and works well before introducing instrumentation-level customization. By
 default, all metrics and labels are exposed.
 
-## Instrument customization
+## Customize instrumentation
 
 You can override behavior per metric under `telemetry.metrics.instrumentation.instruments`.
 
@@ -622,55 +622,45 @@ These labels are shared by cache lookup counters and duration histograms.
   />
 </div>
 
-## Production observability playbook
+## What to monitor in production
+
+The examples below show what to monitor in production and how to break metrics down so you can
+quickly detect and isolate API, subgraph, cache, and GraphQL issues.
 
 ### Monitor latency of your GraphQL API
 
-Use `http.server.request.duration` as your primary latency signal. In production, break this metric
-down by `http.route`, `http.request.method`, and `http.response.status_code`, then track p95 and p99
-per route and method. Keep successful and failed responses separated so error-path latency does not
-get hidden by healthy traffic.
+Use [`http.server.request.duration`](#metric-http-server-request-duration) as your primary latency
+signal.
+
+In production, break this metric down by `http.route`, `http.request.method`, and
+`http.response.status_code`, then track p95 and p99 per route and method. Keep successful and failed
+responses separated so error-path latency does not get hidden by healthy traffic.
 
 ### Monitor health of your subgraphs
 
-Use `http.client.request.duration` and `http.client.active_requests` to monitor dependency health
-across your federated graph. Break these metrics down by `subgraph.name`,
-`http.response.status_code`, and `error.type` to identify which subgraph is driving tail latency or
-error spikes. When you need infrastructure-level debugging, add `server.address` and `server.port`
-to distinguish endpoint-level issues from service-level behavior.
+Use [`http.client.request.duration`](#metric-http-client-request-duration) and
+[`http.client.active_requests`](#metric-http-client-active-requests) to monitor dependency health
+across your federated graph.
+
+Break these metrics down by `subgraph.name`, `http.response.status_code`, and `error.type` to
+identify which subgraph is driving tail latency or error spikes.
 
 ### Monitor cache effectiveness and planning pressure
 
-Use the cache metric families `hive.router.parse_cache.*`, `hive.router.validate_cache.*`,
-`hive.router.normalize_cache.*`, and `hive.router.plan_cache.*` to evaluate cache behavior over
-time. For request and duration metrics, split by `result` (`hit` and `miss`) so you can track hit
-ratio and miss latency per cache tier. Combine those views with cache size trends to catch sustained
-cache-efficiency regressions, especially in planning cache paths.
+Use the cache metrics to evaluate cache behavior over time.
+
+For request and duration metrics, split by `result` (`hit` and `miss`) so you can track hit ratio
+and miss latency per cache tier.
 
 ### Monitor GraphQL errors over time
 
-Use `hive.router.graphql.errors_total` and break it down by `code` to track both volume and error
-shape. In production, monitor how error-code distribution changes over time, not only total count,
-so you can separate validation issues from execution failures. Alert on sharp increases in
-`GRAPHQL_VALIDATION_FAILED`, `PLAN_EXECUTION_FAILED`, or `UNKNOWN`.
+Use [`hive.router.graphql.errors_total`](#metric-hive-router-graphql-errors-total) and break it down
+by `code` to track both volume and error shape.
 
-## Troubleshooting
-
-When metrics are missing or incomplete, check in layers:
-
-- exporter setup
-- instrument overrides
-- label overrides
-- transport reachability
-
-If no metrics appear at all, verify exporter enablement, endpoint reachability, and credentials.
-
-If a configured instrument key is unknown, startup fails with a clear error and valid metric names.
-
-If a configured attribute key is unknown, Router logs a warning and ignores it.
+In production, monitor how error-code distribution changes over time, not only total count, so you
+can separate validation issues from execution failures.
 
 ## Configuration reference
 
-For full options and defaults, see:
-
-- [telemetry configuration reference](/docs/router/configuration/telemetry)
+For full options and defaults, see
+[telemetry configuration reference](/docs/router/configuration/telemetry).
