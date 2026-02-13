@@ -1995,6 +1995,9 @@ importers:
       '@headlessui/react':
         specifier: 2.2.0
         version: 2.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@hive/laboratory':
+        specifier: workspace:*
+        version: link:../../libraries/laboratory
       '@hookform/resolvers':
         specifier: 3.10.0
         version: 3.10.0(react-hook-form@7.54.2(react@18.3.1))

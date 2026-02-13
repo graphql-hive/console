@@ -1,4 +1,9 @@
 export * from './components/laboratory/laboratory';
+export * from './components/laboratory/context';
+export * from './components/laboratory/editor';
+export * from './components/ui/dialog';
+export * from './components/ui/tabs';
+export * from './lib/endpoint';
 export * from './lib/collections';
 export * from './lib/env';
 export * from './lib/history';
@@ -7,3 +12,4 @@ export * from './lib/preflight';
 export * from './lib/settings';
 export * from './lib/tabs';
 export * from './lib/tests';
+export * from './lib/plugins';

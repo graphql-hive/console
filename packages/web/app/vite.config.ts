@@ -25,6 +25,15 @@ const reactScanPlugin: Plugin = {
 
 export default {
   root: __dirname,
+  resolve: {
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+    alias: {
+      react: resolve(__dirname, 'node_modules/react'),
+      'react-dom': resolve(__dirname, 'node_modules/react-dom'),
+      'react/jsx-runtime': resolve(__dirname, 'node_modules/react/jsx-runtime.js'),
+      'react/jsx-dev-runtime': resolve(__dirname, 'node_modules/react/jsx-dev-runtime.js'),
+    },
+  },
   plugins: [
     tsconfigPaths(),
     viteFastify({ spa: true, useRelativePaths: true }),

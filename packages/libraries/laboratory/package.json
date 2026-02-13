@@ -9,8 +9,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/hive-laboratory.es.js",
       "require": "./dist/hive-laboratory.cjs.js"
-    },
-    "./styles": "./dist/hive-laboratory.css"
+    }
   },
   "types": "./dist/index.d.ts",
   "files": [
@@ -18,10 +17,9 @@
   ],
   "scripts": {
     "build": "vite build",
-    "build:lib": "vite build --config vite.lib.config.ts && node scripts/build-lib-css.mjs && pnpm run emit-types",
+    "build:lib": "vite build --config vite.lib.config.ts",
     "dev": "vite",
     "dev:electron": "VITE_TARGET=electron concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "emit-types": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
     "preview": "vite preview"
   },
