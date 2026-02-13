@@ -87,7 +87,7 @@ export function MetricCard({ name, type, unit, description, labels }: MetricCard
       className="group scroll-mt-20 overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow duration-200 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-black/30"
     >
       <div className="p-5">
-        <div className="mb-3 flex items-start justify-between gap-4">
+        <div className="mb-3 flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <code className="break-all text-sm font-semibold text-gray-900 dark:text-slate-100">
