@@ -189,9 +189,14 @@ GraphQL metrics focus on validation, parsing and execution-time errors surfaced 
     {
       name: 'code',
       meaning: 'GraphQL error code',
-      typicalValues: ['GRAPHQL_PARSE_FAILED', 'GRAPHQL_VALIDATION_FAILED', 'PLAN_EXECUTION_FAILED', 'UNKNOWN', '...'],
-      notes:
-        `Uses "extensions.code" values and router's error codes. "UNKNOWN" is used when no code is available.`
+      typicalValues: [
+        'GRAPHQL_PARSE_FAILED',
+        'GRAPHQL_VALIDATION_FAILED',
+        'PLAN_EXECUTION_FAILED',
+        'UNKNOWN',
+        '...'
+      ],
+      notes: `Uses "extensions.code" values and router's error codes. "UNKNOWN" is used when no code is available.`
     }
   ]}
 />
@@ -605,17 +610,49 @@ Planning cache metrics measure query planning cache hit/miss behavior and cache 
 These labels are shared by cache lookup counters and duration histograms.
 
 <div className="mt-4">
-    <MetricsSection
+  <MetricsSection
     labels={[
-        {
+      {
         name: 'result',
         meaning: 'Cache lookup outcome',
         typicalValues: ['hit', 'miss'],
         notes: 'Used by cache `requests_total` and `duration` metrics'
-        }
+      }
     ]}
-    />
+  />
 </div>
+
+## Production observability playbook
+
+### Monitor latency of your GraphQL API
+
+Use `http.server.request.duration` as your primary latency signal. In production, break this metric
+down by `http.route`, `http.request.method`, and `http.response.status_code`, then track p95 and p99
+per route and method. Keep successful and failed responses separated so error-path latency does not
+get hidden by healthy traffic.
+
+### Monitor health of your subgraphs
+
+Use `http.client.request.duration` and `http.client.active_requests` to monitor dependency health
+across your federated graph. Break these metrics down by `subgraph.name`,
+`http.response.status_code`, and `error.type` to identify which subgraph is driving tail latency or
+error spikes. When you need infrastructure-level debugging, add `server.address` and `server.port`
+to distinguish endpoint-level issues from service-level behavior.
+
+### Monitor cache effectiveness and planning pressure
+
+Use the cache metric families `hive.router.parse_cache.*`, `hive.router.validate_cache.*`,
+`hive.router.normalize_cache.*`, and `hive.router.plan_cache.*` to evaluate cache behavior over
+time. For request and duration metrics, split by `result` (`hit` and `miss`) so you can track hit
+ratio and miss latency per cache tier. Combine those views with cache size trends to catch sustained
+cache-efficiency regressions, especially in planning cache paths.
+
+### Monitor GraphQL errors over time
+
+Use `hive.router.graphql.errors_total` and break it down by `code` to track both volume and error
+shape. In production, monitor how error-code distribution changes over time, not only total count,
+so you can separate validation issues from execution failures. Alert on sharp increases in
+`GRAPHQL_VALIDATION_FAILED`, `PLAN_EXECUTION_FAILED`, or `UNKNOWN`.
 
 ## Troubleshooting
 
