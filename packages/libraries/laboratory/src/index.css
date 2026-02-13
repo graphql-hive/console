@@ -2,40 +2,44 @@
 @import 'tw-animate-css';
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
+  --radius-sm: calc(var(--hive-laboratory-radius) - 4px);
+  --radius-md: calc(var(--hive-laboratory-radius) - 2px);
+  --radius-lg: var(--hive-laboratory-radius);
+  --radius-xl: calc(var(--hive-laboratory-radius) + 4px);
+  --color-background: hsl(var(--hive-laboratory-background));
+  --color-foreground: hsl(var(--hive-laboratory-foreground));
+  --color-card: hsl(var(--hive-laboratory-card));
+  --color-card-foreground: hsl(var(--hive-laboratory-card-foreground));
+  --color-popover: hsl(var(--hive-laboratory-popover));
+  --color-popover-foreground: hsl(var(--hive-laboratory-popover-foreground));
+  --color-primary: hsl(var(--hive-laboratory-primary));
+  --color-primary-foreground: hsl(var(--hive-laboratory-primary-foreground));
+  --color-secondary: hsl(var(--hive-laboratory-secondary));
+  --color-secondary-foreground: hsl(var(--hive-laboratory-secondary-foreground));
+  --color-muted: hsl(var(--hive-laboratory-muted));
+  --color-muted-foreground: hsl(var(--hive-laboratory-muted-foreground));
+  --color-accent: hsl(var(--hive-laboratory-accent));
+  --color-accent-foreground: hsl(var(--hive-laboratory-accent-foreground));
+  --color-destructive: hsl(var(--hive-laboratory-destructive));
+  --color-border: hsl(var(--hive-laboratory-border));
+  --color-input: hsl(var(--hive-laboratory-input));
+  --color-ring: hsl(var(--hive-laboratory-ring));
+  --color-chart-1: hsl(var(--hive-laboratory-chart-1));
+  --color-chart-2: hsl(var(--hive-laboratory-chart-2));
+  --color-sidebar-foreground: hsl(var(--hive-laboratory-sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--hive-laboratory-sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--hive-laboratory-sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--hive-laboratory-sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--hive-laboratory-sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--hive-laboratory-sidebar-border));
+  --color-sidebar-ring: hsl(var(--hive-laboratory-sidebar-ring));
 }
 
-.dark {
+:host,
+.hive-laboratory {
+  display: block;
+  width: 100%;
+  height: 100%;
   --radius: 0.5rem;
   --background: 220, 21.43%, 5.49%;
   --foreground: 213 31% 91%;
@@ -74,7 +78,7 @@
     @apply border-border outline-ring/50;
   }
 
-  body {
+  .hive-laboratory {
     @apply bg-background text-foreground;
   }
 }

@@ -6,13 +6,27 @@ import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
+import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
+import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
+import { useRedirect } from '@/lib/access/common';
+import { useLocalStorage, useToggle } from '@/lib/hooks';
+import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
+import { useResetState } from '@/lib/hooks/use-reset-state';
+import { cn } from '@/lib/utils';
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Laboratory,
   LaboratoryCollection,
   LaboratoryCollectionOperation,
@@ -22,25 +36,13 @@ import {
   LaboratoryPreflight,
   LaboratorySettings,
   LaboratoryTab,
-} from '@/laboratory';
-import { LaboratoryApi } from '@/laboratory/components/laboratory/context';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/laboratory/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@/laboratory/components/ui/tabs';
-import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
-import { useRedirect } from '@/lib/access/common';
-import { useLocalStorage, useToggle } from '@/lib/hooks';
-import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
-import { useResetState } from '@/lib/hooks/use-reset-state';
-import { cn } from '@/lib/utils';
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@hive/laboratory';
 import { Link as RouterLink } from '@tanstack/react-router';
+
+// import { LaboratoryApi } from '../../../../libraries/laboratory';
 
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
   const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
@@ -304,7 +306,7 @@ function useLaboratoryState(props: {
   projectSlug: string;
   targetSlug: string;
   defaultEndpoint: string | null;
-}): Partial<LaboratoryApi> & { fetching: boolean } {
+}) {
   const [{ data, fetching }] = useQuery({
     query: LaboratoryQuery,
     variables: {
@@ -605,6 +607,8 @@ function LaboratoryPageContent(props: {
     entity: query.data?.target,
   });
 
+  const { resolvedTheme } = useTheme();
+
   const sdl = query.data?.target?.latestSchemaVersion?.sdl;
 
   const introspection = useMemo(() => {
@@ -734,6 +738,7 @@ function LaboratoryPageContent(props: {
           <Laboratory
             key={url}
             defaultEndpoint={url}
+            theme={resolvedTheme}
             defaultSchemaIntrospection={introspection}
             {...laboratoryState}
             plugins={[
