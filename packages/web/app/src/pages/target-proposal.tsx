@@ -453,7 +453,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 </div>
               </div>
               <div className="p-4 py-8">
-                <Title className="text-neutral-2">{proposal.title}</Title>
+                <Title>{proposal.title}</Title>
                 <div className="text-neutral-10 text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
