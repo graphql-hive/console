@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useMemo, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDate } from 'date-fns';
 import {
   ArrowLeft,
@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { TriggerButton } from '@/components/base/trigger-button';
+import { NestedFilterDropdown } from '@/components/base/nested-filter-dropdown/nested-filter-dropdown';
+import type { FilterItem, FilterSelection } from '@/components/base/nested-filter-dropdown/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -84,6 +85,28 @@ const ManageFilters_DeleteSavedFilterMutation = graphql(`
       }
       ok {
         deletedId
+      }
+    }
+  }
+`);
+
+const ManageFilters_UpdateSavedFilterMutation = graphql(`
+  mutation ManageFilters_UpdateSavedFilter($input: UpdateSavedFilterInput!) {
+    updateSavedFilter(input: $input) {
+      error {
+        message
+      }
+      ok {
+        savedFilter {
+          id
+          filters {
+            operationHashes
+            clientFilters {
+              name
+              versions
+            }
+          }
+        }
       }
     }
   }
@@ -179,7 +202,12 @@ function SavedFilterRow({
       {expanded && (
         <TableRow>
           <TableCell colSpan={7} className="bg-neutral-2 px-10 py-4">
-            <ExpandedFilterContent filter={filter} />
+            <SavedFilterRowFilters
+              filter={filter}
+              organizationSlug={organizationSlug}
+              projectSlug={projectSlug}
+              targetSlug={targetSlug}
+            />
           </TableCell>
         </TableRow>
       )}
@@ -187,9 +215,137 @@ function SavedFilterRow({
   );
 }
 
-function ExpandedFilterContent({ filter }: { filter: SavedFilterNode }) {
+function SavedFilterRowFilters({
+  filter,
+  organizationSlug,
+  projectSlug,
+  targetSlug,
+}: {
+  filter: SavedFilterNode;
+  organizationSlug: string;
+  projectSlug: string;
+  targetSlug: string;
+}) {
   const { operationHashes, clientFilters } = filter.filters;
   const hasFilters = operationHashes.length > 0 || clientFilters.length > 0;
+
+  // Items for the NestedFilterDropdown (derived from saved filter data)
+  const operationItems: FilterItem[] = useMemo(
+    () => operationHashes.map(hash => ({ name: hash, values: [] })),
+    [operationHashes],
+  );
+  const clientItems: FilterItem[] = useMemo(
+    () => clientFilters.map(c => ({ name: c.name, values: c.versions ?? [] })),
+    [clientFilters],
+  );
+
+  // Compute the "saved" selections (what's persisted in the database)
+  const savedOperationSelections = useMemo<FilterSelection[]>(
+    () => operationHashes.map(hash => ({ name: hash, values: null })),
+    [operationHashes],
+  );
+  const savedClientSelections = useMemo<FilterSelection[]>(
+    () =>
+      clientFilters.map(c => ({
+        name: c.name,
+        values: c.versions?.length ? [...c.versions] : null,
+      })),
+    [clientFilters],
+  );
+
+  // Mutable selections (initialized from saved data)
+  const [operationSelections, setOperationSelections] =
+    useState<FilterSelection[]>(savedOperationSelections);
+  const [clientSelections, setClientSelections] =
+    useState<FilterSelection[]>(savedClientSelections);
+  const [showOperationFilter, setShowOperationFilter] = useState(operationHashes.length > 0);
+  const [showClientFilter, setShowClientFilter] = useState(clientFilters.length > 0);
+
+  // Sync state when saved filter data changes (e.g. after mutation updates cache)
+  const filterDataKey = JSON.stringify(filter.filters);
+  useEffect(() => {
+    setOperationSelections(savedOperationSelections);
+    setClientSelections(savedClientSelections);
+    setShowOperationFilter(operationHashes.length > 0);
+    setShowClientFilter(clientFilters.length > 0);
+  }, [filterDataKey]);
+
+  // Detect changes from saved state
+  const hasChanges = useMemo(() => {
+    const current = JSON.stringify({
+      ops: operationSelections,
+      clients: clientSelections,
+      showOps: showOperationFilter,
+      showCli: showClientFilter,
+    });
+    const saved = JSON.stringify({
+      ops: savedOperationSelections,
+      clients: savedClientSelections,
+      showOps: operationHashes.length > 0,
+      showCli: clientFilters.length > 0,
+    });
+    return current !== saved;
+  }, [
+    operationSelections,
+    clientSelections,
+    showOperationFilter,
+    showClientFilter,
+    savedOperationSelections,
+    savedClientSelections,
+    operationHashes,
+    clientFilters,
+  ]);
+
+  // Cancel → reset to saved state
+  const handleCancel = useCallback(() => {
+    setOperationSelections(savedOperationSelections);
+    setClientSelections(savedClientSelections);
+    setShowOperationFilter(operationHashes.length > 0);
+    setShowClientFilter(clientFilters.length > 0);
+  }, [savedOperationSelections, savedClientSelections, operationHashes, clientFilters]);
+
+  // Update mutation
+  const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
+
+  const handleSave = useCallback(async () => {
+    const newOperationHashes = showOperationFilter
+      ? operationSelections.map(s => s.name)
+      : [];
+
+    const newClientFilters = showClientFilter
+      ? clientSelections.map(s => ({
+          name: s.name,
+          versions:
+            s.values === null
+              ? (clientItems.find(i => i.name === s.name)?.values ?? [])
+              : s.values,
+        }))
+      : [];
+
+    await updateSavedFilter({
+      input: {
+        id: filter.id,
+        target: {
+          bySelector: { organizationSlug, projectSlug, targetSlug },
+        },
+        insightsFilter: {
+          operationHashes: newOperationHashes,
+          clientFilters: newClientFilters,
+        },
+      },
+    });
+  }, [
+    showOperationFilter,
+    showClientFilter,
+    operationSelections,
+    clientSelections,
+    clientItems,
+    filter.id,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
+    updateSavedFilter,
+  ]);
 
   if (!hasFilters) {
     return <p className="text-neutral-10 text-sm">No filters configured.</p>;
@@ -199,13 +355,52 @@ function ExpandedFilterContent({ filter }: { filter: SavedFilterNode }) {
     <div>
       <p className="text-neutral-10 mb-2 text-xs font-medium uppercase tracking-wide">Filters</p>
       <div className="flex flex-wrap gap-2">
-        {operationHashes.map(hash => (
-          <TriggerButton key={hash} label="Operation" value={hash} />
-        ))}
-        {clientFilters.map(client => (
-          <TriggerButton key={client.name} label="Client" value={client.name} />
-        ))}
+        {showOperationFilter && operationItems.length > 0 && (
+          <NestedFilterDropdown
+            label="Operation"
+            items={operationItems}
+            value={operationSelections}
+            onChange={setOperationSelections}
+            onRemove={() => {
+              setShowOperationFilter(false);
+              setOperationSelections([]);
+            }}
+          />
+        )}
+        {showClientFilter && clientItems.length > 0 && (
+          <NestedFilterDropdown
+            label="Client"
+            items={clientItems}
+            value={clientSelections}
+            onChange={setClientSelections}
+            onRemove={() => {
+              setShowClientFilter(false);
+              setClientSelections([]);
+            }}
+            valuesLabel="versions"
+          />
+        )}
       </div>
+      {filter.viewerCanUpdate && (
+        <div className="mt-3 flex gap-2">
+          <Button
+            variant={hasChanges ? 'primary' : 'default'}
+            size="sm"
+            onClick={handleSave}
+            disabled={updateResult.fetching || !hasChanges}
+          >
+            Save changes
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleCancel}
+            disabled={updateResult.fetching || !hasChanges}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
