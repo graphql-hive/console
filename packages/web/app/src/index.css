@@ -235,7 +235,7 @@
   :root {
     color-scheme: light dark;
 
-    @apply font-sans;
+    @apply font-sans subpixel-antialiased;
 
     --header-height: 84px;
     --tabs-navbar-height: 47px;

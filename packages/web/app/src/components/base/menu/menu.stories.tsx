@@ -1,19 +1,16 @@
 import { useState } from 'react';
-import { Check, FileText, LogOut, Plus, Settings, Users } from 'lucide-react';
-import { Checkbox, CheckboxIndicator } from '@/components/base/checkbox';
+import { FileText, LogOut, Plus, Settings, Users } from 'lucide-react';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import {
   MenuContent,
   MenuItem,
-  MenuLabel,
   MenuRoot,
   MenuSeparator,
   MenuSubmenu,
-  MenuSubmenuContent,
-  MenuSubmenuTrigger,
   MenuTrigger,
-} from '@/components/base/menu';
+} from '@/components/base/menu/menu';
 import type { Story, StoryDefault } from '@ladle/react';
-import { Flex } from './story-utils';
+import { Flex } from '../story-utils';
 
 export default {
   title: 'UI / Menu',
@@ -51,14 +48,13 @@ export const WithSubmenu: Story = () => (
         User Menu
       </MenuTrigger>
       <MenuContent align="start">
-        <MenuLabel>Jon Doe</MenuLabel>
         <MenuSeparator />
         <MenuSubmenu>
-          <MenuSubmenuTrigger>
+          <MenuItem subMenuTrigger>
             <Users className="mr-2 size-4" />
             Switch organization
-          </MenuSubmenuTrigger>
-          <MenuSubmenuContent>
+          </MenuItem>
+          <MenuContent subMenu>
             <MenuItem active>acme-corp</MenuItem>
             <MenuItem>personal</MenuItem>
             <MenuItem>test-org</MenuItem>
@@ -67,7 +63,7 @@ export const WithSubmenu: Story = () => (
               <Plus className="mr-2 size-4" />
               Create organization
             </MenuItem>
-          </MenuSubmenuContent>
+          </MenuContent>
         </MenuSubmenu>
         <MenuItem>
           <Settings className="mr-2 size-4" />
@@ -106,17 +102,7 @@ export const WithCheckboxItems: Story = () => {
         <MenuContent>
           {items.map(item => (
             <MenuItem key={item} closeOnClick={false} onClick={() => toggle(item)}>
-              <Checkbox
-                checked={selected.has(item)}
-                size="sm"
-                tabIndex={-1}
-                aria-hidden
-                style={{ pointerEvents: 'none' }}
-              >
-                <CheckboxIndicator>
-                  <Check className="size-3" strokeWidth={3} />
-                </CheckboxIndicator>
-              </Checkbox>
+              <Checkbox checked={selected.has(item)} size="sm" visual />
               <span className="ml-2">{item}</span>
             </MenuItem>
           ))}

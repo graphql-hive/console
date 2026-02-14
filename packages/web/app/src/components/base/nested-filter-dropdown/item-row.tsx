@@ -1,7 +1,5 @@
-import { Check, Minus } from 'lucide-react';
-import { Checkbox, CheckboxIndicator } from '@/components/base/checkbox';
-import { MenuItem, MenuSubmenu, MenuSubmenuContent, MenuSubmenuTrigger } from '@/components/base/menu';
-import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { MenuContent, MenuItem, MenuSubmenu } from '@/components/base/menu/menu';
 import type { FilterItem, FilterSelection } from './types';
 import { ValuesSubPanel } from './values-sub-panel';
 
@@ -15,31 +13,8 @@ interface ItemRowProps {
   valuesLabel: string;
 }
 
-function CheckboxVisual({
-  selected,
-  indeterminate,
-}: {
-  selected: boolean;
-  indeterminate: boolean;
-}) {
-  return (
-    <Checkbox
-      checked={selected}
-      indeterminate={indeterminate}
-      size="sm"
-      tabIndex={-1}
-      aria-hidden
-      style={{ pointerEvents: 'none' }}
-    >
-      <CheckboxIndicator>
-        {indeterminate ? (
-          <Minus className="size-3" strokeWidth={3} />
-        ) : (
-          <Check className="size-3" strokeWidth={3} />
-        )}
-      </CheckboxIndicator>
-    </Checkbox>
-  );
+function ItemName({ name }: { name: string }) {
+  return <span className="flex-1 truncate">{name}</span>;
 }
 
 export function ItemRow({
@@ -55,35 +30,21 @@ export function ItemRow({
 
   if (!hasValues) {
     return (
-      <MenuItem closeOnClick={false} onClick={onToggle} className="gap-2">
-        <CheckboxVisual selected={selected} indeterminate={indeterminate} />
-        <span
-          className={cn('flex-1 truncate', selected ? 'text-neutral-12' : 'text-neutral-11')}
-        >
-          {item.name}
-        </span>
+      <MenuItem inSubmenu closeOnClick={false} onClick={onToggle}>
+        <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
+        <ItemName name={item.name} />
       </MenuItem>
     );
   }
 
   return (
     <MenuSubmenu>
-      <MenuSubmenuTrigger
-        openOnHover
-        delay={100}
-        closeDelay={150}
-        onClick={onToggle}
-        className="gap-2"
-      >
-        <CheckboxVisual selected={selected} indeterminate={indeterminate} />
-        <span
-          className={cn('flex-1 truncate', selected ? 'text-neutral-12' : 'text-neutral-11')}
-        >
-          {item.name}
-        </span>
-      </MenuSubmenuTrigger>
+      <MenuItem subMenuTrigger openOnHover delay={100} closeDelay={150} onClick={onToggle}>
+        <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
+        <ItemName name={item.name} />
+      </MenuItem>
 
-      <MenuSubmenuContent className="w-56">
+      <MenuContent subMenu>
         <ValuesSubPanel
           itemName={item.name}
           values={item.values}
@@ -91,7 +52,7 @@ export function ItemRow({
           onValuesChange={onValuesChange}
           valuesLabel={valuesLabel}
         />
-      </MenuSubmenuContent>
+      </MenuContent>
     </MenuSubmenu>
   );
 }
