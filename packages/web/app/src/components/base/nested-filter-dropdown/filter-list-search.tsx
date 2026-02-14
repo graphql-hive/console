@@ -19,7 +19,7 @@ export function FilterListSearch({ label, onSearch, value }: FilterListSearchPro
             e.stopPropagation();
           }
         }}
-        className="border-neutral-5 text-neutral-12 placeholder:text-neutral-8 w-full rounded-t-md border-b py-1.5 pl-4 pr-2 text-sm outline-none"
+        className="border-neutral-5 text-neutral-11 placeholder:text-neutral-8 w-full rounded-t-md border-b py-1.5 pl-4 pr-2 outline-none"
       />
     </div>
   );

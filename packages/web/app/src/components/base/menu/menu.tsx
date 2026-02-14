@@ -57,17 +57,17 @@ function MenuContent({
 }
 
 const menuItemVariants = cva(
-  'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2.5 mx-2',
+  'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2.5',
   {
     variants: {
       variant: {
         default: 'pl-2 text-neutral-10',
-        navigationLink: 'text-accent justify-end pr-2',
+        navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
         action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
         destructiveAction: 'pl-2 text-red-400  hover:bg-red-300/10',
       },
       inSubmenu: {
-        true: '',
+        true: 'mx-2',
         false: '',
       },
       highlighted: {

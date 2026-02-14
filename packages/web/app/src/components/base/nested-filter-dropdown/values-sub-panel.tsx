@@ -63,11 +63,11 @@ export function ValuesSubPanel({
       />
 
       {/* Values list */}
-      <div className="mt-2 max-h-48 overflow-y-auto">
+      <div className="mt-2 max-h-64 overflow-y-auto">
         {/* All values toggle */}
         <MenuItem inSubmenu closeOnClick={false} onClick={toggleAllValues}>
           <Checkbox checked={allSelected} size="sm" visual />
-          <span className="text-neutral-11 font-medium">All {valuesLabel}</span>
+          <span>All {valuesLabel}</span>
         </MenuItem>
 
         {/* Individual values */}

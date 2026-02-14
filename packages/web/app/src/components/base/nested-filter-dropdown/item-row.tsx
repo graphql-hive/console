@@ -39,7 +39,14 @@ export function ItemRow({
 
   return (
     <MenuSubmenu>
-      <MenuItem subMenuTrigger openOnHover delay={100} closeDelay={150} onClick={onToggle}>
+      <MenuItem
+        inSubmenu
+        subMenuTrigger
+        openOnHover
+        delay={100}
+        closeDelay={150}
+        onClick={onToggle}
+      >
         <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
         <ItemName name={item.name} />
       </MenuItem>
