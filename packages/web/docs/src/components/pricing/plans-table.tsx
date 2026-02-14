@@ -287,7 +287,7 @@ export function PlansTable({ className }: { className?: string }) {
 
             <tr>
               <PlansTableCell>
-                <TextLink href=" /docs/schema-registry/usage-reporting" target="_blank">
+                <TextLink href="/docs/schema-registry/usage-reporting" target="_blank">
                   Operation usage reporting and insights
                 </TextLink>
               </PlansTableCell>
