@@ -77,6 +77,7 @@ import { TargetHistoryVersionPage } from './pages/target-history-version';
 import { TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
+import { TargetInsightsManageFiltersPage } from './pages/target-insights-manage-filters';
 import { TargetInsightsOperationPage } from './pages/target-insights-operation';
 import { TargetLaboratoryPage } from './pages/target-laboratory';
 import { TargetLaboratoryPage as TargetLaboratoryPageNew } from './pages/target-laboratory-new';
@@ -707,6 +708,22 @@ const targetInsightsRoute = createRoute({
   },
 });
 
+const targetInsightsManageFiltersRoute = createRoute({
+  getParentRoute: () => targetRoute,
+  path: 'insights/manage-filters',
+  component: function TargetInsightsManageFiltersRoute() {
+    const { organizationSlug, projectSlug, targetSlug } =
+      targetInsightsManageFiltersRoute.useParams();
+    return (
+      <TargetInsightsManageFiltersPage
+        organizationSlug={organizationSlug}
+        projectSlug={projectSlug}
+        targetSlug={targetSlug}
+      />
+    );
+  },
+});
+
 const TargetTracesRouteSearch = z.object({
   filter: TargetTracesFilterState.optional(),
   sort: TargetTracesSort.shape.optional(),
@@ -1107,6 +1124,7 @@ const routeTree = root.addChildren([
       targetLaboratoryRoute,
       targetHistoryRoute.addChildren([targetHistoryVersionRoute]),
       targetInsightsRoute,
+      targetInsightsManageFiltersRoute,
       targetTraceRoute,
       targetTracesRoute,
       targetInsightsCoordinateRoute,
