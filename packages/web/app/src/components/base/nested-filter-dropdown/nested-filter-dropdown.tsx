@@ -65,7 +65,7 @@ export function NestedFilterDropdown({
             Clear current selections
           </MenuItem>
         )}
-        <div className="mb-2">
+        <div className="mb-1">
           <MenuItem
             variant="destructiveAction"
             onClick={() => {

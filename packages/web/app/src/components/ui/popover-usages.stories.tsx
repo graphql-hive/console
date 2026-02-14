@@ -4,11 +4,10 @@ import {
   CalendarIcon,
   Check,
   ChevronDown,
-  ChevronUp,
   ChevronsUpDown,
+  ChevronUp,
   X,
 } from 'lucide-react';
-import type { Story, StoryDefault } from '@ladle/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +24,7 @@ import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/compone
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/v2';
 import { cn } from '@/lib/utils';
+import type { Story, StoryDefault } from '@ladle/react';
 
 export default {
   title: 'Old Popover Usages',
@@ -46,8 +46,7 @@ const MOCK_TARGETS = [
 export const TargetChecksSingle_MoreTargets: Story = () => (
   <div className="p-8">
     <p className="text-neutral-11 text-sm">
-      Conditional breaking changes detected in{' '}
-      <span className="text-neutral-12">production</span>,{' '}
+      Conditional breaking changes detected in <span className="text-neutral-12">production</span>,{' '}
       <span className="text-neutral-12">staging</span>,{' '}
       <span className="text-neutral-12">development</span>
       {' and '}
@@ -245,7 +244,9 @@ export const SchemaExplorer_GraphQLTypeLink: Story = () => (
     <p className="text-neutral-11 text-sm">
       Field type:{' '}
       <Popover>
-        <PopoverTrigger className="hover:underline hover:underline-offset-4">[User!]!</PopoverTrigger>
+        <PopoverTrigger className="hover:underline hover:underline-offset-4">
+          [User!]!
+        </PopoverTrigger>
         <PopoverContent side="right">
           <div className="flex flex-col gap-y-2">
             <p>
@@ -359,11 +360,7 @@ export const OrgMembers_RoleSelector: Story = () => {
     <div className="p-8">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="flex items-center"
-            data-cy="role-selector-trigger"
-          >
+          <Button variant="outline" className="flex items-center" data-cy="role-selector-trigger">
             <span className="flex grow truncate" title={selectedRole.name}>
               {selectedRole.name}
             </span>
@@ -446,12 +443,7 @@ export const DateRangePicker_Presets: Story = () => {
                     </Label>
                     <div className="flex w-full max-w-sm items-center space-x-2">
                       <div className="relative flex w-full">
-                        <Input
-                          type="text"
-                          id="from"
-                          defaultValue="now-1d"
-                          className="font-mono"
-                        />
+                        <Input type="text" id="from" defaultValue="now-1d" className="font-mono" />
                         <Button
                           variant="ghost"
                           className="absolute right-2 top-1/2 size-6 -translate-y-1/2 px-0"
@@ -586,7 +578,7 @@ export const TargetSchemaView_ServiceSelector: Story = () => {
 export const TracesFilter_TimelineCalendar: Story = () => {
   const [isOpen, setIsOpen] = useState(false);
   const now = new Date();
-  const yesterday = new Date(now.getTime() - 86400000);
+  const yesterday = new Date(now.getTime() - 86_400_000);
 
   return (
     <div className="p-8">
@@ -624,12 +616,7 @@ export const TracesFilter_TimelineCalendar: Story = () => {
                 <Input className="h-8 w-16 py-0" type="time" defaultValue="23:59" />
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => setIsOpen(false)}
-            >
+            <Button variant="outline" size="sm" className="w-full" onClick={() => setIsOpen(false)}>
               <span className="relative">
                 Apply
                 <span className="absolute top-[4px] ml-2 text-xs">↵</span>
@@ -694,10 +681,7 @@ export const SchemaContracts_TagAutocomplete: Story = () => {
                   </Button>
                 </div>
               </PopoverTrigger>
-              <PopoverContent
-                className="w-[200px] p-0"
-                onOpenAutoFocus={ev => ev.preventDefault()}
-              >
+              <PopoverContent className="w-[200px] p-0" onOpenAutoFocus={ev => ev.preventDefault()}>
                 <Command>
                   <CommandList>
                     <CommandGroup heading="Tags from latest schema version">
@@ -769,10 +753,7 @@ export const SchemaContracts_TagAutocomplete: Story = () => {
                   </Button>
                 </div>
               </PopoverTrigger>
-              <PopoverContent
-                className="w-[200px] p-0"
-                onOpenAutoFocus={ev => ev.preventDefault()}
-              >
+              <PopoverContent className="w-[200px] p-0" onOpenAutoFocus={ev => ev.preventDefault()}>
                 <Command>
                   <CommandList>
                     <CommandGroup heading="Tags from latest schema version">
@@ -883,7 +864,13 @@ export const Proposals_StageTransitionSelect: Story = () => {
 const MOCK_VERSIONS = [
   { id: 'v1', cursor: 'c0', commit: 'abc1234', createdAt: '2025-01-15T10:00:00Z', author: 'alice' },
   { id: 'v2', cursor: 'c1', commit: 'def5678', createdAt: '2025-01-14T08:30:00Z', author: 'bob' },
-  { id: 'v3', cursor: 'c2', commit: 'ghi9012', createdAt: '2025-01-13T14:15:00Z', author: 'charlie' },
+  {
+    id: 'v3',
+    cursor: 'c2',
+    commit: 'ghi9012',
+    createdAt: '2025-01-13T14:15:00Z',
+    author: 'charlie',
+  },
 ];
 
 export const Proposals_VersionSelect: Story = () => {
@@ -1050,9 +1037,7 @@ export const Proposals_StageFilter: Story = () => {
                   key="all"
                   value=""
                   onSelect={() => {
-                    const allSelected = MOCK_PROPOSAL_STAGES.every(s =>
-                      selectedStages.includes(s),
-                    );
+                    const allSelected = MOCK_PROPOSAL_STAGES.every(s => selectedStages.includes(s));
                     setSelectedStages(allSelected ? [] : [...MOCK_PROPOSAL_STAGES]);
                   }}
                   className="cursor-pointer truncate border-b"
