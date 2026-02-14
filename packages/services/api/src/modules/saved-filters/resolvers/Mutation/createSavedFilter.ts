@@ -3,21 +3,21 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const createSavedFilter: NonNullable<MutationResolvers['createSavedFilter']> = async (
   _parent,
-  args,
+  { input },
   { injector },
 ) => {
-  const result = await injector.get(SavedFiltersProvider).createSavedFilter(args.selector, {
-    type: args.input.type,
-    name: args.input.name,
-    description: args.input.description ?? null,
-    visibility: args.input.visibility,
-    insightsFilter: args.input.insightsFilter
+  const result = await injector.get(SavedFiltersProvider).createSavedFilter(input.target, {
+    type: input.type,
+    name: input.name,
+    description: input.description ?? null,
+    visibility: input.visibility,
+    insightsFilter: input.insightsFilter
       ? {
-          operationIds: args.input.insightsFilter.operationIds
-            ? [...args.input.insightsFilter.operationIds]
+          operationHashes: input.insightsFilter.operationHashes
+            ? [...input.insightsFilter.operationHashes]
             : null,
           clientFilters:
-            args.input.insightsFilter.clientFilters?.map(cf => ({
+            input.insightsFilter.clientFilters?.map(cf => ({
               name: cf.name,
               versions: cf.versions ? [...cf.versions] : null,
             })) ?? null,

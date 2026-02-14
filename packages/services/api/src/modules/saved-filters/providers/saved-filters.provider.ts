@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
+import type { TargetReferenceInput } from '../../../__generated__/types';
 import type {
   SavedFilter,
   SavedFilterType,
@@ -15,7 +16,7 @@ import { SavedFiltersStorage } from './saved-filters-storage';
 
 const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
-  operationIds: zod
+  operationHashes: zod
     .array(zod.string())
     .max(100)
     .nullish()
@@ -72,6 +73,11 @@ export class SavedFiltersProvider {
   }
 
   async getSavedFilter(target: Target, filterId: string): Promise<SavedFilter | null> {
+    this.logger.debug(
+      'Fetching saved filter (filterId=%s, projectId=%s)',
+      filterId,
+      target.projectId,
+    );
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId: target.orgId,
@@ -108,6 +114,13 @@ export class SavedFiltersProvider {
     visibility: SavedFilterVisibility | null,
     search: string | null,
   ) {
+    this.logger.debug(
+      'Listing saved filters (projectId=%s, type=%s, visibility=%s, search=%s)',
+      target.projectId,
+      type,
+      visibility,
+      search,
+    );
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId: target.orgId,
@@ -131,26 +144,30 @@ export class SavedFiltersProvider {
   }
 
   async createSavedFilter(
-    selector: {
-      organizationSlug: string;
-      projectSlug: string;
-      targetSlug: string;
-    },
+    target: TargetReferenceInput,
     input: {
       type: string;
       name: string;
       description: string | null;
       visibility: string;
       insightsFilter?: {
-        operationIds?: string[] | null;
+        operationHashes?: string[] | null;
         clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
       } | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
-    const [organizationId, projectId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(selector),
-      this.idTranslator.translateProjectId(selector),
-    ]);
+    this.logger.info(
+      'Creating saved filter (name=%s, type=%s, visibility=%s)',
+      input.name,
+      input.type,
+      input.visibility,
+    );
+
+    const resolved = await this.idTranslator.resolveTargetReference({ reference: target });
+    if (resolved === null) {
+      return { type: 'error', message: 'Target not found' };
+    }
+    const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
       action: 'project:modifySettings',
@@ -184,7 +201,7 @@ export class SavedFiltersProvider {
     const filters =
       data.type === 'INSIGHTS'
         ? {
-            operationIds: data.insightsFilter?.operationIds ?? [],
+            operationHashes: data.insightsFilter?.operationHashes ?? [],
             clientFilters: data.insightsFilter?.clientFilters ?? [],
           }
         : {};
@@ -218,26 +235,25 @@ export class SavedFiltersProvider {
   }
 
   async updateSavedFilter(
-    selector: {
-      organizationSlug: string;
-      projectSlug: string;
-      targetSlug: string;
-    },
+    target: TargetReferenceInput,
     filterId: string,
     input: {
       name?: string | null;
       description?: string | null;
       visibility?: string | null;
       insightsFilter?: {
-        operationIds?: string[] | null;
+        operationHashes?: string[] | null;
         clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
       } | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
-    const [organizationId, projectId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(selector),
-      this.idTranslator.translateProjectId(selector),
-    ]);
+    this.logger.info('Updating saved filter (filterId=%s)', filterId);
+
+    const resolved = await this.idTranslator.resolveTargetReference({ reference: target });
+    if (resolved === null) {
+      return { type: 'error', message: 'Target not found' };
+    }
+    const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
       action: 'project:modifySettings',
@@ -286,7 +302,7 @@ export class SavedFiltersProvider {
 
     const filters = data.insightsFilter
       ? {
-          operationIds: data.insightsFilter.operationIds ?? [],
+          operationHashes: data.insightsFilter.operationHashes ?? [],
           clientFilters: data.insightsFilter.clientFilters ?? [],
         }
       : null;
@@ -330,17 +346,16 @@ export class SavedFiltersProvider {
   }
 
   async deleteSavedFilter(
-    selector: {
-      organizationSlug: string;
-      projectSlug: string;
-      targetSlug: string;
-    },
+    target: TargetReferenceInput,
     filterId: string,
   ): Promise<{ type: 'success'; deletedId: string } | { type: 'error'; message: string }> {
-    const [organizationId, projectId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(selector),
-      this.idTranslator.translateProjectId(selector),
-    ]);
+    this.logger.info('Deleting saved filter (filterId=%s)', filterId);
+
+    const resolved = await this.idTranslator.resolveTargetReference({ reference: target });
+    if (resolved === null) {
+      return { type: 'error', message: 'Target not found' };
+    }
+    const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
       action: 'project:modifySettings',
@@ -403,17 +418,16 @@ export class SavedFiltersProvider {
   }
 
   async trackView(
-    selector: {
-      organizationSlug: string;
-      projectSlug: string;
-      targetSlug: string;
-    },
+    target: TargetReferenceInput,
     filterId: string,
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
-    const [organizationId, projectId] = await Promise.all([
-      this.idTranslator.translateOrganizationId(selector),
-      this.idTranslator.translateProjectId(selector),
-    ]);
+    this.logger.debug('Tracking saved filter view (filterId=%s)', filterId);
+
+    const resolved = await this.idTranslator.resolveTargetReference({ reference: target });
+    if (resolved === null) {
+      return { type: 'error', message: 'Target not found' };
+    }
+    const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
       action: 'project:describe',

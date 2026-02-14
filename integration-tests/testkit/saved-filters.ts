@@ -10,7 +10,7 @@ export const GetSavedFilterQuery = graphql(`
         name
         description
         filters {
-          operationIds
+          operationHashes
           clientFilters {
             name
             versions
@@ -37,7 +37,7 @@ export const GetSavedFiltersQuery = graphql(`
     $type: SavedFilterType!
     $first: Int!
     $after: String
-    $visibility: SavedFilterVisibility
+    $visibility: SavedFilterVisibilityType
     $search: String
   ) {
     target(reference: { bySelector: $selector }) {
@@ -78,8 +78,8 @@ export const GetSavedFiltersQuery = graphql(`
 `);
 
 export const CreateSavedFilterMutation = graphql(`
-  mutation CreateSavedFilter($selector: TargetSelectorInput!, $input: CreateSavedFilterInput!) {
-    createSavedFilter(selector: $selector, input: $input) {
+  mutation CreateSavedFilter($input: CreateSavedFilterInput!) {
+    createSavedFilter(input: $input) {
       error {
         message
       }
@@ -90,7 +90,7 @@ export const CreateSavedFilterMutation = graphql(`
           name
           description
           filters {
-            operationIds
+            operationHashes
             clientFilters {
               name
               versions
@@ -111,12 +111,8 @@ export const CreateSavedFilterMutation = graphql(`
 `);
 
 export const UpdateSavedFilterMutation = graphql(`
-  mutation UpdateSavedFilter(
-    $selector: TargetSelectorInput!
-    $id: ID!
-    $input: UpdateSavedFilterInput!
-  ) {
-    updateSavedFilter(selector: $selector, id: $id, input: $input) {
+  mutation UpdateSavedFilter($input: UpdateSavedFilterInput!) {
+    updateSavedFilter(input: $input) {
       error {
         message
       }
@@ -127,7 +123,7 @@ export const UpdateSavedFilterMutation = graphql(`
           name
           description
           filters {
-            operationIds
+            operationHashes
             clientFilters {
               name
               versions
@@ -148,8 +144,8 @@ export const UpdateSavedFilterMutation = graphql(`
 `);
 
 export const DeleteSavedFilterMutation = graphql(`
-  mutation DeleteSavedFilter($selector: TargetSelectorInput!, $id: ID!) {
-    deleteSavedFilter(selector: $selector, id: $id) {
+  mutation DeleteSavedFilter($input: DeleteSavedFilterInput!) {
+    deleteSavedFilter(input: $input) {
       error {
         message
       }
@@ -161,8 +157,8 @@ export const DeleteSavedFilterMutation = graphql(`
 `);
 
 export const TrackSavedFilterViewMutation = graphql(`
-  mutation TrackSavedFilterView($selector: TargetSelectorInput!, $id: ID!) {
-    trackSavedFilterView(selector: $selector, id: $id) {
+  mutation TrackSavedFilterView($input: TrackSavedFilterViewInput!) {
+    trackSavedFilterView(input: $input) {
       error {
         message
       }

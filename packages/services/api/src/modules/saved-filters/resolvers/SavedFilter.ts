@@ -9,11 +9,11 @@ export const SavedFilter: SavedFilterResolvers = {
   description: filter => filter.description,
   filters: filter => {
     const filters = filter.filters as {
-      operationIds?: string[];
+      operationHashes?: string[];
       clientFilters?: Array<{ name: string; versions?: string[] | null }>;
     };
     return {
-      operationIds: filters.operationIds ?? [],
+      operationHashes: filters.operationHashes ?? [],
       clientFilters:
         filters.clientFilters?.map(cf => ({
           name: cf.name,

@@ -3,23 +3,23 @@ import { type MigrationExecutor } from '../pg-migrator';
 export default {
   name: '2026.02.07T00-00-00.saved-filters.ts',
   run: ({ sql }) => sql`
+CREATE TYPE "saved_filter_type" AS ENUM ('INSIGHTS');
+CREATE TYPE "saved_filter_visibility" AS ENUM ('private', 'shared');
+
 CREATE TABLE "saved_filters" (
   "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
   "project_id" uuid NOT NULL REFERENCES "projects"("id") ON DELETE CASCADE,
-  "type" text NOT NULL,
+  "type" "saved_filter_type" NOT NULL,
   "created_by_user_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
   "updated_by_user_id" uuid REFERENCES "users"("id") ON DELETE SET NULL,
-  "name" varchar(100) NOT NULL,
+  "name" text NOT NULL,
   "description" text,
   "filters" jsonb NOT NULL,
-  "visibility" text NOT NULL,
+  "visibility" "saved_filter_visibility" NOT NULL,
   "views_count" integer NOT NULL DEFAULT 0,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY ("id"),
-  CONSTRAINT "saved_filters_name_length" CHECK (char_length("name") >= 1 AND char_length("name") <= 100),
-  CONSTRAINT "saved_filters_type_check" CHECK ("type" IN ('INSIGHTS')),
-  CONSTRAINT "saved_filters_visibility_check" CHECK ("visibility" IN ('private', 'shared'))
+  PRIMARY KEY ("id")
 );
 
 CREATE INDEX "saved_filters_project_type_visibility_pagination" ON "saved_filters" (

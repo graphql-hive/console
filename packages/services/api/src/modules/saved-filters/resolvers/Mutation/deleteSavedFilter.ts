@@ -3,10 +3,12 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const deleteSavedFilter: NonNullable<MutationResolvers['deleteSavedFilter']> = async (
   _parent,
-  args,
+  { input },
   { injector },
 ) => {
-  const result = await injector.get(SavedFiltersProvider).deleteSavedFilter(args.selector, args.id);
+  const result = await injector
+    .get(SavedFiltersProvider)
+    .deleteSavedFilter(input.target, input.id);
 
   if (result.type === 'error') {
     return {

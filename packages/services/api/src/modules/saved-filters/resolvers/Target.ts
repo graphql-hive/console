@@ -1,4 +1,4 @@
-import type { SavedFilterVisibility as GqlVisibility } from '../../../__generated__/types';
+import type { SavedFilterVisibilityType as GqlVisibility } from '../../../__generated__/types';
 import type { SavedFilterVisibility } from '../../../shared/entities';
 import { SavedFiltersProvider } from '../providers/saved-filters.provider';
 import type { TargetResolvers } from './../../../__generated__/types';

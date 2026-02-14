@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { ProjectType, SavedFilterType, SavedFilterVisibility } from 'testkit/gql/graphql';
+import { ProjectType, SavedFilterType, SavedFilterVisibilityType } from 'testkit/gql/graphql';
 import { initSeed } from '../../../testkit/seed';
 
 describe('Saved Filters', () => {
@@ -15,9 +15,9 @@ describe('Saved Filters', () => {
         name: 'My Filter',
         description: 'Filter for high-traffic operations',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
+        visibility: SavedFilterVisibilityType.Private,
         insightsFilter: {
-          operationIds: ['op1', 'op2'],
+          operationHashes: ['op1', 'op2'],
           clientFilters: [{ name: 'Hive CLI', versions: ['0.12.1', '0.12.3'] }],
         },
       });
@@ -29,7 +29,7 @@ describe('Saved Filters', () => {
       expect(createResult.ok?.savedFilter.type).toBe('INSIGHTS');
       expect(createResult.ok?.savedFilter.visibility).toBe('PRIVATE');
       expect(createResult.ok?.savedFilter.viewsCount).toBe(0);
-      expect(createResult.ok?.savedFilter.filters.operationIds).toEqual(['op1', 'op2']);
+      expect(createResult.ok?.savedFilter.filters.operationHashes).toEqual(['op1', 'op2']);
       expect(createResult.ok?.savedFilter.filters.clientFilters).toEqual([
         { name: 'Hive CLI', versions: ['0.12.1', '0.12.3'] },
       ]);
@@ -48,9 +48,9 @@ describe('Saved Filters', () => {
         filterId,
         name: 'Updated Filter Name',
         description: 'Updated description',
-        visibility: SavedFilterVisibility.Shared,
+        visibility: SavedFilterVisibilityType.Shared,
         insightsFilter: {
-          operationIds: ['op3'],
+          operationHashes: ['op3'],
           clientFilters: [{ name: 'Gateway' }],
         },
       });
@@ -60,7 +60,7 @@ describe('Saved Filters', () => {
       expect(updateResult.ok?.savedFilter.name).toBe('Updated Filter Name');
       expect(updateResult.ok?.savedFilter.description).toBe('Updated description');
       expect(updateResult.ok?.savedFilter.visibility).toBe('SHARED');
-      expect(updateResult.ok?.savedFilter.filters.operationIds).toEqual(['op3']);
+      expect(updateResult.ok?.savedFilter.filters.operationHashes).toEqual(['op3']);
       expect(updateResult.ok?.savedFilter.filters.clientFilters).toEqual([
         { name: 'Gateway', versions: null },
       ]);
@@ -85,22 +85,22 @@ describe('Saved Filters', () => {
       await createSavedFilter({
         name: 'Private Filter 1',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
-        insightsFilter: { operationIds: ['op1'] },
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { operationHashes: ['op1'] },
       });
 
       await createSavedFilter({
         name: 'Private Filter 2',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
-        insightsFilter: { operationIds: ['op2'] },
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { operationHashes: ['op2'] },
       });
 
       await createSavedFilter({
         name: 'Shared Filter 1',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Shared,
-        insightsFilter: { operationIds: ['op3'] },
+        visibility: SavedFilterVisibilityType.Shared,
+        insightsFilter: { operationHashes: ['op3'] },
       });
 
       // List all filters (private + shared for owner)
@@ -116,7 +116,7 @@ describe('Saved Filters', () => {
       const privateFilters = await getSavedFilters({
         type: SavedFilterType.Insights,
         first: 10,
-        visibility: SavedFilterVisibility.Private,
+        visibility: SavedFilterVisibilityType.Private,
       });
 
       expect(privateFilters.savedFilters?.edges.length).toBe(2);
@@ -128,7 +128,7 @@ describe('Saved Filters', () => {
       const sharedFilters = await getSavedFilters({
         type: SavedFilterType.Insights,
         first: 10,
-        visibility: SavedFilterVisibility.Shared,
+        visibility: SavedFilterVisibilityType.Shared,
       });
 
       expect(sharedFilters.savedFilters?.edges.length).toBe(1);
@@ -155,8 +155,8 @@ describe('Saved Filters', () => {
       const createResult = await createSavedFilter({
         name: 'Trackable Filter',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Shared,
-        insightsFilter: { operationIds: ['op1'] },
+        visibility: SavedFilterVisibilityType.Shared,
+        insightsFilter: { operationHashes: ['op1'] },
       });
 
       const filterId = createResult.ok?.savedFilter.id!;
@@ -188,8 +188,8 @@ describe('Saved Filters', () => {
       const createResult = await createSavedFilter({
         name: 'Owner Private Filter',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
-        insightsFilter: { operationIds: ['op1'] },
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { operationHashes: ['op1'] },
       });
 
       const filterId = createResult.ok?.savedFilter.id!;
@@ -227,8 +227,8 @@ describe('Saved Filters', () => {
         const createResult = await createSavedFilter({
           name: 'Shared Filter',
           type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Shared,
-          insightsFilter: { operationIds: ['op1'] },
+          visibility: SavedFilterVisibilityType.Shared,
+          insightsFilter: { operationHashes: ['op1'] },
         });
 
         const filterId = createResult.ok?.savedFilter.id!;
@@ -264,8 +264,8 @@ describe('Saved Filters', () => {
         const createResult = await createSavedFilter({
           name: 'Shared Filter',
           type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Shared,
-          insightsFilter: { operationIds: ['op1'] },
+          visibility: SavedFilterVisibilityType.Shared,
+          insightsFilter: { operationHashes: ['op1'] },
         });
 
         const filterId = createResult.ok?.savedFilter.id!;
@@ -318,8 +318,8 @@ describe('Saved Filters', () => {
           createSavedFilter({
             name: 'Unauthorized Filter',
             type: SavedFilterType.Insights,
-            visibility: SavedFilterVisibility.Private,
-            insightsFilter: { operationIds: ['op1'] },
+            visibility: SavedFilterVisibilityType.Private,
+            insightsFilter: { operationHashes: ['op1'] },
             token: readOnlyToken,
           }),
         ).rejects.toEqual(
@@ -342,8 +342,8 @@ describe('Saved Filters', () => {
       const result = await createSavedFilter({
         name: '',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
-        insightsFilter: { operationIds: ['op1'] },
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { operationHashes: ['op1'] },
       });
 
       expect(result.error).not.toBeNull();
@@ -358,8 +358,8 @@ describe('Saved Filters', () => {
       const result = await createSavedFilter({
         name: 'a'.repeat(101),
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
-        insightsFilter: { operationIds: ['op1'] },
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { operationHashes: ['op1'] },
       });
 
       expect(result.error).not.toBeNull();
@@ -374,9 +374,9 @@ describe('Saved Filters', () => {
       const result = await createSavedFilter({
         name: 'Too many ops',
         type: SavedFilterType.Insights,
-        visibility: SavedFilterVisibility.Private,
+        visibility: SavedFilterVisibilityType.Private,
         insightsFilter: {
-          operationIds: Array.from({ length: 101 }, (_, i) => `op${i}`),
+          operationHashes: Array.from({ length: 101 }, (_, i) => `op${i}`),
         },
       });
 
@@ -394,7 +394,7 @@ describe('Saved Filters', () => {
         const result = await createSavedFilter({
           name: 'Missing filter config',
           type: SavedFilterType.Insights,
-          visibility: SavedFilterVisibility.Private,
+          visibility: SavedFilterVisibilityType.Private,
           // intentionally missing insightsFilter
         });
 

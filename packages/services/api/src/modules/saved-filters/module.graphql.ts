@@ -5,7 +5,7 @@ export const typeDefs = gql`
     INSIGHTS
   }
 
-  enum SavedFilterVisibility {
+  enum SavedFilterVisibilityType {
     PRIVATE
     SHARED
   }
@@ -16,7 +16,7 @@ export const typeDefs = gql`
     name: String!
     description: String
     filters: InsightsFilterConfiguration!
-    visibility: SavedFilterVisibility!
+    visibility: SavedFilterVisibilityType!
     viewsCount: Int!
     createdAt: DateTime!
     updatedAt: DateTime!
@@ -27,7 +27,7 @@ export const typeDefs = gql`
   }
 
   type InsightsFilterConfiguration {
-    operationIds: [ID!]!
+    operationHashes: [String!]!
     clientFilters: [ClientFilter!]!
   }
 
@@ -47,22 +47,35 @@ export const typeDefs = gql`
   }
 
   input CreateSavedFilterInput {
+    target: TargetReferenceInput!
     type: SavedFilterType!
     name: String!
     description: String
-    visibility: SavedFilterVisibility!
+    visibility: SavedFilterVisibilityType!
     insightsFilter: InsightsFilterConfigurationInput
   }
 
   input UpdateSavedFilterInput {
+    target: TargetReferenceInput!
+    id: ID!
     name: String
     description: String
-    visibility: SavedFilterVisibility
+    visibility: SavedFilterVisibilityType
     insightsFilter: InsightsFilterConfigurationInput
   }
 
+  input DeleteSavedFilterInput {
+    target: TargetReferenceInput!
+    id: ID!
+  }
+
+  input TrackSavedFilterViewInput {
+    target: TargetReferenceInput!
+    id: ID!
+  }
+
   input InsightsFilterConfigurationInput {
-    operationIds: [ID!]
+    operationHashes: [String!]
     clientFilters: [ClientFilterInput!]
   }
 
@@ -77,24 +90,17 @@ export const typeDefs = gql`
       type: SavedFilterType!
       first: Int = 50
       after: String = null
-      visibility: SavedFilterVisibility = null
+      visibility: SavedFilterVisibilityType = null
       search: String = null
     ): SavedFilterConnection!
     viewerCanCreateSavedFilter: Boolean!
   }
 
   extend type Mutation {
-    createSavedFilter(
-      selector: TargetSelectorInput!
-      input: CreateSavedFilterInput!
-    ): CreateSavedFilterResult!
-    updateSavedFilter(
-      selector: TargetSelectorInput!
-      id: ID!
-      input: UpdateSavedFilterInput!
-    ): UpdateSavedFilterResult!
-    deleteSavedFilter(selector: TargetSelectorInput!, id: ID!): DeleteSavedFilterResult!
-    trackSavedFilterView(selector: TargetSelectorInput!, id: ID!): TrackSavedFilterViewResult!
+    createSavedFilter(input: CreateSavedFilterInput!): CreateSavedFilterResult!
+    updateSavedFilter(input: UpdateSavedFilterInput!): UpdateSavedFilterResult!
+    deleteSavedFilter(input: DeleteSavedFilterInput!): DeleteSavedFilterResult!
+    trackSavedFilterView(input: TrackSavedFilterViewInput!): TrackSavedFilterViewResult!
   }
 
   type SavedFilterError implements Error {

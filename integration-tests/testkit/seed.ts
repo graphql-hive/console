@@ -519,7 +519,7 @@ export function initSeed() {
                   type: GraphQLSchema.SavedFilterType;
                   first?: number;
                   after?: string;
-                  visibility?: GraphQLSchema.SavedFilterVisibility;
+                  visibility?: GraphQLSchema.SavedFilterVisibilityType;
                   search?: string;
                   token?: string;
                 }) {
@@ -556,7 +556,7 @@ export function initSeed() {
                   name: string;
                   description?: string;
                   type: GraphQLSchema.SavedFilterType;
-                  visibility: GraphQLSchema.SavedFilterVisibility;
+                  visibility: GraphQLSchema.SavedFilterVisibilityType;
                   insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
                   token?: string;
                 }) {
@@ -564,16 +564,18 @@ export function initSeed() {
                     document: CreateSavedFilterMutation,
                     variables: {
                       input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
                         name,
                         description,
                         type,
                         visibility,
                         insightsFilter,
-                      },
-                      selector: {
-                        organizationSlug: organization.slug,
-                        projectSlug: project.slug,
-                        targetSlug: target.slug,
                       },
                     },
                     authToken: token,
@@ -592,24 +594,26 @@ export function initSeed() {
                   filterId: string;
                   name?: string;
                   description?: string;
-                  visibility?: GraphQLSchema.SavedFilterVisibility;
+                  visibility?: GraphQLSchema.SavedFilterVisibilityType;
                   insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
                   token?: string;
                 }) {
                   const result = await execute({
                     document: UpdateSavedFilterMutation,
                     variables: {
-                      id: filterId,
                       input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
                         name,
                         description,
                         visibility,
                         insightsFilter,
-                      },
-                      selector: {
-                        organizationSlug: organization.slug,
-                        projectSlug: project.slug,
-                        targetSlug: target.slug,
                       },
                     },
                     authToken: token,
@@ -627,11 +631,15 @@ export function initSeed() {
                   const result = await execute({
                     document: DeleteSavedFilterMutation,
                     variables: {
-                      id: filterId,
-                      selector: {
-                        organizationSlug: organization.slug,
-                        projectSlug: project.slug,
-                        targetSlug: target.slug,
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
                       },
                     },
                     authToken: token,
@@ -649,11 +657,15 @@ export function initSeed() {
                   const result = await execute({
                     document: TrackSavedFilterViewMutation,
                     variables: {
-                      id: filterId,
-                      selector: {
-                        organizationSlug: organization.slug,
-                        projectSlug: project.slug,
-                        targetSlug: target.slug,
+                      input: {
+                        target: {
+                          bySelector: {
+                            organizationSlug: organization.slug,
+                            projectSlug: project.slug,
+                            targetSlug: target.slug,
+                          },
+                        },
+                        id: filterId,
                       },
                     },
                     authToken: token,

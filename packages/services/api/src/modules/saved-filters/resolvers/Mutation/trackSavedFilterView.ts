@@ -3,10 +3,10 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 
 export const trackSavedFilterView: NonNullable<MutationResolvers['trackSavedFilterView']> = async (
   _parent,
-  args,
+  { input },
   { injector },
 ) => {
-  const result = await injector.get(SavedFiltersProvider).trackView(args.selector, args.id);
+  const result = await injector.get(SavedFiltersProvider).trackView(input.target, input.id);
 
   if (result.type === 'error') {
     return {

@@ -31,7 +31,9 @@ export default gql`
     """
     Filter by only showing operations performed by specific clients.
     """
-    clientNames: [String!] @tag(name: "public")
+    clientNames: [String!]
+      @tag(name: "public")
+      @deprecated(reason: "Use 'clientVersionFilters' instead for more precise filtering by client name and version.")
     """
     Filter by specific client name + version combinations.
     More precise than clientNames - allows filtering to specific versions.
