@@ -138,10 +138,12 @@ export class OperationsManager {
     period,
     operations,
     clients,
+    clientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
   } & TargetSelector) {
     this.logger.info('Counting unique operations (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -158,6 +160,7 @@ export class OperationsManager {
       period,
       operations,
       clients,
+      clientVersionFilters,
     });
   }
 
@@ -244,10 +247,12 @@ export class OperationsManager {
     period,
     operations,
     clients,
+    clientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
   } & Listify<TargetSelector, 'targetId'>) {
     this.logger.info('Counting requests and failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -265,6 +270,7 @@ export class OperationsManager {
         period,
         operations,
         clients,
+        clientVersionFilters,
       })
       .then(r => r.total);
   }
@@ -320,10 +326,12 @@ export class OperationsManager {
     period,
     operations,
     clients,
+    clientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
   } & TargetSelector) {
     this.logger.info('Counting failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -340,6 +348,7 @@ export class OperationsManager {
       period,
       operations,
       clients,
+      clientVersionFilters,
     });
   }
 
@@ -435,11 +444,13 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info('Reading operations stats (period=%o, target=%s)', period, target);
@@ -458,6 +469,7 @@ export class OperationsManager {
       period,
       operations,
       clients,
+      clientVersionFilters,
       schemaCoordinate,
     });
   }
@@ -571,12 +583,14 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info(
@@ -600,6 +614,7 @@ export class OperationsManager {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
       schemaCoordinate,
     });
   }
@@ -612,11 +627,13 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
   }: {
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
   } & TargetSelector) {
     this.logger.info(
       'Reading failures over time (period=%o, resolution=%s, target=%s)',
@@ -639,6 +656,7 @@ export class OperationsManager {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
     });
   }
 
@@ -650,11 +668,13 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
   }: {
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
   } & TargetSelector) {
     this.logger.info(
       'Reading duration over time (period=%o, resolution=%s, target=%s)',
@@ -677,6 +697,7 @@ export class OperationsManager {
       resolution,
       operations,
       clients,
+      clientVersionFilters,
     });
   }
 
@@ -687,10 +708,12 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
   } & TargetSelector) {
     this.logger.info('Reading overall duration percentiles (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -707,6 +730,7 @@ export class OperationsManager {
       period,
       operations,
       clients,
+      clientVersionFilters,
     });
   }
 
@@ -718,11 +742,13 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info(
@@ -745,6 +771,7 @@ export class OperationsManager {
       period,
       operations,
       clients,
+      clientVersionFilters,
       schemaCoordinate,
     });
   }
@@ -756,11 +783,13 @@ export class OperationsManager {
     targetId: target,
     operations,
     clients,
+    clientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info('Counting unique clients (period=%o, target=%s)', period, target);
@@ -778,6 +807,7 @@ export class OperationsManager {
       period,
       operations,
       clients,
+      clientVersionFilters,
       schemaCoordinate,
     });
   }

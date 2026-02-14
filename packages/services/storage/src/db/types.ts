@@ -270,6 +270,21 @@ export interface projects {
   validation_url: string | null;
 }
 
+export interface saved_filters {
+  created_at: Date;
+  created_by_user_id: string;
+  description: string | null;
+  filters: any;
+  id: string;
+  name: string;
+  project_id: string;
+  type: string;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+  views_count: number;
+  visibility: string;
+}
+
 export interface schema_change_approvals {
   context_id: string;
   created_at: Date;
@@ -520,6 +535,7 @@ export interface DBTables {
   organizations: organizations;
   organizations_billing: organizations_billing;
   projects: projects;
+  saved_filters: saved_filters;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;
   schema_coordinate_status: schema_coordinate_status;

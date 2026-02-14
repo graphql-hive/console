@@ -354,6 +354,33 @@ export const AuditLogModel = z.union([
       organizationAccessTokenId: z.string().uuid(),
     }),
   }),
+  z.object({
+    eventType: z.literal('SAVED_FILTER_CREATED'),
+    metadata: z.object({
+      filterId: z.string().uuid(),
+      filterName: z.string(),
+      filterType: z.string(),
+      visibility: z.string(),
+      projectId: z.string().uuid(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SAVED_FILTER_UPDATED'),
+    metadata: z.object({
+      filterId: z.string().uuid(),
+      filterName: z.string(),
+      filterType: z.string(),
+      updatedFields: z.string(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SAVED_FILTER_DELETED'),
+    metadata: z.object({
+      filterId: z.string().uuid(),
+      filterName: z.string(),
+      filterType: z.string(),
+    }),
+  }),
 ]);
 
 export type AuditLogSchemaEvent = z.infer<typeof AuditLogModel>;
