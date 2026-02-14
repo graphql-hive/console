@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Meta } from '@/components/ui/meta';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
+import { useTimed } from '@/lib/hooks/use-timed';
 import { authVerifyEmailRoute } from '@/router';
 import { Link, useNavigate } from '@tanstack/react-router';
 
@@ -44,6 +45,7 @@ function AuthVerifyEmail() {
 
   const [sendEmailMutation, sendEmailImpl] = useMutation(SendVerificationEmailMutation);
   const [verifyMutation, verify] = useMutation(VerifyEmailMutation);
+  const [emailSent, startEmailSentTimer] = useTimed(3000);
 
   const sendEmail = useCallback(
     async (resend?: boolean) => {
@@ -69,8 +71,10 @@ function AuthVerifyEmail() {
           title: 'Verification email sent',
           description: 'Please check your email inbox.',
         });
+        startEmailSentTimer();
       } else if (result.data?.sendVerificationEmail.error?.emailAlreadyVerified) {
         void navigate({ to: '/' });
+        return;
       } else {
         toast({
           title: 'Failed to send verification email',
@@ -119,7 +123,7 @@ function AuthVerifyEmail() {
               <p>There was an unexpected error when verifying your email address.</p>
               <Button
                 className="w-full"
-                disabled={sendEmailMutation.fetching}
+                disabled={sendEmailMutation.fetching || emailSent}
                 onClick={() => sendEmail(true)}
               >
                 Resend verification email
@@ -198,7 +202,7 @@ function AuthVerifyEmail() {
           <Button
             type="button"
             className="w-full"
-            disabled={sendEmailMutation.fetching}
+            disabled={sendEmailMutation.fetching || emailSent}
             onClick={() => sendEmail(true)}
           >
             Resend verification email
