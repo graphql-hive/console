@@ -1,0 +1,100 @@
+---
+title: Layer 2 Cache for Persisted Documents
+description: Add a distributed cache layer between in-memory cache and CDN for persisted documents.
+date: 2026-02-12
+authors: [adam]
+---
+
+You can now configure a Layer 2 (L2) cache for persisted documents, reducing CDN calls and improving
+performance in serverless and multi-instance deployments.
+
+## The Problem
+
+The in-memory LRU cache (L1) for persisted documents has limitations:
+
+- **Cache lost on restart**: Serverless cold starts, instance restarts, and scaling events clear the
+  cache
+- **No shared state**: Each instance maintains its own cache, leading to redundant CDN calls
+- **Scale constraints**: Large supergraphs with many queries can hit LRU cache limits quickly
+- **No CDN resilience**: If the CDN is unavailable, there's no fallback layer
+
+Teams with high-scale requirements often needed to build custom persisted document implementations
+to use Redis or other distributed caches.
+
+## The Solution
+
+Add a distributed cache (Redis, Memcached, etc.) as an L2 layer between the in-memory cache and CDN:
+
+**L1 (memory) → L2 (Redis) → CDN**
+
+```typescript
+import { createYoga } from 'graphql-yoga'
+import { createClient } from 'redis'
+import { useHive } from '@graphql-hive/yoga'
+
+const redis = createClient({ url: 'redis://localhost:6379' })
+await redis.connect()
+
+const yoga = createYoga({
+  plugins: [
+    useHive({
+      experimental__persistedDocuments: {
+        cdn: {
+          endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+          accessToken: '<cdn_access_token>'
+        },
+        layer2Cache: {
+          cache: {
+            get: key => redis.get(`hive:pd:${key}`),
+            set: (key, value, opts) =>
+              redis.set(`hive:pd:${key}`, value, opts?.ttl ? { EX: opts.ttl } : {})
+          },
+          ttlSeconds: 3600,
+          notFoundTtlSeconds: 60
+        }
+      }
+    })
+  ]
+})
+```
+
+## Hive Gateway
+
+For Hive Gateway, enable caching with just TTL options:
+
+```typescript
+persistedDocuments: {
+  type: 'hive',
+  endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
+  token: '<cdn_access_token>',
+  cacheTtlSeconds: 3600,
+  cacheNotFoundTtlSeconds: 60
+}
+```
+
+[Learn more about cache configuration](https://the-guild.dev/graphql/hive/docs/gateway/other-features/performance)
+
+Or via CLI:
+
+```bash
+hive-gateway supergraph \
+  --hive-persisted-documents-cache-ttl 3600 \
+  --hive-persisted-documents-cache-not-found-ttl 60
+```
+
+## Features
+
+| Option                                           | Description                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `ttlSeconds` / `cacheTtlSeconds`                 | TTL for found documents                                      |
+| `notFoundTtlSeconds` / `cacheNotFoundTtlSeconds` | TTL for not-found documents (negative caching). Default: 60s |
+| `waitUntil`                                      | Register cache writes in serverless environments             |
+
+- Apollo Server automatically uses server's
+  [cache backend](https://www.apollographql.com/docs/apollo-server/performance/cache-backends) as
+  the L2 cache when available.
+- Hive Gateway automatically uses the gateway cache when TTL options are provided.
+
+---
+
+- [Learn more about App Deployments](/docs/schema-registry/app-deployments)

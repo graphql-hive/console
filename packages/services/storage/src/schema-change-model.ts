@@ -1304,6 +1304,9 @@ export const HiveSchemaChangeModel = z
             id: z.string(),
             name: z.string(),
             version: z.string(),
+            createdAt: z.string().nullable().optional(),
+            activatedAt: z.string().nullable().optional(),
+            retiredAt: z.string().nullable().optional(),
             affectedOperations: z.array(
               z.object({
                 hash: z.string(),
@@ -1344,6 +1347,9 @@ export const HiveSchemaChangeModel = z
             id: string;
             name: string;
             version: string;
+            createdAt?: string | null;
+            activatedAt?: string | null;
+            retiredAt?: string | null;
             affectedOperations: { hash: string; name: string | null }[];
           }[]
         | null;

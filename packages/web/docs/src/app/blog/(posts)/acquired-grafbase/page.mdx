@@ -1,13 +1,34 @@
----
-title: The Guild has acquired Grafbase
-description:
-  We're open sourcing the Grafbase stack and uniting the best GraphQL Federation Routers under Hive
-  Platform.
-date: 2026-02-10
-authors: uri
-tags: [company, platform]
-featured: true
----
+import { metadata as rootMetadata } from '../../../layout'
+
+import image from './header-image.webp'
+
+export const metadata = {
+  title: 'The Guild has acquired Grafbase',
+  description:
+    "We're open sourcing the Grafbase stack and uniting the best GraphQL Federation Routers under Hive Platform.",
+  tags: ['company', 'platform'],
+  authors: ['uri'],
+  date: '2026-02-10',
+  featured: true,
+  image,
+  openGraph: {
+    ...rootMetadata.openGraph,
+    url: '/blog/acquired-grafbase',
+    /**
+     * We currently have `metadataBase` which includes `basePath`,
+     * so the opengraph-image.png file convention results in a
+     * duplicate `basePath` in the OG Image URL.
+     *
+     * Remove this workaround when we have a fix upstream.
+     * Do not extract this workaround to a separate file, as it will stop working.
+     */
+    images: [
+      new URL('./opengraph-image.png', import.meta.url)
+        .toString()
+        .replace(process.env.NEXT_BASE_PATH || '', '')
+    ]
+  }
+}
 
 Today, we are very happy to announce that The Guild has acquired Grafbase.
 

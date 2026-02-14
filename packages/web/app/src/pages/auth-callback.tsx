@@ -75,7 +75,7 @@ function AuthCallback(props: { provider: Provider; redirectToPath: string }) {
             description={
               auth.data.status === 'NO_EMAIL_GIVEN_BY_PROVIDER'
                 ? 'No email address was provided by the auth provider. Please try again.'
-                : 'Sign in not allowed.'
+                : auth.data.reason
             }
           />
         </AuthCard>
