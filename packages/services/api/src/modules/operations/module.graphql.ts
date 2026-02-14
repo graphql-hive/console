@@ -33,7 +33,9 @@ export default gql`
     """
     clientNames: [String!]
       @tag(name: "public")
-      @deprecated(reason: "Use 'clientVersionFilters' instead for more precise filtering by client name and version.")
+      @deprecated(
+        reason: "Use 'clientVersionFilters' instead for more precise filtering by client name and version."
+      )
     """
     Filter by specific client name + version combinations.
     More precise than clientNames - allows filtering to specific versions.

@@ -6,9 +6,7 @@ export const deleteSavedFilter: NonNullable<MutationResolvers['deleteSavedFilter
   { input },
   { injector },
 ) => {
-  const result = await injector
-    .get(SavedFiltersProvider)
-    .deleteSavedFilter(input.target, input.id);
+  const result = await injector.get(SavedFiltersProvider).deleteSavedFilter(input.target, input.id);
 
   if (result.type === 'error') {
     return {
