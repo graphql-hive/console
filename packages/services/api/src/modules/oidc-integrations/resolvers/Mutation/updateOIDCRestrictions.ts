@@ -8,6 +8,7 @@ export const updateOIDCRestrictions: NonNullable<
     oidcIntegrationId: input.oidcIntegrationId,
     oidcUserJoinOnly: input.oidcUserJoinOnly ?? null,
     oidcUserAccessOnly: input.oidcUserAccessOnly ?? null,
+    requireInvitation: input.requireInvitation ?? null,
   });
 
   if (result.type === 'ok') {

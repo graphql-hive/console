@@ -943,7 +943,7 @@ export function OrganizationMemberRoles(props: {
               <OrganizationMemberRoleRow
                 organizationSlug={organization.slug}
                 isOIDCDefaultRole={organization.oidcIntegration?.defaultMemberRole?.id === role.id}
-                canChangeOIDCDefaultRole={organization.me.role?.name === 'Admin'}
+                canChangeOIDCDefaultRole={organization.me?.role?.name === 'Admin'}
                 key={role.id}
                 role={role}
                 onEdit={() => setRoleToEdit(role)}

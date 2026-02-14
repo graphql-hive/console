@@ -54,10 +54,6 @@ export const Organization: Pick<
       userId: me.id,
     });
 
-    if (!member) {
-      throw new Error('Could not find member.');
-    }
-
     return member;
   },
   members: (organization, args, { injector }) => {

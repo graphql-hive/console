@@ -103,7 +103,7 @@ export function UserMenu(props: {
         toggleModalOpen={toggleUserSettingsModalOpen}
         isOpen={isUserSettingsModalOpen}
       />
-      {currentOrganization?.me.canLeaveOrganization ? (
+      {currentOrganization?.me?.canLeaveOrganization ? (
         <LeaveOrganizationModal
           toggleModalOpen={toggleLeaveOrganizationModalOpen}
           isOpen={isLeaveOrganizationModalOpen}
@@ -237,7 +237,7 @@ export function UserMenu(props: {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              {currentOrganization?.me.canLeaveOrganization ? (
+              {currentOrganization?.me?.canLeaveOrganization ? (
                 <DropdownMenuItem
                   onClick={() => {
                     toggleLeaveOrganizationModalOpen();

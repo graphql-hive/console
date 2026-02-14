@@ -87,6 +87,7 @@ const publishMutationDocument =
   `;
 
 async function publishSchema(args: { sdl: string; service?: string; target?: string }) {
+  const commit = `${Date.now()}`;
   const response = await fetch(graphqlEndpoint, {
     method: 'POST',
     headers: {
@@ -98,7 +99,7 @@ async function publishSchema(args: { sdl: string; service?: string; target?: str
       variables: {
         input: {
           author: 'MoneyBoy',
-          commit: '1977',
+          commit,
           sdl: args.sdl,
           service: args.service,
           url: `https://${args.service ? `${args.service}.` : ''}localhost/graphql`,
@@ -110,6 +111,7 @@ async function publishSchema(args: { sdl: string; service?: string; target?: str
   return response as {
     data: {
       schemaPublish: {
+        linkToWebsite: string;
         valid: boolean;
       } | null;
     } | null;
@@ -117,11 +119,15 @@ async function publishSchema(args: { sdl: string; service?: string; target?: str
   };
 }
 
+function minifySchema(schema: string): string {
+  return schema.replace(/\s+/g, ' ').trim();
+}
+
 async function single() {
   const schema = await loadSchema('scripts/seed-schemas/mono.graphql', {
     loaders: [new GraphQLFileLoader()],
   });
-  const sdl = printSchema(schema);
+  const sdl = minifySchema(printSchema(schema));
   const result = await publishSchema({
     sdl,
     target,
@@ -129,7 +135,7 @@ async function single() {
   if (result?.errors || result?.data?.schemaPublish?.valid !== true) {
     console.error(`Published schema is invalid.`);
   } else {
-    console.log(`Published successfully.`);
+    console.log(`Published successfully (${result.data.schemaPublish?.linkToWebsite})`);
   }
   return result;
 }
@@ -147,7 +153,7 @@ async function federation() {
       const service = d.location ? parsePath(d.location).name.replaceAll('.', '-') : undefined;
 
       const result = await publishSchema({
-        sdl: d.rawSDL,
+        sdl: minifySchema(d.rawSDL),
         service,
         target,
       });

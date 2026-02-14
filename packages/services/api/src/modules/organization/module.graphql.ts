@@ -888,7 +888,10 @@ export default gql`
     cleanId: ID! @deprecated(reason: "Use the 'slug' field instead.")
     name: String! @deprecated(reason: "Use the 'slug' field instead.")
     owner: Member! @tag(name: "public")
-    me: Member!
+    """
+    Returns 'null' if the user is not a member of the organization, but able to see the organization (admin user).
+    """
+    me: Member
     members(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
@@ -1254,6 +1257,7 @@ export default gql`
   type Member {
     id: ID!
     user: User! @tag(name: "public")
+    authProviders: [MemberAuthProvider!]!
     isOwner: Boolean! @tag(name: "public")
     canLeaveOrganization: Boolean!
     role: MemberRole! @tag(name: "public")
@@ -1379,6 +1383,11 @@ export default gql`
   type ResourceAssignment {
     mode: ResourceAssignmentModeType! @tag(name: "public")
     projects: [ProjectResourceAssignment!] @tag(name: "public")
+  }
+
+  type MemberAuthProvider {
+    type: AuthProviderType!
+    disabledReason: String
   }
 
   extend type Project {

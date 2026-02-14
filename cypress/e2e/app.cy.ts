@@ -207,4 +207,76 @@ describe('oidc', () => {
     cy.visit('/auth/oidc?id=invalid');
     cy.get('[data-cy="auth-card-header-description"]').contains('Could not find OIDC integration.');
   });
+
+  describe('requireInvitation', () => {
+    const getOrgPrepared = () => {
+      const organizationAdminUser = getUserData();
+      cy.visit('/');
+      cy.signup(organizationAdminUser);
+
+      const slug = generateRandomSlug();
+      cy.createOIDCIntegration(slug);
+
+      // Enable the requireInvitation setting
+      cy.get('[data-cy="oidc-require-invitation-toggle"]').click();
+      cy.contains('updated');
+      return { organizationAdminUser, slug };
+    };
+
+    it('oidc user cannot join the org without invitation', () => {
+      const { slug } = getOrgPrepared();
+      cy.visit('/logout');
+
+      // First time login
+      cy.clearAllCookies();
+      cy.clearAllLocalStorage();
+      cy.clearAllSessionStorage();
+      cy.get('a[href^="/auth/sso"]').click();
+      cy.get('input[name="slug"]').type(slug);
+      cy.get('button[type="submit"]').click();
+      // OIDC login
+      cy.get('input[id="Input_Username"]').type('test-user-2');
+      cy.get('input[id="Input_Password"]').type('password');
+      cy.get('button[value="login"]').click();
+
+      // Check if OIDC authentication failed as intended
+      cy.get(`a[href="/${slug}"]`).should('not.exist');
+      cy.contains('not invited');
+    });
+
+    it('oidc user can join the org with an invitation', () => {
+      const { slug } = getOrgPrepared();
+
+      // Send an invite for the SSO user, with admin role specified
+      cy.visit(`/${slug}/view/members?page=invitations`);
+      cy.get('button[data-cy="send-invite-trigger"]').click();
+      cy.get('input[name="email"]').type('tom.sailor@gmail.com');
+      cy.get('button[data-cy="role-selector-trigger"]').click();
+      cy.contains('[data-cy="role-selector-item"]', 'Admin').click();
+      cy.get('button[type="submit"]').click();
+      cy.get('.container table').contains('tom.sailor@gmail.com');
+
+      cy.visit('/logout');
+
+      // First time login
+      cy.clearAllCookies();
+      cy.clearAllLocalStorage();
+      cy.clearAllSessionStorage();
+      cy.get('a[href^="/auth/sso"]').click();
+      cy.get('input[name="slug"]').type(slug);
+      cy.get('button[type="submit"]').click();
+      // OIDC login
+      cy.get('input[id="Input_Username"]').type('test-user-2');
+      cy.get('input[id="Input_Password"]').type('password');
+      cy.get('button[value="login"]').click();
+
+      // Check if user joined successfully
+      cy.get(`a[href="/${slug}"]`).should('exist');
+      cy.contains('not invited').should('not.exist');
+
+      // Check if user has admin role
+      cy.visit(`/${slug}/view/members?page=list`);
+      cy.contains('tr', 'tom.sailor@gmail.com').contains('Admin');
+    });
+  });
 });

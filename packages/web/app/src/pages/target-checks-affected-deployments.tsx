@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery } from 'urql';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
+import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -54,6 +55,9 @@ const AffectedDeploymentsQuery = graphql(`
                       name
                       version
                       totalAffectedOperations
+                      activatedAt
+                      retiredAt
+                      lastUsed
                     }
                   }
                   totalCount
@@ -80,6 +84,9 @@ const AffectedDeploymentsQuery = graphql(`
                       name
                       version
                       totalAffectedOperations
+                      activatedAt
+                      retiredAt
+                      lastUsed
                     }
                   }
                   totalCount
@@ -102,6 +109,9 @@ type AffectedDeployment = {
   name: string;
   version: string;
   totalOperations: number;
+  activatedAt: string | null;
+  retiredAt: string | null;
+  lastUsed: string | null;
 };
 
 const PAGE_SIZE = 20;
@@ -167,6 +177,9 @@ function TargetChecksAffectedDeploymentsContent(props: {
               name: edge.node.name,
               version: edge.node.version,
               totalOperations: edge.node.totalAffectedOperations,
+              activatedAt: edge.node.activatedAt ?? null,
+              retiredAt: edge.node.retiredAt ?? null,
+              lastUsed: edge.node.lastUsed ?? null,
             }),
           ) ?? [];
 
@@ -231,7 +244,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   targetSlug: props.targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
-                className="text-neutral-2 hover:underline"
+                className="text-orange-500 hover:underline"
               >
                 Schema Check
               </Link>
@@ -277,6 +290,8 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   <TableRow>
                     <TableHead className="w-[200px]">App Name</TableHead>
                     <TableHead>Version</TableHead>
+                    <TableHead>Activated</TableHead>
+                    <TableHead>Last Used</TableHead>
                     <TableHead className="text-right">Total Operations</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -302,6 +317,24 @@ function TargetChecksAffectedDeploymentsContent(props: {
                         </Link>
                       </TableCell>
                       <TableCell>{deployment.version}</TableCell>
+                      <TableCell>
+                        {deployment.activatedAt ? (
+                          <span className="text-xs">
+                            <DateWithTimeAgo date={deployment.activatedAt} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {deployment.lastUsed ? (
+                          <span className="text-xs">
+                            <DateWithTimeAgo date={deployment.lastUsed} />
+                          </span>
+                        ) : (
+                          <span className="text-neutral-10 text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button variant="link" className="h-auto p-0" asChild>
                           <Link
