@@ -47,6 +47,7 @@
     "seed:app-deployments": "tsx scripts/seed-app-deployments.mts",
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
+    "seed:traces": "tsx scripts/seed-traces/seed-traces-bulk.ts",
     "seed:usage": "tsx scripts/seed-usage.ts",
     "start": "pnpm run local:setup",
     "test": "vitest",
