@@ -48,7 +48,7 @@ const CreateSavedFilterInputModel = zod.object({
 });
 
 const UpdateSavedFilterInputModel = zod.object({
-  name: zod.string().min(1).max(100).optional(),
+  name: zod.string().min(1).max(100).nullish(),
   description: zod.string().max(500).nullable().optional(),
   // nullish() because resolver passes null when visibility is not provided
   visibility: visibilityEnum.nullish(),
