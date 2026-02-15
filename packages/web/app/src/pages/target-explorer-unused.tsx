@@ -237,6 +237,9 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
+        explorer(usage: { period: $period }) {
+          ...SchemaExplorerTypes_ServiceNamesFragment
+        }
         unusedSchema(period: { absoluteRange: $period }) {
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
         }
@@ -317,13 +320,7 @@ function UnusedSchemaExplorer({
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <ServiceNameFilter
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
-            period={dateRangeController.resolvedRange}
-            metadataAttributes={[]}
-          />
+          <ServiceNameFilter explorer={latestValidSchemaVersion?.explorer} />
           <SchemaVariantFilter
             organizationSlug={organizationSlug}
             projectSlug={projectSlug}

@@ -191,6 +191,7 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
             name
             values
           }
+          ...SchemaExplorerTypes_ServiceNamesFragment
         }
         deprecatedSchema(period: { absoluteRange: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
@@ -258,13 +259,7 @@ function DeprecatedSchemaExplorer(props: {
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
-          <ServiceNameFilter
-            organizationSlug={props.organizationSlug}
-            projectSlug={props.projectSlug}
-            targetSlug={props.targetSlug}
-            period={dateRangeController.resolvedRange}
-            metadataAttributes={latestValidSchemaVersion?.explorer?.metadataAttributes ?? undefined}
-          />
+          <ServiceNameFilter explorer={latestValidSchemaVersion?.explorer} />
           <SchemaVariantFilter
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}

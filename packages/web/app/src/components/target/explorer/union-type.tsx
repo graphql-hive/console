@@ -47,21 +47,23 @@ export function GraphQLUnionTypeComponent(props: {
   const ttype = useFragment(GraphQLUnionTypeComponent_TypeFragment, props.type);
   const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
 
-  const members = ttype.members.filter((member: any) => {
+  const members = ttype.members.filter(member => {
     let matchesFilter = true;
     if (search) {
       matchesFilter &&= member.name.toLowerCase().includes(search);
     }
     if (filterMeta.length && member.supergraphMetadata) {
+      const metadata = member.supergraphMetadata;
       // Check custom metadata attributes
-      const matchesMeta = member.supergraphMetadata.metadata?.some((m: any) =>
+      const matchesMeta = metadata?.metadata?.some((m: any) =>
         hasMetadataFilter(m.name, m.content),
       );
       // Check service name filters
       const matchesService =
-        'ownedByServiceNames' in member.supergraphMetadata &&
-        Array.isArray(member.supergraphMetadata.ownedByServiceNames) &&
-        member.supergraphMetadata.ownedByServiceNames.some((serviceName: string) =>
+        metadata &&
+        'ownedByServiceNames' in metadata &&
+        Array.isArray(metadata.ownedByServiceNames) &&
+        metadata.ownedByServiceNames.some((serviceName: string) =>
           hasMetadataFilter('service', serviceName),
         );
       matchesFilter &&= !!(matchesMeta || matchesService);
@@ -80,7 +82,7 @@ export function GraphQLUnionTypeComponent(props: {
       organizationSlug={props.organizationSlug}
     >
       <div className="flex flex-col">
-        {members.map((member: any, i: number) => (
+        {members.map((member, i: number) => (
           <GraphQLTypeCardListItem key={member.name} index={i}>
             <div>{member.name}</div>
             {typeof props.totalRequests === 'number' && (

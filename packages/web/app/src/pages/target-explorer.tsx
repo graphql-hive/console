@@ -39,6 +39,7 @@ const ExplorerPage_SchemaExplorerFragment = graphql(`
     subscription {
       ...GraphQLObjectTypeComponent_TypeFragment
     }
+    ...SchemaExplorerTypes_ServiceNamesFragment
   }
 `);
 
@@ -207,15 +208,7 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
-              <ServiceNameFilter
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                targetSlug={props.targetSlug}
-                period={resolvedPeriod}
-                metadataAttributes={
-                  latestValidSchemaVersion?.explorer?.metadataAttributes ?? undefined
-                }
-              />
+              <ServiceNameFilter explorer={latestValidSchemaVersion?.explorer as any} />
               <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
