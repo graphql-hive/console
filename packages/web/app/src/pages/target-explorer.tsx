@@ -12,6 +12,7 @@ import {
   FieldByNameFilter,
   MetadataFilter,
   SchemaVariantFilter,
+  ServiceNameFilter,
   TypeFilter,
 } from '@/components/target/explorer/filter';
 import { GraphQLObjectTypeComponent } from '@/components/target/explorer/object-type';
@@ -38,6 +39,7 @@ const ExplorerPage_SchemaExplorerFragment = graphql(`
     subscription {
       ...GraphQLObjectTypeComponent_TypeFragment
     }
+    ...SchemaExplorerTypes_ServiceNamesFragment
   }
 `);
 
@@ -206,6 +208,7 @@ function ExplorerPageContent(props: {
               />
               <FieldByNameFilter />
               <DateRangeFilter />
+              <ServiceNameFilter explorer={latestValidSchemaVersion?.explorer as any} />
               <DescriptionsVisibilityFilter />
               <SchemaVariantFilter
                 organizationSlug={props.organizationSlug}
