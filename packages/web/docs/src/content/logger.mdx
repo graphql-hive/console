@@ -868,3 +868,111 @@ log.error(errs)
   class: "AggregateError"
 ```
 {/* prettier-ignore-end */}
+
+## Redacting Sensitive Information
+
+The Hive Logger provides a `redact` option to automatically remove or mask sensitive information
+from your logs. This is particularly useful for preventing secrets, passwords, authentication
+tokens, or other sensitive data from being logged.
+
+The redaction feature supports path arrays, custom censor strings/functions, wildcard paths, and key
+removal.
+
+### Examples
+
+#### Array of Paths
+
+You can provide an array of paths to redact specific fields in your log attributes. Use dot notation
+for nested properties and bracket notation with wildcards (`[*]`) for arrays.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const logger = new Logger({
+  redact: ['password', 'headers.authorization', 'users[*].secret']
+})
+
+logger.info({
+  password: 'super-secret',
+  headers: { authorization: 'Bearer token', host: 'example.com' },
+  users: [{ secret: 'hidden', name: 'alice' }]
+})
+// attrs: {
+//   password: '[Redacted]',
+//   headers: { authorization: '[Redacted]', host: 'example.com' },
+//   users: [{ secret: '[Redacted]', name: 'alice' }],
+// }
+```
+
+#### Custom Censor String
+
+You can specify a custom string to use instead of the default `[Redacted]` censor value.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const logger = new Logger({
+  redact: {
+    paths: ['password', 'headers.authorization'],
+    censor: '**REDACTED**'
+  }
+})
+
+logger.info({
+  password: 'super-secret',
+  headers: { authorization: 'Bearer token', host: 'example.com' }
+})
+// attrs: {
+//   password: '**REDACTED**',
+//   headers: { authorization: '**REDACTED**', host: 'example.com' },
+// }
+```
+
+#### Censor Function
+
+For more advanced use cases, you can provide a function that receives the original value and path,
+and returns the censored value.
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const logger = new Logger({
+  redact: {
+    paths: ['password'],
+    censor: (value, path) => `[${path.join('.')}=${String(value).length} chars]`
+  }
+})
+
+logger.info({ password: 'super-secret' })
+// attrs: { password: '[password=12 chars]' }
+```
+
+#### Key Removal
+
+Instead of replacing sensitive values with a censor string, you can remove the keys entirely from
+the logs by setting `remove: true`.
+
+<Callout type="info">
+
+For performance reasons, we set the attribute value to `undefined` instead of completely deleting
+it. If you're using any of our default writers, those values won't show in the output anyways
+because the JSON serializer handles `undefined` by omitting it.
+
+</Callout>
+
+```ts
+import { Logger } from '@graphql-hive/logger'
+
+const logger = new Logger({
+  redact: {
+    paths: ['password', 'headers.authorization'],
+    remove: true
+  }
+})
+
+logger.info({
+  password: 'super-secret',
+  headers: { authorization: 'Bearer token', host: 'example.com' }
+})
+// attrs: { password: undefined, headers: { authorization: undefined, host: 'example.com' } }
+```
