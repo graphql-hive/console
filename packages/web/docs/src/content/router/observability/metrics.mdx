@@ -484,7 +484,8 @@ HTTP client metrics capture outbound requests the router makes to subgraphs.
         'url.scheme',
         'subgraph.name',
         'http.response.status_code',
-        'error.type'
+        'error.type',
+        'graphql.response.status'
       ]
     },
     {
@@ -501,7 +502,8 @@ HTTP client metrics capture outbound requests the router makes to subgraphs.
         'url.scheme',
         'subgraph.name',
         'http.response.status_code',
-        'error.type'
+        'error.type',
+        'graphql.response.status'
       ]
     },
     {
@@ -518,7 +520,8 @@ HTTP client metrics capture outbound requests the router makes to subgraphs.
         'url.scheme',
         'subgraph.name',
         'http.response.status_code',
-        'error.type'
+        'error.type',
+        'graphql.response.status'
       ]
     },
     {
@@ -597,6 +600,13 @@ HTTP client metrics capture outbound requests the router makes to subgraphs.
       meaning: 'Error classification',
       typicalValues: ['400', 'SUBGRAPH_REQUEST_FAILURE', '...'],
       notes: 'Numeric status code >= 400 or execution error code string'
+    },
+    {
+      name: 'graphql.response.status',
+      meaning: 'GraphQL response status for the subgraph request',
+      typicalValues: ['ok', 'error'],
+      notes:
+        'Set to "ok" when the parsed subgraph response has no GraphQL errors. Set to "error" when the subgraph response includes GraphQL errors or when transport/deserialization fails.'
     }
   ]}
 />
