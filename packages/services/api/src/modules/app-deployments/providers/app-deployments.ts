@@ -786,7 +786,20 @@ export class AppDeployments {
     const sortField = args.sort?.field ?? 'CREATED_AT';
     const sortDirection = args.sort?.direction ?? 'DESC';
 
-    let cursor = args.cursor ? decodeAppDeploymentSortCursor(args.cursor) : null;
+    let cursor = null;
+    if (args.cursor) {
+      try {
+        cursor = decodeAppDeploymentSortCursor(args.cursor);
+      } catch (error) {
+        this.logger.error(
+          'Failed to decode cursor for getPaginatedAppDeployments (targetId=%s, cursor=%s): %s',
+          args.targetId,
+          args.cursor,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw new Error('Invalid cursor format for getPaginatedAppDeployments.');
+      }
+    }
     if (cursor && cursor.sortField !== sortField) {
       this.logger.debug(
         'Cursor sort field mismatch (targetId=%s, cursorField=%s, requestedField=%s). Ignoring cursor.',
@@ -878,7 +891,20 @@ export class AppDeployments {
     );
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const isDesc = args.direction === 'DESC';
-    let cursor = args.cursor ? decodeAppDeploymentSortCursor(args.cursor) : null;
+    let cursor = null;
+    if (args.cursor) {
+      try {
+        cursor = decodeAppDeploymentSortCursor(args.cursor);
+      } catch (error) {
+        this.logger.error(
+          'Failed to decode cursor for getPaginatedAppDeploymentsSortedByLastUsed (targetId=%s, cursor=%s): %s',
+          args.targetId,
+          args.cursor,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw new Error('Invalid cursor format for getPaginatedAppDeploymentsSortedByLastUsed.');
+      }
+    }
     if (cursor && cursor.sortField !== 'LAST_USED') {
       this.logger.debug(
         'Cursor sort field mismatch (targetId=%s, cursorField=%s, requestedField=LAST_USED). Ignoring cursor.',
@@ -900,22 +926,32 @@ export class AppDeployments {
           : cSql`HAVING lastUsed >= ${cursor.sortValue}`;
       }
 
-      const chResult = await this.clickhouse.query({
-        query: cSql`
-          SELECT
-            app_name AS appName, 
-            app_version AS appVersion, 
-            formatDateTimeInJodaSyntax(max(last_request), 'yyyy-MM-dd\\'T\\'HH:mm:ss.000000+00:00') AS lastUsed
-          FROM app_deployment_usage
-          WHERE target_id = ${args.targetId}
-          GROUP BY app_name, app_version
-          ${chCursorCondition}
-          ORDER BY lastUsed ${chDirSql}
-          LIMIT ${cSql.raw(String(limit + 1))}
-        `,
-        queryId: 'get-all-deployments-last-used-for-sorting',
-        timeout: 30_000,
-      });
+      let chResult;
+      try {
+        chResult = await this.clickhouse.query({
+          query: cSql`
+            SELECT
+              app_name AS appName,
+              app_version AS appVersion,
+              formatDateTimeInJodaSyntax(max(last_request), 'yyyy-MM-dd\\'T\\'HH:mm:ss.000000+00:00') AS lastUsed
+            FROM app_deployment_usage
+            WHERE target_id = ${args.targetId}
+            GROUP BY app_name, app_version
+            ${chCursorCondition}
+            ORDER BY lastUsed ${chDirSql}
+            LIMIT ${cSql.raw(String(limit + 1))}
+          `,
+          queryId: 'get-all-deployments-last-used-for-sorting',
+          timeout: 30_000,
+        });
+      } catch (error) {
+        this.logger.error(
+          'Failed to query deployment last-used from ClickHouse (targetId=%s): %s',
+          args.targetId,
+          error instanceof Error ? error.message : String(error),
+        );
+        throw error;
+      }
 
       const chModel = z.array(
         z.object({
@@ -998,16 +1034,26 @@ export class AppDeployments {
         const candidateTuples = candidates.map(
           c => cSql`(${args.targetId}, ${c.name}, ${c.version})`,
         );
-        const usageCheckResult = await this.clickhouse.query({
-          query: cSql`
-            SELECT DISTINCT app_name, app_version
-            FROM app_deployment_usage
-            WHERE (target_id, app_name, app_version)
-              IN (${candidateTuples.reduce((a, b) => cSql`${a}, ${b}`)})
-          `,
-          queryId: 'check-candidates-have-usage',
-          timeout: 10_000,
-        });
+        let usageCheckResult;
+        try {
+          usageCheckResult = await this.clickhouse.query({
+            query: cSql`
+              SELECT DISTINCT app_name, app_version
+              FROM app_deployment_usage
+              WHERE (target_id, app_name, app_version)
+                IN (${candidateTuples.reduce((a, b) => cSql`${a}, ${b}`)})
+            `,
+            queryId: 'check-candidates-have-usage',
+            timeout: 10_000,
+          });
+        } catch (error) {
+          this.logger.error(
+            'Failed to check candidate usage from ClickHouse (targetId=%s): %s',
+            args.targetId,
+            error instanceof Error ? error.message : String(error),
+          );
+          throw error;
+        }
         const pairsWithUsage = new Set(
           z
             .array(z.object({ app_name: z.string(), app_version: z.string() }))
