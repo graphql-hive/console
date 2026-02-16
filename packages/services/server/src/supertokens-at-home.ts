@@ -262,44 +262,58 @@ export function registerSupertokensAtHome(server: FastifyInstance, storage: Stor
       const refreshToken = req.cookies['sRefreshToken'] ?? null;
 
       if (!refreshToken) {
+        req.log.debug('No refresh token provided.');
         return rep.status(404).send();
       }
 
       const [payload, nonce, version] = refreshToken.split('.');
 
       if (version !== 'V2') {
+        req.log.debug('Wrong refresh token version provided.');
         return rep.status(404).send();
       }
 
-      // TODO: error handling here
-      const rawPayload = JSON.parse(decryptRefreshToken(payload).toString('utf8'));
+      let refreshTokenPayload: RefreshTokenType;
+      try {
+        const rawPayload = JSON.parse(decryptRefreshToken(payload).toString('utf8'));
+        refreshTokenPayload = RefreshTokenModel.parse(rawPayload);
+      } catch (err) {
+        req.log.debug('Failed to parse refresh token payload..');
+        return rep.status(404).send();
+      }
 
-      const result = RefreshTokenModel.parse(rawPayload);
-
-      if (result.nonce !== nonce) {
-        throw new Error('Invalid session!');
+      if (refreshTokenPayload.nonce !== nonce) {
+        req.log.debug('Wrong refresh token nonce provided.');
+        return rep.status(404).send();
       }
 
       // 1. lookup refresh token based on hash and check if it is invalid or rejected
-      const session = await supertokensStore.getSessionInfo(result.sessionHandle);
+      const session = await supertokensStore.getSessionInfo(refreshTokenPayload.sessionHandle);
 
       if (!session) {
-        throw new Error('Session does not exist.');
-      }
-
-      if (
-        result.parentRefreshTokenHash1 &&
-        session.refreshTokenHash2 !== sha256(result.parentRefreshTokenHash1)
-      ) {
-        throw new Error('Refresh hash does not match');
-      }
-
-      if (!result.parentRefreshTokenHash1 && sha256(refreshToken) !== session.refreshTokenHash2) {
-        throw new Error('Refresh hash does not match');
+        req.log.debug('The referenced session does not exist.');
+        return rep.status(404).send();
       }
 
       if (session.expiresAt < Date.now()) {
-        throw new Error('Session is expired');
+        req.log.debug('The session has expired.');
+        return rep.status(404).send();
+      }
+
+      if (
+        !refreshTokenPayload.parentRefreshTokenHash1 &&
+        sha256(refreshToken) !== session.refreshTokenHash2
+      ) {
+        req.log.debug('The refreshTokenHash2 does not match (first refresh).');
+        return rep.status(404).send();
+      }
+
+      if (
+        refreshTokenPayload.parentRefreshTokenHash1 &&
+        session.refreshTokenHash2 !== sha256(refreshTokenPayload.parentRefreshTokenHash1)
+      ) {
+        req.log.debug('The refreshTokenHash2 does not match.');
+        return rep.status(404).send();
       }
 
       // 2. create a new refresh token
@@ -312,10 +326,18 @@ export function registerSupertokensAtHome(server: FastifyInstance, storage: Stor
       });
 
       // 2,5. store new parentTokenHash in DB
-      await supertokensStore.updateSessionRefreshHash(
+      const updatedSession = await supertokensStore.updateSessionRefreshHash(
         session.sessionHandle,
+        session.refreshTokenHash2,
         sha256(parentTokenHash),
       );
+
+      if (!updatedSession) {
+        req.log.debug(
+          'The session has expired (another refresh for the same access token was completed, while this request was in flight).',
+        );
+        return rep.status(404).send();
+      }
 
       // 3. create a new access token
       const accessToken = createAccessToken(
@@ -615,3 +637,5 @@ const RefreshTokenModel = z.object({
   parentRefreshTokenHash1: z.string().optional(),
   nonce: z.string(),
 });
+
+type RefreshTokenType = z.TypeOf<typeof RefreshTokenModel>;
