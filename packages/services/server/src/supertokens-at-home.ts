@@ -273,10 +273,11 @@ export function registerSupertokensAtHome(server: FastifyInstance, storage: Stor
         return rep.status(404).send();
       }
 
-      let refreshTokenPayload: RefreshTokenType;
+      let refreshTokenPayload: RefreshTokenPayloadType;
       try {
-        const rawPayload = JSON.parse(decryptRefreshToken(payload).toString('utf8'));
-        refreshTokenPayload = RefreshTokenModel.parse(rawPayload);
+        refreshTokenPayload = RefreshTokenPayloadModel.parse(
+          JSON.parse(decryptRefreshToken(payload).toString('utf8')),
+        );
       } catch (err) {
         req.log.debug('Failed to parse refresh token payload..');
         return rep.status(404).send();
@@ -631,11 +632,11 @@ function createFrontToken(args: {
   ).toString('base64');
 }
 
-const RefreshTokenModel = z.object({
+const RefreshTokenPayloadModel = z.object({
   sessionHandle: z.string(),
   userId: z.string(),
   parentRefreshTokenHash1: z.string().optional(),
   nonce: z.string(),
 });
 
-type RefreshTokenType = z.TypeOf<typeof RefreshTokenModel>;
+type RefreshTokenPayloadType = z.TypeOf<typeof RefreshTokenPayloadModel>;
