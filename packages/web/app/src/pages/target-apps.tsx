@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
+import { z } from 'zod';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,19 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { TimeAgo } from '@/components/v2';
+import { Sortable, TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { AppDeploymentsSortField, SortDirectionType } from '@/gql/graphql';
 import { useRedirect } from '@/lib/access/common';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
+
+export const TargetAppsSortSchema = z.object({
+  field: z.enum(['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED']),
+  direction: z.enum(['ASC', 'DESC']),
+});
+
+export type SortState = z.output<typeof TargetAppsSortSchema>;
 
 const AppTableRow_AppDeploymentFragment = graphql(`
   fragment AppTableRow_AppDeploymentFragment on AppDeployment {
@@ -48,6 +57,7 @@ const TargetAppsViewQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
     $after: String
+    $sort: AppDeploymentsSortInput
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
@@ -71,7 +81,7 @@ const TargetAppsViewQuery = graphql(`
         type
       }
       viewerCanViewAppDeployments
-      appDeployments(first: 20, after: $after) {
+      appDeployments(first: 20, after: $after, sort: $sort) {
         pageInfo {
           hasNextPage
           endCursor
@@ -93,6 +103,7 @@ const TargetAppsViewFetchMoreQuery = graphql(`
     $projectSlug: String!
     $targetSlug: String!
     $after: String!
+    $sort: AppDeploymentsSortInput
   ) {
     target(
       reference: {
@@ -104,7 +115,7 @@ const TargetAppsViewFetchMoreQuery = graphql(`
       }
     ) {
       id
-      appDeployments(first: 20, after: $after) {
+      appDeployments(first: 20, after: $after, sort: $sort) {
         pageInfo {
           hasNextPage
           endCursor
@@ -205,17 +216,41 @@ function TargetAppsView(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  sorting: SortState;
 }) {
+  const navigate = useNavigate();
+  const sortVariable = {
+    field: props.sorting.field as AppDeploymentsSortField,
+    direction: props.sorting.direction === 'DESC' ? SortDirectionType.Desc : SortDirectionType.Asc,
+  };
+
   const [data] = useQuery({
     query: TargetAppsViewQuery,
     variables: {
       organizationSlug: props.organizationSlug,
       projectSlug: props.projectSlug,
       targetSlug: props.targetSlug,
+      sort: sortVariable,
     },
   });
   const client = useClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  function handleSortClick(field: SortState['field']) {
+    const newDirection =
+      props.sorting.field === field && props.sorting.direction === 'DESC' ? 'ASC' : 'DESC';
+    void navigate({
+      search: (prev: Record<string, unknown>) => ({
+        ...prev,
+        sort: { field, direction: newDirection },
+      }),
+    });
+  }
+
+  function getSortOrder(field: SortState['field']): 'asc' | 'desc' | false {
+    if (props.sorting.field !== field) return false;
+    return props.sorting.direction === 'ASC' ? 'asc' : 'desc';
+  }
 
   const project = data.data?.target;
 
@@ -292,26 +327,47 @@ function TargetAppsView(props: {
       ) : (
         <div>
           <div className="rounded-md border">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden sm:table-cell">App@Version</TableHead>
-                  <TableHead className="hidden text-center sm:table-cell">Status</TableHead>
-                  <TableHead className="hidden text-center sm:table-cell">
-                    Amount of Documents
+                  <TableHead className="hidden w-[30%] sm:table-cell">App@Version</TableHead>
+                  <TableHead className="hidden w-[15%] text-center sm:table-cell">
+                    Status
                   </TableHead>
-                  <TableHead className="hidden text-center sm:table-cell">Created</TableHead>
-                  <TableHead className="hidden text-center sm:table-cell">Activated</TableHead>
-                  <TableHead className="hidden text-end sm:table-cell">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="cursor-help">Last used</TooltipTrigger>
-                        <TooltipContent className="max-w-64 text-start">
-                          Last time a request was sent for this app. Requires usage reporting being
-                          set up.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                  <TableHead className="hidden w-[5%] text-center sm:table-cell">
+                    Documents
+                  </TableHead>
+                  <TableHead className="hidden w-[10%] text-center sm:table-cell">
+                    <Sortable
+                      sortOrder={getSortOrder('CREATED_AT')}
+                      onClick={() => handleSortClick('CREATED_AT')}
+                    >
+                      Created
+                    </Sortable>
+                  </TableHead>
+                  <TableHead className="hidden w-[10%] text-center sm:table-cell">
+                    <Sortable
+                      sortOrder={getSortOrder('ACTIVATED_AT')}
+                      onClick={() => handleSortClick('ACTIVATED_AT')}
+                    >
+                      Activated
+                    </Sortable>
+                  </TableHead>
+                  <TableHead className="hidden w-[7%] text-end sm:table-cell">
+                    <Sortable
+                      sortOrder={getSortOrder('LAST_USED')}
+                      onClick={() => handleSortClick('LAST_USED')}
+                    >
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="cursor-help">Last used</TooltipTrigger>
+                          <TooltipContent className="max-w-64 text-start">
+                            Last time a request was sent for this app. Requires usage reporting
+                            being set up.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Sortable>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -346,6 +402,7 @@ function TargetAppsView(props: {
                       projectSlug: props.projectSlug,
                       targetSlug: props.targetSlug,
                       after: data?.data?.target?.appDeployments?.pageInfo?.endCursor,
+                      sort: sortVariable,
                     })
                     .toPromise()
                     .finally(() => {
@@ -373,6 +430,7 @@ export function TargetAppsPage(props: {
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  sorting: SortState;
 }) {
   return (
     <>
@@ -387,6 +445,7 @@ export function TargetAppsPage(props: {
           organizationSlug={props.organizationSlug}
           projectSlug={props.projectSlug}
           targetSlug={props.targetSlug}
+          sorting={props.sorting}
         />
       </TargetLayout>
     </>
