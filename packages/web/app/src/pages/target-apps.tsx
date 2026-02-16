@@ -331,9 +331,7 @@ function TargetAppsView(props: {
               <TableHeader>
                 <TableRow>
                   <TableHead className="hidden w-[30%] sm:table-cell">App@Version</TableHead>
-                  <TableHead className="hidden w-[15%] text-center sm:table-cell">
-                    Status
-                  </TableHead>
+                  <TableHead className="hidden w-[15%] text-center sm:table-cell">Status</TableHead>
                   <TableHead className="hidden w-[5%] text-center sm:table-cell">
                     Documents
                   </TableHead>

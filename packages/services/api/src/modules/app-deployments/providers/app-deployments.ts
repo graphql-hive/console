@@ -979,7 +979,8 @@ export class AppDeployments {
       }
     }
 
-    let pageItems: Array<{ node: z.infer<typeof AppDeploymentModel>; lastUsed: string | null }> = [];
+    let pageItems: Array<{ node: AppDeploymentRecord; lastUsed: string | null }> =
+      [];
     for (const usage of usageForPage) {
       const node = deploymentByPair.get(`${usage.appName}:${usage.appVersion}`);
       if (node) {
