@@ -3,12 +3,12 @@ import { InsightsFilters } from '@/components/base/insights-filters';
 import { MenuRoot } from '@/components/base/menu/menu';
 import { cn } from '@/lib/utils';
 import type { Story, StoryDefault } from '@ladle/react';
-import { NestedFilterDropdown, type NestedFilterDropdownProps } from './nested-filter-dropdown';
+import { FilterDropdown, type FilterDropdownProps } from './filter-dropdown';
 import type { FilterItem, FilterSelection } from './types';
 import { ValuesSubPanel } from './values-sub-panel';
 
 export default {
-  title: 'UI / NestedFilterDropdown',
+  title: 'UI / FilterDropdown',
 } satisfies StoryDefault;
 
 function StoryWrapper({
@@ -16,7 +16,7 @@ function StoryWrapper({
   label,
   value: initialValue,
   valuesLabel,
-}: Omit<NestedFilterDropdownProps, 'onChange' | 'onRemove'>) {
+}: Omit<FilterDropdownProps, 'onChange' | 'onRemove'>) {
   const [value, setValue] = useState<FilterSelection[]>(initialValue);
   return (
     <div className="p-8">
@@ -42,7 +42,7 @@ function StoryWrapper({
           </ul>
         )}
       </div>
-      <NestedFilterDropdown
+      <FilterDropdown
         items={items}
         label={label}
         onChange={setValue}

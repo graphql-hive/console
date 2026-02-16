@@ -1,19 +1,13 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { formatDate } from 'date-fns';
-import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronRight,
-  Lock,
-  MoreVertical,
-  Users,
-} from 'lucide-react';
+import { formatDate, formatISO } from 'date-fns';
+import { ArrowLeft, ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
+import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { NestedFilterDropdown } from '@/components/base/nested-filter-dropdown/nested-filter-dropdown';
-import type { FilterItem, FilterSelection } from '@/components/base/nested-filter-dropdown/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { availablePresets, DateRangePicker } from '@/components/ui/date-range-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +18,7 @@ import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Table,
   TableBody,
@@ -32,12 +27,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
+import { parse } from '@/lib/date-math';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 
-const ManageFilters_SavedFiltersQuery = graphql(`
+export const ManageFilters_SavedFiltersQuery = graphql(`
   query ManageFilters_SavedFiltersQuery($selector: TargetSelectorInput!) {
     target(reference: { bySelector: $selector }) {
       id
@@ -58,6 +55,10 @@ const ManageFilters_SavedFiltersQuery = graphql(`
                 name
                 versions
               }
+              dateRange {
+                from
+                to
+              }
             }
             createdBy {
               id
@@ -77,7 +78,7 @@ const ManageFilters_SavedFiltersQuery = graphql(`
   }
 `);
 
-const ManageFilters_DeleteSavedFilterMutation = graphql(`
+export const ManageFilters_DeleteSavedFilterMutation = graphql(`
   mutation ManageFilters_DeleteSavedFilter($input: DeleteSavedFilterInput!) {
     deleteSavedFilter(input: $input) {
       error {
@@ -105,12 +106,47 @@ const ManageFilters_UpdateSavedFilterMutation = graphql(`
               name
               versions
             }
+            dateRange {
+              from
+              to
+            }
           }
         }
       }
     }
   }
 `);
+
+const ManageFilters_OperationStatsQuery = graphql(`
+  query ManageFilters_OperationStats($selector: TargetSelectorInput!, $period: DateRangeInput!) {
+    target(reference: { bySelector: $selector }) {
+      id
+      operationsStats(period: $period) {
+        operations {
+          edges {
+            node {
+              id
+              name
+              operationHash
+            }
+          }
+        }
+        clients {
+          edges {
+            node {
+              name
+              versions {
+                version
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const DEFAULT_DATE_RANGE = { from: 'now-7d', to: 'now' };
 
 type SavedFilterNode = NonNullable<
   ResultOf<typeof ManageFilters_SavedFiltersQuery>['target']
@@ -132,6 +168,7 @@ function SavedFilterRow({
   targetSlug: string;
 }) {
   const [, deleteSavedFilter] = useMutation(ManageFilters_DeleteSavedFilterMutation);
+  const { toast } = useToast();
 
   const handleDelete = useCallback(() => {
     void deleteSavedFilter({
@@ -145,8 +182,21 @@ function SavedFilterRow({
         },
         id: filter.id,
       },
+    }).then(result => {
+      if (result.error || result.data?.deleteSavedFilter.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.error?.message || result.data?.deleteSavedFilter.error?.message,
+        });
+      } else {
+        toast({
+          title: 'Filter deleted',
+          description: 'The saved filter has been deleted.',
+        });
+      }
     });
-  }, [deleteSavedFilter, filter.id, organizationSlug, projectSlug, targetSlug]);
+  }, [deleteSavedFilter, filter.id, organizationSlug, projectSlug, targetSlug, toast]);
 
   const ChevronIcon = expanded ? ChevronDown : ChevronRight;
 
@@ -184,10 +234,7 @@ function SavedFilterRow({
           {filter.viewerCanDelete && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="data-[state=open]:bg-neutral-3 flex size-8 p-0"
-                >
+                <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
                   <MoreVertical className="size-4" />
                   <span className="sr-only">Open menu</span>
                 </Button>
@@ -227,22 +274,98 @@ function SavedFilterRowFilters({
   targetSlug: string;
 }) {
   const { operationHashes, clientFilters } = filter.filters;
-  const hasFilters = operationHashes.length > 0 || clientFilters.length > 0;
 
-  // Items for the NestedFilterDropdown (derived from saved filter data)
-  const operationItems: FilterItem[] = useMemo(
-    () => operationHashes.map(hash => ({ name: hash, values: [] })),
-    [operationHashes],
-  );
-  const clientItems: FilterItem[] = useMemo(
-    () => clientFilters.map(c => ({ name: c.name, values: c.versions ?? [] })),
-    [clientFilters],
-  );
+  // Date range state (relative strings like 'now-7d')
+  const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
+  const [dateRange, setDateRange] = useState(savedDateRange);
+
+  // Resolve relative date range to ISO strings for the operationsStats query
+  const resolvedPeriod = useMemo(() => {
+    const from = parse(dateRange.from);
+    const to = parse(dateRange.to);
+    if (from && to) {
+      return { from: formatISO(from), to: formatISO(to) };
+    }
+    const fallbackFrom = parse('now-7d')!;
+    const fallbackTo = parse('now')!;
+    return { from: formatISO(fallbackFrom), to: formatISO(fallbackTo) };
+  }, [dateRange]);
+
+  // Fetch all operations and clients for the date range
+  const [opsQuery] = useQuery({
+    query: ManageFilters_OperationStatsQuery,
+    variables: {
+      selector: { organizationSlug, projectSlug, targetSlug },
+      period: resolvedPeriod,
+    },
+  });
+
+  // Build merged operation items (all from stats + any saved hashes not in stats)
+  const { allOperationItems, hashToNameMap } = useMemo(() => {
+    const map = new Map<string, string>();
+    const statsOps = opsQuery.data?.target?.operationsStats?.operations?.edges ?? [];
+
+    for (const edge of statsOps) {
+      if (edge.node.operationHash) {
+        map.set(edge.node.operationHash, edge.node.name);
+      }
+    }
+
+    const items: FilterItem[] = statsOps
+      .filter(e => e.node.operationHash != null)
+      .map(e => ({
+        id: e.node.operationHash!,
+        name: e.node.name,
+        values: [],
+      }));
+
+    // Add any saved hashes that aren't in the current stats (fallback: show hash as name)
+    for (const hash of operationHashes) {
+      if (!map.has(hash)) {
+        items.push({ id: hash, name: hash, values: [] });
+      }
+    }
+
+    return { allOperationItems: items, hashToNameMap: map };
+  }, [opsQuery.data, operationHashes]);
+
+  // Build merged client items (all from stats + any saved clients not in stats)
+  const allClientItems = useMemo<FilterItem[]>(() => {
+    const statsClients = opsQuery.data?.target?.operationsStats?.clients?.edges ?? [];
+    const clientNameSet = new Set(statsClients.map(e => e.node.name));
+
+    const items: FilterItem[] = statsClients.map(e => ({
+      name: e.node.name,
+      values: e.node.versions.map(v => v.version),
+    }));
+
+    // Add saved clients not in current stats, preserving their versions
+    for (const cf of clientFilters) {
+      if (!clientNameSet.has(cf.name)) {
+        items.push({ name: cf.name, values: cf.versions ?? [] });
+      }
+    }
+
+    return items;
+  }, [opsQuery.data, clientFilters]);
+
+  // While stats are loading, use saved data as fallback for items
+  const operationItems = opsQuery.fetching
+    ? operationHashes.map(hash => ({ id: hash, name: hash, values: [] as string[] }))
+    : allOperationItems;
+  const clientItems = opsQuery.fetching
+    ? clientFilters.map(c => ({ name: c.name, values: c.versions ?? [] }))
+    : allClientItems;
 
   // Compute the "saved" selections (what's persisted in the database)
   const savedOperationSelections = useMemo<FilterSelection[]>(
-    () => operationHashes.map(hash => ({ name: hash, values: null })),
-    [operationHashes],
+    () =>
+      operationHashes.map(hash => ({
+        id: hash,
+        name: hashToNameMap.get(hash) ?? hash,
+        values: null,
+      })),
+    [operationHashes, hashToNameMap],
   );
   const savedClientSelections = useMemo<FilterSelection[]>(
     () =>
@@ -268,32 +391,42 @@ function SavedFilterRowFilters({
     setClientSelections(savedClientSelections);
     setShowOperationFilter(operationHashes.length > 0);
     setShowClientFilter(clientFilters.length > 0);
+    setDateRange(savedDateRange);
   }, [filterDataKey]);
 
-  // Detect changes from saved state
+  // Detect changes from saved state (compare by identifiers, not display names)
   const hasChanges = useMemo(() => {
-    const current = JSON.stringify({
-      ops: operationSelections,
-      clients: clientSelections,
-      showOps: showOperationFilter,
-      showCli: showClientFilter,
-    });
-    const saved = JSON.stringify({
-      ops: savedOperationSelections,
-      clients: savedClientSelections,
-      showOps: operationHashes.length > 0,
-      showCli: clientFilters.length > 0,
-    });
-    return current !== saved;
+    if (showOperationFilter !== operationHashes.length > 0) return true;
+    if (showClientFilter !== clientFilters.length > 0) return true;
+    if (dateRange.from !== savedDateRange.from || dateRange.to !== savedDateRange.to) return true;
+
+    const normalizeOps = (sels: FilterSelection[]) =>
+      sels
+        .map(s => s.id ?? s.name)
+        .sort()
+        .join('\0');
+    if (normalizeOps(operationSelections) !== normalizeOps(savedOperationSelections)) return true;
+
+    const normalizeClients = (sels: FilterSelection[]) =>
+      JSON.stringify(
+        sels
+          .map(s => ({ name: s.name, values: s.values }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    if (normalizeClients(clientSelections) !== normalizeClients(savedClientSelections)) return true;
+
+    return false;
   }, [
     operationSelections,
     clientSelections,
     showOperationFilter,
     showClientFilter,
+    dateRange,
     savedOperationSelections,
     savedClientSelections,
     operationHashes,
     clientFilters,
+    savedDateRange,
   ]);
 
   // Cancel → reset to saved state
@@ -302,23 +435,30 @@ function SavedFilterRowFilters({
     setClientSelections(savedClientSelections);
     setShowOperationFilter(operationHashes.length > 0);
     setShowClientFilter(clientFilters.length > 0);
-  }, [savedOperationSelections, savedClientSelections, operationHashes, clientFilters]);
+    setDateRange(savedDateRange);
+  }, [
+    savedOperationSelections,
+    savedClientSelections,
+    operationHashes,
+    clientFilters,
+    savedDateRange,
+  ]);
 
   // Update mutation
   const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
+  const { toast } = useToast();
 
   const handleSave = useCallback(async () => {
+    // Extract hashes from selections (id is the hash, fallback to name for backwards compat)
     const newOperationHashes = showOperationFilter
-      ? operationSelections.map(s => s.name)
+      ? operationSelections.map(s => s.id ?? s.name)
       : [];
 
     const newClientFilters = showClientFilter
       ? clientSelections.map(s => ({
           name: s.name,
           versions:
-            s.values === null
-              ? (clientItems.find(i => i.name === s.name)?.values ?? [])
-              : s.values,
+            s.values === null ? (clientItems.find(i => i.name === s.name)?.values ?? []) : s.values,
         }))
       : [];
 
@@ -331,8 +471,23 @@ function SavedFilterRowFilters({
         insightsFilter: {
           operationHashes: newOperationHashes,
           clientFilters: newClientFilters,
+          dateRange: { from: dateRange.from, to: dateRange.to },
         },
       },
+    }).then(result => {
+      if (result.error || result.data?.updateSavedFilter.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: result.error?.message || result.data?.updateSavedFilter.error?.message,
+        });
+      } else {
+        toast({
+          variant: 'success',
+          title: 'Filter updated',
+          description: 'The saved filter has been updated.',
+        });
+      }
     });
   }, [
     showOperationFilter,
@@ -340,23 +495,28 @@ function SavedFilterRowFilters({
     operationSelections,
     clientSelections,
     clientItems,
+    dateRange,
     filter.id,
     organizationSlug,
     projectSlug,
     targetSlug,
     updateSavedFilter,
+    toast,
   ]);
 
-  if (!hasFilters) {
-    return <p className="text-neutral-10 text-sm">No filters configured.</p>;
-  }
+  const loading = opsQuery.fetching;
 
   return (
     <div>
-      <p className="text-neutral-10 mb-2 text-xs font-medium uppercase tracking-wide">Filters</p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <DateRangePicker
+          selectedRange={dateRange}
+          onUpdate={({ preset }) => setDateRange(preset.range)}
+          presets={availablePresets}
+          validUnits={['y', 'M', 'w', 'd', 'h']}
+        />
         {showOperationFilter && operationItems.length > 0 && (
-          <NestedFilterDropdown
+          <FilterDropdown
             label="Operation"
             items={operationItems}
             value={operationSelections}
@@ -365,10 +525,11 @@ function SavedFilterRowFilters({
               setShowOperationFilter(false);
               setOperationSelections([]);
             }}
+            disabled={loading}
           />
         )}
         {showClientFilter && clientItems.length > 0 && (
-          <NestedFilterDropdown
+          <FilterDropdown
             label="Client"
             items={clientItems}
             value={clientSelections}
@@ -378,8 +539,10 @@ function SavedFilterRowFilters({
               setClientSelections([]);
             }}
             valuesLabel="versions"
+            disabled={loading}
           />
         )}
+        {loading && <Spinner />}
       </div>
       {filter.viewerCanUpdate && (
         <div className="mt-3 flex gap-2">
@@ -434,16 +597,6 @@ function ManageFiltersContent(props: {
     });
   }, []);
 
-  if (query.error) {
-    return (
-      <QueryError
-        organizationSlug={props.organizationSlug}
-        error={query.error}
-        showLogoutButton={false}
-      />
-    );
-  }
-
   const edges = query.data?.target?.savedFilters.edges ?? [];
 
   const stats = useMemo(() => {
@@ -454,6 +607,16 @@ function ManageFiltersContent(props: {
       totalViews: filters.reduce((sum, f) => sum + f.viewsCount, 0),
     };
   }, [edges]);
+
+  if (query.error) {
+    return (
+      <QueryError
+        organizationSlug={props.organizationSlug}
+        error={query.error}
+        showLogoutButton={false}
+      />
+    );
+  }
 
   if (!query.fetching && edges.length === 0) {
     return (

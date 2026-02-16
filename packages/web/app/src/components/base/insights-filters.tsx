@@ -7,8 +7,8 @@ import {
   MenuSubmenu,
   MenuTrigger,
 } from '@/components/base/menu/menu';
-import { NestedFilterContent } from '@/components/base/nested-filter-dropdown/nested-filter-content';
-import { FilterItem, FilterSelection } from '@/components/base/nested-filter-dropdown/types';
+import { FilterContent } from '@/components/base/filter-dropdown/filter-content';
+import { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import { TriggerButton } from '@/components/base/trigger-button';
 
 type InsightsFiltersProps = {
@@ -47,7 +47,7 @@ export function InsightsFilters({
         <MenuSubmenu>
           <MenuItem subMenuTrigger>Operations</MenuItem>
           <MenuContent subMenu>
-            <NestedFilterContent
+            <FilterContent
               label="operations"
               items={operationFilterItems}
               value={operationFilterSelections}
@@ -58,7 +58,7 @@ export function InsightsFilters({
         <MenuSubmenu>
           <MenuItem subMenuTrigger>Clients</MenuItem>
           <MenuContent subMenu>
-            <NestedFilterContent
+            <FilterContent
               label="clients"
               items={clientFilterItems}
               value={clientFilterSelections}

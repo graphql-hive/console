@@ -7,10 +7,10 @@ import {
   MenuTrigger,
 } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
-import { NestedFilterContent } from './nested-filter-content';
+import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
-export type NestedFilterDropdownProps = {
+export type FilterDropdownProps = {
   /** Label shown on the trigger button */
   label: string;
   /** Available items and their sub-values */
@@ -23,16 +23,19 @@ export type NestedFilterDropdownProps = {
   onRemove: () => void;
   /** Label for the sub-values (e.g. "versions", "endpoints"). Used in accessibility labels. */
   valuesLabel?: string;
+  /** When true, the trigger is visually dimmed and the menu cannot be opened */
+  disabled?: boolean;
 };
 
-export function NestedFilterDropdown({
+export function FilterDropdown({
   label,
   items,
   value,
   onChange,
   onRemove,
   valuesLabel = 'values',
-}: NestedFilterDropdownProps) {
+  disabled,
+}: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
 
   const selectedCount = value.length;
@@ -41,16 +44,12 @@ export function NestedFilterDropdown({
     <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
       <MenuTrigger
         render={
-          <TriggerButton
-            label={label}
-            badge={selectedCount > 0 ? selectedCount : undefined}
-            variant={selectedCount > 0 ? 'active' : 'default'}
-          />
+          <TriggerButton label={label} badge={selectedCount > 0 ? selectedCount : undefined} disabled={disabled} />
         }
       />
 
       <MenuContent side="bottom" align="start" sideOffset={8}>
-        <NestedFilterContent
+        <FilterContent
           label={label}
           items={items}
           value={value}
@@ -61,12 +60,13 @@ export function NestedFilterDropdown({
         <MenuSeparator />
 
         {selectedCount > 0 && (
-          <MenuItem variant="action" closeOnClick={false} onClick={() => onChange([])}>
+          <MenuItem inSubmenu variant="action" closeOnClick={false} onClick={() => onChange([])}>
             Clear current selections
           </MenuItem>
         )}
         <div className="mb-1">
           <MenuItem
+            inSubmenu
             variant="destructiveAction"
             onClick={() => {
               onRemove();

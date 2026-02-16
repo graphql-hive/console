@@ -36,12 +36,20 @@ type TriggerButtonProps = VariantProps<typeof triggerButtonVariants> & {
   badge?: number;
   /** When provided, shows × dismiss button instead of chevron. Callback fires on dismiss click. */
   onDismiss?: (e: React.MouseEvent) => void;
+  /** When true, the button is visually dimmed and non-interactive */
+  disabled?: boolean;
 };
 
 export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
-  function TriggerButton({ label, icon, value, badge, onDismiss, variant, ...props }, ref) {
+  function TriggerButton({ label, icon, value, badge, onDismiss, variant, disabled, ...props }, ref) {
     return (
-      <button ref={ref} className={triggerButtonVariants({ variant })} {...props}>
+      <button
+        ref={ref}
+        className={triggerButtonVariants({ variant })}
+        disabled={disabled}
+        {...props}
+        style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+      >
         <span className="px-3 py-1.5 text-[13px]">{label}</span>
         {value != null && (
           <span className={`${separatorClass} text-neutral-12 px-3 py-1.5`}>{value}</span>
