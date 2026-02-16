@@ -5020,7 +5020,15 @@ export function decodeAppDeploymentSortCursor(cursor: string) {
     throw new Error('Invalid cursor');
   }
   const sortField = fieldAndValue.slice(0, colonIndex);
+  const validSortFields = ['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED'];
+  if (!validSortFields.includes(sortField)) {
+    throw new Error('Invalid cursor: unknown sort field');
+  }
+
   const sortValue = fieldAndValue.slice(colonIndex + 1) || null;
+  if (sortValue !== null && isNaN(new Date(sortValue).getTime())) {
+    throw new Error('Invalid cursor: sortValue is not a valid date');
+  }
 
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     throw new Error('Invalid cursor');

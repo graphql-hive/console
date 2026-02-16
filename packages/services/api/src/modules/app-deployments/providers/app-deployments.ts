@@ -994,6 +994,7 @@ export class AppDeployments {
       } else {
         pageItems = pageItems.filter(item => {
           const cmp = item.lastUsed!.localeCompare(cursor.sortValue!);
+          if (cmp === 0) return item.node.id !== cursor.id;
           return isDesc ? cmp < 0 : cmp > 0;
         });
       }
