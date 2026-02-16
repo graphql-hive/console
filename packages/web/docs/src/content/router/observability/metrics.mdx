@@ -342,7 +342,8 @@ HTTP server metrics capture inbound client traffic processed by the router.
         'url.scheme',
         'error.type',
         'graphql.operation.name',
-        'graphql.operation.type'
+        'graphql.operation.type',
+        'graphql.response.status'
       ]
     },
     {
@@ -359,7 +360,8 @@ HTTP server metrics capture inbound client traffic processed by the router.
         'url.scheme',
         'error.type',
         'graphql.operation.name',
-        'graphql.operation.type'
+        'graphql.operation.type',
+        'graphql.response.status'
       ]
     },
     {
@@ -376,7 +378,8 @@ HTTP server metrics capture inbound client traffic processed by the router.
         'url.scheme',
         'error.type',
         'graphql.operation.name',
-        'graphql.operation.type'
+        'graphql.operation.type',
+        'graphql.response.status'
       ]
     },
     {
@@ -450,6 +453,13 @@ HTTP server metrics capture inbound client traffic processed by the router.
       typicalValues: ['query', 'mutation', 'subscription'],
       notes:
         'Used by http.server.request.duration, http.server.request.body.size, and http.server.response.body.size. Omitted when unknown'
+    },
+    {
+      name: 'graphql.response.status',
+      meaning: 'GraphQL response status for the request',
+      typicalValues: ['ok', 'error'],
+      notes:
+        'Used by http.server.request.duration, http.server.request.body.size, and http.server.response.body.size. "error" indicates the GraphQL response contains at least one error'
     }
   ]}
 />
@@ -731,9 +741,10 @@ quickly isolate API, subgraph, cache, and GraphQL issues.
 Use [`http.server.request.duration`](#metric-http-server-request-duration) as your primary latency
 signal.
 
-In production, break this metric down by `http.route`, `http.request.method`, and
-`http.response.status_code`, then track p95 and p99 latency per route and method. Keep successful
-and failed responses separated so error-path latency does not get hidden by healthy traffic.
+In production, break this metric down by `http.route`, `http.request.method`,
+`http.response.status_code`, and/or `graphql.response.status`, then track p95 and p99 latency per
+route and method. Keep successful and failed responses separated so error-path latency does not get
+hidden by healthy traffic.
 
 ### Monitor health of your subgraphs
 
