@@ -80,6 +80,7 @@ export default gql`
   type AppDeploymentConnection {
     pageInfo: PageInfo! @tag(name: "public")
     edges: [AppDeploymentEdge!]! @tag(name: "public")
+    total: Int! @tag(name: "public")
   }
 
   type AppDeploymentEdge {
