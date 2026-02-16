@@ -59,6 +59,7 @@ import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
+import { registerSupertokensAtHome } from './supertokens-at-home';
 
 class CorsError extends Error {
   constructor() {
@@ -458,7 +459,7 @@ export async function main() {
     });
 
     await server.register(formDataPlugin);
-    await server.register(supertokensFastifyPlugin);
+    // await server.register(supertokensFastifyPlugin)
 
     await registerTRPC(server, {
       router: internalApiRouter,
@@ -566,6 +567,8 @@ export async function main() {
       });
       return;
     });
+
+    registerSupertokensAtHome(server, storage);
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

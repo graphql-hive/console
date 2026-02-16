@@ -292,3 +292,7 @@ type GraphQLPayload = {
       documentId: string;
     }
 );
+
+window.lol = () => {
+  Session.attemptRefreshingSession();
+};
