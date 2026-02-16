@@ -771,10 +771,9 @@ export class AppDeployments {
   }
 
   async countAppDeployments(targetId: string): Promise<number> {
-    const result = await this.pool.oneFirst<number>(sql`
+    return this.pool.oneFirst<number>(sql`
       SELECT count(*) FROM "app_deployments" WHERE "target_id" = ${targetId}
     `);
-    return result;
   }
 
   async getPaginatedAppDeployments(args: {
