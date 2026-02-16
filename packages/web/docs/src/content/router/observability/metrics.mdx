@@ -146,9 +146,44 @@ This is a safe baseline and works well before introducing instrumentation-level 
 Additional exporters can be added later, but starting with one simplifies validation and
 troubleshooting.
 
+### Cardinality considerations
+
+For production workloads, consider disabling `graphql.operation.name` label or even `graphql.operation.type` on high-volume metrics.
+
+<Callout type="warning">
+  `graphql.operation.name` can create very high-cardinality metrics.
+
+  Operation names come from client requests. Without persisted operations, clients can send many
+  distinct operation names (or random names), which can rapidly increase cardinality and cost in
+  Prometheus and OTLP backends.
+</Callout>
+
+```yaml filename="router.config.yaml"
+telemetry:
+  metrics:
+    instrumentation:
+      instruments:
+        http.server.request.duration:
+          attributes:
+            graphql.operation.name: false
+        http.server.request.body.size:
+          attributes:
+            graphql.operation.name: false
+        http.server.response.body.size:
+          attributes:
+            graphql.operation.name: false
+```
+
 ## Customize instrumentation
 
 You can override behavior per metric under `telemetry.metrics.instrumentation.instruments`.
+
+<Callout type="tip">
+    Disable non-essential labels to control cost, since each additional label value increases active time-series cardinality - a primary billing and performance driver in platforms like Grafana and Datadog.
+</Callout>
+
+For production guidance on label cardinality (especially `graphql.operation.name`), see
+[Cardinality considerations](#cardinality-considerations).
 
 - `false` disables a metric.
 - `true` keeps default behavior.
@@ -445,7 +480,7 @@ HTTP server metrics capture inbound client traffic processed by the router.
       meaning: 'GraphQL operation name associated with the HTTP request',
       typicalValues: ['UsersQuery', 'IntrospectionQuery', 'UNKNOWN'],
       notes:
-        'Used by http.server.request.duration, http.server.request.body.size, and http.server.response.body.size'
+        'Used by http.server.request.duration, http.server.request.body.size, and http.server.response.body.size. High-cardinality risk: value is client-controlled and can explode without persisted operations.'
     },
     {
       name: 'graphql.operation.type',
