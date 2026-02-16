@@ -5025,7 +5025,7 @@ export function decodeAppDeploymentSortCursor(cursor: string) {
   }
 
   const sortValue = fieldAndValue.slice(colonIndex + 1) || null;
-  if (sortValue !== null && isNaN(new Date(sortValue).getTime())) {
+  if (sortValue !== null && Number.isNaN(new Date(sortValue).getTime())) {
     throw new Error('Invalid cursor: sortValue is not a valid date');
   }
 

@@ -231,8 +231,6 @@ function OperationsTable({
 
   const { headers } = tableInstance.getHeaderGroups()[0];
 
-  const sortedColumnsById = tableInstance.getState().sorting.map(s => s.id);
-
   return (
     <div
       className={clsx(
