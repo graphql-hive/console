@@ -64,7 +64,7 @@ import { ProjectAlertsPage } from './pages/project-alerts';
 import { ProjectSettingsPage, ProjectSettingsPageEnum } from './pages/project-settings';
 import { TargetPage } from './pages/target';
 import { TargetAppVersionPage } from './pages/target-app-version';
-import { TargetAppsPage } from './pages/target-apps';
+import { TargetAppsPage, TargetAppsSortSchema, type SortState } from './pages/target-apps';
 import { TargetChecksPage } from './pages/target-checks';
 import { TargetChecksAffectedDeploymentsPage } from './pages/target-checks-affected-deployments';
 import { TargetChecksSinglePage } from './pages/target-checks-single';
@@ -657,16 +657,28 @@ const targetLaboratoryRoute = createRoute({
   },
 });
 
+const TargetAppsRouteSearch = z.object({
+  sort: TargetAppsSortSchema.optional(),
+});
+
 const targetAppsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'apps',
+  validateSearch: TargetAppsRouteSearch.parse,
   component: function TargetAppsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetAppsRoute.useParams();
+    const {
+      sort = {
+        field: 'ACTIVATED_AT',
+        direction: 'DESC',
+      } satisfies SortState,
+    } = targetAppsRoute.useSearch();
     return (
       <TargetAppsPage
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
+        sorting={sort}
       />
     );
   },

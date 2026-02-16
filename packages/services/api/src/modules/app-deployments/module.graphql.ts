@@ -40,6 +40,23 @@ export default gql`
     retired
   }
 
+  """
+  Fields available for sorting app deployments.
+  """
+  enum AppDeploymentsSortField {
+    CREATED_AT
+    ACTIVATED_AT
+    LAST_USED
+  }
+
+  """
+  Sort configuration for app deployments.
+  """
+  input AppDeploymentsSortInput {
+    field: AppDeploymentsSortField!
+    direction: SortDirectionType!
+  }
+
   type GraphQLDocumentConnection {
     pageInfo: PageInfo!
     edges: [GraphQLDocumentEdge!]!
@@ -108,7 +125,11 @@ export default gql`
     """
     The app deployments for this target.
     """
-    appDeployments(first: Int, after: String): AppDeploymentConnection
+    appDeployments(
+      first: Int
+      after: String
+      sort: AppDeploymentsSortInput
+    ): AppDeploymentConnection
     appDeployment(appName: String!, appVersion: String!): AppDeployment
     """
     Whether the viewer can access the app deployments within a target.

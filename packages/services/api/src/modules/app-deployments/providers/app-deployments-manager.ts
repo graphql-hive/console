@@ -222,12 +222,29 @@ export class AppDeploymentsManager {
 
   async getPaginatedAppDeploymentsForTarget(
     target: Target,
-    args: { cursor: string | null; first: number | null },
+    args: {
+      cursor: string | null;
+      first: number | null;
+      sort: {
+        field: 'CREATED_AT' | 'ACTIVATED_AT' | 'LAST_USED';
+        direction: 'ASC' | 'DESC';
+      } | null;
+    },
   ) {
+    if (args.sort?.field === 'LAST_USED') {
+      return await this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
+        targetId: target.id,
+        cursor: args.cursor,
+        first: args.first,
+        direction: args.sort.direction,
+      });
+    }
+
     return await this.appDeployments.getPaginatedAppDeployments({
       targetId: target.id,
       cursor: args.cursor,
       first: args.first,
+      sort: args.sort as { field: 'CREATED_AT' | 'ACTIVATED_AT'; direction: 'ASC' | 'DESC' } | null,
     });
   }
 

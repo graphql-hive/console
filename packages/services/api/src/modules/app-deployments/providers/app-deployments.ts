@@ -4,8 +4,10 @@ import { sql, UniqueIntegrityConstraintViolationError, type DatabasePool } from 
 import { z } from 'zod';
 import { buildAppDeploymentIsEnabledKey } from '@hive/cdn-script/artifact-storage-reader';
 import {
+  decodeAppDeploymentSortCursor,
   decodeCreatedAtAndUUIDIdBasedCursor,
   decodeHashBasedCursor,
+  encodeAppDeploymentSortCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
@@ -772,9 +774,54 @@ export class AppDeployments {
     targetId: string;
     cursor: string | null;
     first: number | null;
+    sort: { field: 'CREATED_AT' | 'ACTIVATED_AT'; direction: 'ASC' | 'DESC' } | null;
   }) {
+    this.logger.debug(
+      'get paginated app deployments (targetId=%s, cursor=%s, sort=%o)',
+      args.targetId,
+      args.cursor,
+      args.sort,
+    );
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
-    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
+    const sortField = args.sort?.field ?? 'CREATED_AT';
+    const sortDirection = args.sort?.direction ?? 'DESC';
+
+    let cursor = args.cursor ? decodeAppDeploymentSortCursor(args.cursor) : null;
+    if (cursor && cursor.sortField !== sortField) {
+      this.logger.debug(
+        'Cursor sort field mismatch (targetId=%s, cursorField=%s, requestedField=%s). Ignoring cursor.',
+        args.targetId,
+        cursor.sortField,
+        sortField,
+      );
+      cursor = null;
+    }
+
+    const col = sql.identifier([sortField === 'ACTIVATED_AT' ? 'activated_at' : 'created_at']);
+    const isNullable = sortField === 'ACTIVATED_AT';
+    const isDesc = sortDirection === 'DESC';
+
+    let cursorCondition = sql``;
+    if (cursor) {
+      const cv = cursor.sortValue;
+      const tiebreakOp = isDesc ? sql`<` : sql`>`;
+
+      if (cv === null) {
+        cursorCondition = sql`AND (${col} IS NULL AND "id" ${tiebreakOp} ${cursor.id})`;
+      } else if (isNullable) {
+        cursorCondition = isDesc
+          ? sql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv} OR ${col} IS NULL)`
+          : sql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv} OR ${col} IS NULL)`;
+      } else {
+        cursorCondition = isDesc
+          ? sql`AND ((${col} = ${cv} AND "id" < ${cursor.id}) OR ${col} < ${cv})`
+          : sql`AND ((${col} = ${cv} AND "id" > ${cursor.id}) OR ${col} > ${cv})`;
+      }
+    }
+
+    const dirSql = isDesc ? sql`DESC` : sql`ASC`;
+    const nullsLast = isNullable ? sql`NULLS LAST` : sql``;
+    const orderBy = sql`ORDER BY ${col} ${dirSql} ${nullsLast}, "id" ${dirSql}`;
 
     const result = await this.pool.query<unknown>(sql`
       SELECT
@@ -783,28 +830,21 @@ export class AppDeployments {
         "app_deployments"
       WHERE
         "target_id" = ${args.targetId}
-        ${
-          cursor
-            ? sql`
-                AND (
-                  (
-                    "created_at" = ${cursor.createdAt}
-                    AND "id" < ${cursor.id}
-                  )
-                  OR "created_at" < ${cursor.createdAt}
-                )
-              `
-            : sql``
-        }
-      ORDER BY "created_at" DESC, "id"
+        ${cursorCondition}
+      ${orderBy}
       LIMIT ${limit + 1}
     `);
 
     let items = result.rows.map(row => {
       const node = AppDeploymentModel.parse(row);
+      const sortValue = sortField === 'ACTIVATED_AT' ? node.activatedAt : node.createdAt;
 
       return {
-        cursor: encodeCreatedAtAndUUIDIdBasedCursor(node),
+        cursor: encodeAppDeploymentSortCursor({
+          sortField,
+          sortValue,
+          id: node.id,
+        }),
         node,
       };
     });
@@ -812,6 +852,189 @@ export class AppDeployments {
     const hasNextPage = items.length > limit;
 
     items = items.slice(0, limit);
+
+    return {
+      edges: items,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: cursor !== null,
+        endCursor: items[items.length - 1]?.cursor ?? '',
+        startCursor: items[0]?.cursor ?? '',
+      },
+    };
+  }
+
+  async getPaginatedAppDeploymentsSortedByLastUsed(args: {
+    targetId: string;
+    cursor: string | null;
+    first: number | null;
+    direction: 'ASC' | 'DESC';
+  }) {
+    this.logger.debug(
+      'get paginated app deployments sorted by last used (targetId=%s, cursor=%s, direction=%s)',
+      args.targetId,
+      args.cursor,
+      args.direction,
+    );
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const isDesc = args.direction === 'DESC';
+    let cursor = args.cursor ? decodeAppDeploymentSortCursor(args.cursor) : null;
+    if (cursor && cursor.sortField !== 'LAST_USED') {
+      this.logger.debug(
+        'Cursor sort field mismatch (targetId=%s, cursorField=%s, requestedField=LAST_USED). Ignoring cursor.',
+        args.targetId,
+        cursor.sortField,
+      );
+      cursor = null;
+    }
+
+    const cursorInNoUsageSection = cursor !== null && cursor.sortValue === null;
+    let usageForPage: Array<{ appName: string; appVersion: string; lastUsed: string }> = [];
+
+    if (!cursorInNoUsageSection) {
+      const chDirSql = isDesc ? cSql`DESC` : cSql`ASC`;
+      let chCursorCondition = cSql``;
+      if (cursor && cursor.sortValue !== null) {
+        chCursorCondition = isDesc
+          ? cSql`HAVING lastUsed <= ${cursor.sortValue}`
+          : cSql`HAVING lastUsed >= ${cursor.sortValue}`;
+      }
+
+      const chResult = await this.clickhouse.query({
+        query: cSql`
+          SELECT
+            app_name AS appName, 
+            app_version AS appVersion, 
+            formatDateTimeInJodaSyntax(max(last_request), 'yyyy-MM-dd\\'T\\'HH:mm:ss.000000+00:00') AS lastUsed
+          FROM app_deployment_usage
+          WHERE target_id = ${args.targetId}
+          GROUP BY app_name, app_version
+          ${chCursorCondition}
+          ORDER BY lastUsed ${chDirSql}
+          LIMIT ${cSql.raw(String(limit + 1))}
+        `,
+        queryId: 'get-all-deployments-last-used-for-sorting',
+        timeout: 30_000,
+      });
+
+      const chModel = z.array(
+        z.object({
+          appName: z.string(),
+          appVersion: z.string(),
+          lastUsed: z.string(),
+        }),
+      );
+      usageForPage = chModel.parse(chResult.data);
+    }
+
+    const usagePairsForPage = usageForPage.map(r => `${r.appName}:${r.appVersion}`);
+    let usageDeployments: Array<any> = [];
+    if (usagePairsForPage.length > 0) {
+      const pgResult = await this.pool.query<unknown>(sql`
+        SELECT ${appDeploymentFields}
+        FROM "app_deployments"
+        WHERE "target_id" = ${args.targetId}
+          AND ("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')})
+      `);
+      usageDeployments = pgResult.rows.map(row => AppDeploymentModel.parse(row));
+    }
+
+    const deploymentByPair = new Map();
+    for (const d of usageDeployments) {
+      deploymentByPair.set(`${d.name}:${d.version}`, d);
+    }
+
+    let pageItems: Array<{ node: z.infer<typeof AppDeploymentModel>; lastUsed: string | null }> = [];
+    for (const usage of usageForPage) {
+      const node = deploymentByPair.get(`${usage.appName}:${usage.appVersion}`);
+      if (node) {
+        pageItems.push({ node, lastUsed: usage.lastUsed });
+      }
+    }
+
+    if (cursor && cursor.sortValue !== null) {
+      const cursorIdx = pageItems.findIndex(item => item.node.id === cursor.id);
+      if (cursorIdx !== -1) {
+        pageItems = pageItems.slice(cursorIdx + 1);
+      } else {
+        pageItems = pageItems.filter(item => {
+          const cmp = item.lastUsed!.localeCompare(cursor.sortValue!);
+          return isDesc ? cmp < 0 : cmp > 0;
+        });
+      }
+    }
+
+    const remaining = limit + 1 - pageItems.length;
+    let fillHasMore = false;
+    if (remaining > 0) {
+      const dirSql = isDesc ? sql`DESC` : sql`ASC`;
+      let fillCursorCondition = sql``;
+      if (cursorInNoUsageSection) {
+        fillCursorCondition = isDesc
+          ? sql`AND "id" < ${cursor!.id}`
+          : sql`AND "id" > ${cursor!.id}`;
+      }
+
+      const excludeCurrentPage =
+        usagePairsForPage.length > 0
+          ? sql`AND NOT (("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')}))`
+          : sql``;
+
+      const batchSize = limit + 1;
+      const fillResult = await this.pool.query<unknown>(sql`
+        SELECT ${appDeploymentFields}
+        FROM "app_deployments"
+        WHERE "target_id" = ${args.targetId}
+          ${excludeCurrentPage}
+          ${fillCursorCondition}
+        ORDER BY "id" ${dirSql}
+        LIMIT ${batchSize}
+      `);
+
+      const candidates = fillResult.rows.map(row => AppDeploymentModel.parse(row));
+      fillHasMore = candidates.length === batchSize;
+
+      if (candidates.length > 0) {
+        const candidateTuples = candidates.map(
+          c => cSql`(${args.targetId}, ${c.name}, ${c.version})`,
+        );
+        const usageCheckResult = await this.clickhouse.query({
+          query: cSql`
+            SELECT DISTINCT app_name, app_version
+            FROM app_deployment_usage
+            WHERE (target_id, app_name, app_version)
+              IN (${candidateTuples.reduce((a, b) => cSql`${a}, ${b}`)})
+          `,
+          queryId: 'check-candidates-have-usage',
+          timeout: 10_000,
+        });
+        const pairsWithUsage = new Set(
+          z
+            .array(z.object({ app_name: z.string(), app_version: z.string() }))
+            .parse(usageCheckResult.data)
+            .map(r => `${r.app_name}:${r.app_version}`),
+        );
+
+        for (const candidate of candidates) {
+          if (pageItems.length >= limit + 1) break;
+          if (!pairsWithUsage.has(`${candidate.name}:${candidate.version}`)) {
+            pageItems.push({ node: candidate, lastUsed: null });
+          }
+        }
+      }
+    }
+
+    const hasNextPage = pageItems.length > limit || fillHasMore;
+    const finalItems = pageItems.slice(0, limit);
+
+    const items = finalItems.map(item => ({
+      cursor: encodeAppDeploymentSortCursor({
+        sortField: 'LAST_USED',
+        sortValue: item.lastUsed,
+        id: item.node.id,
+      }),
+      node: item.node,
+    }));
 
     return {
       edges: items,
