@@ -568,7 +568,7 @@ export async function main() {
       return;
     });
 
-    registerSupertokensAtHome(server, storage);
+    registerSupertokensAtHome(server, storage, registry.injector.get(TaskScheduler));
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

@@ -13,17 +13,21 @@ const SessionInfoModel = z.object({
   refreshTokenHash2: z.string(),
 });
 
+export type SessionInfo = z.TypeOf<typeof SessionInfoModel>;
+
 const UserModel = z.object({
   userId: z.string(),
   recipeId: z.union([z.literal('emailpassword'), z.literal('thirdparty')]),
 });
 
-const EmailUserModel = z.object({
+const EmailPasswordUserModel = z.object({
   userId: z.string(),
   email: z.string(),
   passwordHash: z.string(),
   timeJoined: z.number(),
 });
+
+type EmailPasswordUser = z.TypeOf<typeof EmailPasswordUserModel>;
 
 const ThirdpartUserModel = z.object({
   thirdPartyId: z.string(),
@@ -31,7 +35,12 @@ const ThirdpartUserModel = z.object({
   email: z.string(),
 });
 
-export type SessionInfo = z.TypeOf<typeof SessionInfoModel>;
+const EmailPasswordResetTokenModel = z.object({
+  userId: z.string(),
+  token: z.string(),
+  email: z.string(),
+  tokenExpiry: z.number(),
+});
 
 export class SuperTokensStore {
   private logger: Logger;
@@ -95,7 +104,7 @@ export class SuperTokensStore {
       WHERE "email" = ${email}
     `;
 
-    const record = await this.pool.maybeOne(query).then(EmailUserModel.nullable().parse);
+    const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
     return record;
   }
 
@@ -111,7 +120,7 @@ export class SuperTokensStore {
       WHERE "user_id" = ${userId}
     `;
 
-    const record = await this.pool.maybeOne(query).then(EmailUserModel.nullable().parse);
+    const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
     return record;
   }
 
@@ -127,7 +136,7 @@ export class SuperTokensStore {
       WHERE "email" = lower(${email})
     `;
 
-    const record = await this.pool.maybeOne(query).then(EmailUserModel.nullable().parse);
+    const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
     return record;
   }
 
@@ -314,6 +323,85 @@ export class SuperTokensStore {
         await t.query(allRecipeUsersQuery);
         return result;
       })
-      .then(r => EmailUserModel.parse(r));
+      .then(r => EmailPasswordUserModel.parse(r));
+  }
+
+  async createEmailPasswordResetToken(args: {
+    user: EmailPasswordUser;
+    token: string;
+    expiresAt: number;
+  }) {
+    const deletePendingRequestsQuery = sql`
+      DELETE
+      FROM "supertokens_emailpassword_pswd_reset_tokens"
+      WHERE
+        "user_id" =${args.user.userId}
+    `;
+
+    const query = sql`
+      INSERT INTO "supertokens_emailpassword_pswd_reset_tokens" (
+        "app_id"
+        , "user_id"
+        , "token"
+        , "email"
+        , "token_expiry"
+      ) VALUES (
+       'public'
+       , ${args.user.userId}
+       , ${args.token}
+       , ${args.user.email}
+       , ${args.expiresAt}
+      )
+      RETURNING
+        "user_id" AS "userId"
+        , "token"
+        , "email"
+        , "token_expiry" AS "tokenExpiry"
+    `;
+
+    return await this.pool.transaction(async t => {
+      await t.query(deletePendingRequestsQuery);
+      return await t.one(query).then(EmailPasswordResetTokenModel.parse);
+    });
+  }
+
+  async updateEmailPasswordBasedOnResetToken(args: { token: string; newPasswordHash: string }) {
+    const emailPasswordResetTokenQuery = sql`
+      DELETE
+      FROM
+        "supertokens_emailpassword_pswd_reset_tokens"
+      WHERE
+        "token" = ${args.token}
+      RETURNING
+        "user_id" AS "userId"
+        , "token"
+        , "email"
+        , "token_expiry" AS "tokenExpiry"
+    `;
+
+    const updatePasswordHash = (userId: string) => sql`
+      UPDATE "supertokens_emailpassword_users"
+      SET
+        "password_hash" = ${args.newPasswordHash}
+      WHERE
+        "user_id" = ${userId}
+      RETURNING
+        "user_id" AS "userId"
+        , "email" AS "email"
+        , "password_hash" AS "passwordHash"
+        , "time_joined" AS "timeJoined"
+    `;
+
+    return await this.pool.transaction(async t => {
+      const resetToken = await t
+        .maybeOne(emailPasswordResetTokenQuery)
+        .then(EmailPasswordResetTokenModel.parse);
+
+      if (!resetToken) {
+        return null;
+      }
+
+      return await t.one(updatePasswordHash(resetToken.userId)).then(EmailPasswordUserModel.parse);
+    });
   }
 }
