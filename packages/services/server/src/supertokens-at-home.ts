@@ -294,6 +294,10 @@ export function registerSupertokensAtHome(server: FastifyInstance, storage: Stor
         throw new Error('Refresh hash does not match');
       }
 
+      if (!result.parentRefreshTokenHash1 && sha256(refreshToken) !== session.refreshTokenHash2) {
+        throw new Error('Refresh hash does not match');
+      }
+
       if (session.expiresAt < Date.now()) {
         throw new Error('Session is expired');
       }
