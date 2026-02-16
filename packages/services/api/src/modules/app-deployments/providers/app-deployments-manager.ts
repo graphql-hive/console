@@ -233,36 +233,26 @@ export class AppDeploymentsManager {
   ) {
     const { sort, cursor, first } = args;
 
-    let page;
-    switch (sort?.field) {
-      case 'LAST_USED':
-        page = await this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
-          targetId: target.id,
-          cursor,
-          first,
-          direction: sort.direction,
-        });
-        break;
-      case 'CREATED_AT':
-      case 'ACTIVATED_AT':
-        page = await this.appDeployments.getPaginatedAppDeployments({
-          targetId: target.id,
-          cursor,
-          first,
-          sort: { field: sort.field, direction: sort.direction },
-        });
-        break;
-      default:
-        page = await this.appDeployments.getPaginatedAppDeployments({
-          targetId: target.id,
-          cursor,
-          first,
-          sort: null,
-        });
-        break;
-    }
+    const pagePromise =
+      sort?.field === 'LAST_USED'
+        ? this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
+            targetId: target.id,
+            cursor,
+            first,
+            direction: sort.direction,
+          })
+        : this.appDeployments.getPaginatedAppDeployments({
+            targetId: target.id,
+            cursor,
+            first,
+            sort: sort ? { field: sort.field, direction: sort.direction } : null,
+          });
 
-    const total = await this.appDeployments.countAppDeployments(target.id);
+    const [page, total] = await Promise.all([
+      pagePromise,
+      this.appDeployments.countAppDeployments(target.id),
+    ]);
+
     return { ...page, total };
   }
 
@@ -278,12 +268,17 @@ export class AppDeploymentsManager {
       };
     },
   ) {
-    return await this.appDeployments.getActiveAppDeployments({
-      targetId: target.id,
-      cursor: args.cursor,
-      first: args.first,
-      filter: args.filter,
-    });
+    const [page, total] = await Promise.all([
+      this.appDeployments.getActiveAppDeployments({
+        targetId: target.id,
+        cursor: args.cursor,
+        first: args.first,
+        filter: args.filter,
+      }),
+      this.appDeployments.countAppDeployments(target.id),
+    ]);
+
+    return { ...page, total };
   }
 
   getDocumentCountForAppDeployment = batch<AppDeploymentRecord, number>(async args => {

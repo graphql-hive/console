@@ -117,6 +117,7 @@ const TargetAppsViewFetchMoreQuery = graphql(`
     ) {
       id
       appDeployments(first: 20, after: $after, sort: $sort) {
+        total
         pageInfo {
           hasNextPage
           endCursor

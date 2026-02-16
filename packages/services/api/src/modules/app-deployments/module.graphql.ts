@@ -80,6 +80,9 @@ export default gql`
   type AppDeploymentConnection {
     pageInfo: PageInfo! @tag(name: "public")
     edges: [AppDeploymentEdge!]! @tag(name: "public")
+    """
+    The total number of app deployments for this target.
+    """
     total: Int! @tag(name: "public")
   }
 
