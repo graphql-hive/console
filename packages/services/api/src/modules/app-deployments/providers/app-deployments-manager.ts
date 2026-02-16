@@ -104,6 +104,7 @@ export class AppDeploymentsManager {
       hash: string;
       body: string;
     }>;
+    isV1Format: boolean;
   }) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
@@ -130,6 +131,7 @@ export class AppDeploymentsManager {
       targetId: selector.targetId,
       appDeployment: args.appDeployment,
       operations: args.documents,
+      isV1Format: args.isV1Format,
     });
   }
 
@@ -276,4 +278,34 @@ export class AppDeploymentsManager {
 
     return appDeploymentIds.map(id => Promise.resolve(dateMap.get(id) ?? null));
   });
+
+  async getExistingDocumentHashes(args: {
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+    appName: string;
+  }): Promise<
+    { type: 'success'; hashes: string[] } | { type: 'error'; error: { message: string } }
+  > {
+    await this.session.assertPerformAction({
+      action: 'appDeployment:create',
+      organizationId: args.organizationId,
+      params: {
+        organizationId: args.organizationId,
+        projectId: args.projectId,
+        targetId: args.targetId,
+        appDeploymentName: args.appName,
+      },
+    });
+
+    const hashes = await this.appDeployments.getExistingDocumentHashes({
+      targetId: args.targetId,
+      appName: args.appName,
+    });
+
+    return {
+      type: 'success',
+      hashes,
+    };
+  }
 }

@@ -11,6 +11,7 @@ export const addDocumentsToAppDeployment: NonNullable<
       version: input.appVersion,
     },
     documents: input.documents,
+    isV1Format: input.format !== 'V2',
   });
 
   if (result.type === 'error') {
@@ -27,6 +28,7 @@ export const addDocumentsToAppDeployment: NonNullable<
     error: null,
     ok: {
       appDeployment: result.appDeployment,
+      timing: result.timing,
     },
   };
 };

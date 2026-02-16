@@ -41,6 +41,18 @@ export function buildOperationS3BucketKey(
   return ['app', ...OperationS3BucketKeyModel.parse(args)].join('/');
 }
 
+const OperationS3BucketKeyV2Model = zod.tuple([
+  zod.string().uuid(),
+  zod.string().min(1),
+  zod.string().min(1),
+]);
+
+export function buildOperationS3BucketKeyV2(
+  ...args: [targetId: string, appName: string, hash: string]
+) {
+  return ['app-v2', ...OperationS3BucketKeyV2Model.parse(args)].join('/');
+}
+
 const AppDeploymentIsEnabledKeyModel = zod.tuple([
   zod.string().uuid(),
   zod.string().min(1),
@@ -360,25 +372,26 @@ export class ArtifactStorageReader {
     hash: string,
     etagValue: string | null,
   ) {
-    const key = buildOperationS3BucketKey(targetId, appName, appVersion, hash);
-
     const headers: Record<string, string> = {};
     if (etagValue) {
       headers['if-none-match'] = etagValue;
     }
 
-    const response = await this.request({
-      key,
+    // Try v2 key first
+    const keyV2 = buildOperationS3BucketKeyV2(targetId, appName, hash);
+
+    const responseV2 = await this.request({
+      key: keyV2,
       method: 'GET',
       headers,
       onAttempt: args => {
         if (args.result.type === 'error') {
           this.breadcrumb(
-            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
+            `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV2}, message=${args.result.error.message})`,
           );
         } else {
           this.breadcrumb(
-            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key})`,
+            `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV2})`,
           );
         }
         this.analytics?.track(
@@ -396,24 +409,73 @@ export class ArtifactStorageReader {
       },
     });
 
-    if (etagValue && response.status === 304) {
+    if (etagValue && responseV2.status === 304) {
       return { type: 'notModified' } as const;
     }
 
-    if (response.status === 200) {
-      const body = await response.text();
+    if (responseV2.status === 200) {
+      const body = await responseV2.text();
       return {
         type: 'body',
         body,
       } as const;
     }
 
-    if (response.status === 404) {
-      return { type: 'notFound' } as const;
+    // Fallback to v1 key
+    if (responseV2.status === 404) {
+      const keyV1 = buildOperationS3BucketKey(targetId, appName, appVersion, hash);
+
+      const responseV1 = await this.request({
+        key: keyV1,
+        method: 'GET',
+        headers,
+        onAttempt: args => {
+          if (args.result.type === 'error') {
+            this.breadcrumb(
+              `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV1}, message=${args.result.error.message})`,
+            );
+          } else {
+            this.breadcrumb(
+              `Fetch attempt succeeded (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${keyV1})`,
+            );
+          }
+          this.analytics?.track(
+            {
+              type: args.isMirror ? 's3' : 'r2',
+              statusCodeOrErrCode:
+                args.result.type === 'error'
+                  ? String(args.result.error.name ?? 'unknown')
+                  : args.result.response.status,
+              action: 'GET persistedOperation',
+              duration: args.duration,
+            },
+            targetId,
+          );
+        },
+      });
+
+      if (etagValue && responseV1.status === 304) {
+        return { type: 'notModified' } as const;
+      }
+
+      if (responseV1.status === 200) {
+        const body = await responseV1.text();
+        return {
+          type: 'body',
+          body,
+        } as const;
+      }
+
+      if (responseV1.status === 404) {
+        return { type: 'notFound' } as const;
+      }
+
+      const body = await responseV1.text();
+      throw new Error(`GET request failed with status ${responseV1.status}: ${body}`);
     }
 
-    const body = await response.text();
-    throw new Error(`HEAD request failed with status ${response.status}: ${body}`);
+    const body = await responseV2.text();
+    throw new Error(`GET request failed with status ${responseV2.status}: ${body}`);
   }
 
   async readLegacyAccessKey(targetId: string) {
