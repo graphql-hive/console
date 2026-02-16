@@ -31,6 +31,13 @@ const InsightsFilterConfigurationModel = zod.object({
     .max(50)
     .nullish()
     .transform(v => v ?? []),
+  dateRange: zod
+    .object({
+      from: zod.string().min(1).max(100),
+      to: zod.string().min(1).max(100),
+    })
+    .nullish()
+    .transform(v => v ?? null),
 });
 
 // Transform GraphQL uppercase enum values to lowercase for database storage
@@ -153,6 +160,7 @@ export class SavedFiltersProvider {
       insightsFilter?: {
         operationHashes?: string[] | null;
         clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
+        dateRange?: { from: string; to: string } | null;
       } | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
@@ -203,6 +211,7 @@ export class SavedFiltersProvider {
         ? {
             operationHashes: data.insightsFilter?.operationHashes ?? [],
             clientFilters: data.insightsFilter?.clientFilters ?? [],
+            dateRange: data.insightsFilter?.dateRange ?? null,
           }
         : {};
 
@@ -244,6 +253,7 @@ export class SavedFiltersProvider {
       insightsFilter?: {
         operationHashes?: string[] | null;
         clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
+        dateRange?: { from: string; to: string } | null;
       } | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
@@ -304,6 +314,7 @@ export class SavedFiltersProvider {
       ? {
           operationHashes: data.insightsFilter.operationHashes ?? [],
           clientFilters: data.insightsFilter.clientFilters ?? [],
+          dateRange: data.insightsFilter.dateRange ?? null,
         }
       : null;
 

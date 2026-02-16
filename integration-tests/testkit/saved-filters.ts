@@ -15,6 +15,10 @@ export const GetSavedFilterQuery = graphql(`
             name
             versions
           }
+          dateRange {
+            from
+            to
+          }
         }
         visibility
         viewsCount
@@ -95,6 +99,10 @@ export const CreateSavedFilterMutation = graphql(`
               name
               versions
             }
+            dateRange {
+              from
+              to
+            }
           }
           visibility
           viewsCount
@@ -127,6 +135,10 @@ export const UpdateSavedFilterMutation = graphql(`
             clientFilters {
               name
               versions
+            }
+            dateRange {
+              from
+              to
             }
           }
           visibility

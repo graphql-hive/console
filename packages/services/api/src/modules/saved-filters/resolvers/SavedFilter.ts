@@ -11,6 +11,7 @@ export const SavedFilter: SavedFilterResolvers = {
     const filters = filter.filters as {
       operationHashes?: string[];
       clientFilters?: Array<{ name: string; versions?: string[] | null }>;
+      dateRange?: { from: string; to: string } | null;
     };
     return {
       operationHashes: filters.operationHashes ?? [],
@@ -19,6 +20,7 @@ export const SavedFilter: SavedFilterResolvers = {
           name: cf.name,
           versions: cf.versions ?? null,
         })) ?? [],
+      dateRange: filters.dateRange ?? null,
     };
   },
   visibility: filter => (filter.visibility === 'private' ? 'PRIVATE' : 'SHARED'),

@@ -22,6 +22,12 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
                 name: cf.name,
                 versions: cf.versions ? [...cf.versions] : null,
               })) ?? null,
+            dateRange: input.insightsFilter.dateRange
+              ? {
+                  from: input.insightsFilter.dateRange.from,
+                  to: input.insightsFilter.dateRange.to,
+                }
+              : null,
           }
         : null,
     });

@@ -29,11 +29,17 @@ export const typeDefs = gql`
   type InsightsFilterConfiguration {
     operationHashes: [String!]!
     clientFilters: [ClientFilter!]!
+    dateRange: InsightsDateRange
   }
 
   type ClientFilter {
     name: String!
     versions: [String!]
+  }
+
+  type InsightsDateRange {
+    from: String!
+    to: String!
   }
 
   type SavedFilterEdge {
@@ -77,6 +83,12 @@ export const typeDefs = gql`
   input InsightsFilterConfigurationInput {
     operationHashes: [String!]
     clientFilters: [ClientFilterInput!]
+    dateRange: InsightsDateRangeInput
+  }
+
+  input InsightsDateRangeInput {
+    from: String!
+    to: String!
   }
 
   input ClientFilterInput {
