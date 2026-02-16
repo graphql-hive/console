@@ -220,17 +220,29 @@ export class SuperTokensStore {
     return await this.pool.one(query).then(SessionInfoModel.parse);
   }
 
-  async updateSessionRefreshHash(sessionHandle: string, hash: string) {
+  async updateSessionRefreshHash(
+    sessionHandle: string,
+    lastRefreshTokenHash2: string,
+    newRefreshTokenHash2: string,
+  ) {
     const query = sql`
       UPDATE
         "supertokens_session_info"
       SET
-        "refresh_token_hash_2" = ${hash}
+        "refresh_token_hash_2" = ${newRefreshTokenHash2}
       WHERE
         "session_handle" = ${sessionHandle}
+        AND "refresh_token_hash_2" = ${lastRefreshTokenHash2}
+      RETURNING
+        "session_handle" AS "sessionHandle"
+        , "user_id" AS "userId"
+        , "session_data" AS "sessionData"
+        , "expires_at" AS "expiresAt"
+        , "created_at_time" AS "createdAt"
+        , "refresh_token_hash_2" AS "refreshTokenHash2"
     `;
 
-    await this.pool.query(query);
+    return await this.pool.maybeOne(query).then(SessionInfoModel.nullable().parse);
   }
 
   async createEmailPasswordUser(args: { email: string; passwordHash: string }) {
