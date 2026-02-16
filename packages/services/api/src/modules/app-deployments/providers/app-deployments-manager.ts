@@ -231,20 +231,32 @@ export class AppDeploymentsManager {
       } | null;
     },
   ) {
-    if (args.sort?.field === 'LAST_USED') {
-      return await this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
-        targetId: target.id,
-        cursor: args.cursor,
-        first: args.first,
-        direction: args.sort.direction,
-      });
+    const { sort, cursor, first } = args;
+    if (sort) {
+      switch (sort.field) {
+        case 'LAST_USED':
+          return this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
+            targetId: target.id,
+            cursor,
+            first,
+            direction: sort.direction,
+          });
+        case 'CREATED_AT':
+        case 'ACTIVATED_AT':
+          return this.appDeployments.getPaginatedAppDeployments({
+            targetId: target.id,
+            cursor,
+            first,
+            sort,
+          });
+      }
     }
 
-    return await this.appDeployments.getPaginatedAppDeployments({
+    return this.appDeployments.getPaginatedAppDeployments({
       targetId: target.id,
-      cursor: args.cursor,
-      first: args.first,
-      sort: args.sort as { field: 'CREATED_AT' | 'ACTIVATED_AT'; direction: 'ASC' | 'DESC' } | null,
+      cursor,
+      first,
+      sort: null,
     });
   }
 
