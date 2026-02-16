@@ -6,8 +6,15 @@ import z from 'zod';
 import cookie from '@fastify/cookie';
 import { Storage, User } from '@hive/api';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
+import { env } from './environment';
 
-export function registerSupertokensAtHome(server: FastifyInstance, storage: Storage) {
+export function registerSupertokensAtHome(
+  server: FastifyInstance,
+  storage: Storage,
+  taskScheduler: TaskScheduler,
+) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
 
   server.register(cookie, {
@@ -256,6 +263,83 @@ export function registerSupertokensAtHome(server: FastifyInstance, storage: Stor
   });
 
   server.route({
+    url: '/auth-api/user/password/reset/token',
+    method: 'POST',
+    async handler(req, rep) {
+      const parsedBody = UserPasswordResetTokenBodyModel.safeParse(req.body);
+
+      if (!parsedBody.success) {
+        return rep.send(401);
+      }
+
+      const email = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
+
+      const user = await supertokensStore.findEmailPasswordUserByEmail(email);
+
+      if (!user) {
+        req.log.debug('User not found via email.');
+        return rep.send({
+          status: 'OK',
+        });
+      }
+
+      const token = c.randomBytes(32).toString('hex');
+
+      await supertokensStore.createEmailPasswordResetToken({
+        user,
+        token: sha256(token),
+        expiresAt: Date.now() + 15 * 60 * 1000,
+      });
+
+      const passwordResetLink = new URL(env.hiveServices.webApp.url);
+      passwordResetLink.pathname = '/auth/reset-password';
+      passwordResetLink.searchParams.set('rid', 'thirdpartyemailpassword');
+      passwordResetLink.searchParams.set('tenantId', 'public');
+      passwordResetLink.searchParams.set('token', token);
+
+      await taskScheduler.scheduleTask(PasswordResetTask, {
+        user: {
+          id: 'noop',
+          email: user.email,
+        },
+        passwordResetLink: passwordResetLink.toString(),
+      });
+
+      return rep.status(200).send({
+        status: 'OK',
+      });
+    },
+  });
+
+  server.route({
+    url: '/auth-api/user/password/reset',
+    method: 'POST',
+    async handler(req, rep) {
+      const parsedBody = UserPasswordResetBodyModel.safeParse(req.body);
+
+      if (!parsedBody.success) {
+        return rep.status(401).send();
+      }
+
+      const newPassword =
+        parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
+
+      // TODO: validate password payload
+      const token = sha256(parsedBody.data.token);
+      const newPasswordHash = await hashPassword(newPassword);
+
+      await supertokensStore.updateEmailPasswordBasedOnResetToken({
+        token,
+        newPasswordHash,
+      });
+
+      return rep.send({
+        status: 'OK',
+      });
+    },
+  });
+
+  server.route({
     url: '/auth-api/session/refresh',
     method: 'POST',
     async handler(req, rep) {
@@ -376,7 +460,7 @@ export function registerSupertokensAtHome(server: FastifyInstance, storage: Stor
   });
 }
 
-const SignUpBodyModel = z.object({
+const GenericFormFieldBody = z.object({
   formFields: z.array(
     z.object({
       id: z.string(),
@@ -385,7 +469,16 @@ const SignUpBodyModel = z.object({
   ),
 });
 
-const SignInBodyModel = SignUpBodyModel.extend({});
+const SignUpBodyModel = GenericFormFieldBody.extend({});
+
+const SignInBodyModel = GenericFormFieldBody.extend({});
+
+const UserPasswordResetBodyModel = GenericFormFieldBody.extend({
+  method: z.literal('token'),
+  token: z.string(),
+});
+
+const UserPasswordResetTokenBodyModel = GenericFormFieldBody.extend({});
 
 async function hashPassword(plaintextPassword: string): Promise<string> {
   // The "cost factor" or salt rounds. 10 is a good, standard balance of security and performance.
