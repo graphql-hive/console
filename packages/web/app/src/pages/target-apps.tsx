@@ -82,6 +82,7 @@ const TargetAppsViewQuery = graphql(`
       }
       viewerCanViewAppDeployments
       appDeployments(first: 20, after: $after, sort: $sort) {
+        total
         pageInfo {
           hasNextPage
           endCursor
@@ -382,11 +383,15 @@ function TargetAppsView(props: {
               </TableBody>
             </Table>
           </div>
-          <div className="mt-2">
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-muted-foreground text-xs">
+              Showing {data.data?.target?.appDeployments?.edges.length ?? 0} of{' '}
+              {data.data?.target?.appDeployments?.total ?? 0} deployments
+            </span>
             <Button
               size="sm"
               variant="outline"
-              className="ml-auto mr-0 flex"
+              className="flex"
               disabled={!data?.data?.target?.appDeployments?.pageInfo?.hasNextPage || isLoadingMore}
               onClick={() => {
                 if (

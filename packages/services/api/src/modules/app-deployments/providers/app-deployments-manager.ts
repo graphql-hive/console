@@ -232,32 +232,38 @@ export class AppDeploymentsManager {
     },
   ) {
     const { sort, cursor, first } = args;
-    if (sort) {
-      switch (sort.field) {
-        case 'LAST_USED':
-          return this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
-            targetId: target.id,
-            cursor,
-            first,
-            direction: sort.direction,
-          });
-        case 'CREATED_AT':
-        case 'ACTIVATED_AT':
-          return this.appDeployments.getPaginatedAppDeployments({
-            targetId: target.id,
-            cursor,
-            first,
-            sort,
-          });
-      }
+
+    let page;
+    switch (sort?.field) {
+      case 'LAST_USED':
+        page = await this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
+          targetId: target.id,
+          cursor,
+          first,
+          direction: sort.direction,
+        });
+        break;
+      case 'CREATED_AT':
+      case 'ACTIVATED_AT':
+        page = await this.appDeployments.getPaginatedAppDeployments({
+          targetId: target.id,
+          cursor,
+          first,
+          sort: { field: sort.field, direction: sort.direction },
+        });
+        break;
+      default:
+        page = await this.appDeployments.getPaginatedAppDeployments({
+          targetId: target.id,
+          cursor,
+          first,
+          sort: null,
+        });
+        break;
     }
 
-    return this.appDeployments.getPaginatedAppDeployments({
-      targetId: target.id,
-      cursor,
-      first,
-      sort: null,
-    });
+    const total = await this.appDeployments.countAppDeployments(target.id);
+    return { ...page, total };
   }
 
   async getActiveAppDeploymentsForTarget(
