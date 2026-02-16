@@ -964,7 +964,8 @@ export class AppDeployments {
     }
 
     const usagePairsForPage = usageForPage.map(r => `${r.appName}:${r.appVersion}`);
-    let usageDeployments: Array<any> = [];
+    const deploymentByPair = new Map();
+
     if (usagePairsForPage.length > 0) {
       const pgResult = await this.pool.query<unknown>(sql`
         SELECT ${appDeploymentFields}
@@ -972,12 +973,10 @@ export class AppDeployments {
         WHERE "target_id" = ${args.targetId}
           AND ("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')})
       `);
-      usageDeployments = pgResult.rows.map(row => AppDeploymentModel.parse(row));
-    }
-
-    const deploymentByPair = new Map();
-    for (const d of usageDeployments) {
-      deploymentByPair.set(`${d.name}:${d.version}`, d);
+      for (const row of pgResult.rows) {
+        const d = AppDeploymentModel.parse(row);
+        deploymentByPair.set(`${d.name}:${d.version}`, d);
+      }
     }
 
     let pageItems: Array<{ node: z.infer<typeof AppDeploymentModel>; lastUsed: string | null }> = [];
@@ -1016,7 +1015,6 @@ export class AppDeployments {
           ? sql`AND NOT (("name" || ':' || "version") = ANY(${sql.array(usagePairsForPage, 'text')}))`
           : sql``;
 
-      const batchSize = limit + 1;
       const fillResult = await this.pool.query<unknown>(sql`
         SELECT ${appDeploymentFields}
         FROM "app_deployments"
@@ -1024,11 +1022,11 @@ export class AppDeployments {
           ${excludeCurrentPage}
           ${fillCursorCondition}
         ORDER BY "id" ${dirSql}
-        LIMIT ${batchSize}
+        LIMIT ${limit + 1}
       `);
 
       const candidates = fillResult.rows.map(row => AppDeploymentModel.parse(row));
-      fillHasMore = candidates.length === batchSize;
+      fillHasMore = candidates.length > limit;
 
       if (candidates.length > 0) {
         const candidateTuples = candidates.map(

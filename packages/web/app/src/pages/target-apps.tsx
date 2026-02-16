@@ -221,7 +221,7 @@ function TargetAppsView(props: {
   const navigate = useNavigate();
   const sortVariable = {
     field: props.sorting.field as AppDeploymentsSortField,
-    direction: props.sorting.direction === 'DESC' ? SortDirectionType.Desc : SortDirectionType.Asc,
+    direction: props.sorting.direction as SortDirectionType,
   };
 
   const [data] = useQuery({
