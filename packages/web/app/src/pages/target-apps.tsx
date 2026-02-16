@@ -385,7 +385,7 @@ function TargetAppsView(props: {
             </Table>
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs">
               Showing {data.data?.target?.appDeployments?.edges.length ?? 0} of{' '}
               {data.data?.target?.appDeployments?.total ?? 0} deployments
             </span>
