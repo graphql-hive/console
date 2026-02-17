@@ -1,5 +1,7 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { useRouter } from '@tanstack/react-router';
 import { GraphQLTypeCard, GraphQLTypeCardListItem, SchemaExplorerUsageStats } from './common';
+import { useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 
 const GraphQLUnionTypeComponent_TypeFragment = graphql(`
@@ -15,6 +17,10 @@ const GraphQLUnionTypeComponent_TypeFragment = graphql(`
         ...SchemaExplorerUsageStats_UsageFragment
       }
       supergraphMetadata {
+        metadata {
+          name
+          content
+        }
         ...SupergraphMetadataList_SupergraphMetadataFragment
       }
     }
@@ -32,7 +38,39 @@ export function GraphQLUnionTypeComponent(props: {
   projectSlug: string;
   targetSlug: string;
 }) {
+  const router = useRouter();
+  const searchObj = router.latestLocation.search;
+  const search =
+    'search' in searchObj && typeof searchObj.search === 'string'
+      ? searchObj.search.toLowerCase()
+      : undefined;
   const ttype = useFragment(GraphQLUnionTypeComponent_TypeFragment, props.type);
+  const { hasMetadataFilter, metadata: filterMeta } = useSchemaExplorerContext();
+
+  const members = ttype.members.filter(member => {
+    let matchesFilter = true;
+    if (search) {
+      matchesFilter &&= member.name.toLowerCase().includes(search);
+    }
+    if (filterMeta.length && member.supergraphMetadata) {
+      const metadata = member.supergraphMetadata;
+      // Check custom metadata attributes
+      const matchesMeta = metadata?.metadata?.some((m: any) =>
+        hasMetadataFilter(m.name, m.content),
+      );
+      // Check service name filters
+      const matchesService =
+        metadata &&
+        'ownedByServiceNames' in metadata &&
+        Array.isArray(metadata.ownedByServiceNames) &&
+        metadata.ownedByServiceNames.some((serviceName: string) =>
+          hasMetadataFilter('service', serviceName),
+        );
+      matchesFilter &&= !!(matchesMeta || matchesService);
+    }
+    return matchesFilter;
+  });
+
   return (
     <GraphQLTypeCard
       name={ttype.name}
@@ -44,7 +82,7 @@ export function GraphQLUnionTypeComponent(props: {
       organizationSlug={props.organizationSlug}
     >
       <div className="flex flex-col">
-        {ttype.members.map((member, i) => (
+        {members.map((member, i: number) => (
           <GraphQLTypeCardListItem key={member.name} index={i}>
             <div>{member.name}</div>
             {typeof props.totalRequests === 'number' && (

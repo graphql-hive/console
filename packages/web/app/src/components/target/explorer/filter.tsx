@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Autocomplete } from '@/components/v2';
 import type { SelectOption } from '@/components/v2/radix-select';
-import { graphql } from '@/gql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   Link,
   RegisteredRouter,
@@ -32,6 +32,64 @@ import {
   usePeriodSelector,
   useSchemaExplorerContext,
 } from './provider';
+
+const SchemaExplorerTypes_TypesFragment = graphql(`
+  fragment SchemaExplorerTypes_TypesFragment on SchemaExplorer {
+    types {
+      __typename
+      ... on GraphQLObjectType {
+        name
+      }
+      ... on GraphQLInterfaceType {
+        name
+      }
+      ... on GraphQLUnionType {
+        name
+      }
+      ... on GraphQLEnumType {
+        name
+      }
+      ... on GraphQLInputObjectType {
+        name
+      }
+      ... on GraphQLScalarType {
+        name
+      }
+    }
+  }
+`);
+
+const SchemaExplorerTypes_ServiceNamesFragment = graphql(`
+  fragment SchemaExplorerTypes_ServiceNamesFragment on SchemaExplorer {
+    types {
+      __typename
+      supergraphMetadata {
+        ownedByServiceNames
+      }
+      ... on GraphQLObjectType {
+        fields {
+          supergraphMetadata {
+            ownedByServiceNames
+          }
+        }
+      }
+      ... on GraphQLInterfaceType {
+        fields {
+          supergraphMetadata {
+            ownedByServiceNames
+          }
+        }
+      }
+      ... on GraphQLInputObjectType {
+        fields {
+          supergraphMetadata {
+            ownedByServiceNames
+          }
+        }
+      }
+    }
+  }
+`);
 
 const TypeFilter_AllTypes = graphql(`
   query TypeFilter_AllTypes(
@@ -54,29 +112,8 @@ const TypeFilter_AllTypes = graphql(`
       latestValidSchemaVersion {
         __typename
         id
-        isValid
         explorer(usage: { period: $period }) {
-          types {
-            __typename
-            ... on GraphQLObjectType {
-              name
-            }
-            ... on GraphQLInterfaceType {
-              name
-            }
-            ... on GraphQLUnionType {
-              name
-            }
-            ... on GraphQLEnumType {
-              name
-            }
-            ... on GraphQLInputObjectType {
-              name
-            }
-            ... on GraphQLScalarType {
-              name
-            }
-          }
+          ...SchemaExplorerTypes_TypesFragment
         }
       }
     }
@@ -107,10 +144,12 @@ export function TypeFilter(props: {
     requestPolicy: 'cache-first',
   });
 
-  const allNamedTypes = query.data?.target?.latestValidSchemaVersion?.explorer?.types;
+  const explorer = query.data?.target?.latestValidSchemaVersion?.explorer;
+  const explorerFragment = useFragment(SchemaExplorerTypes_TypesFragment, explorer);
+  const allNamedTypes = explorerFragment?.types;
   const types = useMemo(
     () =>
-      allNamedTypes?.map(t => ({
+      allNamedTypes?.map((t: any) => ({
         value: t.name,
         label: t.name,
       })) || [],
@@ -222,6 +261,80 @@ export function DateRangeFilter() {
       startDate={periodSelector.startDate}
       align="end"
     />
+  );
+}
+
+export function ServiceNameFilter(props: {
+  explorer?: FragmentType<typeof SchemaExplorerTypes_ServiceNamesFragment> | null;
+}) {
+  const { setMetadataFilter, unsetMetadataFilter, hasMetadataFilter } = useSchemaExplorerContext();
+
+  const explorerFragment = useFragment(SchemaExplorerTypes_ServiceNamesFragment, props.explorer);
+
+  const serviceNames = useMemo(() => {
+    const allTypes = explorerFragment?.types;
+    if (!allTypes) return [];
+
+    const serviceNameSet = new Set<string>();
+
+    for (const type of allTypes) {
+      // Add service names from type-level metadata
+      for (const serviceName of type.supergraphMetadata?.ownedByServiceNames ?? []) {
+        serviceNameSet.add(serviceName);
+      }
+
+      // Add service names from field-level metadata
+      if ('fields' in type && Array.isArray(type.fields)) {
+        for (const field of type.fields) {
+          for (const serviceName of field.supergraphMetadata?.ownedByServiceNames ?? []) {
+            serviceNameSet.add(serviceName);
+          }
+        }
+      }
+    }
+
+    const extracted = Array.from(serviceNameSet).sort();
+
+    return extracted;
+  }, [explorerFragment]);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" className="data-[state=open]:bg-neutral-3">
+          <FilterIcon className="mr-2 size-4" />
+          Service
+          <span className="sr-only">Open menu to filter by service name.</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        className="max-h-[300px] min-w-[160px] max-w-[300px] flex-wrap overflow-y-auto"
+      >
+        {serviceNames.length > 0 ? (
+          serviceNames.map(serviceName => (
+            <DropdownMenuCheckboxItem
+              key={serviceName}
+              className="w-full"
+              checked={hasMetadataFilter('service', serviceName)}
+              onCheckedChange={isChecked => {
+                if (isChecked) {
+                  setMetadataFilter('service', serviceName);
+                } else {
+                  unsetMetadataFilter('service', serviceName);
+                }
+              }}
+            >
+              {serviceName}
+            </DropdownMenuCheckboxItem>
+          ))
+        ) : (
+          <DropdownMenuCheckboxItem disabled>
+            No services found in metadata
+          </DropdownMenuCheckboxItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

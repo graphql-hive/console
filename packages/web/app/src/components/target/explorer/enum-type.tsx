@@ -61,10 +61,18 @@ export function GraphQLEnumTypeComponent(props: {
       matchesFilter &&= value.name.toLowerCase().includes(search);
     }
     if (filterMeta.length) {
-      const matchesMeta = value.supergraphMetadata?.metadata?.some(m =>
-        hasMetadataFilter(m.name, m.content),
-      );
-      matchesFilter &&= !!matchesMeta;
+      const metadata = value.supergraphMetadata;
+      // Check custom metadata attributes
+      const matchesMeta = metadata?.metadata?.some(m => hasMetadataFilter(m.name, m.content));
+      // Check service name filters
+      const matchesService =
+        metadata &&
+        'ownedByServiceNames' in metadata &&
+        Array.isArray(metadata.ownedByServiceNames) &&
+        metadata.ownedByServiceNames.some((serviceName: string) =>
+          hasMetadataFilter('service', serviceName),
+        );
+      matchesFilter &&= !!(matchesMeta || matchesService);
     }
     return matchesFilter;
   });
