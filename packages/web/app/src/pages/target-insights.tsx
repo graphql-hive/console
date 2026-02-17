@@ -230,7 +230,10 @@ function OperationsView({
       void navigate({
         search: prev => ({
           ...prev,
-          operations: view.filters.operationHashes.length > 0 ? view.filters.operationHashes : undefined,
+          operations:
+            view.filters.operationHashes.length > 0
+              ? view.filters.operationHashes
+              : undefined,
           clients:
             view.filters.clientFilters.length > 0
               ? view.filters.clientFilters.map(c => ({
@@ -238,8 +241,8 @@ function OperationsView({
                   versions: c.versions,
                 }))
               : undefined,
-          from: view.filters.dateRange?.from ?? ('from' in prev ? prev.from : undefined),
-          to: view.filters.dateRange?.to ?? ('to' in prev ? prev.to : undefined),
+          from: view.filters.dateRange?.from,
+          to: view.filters.dateRange?.to,
         }),
       });
     },

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ListFilter } from 'lucide-react';
 import { FilterContent } from '@/components/base/filter-dropdown/filter-content';
 import { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
@@ -74,8 +75,18 @@ export function InsightsFilters({
   onApplyView,
   onManageViews,
 }: InsightsFiltersProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleApplyView = (view: SavedView) => {
+    setOpen(false);
+    // Defer navigation to next frame so the menu portals unmount first
+    requestAnimationFrame(() => {
+      onApplyView(view);
+    });
+  };
+
   return (
-    <MenuRoot modal={false}>
+    <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
       <MenuTrigger
         render={<TriggerButton label="Filter" icon={<ListFilter className="size-4" />} />}
       />
@@ -90,7 +101,7 @@ export function InsightsFilters({
                 <ViewsList
                   views={privateViews}
                   emptyMessage="No saved private views"
-                  onApplyView={onApplyView}
+                  onApplyView={handleApplyView}
                 />
               </MenuContent>
             </MenuSubmenu>
@@ -100,7 +111,7 @@ export function InsightsFilters({
                 <ViewsList
                   views={sharedViews}
                   emptyMessage="No saved shared views"
-                  onApplyView={onApplyView}
+                  onApplyView={handleApplyView}
                 />
               </MenuContent>
             </MenuSubmenu>
