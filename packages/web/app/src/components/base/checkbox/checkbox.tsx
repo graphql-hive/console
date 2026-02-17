@@ -39,7 +39,7 @@ export function Checkbox({
   ...props
 }: Omit<BaseCheckbox.Root.Props, 'children' | 'className'> &
   VariantProps<typeof checkboxVariants> & {
-    /** When true, the checkbox is a non-interactive visual indicator (sets pointer-events: none, tabIndex: -1, aria-hidden) */
+    /** When true, the checkbox is a non-interactive visual indicator (preserves hover styles, sets tabIndex: -1, aria-hidden) */
     visual?: boolean;
   }) {
   const iconClass = iconSizeMap[size ?? 'md'];
@@ -47,7 +47,12 @@ export function Checkbox({
     <BaseCheckbox.Root
       className={checkboxVariants({ size, variant })}
       {...(visual
-        ? { tabIndex: -1, 'aria-hidden': true, style: { pointerEvents: 'none' as const } }
+        ? {
+            tabIndex: -1,
+            'aria-hidden': true,
+            style: { cursor: 'default' as const },
+            onCheckedChange: undefined,
+          }
         : {})}
       {...props}
     >
