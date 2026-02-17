@@ -478,9 +478,9 @@ export function registerSupertokensAtHome(
         });
       }
 
-      // TODO: GITHUB
       if (query.data.thirdPartyId === 'github') {
         if (!env.auth.github) {
+          req.log.debug('The github provider is not enabled.');
           return rep.status(200).send({
             status: 'GENERAL_ERROR',
             message: 'Method not supported.',
@@ -498,7 +498,36 @@ export function registerSupertokensAtHome(
           urlWithQueryParams: authorizeUrl.toString(),
         });
       }
-      // TODO: GOOGLE
+
+      if (query.data.thirdPartyId === 'google') {
+        req.log.debug('The google provider is not enabled.');
+        if (!env.auth.google) {
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Method not supported.',
+          });
+        }
+
+        const redirectUrl = new URL(env.hiveServices.webApp.url);
+        redirectUrl.pathname = '/auth/callback/google';
+        const authorizeUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+        authorizeUrl.searchParams.set('client_id', env.auth.google.clientId);
+        authorizeUrl.searchParams.set('redirect_uri', redirectUrl.toString());
+        authorizeUrl.searchParams.set('response_type', 'code');
+        authorizeUrl.searchParams.set(
+          'scope',
+          [
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'openid',
+          ].join(' '),
+        );
+
+        return rep.send({
+          status: 'OK',
+          urlWithQueryParams: authorizeUrl.toString(),
+        });
+      }
       // TODO: OKTA
 
       console.log(query.data.thirdPartyId);
@@ -579,14 +608,14 @@ export function registerSupertokensAtHome(
           });
         }
 
-        const url = new URL('https://github.com/login/oauth/access_token');
+        const accessTokenUrl = new URL('https://github.com/login/oauth/access_token');
 
         const AccessTokenResponseBodyModel = z.object({
           access_token: z.string(),
           scope: z.string(),
         });
 
-        const accessTokenResponse = await fetch(url.toString(), {
+        const accessTokenResponse = await fetch(accessTokenUrl.toString(), {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
@@ -683,7 +712,104 @@ export function registerSupertokensAtHome(
           user = await supertokensStore.createThirdPartyUser({
             email: email?.email,
             thirdPartyId: 'github',
-            thirdPartUserId: String(userInfoBody.id),
+            thirdPartyUserId: String(userInfoBody.id),
+          });
+        }
+
+        const ensureUserExists = await storage.ensureUserExists({
+          superTokensUserId: user.userId,
+          email: user.email,
+          firstName: null,
+          lastName: null,
+          oidcIntegration: null,
+        });
+
+        if (!ensureUserExists.ok) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          });
+        }
+
+        supertokensUser = user;
+        hiveUser = ensureUserExists.user;
+      } else if (parsedBody.data.thirdPartyId === 'google') {
+        if (!env.auth.google) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'GitHub sign in is not allowed.',
+          });
+        }
+
+        const accessTokenUrl = new URL('https://oauth2.googleapis.com/token');
+
+        const AccessTokenResponseBodyModel = z.object({
+          access_token: z.string(),
+          scope: z.string(),
+        });
+
+        const accessTokenResponse = await fetch(accessTokenUrl.toString(), {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+          },
+          body: JSON.stringify({
+            grant_type: 'authorization_code',
+            client_id: env.auth.google.clientId,
+            client_secret: env.auth.google.clientSecret,
+            code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
+            redirect_uri: parsedBody.data.redirectURIInfo.redirectURIOnProviderDashboard,
+          }),
+        });
+
+        if (accessTokenResponse.status !== 200) {
+          req.log.debug('Received invalid response status from google.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Something went wrong.',
+          });
+        }
+
+        const accessTokenBody = await accessTokenResponse
+          .json()
+          .then(res => AccessTokenResponseBodyModel.parse(res));
+
+        console.log(accessTokenBody);
+
+        const UserInfoBodyModel = z.object({
+          sub: z.string(),
+          email: z.string(),
+        });
+
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          method: 'GET',
+          headers: {
+            accept: 'application/json',
+            authorization: `Bearer ${accessTokenBody.access_token}`,
+          },
+        });
+
+        if (userInfoResponse.status !== 200) {
+          req.log.debug('Received invalid response status from google user info endpoint.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Something went wrong.',
+          });
+        }
+
+        const userInfo = await userInfoResponse.json().then(UserInfoBodyModel.parse);
+
+        let user = await supertokensStore.findThirdPartyUser({
+          thirdPartyId: 'google',
+          thirdPartyUserId: String(userInfo.sub),
+        });
+
+        if (!user) {
+          user = await supertokensStore.createThirdPartyUser({
+            thirdPartyId: 'google',
+            thirdPartyUserId: userInfo.sub,
+            email: userInfo.email,
           });
         }
 
@@ -705,8 +831,17 @@ export function registerSupertokensAtHome(
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
       } else if (parsedBody.data.thirdPartyId === 'oidc') {
-        const [, oidcIntegrationId] =
-          parsedBody.data.redirectURIInfo.redirectURIQueryParams.state.split('--');
+        const [, oidcIntegrationId] = (
+          parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? ''
+        ).split('--');
+
+        if (!oidcIntegrationId) {
+          req.log.debug('Missing OIDC ID provided.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please try again.',
+          });
+        }
 
         const oidcIntegration = await storage.getOIDCIntegrationById({ oidcIntegrationId });
 
@@ -720,7 +855,7 @@ export function registerSupertokensAtHome(
 
         const oidClientConfig = new oidClient.Configuration(
           {
-            issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss,
+            issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss ?? '',
             authorization_endpoint: oidcIntegration.authorizationEndpoint,
             userinfo_endpoint: oidcIntegration.userinfoEndpoint,
             token_endpoint: oidcIntegration.tokenEndpoint,
@@ -738,7 +873,7 @@ export function registerSupertokensAtHome(
         current_url.pathname = '/auth/callback/oidc';
         current_url.searchParams.set(
           'code',
-          parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
+          parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
         );
 
         // TODO: error handling
