@@ -698,12 +698,6 @@ impl RouterPlugin for ContextDataPlugin {
         let context_data_entry = payload.context.get_ref::<ContextData>();
         if let Some(ref context_data_entry) = context_data_entry {
             tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
-            let new_header_value = format!("Hello {}", context_data_entry.incoming_data);
-            // Add a new header to the subgraph execution request
-            payload.execution_request.headers.insert(
-                "x-hello",
-                http::HeaderValue::from_str(&new_header_value).unwrap(),
-            );
         }
     }
 }
