@@ -673,7 +673,7 @@ pass information between hooks.
 For example, you can store some data in the context during the `on_graphql_params` hook and retrieve
 it later in the `on_subgraph_execute` hook.
 
-```rust filename="src/context_data.rs" {1,2,12-55}
+```rust filename="src/context_data.rs"
 pub struct ContextData {
     incoming_data: String,
 }
