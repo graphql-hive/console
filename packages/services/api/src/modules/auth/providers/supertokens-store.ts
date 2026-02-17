@@ -31,8 +31,10 @@ type EmailPasswordUser = z.TypeOf<typeof EmailPasswordUserModel>;
 
 const ThirdpartUserModel = z.object({
   thirdPartyId: z.string(),
+  thirdPartyUserId: z.string(),
   userId: z.string(),
   email: z.string(),
+  timeJoined: z.number(),
 });
 
 const EmailPasswordResetTokenModel = z.object({
@@ -145,7 +147,9 @@ export class SuperTokensStore {
       SELECT
         "user_id" AS "userId"
         , "email" AS "email"
-        , "third_party_user_id" AS "thirdPartyId"
+        , "third_party_id" AS "thirdPartyId"
+        , "third_party_user_id" AS "thirdPartyUserId"
+        , "time_joined" AS "timeJoined"
       FROM
        "supertokens_thirdparty_users"
       WHERE "user_id" = ${userId}
@@ -252,6 +256,100 @@ export class SuperTokensStore {
     `;
 
     return await this.pool.maybeOne(query).then(SessionInfoModel.nullable().parse);
+  }
+
+  async findOIDCUserBySubAndOIDCIntegrationId(args: { sub: string; oidcIntegrationId: string }) {
+    const query = sql`
+      SELECT
+        "user_id" AS "userId"
+        , "email" AS "email"
+        , "third_party_id" AS "thirdPartyId"
+        , "third_party_user_id" AS "thirdPartyUserId"
+        , "time_joined" AS "timeJoined"
+      FROM
+        "supertokens_thirdparty_users"
+      WHERE
+        "third_party_id" = 'oidc'
+        AND "third_party_user_id" = ${`${args.oidcIntegrationId}-${args.sub}`}
+    `;
+
+    return await this.pool.maybeOne(query).then(ThirdpartUserModel.parse);
+  }
+
+  async createOIDCUser(args: { email: string; sub: string; oidcIntegrationId: string }) {
+    const userId = crypto.randomUUID();
+    const now = Date.now();
+
+    const allRecipeUsersQuery = sql`
+      INSERT INTO "supertokens_all_auth_recipe_users" (
+        "app_id"
+        , "tenant_id"
+        , "user_id"
+        , "primary_or_recipe_user_id"
+        , "is_linked_or_is_a_primary_user"
+        , "recipe_id"
+        , "time_joined"
+        , "primary_or_recipe_user_time_joined"
+      ) VALUES (
+        'public'
+        , 'public'
+        , ${userId}
+        , ${userId}
+        , false
+        , 'oidc'
+        , ${now}
+        , ${now}
+      )
+    `;
+
+    const oidcUserQuery = sql`
+      INSERT INTO "supertokens_thirdparty_users" (
+        "app_id"
+        , "third_party_id"
+        , "third_party_user_id"
+        , "user_id"
+        , "email"
+        , "time_joined"
+      ) VALUES (
+        'public'
+        , 'oidc'
+        , ${args.oidcIntegrationId + '-' + args.sub}
+        , ${userId}
+        , ${args.email}
+        , ${now}
+      )
+      RETURNING
+        "user_id" AS "userId"
+        , "email" AS "email"
+        , "third_party_id" AS "thirdPartyId"
+        , "third_party_user_id" AS "thirdPartyUserId"
+        , "time_joined" AS "timeJoined"
+    `;
+
+    const appIdToUserIdQuery = sql`
+      INSERT INTO "supertokens_app_id_to_user_id" (
+        "app_id"
+        , "user_id"
+        , "recipe_id"
+        , "primary_or_recipe_user_id"
+        , "is_linked_or_is_a_primary_user"
+      ) VALUES (
+        'public'
+        , ${userId}
+        , 'oidc'
+        , ${userId}
+        , false
+      )
+    `;
+
+    return await this.pool
+      .transaction(async t => {
+        await t.query(appIdToUserIdQuery);
+        const result = await t.one(oidcUserQuery);
+        await t.query(allRecipeUsersQuery);
+        return result;
+      })
+      .then(r => ThirdpartUserModel.parse(r));
   }
 
   async createEmailPasswordUser(args: { email: string; passwordHash: string }) {
