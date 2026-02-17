@@ -10,7 +10,7 @@ Hive Router is designed to be flexible and extensible, allowing you to customize
 your specific needs. This guide explores various ways to extend the router's functionality,
 including custom plugins.
 
-## Custom Builds with Rust Plugins
+## Getting Started
 
 Hive Router is built using Rust, which allows for high performance and safety. One of the powerful
 features of Hive Router is the ability to create custom builds with your own Rust plugins. This
@@ -27,12 +27,40 @@ cargo new --bin my_custom_router
 cd my_custom_router
 ```
 
-Install `hive-router` as a dependency by adding it to your `Cargo.toml` file:
+### Installing Dependencies
+
+Install `hive-router` and `serde` as a dependency by adding it to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-hive-router = "0.17"
+hive-router = "0.0.39"
+serde = "1"
 ```
+
+### Create an entrypoint for your custom router
+
+Next, you need to create an entrypoint for your custom router. This is where you'll initialize the
+router and register your plugins. Create a new file `src/main.rs` and add the following code:
+
+```rust
+use hive_router::{
+    error::RouterInitError, init_rustls_crypto_provider, router_entrypoint, DefaultGlobalAllocator,
+    PluginRegistry,
+};
+
+#[global_allocator]
+static GLOBAL: DefaultGlobalAllocator = DefaultGlobalAllocator;
+
+#[ntex::main]
+async fn main() -> Result<(), RouterInitError> {
+    init_rustls_crypto_provider();
+
+    /// Start the Hive Router with the plugin registry
+    router_entrypoint(PluginRegistry::new()).await
+}
+```
+
+### Provide an example supergraph
 
 You can use our example supergraph as a starting point;
 
@@ -51,36 +79,68 @@ supergraph:
 Or you can use other ways to provide the supergraph, see
 [Supergraph Sources](https://the-guild.dev/graphql/hive/docs/router/supergraph).
 
-### Create an entrypoint for your custom router
+### Create a custom plugin
 
-Next, you need to create an entrypoint for your custom router. This is where you'll initialize the
-router and register your plugins. Create a new file `src/main.rs` and add the following code:
+Now you can create a custom plugin by implementing the `RouterPlugin` trait. For example, let's say
+you want to create a plugin that logs the incoming GraphQL operations. You can create a new file
+`src/plugin.rs` and add the following code:
 
 ```rust
-use hive_router::{PluginRegistry, router_entrypoint, BoxError};
+use hive_router::{
+    async_trait,
+    plugins::{
+        hooks::{
+            on_graphql_params::{OnGraphQLParamsStartHookPayload, OnGraphQLParamsStartHookResult}, on_plugin_init::{OnPluginInitPayload, OnPluginInitResult}
+        },
+        plugin_trait::{RouterPlugin, StartHookPayload},
+    },
+};
 
-#[ntex::main]
-async fn main() -> Result<(), BoxError> {
-    /// This is where you can register your custom plugins
-    let plugin_registry = PluginRegistry::new();
-    /// Start the Hive Router with the plugin registry
-    match router_entrypoint(Some(plugin_registry)).await {
-        Ok(_) => Ok(()),
-        Err(err) => {
-            eprintln!("Failed to start Hive Router:\n  {}", err);
+#[derive(Default)]
+pub struct MyPlugin;
 
-            Err(err)
-        }
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = ();
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+    fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+        payload.initialize_plugin_with_defaults()
+    }
+    async fn on_graphql_params<'exec>(
+        &'exec self,
+        payload: OnGraphQLParamsStartHookPayload<'exec>,
+    ) -> OnGraphQLParamsStartHookResult<'exec> {
+        tracing::info!("Received GraphQL operation: {:?}", payload.graphql_params.query);
+        payload.proceed()
     }
 }
+
 ```
 
-### Run your custom router
+Then register your plugin in the `main.rs`:
 
-Finally, you can build and run your custom router using Cargo:
+```diff
+use hive_router::{
+    error::RouterInitError, init_rustls_crypto_provider, ntex, router_entrypoint,
+    DefaultGlobalAllocator, PluginRegistry,
+};
++ mod plugin;
++ use plugin::MyPlugin;
 
-```bash
-cargo run
+#[global_allocator]
+static GLOBAL: DefaultGlobalAllocator = DefaultGlobalAllocator;
+
+#[hive_router::main]
+async fn main() -> Result<(), RouterInitError> {
+    init_rustls_crypto_provider();
+
+    router_entrypoint(
+        PluginRegistry::new()
++            .register::<MyPlugin>()
+    ).await
+}
 ```
 
 ### Configure your plugins in `router.config.yaml`
@@ -90,13 +150,20 @@ an example configuration:
 
 ```yaml filename="router.config.yaml"
 plugins:
-  my_custom_plugin:
-    option1: value1
-    option2: value2
+  my_plugin:
+    enabled: true
 ```
 
 During this phase of development, you need to learn more about the Hive Router plugin system and how
 the hooks are structured.
+
+### Run your custom router
+
+Finally, you can build and run your custom router using Cargo:
+
+```bash
+cargo run
+```
 
 ## Hooks Lifecycle
 
@@ -139,10 +206,11 @@ On the end of this hook, you can do the following things for example;
 
 You can check the following example implementations;
 
-- `apollo-sandbox` plugin that serves Apollo Sandbox in a custom endpoint using `on_http_request`
-  hook
-- `propagate-status-code` plugin that propagates status codes from subgraphs to clients using the
-  end phase of `on_http_request` hook by manipulating the final response.
+- [`apollo_sandbox`](https://github.com/graphql-hive/router/tree/main/plugin_examples/apollo_sandbox)
+  plugin that serves Apollo Sandbox in a custom endpoint using `on_http_request` hook
+- [`propagate_status_code`](https://github.com/graphql-hive/router/tree/main/plugin_examples/propagate_status_code)
+  plugin that propagates status codes from subgraphs to clients using the end phase of
+  `on_http_request` hook by manipulating the final response
 
 ### `on_graphql_params`
 
@@ -171,15 +239,19 @@ On this hook's end;
 
 You can check the following example implementations;
 
-- `forbid-anon-ops` example that checks the parsed `operation_name` in the end payload of this hook
-  and rejects the operations without operation names.
-- `apq` example shows how to implement a simple Automatic Persisted Queries plugin using this hook.
-  So it takes the hash from the extensions from the parsed body, and looks up the actual query from
-  a map then puts it into the GraphQL parameters.
-- `multipart` plugin that parses the body using `multer`, and holds the file bytes in the context
-  then fetches then lazily when needed during the subgraph execution. So it shows how to override
-  parsing logic using this hook.
-- `async_auth` plugin that shows how to implement a custom auth logic
+- [`forbid_anonymous_operations`](https://github.com/graphql-hive/router/tree/main/plugin_examples/forbid_anonymous_operations)
+  example that checks the parsed `operation_name` in the end payload of this hook and rejects the
+  operations without operation names.
+- [`apq`](https://github.com/graphql-hive/router/tree/main/plugin_examples/apq) example shows how to
+  implement a simple Automatic Persisted Queries plugin using this hook. So it takes the hash from
+  the extensions from the parsed body, and looks up the actual query from a map then puts it into
+  the GraphQL parameters.
+- [`multipart`](https://github.com/graphql-hive/router/tree/main/plugin_examples/multipart) plugin
+  that parses the body using `multer`, and holds the file bytes in the context then fetches then
+  lazily when needed during the subgraph execution. So it shows how to override parsing logic using
+  this hook.
+- [`async_auth`](https://github.com/graphql-hive/router/tree/main/plugin_examples/async_auth) plugin
+  that shows how to implement a custom auth logic
 
 ### `on_graphql_parse`
 
@@ -223,10 +295,12 @@ On the end of this hook, you can do the following things for example;
 
 You can check the following example implementations;
 
-- `root-field-limit` plugin that implements a new `ValidationRule` to limit the number of root
-  fields in an operation using this hook.
-- `one-of` plugin is a more complicated one that combines this hook and `on_execute` hook to
-  implement custom validation and execution logic for `@oneOf` directive.
+- [`root_field_limit`](https://github.com/graphql-hive/router/tree/main/plugin_examples/root_field_limit)
+  plugin that implements a new `ValidationRule` to limit the number of root fields in an operation
+  using this hook.
+- [`one_of`](https://github.com/graphql-hive/router/tree/main/plugin_examples/one_of) plugin is a
+  more complicated one that combines this hook and `on_execute` hook to implement custom validation
+  and execution logic for `@oneOf` directive.
 
 ### `on_query_plan`
 
@@ -246,8 +320,9 @@ On the end of this hook, you can do the following things for example;
 
 You can check the following example implementations;
 
-- `root-field-limit` plugin that implements another variant of root field limiting using this hook
-  besides `on_graphql_validation`.
+- [`root_field_limit`](https://github.com/graphql-hive/router/tree/main/plugin_examples/root_field_limit)
+  plugin that implements another variant of root field limiting using this hook besides
+  `on_graphql_validation`.
 
 ### `on_execute`
 
@@ -273,10 +348,11 @@ On the end of this hook, you can do the following things for example;
 
 You can check the following example implementations;
 
-- `one_of` plugin that implements the execution logic for `@oneOf` directive using this hook.
-  `on_graphql_validation` is not enough by itself because the coerced variables need to be checked
-  as well.
-- `response_caching` plugin that implements a simple response caching mechanism using this hook.
+- [`one_of`](https://github.com/graphql-hive/router/tree/main/plugin_examples/one_of) plugin that
+  implements the execution logic for `@oneOf` directive using this hook. `on_graphql_validation` is
+  not enough by itself because the coerced variables need to be checked as well.
+- [`response_cache`](https://github.com/graphql-hive/router/tree/main/plugin_examples/response_cache)
+  plugin that implements a simple response caching mechanism using this hook.
 
 ### `on_subgraph_execute`
 
@@ -307,10 +383,11 @@ On the end of this hook, you can do the following things for example;
 
 You can check the following example implementations;
 
-- `subgraph_response_cache` plugin that implements a simple subgraph response caching mechanism
-  using this hook.
-- `context_data` plugin that shows how to pass data between the main request lifecycle and subgraph
-  execution using this hook.
+- [`subgraph_response_cache`](https://github.com/graphql-hive/router/tree/main/plugin_examples/subgraph_response_cache)
+  plugin that implements a simple subgraph response caching mechanism using this hook.
+- [`context_data`](https://github.com/graphql-hive/router/tree/main/plugin_examples/context_data)
+  plugin that shows how to pass data between the main request lifecycle and subgraph execution using
+  this hook.
 
 ### `on_subgraph_http_request`
 
@@ -339,13 +416,15 @@ On the end of this hook, you can do the following things for example;
 
 You can check the following example implementations;
 
-- `propagate-status-code` plugin that propagates status codes from subgraphs to clients using the
-  end phase of this hook by manipulating the final response.
-- `multipart` plugin that overrides the default deserialization logic of Hive Router to handle
-  `multipart/form-data` requests from the client, and it holds the files in the context for lazy
-  fetching during subgraph execution. In this hook, it re-uses the files from the context to prepare
-  the subgraph HTTP request, and replaces the default JSON-based HTTP transport with
-  `multipart/form-data` when needed.
+- [`propagate_status_code`](https://github.com/graphql-hive/router/tree/main/plugin_examples/propagate_status_code)
+  plugin that propagates status codes from subgraphs to clients using the end phase of this hook by
+  manipulating the final response.
+- [`multipart`](https://github.com/graphql-hive/router/tree/main/plugin_examples/multipart) plugin
+  that overrides the default deserialization logic of Hive Router to handle `multipart/form-data`
+  requests from the client, and it holds the files in the context for lazy fetching during subgraph
+  execution. In this hook, it re-uses the files from the context to prepare the subgraph HTTP
+  request, and replaces the default JSON-based HTTP transport with `multipart/form-data` when
+  needed.
 
 ### `on_supergraph_load`
 
@@ -363,11 +442,13 @@ You can do the following things for example;
 
 You can check the following example implementations;
 
-- `one_of` plugin that precalculates the `@oneOf` directive locations in the supergraph schema for
-  faster access during request processing. So it avoids traversing the schema for each request, and
-  refreshes the state whenever the supergraph is reloaded.
-- `response_cache` plugin that precalculates the TTL information based on `@cacheControl` directives
-  in the supergraph schema for response caching.
+- [`one_of`](https://github.com/graphql-hive/router/tree/main/plugin_examples/one_of) plugin that
+  precalculates the `@oneOf` directive locations in the supergraph schema for faster access during
+  request processing. So it avoids traversing the schema for each request, and refreshes the state
+  whenever the supergraph is reloaded.
+- [`response_cache`](https://github.com/graphql-hive/router/tree/main/plugin_examples/response_cache)
+  plugin that precalculates the TTL information based on `@cacheControl` directives in the
+  supergraph schema for response caching.
 
 ### `on_shutdown`
 
@@ -382,67 +463,31 @@ You can do the following things for example;
 
 You can check the following example implementations;
 
-- `usage_reporting` plugin that flushes any pending usage reports to the server before shutdown.
+- [`usage_reporting`](https://github.com/graphql-hive/router/tree/main/plugin_examples/usage_reporting)
+  plugin that flushes any pending usage reports to the server before shutdown.
 
 ## Short Circuit Responses
 
 In many of the hooks mentioned above, you have the ability to short-circuit the request processing
 by providing a custom response.
 
-Let's say you want to implement a plugin that returns an early error response if it doesn't have a
-specific operation name. So basically this plugin rejects anonymous operations. See the highlighted
-code below;
+Let's say you want to implement a plugin that returns an early error response in some cases;
 
-```rust filename="src/forbid_anon_ops.rs" {33}
-#[async_trait::async_trait]
-impl RouterPlugin for ForbidAnonymousOperationsPlugin {
-    async fn on_graphql_params<'exec>(
-        &'exec self,
-        payload: OnGraphQLParamsStartHookPayload<'exec>,
-    ) -> OnGraphQLParamsStartHookResult<'exec> {
-        // After the GraphQL parameters have been parsed, we can check if the operation is anonymous
-        // So we use `on_end`
-        payload.on_end(|payload| {
-            let maybe_operation_name = &payload
-                .graphql_params
-                .operation_name
-                .as_ref();
-
-            if maybe_operation_name
-                .is_none_or(|operation_name| operation_name.is_empty())
-            {
-                // let's log the error
-                tracing::error!("Operation is not allowed!");
-
-                // Prepare an HTTP 400 response with a GraphQL error message
-                let body = json!({
-                    "errors": [
-                        {
-                            "message": "Anonymous operations are not allowed",
-                            "extensions": {
-                                "code": "ANONYMOUS_OPERATION"
-                            }
-                        }
-                    ]
-                });
-                // Here we short-circuit the request processing by returning an early response
-                return payload.end_with_response(
-                    Response::with_body(
-                        StatusCode::BAD_REQUEST,
-                        body.to_string().into(),
-                    )
-                );
-            }
-            // we're good to go!
-            tracing::info!("operation is allowed!");
-            payload.proceed()
-        })
-    }
-}
+```rust
+return payload.end_with_response(
+    Response::with_body(
+        StatusCode::BAD_REQUEST,
+        body.to_string().into(),
+    )
+);
 ```
 
-Here we use `end_with_response` method on the `OnGraphQLParamsEndHookPayload` to provide a custom
-HTTP response. But there are some helper methods to make it easier to create early responses.
+Here we use `end_with_response` method on the `payload` to provide a custom HTTP response. But there
+are some helper methods to make it easier to create early responses.
+
+You can see
+[forbid_anonymous_operations](https://github.com/graphql-hive/router/blob/main/plugin_examples/forbid_anonymous_operations/src/plugin.rs#L40)
+example to see a full example.
 
 ### Helpers for early responses
 
@@ -495,15 +540,7 @@ request body received from the client. In this case, you need to modify the `que
 `GraphQLParams` struct to put the actual query string into it based on the hash received from the
 client.
 
-In the following example, we implement a simple APQ plugin that uses an in-memory cache to store the
-persisted queries. When a request comes in with a hash, it looks up the query from the cache and
-puts it into the `GraphQLParams`. If the query is not found, it returns an error response.
-
-```rust filename="src/apq.rs" {1,2,12-88}
-struct APQPlugin {
-    cache: DashMap<String, String>,
-}
-
+```rust
 #[async_trait::async_trait]
 impl RouterPlugin for APQPlugin {
     async fn on_graphql_params<'exec>(
@@ -517,60 +554,18 @@ impl RouterPlugin for APQPlugin {
                 .as_ref()
                 .and_then(|ext| ext.get("persistedQuery"))
                 .and_then(|pq| pq.as_object());
-            if let Some(persisted_query_ext) = persisted_query_ext {
-                match persisted_query_ext.get(&"version").and_then(|v| v.as_i64()) {
-                    Some(1) => {}
-                    _ => {
-                        return payload.end_with_graphql_error(
-                            GraphQLError::from_message_and_code(
-                                "Unsupported persisted query version",
-                                "UNSUPPORTED_PERSISTED_QUERY_VERSION",
-                            ),
-                            StatusCode::BAD_REQUEST,
-                        );
-                    }
-                }
-                let sha256_hash = match persisted_query_ext
-                    .get(&"sha256Hash")
-                    .and_then(|h| h.as_str())
-                {
-                    Some(h) => h,
-                    None => {
-                        return payload.end_with_graphql_error(
-                            GraphQLError::from_message_and_code(
-                                "Missing sha256Hash in persisted query",
-                                "MISSING_PERSISTED_QUERY_HASH",
-                            ),
-                            StatusCode::BAD_REQUEST,
-                        );
-                    }
-                };
-                if let Some(query_param) = &payload.graphql_params.query {
-                    // Store the query in the cache
-                    self.cache
-                        .insert(sha256_hash.to_string(), query_param.to_string());
-                } else {
-                    // Try to get the query from the cache
-                    if let Some(cached_query) = self.cache.get(sha256_hash) {
-                        // Update the graphql_params with the cached query
-                        payload.graphql_params.query = Some(cached_query.value().to_string());
-                    } else {
-                        return payload.end_with_graphql_error(
-                            GraphQLError::from_message_and_code(
-                                "Persisted query not found",
-                                "PERSISTED_QUERY_NOT_FOUND",
-                            ),
-                            StatusCode::NOT_FOUND,
-                        );
-                    }
-                }
-            }
+
+            // Get the original query string from the map using the hash from the extensions
+            let query = get_persisted_query(persisted_query_ext);
+            payload.graphql_params.query = Some(query);
 
             payload.proceed()
         })
     }
 }
 ```
+
+[See `apq` example for a full implementation](https://github.com/graphql-hive/router/blob/main/plugin_examples/apq/src/plugin.rs#L29)
 
 ## Context Data Sharing
 
@@ -584,7 +579,6 @@ it later in the `on_subgraph_execute` hook.
 ```rust filename="src/context_data.rs" {1,2,12-55}
 pub struct ContextData {
     incoming_data: String,
-    response_count: u64,
 }
 
 #[async_trait::async_trait]
@@ -595,19 +589,9 @@ impl RouterPlugin for ContextDataPlugin {
     ) -> OnGraphQLParamsStartHookResult<'exec> {
         let context_data = ContextData {
             incoming_data: "world".to_string(),
-            response_count: 0,
         };
 
         payload.context.insert(context_data);
-
-        payload.on_end(|payload| {
-            let context_data = payload.context.get_mut::<ContextData>();
-            if let Some(mut context_data) = context_data {
-                context_data.response_count += 1;
-                tracing::info!("subrequest count {}", context_data.response_count);
-            }
-            payload.proceed()
-        })
     }
     async fn on_subgraph_execute<'exec>(
         &'exec self,
@@ -618,22 +602,17 @@ impl RouterPlugin for ContextDataPlugin {
         if let Some(ref context_data_entry) = context_data_entry {
             tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
             let new_header_value = format!("Hello {}", context_data_entry.incoming_data);
+            // Add a new header to the subgraph execution request
             payload.execution_request.headers.insert(
                 "x-hello",
                 http::HeaderValue::from_str(&new_header_value).unwrap(),
             );
         }
-        payload.on_end(|payload: OnSubgraphExecuteEndHookPayload<'exec>| {
-            let context_data = payload.context.get_mut::<ContextData>();
-            if let Some(mut context_data) = context_data {
-                context_data.response_count += 1;
-                tracing::info!("subrequest count {}", context_data.response_count);
-            }
-            payload.proceed()
-        })
     }
 }
 ```
+
+[See `context_data` example for a full implementation](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs)
 
 In the example above, we define a `ContextData` struct to hold our custom data. In the
 `on_graphql_params` hook, we create an instance of `ContextData` and insert it into the request
@@ -675,26 +654,7 @@ pub struct ResponseCachePlugin {
         // Create a new map
         let ttl_per_type = HashMap::new();
         // Visit the schema and update ttl_per_type based on some directive
-        payload.new_ast.definitions.iter().for_each(|def| {
-            if let graphql_parser::schema::Definition::TypeDefinition(type_def) = def {
-                if let graphql_parser::schema::TypeDefinition::Object(obj_type) = type_def {
-                    for directive in &obj_type.directives {
-                        if directive.name == "cacheControl" {
-                            for arg in &directive.arguments {
-                                if arg.0 == "maxAge" {
-                                    if let graphql_parser::query::Value::Int(max_age) = &arg.1 {
-                                        if let Some(max_age) = max_age.as_i64() {
-                                            ttl_per_type
-                                                .insert(obj_type.name.clone(), max_age as u64);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        /** .. */
         self.ttl_per_type.store(ttl_per_type.into())
 
         payload.proceed()
@@ -721,45 +681,18 @@ How do we use this `ttl_per_type` map during request processing?
             if let Ok(serialized) = sonic_rs::to_vec(&payload.data) {
                 // Here we load the ttl_per_type map once
                 let ttl_per_type = self.ttl_per_type.load();
-                trace!("Caching response for key: {}", key);
-                // Decide on the ttl somehow
-                // Get the type names
-                let mut max_ttl = 0;
-
-                // Imagine this code is traversing the response data to find type names
-                if let Some(obj) = payload.data.as_object() {
-                    if let Some(typename) = obj
-                        .iter()
-                        .position(|(k, _)| k == &TYPENAME_FIELD_NAME)
-                        .and_then(|idx| obj[idx].1.as_str())
-                    {
-                        if let Some(ttl) = ttl_per_type.get(typename) {
-                            max_ttl = max_ttl.max(*ttl);
-                        }
-                    }
-                }
-
-                // If no ttl found, default
-                if max_ttl == 0 {
-                    max_ttl = self.default_ttl_seconds;
-                }
-                trace!("Using TTL of {} seconds for key: {}", max_ttl, key);
-
-                // Insert the ttl into extensions for client awareness
-                payload.add_extension("response_cache_ttl", max_ttl);
-
-                // Set the cache with the decided ttl
-                let result = conn.set_ex::<&str, Vec<u8>, ()>(&key, serialized, max_ttl);
-                if let Err(err) = result {
-                    trace!("Failed to set cache for key {}: {}", key, err);
-                } else {
-                    trace!("Cached response for key: {} with TTL: {}", key, max_ttl);
-                }
+                /**
+                 * ...
+                */
             }
-            payload.proceed()
+            /**
+             * ...
+            */
         })
     }
 ```
+
+[See the full example here](https://github.com/graphql-hive/router/tree/main/plugin_examples/response_cache)
 
 ## Configuration of Plugins
 
@@ -769,77 +702,6 @@ under `plugins` section, where you can specify various options and settings spec
 The configuration `struct` should be `serde` compliant, so that it can be deserialized from the YAML
 file.
 
-Let's say we have a custom auth logic that checks the expected header values from a file
-dynamically.
-
-```rust
-pub struct AllowClientIdFromFilePlugin {
-    header_key: String,
-    allowed_ids_path: PathBuf,
-}
-
-#[async_trait::async_trait]
-impl RouterPlugin for AllowClientIdFromFilePlugin {
-    // Whenever it is a GraphQL request,
-    // We don't use on_http_request here because we want to run this only when it is a GraphQL request
-    async fn on_graphql_params<'exec>(
-        &'exec self,
-        payload: OnGraphQLParamsStartHookPayload<'exec>,
-    ) -> OnGraphQLParamsStartHookResult<'exec> {
-        let header = payload.router_http_request.headers.get(&self.header_key);
-        match header {
-            Some(client_id) => {
-                let client_id_str = client_id.to_str();
-                match client_id_str {
-                    Ok(client_id) => {
-                        let allowed_clients: Vec<String> = serde_json::from_str(
-                            std::fs::read_to_string(self.allowed_ids_path.clone())
-                                .unwrap()
-                                .as_str(),
-                        )
-                        .unwrap();
-
-                        if !allowed_clients.contains(&client_id.to_string()) {
-                            // Prepare an HTTP 403 response with a GraphQL error message
-                            return payload.end_with_graphql_error(
-                                GraphQLError::from_message_and_code(
-                                    "client-id is not allowed",
-                                    "UNAUTHORIZED_CLIENT_ID",
-                                ),
-                                http::StatusCode::FORBIDDEN,
-                            );
-                        }
-                    }
-                    Err(_not_a_string_error) => {
-                        let message = format!("'{}' value is not a string", &self.header_key);
-                        tracing::error!(message);
-                        return payload.end_with_graphql_error(
-                            GraphQLError::from_message_and_code(
-                                &message,
-                                "BAD_CLIENT_ID",
-                            ),
-                            http::StatusCode::BAD_REQUEST,
-                        );
-                    }
-                }
-            }
-            None => {
-                let message = format!("Missing '{}' header", &self.header_key);
-                tracing::error!(message);
-                return payload.end_with_graphql_error(
-                    GraphQLError::from_message_and_code(
-                        &message,
-                        "MISSING_CLIENT_ID",
-                    ),
-                    http::StatusCode::UNAUTHORIZED,
-                );
-            }
-        }
-        payload.proceed()
-    }
-}
-```
-
 So we can have a configuration struct like below;
 
 ```rust filename="src/dynamic_auth.rs"
@@ -847,7 +709,6 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct AllowClientIdConfig {
-    pub enabled: bool,
     pub header: String,
     pub path: String,
 }
@@ -861,22 +722,21 @@ impl RouterPlugin for AllowClientIdFromFilePlugin {
     fn plugin_name() -> &'static str {
         "allow_client_id_from_file"
     }
-    fn from_config(config: AllowClientIdConfig) -> Option<Self> {
-        if config.enabled {
-            Some(AllowClientIdFromFilePlugin {
-                header_key: config.header,
-                allowed_ids_path: PathBuf::from(config.path),
-            })
-        } else {
-            None
-        }
+    fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+        // Payload config method will deserialize the config section
+        // for this plugin from the router.config.yaml file into the AllowClientIdConfig struct
+        let config = payload.config()?;
+        payload.initialize_plugin(Self {
+            header_key: config.header,
+            allowed_ids_path: PathBuf::from(config.path),
+        })
     }
 }
 ```
 
 `plugin_name` method should return the name of the plugin as it appears in the `router.config.yaml`
-file. The `from_config` method is responsible for creating an instance of the plugin from the
-provided configuration. If `from_config` returns `None`, the plugin will not be registered.
+file. The `on_plugin_init` hook is responsible for creating an instance of the plugin from the
+provided configuration.
 
 With this setup, you can now configure the `allow_client_id_from_file` plugin in your
 `router.config.yaml` file like this:
@@ -885,8 +745,11 @@ With this setup, you can now configure the `allow_client_id_from_file` plugin in
 plugins:
   allow_client_id_from_file:
     enabled: true
-    header: 'x-client-id'
+    config:
+      header: 'x-client-id'
 ```
+
+[See the full `async_auth` example here](https://github.com/graphql-hive/router/tree/main/plugin_examples/async_auth)
 
 ## Registration of Plugins
 
@@ -894,15 +757,17 @@ Finally, to use your custom plugin, you need to register it with the `PluginRegi
 `main.rs` file.
 
 ```rust filename="src/main.rs" {9-14}
-    let mut plugin_registry = PluginRegistry::new();
-    // Register your custom plugin
-    plugin_registry.register_plugin::<AllowClientIdFromFilePlugin>();
+    PluginRegistry::new()
+        .register_plugin::<AllowClientIdFromFilePlugin>()
 ```
 
 Then pass the `plugin_registry` to the `router_entrypoint` function as shown earlier.
 
 ```rust filename="src/main.rs" {15}
-    match router_entrypoint(Some(plugin_registry)).await {
+    router_entrypoint(
+        PluginRegistry::new()
+            .register_plugin::<AllowClientIdFromFilePlugin>()
+    ).await
 ```
 
 ## Cleanup State on Shutdown
@@ -914,59 +779,121 @@ For example, if your plugin opens a database connection or a file handle, you sh
 gracefully in the `on_shutdown` method.
 
 ```rust filename="usage_reporting.rs"
-struct UsageReportingPlugin {
-    endpoint: String,
-    reports: Mutex<Vec<UsageReport>>,
-}
-
 #[async_trait::async_trait]
 impl RouterPlugin for UsageReportingPlugin {
-    type Config = UsageReportingPluginConfig;
-    fn plugin_name() -> &'static str {
-        "usage_reporting"
-    }
-    fn from_config(config: UsageReportingPluginConfig) -> Option<Self> {
-        if config.enabled {
-            Some(UsageReportingPlugin {
-                endpoint: config.endpoint,
-                reports: Default::default(),
-            })
-        } else {
-            None
-        }
-    }
-    async fn on_execute<'exec>(
-        &'exec self,
-        payload: OnExecuteStartHookPayload<'exec>,
-    ) -> OnExecuteStartHookResult<'exec> {
-        self.reports.lock().await.push(UsageReport {
-            query: payload.operation_for_plan.to_string(),
-            operation_name: payload.operation_for_plan.name.clone(),
-        });
-        tracing::trace!(
-            "Pushed usage report for operation: {:?}",
-            payload.operation_for_plan.name
-        );
-        payload.proceed()
-    }
-    // This method is called when the router is shutting down
+    /** .. */
     async fn on_shutdown<'exec>(&'exec self) {
         println!("Disposing UsageReportingPlugin and sending usage report");
         // Here you would gather and send the usage report
         let reports = self.reports.lock().await;
-        match reqwest::Client::new()
-            .post(&self.endpoint)
-            .json(reports.as_slice())
-            .send()
-            .await
-        {
-            Ok(response) => {
-                tracing::trace!("Usage report sent successfully: {:?}", response);
-            }
-            Err(e) => {
-                tracing::trace!("Failed to send usage report: {:?}", e);
-            }
-        }
+        // Send the requests here using your preferred HTTP client
+        /** .. */
     }
 }
+```
+
+[See the full example here](https://github.com/graphql-hive/router/tree/main/plugin_examples/usage_reporting)
+
+## Understanding the hotpath
+
+When creating custom plugins, it's important to understand the hotpath of the request processing.
+The hotpath refers to the critical path that affects the performance of the router. When
+implementing the request lifecycle hooks like `on_graphql_params`, `on_graphql_validation`,
+`on_query_plan`, `on_execute`, etc., you should be mindful of the performance implications of your
+code. Avoid doing heavy computations or blocking operations in these hooks, as they can
+significantly impact the latency of your GraphQL requests.
+
+```rust
+#[async_trait::async_trait]
+impl RouterPlugin for MyPlugin {
+    async fn on_subgraph_execute<'exec>(
+        &'exec self,
+        payload: OnSubgraphExecuteStartHookPayload<'exec>,
+    ) -> OnSubgraphExecuteStartHookResult<'exec> {
+        // Any heavy computations here would block the subgraph execution and increase latency
+        // if the operation is complex or if there are many subgraph requests.
+        payload.proceed()
+    }
+}
+```
+
+## Build and distribute the custom build
+
+Finally, after you have implemented your custom router with the necessary plugins, you can build and
+distribute it. You can build a binary using Cargo and share it with others or deploy it in
+production.
+
+### Executable single binary with Cargo
+
+After you have implemented your custom router with the necessary plugins, you can build a
+distributable binary using Cargo. This will allow you to deploy your custom router in production or
+share it with others when necessary.
+
+Make sure the `Cargo.toml` file has the correct configuration for building a binary, and the name of
+the binary is named as desired;
+
+```toml
+[package]
+name = "my-plugin-example"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+
+[lib]
+
+[[bin]]
+name = "hive_router_with_my_plugin" # Name of the binary
+path = "src/main.rs"
+
+[dependencies]
+hive-router = "0.0.39"
+serde = "1"
+```
+
+```bash
+cargo build --release
+```
+
+This command will create an optimized binary in the `target/release` directory. You can then run the
+binary directly:
+
+```bash
+./target/release/hive_router_with_my_plugin
+```
+
+### Containerize with Docker
+
+To containerize your custom router, you can create a `Dockerfile` in the root of your project. Here
+is an example `Dockerfile` that builds and runs your custom router:
+
+```dockerfile
+# Use the official Rust image as the base image
+FROM rust:latest
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the entire project into the container
+COPY . .
+
+# Build the project in release mode
+RUN cargo build --release
+
+# Expose the port that the router will run on
+EXPOSE 4000
+
+# Run the custom router binary
+CMD ["./target/release/hive_router_with_my_plugin"]
+```
+
+You can then build the Docker image using the following command:
+
+```bash
+docker build -t my-custom-router .
+```
+
+After the image is built, you can run a container from it:
+
+```bash
+docker run -p 4000:4000 my-custom-router
 ```
