@@ -2,7 +2,7 @@
 title: 'Extending the Router'
 ---
 
-import { Callout, Tabs } from '@theguild/components'
+import { Tabs } from '@theguild/components'
 
 # Extending the Router
 
@@ -212,6 +212,15 @@ You can check the following example implementations;
   plugin that propagates status codes from subgraphs to clients using the end phase of
   `on_http_request` hook by manipulating the final response
 
+```rust
+fn on_http_request<'exec>(
+        &'exec self,
+        payload: OnHttpRequestHookPayload<'exec>,
+    ) -> OnHttpRequestHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/plugin_trait.rs#L162)
+
 ### `on_graphql_params`
 
 This hook is called after the router has determined that the incoming request is a GraphQL request
@@ -253,6 +262,15 @@ You can check the following example implementations;
 - [`async_auth`](https://github.com/graphql-hive/router/tree/main/plugin_examples/async_auth) plugin
   that shows how to implement a custom auth logic
 
+```rust
+async fn on_graphql_params<'exec>(
+        &'exec self,
+        payload: OnGraphQLParamsStartHookPayload<'exec>,
+    ) -> OnGraphQLParamsStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L176C5-L179C41)
+
 ### `on_graphql_parse`
 
 This hook is called after the deserialization of the request, and the router has parsed the GraphQL
@@ -272,6 +290,15 @@ On the end of this hook, you can do the following things for example;
 - Prevent certain operations from being executed by checked the HTTP headers or other request
   properties along with the parsed AST.
 - Logging or metrics based on the parsed AST like counting certain fields or directives usage.
+
+```rust
+async fn on_graphql_parse<'exec>(
+        &'exec self,
+        payload: OnGraphQLParseStartHookPayload<'exec>,
+    ) -> OnGraphQLParseHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L169C5-L172C46)
 
 ### `on_graphql_validation`
 
@@ -302,6 +329,15 @@ You can check the following example implementations;
   more complicated one that combines this hook and `on_execute` hook to implement custom validation
   and execution logic for `@oneOf` directive.
 
+```rust
+async fn on_graphql_validation<'exec>(
+        &'exec self,
+        payload: OnGraphQLValidationStartHookPayload<'exec>,
+    ) -> OnGraphQLValidationStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L183C5-L188C6)
+
 ### `on_query_plan`
 
 This hook is invoked before the query planner starts the planning process. At this point, we have
@@ -323,6 +359,15 @@ You can check the following example implementations;
 - [`root_field_limit`](https://github.com/graphql-hive/router/tree/main/plugin_examples/root_field_limit)
   plugin that implements another variant of root field limiting using this hook besides
   `on_graphql_validation`.
+
+```rust
+async fn on_query_plan<'exec>(
+        &'exec self,
+        payload: OnQueryPlanStartHookPayload<'exec>,
+    ) -> OnQueryPlanStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L190)
 
 ### `on_execute`
 
@@ -353,6 +398,15 @@ You can check the following example implementations;
   not enough by itself because the coerced variables need to be checked as well.
 - [`response_cache`](https://github.com/graphql-hive/router/tree/main/plugin_examples/response_cache)
   plugin that implements a simple response caching mechanism using this hook.
+
+```rust
+async fn on_execute<'exec>(
+        &'exec self,
+        payload: OnExecuteStartHookPayload<'exec>,
+    ) -> OnExecuteStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L197)
 
 ### `on_subgraph_execute`
 
@@ -388,6 +442,15 @@ You can check the following example implementations;
 - [`context_data`](https://github.com/graphql-hive/router/tree/main/plugin_examples/context_data)
   plugin that shows how to pass data between the main request lifecycle and subgraph execution using
   this hook.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+        &'exec self,
+        payload: OnSubgraphExecuteStartHookPayload<'exec>,
+    ) -> OnSubgraphExecuteStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L204)
 
 ### `on_subgraph_http_request`
 
@@ -426,6 +489,15 @@ You can check the following example implementations;
   request, and replaces the default JSON-based HTTP transport with `multipart/form-data` when
   needed.
 
+```rust
+async fn on_subgraph_http_request<'exec>(
+        &'exec self,
+        payload: OnSubgraphHttpRequestStartHookPayload<'exec>,
+    ) -> OnSubgraphHttpRequestStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L211)
+
 ### `on_supergraph_load`
 
 This hook is called whenever the supergraph is loaded or reloaded. This can happen at startup or
@@ -450,6 +522,15 @@ You can check the following example implementations;
   plugin that precalculates the TTL information based on `@cacheControl` directives in the
   supergraph schema for response caching.
 
+```rust
+fn on_supergraph_reload<'exec>(
+        &'exec self,
+        start_payload: OnSupergraphLoadStartHookPayload,
+    ) -> OnSupergraphLoadStartHookResult<'exec>
+```
+
+[See the definition of the hook](https://github.com/graphql-hive/router/blob/plugin-system/lib/executor/src/plugins/plugin_trait.rs#L218C5-L221C48)
+
 ### `on_shutdown`
 
 This hook is called when the router is shutting down. If your plugin holds resources that need to be
@@ -465,6 +546,22 @@ You can check the following example implementations;
 
 - [`usage_reporting`](https://github.com/graphql-hive/router/tree/main/plugin_examples/usage_reporting)
   plugin that flushes any pending usage reports to the server before shutdown.
+
+```rust
+async fn on_shutdown<'exec>(&'exec self)
+```
+
+### `on_graphql_error`
+
+This hook is called whenever a GraphQL error is about to be sent to the client. This allows you to
+inspect or modify the error before it is sent. You can use this hook to implement custom error
+handling logic, such as masking certain error details, adding additional information to the error
+response, or even transforming the error into a different format.
+
+You can check the following example implementation;
+
+- [`error_mapping`](https://github.com/graphql-hive/router/tree/main/plugin_examples/error_mapping)
+  plugin that maps certain error messages to custom error codes and formats using this hook.
 
 ## Short Circuit Responses
 
