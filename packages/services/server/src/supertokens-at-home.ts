@@ -1,7 +1,4 @@
-import * as c from 'node:crypto';
-import bcrypt from 'bcryptjs';
 import { type FastifyInstance } from 'fastify';
-import jwt from 'jsonwebtoken';
 import * as oidClient from 'openid-client';
 import z from 'zod';
 import cookie from '@fastify/cookie';
@@ -13,7 +10,29 @@ import {
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
+import {
+  comparePassword,
+  createAccessToken,
+  createFrontToken,
+  createRefreshToken,
+  getPasswordResetHash,
+  hashPassword,
+  parseRefreshToken,
+  sha256,
+} from './supertokens-at-home/crypto';
+import { SuperTokensSessionPayload } from './supertokens-at-home/shared';
 
+// TODO: not hardcode this localhost value here :)
+const UNSAFE_REFRESH_TOKEN_MASTER_KEY =
+  '1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0';
+
+// TODO: not hardcode this localhost value here :)
+const UNSAFE_ACCESS_TOKEN_SIGNING_KEY =
+  '-----BEGIN RSA PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCmrnawc+IN/NFQaZQj8ah/tezi6qiaF5NVsk4eoCyZbCEEef0AfJ96xYKwYWJe/BZebRvomaHv09a9swCW041P3QqjkUJRBfdKZpgqYwvXwcbXxbTw8UcGAIeLT8fDczaMbewZrxBf+VakgXQIYy7ekMPPx6VgQTJyP/tX4YUxC6HxeiPpdFCEc6DbuQqzLqr8I0N6B2jr3Gkw3WFq4Ui4zWfMD8pcgsrOlX6irsBT7MKt0KmyGGm92RFzESU075d9KJKEahNnWfkJfy2yBscF/H+cXUIa3To/Ps6XplG/f5L5ocw15pjJiCMg3prA6eaIRAKkbLmY3+2lj3gyPiArAgMBAAECggEAMfQNXBqOv/Rp4riRjigpgITMRsFe4Dd6j29NnD4Sv7Q5PPc2TMQMo6W34hZ9fcv9BDWc7JvGfXK2Y8nWvl0Od8XeH2E0R8YK88BFkEZ40SOg7R+yd5dH2tOjy6uQSdIoofN7k8L0nF7Eia7GUJExBcDK/mVt+afwb28fa5oJ6cV/m4IvN8tkIUH83erdx2p8zvAKiJT/Ljrq3UhstAAGHLT7k52A9CuKiJK7QiFViFNSpNZhz64VDIMkTalL9tyOHvOlI9Dfvjp6uipf2tGwmien24RckrewZHoK/NkLW0esPSDEoF0/ZBrkRvs+RyCJsEvVDVE9O4HsemWTafpeyQKBgQDdJpnAt5QIjNgmoMlKMiL1uptQ5p7bqNX11Jhz0l0A67cBi2+JzA00JRfOPD0JIV8niqCUhIfXC7u1OJcKXGMAG1pjql4HQWd6z6wLPGX05jq7GljHCf5xpKWiY5oYc6XNIcmE9NrJEqmGmJ4pKJ9NeUqCIoKnsxsjXLbyzVQuDQKBgQDA8odNzm6c6gLp0K/qZDy5z/SAUzWQ6IrL1RPG+HnuF4XwuwAzZ3y1fGPYTIZkUadwkQL6DbK2Zqvw73jEamfL9FYS6flw0joq2i4jL9ZYhOxSxXPNdy70PUuqrFnMnWq0JUeNbVz9dXzQC0nTJjUiI4kRBqyo5jW3ckEETHOxFwKBgBIF3E/tZh4QRGlZfy4RyfGWxKOiN94U82L2cXo28adqjl6M24kyXP0b7MW8+QhudM/HJ3ETH/LxnNmXBBAvGU5f7EzlDIaw2NsUY6QCxxhfTvgCnKuT7+2ZCnqifWNywVdnYoH4ZoAuiixS8cjO67Snpt/WKim6mgKWwr4k57BdAoGBAJqSMJ6+X5LJTagujJ9Dyfo5hHBBOMpr4LVGb9+YM2Xv5ldiF9kWcKubiQlA1PENEQx2v2G/E4pYWipcTe1cKOcVSNdCJZiicgLeYtPBgP/NDN2KXSke77iuWi3SgOYQveivbND56eMK+gBY6r2DAFHnEelX5X4xXpslprxg2tXlAoGACv2y3ImZdzaCtQfmD05mEIA8zQLtDMpteO+XFQ8uNZdeG0iBJCi/N523hi5Nbg4Y1jNccwBQQSpq7A17u/j/d6EmCuduosALVQY3ILpd3P8hf8wDOBO6JfAd6DTO3QcrArmFcoJTB2t2zGud9zqdzL1fWNV9/X3Zow2XmHox+CI=\n-----END RSA PRIVATE KEY-----';
+
+/**
+ * Registers the routes of the Supertokens at Home implementation to a fastify instance.
+ */
 export function registerSupertokensAtHome(
   server: FastifyInstance,
   storage: Storage,
@@ -21,6 +40,11 @@ export function registerSupertokensAtHome(
   crypto: CryptoProvider,
 ) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
+
+  const secrets = {
+    refreshTokenKey: UNSAFE_REFRESH_TOKEN_MASTER_KEY,
+    accessTokenSigningKey: UNSAFE_ACCESS_TOKEN_SIGNING_KEY,
+  };
 
   server.register(cookie, {
     hook: 'onRequest',
@@ -117,11 +141,15 @@ export function registerSupertokensAtHome(
         });
       }
 
-      const { session, accessToken, refreshToken } = await createNewSession(supertokensStore, {
-        hiveUser: ensureUserResult.user,
-        oidcIntegrationId: null,
-        superTokensUserId: user.userId,
-      });
+      const { session, accessToken, refreshToken } = await createNewSession(
+        supertokensStore,
+        {
+          hiveUser: ensureUserResult.user,
+          oidcIntegrationId: null,
+          superTokensUserId: user.userId,
+        },
+        secrets,
+      );
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
         accessToken,
@@ -191,7 +219,7 @@ export function registerSupertokensAtHome(
         });
       }
 
-      const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+      const passwordMatch = await comparePassword(password, user.passwordHash);
 
       if (!passwordMatch) {
         return rep.send({
@@ -215,11 +243,15 @@ export function registerSupertokensAtHome(
         });
       }
 
-      const { session, refreshToken, accessToken } = await createNewSession(supertokensStore, {
-        hiveUser: result.user,
-        oidcIntegrationId: null,
-        superTokensUserId: user.userId,
-      });
+      const { session, refreshToken, accessToken } = await createNewSession(
+        supertokensStore,
+        {
+          hiveUser: result.user,
+          oidcIntegrationId: null,
+          superTokensUserId: user.userId,
+        },
+        secrets,
+      );
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
         accessToken,
@@ -288,7 +320,7 @@ export function registerSupertokensAtHome(
         });
       }
 
-      const token = c.randomBytes(32).toString('hex');
+      const token = getPasswordResetHash();
 
       await supertokensStore.createEmailPasswordResetToken({
         user,
@@ -355,30 +387,17 @@ export function registerSupertokensAtHome(
         return rep.status(404).send();
       }
 
-      const [payload, nonce, version] = refreshToken.split('.');
+      const parseResult = parseRefreshToken(refreshToken, secrets.refreshTokenKey);
 
-      if (version !== 'V2') {
-        req.log.debug('Wrong refresh token version provided.');
+      if (parseResult.type === 'error') {
+        req.log.debug('Wrong refresh token version provided. err=%s', parseResult.code);
         return rep.status(404).send();
       }
 
-      let refreshTokenPayload: RefreshTokenPayloadType;
-      try {
-        refreshTokenPayload = RefreshTokenPayloadModel.parse(
-          JSON.parse(decryptRefreshToken(payload).toString('utf8')),
-        );
-      } catch (err) {
-        req.log.debug('Failed to parse refresh token payload..');
-        return rep.status(404).send();
-      }
-
-      if (refreshTokenPayload.nonce !== nonce) {
-        req.log.debug('Wrong refresh token nonce provided.');
-        return rep.status(404).send();
-      }
+      const { payload } = parseResult;
 
       // 1. lookup refresh token based on hash and check if it is invalid or rejected
-      const session = await supertokensStore.getSessionInfo(refreshTokenPayload.sessionHandle);
+      const session = await supertokensStore.getSessionInfo(payload.sessionHandle);
 
       if (!session) {
         req.log.debug('The referenced session does not exist.');
@@ -390,17 +409,14 @@ export function registerSupertokensAtHome(
         return rep.status(404).send();
       }
 
-      if (
-        !refreshTokenPayload.parentRefreshTokenHash1 &&
-        sha256(refreshToken) !== session.refreshTokenHash2
-      ) {
+      if (!payload.parentRefreshTokenHash1 && sha256(refreshToken) !== session.refreshTokenHash2) {
         req.log.debug('The refreshTokenHash2 does not match (first refresh).');
         return rep.status(404).send();
       }
 
       if (
-        refreshTokenPayload.parentRefreshTokenHash1 &&
-        session.refreshTokenHash2 !== sha256(refreshTokenPayload.parentRefreshTokenHash1)
+        payload.parentRefreshTokenHash1 &&
+        session.refreshTokenHash2 !== sha256(payload.parentRefreshTokenHash1)
       ) {
         req.log.debug('The refreshTokenHash2 does not match.');
         return rep.status(404).send();
@@ -409,11 +425,14 @@ export function registerSupertokensAtHome(
       // 2. create a new refresh token
       const parentTokenHash = sha256(refreshToken);
 
-      const newRefreshToken = createRefreshToken({
-        sessionHandle: session.sessionHandle,
-        userId: session.userId,
-        parentRefreshTokenHash1: sha256(refreshToken),
-      });
+      const newRefreshToken = createRefreshToken(
+        {
+          sessionHandle: session.sessionHandle,
+          userId: session.userId,
+          parentRefreshTokenHash1: sha256(refreshToken),
+        },
+        secrets.refreshTokenKey,
+      );
 
       // 2,5. store new parentTokenHash in DB
       const updatedSession = await supertokensStore.updateSessionRefreshHash(
@@ -431,11 +450,14 @@ export function registerSupertokensAtHome(
 
       // 3. create a new access token
       const accessToken = createAccessToken(
-        session.userId,
-        session.sessionHandle,
-        session.sessionData,
-        sha256(newRefreshToken),
-        parentTokenHash,
+        {
+          sub: session.userId,
+          sessionHandle: session.sessionHandle,
+          sessionData: JSON.parse(session.sessionData),
+          refreshTokenHash1: sha256(newRefreshToken),
+          parentRefreshTokenHash1: parentTokenHash,
+        },
+        secrets.accessTokenSigningKey,
       );
 
       const frontToken = createFrontToken({
@@ -934,11 +956,15 @@ export function registerSupertokensAtHome(
         });
       }
 
-      const { session, refreshToken, accessToken } = await createNewSession(supertokensStore, {
-        hiveUser: hiveUser,
-        oidcIntegrationId: null,
-        superTokensUserId: supertokensUser.userId,
-      });
+      const { session, refreshToken, accessToken } = await createNewSession(
+        supertokensStore,
+        {
+          hiveUser: hiveUser,
+          oidcIntegrationId: null,
+          superTokensUserId: supertokensUser.userId,
+        },
+        secrets,
+      );
       const frontToken = createFrontToken({
         superTokensUserId: supertokensUser.userId,
         accessToken,
@@ -1034,18 +1060,6 @@ const ThirdPartySigninupModel = z.object({
   }),
 });
 
-async function hashPassword(plaintextPassword: string): Promise<string> {
-  // The "cost factor" or salt rounds. 10 is a good, standard balance of security and performance.
-  // This value is included in the final hash string itself.
-  const saltRounds = 10;
-
-  // bcrypt.hash handles the generation of a random salt and the hashing process.
-  // The operation is asynchronous to prevent blocking the event loop.
-  const hash = await bcrypt.hash(plaintextPassword, saltRounds);
-
-  return hash;
-}
-
 async function createNewSession(
   supertokensStore: SuperTokensStore,
   args: {
@@ -1053,16 +1067,23 @@ async function createNewSession(
     hiveUser: User;
     oidcIntegrationId: string | null;
   },
+  secrets: {
+    refreshTokenKey: string;
+    accessTokenSigningKey: string;
+  },
 ) {
   const sessionHandle = crypto.randomUUID();
   // 1 week for now
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1_000;
 
-  const refreshToken = createRefreshToken({
-    sessionHandle,
-    userId: args.superTokensUserId,
-    parentRefreshTokenHash1: null,
-  });
+  const refreshToken = createRefreshToken(
+    {
+      sessionHandle,
+      userId: args.superTokensUserId,
+      parentRefreshTokenHash1: null,
+    },
+    secrets.refreshTokenKey,
+  );
 
   const payload: SuperTokensSessionPayload = {
     version: '2',
@@ -1084,11 +1105,14 @@ async function createNewSession(
   );
 
   const accessToken = createAccessToken(
-    args.superTokensUserId,
-    sessionHandle,
-    stringifiedPayload,
-    sha256(refreshToken),
-    null,
+    {
+      sub: args.superTokensUserId,
+      sessionHandle,
+      sessionData: payload,
+      refreshTokenHash1: sha256(refreshToken),
+      parentRefreshTokenHash1: null,
+    },
+    secrets.accessTokenSigningKey,
   );
 
   return {
@@ -1097,193 +1121,3 @@ async function createNewSession(
     accessToken,
   };
 }
-
-// TODO: not hardcode this localhost value here :)
-const UNSAFE_REFRESH_TOKEN_MASTER_KEY =
-  '1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0';
-
-function decryptRefreshToken(
-  encodedData: string,
-  masterKey: string = UNSAFE_REFRESH_TOKEN_MASTER_KEY,
-) {
-  // 1. Decode the incoming string (URL -> Base64 -> Buffer).
-  const urlDecodedData = decodeURIComponent(encodedData);
-  const buffer = Buffer.from(urlDecodedData, 'base64');
-
-  // 2. Deconstruct the buffer based on the Java encryption logic.
-  // The first 12 bytes are the IV.
-  const iv = buffer.slice(0, 12);
-
-  // The rest of the buffer is the encrypted data + 16-byte auth tag.
-  const encryptedPayload = buffer.slice(12);
-
-  // 3. Re-derive the secret key using PBKDF2. This is the critical step.
-  // The parameters MUST match the Java side exactly.
-  // The IV is used as the salt.
-  const iterations = 100;
-  const keylen = 32; // 32 bytes = 256 bits
-  const digest = 'sha512'; // NOTE: This is a guess. See explanation below.
-
-  const secretKey = c.pbkdf2Sync(masterKey, iv, iterations, keylen, digest);
-
-  // 4. Separate the encrypted data from the authentication tag.
-  const authTagLength = 16; // 128 bits
-  const encryptedData = encryptedPayload.slice(0, -authTagLength);
-  const authTag = encryptedPayload.slice(-authTagLength);
-
-  // 5. Perform the decryption with the derived key and IV.
-  const decipher = c.createDecipheriv('aes-256-gcm', secretKey, iv);
-  decipher.setAuthTag(authTag);
-
-  let decrypted = decipher.update(encryptedData);
-  decrypted += decipher.final('utf8');
-
-  return decrypted;
-}
-
-function encryptRefreshToken(
-  plaintext: string,
-  masterKey: string = UNSAFE_REFRESH_TOKEN_MASTER_KEY,
-) {
-  // 1. Generate a random 12-byte IV (Initialization Vector), same as the Java side.
-  const iv = c.randomBytes(12);
-
-  // 2. Derive the secret key using PBKDF2. The IV is used as the salt.
-  // The parameters (iterations, key length, and digest) match the Java implementation.
-  const iterations = 100;
-  const keylen = 32; // 32 bytes = 256 bits
-  const digest = 'sha512'; // From "PBKDF2WithHmacSHA512"
-
-  const secretKey = c.pbkdf2Sync(masterKey, iv, iterations, keylen, digest);
-
-  // 3. Create the AES-256-GCM cipher.
-  const cipher = c.createCipheriv('aes-256-gcm', secretKey, iv);
-
-  // 4. Encrypt the plaintext.
-  // The result is the ciphertext.
-  let encrypted = cipher.update(plaintext, 'utf8');
-  encrypted = Buffer.concat([encrypted, cipher.final()]);
-
-  // 5. Get the 16-byte authentication tag.
-  // This is a crucial step in GCM.
-  const authTag = cipher.getAuthTag();
-
-  // 6. Concatenate everything in the correct order: IV + Ciphertext + Auth Tag.
-  // This matches the Java `ByteBuffer` logic.
-  const finalBuffer = Buffer.concat([iv, encrypted, authTag]);
-
-  // 7. Base64-encode the final buffer and then URL-encode it for safe transport.
-  const base64Data = finalBuffer.toString('base64');
-  return encodeURIComponent(base64Data);
-}
-
-function createRefreshToken(args: {
-  sessionHandle: string;
-  userId: string;
-  parentRefreshTokenHash1: string | null;
-}) {
-  const newNonce = sha256(crypto.randomUUID());
-
-  const encryptedPayload = encryptRefreshToken(
-    JSON.stringify({
-      sessionHandle: args.sessionHandle,
-      userId: args.userId,
-      nonce: newNonce,
-      parentRefreshTokenHash1: args.parentRefreshTokenHash1 ?? undefined,
-    }),
-  );
-
-  const refreshToken = encryptedPayload + '.' + newNonce + '.' + 'V2';
-
-  return refreshToken;
-}
-
-const SuperTokensSessionPayloadV2Model = z.object({
-  version: z.literal('2'),
-  superTokensUserId: z.string(),
-  email: z.string(),
-  userId: z.string(),
-  oidcIntegrationId: z.string().nullable(),
-});
-
-type SuperTokensSessionPayload = z.TypeOf<typeof SuperTokensSessionPayloadV2Model>;
-
-function sha256(str: string) {
-  return c.createHash('sha256').update(str).digest('hex');
-}
-
-const AccessTokenInfoModel = z.object({
-  iat: z.number(),
-  sub: z.string(),
-  tId: z.string(),
-  rsub: z.string(),
-  sessionHandle: z.string(),
-  refreshTokenHash1: z.string(),
-  parentRefreshTokenHash1: z.string().optional(), // Making this optional as it may not always be present
-  antiCsrfToken: z.string().nullable(),
-});
-
-type AccessTokenInfo = z.TypeOf<typeof AccessTokenInfoModel>;
-
-const UNSAFE_ACCESS_TOKEN_SIGNING_KEY =
-  '-----BEGIN RSA PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCmrnawc+IN/NFQaZQj8ah/tezi6qiaF5NVsk4eoCyZbCEEef0AfJ96xYKwYWJe/BZebRvomaHv09a9swCW041P3QqjkUJRBfdKZpgqYwvXwcbXxbTw8UcGAIeLT8fDczaMbewZrxBf+VakgXQIYy7ekMPPx6VgQTJyP/tX4YUxC6HxeiPpdFCEc6DbuQqzLqr8I0N6B2jr3Gkw3WFq4Ui4zWfMD8pcgsrOlX6irsBT7MKt0KmyGGm92RFzESU075d9KJKEahNnWfkJfy2yBscF/H+cXUIa3To/Ps6XplG/f5L5ocw15pjJiCMg3prA6eaIRAKkbLmY3+2lj3gyPiArAgMBAAECggEAMfQNXBqOv/Rp4riRjigpgITMRsFe4Dd6j29NnD4Sv7Q5PPc2TMQMo6W34hZ9fcv9BDWc7JvGfXK2Y8nWvl0Od8XeH2E0R8YK88BFkEZ40SOg7R+yd5dH2tOjy6uQSdIoofN7k8L0nF7Eia7GUJExBcDK/mVt+afwb28fa5oJ6cV/m4IvN8tkIUH83erdx2p8zvAKiJT/Ljrq3UhstAAGHLT7k52A9CuKiJK7QiFViFNSpNZhz64VDIMkTalL9tyOHvOlI9Dfvjp6uipf2tGwmien24RckrewZHoK/NkLW0esPSDEoF0/ZBrkRvs+RyCJsEvVDVE9O4HsemWTafpeyQKBgQDdJpnAt5QIjNgmoMlKMiL1uptQ5p7bqNX11Jhz0l0A67cBi2+JzA00JRfOPD0JIV8niqCUhIfXC7u1OJcKXGMAG1pjql4HQWd6z6wLPGX05jq7GljHCf5xpKWiY5oYc6XNIcmE9NrJEqmGmJ4pKJ9NeUqCIoKnsxsjXLbyzVQuDQKBgQDA8odNzm6c6gLp0K/qZDy5z/SAUzWQ6IrL1RPG+HnuF4XwuwAzZ3y1fGPYTIZkUadwkQL6DbK2Zqvw73jEamfL9FYS6flw0joq2i4jL9ZYhOxSxXPNdy70PUuqrFnMnWq0JUeNbVz9dXzQC0nTJjUiI4kRBqyo5jW3ckEETHOxFwKBgBIF3E/tZh4QRGlZfy4RyfGWxKOiN94U82L2cXo28adqjl6M24kyXP0b7MW8+QhudM/HJ3ETH/LxnNmXBBAvGU5f7EzlDIaw2NsUY6QCxxhfTvgCnKuT7+2ZCnqifWNywVdnYoH4ZoAuiixS8cjO67Snpt/WKim6mgKWwr4k57BdAoGBAJqSMJ6+X5LJTagujJ9Dyfo5hHBBOMpr4LVGb9+YM2Xv5ldiF9kWcKubiQlA1PENEQx2v2G/E4pYWipcTe1cKOcVSNdCJZiicgLeYtPBgP/NDN2KXSke77iuWi3SgOYQveivbND56eMK+gBY6r2DAFHnEelX5X4xXpslprxg2tXlAoGACv2y3ImZdzaCtQfmD05mEIA8zQLtDMpteO+XFQ8uNZdeG0iBJCi/N523hi5Nbg4Y1jNccwBQQSpq7A17u/j/d6EmCuduosALVQY3ILpd3P8hf8wDOBO6JfAd6DTO3QcrArmFcoJTB2t2zGud9zqdzL1fWNV9/X3Zow2XmHox+CI=\n-----END RSA PRIVATE KEY-----';
-
-function createAccessToken(
-  sub: string,
-  sessionHandle: string,
-  sessionData: string,
-  refreshTokenHash1: string,
-  parentRefreshTokenHash1: string | null,
-) {
-  const now = Math.floor(Date.now() / 1000);
-  // Access tokens expires in 6 hours
-  const expiresIn = Math.floor(now + 60 * 60 * 6 * 1000);
-
-  const data: AccessTokenInfo = {
-    iat: now,
-    sub,
-    tId: 'public',
-    rsub: sub,
-    sessionHandle,
-    antiCsrfToken: null,
-    refreshTokenHash1,
-    parentRefreshTokenHash1: parentRefreshTokenHash1 ?? undefined,
-    ...JSON.parse(sessionData),
-  };
-
-  const token = jwt.sign(data, UNSAFE_ACCESS_TOKEN_SIGNING_KEY, {
-    algorithm: 'RS256',
-    expiresIn,
-    keyid: 'd-1770648231409',
-    header: {
-      kid: 'd-1770648231409',
-      typ: 'JWT',
-      version: '5',
-      alg: 'RS256',
-    },
-  });
-
-  return { token, expiresIn, d: jwt.decode(token) };
-}
-
-function createFrontToken(args: {
-  superTokensUserId: string;
-  accessToken: ReturnType<typeof createAccessToken>;
-}) {
-  return Buffer.from(
-    JSON.stringify({
-      uid: args.superTokensUserId,
-      ate: args.accessToken.expiresIn * 1000,
-      up: args.accessToken.d,
-    }),
-  ).toString('base64');
-}
-
-const RefreshTokenPayloadModel = z.object({
-  sessionHandle: z.string(),
-  userId: z.string(),
-  parentRefreshTokenHash1: z.string().optional(),
-  nonce: z.string(),
-});
-
-type RefreshTokenPayloadType = z.TypeOf<typeof RefreshTokenPayloadModel>;
