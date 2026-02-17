@@ -2,7 +2,7 @@
 title: 'Extending the Router'
 ---
 
-import { Tabs } from '@theguild/components'
+import { Callout, Tabs } from '@theguild/components'
 
 # Extending the Router
 
@@ -804,18 +804,43 @@ code. Avoid doing heavy computations or blocking operations in these hooks, as t
 significantly impact the latency of your GraphQL requests.
 
 ```rust
-#[async_trait::async_trait]
-impl RouterPlugin for MyPlugin {
-    async fn on_subgraph_execute<'exec>(
+// We use thread-safe `DashMap` here to cache the schema with feature flags applied
+// So that we can avoid visiting the schema for each request, and instead cache the result based on some cache key
+// We keep it in `Arc` to avoid cloning the schema for each request, since the schema can be quite large
+pub struct FeatureFlagsPlugin {
+    schema_with_flags_cache: DashMap<String, Arc<SchemaDocument>>,
+}
+
+#[async_trait]
+impl RouterPlugin for FeatureFlagsPlugin {
+    async fn on_graphql_validation<'exec>(
         &'exec self,
-        payload: OnSubgraphExecuteStartHookPayload<'exec>,
-    ) -> OnSubgraphExecuteStartHookResult<'exec> {
-        // Any heavy computations here would block the subgraph execution and increase latency
-        // if the operation is complex or if there are many subgraph requests.
-        payload.proceed()
+        payload: OnGraphQLValidationStartHookPayload<'exec>,
+    ) -> OnGraphQLValidationStartHookResult<'exec> {
+        // Generate a cache key based on the request properties, for example using the headers
+        let cache_key = generate_cache_key_from_header(&payload.router_http_request);
+
+        // Do not repeat the expensive schema transformation for each request, instead cache the result based on the cache key
+        let cached_schema = self
+            .schema_with_flags_cache
+            .entry(cache_key)
+            .or_insert_with(|| {
+                let visitor = FeatureFlagsVisitor { feature_flags };
+
+                visitor
+                    .visit_schema_document(SchemaDocument::clone(&payload.schema.document), &mut ())
+                    .unwrap()
+                    .into()
+            })
+            .value()
+            .clone();
+
+        payload.with_schema(cached_schema).proceed()
     }
 }
 ```
+
+[See the full of `feature_flags` example](https://github.com/graphql-hive/router/tree/main/plugin_examples/feature_flags)
 
 ## Build and distribute the custom build
 
@@ -832,7 +857,7 @@ share it with others when necessary.
 Make sure the `Cargo.toml` file has the correct configuration for building a binary, and the name of
 the binary is named as desired;
 
-```toml
+```toml filename="Cargo.toml"
 [package]
 name = "my-plugin-example"
 version = "0.0.1"
@@ -866,7 +891,7 @@ binary directly:
 To containerize your custom router, you can create a `Dockerfile` in the root of your project. Here
 is an example `Dockerfile` that builds and runs your custom router:
 
-```dockerfile
+```dockerfile name="Dockerfile"
 # Use the official Rust image as the base image
 FROM rust:latest
 
