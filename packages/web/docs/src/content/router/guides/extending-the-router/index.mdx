@@ -675,7 +675,7 @@ it later in the `on_subgraph_execute` hook.
 
 ```rust filename="src/context_data.rs"
 pub struct ContextData {
-    incoming_data: String,
+    incoming_data: &'static str,
 }
 
 #[async_trait::async_trait]
@@ -685,7 +685,7 @@ impl RouterPlugin for ContextDataPlugin {
         payload: OnGraphQLParamsStartHookPayload<'exec>,
     ) -> OnGraphQLParamsStartHookResult<'exec> {
         let context_data = ContextData {
-            incoming_data: "world".to_string(),
+            incoming_data: "world",
         };
 
         payload.context.insert(context_data);
