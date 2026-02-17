@@ -8,13 +8,15 @@ const checkboxVariants = cva(
     variants: {
       size: {
         sm: 'size-3.5',
-        md: 'size-4',
+        md: 'size-4.5',
       },
       variant: {
         default: [
-          'border-neutral-7 dark:border-neutral-7',
-          'data-[checked]:bg-accent data-[checked]:border-accent data-[checked]:text-neutral-1',
-          'data-[indeterminate]:bg-accent data-[indeterminate]:border-accent data-[indeterminate]:text-neutral-1',
+          'border-neutral-6',
+          'data-[checked]:bg-accent_30 data-[checked]:border-accent_30 data-[checked]:text-accent',
+          'hover:bg-neutral-6 hover:border-accent_30',
+          'data-[checked]:hover:bg-accent_10',
+          'data-[indeterminate]:bg-accent_30 data-[indeterminate]:border-accent_30 data-[indeterminate]:text-accent',
         ],
       },
     },
