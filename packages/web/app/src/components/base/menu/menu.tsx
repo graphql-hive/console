@@ -7,16 +7,24 @@ const MenuRoot = Menu.Root;
 const MenuTrigger = Menu.Trigger;
 
 const menuVariants = cva(
-  'z-50 w-45 min-w-[8rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-4 border-neutral-5',
+  'z-50 max-w-75 min-w-[10rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-4 border-neutral-5',
   {
     variants: {
       withPadding: {
         true: 'p-2',
         false: '',
       },
+      withXPadding: {
+        true: 'px-2',
+        false: '',
+      },
+      withYPadding: {
+        true: 'py-2',
+        false: '',
+      },
     },
     defaultVariants: {
-      withPadding: false,
+      withXPadding: false,
     },
   },
 );
@@ -30,7 +38,8 @@ type MenuContentProps = {
    * configure positioning and alignment as a submenu
    */
   subMenu?: boolean;
-  withPadding?: VariantProps<typeof menuVariants>['withPadding'];
+  withXPadding?: VariantProps<typeof menuVariants>['withXPadding'];
+  withYPadding?: VariantProps<typeof menuVariants>['withYPadding'];
 };
 
 function MenuContent({
@@ -39,7 +48,8 @@ function MenuContent({
   side = 'bottom',
   sideOffset = 8,
   subMenu = false,
-  withPadding = false,
+  withXPadding = false,
+  withYPadding = false,
 }: MenuContentProps) {
   if (subMenu) {
     align = 'start';
@@ -50,7 +60,7 @@ function MenuContent({
   return (
     <Menu.Portal>
       <Menu.Positioner side={side} align={align} sideOffset={sideOffset} className="outline-none">
-        <Menu.Popup className={menuVariants({ withPadding })}>{children}</Menu.Popup>
+        <Menu.Popup className={menuVariants({ withXPadding, withYPadding })}>{children}</Menu.Popup>
       </Menu.Positioner>
     </Menu.Portal>
   );

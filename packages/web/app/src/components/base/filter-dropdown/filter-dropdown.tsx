@@ -44,7 +44,11 @@ export function FilterDropdown({
     <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
       <MenuTrigger
         render={
-          <TriggerButton label={label} badge={selectedCount > 0 ? selectedCount : undefined} disabled={disabled} />
+          <TriggerButton
+            label={label}
+            badge={selectedCount > 0 ? selectedCount : undefined}
+            disabled={disabled}
+          />
         }
       />
 
@@ -59,11 +63,6 @@ export function FilterDropdown({
 
         <MenuSeparator />
 
-        {selectedCount > 0 && (
-          <MenuItem inSubmenu variant="action" closeOnClick={false} onClick={() => onChange([])}>
-            Clear current selections
-          </MenuItem>
-        )}
         <div className="mb-1">
           <MenuItem
             inSubmenu

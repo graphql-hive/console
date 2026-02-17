@@ -1,9 +1,10 @@
-import { ReactElement, useMemo } from 'react';
+import { ReactElement, useCallback, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { useQuery } from 'urql';
+import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
+import type { SavedView } from '@/components/base/insights-filters';
 import { InsightsFilters } from '@/components/base/insights-filters';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/List';
@@ -15,7 +16,7 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
-import { OperationStatsFilterInput } from '@/gql/graphql';
+import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
@@ -69,6 +70,39 @@ const InsightsFilterPicker_Query = graphql(`
               }
             }
           }
+        }
+      }
+      savedFilters(type: INSIGHTS, first: 50) {
+        edges {
+          node {
+            id
+            name
+            visibility
+            filters {
+              operationHashes
+              clientFilters {
+                name
+                versions
+              }
+              dateRange {
+                from
+                to
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const InsightsTrackView_Mutation = graphql(`
+  mutation InsightsTrackView($input: TrackSavedFilterViewInput!) {
+    trackSavedFilterView(input: $input) {
+      ok {
+        savedFilter {
+          id
+          viewsCount
         }
       }
     }
@@ -152,6 +186,66 @@ function OperationsView({
     [search.clients],
   );
 
+  const { privateViews, sharedViews } = useMemo(() => {
+    const edges = pickerQuery.data?.target?.savedFilters?.edges ?? [];
+    const privateViews: SavedView[] = [];
+    const sharedViews: SavedView[] = [];
+
+    for (const edge of edges) {
+      const node = edge.node;
+      const view: SavedView = {
+        id: node.id,
+        name: node.name,
+        filters: {
+          operationHashes: node.filters.operationHashes,
+          clientFilters: node.filters.clientFilters.map(c => ({
+            name: c.name,
+            versions: c.versions ?? null,
+          })),
+          dateRange: node.filters.dateRange ?? null,
+        },
+      };
+
+      if (node.visibility === SavedFilterVisibilityType.Private) {
+        privateViews.push(view);
+      } else {
+        sharedViews.push(view);
+      }
+    }
+
+    return { privateViews, sharedViews };
+  }, [pickerQuery.data]);
+
+  const [, trackView] = useMutation(InsightsTrackView_Mutation);
+
+  const handleApplyView = useCallback(
+    (view: SavedView) => {
+      void trackView({
+        input: {
+          target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+          id: view.id,
+        },
+      });
+
+      void navigate({
+        search: prev => ({
+          ...prev,
+          operations: view.filters.operationHashes.length > 0 ? view.filters.operationHashes : undefined,
+          clients:
+            view.filters.clientFilters.length > 0
+              ? view.filters.clientFilters.map(c => ({
+                  name: c.name,
+                  versions: c.versions,
+                }))
+              : undefined,
+          from: view.filters.dateRange?.from ?? ('from' in prev ? prev.from : undefined),
+          to: view.filters.dateRange?.to ?? ('to' in prev ? prev.to : undefined),
+        }),
+      });
+    },
+    [navigate, trackView, organizationSlug, projectSlug, targetSlug],
+  );
+
   const filter = useMemo(() => buildGraphQLFilter(search), [search]);
 
   return (
@@ -168,6 +262,9 @@ function OperationsView({
               operationFilterSelections={operationFilterSelections}
               clientFilterItems={clientFilterItems}
               clientFilterSelections={clientFilterSelections}
+              privateViews={privateViews}
+              sharedViews={sharedViews}
+              onApplyView={handleApplyView}
               onManageViews={() => {
                 void navigate({
                   to: '/$organizationSlug/$projectSlug/$targetSlug/insights/manage-filters',

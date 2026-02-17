@@ -4,17 +4,13 @@ import { ArrowLeft, ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 
 import { useMutation, useQuery } from 'urql';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
+import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from '@/components/base/menu/menu';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { availablePresets, DateRangePicker } from '@/components/ui/date-range-picker';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { EmptyList } from '@/components/ui/empty-list';
+import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
@@ -100,6 +96,7 @@ const ManageFilters_UpdateSavedFilterMutation = graphql(`
       ok {
         savedFilter {
           id
+          name
           filters {
             operationHashes
             clientFilters {
@@ -168,7 +165,48 @@ function SavedFilterRow({
   targetSlug: string;
 }) {
   const [, deleteSavedFilter] = useMutation(ManageFilters_DeleteSavedFilterMutation);
+  const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
   const { toast } = useToast();
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(filter.name);
+
+  const handleRename = useCallback(async () => {
+    const trimmed = renameValue.trim();
+    if (!trimmed || trimmed === filter.name) return;
+
+    const result = await updateSavedFilter({
+      input: {
+        id: filter.id,
+        target: {
+          bySelector: { organizationSlug, projectSlug, targetSlug },
+        },
+        name: trimmed,
+      },
+    });
+
+    if (result.error || result.data?.updateSavedFilter.error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: result.error?.message || result.data?.updateSavedFilter.error?.message,
+      });
+    } else {
+      toast({
+        title: 'Filter renamed',
+        description: 'The saved filter has been renamed.',
+      });
+      setIsRenaming(false);
+    }
+  }, [
+    renameValue,
+    filter.name,
+    filter.id,
+    organizationSlug,
+    projectSlug,
+    targetSlug,
+    updateSavedFilter,
+    toast,
+  ]);
 
   const handleDelete = useCallback(() => {
     void deleteSavedFilter({
@@ -206,7 +244,40 @@ function SavedFilterRow({
         <TableCell className="w-8">
           <ChevronIcon className="text-neutral-10 size-4" />
         </TableCell>
-        <TableCell className="font-medium">{filter.name}</TableCell>
+        <TableCell
+          className="font-medium"
+          onClick={isRenaming ? e => e.stopPropagation() : undefined}
+        >
+          {isRenaming ? (
+            <span className="flex items-center gap-2">
+              <Input
+                value={renameValue}
+                onChange={e => setRenameValue(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    void handleRename();
+                  } else if (e.key === 'Escape') {
+                    setIsRenaming(false);
+                    setRenameValue(filter.name);
+                  }
+                }}
+                className="h-8"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => void handleRename()}
+                disabled={
+                  updateResult.fetching || renameValue.trim() === filter.name || !renameValue.trim()
+                }
+              >
+                Save
+              </Button>
+            </span>
+          ) : (
+            filter.name
+          )}
+        </TableCell>
         <TableCell>{filter.viewsCount.toLocaleString()}</TableCell>
         <TableCell>{formatDate(filter.createdAt, 'MMM d, yyyy')}</TableCell>
         <TableCell>{formatDate(filter.updatedAt, 'MMM d, yyyy')}</TableCell>
@@ -231,18 +302,34 @@ function SavedFilterRow({
             e.stopPropagation();
           }}
         >
-          {filter.viewerCanDelete && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="data-[state=open]:bg-neutral-3 flex size-8 p-0">
-                  <MoreVertical className="size-4" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[160px]">
-                <DropdownMenuItem onSelect={handleDelete}>Delete</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {(filter.viewerCanUpdate || filter.viewerCanDelete) && (
+            <MenuRoot>
+              <MenuTrigger
+                render={
+                  <Button variant="ghost" className="flex size-8 p-0">
+                    <MoreVertical className="size-4" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                }
+              />
+              <MenuContent align="end" sideOffset={8} withXPadding withYPadding>
+                {filter.viewerCanUpdate && (
+                  <MenuItem
+                    onClick={() => {
+                      setRenameValue(filter.name);
+                      setIsRenaming(true);
+                    }}
+                  >
+                    Rename
+                  </MenuItem>
+                )}
+                {filter.viewerCanDelete && (
+                  <MenuItem variant="destructiveAction" onClick={handleDelete}>
+                    Delete
+                  </MenuItem>
+                )}
+              </MenuContent>
+            </MenuRoot>
           )}
         </TableCell>
       </TableRow>
