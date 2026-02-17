@@ -19,8 +19,9 @@ export default gql`
     clientName: String! @tag(name: "public")
     """
     Specific versions of this client to include.
+    When null, all versions of this client are included.
     """
-    versions: [String!]! @tag(name: "public")
+    versions: [String!] @tag(name: "public")
   }
 
   input OperationStatsFilterInput {

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CHART_PRIMARY_COLOR } from '@/constants';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { OperationStatsFilterInput } from '@/gql/graphql';
 import { createAdaptiveTimeFormatter } from '@/lib/date-time';
 import {
   formatDuration,
@@ -1044,8 +1045,7 @@ export function OperationsStats({
   projectSlug,
   targetSlug,
   period,
-  operationsFilter,
-  clientNamesFilter,
+  filter,
   resolution,
   mode,
   dateRangeText,
@@ -1059,8 +1059,7 @@ export function OperationsStats({
   };
   dateRangeText: string;
   resolution: number;
-  operationsFilter: string[];
-  clientNamesFilter: Array<string>;
+  filter: OperationStatsFilterInput;
   mode: 'operation-page' | 'operation-list';
 }): ReactElement {
   const [query, refetchQuery] = useQuery({
@@ -1072,10 +1071,7 @@ export function OperationsStats({
         targetSlug,
       },
       period,
-      filter: {
-        operationIds: operationsFilter,
-        clientNames: clientNamesFilter,
-      },
+      filter,
       resolution,
     },
   });

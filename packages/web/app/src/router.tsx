@@ -74,7 +74,7 @@ import { TargetExplorerTypePage } from './pages/target-explorer-type';
 import { TargetExplorerUnusedPage } from './pages/target-explorer-unused';
 import { TargetHistoryPage } from './pages/target-history';
 import { TargetHistoryVersionPage } from './pages/target-history-version';
-import { TargetInsightsPage } from './pages/target-insights';
+import { InsightsFilterSearch, TargetInsightsPage } from './pages/target-insights';
 import { TargetInsightsClientPage } from './pages/target-insights-client';
 import { TargetInsightsCoordinatePage } from './pages/target-insights-coordinate';
 import { TargetInsightsManageFiltersPage } from './pages/target-insights-manage-filters';
@@ -693,9 +693,10 @@ const targetAppVersionRoute = createRoute({
   },
 });
 
-const targetInsightsRoute = createRoute({
+export const targetInsightsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'insights',
+  validateSearch: InsightsFilterSearch.parse,
   component: function TargetInsightsRoute() {
     const { organizationSlug, projectSlug, targetSlug } = targetInsightsRoute.useParams();
     return (

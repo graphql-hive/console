@@ -1,11 +1,11 @@
-import { ReactElement } from 'react';
+import { ReactElement, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useQuery } from 'urql';
+import { z } from 'zod';
+import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
+import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
+import { InsightsFilters } from '@/components/base/insights-filters';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import {
-  ClientsFilterTrigger,
-  OperationsFilterTrigger,
-} from '@/components/target/insights/Filters';
 import { OperationsList } from '@/components/target/insights/List';
 import { OperationsStats } from '@/components/target/insights/Stats';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,63 @@ import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
+import { OperationStatsFilterInput } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+
+const InsightsClientFilter = z.object({
+  name: z.string(),
+  versions: z.array(z.string()).nullable().default(null),
+});
+
+export const InsightsFilterSearch = z.object({
+  operations: z.array(z.string()).optional().default([]),
+  clients: z.array(InsightsClientFilter).optional().default([]),
+});
+
+type InsightsFilterState = z.infer<typeof InsightsFilterSearch>;
+
+function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
+  return {
+    operationIds: state.operations.length > 0 ? state.operations : undefined,
+    clientVersionFilters:
+      state.clients.length > 0
+        ? state.clients.map(c => ({
+            clientName: c.name,
+            versions: c.versions,
+          }))
+        : undefined,
+  };
+}
+
+const InsightsFilterPicker_Query = graphql(`
+  query InsightsFilterPicker($selector: TargetSelectorInput!, $period: DateRangeInput!) {
+    target(reference: { bySelector: $selector }) {
+      id
+      operationsStats(period: $period) {
+        operations {
+          edges {
+            node {
+              id
+              name
+              operationHash
+            }
+          }
+        }
+        clients {
+          edges {
+            node {
+              name
+              versions {
+                version
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`);
 
 function OperationsView({
   organizationSlug,
@@ -29,52 +84,165 @@ function OperationsView({
   targetSlug: string;
   dataRetentionInDays: number;
 }): ReactElement {
-  const [selectedOperations, setSelectedOperations] = useSearchParamsFilter<string[]>(
-    'operations',
-    [],
-  );
-  const [selectedClients, setSelectedClients] = useSearchParamsFilter<string[]>('clients', []);
+  const search = useSearch({
+    from: '/authenticated/$organizationSlug/$projectSlug/$targetSlug/insights',
+  });
+  const navigate = useNavigate();
   const dateRangeController = useDateRangeController({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
 
+  const [pickerQuery] = useQuery({
+    query: InsightsFilterPicker_Query,
+    variables: {
+      selector: { organizationSlug, projectSlug, targetSlug },
+      period: dateRangeController.resolvedRange,
+    },
+  });
+
+  const operationFilterItems: FilterItem[] = useMemo(() => {
+    const edges = pickerQuery.data?.target?.operationsStats?.operations?.edges ?? [];
+    return edges
+      .filter(e => e.node.operationHash != null)
+      .map(e => ({
+        id: e.node.operationHash!,
+        name: e.node.name,
+        values: [],
+      }));
+  }, [pickerQuery.data]);
+
+  const clientFilterItems: FilterItem[] = useMemo(() => {
+    const edges = pickerQuery.data?.target?.operationsStats?.clients?.edges ?? [];
+    return edges.map(e => ({
+      name: e.node.name,
+      values: e.node.versions.map(v => v.version),
+    }));
+  }, [pickerQuery.data]);
+
+  // Build a hash→name map for converting search state hashes back to display names
+  const hashToNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const item of operationFilterItems) {
+      if (item.id) {
+        map.set(item.id, item.name);
+      }
+    }
+    return map;
+  }, [operationFilterItems]);
+
+  const operationFilterSelections: FilterSelection[] = useMemo(
+    () =>
+      search.operations.map(hash => ({
+        id: hash,
+        name: hashToNameMap.get(hash) ?? hash,
+        values: null,
+      })),
+    [search.operations, hashToNameMap],
+  );
+
+  const clientFilterSelections: FilterSelection[] = useMemo(
+    () =>
+      search.clients.map(c => ({
+        name: c.name,
+        values: c.versions,
+      })),
+    [search.clients],
+  );
+
+  const filter = useMemo(() => buildGraphQLFilter(search), [search]);
+
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
+      <div className="py-6">
         <div>
           <Title>Insights</Title>
           <Subtitle>Observe GraphQL requests and see how the API is consumed.</Subtitle>
         </div>
-        <div className="flex justify-end gap-x-4">
-          <OperationsFilterTrigger
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
-            period={dateRangeController.resolvedRange}
-            selected={selectedOperations}
-            onFilter={setSelectedOperations}
-            clientNames={selectedClients}
-          />
-          <ClientsFilterTrigger
-            organizationSlug={organizationSlug}
-            projectSlug={projectSlug}
-            targetSlug={targetSlug}
-            period={dateRangeController.resolvedRange}
-            selected={selectedClients}
-            selectedOperationIds={selectedOperations}
-            onFilter={setSelectedClients}
-          />
-          <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h']}
-            selectedRange={dateRangeController.selectedPreset.range}
-            startDate={dateRangeController.startDate}
-            align="end"
-            onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-          />
-          <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
-            <RefreshCw className="size-4" />
-          </Button>
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-x-2">
+            <InsightsFilters
+              operationFilterItems={operationFilterItems}
+              operationFilterSelections={operationFilterSelections}
+              clientFilterItems={clientFilterItems}
+              clientFilterSelections={clientFilterSelections}
+              setOperationSelections={selections => {
+                void navigate({
+                  search: prev => ({
+                    ...prev,
+                    operations: selections.map(s => s.id ?? s.name),
+                  }),
+                });
+              }}
+              setClientSelections={selections => {
+                void navigate({
+                  search: prev => ({
+                    ...prev,
+                    clients: selections.map(s => ({
+                      name: s.name,
+                      versions: s.values,
+                    })),
+                  }),
+                });
+              }}
+            />
+            {operationFilterSelections.length > 0 && (
+              <FilterDropdown
+                label="Operation"
+                items={operationFilterItems}
+                value={operationFilterSelections}
+                onChange={selections => {
+                  void navigate({
+                    search: prev => ({
+                      ...prev,
+                      operations: selections.map(s => s.id ?? s.name),
+                    }),
+                  });
+                }}
+                onRemove={() => {
+                  void navigate({
+                    search: prev => ({ ...prev, operations: [] }),
+                  });
+                }}
+              />
+            )}
+            {clientFilterSelections.length > 0 && (
+              <FilterDropdown
+                label="Client"
+                items={clientFilterItems}
+                value={clientFilterSelections}
+                valuesLabel="versions"
+                onChange={selections => {
+                  void navigate({
+                    search: prev => ({
+                      ...prev,
+                      clients: selections.map(s => ({
+                        name: s.name,
+                        versions: s.values,
+                      })),
+                    }),
+                  });
+                }}
+                onRemove={() => {
+                  void navigate({
+                    search: prev => ({ ...prev, clients: [] }),
+                  });
+                }}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-x-2">
+            <DateRangePicker
+              validUnits={['y', 'M', 'w', 'd', 'h']}
+              selectedRange={dateRangeController.selectedPreset.range}
+              startDate={dateRangeController.startDate}
+              align="end"
+              onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+            />
+            <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
+              <RefreshCw className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
       <OperationsStats
@@ -82,8 +250,7 @@ function OperationsView({
         projectSlug={projectSlug}
         targetSlug={targetSlug}
         period={dateRangeController.resolvedRange}
-        operationsFilter={selectedOperations}
-        clientNamesFilter={selectedClients}
+        filter={filter}
         dateRangeText={dateRangeController.selectedPreset.label}
         mode="operation-list"
         resolution={dateRangeController.resolution}
@@ -94,8 +261,7 @@ function OperationsView({
         organizationSlug={organizationSlug}
         projectSlug={projectSlug}
         targetSlug={targetSlug}
-        operationsFilter={selectedOperations}
-        clientNamesFilter={selectedClients}
+        filter={filter}
         selectedPeriod={dateRangeController.selectedPreset.range}
       />
     </>

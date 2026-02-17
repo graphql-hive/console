@@ -462,7 +462,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     schemaCoordinate?: string;
   }): Promise<{
     total: number;
@@ -526,7 +526,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
   }): Promise<number> {
     return this.countRequests({ target, period, operations, clients, clientVersionFilters }).then(
       r => r.notOk,
@@ -544,7 +544,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
   }): Promise<number> {
     const query = this.pickAggregationByPeriod({
       period,
@@ -585,7 +585,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -817,7 +817,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -1738,7 +1738,7 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     schemaCoordinate?: string;
   }) {
     const results = await this.getDurationAndCountOverTime({
@@ -1770,7 +1770,7 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
   }) {
     const result = await this.getDurationAndCountOverTime({
       target,
@@ -1798,7 +1798,7 @@ export class OperationsReader {
     target: string;
     period: DateRange;
     resolution: number;
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     operations?: readonly string[];
     clients?: readonly string[];
   }): Promise<
@@ -1828,7 +1828,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
   }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
@@ -1859,7 +1859,7 @@ export class OperationsReader {
     clientVersionFilters,
     schemaCoordinate,
   }: {
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     target: string;
     period: DateRange;
     operations?: readonly string[];
@@ -1953,7 +1953,7 @@ export class OperationsReader {
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     schemaCoordinate?: string;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
@@ -2298,7 +2298,7 @@ export class OperationsReader {
     period?: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
-    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] }[];
+    clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     extra?: SqlValue[];
     skipWhere?: boolean;
     namespace?: string;
@@ -2334,6 +2334,10 @@ export class OperationsReader {
       // Build OR conditions for each client+versions combination
       const versionConditions = clientVersionFilters.map(filter => {
         const clientName = filter.clientName === 'unknown' ? '' : filter.clientName;
+        if (!filter.versions?.length) {
+          // null/empty versions = all versions of this client
+          return sql`(${columnPrefix}client_name = ${clientName})`;
+        }
         return sql`(${columnPrefix}client_name = ${clientName} AND ${columnPrefix}client_version IN (${sql.array(filter.versions, 'String')}))`;
       });
       where.push(sql`(${sql.join(versionConditions, ' OR ')})`);

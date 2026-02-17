@@ -36,7 +36,7 @@ export interface OperationsStatsMapper {
   period: DateRange;
   operations: readonly string[];
   clients: readonly string[];
-  clientVersionFilters: readonly { clientName: string; versions: readonly string[] }[];
+  clientVersionFilters: readonly { clientName: string; versions: readonly string[] | null }[];
 }
 export interface DurationValuesMapper {
   avg: number | null;

@@ -67,7 +67,7 @@ export const Target: Pick<
         );
       }
       for (const filter of clientVersionFilters) {
-        if (filter.versions.length > MAX_VERSIONS_PER_FILTER) {
+        if (filter.versions && filter.versions.length > MAX_VERSIONS_PER_FILTER) {
           throw new GraphQLError(
             `Each clientVersionFilter.versions must contain at most ${MAX_VERSIONS_PER_FILTER} elements`,
           );
@@ -88,7 +88,7 @@ export const Target: Pick<
       clientVersionFilters:
         clientVersionFilters?.map(f => ({
           clientName: f.clientName === 'unknown' ? '' : f.clientName,
-          versions: [...f.versions],
+          versions: f.versions ? [...f.versions] : null,
         })) ?? [],
     };
   },
