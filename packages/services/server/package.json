@@ -45,6 +45,7 @@
     "graphql-yoga": "5.13.3",
     "hyperid": "3.3.0",
     "ioredis": "5.8.2",
+    "openid-client": "6.8.2",
     "pino-pretty": "11.3.0",
     "prom-client": "15.1.3",
     "reflect-metadata": "0.2.2",

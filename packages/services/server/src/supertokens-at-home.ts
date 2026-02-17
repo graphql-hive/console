@@ -2,9 +2,10 @@ import * as c from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { type FastifyInstance } from 'fastify';
 import jwt from 'jsonwebtoken';
+import * as oidClient from 'openid-client';
 import z from 'zod';
 import cookie from '@fastify/cookie';
-import { Storage, User } from '@hive/api';
+import { CryptoProvider, Storage, User } from '@hive/api';
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
@@ -14,6 +15,7 @@ export function registerSupertokensAtHome(
   server: FastifyInstance,
   storage: Storage,
   taskScheduler: TaskScheduler,
+  crypto: CryptoProvider,
 ) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
 
@@ -458,6 +460,226 @@ export function registerSupertokensAtHome(
         .send();
     },
   });
+
+  server.route({
+    url: '/auth-api/authorisationurl',
+    method: 'GET',
+    async handler(req, rep) {
+      const query = AuthorisationurlQueryParamsModel.safeParse(req.query);
+
+      if (!query.success) {
+        req.log.debug('Invalid input provided.');
+        return rep.status(200).send({
+          status: 'GENERAL_ERROR',
+          message: 'Something went wrong.',
+        });
+      }
+
+      if (!query.data.oidc_id) {
+        throw new Error('NOT SUPPORTED');
+      }
+
+      const oidcIntegration = await storage.getOIDCIntegrationById({
+        oidcIntegrationId: query.data.oidc_id,
+      });
+
+      if (!oidcIntegration) {
+        return rep.status(200).send({
+          status: 'GENERAL_ERROR',
+          message: 'Something went wrong. Please try again',
+        });
+      }
+
+      const scopes = ['openid', 'email', ...oidcIntegration.additionalScopes];
+
+      const oidClientConfig = new oidClient.Configuration(
+        {
+          issuer: oidcIntegration.id,
+          authorization_endpoint: oidcIntegration.authorizationEndpoint,
+          userinfo_endpoint: oidcIntegration.userinfoEndpoint,
+          token_endpoint: oidcIntegration.tokenEndpoint,
+        },
+        oidcIntegration.clientId,
+        {
+          client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
+        },
+      );
+      oidClient.allowInsecureRequests(oidClientConfig);
+
+      const redirect_uri = new URL(env.hiveServices.webApp.url);
+      redirect_uri.pathname = '/auth/callback/oidc';
+
+      let parameters: Record<string, string> = {
+        redirect_uri: redirect_uri.toString(),
+        scope: scopes.join(' '),
+      };
+
+      let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
+
+      redirectTo.searchParams.set('state', oidcIntegration.id);
+
+      return rep.send({
+        status: 'OK',
+        urlWithQueryParams: redirectTo.toString(),
+      });
+    },
+  });
+
+  server.route({
+    url: '/auth-api/signinup',
+    method: 'POST',
+    async handler(req, rep) {
+      const parsedBody = ThirdPartySigninupModel.safeParse(req.body);
+
+      if (!parsedBody.success) {
+        req.log.debug('Invalid body provided.');
+        return rep.status(200).send({
+          status: 'SIGN_IN_UP_NOT_ALLOWED',
+          reason: 'Please try again.',
+        });
+      }
+
+      const [, oidcIntegrationId] =
+        parsedBody.data.redirectURIInfo.redirectURIQueryParams.state.split('--');
+
+      const oidcIntegration = await storage.getOIDCIntegrationById({ oidcIntegrationId });
+
+      if (!oidcIntegration) {
+        req.log.debug('The oidc integration does not exist.');
+        return rep.status(200).send({
+          status: 'SIGN_IN_UP_NOT_ALLOWED',
+          reason: 'Please try again.',
+        });
+      }
+
+      const oidClientConfig = new oidClient.Configuration(
+        {
+          issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss,
+          authorization_endpoint: oidcIntegration.authorizationEndpoint,
+          userinfo_endpoint: oidcIntegration.userinfoEndpoint,
+          token_endpoint: oidcIntegration.tokenEndpoint,
+        },
+        oidcIntegration.clientId,
+        {
+          client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
+        },
+      );
+
+      // TODO
+      oidClient.allowInsecureRequests(oidClientConfig);
+
+      const current_url = new URL(env.hiveServices.webApp.url);
+      current_url.pathname = '/auth/callback/oidc';
+      current_url.searchParams.set(
+        'code',
+        parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
+      );
+
+      // TODO: error handling
+      const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url);
+
+      const codeGrantAccessToken = result.access_token;
+
+      const userInfo = await oidClient.fetchUserInfo(
+        oidClientConfig,
+        codeGrantAccessToken,
+        oidClient.skipSubjectCheck,
+      );
+
+      if (!userInfo.email) {
+        return rep.status(200).send({
+          status: 'SIGN_IN_UP_NOT_ALLOWED',
+          reason: 'Missing email claim.',
+        });
+      }
+
+      let user = await supertokensStore.findOIDCUserBySubAndOIDCIntegrationId({
+        oidcIntegrationId: oidcIntegration.id,
+        sub: userInfo.sub,
+      });
+
+      if (!user) {
+        user = await supertokensStore.createOIDCUser({
+          email: userInfo.email,
+          oidcIntegrationId: oidcIntegration.id,
+          sub: userInfo.sub,
+        });
+      }
+
+      const ensureUserExists = await storage.ensureUserExists({
+        superTokensUserId: user.userId,
+        email: userInfo.email,
+        firstName: null,
+        lastName: null,
+        oidcIntegration: {
+          id: oidcIntegration.id,
+          defaultScopes: [],
+        },
+      });
+
+      if (!ensureUserExists.ok) {
+        return rep.status(200).send({
+          status: 'SIGN_IN_UP_NOT_ALLOWED',
+          reason: 'Sign in not allowed.',
+        });
+      }
+
+      const { session, refreshToken, accessToken } = await createNewSession(supertokensStore, {
+        hiveUser: ensureUserExists.user,
+        oidcIntegrationId: null,
+        superTokensUserId: user.userId,
+      });
+      const frontToken = createFrontToken({
+        superTokensUserId: user.userId,
+        accessToken,
+      });
+
+      return rep
+        .setCookie('sRefreshToken', refreshToken, {
+          httpOnly: true,
+          secure: true,
+          path: '/auth-api/session/refresh',
+          sameSite: 'lax',
+          expires: new Date(session.expiresAt),
+        })
+        .setCookie('sAccessToken', accessToken.token, {
+          httpOnly: true,
+          secure: true,
+          path: '/',
+          sameSite: 'lax',
+          expires: new Date(session.expiresAt),
+        })
+        .header('front-token', frontToken)
+        .header('access-control-expose-headers', 'front-token')
+        .send({
+          status: 'OK',
+          user: {
+            id: user.userId,
+            isPrimaryUser: false,
+            tenantIds: ['public'],
+            timeJoined: user.timeJoined,
+            emails: [user.email],
+            phoneNumbers: [],
+            thirdParty: [
+              {
+                id: 'oidc',
+                userId: user.thirdPartyUserId,
+              },
+            ],
+            loginMethods: [
+              {
+                tenantIds: ['public'],
+                recipeUserId: user.userId,
+                verified: false,
+                timeJoined: user.timeJoined,
+                recipeId: 'thirdparty',
+                email: user.email,
+              },
+            ],
+          },
+        });
+    },
+  });
 }
 
 const GenericFormFieldBody = z.object({
@@ -479,6 +701,28 @@ const UserPasswordResetBodyModel = GenericFormFieldBody.extend({
 });
 
 const UserPasswordResetTokenBodyModel = GenericFormFieldBody.extend({});
+
+const AuthorisationurlQueryParamsModel = z.object({
+  thirdPartyId: z.string(),
+  redirectURIOnProviderDashboard: z.string(),
+  oidc_id: z.string().optional(),
+});
+
+const ThirdPartySigninupModel = z.object({
+  thirdPartyId: z.string(),
+  redirectURIInfo: z.object({
+    // pkceCodeVerifier: z.string(),
+    redirectURIOnProviderDashboard: z.string(),
+    redirectURIQueryParams: z.object({
+      code: z.string(),
+      iss: z.string(),
+      redirectToPath: z.string(),
+      scope: z.string(),
+      session_state: z.string(),
+      state: z.string(),
+    }),
+  }),
+});
 
 async function hashPassword(plaintextPassword: string): Promise<string> {
   // The "cost factor" or salt rounds. 10 is a good, standard balance of security and performance.
