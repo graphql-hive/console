@@ -6,7 +6,10 @@ import * as oidClient from 'openid-client';
 import z from 'zod';
 import cookie from '@fastify/cookie';
 import { CryptoProvider, Storage, User } from '@hive/api';
-import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import {
+  EmailPasswordOrThirdPartyUser,
+  SuperTokensStore,
+} from '@hive/api/modules/auth/providers/supertokens-store';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
@@ -475,6 +478,31 @@ export function registerSupertokensAtHome(
         });
       }
 
+      // TODO: GITHUB
+      if (query.data.thirdPartyId === 'github') {
+        if (!env.auth.github) {
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Method not supported.',
+          });
+        }
+        const redirectUrl = new URL(env.hiveServices.webApp.url);
+        redirectUrl.pathname = '/auth/callback/github';
+        const authorizeUrl = new URL('https://github.com/login/oauth/authorize');
+        authorizeUrl.searchParams.set('client_id', env.auth.github.clientId);
+        authorizeUrl.searchParams.set('redirect_uri', redirectUrl.toString());
+        authorizeUrl.searchParams.set('scope', ['read:user', 'user:email'].join(' '));
+
+        return rep.send({
+          status: 'OK',
+          urlWithQueryParams: authorizeUrl.toString(),
+        });
+      }
+      // TODO: GOOGLE
+      // TODO: OKTA
+
+      console.log(query.data.thirdPartyId);
+
       if (!query.data.oidc_id) {
         throw new Error('NOT SUPPORTED');
       }
@@ -529,6 +557,7 @@ export function registerSupertokensAtHome(
     url: '/auth-api/signinup',
     method: 'POST',
     async handler(req, rep) {
+      console.log(req.body);
       const parsedBody = ThirdPartySigninupModel.safeParse(req.body);
 
       if (!parsedBody.success) {
@@ -539,98 +568,244 @@ export function registerSupertokensAtHome(
         });
       }
 
-      const [, oidcIntegrationId] =
-        parsedBody.data.redirectURIInfo.redirectURIQueryParams.state.split('--');
+      let supertokensUser: EmailPasswordOrThirdPartyUser;
+      let hiveUser: User;
 
-      const oidcIntegration = await storage.getOIDCIntegrationById({ oidcIntegrationId });
+      if (parsedBody.data.thirdPartyId === 'github') {
+        if (!env.auth.github) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'GitHub sign in is not allowed.',
+          });
+        }
 
-      if (!oidcIntegration) {
-        req.log.debug('The oidc integration does not exist.');
-        return rep.status(200).send({
-          status: 'SIGN_IN_UP_NOT_ALLOWED',
-          reason: 'Please try again.',
+        const url = new URL('https://github.com/login/oauth/access_token');
+
+        const AccessTokenResponseBodyModel = z.object({
+          access_token: z.string(),
+          scope: z.string(),
         });
-      }
 
-      const oidClientConfig = new oidClient.Configuration(
-        {
-          issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss,
-          authorization_endpoint: oidcIntegration.authorizationEndpoint,
-          userinfo_endpoint: oidcIntegration.userinfoEndpoint,
-          token_endpoint: oidcIntegration.tokenEndpoint,
-        },
-        oidcIntegration.clientId,
-        {
-          client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
-        },
-      );
-
-      // TODO
-      oidClient.allowInsecureRequests(oidClientConfig);
-
-      const current_url = new URL(env.hiveServices.webApp.url);
-      current_url.pathname = '/auth/callback/oidc';
-      current_url.searchParams.set(
-        'code',
-        parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
-      );
-
-      // TODO: error handling
-      const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url);
-
-      const codeGrantAccessToken = result.access_token;
-
-      const userInfo = await oidClient.fetchUserInfo(
-        oidClientConfig,
-        codeGrantAccessToken,
-        oidClient.skipSubjectCheck,
-      );
-
-      if (!userInfo.email) {
-        return rep.status(200).send({
-          status: 'SIGN_IN_UP_NOT_ALLOWED',
-          reason: 'Missing email claim.',
+        const accessTokenResponse = await fetch(url.toString(), {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+          },
+          body: JSON.stringify({
+            client_id: env.auth.github.clientId,
+            client_secret: env.auth.github.clientSecret,
+            code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
+            redirect_uri: parsedBody.data.redirectURIInfo.redirectURIOnProviderDashboard,
+          }),
         });
-      }
 
-      let user = await supertokensStore.findOIDCUserBySubAndOIDCIntegrationId({
-        oidcIntegrationId: oidcIntegration.id,
-        sub: userInfo.sub,
-      });
+        if (accessTokenResponse.status !== 200) {
+          req.log.debug('Received invalid response status from github.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Something went wrong.',
+          });
+        }
 
-      if (!user) {
-        user = await supertokensStore.createOIDCUser({
-          email: userInfo.email,
+        const accessTokenBody = await accessTokenResponse
+          .json()
+          .then(res => AccessTokenResponseBodyModel.parse(res));
+
+        const UserInfoResponseModel = z.object({
+          id: z.number(),
+        });
+
+        const userInfoResponse = await fetch('https://api.github.com/user', {
+          method: 'GET',
+          headers: {
+            accept: 'application/vnd.github+json',
+            'x-gitHub-api-version': '2022-11-28',
+            authorization: `Bearer ${accessTokenBody.access_token}`,
+          },
+        });
+
+        if (userInfoResponse.status !== 200) {
+          req.log.debug('Received invalid response status from github user lookup.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Something went wrong.',
+          });
+        }
+
+        const userInfoBody = await userInfoResponse
+          .json()
+          .then(res => UserInfoResponseModel.parse(res));
+
+        let user = await supertokensStore.findThirdPartyUser({
+          thirdPartyId: 'github',
+          thirdPartyUserId: String(userInfoBody.id),
+        });
+
+        if (!user) {
+          const EmailsBodyModel = z.array(
+            z.object({
+              email: z.string(),
+              verified: z.boolean(),
+              primary: z.boolean(),
+            }),
+          );
+
+          const emailsResponse = await fetch('https://api.github.com/user/emails', {
+            method: 'GET',
+            headers: {
+              accept: 'application/vnd.github+json',
+              'x-gitHub-api-version': '2022-11-28',
+              authorization: `Bearer ${accessTokenBody.access_token}`,
+            },
+          });
+
+          if (emailsResponse.status !== 200) {
+            req.log.debug('Received invalid response status from github email lookup.');
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Something went wrong.',
+            });
+          }
+
+          const emailsBody = await emailsResponse.json().then(res => EmailsBodyModel.parse(res));
+
+          const email = emailsBody.find(email => email.primary) ?? null;
+
+          if (!email) {
+            req.log.debug('Failed to find primary email address from GitHub API.');
+            return rep.status(200).send({
+              status: 'SIGN_IN_UP_NOT_ALLOWED',
+              reason: 'Something went wrong.',
+            });
+          }
+
+          user = await supertokensStore.createThirdPartyUser({
+            email: email?.email,
+            thirdPartyId: 'github',
+            thirdPartUserId: String(userInfoBody.id),
+          });
+        }
+
+        const ensureUserExists = await storage.ensureUserExists({
+          superTokensUserId: user.userId,
+          email: user.email,
+          firstName: null,
+          lastName: null,
+          oidcIntegration: null,
+        });
+
+        if (!ensureUserExists.ok) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          });
+        }
+
+        supertokensUser = user;
+        hiveUser = ensureUserExists.user;
+      } else if (parsedBody.data.thirdPartyId === 'oidc') {
+        const [, oidcIntegrationId] =
+          parsedBody.data.redirectURIInfo.redirectURIQueryParams.state.split('--');
+
+        const oidcIntegration = await storage.getOIDCIntegrationById({ oidcIntegrationId });
+
+        if (!oidcIntegration) {
+          req.log.debug('The oidc integration does not exist.');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please try again.',
+          });
+        }
+
+        const oidClientConfig = new oidClient.Configuration(
+          {
+            issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss,
+            authorization_endpoint: oidcIntegration.authorizationEndpoint,
+            userinfo_endpoint: oidcIntegration.userinfoEndpoint,
+            token_endpoint: oidcIntegration.tokenEndpoint,
+          },
+          oidcIntegration.clientId,
+          {
+            client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
+          },
+        );
+
+        // TODO
+        oidClient.allowInsecureRequests(oidClientConfig);
+
+        const current_url = new URL(env.hiveServices.webApp.url);
+        current_url.pathname = '/auth/callback/oidc';
+        current_url.searchParams.set(
+          'code',
+          parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
+        );
+
+        // TODO: error handling
+        const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url);
+
+        const codeGrantAccessToken = result.access_token;
+
+        const userInfo = await oidClient.fetchUserInfo(
+          oidClientConfig,
+          codeGrantAccessToken,
+          oidClient.skipSubjectCheck,
+        );
+
+        if (!userInfo.email) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Missing email claim.',
+          });
+        }
+
+        let user = await supertokensStore.findOIDCUserBySubAndOIDCIntegrationId({
           oidcIntegrationId: oidcIntegration.id,
           sub: userInfo.sub,
         });
-      }
 
-      const ensureUserExists = await storage.ensureUserExists({
-        superTokensUserId: user.userId,
-        email: userInfo.email,
-        firstName: null,
-        lastName: null,
-        oidcIntegration: {
-          id: oidcIntegration.id,
-          defaultScopes: [],
-        },
-      });
+        if (!user) {
+          user = await supertokensStore.createOIDCUser({
+            email: userInfo.email,
+            oidcIntegrationId: oidcIntegration.id,
+            sub: userInfo.sub,
+          });
+        }
 
-      if (!ensureUserExists.ok) {
+        const ensureUserExists = await storage.ensureUserExists({
+          superTokensUserId: user.userId,
+          email: userInfo.email,
+          firstName: null,
+          lastName: null,
+          oidcIntegration: {
+            id: oidcIntegration.id,
+            defaultScopes: [],
+          },
+        });
+
+        if (!ensureUserExists.ok) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          });
+        }
+
+        supertokensUser = user;
+        hiveUser = ensureUserExists.user;
+      } else {
         return rep.status(200).send({
           status: 'SIGN_IN_UP_NOT_ALLOWED',
-          reason: 'Sign in not allowed.',
+          reason: 'Unsupported sing in method.',
         });
       }
 
       const { session, refreshToken, accessToken } = await createNewSession(supertokensStore, {
-        hiveUser: ensureUserExists.user,
+        hiveUser: hiveUser,
         oidcIntegrationId: null,
-        superTokensUserId: user.userId,
+        superTokensUserId: supertokensUser.userId,
       });
       const frontToken = createFrontToken({
-        superTokensUserId: user.userId,
+        superTokensUserId: supertokensUser.userId,
         accessToken,
       });
 
@@ -654,26 +829,26 @@ export function registerSupertokensAtHome(
         .send({
           status: 'OK',
           user: {
-            id: user.userId,
+            id: supertokensUser.userId,
             isPrimaryUser: false,
             tenantIds: ['public'],
-            timeJoined: user.timeJoined,
-            emails: [user.email],
+            timeJoined: supertokensUser.timeJoined,
+            emails: [supertokensUser.email],
             phoneNumbers: [],
             thirdParty: [
               {
-                id: 'oidc',
-                userId: user.thirdPartyUserId,
+                id: supertokensUser.thirdPartyId,
+                userId: supertokensUser.thirdPartyUserId,
               },
             ],
             loginMethods: [
               {
                 tenantIds: ['public'],
-                recipeUserId: user.userId,
+                recipeUserId: supertokensUser.userId,
                 verified: false,
-                timeJoined: user.timeJoined,
+                timeJoined: supertokensUser.timeJoined,
                 recipeId: 'thirdparty',
-                email: user.email,
+                email: supertokensUser.email,
               },
             ],
           },
@@ -714,12 +889,12 @@ const ThirdPartySigninupModel = z.object({
     // pkceCodeVerifier: z.string(),
     redirectURIOnProviderDashboard: z.string(),
     redirectURIQueryParams: z.object({
-      code: z.string(),
-      iss: z.string(),
-      redirectToPath: z.string(),
-      scope: z.string(),
-      session_state: z.string(),
-      state: z.string(),
+      code: z.string().optional(),
+      iss: z.string().optional(),
+      redirectToPath: z.string().optional(),
+      scope: z.string().optional(),
+      session_state: z.string().optional(),
+      state: z.string().optional(),
     }),
   }),
 });
