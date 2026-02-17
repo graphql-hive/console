@@ -37,6 +37,10 @@ const ThirdpartUserModel = z.object({
   timeJoined: z.number(),
 });
 
+const EmailPasswordOrThirdPartyUserModel = z.union([EmailPasswordUserModel, ThirdpartUserModel]);
+
+export type EmailPasswordOrThirdPartyUser = z.TypeOf<typeof EmailPasswordOrThirdPartyUserModel>;
+
 const EmailPasswordResetTokenModel = z.object({
   userId: z.string(),
   token: z.string(),
@@ -258,7 +262,7 @@ export class SuperTokensStore {
     return await this.pool.maybeOne(query).then(SessionInfoModel.nullable().parse);
   }
 
-  async findOIDCUserBySubAndOIDCIntegrationId(args: { sub: string; oidcIntegrationId: string }) {
+  async findThirdPartyUser(args: { thirdPartyId: string; thirdPartyUserId: string }) {
     const query = sql`
       SELECT
         "user_id" AS "userId"
@@ -269,14 +273,25 @@ export class SuperTokensStore {
       FROM
         "supertokens_thirdparty_users"
       WHERE
-        "third_party_id" = 'oidc'
-        AND "third_party_user_id" = ${`${args.oidcIntegrationId}-${args.sub}`}
+        "third_party_id" = ${args.thirdPartyId}
+        AND "third_party_user_id" = ${args.thirdPartyId}
     `;
 
-    return await this.pool.maybeOne(query).then(ThirdpartUserModel.parse);
+    return await this.pool.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
   }
 
-  async createOIDCUser(args: { email: string; sub: string; oidcIntegrationId: string }) {
+  async findOIDCUserBySubAndOIDCIntegrationId(args: { sub: string; oidcIntegrationId: string }) {
+    return this.findThirdPartyUser({
+      thirdPartyId: 'oidc',
+      thirdPartyUserId: `${args.oidcIntegrationId}-${args.sub}`,
+    });
+  }
+
+  async createThirdPartyUser(args: {
+    email: string;
+    thirdPartyId: string;
+    thirdPartUserId: string;
+  }) {
     const userId = crypto.randomUUID();
     const now = Date.now();
 
@@ -296,7 +311,7 @@ export class SuperTokensStore {
         , ${userId}
         , ${userId}
         , false
-        , 'oidc'
+        , 'thirdparty'
         , ${now}
         , ${now}
       )
@@ -312,8 +327,8 @@ export class SuperTokensStore {
         , "time_joined"
       ) VALUES (
         'public'
-        , 'oidc'
-        , ${args.oidcIntegrationId + '-' + args.sub}
+        , ${args.thirdPartyId}
+        , ${args.thirdPartUserId}
         , ${userId}
         , ${args.email}
         , ${now}
@@ -336,7 +351,7 @@ export class SuperTokensStore {
       ) VALUES (
         'public'
         , ${userId}
-        , 'oidc'
+        , 'thirdparty'
         , ${userId}
         , false
       )
@@ -350,6 +365,14 @@ export class SuperTokensStore {
         return result;
       })
       .then(r => ThirdpartUserModel.parse(r));
+  }
+
+  async createOIDCUser(args: { email: string; sub: string; oidcIntegrationId: string }) {
+    return this.createThirdPartyUser({
+      email: args.email,
+      thirdPartyId: 'oidc',
+      thirdPartUserId: args.oidcIntegrationId + '-' + args.sub,
+    });
   }
 
   async createEmailPasswordUser(args: { email: string; passwordHash: string }) {
