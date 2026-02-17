@@ -290,7 +290,7 @@ export class SuperTokensStore {
   async createThirdPartyUser(args: {
     email: string;
     thirdPartyId: string;
-    thirdPartUserId: string;
+    thirdPartyUserId: string;
   }) {
     const userId = crypto.randomUUID();
     const now = Date.now();
@@ -328,7 +328,7 @@ export class SuperTokensStore {
       ) VALUES (
         'public'
         , ${args.thirdPartyId}
-        , ${args.thirdPartUserId}
+        , ${args.thirdPartyUserId}
         , ${userId}
         , ${args.email}
         , ${now}
@@ -371,7 +371,7 @@ export class SuperTokensStore {
     return this.createThirdPartyUser({
       email: args.email,
       thirdPartyId: 'oidc',
-      thirdPartUserId: args.oidcIntegrationId + '-' + args.sub,
+      thirdPartyUserId: args.oidcIntegrationId + '-' + args.sub,
     });
   }
 
