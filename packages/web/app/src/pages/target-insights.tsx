@@ -25,17 +25,19 @@ const InsightsClientFilter = z.object({
 });
 
 export const InsightsFilterSearch = z.object({
-  operations: z.array(z.string()).optional().default([]),
-  clients: z.array(InsightsClientFilter).optional().default([]),
+  operations: z.array(z.string()).optional(),
+  clients: z.array(InsightsClientFilter).optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 type InsightsFilterState = z.infer<typeof InsightsFilterSearch>;
 
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {
-    operationIds: state.operations.length > 0 ? state.operations : undefined,
+    operationIds: state.operations?.length ? state.operations : undefined,
     clientVersionFilters:
-      state.clients.length > 0
+      state.clients?.length
         ? state.clients.map(c => ({
             clientName: c.name,
             versions: c.versions,
@@ -133,7 +135,7 @@ function OperationsView({
 
   const operationFilterSelections: FilterSelection[] = useMemo(
     () =>
-      search.operations.map(hash => ({
+      (search.operations ?? []).map(hash => ({
         id: hash,
         name: hashToNameMap.get(hash) ?? hash,
         values: null,
@@ -143,7 +145,7 @@ function OperationsView({
 
   const clientFilterSelections: FilterSelection[] = useMemo(
     () =>
-      search.clients.map(c => ({
+      (search.clients ?? []).map(c => ({
         name: c.name,
         values: c.versions,
       })),
@@ -166,11 +168,20 @@ function OperationsView({
               operationFilterSelections={operationFilterSelections}
               clientFilterItems={clientFilterItems}
               clientFilterSelections={clientFilterSelections}
+              onManageViews={() => {
+                void navigate({
+                  to: '/$organizationSlug/$projectSlug/$targetSlug/insights/manage-filters',
+                  params: { organizationSlug, projectSlug, targetSlug },
+                });
+              }}
               setOperationSelections={selections => {
                 void navigate({
                   search: prev => ({
                     ...prev,
-                    operations: selections.map(s => s.id ?? s.name),
+                    operations:
+                      selections.length > 0
+                        ? selections.map(s => s.id ?? s.name)
+                        : undefined,
                   }),
                 });
               }}
@@ -178,10 +189,13 @@ function OperationsView({
                 void navigate({
                   search: prev => ({
                     ...prev,
-                    clients: selections.map(s => ({
-                      name: s.name,
-                      versions: s.values,
-                    })),
+                    clients:
+                      selections.length > 0
+                        ? selections.map(s => ({
+                            name: s.name,
+                            versions: s.values,
+                          }))
+                        : undefined,
                   }),
                 });
               }}
@@ -195,13 +209,16 @@ function OperationsView({
                   void navigate({
                     search: prev => ({
                       ...prev,
-                      operations: selections.map(s => s.id ?? s.name),
+                      operations:
+                        selections.length > 0
+                          ? selections.map(s => s.id ?? s.name)
+                          : undefined,
                     }),
                   });
                 }}
                 onRemove={() => {
                   void navigate({
-                    search: prev => ({ ...prev, operations: [] }),
+                    search: prev => ({ ...prev, operations: undefined }),
                   });
                 }}
               />
@@ -216,16 +233,19 @@ function OperationsView({
                   void navigate({
                     search: prev => ({
                       ...prev,
-                      clients: selections.map(s => ({
-                        name: s.name,
-                        versions: s.values,
-                      })),
+                      clients:
+                        selections.length > 0
+                          ? selections.map(s => ({
+                              name: s.name,
+                              versions: s.values,
+                            }))
+                          : undefined,
                     }),
                   });
                 }}
                 onRemove={() => {
                   void navigate({
-                    search: prev => ({ ...prev, clients: [] }),
+                    search: prev => ({ ...prev, clients: undefined }),
                   });
                 }}
               />

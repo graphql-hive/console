@@ -246,7 +246,7 @@ export const TargetLayout = ({
                           projectSlug: props.projectSlug,
                           targetSlug: props.targetSlug,
                         }}
-                        search={{ operations: [], clients: [] }}
+                        search={{}}
                       >
                         Insights
                       </Link>

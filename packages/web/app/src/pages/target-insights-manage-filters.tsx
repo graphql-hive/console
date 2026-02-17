@@ -704,7 +704,7 @@ export function TargetInsightsManageFiltersPage(props: {
               projectSlug: props.projectSlug,
               targetSlug: props.targetSlug,
             }}
-            search={{ operations: [], clients: [] }}
+            search={{}}
             className="text-neutral-10 hover:text-neutral-12 mb-4 inline-flex items-center gap-1 text-sm transition-colors"
           >
             <ArrowLeft className="size-4" />

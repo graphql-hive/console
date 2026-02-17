@@ -18,6 +18,7 @@ type InsightsFiltersProps = {
   operationFilterSelections: FilterSelection[];
   setClientSelections: (value: FilterSelection[]) => void;
   setOperationSelections: (value: FilterSelection[]) => void;
+  onManageViews?: () => void;
 };
 
 export function InsightsFilters({
@@ -27,6 +28,7 @@ export function InsightsFilters({
   operationFilterSelections,
   setClientSelections,
   setOperationSelections,
+  onManageViews,
 }: InsightsFiltersProps) {
   return (
     <MenuRoot modal={false}>
@@ -41,7 +43,9 @@ export function InsightsFilters({
             <MenuItem>My views</MenuItem>
             <MenuItem>Shared views</MenuItem>
             <MenuSeparator />
-            <MenuItem variant="navigationLink">Manage views</MenuItem>
+            <MenuItem variant="navigationLink" onClick={onManageViews}>
+              Manage views
+            </MenuItem>
           </MenuContent>
         </MenuSubmenu>
         <MenuSubmenu>
