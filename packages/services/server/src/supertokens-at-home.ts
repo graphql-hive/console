@@ -1113,13 +1113,10 @@ export async function registerSupertokensAtHome(
 
         const ensureUserExists = await storage.ensureUserExists({
           superTokensUserId: user.userId,
-          email: userInfo.email,
+          email: user.email,
           firstName: null,
           lastName: null,
-          oidcIntegration: {
-            id: oidcIntegration.id,
-            defaultScopes: [],
-          },
+          oidcIntegration: null,
         });
 
         if (!ensureUserExists.ok) {
