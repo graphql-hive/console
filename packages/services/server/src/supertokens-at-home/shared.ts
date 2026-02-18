@@ -1,4 +1,12 @@
 import { z } from 'zod';
+import type { User } from '@hive/api';
+import {
+  AccessTokenKeyContainer,
+  createAccessToken,
+  createRefreshToken,
+  sha256,
+} from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
+import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 
 export const SuperTokensSessionPayloadV2Model = z.object({
   version: z.literal('2'),
@@ -42,4 +50,66 @@ export function validatePassword(password: string):
   }
 
   return { status: 'OK' };
+}
+
+export async function createNewSession(
+  supertokensStore: SuperTokensStore,
+  args: {
+    superTokensUserId: string;
+    hiveUser: User;
+    oidcIntegrationId: string | null;
+  },
+  secrets: {
+    refreshTokenKey: string;
+    accessTokenKey: AccessTokenKeyContainer;
+  },
+) {
+  const sessionHandle = crypto.randomUUID();
+  // 1 week for now
+  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1_000;
+
+  const refreshToken = createRefreshToken(
+    {
+      sessionHandle,
+      userId: args.superTokensUserId,
+      parentRefreshTokenHash1: null,
+    },
+    secrets.refreshTokenKey,
+  );
+
+  const payload: SuperTokensSessionPayload = {
+    version: '2',
+    superTokensUserId: args.superTokensUserId,
+    userId: args.hiveUser.id,
+    oidcIntegrationId: args.oidcIntegrationId ?? null,
+    email: args.hiveUser.email,
+  };
+
+  const stringifiedPayload = JSON.stringify(payload);
+
+  const session = await supertokensStore.createSession(
+    sessionHandle,
+    args.superTokensUserId,
+    stringifiedPayload,
+    stringifiedPayload,
+    sha256(sha256(refreshToken)),
+    expiresAt,
+  );
+
+  const accessToken = createAccessToken(
+    {
+      sub: args.superTokensUserId,
+      sessionHandle,
+      sessionData: payload,
+      refreshTokenHash1: sha256(refreshToken),
+      parentRefreshTokenHash1: null,
+    },
+    secrets.accessTokenKey,
+  );
+
+  return {
+    session,
+    refreshToken,
+    accessToken,
+  };
 }
