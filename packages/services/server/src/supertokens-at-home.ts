@@ -14,6 +14,7 @@ import {
   parseRefreshToken,
   sha256,
 } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
+import { OAuthCache } from '@hive/api/modules/auth/providers/oidc-cache';
 import {
   EmailPasswordOrThirdPartyUser,
   SuperTokensStore,
@@ -33,6 +34,7 @@ export async function registerSupertokensAtHome(
   taskScheduler: TaskScheduler,
   crypto: CryptoProvider,
   rateLimiter: RedisRateLimiter,
+  oauthCache: OAuthCache,
   secrets: {
     refreshTokenKey: string;
     accessTokenKey: string;
@@ -570,12 +572,23 @@ export async function registerSupertokensAtHome(
             message: 'Method not supported.',
           });
         }
+
+        const state = oidClient.randomState();
+
         const redirectUrl = new URL(env.hiveServices.webApp.url);
         redirectUrl.pathname = '/auth/callback/github';
         const authorizeUrl = new URL('https://github.com/login/oauth/authorize');
         authorizeUrl.searchParams.set('client_id', env.auth.github.clientId);
         authorizeUrl.searchParams.set('redirect_uri', redirectUrl.toString());
         authorizeUrl.searchParams.set('scope', ['read:user', 'user:email'].join(' '));
+        authorizeUrl.searchParams.set('state', state);
+
+        console.log('HORA', state);
+
+        await oauthCache.put(state, {
+          method: 'github',
+          oidIntegrationId: null,
+        });
 
         return rep.send({
           status: 'OK',
@@ -592,6 +605,8 @@ export async function registerSupertokensAtHome(
           });
         }
 
+        const state = oidClient.randomState();
+
         const redirectUrl = new URL(env.hiveServices.webApp.url);
         redirectUrl.pathname = '/auth/callback/google';
         const authorizeUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -606,6 +621,12 @@ export async function registerSupertokensAtHome(
             'openid',
           ].join(' '),
         );
+        authorizeUrl.searchParams.set('state', state);
+
+        await oauthCache.put(state, {
+          method: 'google',
+          oidIntegrationId: null,
+        });
 
         return rep.send({
           status: 'OK',
@@ -656,8 +677,10 @@ export async function registerSupertokensAtHome(
       };
 
       let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
+      const state = oidClient.randomState();
 
-      redirectTo.searchParams.set('state', oidcIntegration.id);
+      redirectTo.searchParams.set('state', state);
+      await oauthCache.put(state, { method: 'oidc', oidIntegrationId: oidcIntegration.id });
 
       return rep.send({
         status: 'OK',
@@ -695,6 +718,17 @@ export async function registerSupertokensAtHome(
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'GitHub sign in is not allowed.',
+          });
+        }
+
+        const state = parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? '';
+
+        const cacheRecord = await oauthCache.get(state);
+
+        if (cacheRecord?.method !== 'github') {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please try again.',
           });
         }
 
@@ -831,6 +865,17 @@ export async function registerSupertokensAtHome(
           });
         }
 
+        const state = parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? '';
+
+        const cacheRecord = await oauthCache.get(state);
+
+        if (cacheRecord?.method !== 'google') {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please try again.',
+          });
+        }
+
         const accessTokenUrl = new URL('https://oauth2.googleapis.com/token');
 
         const AccessTokenResponseBodyModel = z.object({
@@ -921,19 +966,23 @@ export async function registerSupertokensAtHome(
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
       } else if (parsedBody.data.thirdPartyId === 'oidc') {
-        const [, oidcIntegrationId] = (
-          parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? ''
-        ).split('--');
+        console.log(parsedBody.data.redirectURIInfo.redirectURIQueryParams);
+        const [state] = (parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? '').split(
+          '--',
+        );
 
-        if (!oidcIntegrationId) {
-          req.log.debug('Missing OIDC ID provided.');
+        const cacheRecord = await oauthCache.get(state);
+
+        if (!cacheRecord?.oidIntegrationId || cacheRecord.method !== 'oidc') {
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Please try again.',
           });
         }
 
-        const oidcIntegration = await storage.getOIDCIntegrationById({ oidcIntegrationId });
+        const oidcIntegration = await storage.getOIDCIntegrationById({
+          oidcIntegrationId: cacheRecord.oidIntegrationId,
+        });
 
         if (!oidcIntegration) {
           req.log.debug('The oidc integration does not exist.');

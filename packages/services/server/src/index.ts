@@ -23,6 +23,7 @@ import {
 } from '@hive/api';
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
+import { OAuthCache } from '@hive/api/modules/auth/providers/oidc-cache';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
@@ -587,6 +588,7 @@ export async function main() {
         registry.injector.get(TaskScheduler),
         registry.injector.get(CryptoProvider),
         registry.injector.get(RedisRateLimiter),
+        registry.injector.get(OAuthCache),
         env.supertokens.secrets,
       );
     }
