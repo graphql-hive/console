@@ -71,7 +71,9 @@ export class SuperTokensStore {
       FROM
         "supertokens_session_info"
       WHERE
-        "session_handle" = ${sessionHandle}
+        "app_id" = 'public'
+        AND "tenant_id" = 'public'
+        AND "session_handle" = ${sessionHandle}
     `;
 
     const result = await this.pool.maybeOne(query);
@@ -92,7 +94,9 @@ export class SuperTokensStore {
       DELETE
       FROM "supertokens_session_info"
       WHERE
-        "session_handle" = ${sessionHandle}
+        "app_id" = 'public'
+        AND "tenant_id" = 'public'
+        AND "session_handle" = ${sessionHandle}
     `;
 
     await this.pool.query(query);
@@ -107,7 +111,9 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
       FROM
        "supertokens_emailpassword_users"
-      WHERE "email" = lower(${email})
+      WHERE
+        "app_id" = 'public'
+        AND "email" = lower(${email})
     `;
 
     const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
@@ -123,7 +129,9 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
       FROM
        "supertokens_emailpassword_users"
-      WHERE "user_id" = ${userId}
+      WHERE
+        "app_id" = 'public'
+        AND "user_id" = ${userId}
     `;
 
     const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
@@ -131,6 +139,25 @@ export class SuperTokensStore {
   }
 
   public async lookupEmailUserByEmail(email: string) {
+    const userToTenantQuery = sql`
+      SELECT
+        "user_id" AS "userId"
+      FROM
+        "supertokens_emailpassword_user_to_tenant"
+      WHERE
+        "app_id" = 'public'
+        AND "tenant_id" = 'public'
+        AND "email" = lower(${email})
+    `;
+
+    const userId = await this.pool
+      .maybeOneFirst(userToTenantQuery)
+      .then(z.string().nullable().parse);
+
+    if (!userId) {
+      return null;
+    }
+
     const query = sql`
       SELECT
         "user_id" AS "userId"
@@ -139,7 +166,9 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
       FROM
        "supertokens_emailpassword_users"
-      WHERE "email" = lower(${email})
+      WHERE
+        "app_id" = 'public'
+        AND "user_id" = ${userId}
     `;
 
     const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
@@ -156,7 +185,9 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
       FROM
        "supertokens_thirdparty_users"
-      WHERE "user_id" = ${userId}
+      WHERE
+        "app_id" = 'public'
+        AND "user_id" = ${userId}
     `;
 
     const record = await this.pool.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
@@ -173,7 +204,9 @@ export class SuperTokensStore {
       FROM
         "supertokens_all_auth_recipe_users"
       WHERE
-        "user_id" = ${userId}
+        "app_id" = 'public'
+        AND "tenant_id" = 'public'
+        AND "user_id" = ${userId}
     `;
 
     const record = await this.pool.maybeOne(query).then(UserModel.nullable().parse);
@@ -248,7 +281,9 @@ export class SuperTokensStore {
       SET
         "refresh_token_hash_2" = ${newRefreshTokenHash2}
       WHERE
-        "session_handle" = ${sessionHandle}
+        "app_id" = 'public'
+        AND "tenant_id" = 'public'
+        AND "session_handle" = ${sessionHandle}
         AND "refresh_token_hash_2" = ${lastRefreshTokenHash2}
       RETURNING
         "session_handle" AS "sessionHandle"
@@ -273,7 +308,8 @@ export class SuperTokensStore {
       FROM
         "supertokens_thirdparty_users"
       WHERE
-        "third_party_id" = ${args.thirdPartyId}
+        "app_id" = 'public'
+        AND "third_party_id" = ${args.thirdPartyId}
         AND "third_party_user_id" = ${args.thirdPartyUserId}
     `;
 
@@ -488,7 +524,8 @@ export class SuperTokensStore {
       DELETE
       FROM "supertokens_emailpassword_pswd_reset_tokens"
       WHERE
-        "user_id" =${args.user.userId}
+        "app_id" = 'public'
+        AND "user_id" =${args.user.userId}
     `;
 
     const query = sql`
@@ -537,7 +574,8 @@ export class SuperTokensStore {
       SET
         "password_hash" = ${args.newPasswordHash}
       WHERE
-        "user_id" = ${userId}
+        "app_id" = 'public'
+        AND "user_id" = ${userId}
       RETURNING
         "user_id" AS "userId"
         , "email" AS "email"
