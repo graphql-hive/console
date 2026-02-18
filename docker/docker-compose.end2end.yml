@@ -33,10 +33,6 @@ services:
     networks:
       - 'stack'
 
-  supertokens:
-    ports:
-      - '3567:3567'
-
   db:
     ports:
       - '5432:5432'
