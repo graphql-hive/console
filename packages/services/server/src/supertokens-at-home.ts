@@ -1345,7 +1345,7 @@ const ThirdPartySigninupModel = z.object({
   }),
 });
 
-async function createNewSession(
+export async function createNewSession(
   supertokensStore: SuperTokensStore,
   args: {
     superTokensUserId: string;
