@@ -101,7 +101,7 @@ export const backendConfig = (requirements: {
   return {
     framework: 'fastify',
     supertokens: {
-      connectionURI: env.supertokens.connectionURI,
+      connectionURI: env.supertokens.connectionURI ?? '',
       apiKey: env.supertokens.apiKey,
     },
     telemetry: false,

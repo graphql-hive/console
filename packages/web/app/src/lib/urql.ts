@@ -293,6 +293,5 @@ type GraphQLPayload = {
     }
 );
 
-window.lol = () => {
-  Session.attemptRefreshingSession();
-};
+// @ts-expect-error for testing purposes ok
+window.__YOU_ARE_FIRED_attemptSessionRefresh = () => Session.attemptRefreshingSession();
