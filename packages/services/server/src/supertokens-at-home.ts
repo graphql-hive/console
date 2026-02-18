@@ -27,7 +27,7 @@ import { SuperTokensSessionPayload } from './supertokens-at-home/shared';
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
  */
-export function registerSupertokensAtHome(
+export async function registerSupertokensAtHome(
   server: FastifyInstance,
   storage: Storage,
   taskScheduler: TaskScheduler,
@@ -42,7 +42,7 @@ export function registerSupertokensAtHome(
 
   const accessTokenKey = new AccessTokenKeyContainer(secrets.accessTokenKey);
 
-  server.register(cookie, {
+  await server.register(cookie, {
     hook: 'onRequest',
     parseOptions: {},
   });
