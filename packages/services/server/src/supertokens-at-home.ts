@@ -597,7 +597,8 @@ export async function registerSupertokensAtHome(
           status: 'OK',
           urlWithQueryParams: authorizeUrl.toString(),
         });
-      } else if (query.data.thirdPartyId === 'google') {
+      }
+      if (query.data.thirdPartyId === 'google') {
         if (!env.auth.google) {
           req.log.debug('The google provider is not enabled.');
           return rep.status(200).send({
@@ -639,7 +640,8 @@ export async function registerSupertokensAtHome(
           status: 'OK',
           urlWithQueryParams: authorizeUrl.toString(),
         });
-      } else if (query.data.thirdPartyId === 'okta') {
+      }
+      if (query.data.thirdPartyId === 'okta') {
         if (!env.auth.okta) {
           req.log.debug('The okta provider is not enabled.');
           return rep.status(200).send({
@@ -679,7 +681,8 @@ export async function registerSupertokensAtHome(
           status: 'OK',
           urlWithQueryParams: authorizeUrl.toString(),
         });
-      } else if (query.data.thirdPartyId === 'oidc') {
+      }
+      if (query.data.thirdPartyId === 'oidc') {
         if (!query.data.oidc_id) {
           req.log.debug('Missing oidc_id parameter.');
           return rep.status(200).send({
