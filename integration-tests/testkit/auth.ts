@@ -1,5 +1,13 @@
+import { DatabasePool } from 'slonik';
 import { z } from 'zod';
+import {
+  AccessTokenKeyContainer,
+  hashPassword,
+} from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
+import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import type { InternalApi } from '@hive/server';
+import { createNewSession } from '@hive/server/src/supertokens-at-home';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import { ensureEnv } from './env';
 import { getServiceHost } from './utils';
@@ -55,6 +63,56 @@ const signUpUserViaEmail = async (
 
     throw e;
   }
+};
+
+const createSessionAtHome = async (
+  supertokensStore: SuperTokensStore,
+  superTokensUserId: string,
+  email: string,
+  oidcIntegrationId: string | null,
+) => {
+  const graphqlAddress = await getServiceHost('server', 8082);
+
+  const internalApi = createTRPCProxyClient<InternalApi>({
+    links: [
+      httpLink({
+        url: `http://${graphqlAddress}/trpc`,
+        fetch,
+      }),
+    ],
+  });
+
+  const ensureUserResult = await internalApi.ensureUser.mutate({
+    superTokensUserId,
+    email,
+    oidcIntegrationId,
+    firstName: null,
+    lastName: null,
+  });
+  if (!ensureUserResult.ok) {
+    throw new Error(ensureUserResult.reason);
+  }
+
+  const session = await createNewSession(
+    supertokensStore,
+    {
+      superTokensUserId,
+      hiveUser: ensureUserResult.user,
+      oidcIntegrationId,
+    },
+    {
+      refreshTokenKey: process.env.SUPERTOKENS_REFRESH_TOKEN_KEY!,
+      accessTokenKey: new AccessTokenKeyContainer(process.env.SUPERTOKENS_ACCESS_TOKEN_KEY!),
+    },
+  );
+
+  /**
+   * These are the required cookies that need to be set.
+   */
+  return {
+    access_token: session.accessToken.token,
+    refresh_token: session.refreshToken,
+  };
 };
 
 const createSessionPayload = (payload: {
@@ -155,31 +213,51 @@ const createSession = async (
 };
 
 const password = 'ilikebigturtlesandicannotlie47';
+const hashedPassword = await hashPassword(password);
 
 export function userEmail(userId: string) {
   return `${userId}-${Date.now()}@localhost.localhost`;
 }
 
 const tokenResponsePromise: {
-  [key: string]: Promise<z.TypeOf<typeof SignUpSignInUserResponseModel>> | null;
+  [key: string]: Promise<{
+    userId: string;
+    email: string;
+  }> | null;
 } = {};
 
-export function authenticate(
+export async function authenticate(
+  pool: DatabasePool,
   email: string,
-): Promise<{ access_token: string; refresh_token: string }>;
-export function authenticate(
-  email: string,
-  oidcIntegrationId?: string,
-): Promise<{ access_token: string; refresh_token: string }>;
-export function authenticate(
-  email: string | string,
   oidcIntegrationId?: string,
 ): Promise<{ access_token: string; refresh_token: string }> {
+  if (process.env.SUPERTOKENS_AT_HOME === '1') {
+    const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
+    if (!tokenResponsePromise[email]) {
+      tokenResponsePromise[email] = supertokensStore.createEmailPasswordUser({
+        email,
+        passwordHash: hashedPassword,
+      });
+    }
+
+    const user = await tokenResponsePromise[email]!;
+
+    return await createSessionAtHome(
+      supertokensStore,
+      user.userId,
+      email,
+      oidcIntegrationId ?? null,
+    );
+  }
+
   if (!tokenResponsePromise[email]) {
-    tokenResponsePromise[email] = signUpUserViaEmail(email, password);
+    tokenResponsePromise[email] = signUpUserViaEmail(email, password).then(res => ({
+      email: res.user.email,
+      userId: res.user.id,
+    }));
   }
 
   return tokenResponsePromise[email]!.then(data =>
-    createSession(data.user.id, data.user.email, oidcIntegrationId ?? null),
+    createSession(data.userId, data.email, oidcIntegrationId ?? null),
   );
 }
