@@ -581,7 +581,7 @@ export async function main() {
     });
 
     if (env.supertokens.type === 'atHome') {
-      registerSupertokensAtHome(
+      await registerSupertokensAtHome(
         server,
         storage,
         registry.injector.get(TaskScheduler),
