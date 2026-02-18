@@ -597,11 +597,9 @@ export async function registerSupertokensAtHome(
           status: 'OK',
           urlWithQueryParams: authorizeUrl.toString(),
         });
-      }
-
-      if (query.data.thirdPartyId === 'google') {
-        req.log.debug('The google provider is not enabled.');
+      } else if (query.data.thirdPartyId === 'google') {
         if (!env.auth.google) {
+          req.log.debug('The google provider is not enabled.');
           return rep.status(200).send({
             status: 'GENERAL_ERROR',
             message: 'Method not supported.',
@@ -641,66 +639,115 @@ export async function registerSupertokensAtHome(
           status: 'OK',
           urlWithQueryParams: authorizeUrl.toString(),
         });
-      }
-      // TODO: OKTA
+      } else if (query.data.thirdPartyId === 'okta') {
+        if (!env.auth.okta) {
+          req.log.debug('The okta provider is not enabled.');
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Method not supported.',
+          });
+        }
 
-      if (!query.data.oidc_id) {
-        throw new Error('NOT SUPPORTED');
-      }
+        const state = oidClient.randomState();
+        const pkceVerifier = oidClient.randomPKCECodeVerifier();
+        const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
-      const oidcIntegration = await storage.getOIDCIntegrationById({
-        oidcIntegrationId: query.data.oidc_id,
-      });
+        const redirectUrl = new URL(env.hiveServices.webApp.url);
+        redirectUrl.pathname = '/auth/callback/google';
+        const authorizeUrl = new URL(env.auth.okta.endpoint);
+        authorizeUrl.pathname = '/oauth2/v1/authorize';
 
-      if (!oidcIntegration) {
-        return rep.status(200).send({
-          status: 'GENERAL_ERROR',
-          message: 'Something went wrong. Please try again',
+        authorizeUrl.searchParams.set('client_id', env.auth.okta.clientId);
+        authorizeUrl.searchParams.set('redirect_uri', redirectUrl.toString());
+        authorizeUrl.searchParams.set('response_type', 'code');
+        authorizeUrl.searchParams.set(
+          'scope',
+          ['openid', 'email', 'profile', 'okta.users.read.self'].join(' '),
+        );
+        authorizeUrl.searchParams.set('state', state);
+        authorizeUrl.searchParams.set('state', state);
+        authorizeUrl.searchParams.set('code_challenge', codeChallenge);
+        authorizeUrl.searchParams.set('code_challenge_method', 'S256');
+
+        await oauthCache.put(state, {
+          method: 'okta',
+          oidIntegrationId: null,
+          pkceVerifier,
+        });
+
+        return rep.send({
+          status: 'OK',
+          urlWithQueryParams: authorizeUrl.toString(),
+        });
+      } else if (query.data.thirdPartyId === 'oidc') {
+        if (!query.data.oidc_id) {
+          req.log.debug('Missing oidc_id parameter.');
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Something went wrong.',
+          });
+        }
+
+        const oidcIntegration = await storage.getOIDCIntegrationById({
+          oidcIntegrationId: query.data.oidc_id,
+        });
+
+        if (!oidcIntegration) {
+          return rep.status(200).send({
+            status: 'GENERAL_ERROR',
+            message: 'Something went wrong. Please try again',
+          });
+        }
+
+        const scopes = ['openid', 'email', ...oidcIntegration.additionalScopes];
+
+        const oidClientConfig = new oidClient.Configuration(
+          {
+            issuer: oidcIntegration.id,
+            authorization_endpoint: oidcIntegration.authorizationEndpoint,
+            userinfo_endpoint: oidcIntegration.userinfoEndpoint,
+            token_endpoint: oidcIntegration.tokenEndpoint,
+          },
+          oidcIntegration.clientId,
+          {
+            client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
+          },
+        );
+        oidClient.allowInsecureRequests(oidClientConfig);
+
+        const redirect_uri = new URL(env.hiveServices.webApp.url);
+        redirect_uri.pathname = '/auth/callback/oidc';
+
+        const pkceVerifier = oidClient.randomPKCECodeVerifier();
+        const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
+
+        let parameters: Record<string, string> = {
+          redirect_uri: redirect_uri.toString(),
+          scope: scopes.join(' '),
+          code_challenge: codeChallenge,
+          code_challenge_method: 'S256',
+        };
+
+        let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
+        const state = oidClient.randomState();
+
+        redirectTo.searchParams.set('state', state);
+        await oauthCache.put(state, {
+          method: 'oidc',
+          oidIntegrationId: oidcIntegration.id,
+          pkceVerifier,
+        });
+
+        return rep.send({
+          status: 'OK',
+          urlWithQueryParams: redirectTo.toString(),
         });
       }
 
-      const scopes = ['openid', 'email', ...oidcIntegration.additionalScopes];
-
-      const oidClientConfig = new oidClient.Configuration(
-        {
-          issuer: oidcIntegration.id,
-          authorization_endpoint: oidcIntegration.authorizationEndpoint,
-          userinfo_endpoint: oidcIntegration.userinfoEndpoint,
-          token_endpoint: oidcIntegration.tokenEndpoint,
-        },
-        oidcIntegration.clientId,
-        {
-          client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
-        },
-      );
-      oidClient.allowInsecureRequests(oidClientConfig);
-
-      const redirect_uri = new URL(env.hiveServices.webApp.url);
-      redirect_uri.pathname = '/auth/callback/oidc';
-
-      const pkceVerifier = oidClient.randomPKCECodeVerifier();
-      const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
-
-      let parameters: Record<string, string> = {
-        redirect_uri: redirect_uri.toString(),
-        scope: scopes.join(' '),
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256',
-      };
-
-      let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
-      const state = oidClient.randomState();
-
-      redirectTo.searchParams.set('state', state);
-      await oauthCache.put(state, {
-        method: 'oidc',
-        oidIntegrationId: oidcIntegration.id,
-        pkceVerifier,
-      });
-
-      return rep.send({
-        status: 'OK',
-        urlWithQueryParams: redirectTo.toString(),
+      req.log.debug('unknown login method %s', query.data.thirdPartyId);
+      return rep.status(200).send({
+        status: 'GENERAL_ERROR',
+        message: 'Something went wrong.',
       });
     },
   });
@@ -973,6 +1020,106 @@ export async function registerSupertokensAtHome(
           firstName: null,
           lastName: null,
           oidcIntegration: null,
+        });
+
+        if (!ensureUserExists.ok) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in not allowed.',
+          });
+        }
+
+        supertokensUser = user;
+        hiveUser = ensureUserExists.user;
+      } else if (parsedBody.data.thirdPartyId === 'okta') {
+        if (!env.auth.okta) {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Okta sign in is not allowed.',
+          });
+        }
+
+        const state = parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? '';
+
+        const cacheRecord = await oauthCache.get(state);
+
+        if (cacheRecord?.method !== 'okta') {
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Please try again.',
+          });
+        }
+
+        const current_url = new URL(env.hiveServices.webApp.url);
+        current_url.pathname = '/auth/callback/okta';
+        current_url.searchParams.set(
+          'code',
+          parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
+        );
+
+        const oidClientConfig = new oidClient.Configuration(
+          {
+            issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss ?? '',
+            authorization_endpoint: 'https://noop.noop',
+            userinfo_endpoint: 'https://noop.noop',
+            token_endpoint: env.auth.okta.endpoint + '/oauth2/v1/token',
+          },
+          env.auth.okta.clientId,
+          {
+            client_secret: env.auth.okta.clientSecret,
+          },
+        );
+        const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url, {
+          pkceCodeVerifier: cacheRecord.pkceVerifier,
+        });
+
+        const accessToken = result.access_token;
+
+        const response = await fetch(`${env.auth.okta.endpoint}/api/v1/users/me`, {
+          method: 'GET',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+            authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.status !== 200) {
+          throw new Error(`Unexpected status code from Okta API: ${response.status}`);
+        }
+
+        const OktaProfileModel = z.object({
+          id: z.string(),
+          profile: z.object({
+            email: z.string(),
+          }),
+        });
+
+        const json = await response.json();
+        const profile = OktaProfileModel.parse(json);
+
+        let user = await supertokensStore.findThirdPartyUser({
+          thirdPartyId: 'okta',
+          thirdPartyUserId: profile.id,
+        });
+
+        if (!user) {
+          user = await supertokensStore.createThirdPartyUser({
+            email: profile.profile.email,
+            thirdPartyId: 'okta',
+            thirdPartyUserId: profile.id,
+          });
+        }
+
+        const ensureUserExists = await storage.ensureUserExists({
+          superTokensUserId: user.userId,
+          email: userInfo.email,
+          firstName: null,
+          lastName: null,
+          oidcIntegration: {
+            id: oidcIntegration.id,
+            defaultScopes: [],
+          },
         });
 
         if (!ensureUserExists.ok) {
