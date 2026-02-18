@@ -313,6 +313,31 @@ function SavedFilterRow({
                 }
               />
               <MenuContent align="end" sideOffset={8} withXPadding withYPadding>
+                <MenuItem
+                  render={
+                    <Link
+                      to="/$organizationSlug/$projectSlug/$targetSlug/insights"
+                      params={{ organizationSlug, projectSlug, targetSlug }}
+                      search={{
+                        operations:
+                          filter.filters.operationHashes.length > 0
+                            ? filter.filters.operationHashes
+                            : undefined,
+                        clients:
+                          filter.filters.clientFilters.length > 0
+                            ? filter.filters.clientFilters.map(c => ({
+                                name: c.name,
+                                versions: c.versions ?? null,
+                              }))
+                            : undefined,
+                        from: filter.filters.dateRange?.from,
+                        to: filter.filters.dateRange?.to,
+                      }}
+                    />
+                  }
+                >
+                  View in Insights
+                </MenuItem>
                 {filter.viewerCanUpdate && (
                   <MenuItem
                     onClick={() => {
