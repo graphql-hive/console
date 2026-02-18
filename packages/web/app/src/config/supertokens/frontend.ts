@@ -77,20 +77,9 @@ export const frontendConfig = () => {
             return '/';
           }
         },
-        async postAPIHook(context) {
-          console.log('AYY HERE WE GO');
-          console.log(
-            JSON.stringify(Object.fromEntries(context.fetchResponse.headers.entries()), null, 2),
-          );
-          console.log(await context.fetchResponse.clone().text());
-        },
         override: env.auth.oidc ? getOIDCOverrides() : undefined,
       }),
-      SessionReact.init({
-        onHandleEvent(ev) {
-          console.log(ev.action);
-        },
-      }),
+      SessionReact.init({}),
     ],
   };
 };
