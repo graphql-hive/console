@@ -12,7 +12,11 @@ import type { Storage } from '../../shared/providers/storage';
 import { EmailVerification } from '../providers/email-verification';
 import { SessionInfo, SuperTokensStore } from '../providers/supertokens-store';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
-import { AccessTokenKeyContainer, parseAccessToken } from './supertokens-at-home/crypto';
+import {
+  AccessTokenKeyContainer,
+  isAccessToken,
+  parseAccessToken,
+} from './supertokens-at-home/crypto';
 
 function sha256(str: string) {
   return c.createHash('sha256').update(str).digest('hex');
@@ -250,17 +254,26 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   ) {
     let session: SessionInfo | null = null;
 
-    const cookie = parseCookie(args.req.headers.cookie ?? '');
-    const accessTokenCookie: string | undefined = cookie['sAccessToken'];
+    args.req.log.debug('attempt parsing access token from cookie');
 
-    if (!accessTokenCookie) {
+    const cookie = parseCookie(args.req.headers.cookie ?? '');
+    let rawAccessToken: string | undefined = cookie['sAccessToken'];
+
+    if (!rawAccessToken) {
+      args.req.log.debug('attempt parsing access token authorization header');
+      rawAccessToken = args.req.headers.authorization?.replace('Bearer ', '')?.trim();
+    }
+
+    if (!rawAccessToken || !isAccessToken(rawAccessToken)) {
+      args.req.log.debug('access token is not identified as a supertokens access token.');
       return null;
     }
 
     let accessToken;
     try {
-      accessToken = parseAccessToken(accessTokenCookie, accessTokenKey.publicKey);
+      accessToken = parseAccessToken(rawAccessToken, accessTokenKey.publicKey);
     } catch (err) {
+      args.req.log.debug('Failed verifying the access token. Ask for refresh.');
       throw new HiveError('Invalid session', {
         extensions: {
           code: 'NEEDS_REFRESH',
@@ -269,6 +282,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     }
 
     if (accessToken.exp < Date.now() / 1000) {
+      args.req.log.debug('The access token is expired. Ask for refresh.');
       throw new HiveError('Invalid session', {
         extensions: {
           code: 'NEEDS_REFRESH',
@@ -279,14 +293,15 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     session = await this.supertokensStore.getSessionInfo(accessToken.sessionHandle);
 
     if (!session) {
-      this.logger.debug('No session found');
+      args.req.log.debug('The access token is expired, no session was found. Ask for refresh.');
       return null;
     }
 
     if (session.expiresAt < Date.now()) {
+      args.req.log.debug('The session is expired.');
       throw new HiveError('Invalid session.', {
         extensions: {
-          code: 'NEEDS_REFRESH',
+          code: 'UNAUTHENTICATED',
         },
       });
     }
@@ -295,6 +310,10 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       accessToken.parentRefreshTokenHash1 &&
       sha256(accessToken.parentRefreshTokenHash1) !== session.refreshTokenHash2
     ) {
+      args.req.log.debug(
+        'The access token is expired. A new access token has been issued for this session. Require refresh.',
+      );
+
       // old access token in use, there was alreadya refresh
       throw new HiveError('Invalid session.', {
         extensions: {
@@ -303,7 +322,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       });
     }
 
-    // TODO: json parse might be dangerous
     const result = SuperTokensSessionPayloadModel.safeParse(JSON.parse(session.sessionData));
 
     if (result.success === false) {

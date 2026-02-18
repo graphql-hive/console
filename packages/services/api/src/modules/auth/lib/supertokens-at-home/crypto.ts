@@ -203,6 +203,10 @@ export function createAccessToken(
   return { token, expiresIn, d: jwt.decode(token) };
 }
 
+export function isAccessToken(accessToken: string) {
+  return !!jwt.decode(accessToken);
+}
+
 export function parseAccessToken(accessToken: string, accessTokenPublicKey: string) {
   const token = jwt.verify(accessToken, accessTokenPublicKey, {
     algorithms: ['RS256'],
