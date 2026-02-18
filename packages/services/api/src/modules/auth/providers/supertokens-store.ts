@@ -274,7 +274,7 @@ export class SuperTokensStore {
         "supertokens_thirdparty_users"
       WHERE
         "third_party_id" = ${args.thirdPartyId}
-        AND "third_party_user_id" = ${args.thirdPartyId}
+        AND "third_party_user_id" = ${args.thirdPartyUserId}
     `;
 
     return await this.pool.maybeOne(query).then(ThirdpartUserModel.nullable().parse);
@@ -357,11 +357,28 @@ export class SuperTokensStore {
       )
     `;
 
+    const thirdpartyUserToTenant = sql`
+      INSERT INTO "supertokens_thirdparty_user_to_tenant" (
+        "app_id"
+        , "tenant_id"
+        , "user_id"
+        , "third_party_id"
+        , "third_party_user_id"
+      ) VALUES (
+        'public'
+        , 'public'
+        , ${userId}
+        , ${args.thirdPartyId}
+        , ${args.thirdPartyUserId}
+      )
+    `;
+
     return await this.pool
       .transaction(async t => {
         await t.query(appIdToUserIdQuery);
         const result = await t.one(oidcUserQuery);
         await t.query(allRecipeUsersQuery);
+        await t.query(thirdpartyUserToTenant);
         return result;
       })
       .then(r => ThirdpartUserModel.parse(r));
@@ -410,7 +427,7 @@ export class SuperTokensStore {
       ) VALUES (
         'public'
         , ${userId}
-        , ${args.email}
+        , lower(${args.email})
         , ${args.passwordHash}
         , ${now}
       )
@@ -437,11 +454,26 @@ export class SuperTokensStore {
       )
     `;
 
+    const userToTenantQuery = sql`
+      INSERT INTO "supertokens_emailpassword_user_to_tenant" (
+        "app_id"
+        , "tenant_id"
+        , "user_id"
+        , "email"
+      ) VALUES (
+        'public'
+        , 'public'
+        , ${userId}
+        , lower(${args.email})
+      )
+    `;
+
     return await this.pool
       .transaction(async t => {
         await t.query(appIdToUserIdQuery);
         const result = await t.one(emailPasswordUserQuery);
         await t.query(allRecipeUsersQuery);
+        await t.query(userToTenantQuery);
         return result;
       })
       .then(r => EmailPasswordUserModel.parse(r));
