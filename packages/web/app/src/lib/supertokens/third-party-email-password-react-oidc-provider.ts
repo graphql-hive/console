@@ -23,9 +23,7 @@ export const getOIDCOverrides = (): UserInput['override'] => ({
         state = url.searchParams.get('state');
       }
 
-      if (!state) {
-        state = originalImplementation.generateStateToSendToOAuthProvider(input);
-      }
+      state ||= originalImplementation.generateStateToSendToOAuthProvider(input);
 
       const oidcId = input?.userContext?.['oidcId'];
 
