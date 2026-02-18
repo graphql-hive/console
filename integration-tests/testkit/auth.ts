@@ -7,7 +7,7 @@ import {
 import { SuperTokensStore } from '@hive/api/src/modules/auth/providers/supertokens-store';
 import { NoopLogger } from '@hive/api/src/modules/shared/providers/logger';
 import type { InternalApi } from '@hive/server';
-import { createNewSession } from '@hive/server/src/supertokens-at-home';
+import { createNewSession } from '@hive/server/supertokens-at-home';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import { ensureEnv } from './env';
 import { getServiceHost } from './utils';
