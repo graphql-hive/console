@@ -14,7 +14,7 @@ import {
   parseRefreshToken,
   sha256,
 } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
-import { OAuthCache } from '@hive/api/modules/auth/providers/oidc-cache';
+import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import {
   EmailPasswordOrThirdPartyUser,
   SuperTokensStore,
@@ -574,6 +574,8 @@ export async function registerSupertokensAtHome(
         }
 
         const state = oidClient.randomState();
+        const pkceVerifier = oidClient.randomPKCECodeVerifier();
+        const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
         const redirectUrl = new URL(env.hiveServices.webApp.url);
         redirectUrl.pathname = '/auth/callback/github';
@@ -582,10 +584,13 @@ export async function registerSupertokensAtHome(
         authorizeUrl.searchParams.set('redirect_uri', redirectUrl.toString());
         authorizeUrl.searchParams.set('scope', ['read:user', 'user:email'].join(' '));
         authorizeUrl.searchParams.set('state', state);
+        authorizeUrl.searchParams.set('code_challenge', codeChallenge);
+        authorizeUrl.searchParams.set('code_challenge_method', 'S256');
 
         await oauthCache.put(state, {
           method: 'github',
           oidIntegrationId: null,
+          pkceVerifier,
         });
 
         return rep.send({
@@ -604,6 +609,8 @@ export async function registerSupertokensAtHome(
         }
 
         const state = oidClient.randomState();
+        const pkceVerifier = oidClient.randomPKCECodeVerifier();
+        const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
         const redirectUrl = new URL(env.hiveServices.webApp.url);
         redirectUrl.pathname = '/auth/callback/google';
@@ -620,10 +627,14 @@ export async function registerSupertokensAtHome(
           ].join(' '),
         );
         authorizeUrl.searchParams.set('state', state);
+        authorizeUrl.searchParams.set('state', state);
+        authorizeUrl.searchParams.set('code_challenge', codeChallenge);
+        authorizeUrl.searchParams.set('code_challenge_method', 'S256');
 
         await oauthCache.put(state, {
           method: 'google',
           oidIntegrationId: null,
+          pkceVerifier,
         });
 
         return rep.send({
@@ -667,16 +678,25 @@ export async function registerSupertokensAtHome(
       const redirect_uri = new URL(env.hiveServices.webApp.url);
       redirect_uri.pathname = '/auth/callback/oidc';
 
+      const pkceVerifier = oidClient.randomPKCECodeVerifier();
+      const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
+
       let parameters: Record<string, string> = {
         redirect_uri: redirect_uri.toString(),
         scope: scopes.join(' '),
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
       };
 
       let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
       const state = oidClient.randomState();
 
       redirectTo.searchParams.set('state', state);
-      await oauthCache.put(state, { method: 'oidc', oidIntegrationId: oidcIntegration.id });
+      await oauthCache.put(state, {
+        method: 'oidc',
+        oidIntegrationId: oidcIntegration.id,
+        pkceVerifier,
+      });
 
       return rep.send({
         status: 'OK',
@@ -746,6 +766,7 @@ export async function registerSupertokensAtHome(
             client_secret: env.auth.github.clientSecret,
             code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
             redirect_uri: parsedBody.data.redirectURIInfo.redirectURIOnProviderDashboard,
+            code_verifier: cacheRecord.pkceVerifier,
           }),
         });
 
@@ -891,11 +912,15 @@ export async function registerSupertokensAtHome(
             client_secret: env.auth.google.clientSecret,
             code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code,
             redirect_uri: parsedBody.data.redirectURIInfo.redirectURIOnProviderDashboard,
+            code_verifier: cacheRecord.pkceVerifier,
           }),
         });
 
         if (accessTokenResponse.status !== 200) {
-          req.log.debug('Received invalid response status from google.');
+          req.log.debug(
+            'Received invalid response status from google. %s',
+            await accessTokenResponse.text(),
+          );
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Something went wrong.',
@@ -1010,7 +1035,9 @@ export async function registerSupertokensAtHome(
         );
 
         // TODO: error handling
-        const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url);
+        const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url, {
+          pkceCodeVerifier: cacheRecord.pkceVerifier,
+        });
 
         const codeGrantAccessToken = result.access_token;
 
