@@ -107,7 +107,7 @@ export class SuperTokensStore {
         , "time_joined" AS "timeJoined"
       FROM
        "supertokens_emailpassword_users"
-      WHERE "email" = ${email}
+      WHERE "email" = lower(${email})
     `;
 
     const record = await this.pool.maybeOne(query).then(EmailPasswordUserModel.nullable().parse);
