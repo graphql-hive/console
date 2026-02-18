@@ -36,6 +36,22 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 import { SignInButton } from './auth-sign-in';
 
+export const PasswordStringModel = z
+  .string({
+    required_error: 'Password is required',
+  })
+  .min(10, { message: 'Password must be at least 10 characters long.' })
+  // Check 2: At least one uppercase letter
+  .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter.' })
+  // Check 3: At least one special character
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, {
+    message: 'Password must contain at least one special character.',
+  })
+  // Check 4: At least one digit
+  .regex(/[0-9]/, { message: 'Password must contain at least one digit.' })
+  // Check 5: At least one lowercase letter
+  .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' });
+
 const SignUpFormSchema = z.object({
   firstName: z.string({
     required_error: 'First name is required',
@@ -48,7 +64,7 @@ const SignUpFormSchema = z.object({
       required_error: 'Email is required',
     })
     .email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: PasswordStringModel,
 });
 
 type SignUpFormValues = z.infer<typeof SignUpFormSchema>;
