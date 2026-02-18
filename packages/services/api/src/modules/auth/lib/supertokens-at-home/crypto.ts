@@ -56,10 +56,7 @@ function decryptRefreshToken(encodedData: string, masterKey: string) {
   const decipher = c.createDecipheriv('aes-256-gcm', secretKey, iv);
   decipher.setAuthTag(authTag);
 
-  let decrypted = decipher.update(encryptedData);
-  decrypted += decipher.final('utf8');
-
-  return decrypted;
+  return Buffer.concat([decipher.update(encryptedData), decipher.final()]).toString('utf-8');
 }
 
 function encryptRefreshToken(plaintext: string, masterKey: string) {
@@ -139,12 +136,10 @@ export function parseRefreshToken(refreshToken: string, masterKey: string) {
     } as const;
   }
 
-  console.log(payload);
-
   let refreshTokenPayload: RefreshTokenPayloadType;
   try {
     refreshTokenPayload = RefreshTokenPayloadModel.parse(
-      JSON.parse(decryptRefreshToken(payload, masterKey).toString('utf8')),
+      JSON.parse(decryptRefreshToken(payload, masterKey)),
     );
   } catch (err) {
     return {
