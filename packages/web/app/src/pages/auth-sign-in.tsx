@@ -73,7 +73,7 @@ const SignInFormSchema = z.object({
       required_error: 'Email is required',
     })
     .email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string(),
 });
 
 type SignInFormValues = z.infer<typeof SignInFormSchema>;
