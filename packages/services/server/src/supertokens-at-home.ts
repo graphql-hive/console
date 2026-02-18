@@ -120,7 +120,13 @@ export async function registerSupertokensAtHome(
 
       if (user) {
         return rep.send({
-          status: 'EMAIL_ALREADY_EXISTS_ERROR',
+          status: 'FIELD_ERROR',
+          formFields: [
+            {
+              id: 'email',
+              error: 'This email already exists. Please sign in instead.',
+            },
+          ],
         });
       }
 
@@ -128,8 +134,13 @@ export async function registerSupertokensAtHome(
 
       if (passwordValidation.status === 'INVALID') {
         return rep.send({
-          status: 'GENERAL_ERROR',
-          message: passwordValidation.message,
+          status: 'FIELD_ERROR',
+          formFields: [
+            {
+              id: 'password',
+              error: passwordValidation.message,
+            },
+          ],
         });
       }
 
@@ -408,18 +419,29 @@ export async function registerSupertokensAtHome(
 
       if (passwordValidation.status === 'INVALID') {
         return rep.send({
-          status: 'GENERAL_ERROR',
-          message: passwordValidation.message,
+          status: 'FIELD_ERROR',
+          formFields: [
+            {
+              id: 'password',
+              error: passwordValidation.message,
+            },
+          ],
         });
       }
 
       const token = sha256(parsedBody.data.token);
       const newPasswordHash = await hashPassword(newPassword);
 
-      await supertokensStore.updateEmailPasswordBasedOnResetToken({
+      const result = await supertokensStore.updateEmailPasswordBasedOnResetToken({
         token,
         newPasswordHash,
       });
+
+      if (!result) {
+        return rep.send({
+          status: 'RESET_PASSWORD_INVALID_TOKEN_ERROR',
+        });
+      }
 
       return rep.send({
         status: 'OK',
