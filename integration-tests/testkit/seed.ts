@@ -62,32 +62,37 @@ import { UpdateSchemaPolicyForOrganization, UpdateSchemaPolicyForProject } from 
 import { collect, CollectedOperation, legacyCollect } from './usage';
 import { generateUnique, getServiceHost } from './utils';
 
-export function initSeed() {
-  function createConnectionPool() {
-    const pg = {
-      user: ensureEnv('POSTGRES_USER'),
-      password: ensureEnv('POSTGRES_PASSWORD'),
-      host: ensureEnv('POSTGRES_HOST'),
-      port: ensureEnv('POSTGRES_PORT'),
-      db: ensureEnv('POSTGRES_DB'),
-    };
+function createConnectionPool() {
+  const pg = {
+    user: ensureEnv('POSTGRES_USER'),
+    password: ensureEnv('POSTGRES_PASSWORD'),
+    host: ensureEnv('POSTGRES_HOST'),
+    port: ensureEnv('POSTGRES_PORT'),
+    db: ensureEnv('POSTGRES_DB'),
+  };
 
-    return createPool(
-      `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
-    );
-  }
+  return createPool(
+    `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
+  );
+}
 
+async function createDbConnection() {
+  const pool = await createConnectionPool();
   return {
-    async createDbConnection() {
-      const pool = await createConnectionPool();
-      return {
-        pool,
-        [Symbol.asyncDispose]: async () => {
-          await pool.end();
-        },
-      };
+    pool,
+    [Symbol.asyncDispose]: async () => {
+      await pool.end();
     },
-    authenticate,
+  };
+}
+
+const sharedPool = await createDbConnection();
+
+export function initSeed() {
+  return {
+    createDbConnection,
+    authenticate: (email: string, oidcIntegrationId?: string) =>
+      authenticate(sharedPool.pool, email, oidcIntegrationId),
     generateEmail: () => userEmail(generateUnique()),
     async purgeOrganizationAccessTokenById(id: string) {
       const registryAddress = await getServiceHost('server', 8082);
@@ -100,7 +105,7 @@ export function initSeed() {
     },
     async createOwner() {
       const ownerEmail = userEmail(generateUnique());
-      const auth = await authenticate(ownerEmail);
+      const auth = await authenticate(sharedPool.pool, ownerEmail);
       const ownerRefreshToken = auth.refresh_token;
       const ownerToken = auth.access_token;
 
@@ -904,9 +909,11 @@ export function initSeed() {
                 },
               );
               const memberEmail = userEmail(generateUnique());
-              const memberToken = await authenticate(memberEmail, oidcIntegrationId).then(
-                r => r.access_token,
-              );
+              const memberToken = await authenticate(
+                sharedPool.pool,
+                memberEmail,
+                oidcIntegrationId,
+              ).then(r => r.access_token);
 
               if (!oidcIntegrationId) {
                 const invitationResult = await inviteToOrganization(
