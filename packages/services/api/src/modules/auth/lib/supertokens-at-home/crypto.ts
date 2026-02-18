@@ -161,13 +161,6 @@ export function parseRefreshToken(refreshToken: string, masterKey: string) {
   } as const;
 }
 
-// console.log(
-//   parseRefreshToken(
-//     'DjWH1zah0hb5DfuNgvMMMLnvWlSX15Pl8ndmugkNfzYc04%2BRZ54Vf2iwfySVuTjAfmbmj6hWASBs9AMKVwS9MY2S44uqaRx7Qac5W811cZybzPQdIVMtmwTYHws9oC0pY6Eia1gRUfnd1FVxOsGnwoIXT2t4JFiO2KaEcxi%2BnJKoRmjEMXNQaIgCbxTp2QV7O7z0g8GmSU9XR%2B5GABCWEzl%2FSPFYYnhOplQM1Zqm8JmK3STMy2E50askaKSJasj1Tei5qlbDMtlK%2BP4hhXu%2B.7e029cdfa5d172f27083ef10cacfb6a7ee1b1ee82a3db84b3d13f5e99017033b.V2',
-//     '1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0',
-//   ),
-// );
-
 export function sha256(str: string) {
   return c.createHash('sha256').update(str).digest('hex');
 }
