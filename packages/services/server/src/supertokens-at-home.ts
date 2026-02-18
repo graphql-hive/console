@@ -22,7 +22,7 @@ import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
-import { SuperTokensSessionPayload } from './supertokens-at-home/shared';
+import { SuperTokensSessionPayload, validatePassword } from './supertokens-at-home/shared';
 
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
@@ -83,10 +83,10 @@ export async function registerSupertokensAtHome(
     method: 'POST',
     async handler(req, rep) {
       if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Please try again later.',
-        };
+        });
       }
 
       const parsedBody = SignUpBodyModel.safeParse(req.body);
@@ -107,22 +107,29 @@ export async function registerSupertokensAtHome(
 
       // Verify email
       if (!emailRegex.test(email)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Invalid email provided.',
-        };
+        });
       }
 
       // Lookup user
       let user = await supertokensStore.lookupEmailUserByEmail(email);
 
       if (user) {
-        return {
+        return rep.send({
           status: 'EMAIL_ALREADY_EXISTS_ERROR',
-        };
+        });
       }
 
-      // TODO: Validate password
+      const passwordValidation = validatePassword(password);
+
+      if (passwordValidation.status === 'INVALID') {
+        return rep.send({
+          status: 'GENERAL_ERROR',
+          message: passwordValidation.message,
+        });
+      }
 
       // hash password
       const passwordHash = await hashPassword(password);
@@ -212,10 +219,10 @@ export async function registerSupertokensAtHome(
     method: 'POST',
     async handler(req, rep) {
       if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Please try again later.',
-        };
+        });
       }
 
       const parsedBody = SignInBodyModel.safeParse(req.body);
@@ -324,16 +331,10 @@ export async function registerSupertokensAtHome(
     method: 'POST',
     async handler(req, rep) {
       if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Please try again later.',
-        };
-      }
-      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
-          status: 'GENERAL_ERROR',
-          message: 'Please try again later.',
-        };
+        });
       }
 
       const parsedBody = UserPasswordResetTokenBodyModel.safeParse(req.body);
@@ -386,10 +387,10 @@ export async function registerSupertokensAtHome(
     method: 'POST',
     async handler(req, rep) {
       if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Please try again later.',
-        };
+        });
       }
 
       const parsedBody = UserPasswordResetBodyModel.safeParse(req.body);
@@ -401,7 +402,15 @@ export async function registerSupertokensAtHome(
       const newPassword =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
-      // TODO: validate password payload
+      const passwordValidation = validatePassword(newPassword);
+
+      if (passwordValidation.status === 'INVALID') {
+        return rep.send({
+          status: 'GENERAL_ERROR',
+          message: passwordValidation.message,
+        });
+      }
+
       const token = sha256(parsedBody.data.token);
       const newPasswordHash = await hashPassword(newPassword);
 
@@ -538,10 +547,10 @@ export async function registerSupertokensAtHome(
     method: 'GET',
     async handler(req, rep) {
       if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Please try again later.',
-        };
+        });
       }
       const query = AuthorisationurlQueryParamsModel.safeParse(req.query);
 
@@ -662,10 +671,10 @@ export async function registerSupertokensAtHome(
     method: 'POST',
     async handler(req, rep) {
       if (await rateLimiter.isFastifyRouteRateLimited(req)) {
-        return {
+        return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Please try again later.',
-        };
+        });
       }
 
       const parsedBody = ThirdPartySigninupModel.safeParse(req.body);
