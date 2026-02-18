@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.58.1
+
+### Patch Changes
+
+- [#7664](https://github.com/graphql-hive/console/pull/7664)
+  [`ddea09b`](https://github.com/graphql-hive/console/commit/ddea09bbc34f5486fa6ddddf4e60a899fc7f43b5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Do not minify multiline descriptions in SDL on
+  check/push
+
 ## 0.58.0
 
 ### Minor Changes
