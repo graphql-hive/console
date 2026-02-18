@@ -583,8 +583,6 @@ export async function registerSupertokensAtHome(
         authorizeUrl.searchParams.set('scope', ['read:user', 'user:email'].join(' '));
         authorizeUrl.searchParams.set('state', state);
 
-        console.log('HORA', state);
-
         await oauthCache.put(state, {
           method: 'github',
           oidIntegrationId: null,
@@ -634,8 +632,6 @@ export async function registerSupertokensAtHome(
         });
       }
       // TODO: OKTA
-
-      console.log(query.data.thirdPartyId);
 
       if (!query.data.oidc_id) {
         throw new Error('NOT SUPPORTED');
@@ -910,8 +906,6 @@ export async function registerSupertokensAtHome(
           .json()
           .then(res => AccessTokenResponseBodyModel.parse(res));
 
-        console.log(accessTokenBody);
-
         const UserInfoBodyModel = z.object({
           sub: z.string(),
           email: z.string(),
@@ -966,7 +960,7 @@ export async function registerSupertokensAtHome(
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
       } else if (parsedBody.data.thirdPartyId === 'oidc') {
-        console.log(parsedBody.data.redirectURIInfo.redirectURIQueryParams);
+        // for backwards-compatibility purposes we support the case where the frontend modifies the state to append the oidc id
         const [state] = (parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? '').split(
           '--',
         );
