@@ -21,7 +21,6 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
-import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
@@ -29,6 +28,7 @@ import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
+import { AccessTokenKeyContainer } from '@hive/api/src/modules/auth/lib/supertokens-at-home/crypto';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
 import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader';
 import { AwsClient } from '@hive/cdn-script/aws';
@@ -453,6 +453,13 @@ export async function main() {
 
     const crypto = new CryptoProvider(env.encryptionSecret);
 
+    function broadcastLog(oidcId: string, message: string) {
+      pubSub.publish('oidcIntegrationLogs', oidcId, {
+        timestamp: new Date().toISOString(),
+        message,
+      });
+    }
+
     if (env.supertokens.type == 'core') {
       initSupertokens({
         storage,
@@ -460,12 +467,7 @@ export async function main() {
         logger: server.log,
         redis,
         taskScheduler,
-        broadcastLog(id, message) {
-          pubSub.publish('oidcIntegrationLogs', id, {
-            timestamp: new Date().toISOString(),
-            message,
-          });
-        },
+        broadcastLog,
       });
     }
 
@@ -589,6 +591,7 @@ export async function main() {
         registry.injector.get(CryptoProvider),
         registry.injector.get(RedisRateLimiter),
         registry.injector.get(OAuthCache),
+        broadcastLog,
         env.supertokens.secrets,
       );
     }

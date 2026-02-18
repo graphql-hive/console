@@ -23,7 +23,8 @@ import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
-import { SuperTokensSessionPayload, validatePassword } from './supertokens-at-home/shared';
+import { createNewSession, validatePassword } from './supertokens-at-home/shared';
+import { type BroadcastOIDCIntegrationLog } from './supertokens/oidc-provider';
 
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
@@ -35,6 +36,7 @@ export async function registerSupertokensAtHome(
   crypto: CryptoProvider,
   rateLimiter: RedisRateLimiter,
   oauthCache: OAuthCache,
+  broadcastLog: BroadcastOIDCIntegrationLog,
   secrets: {
     refreshTokenKey: string;
     accessTokenKey: string;
@@ -763,6 +765,11 @@ export async function registerSupertokensAtHome(
           pkceVerifier,
         });
 
+        broadcastLog(
+          oidcIntegration.id,
+          `redirect client to oauth provider ${redirectTo.toString()}`,
+        );
+
         return rep.send({
           status: 'OK',
           urlWithQueryParams: redirectTo.toString(),
@@ -1203,23 +1210,66 @@ export async function registerSupertokensAtHome(
           parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
         );
 
-        // TODO: error handling
-        const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url, {
-          pkceCodeVerifier: cacheRecord.pkceVerifier,
-        });
+        broadcastLog(
+          oidcIntegration.id,
+          `attempt exchanging auth code for auth tokens on endpoint. ${oidcIntegration.tokenEndpoint}`,
+        );
+
+        let result;
+        try {
+          result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url, {
+            pkceCodeVerifier: cacheRecord.pkceVerifier,
+          });
+        } catch (err) {
+          if (err instanceof oidClient.ResponseBodyError) {
+            broadcastLog(
+              oidcIntegration.id,
+              `the token endpoint ${oidcIntegration.tokenEndpoint} responded with ${JSON.stringify(err.cause)}`,
+            );
+          } else {
+            broadcastLog(
+              oidcIntegration.id,
+              `an unexpected error occured while calling the token endpoint ${oidcIntegration.tokenEndpoint}.`,
+            );
+          }
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
 
         const codeGrantAccessToken = result.access_token;
 
-        const userInfo = await oidClient.fetchUserInfo(
-          oidClientConfig,
-          codeGrantAccessToken,
-          oidClient.skipSubjectCheck,
-        );
+        let userInfo;
 
-        if (!userInfo.email) {
+        try {
+          userInfo = await oidClient.fetchUserInfo(
+            oidClientConfig,
+            codeGrantAccessToken,
+            oidClient.skipSubjectCheck,
+          );
+        } catch (err) {
+          broadcastLog(
+            oidcIntegration.id,
+            `an unexpected error occured while fetching the user info endpoint ${oidcIntegration.userinfoEndpoint}.`,
+          );
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Missing email claim.',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        if (!userInfo.email) {
+          broadcastLog(
+            oidcIntegration.id,
+            `the user info endpoint did not include an email. ${oidcIntegration.userinfoEndpoint}.`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Missing email claim. Please contact your origanization administrator.',
           });
         }
 
@@ -1369,65 +1419,3 @@ const ThirdPartySigninupModel = z.object({
     }),
   }),
 });
-
-export async function createNewSession(
-  supertokensStore: SuperTokensStore,
-  args: {
-    superTokensUserId: string;
-    hiveUser: User;
-    oidcIntegrationId: string | null;
-  },
-  secrets: {
-    refreshTokenKey: string;
-    accessTokenKey: AccessTokenKeyContainer;
-  },
-) {
-  const sessionHandle = crypto.randomUUID();
-  // 1 week for now
-  const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1_000;
-
-  const refreshToken = createRefreshToken(
-    {
-      sessionHandle,
-      userId: args.superTokensUserId,
-      parentRefreshTokenHash1: null,
-    },
-    secrets.refreshTokenKey,
-  );
-
-  const payload: SuperTokensSessionPayload = {
-    version: '2',
-    superTokensUserId: args.superTokensUserId,
-    userId: args.hiveUser.id,
-    oidcIntegrationId: args.oidcIntegrationId ?? null,
-    email: args.hiveUser.email,
-  };
-
-  const stringifiedPayload = JSON.stringify(payload);
-
-  const session = await supertokensStore.createSession(
-    sessionHandle,
-    args.superTokensUserId,
-    stringifiedPayload,
-    stringifiedPayload,
-    sha256(sha256(refreshToken)),
-    expiresAt,
-  );
-
-  const accessToken = createAccessToken(
-    {
-      sub: args.superTokensUserId,
-      sessionHandle,
-      sessionData: payload,
-      refreshTokenHash1: sha256(refreshToken),
-      parentRefreshTokenHash1: null,
-    },
-    secrets.accessTokenKey,
-  );
-
-  return {
-    session,
-    refreshToken,
-    accessToken,
-  };
-}
