@@ -3,9 +3,9 @@ import { z } from 'zod';
 import {
   AccessTokenKeyContainer,
   hashPassword,
-} from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
-import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
-import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+} from '@hive/api/src/modules/auth/lib/supertokens-at-home/crypto';
+import { SuperTokensStore } from '@hive/api/src/modules/auth/providers/supertokens-store';
+import { NoopLogger } from '@hive/api/src/modules/shared/providers/logger';
 import type { InternalApi } from '@hive/server';
 import { createNewSession } from '@hive/server/src/supertokens-at-home';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
