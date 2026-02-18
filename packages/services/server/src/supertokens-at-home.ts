@@ -1,16 +1,10 @@
-import { type FastifyInstance } from 'fastify';
+import { FastifyReply, type FastifyInstance } from 'fastify';
 import * as oidClient from 'openid-client';
 import z from 'zod';
 import cookie from '@fastify/cookie';
 import { CryptoProvider, Storage, User } from '@hive/api';
 import {
-  EmailPasswordOrThirdPartyUser,
-  SuperTokensStore,
-} from '@hive/api/modules/auth/providers/supertokens-store';
-import { TaskScheduler } from '@hive/workflows/kit';
-import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
-import { env } from './environment';
-import {
+  AccessTokenKeyContainer,
   comparePassword,
   createAccessToken,
   createFrontToken,
@@ -19,16 +13,16 @@ import {
   hashPassword,
   parseRefreshToken,
   sha256,
-} from './supertokens-at-home/crypto';
+} from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
+import {
+  EmailPasswordOrThirdPartyUser,
+  SuperTokensStore,
+} from '@hive/api/modules/auth/providers/supertokens-store';
+import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
+import { env } from './environment';
 import { SuperTokensSessionPayload } from './supertokens-at-home/shared';
-
-// TODO: not hardcode this localhost value here :)
-const UNSAFE_REFRESH_TOKEN_MASTER_KEY =
-  '1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0';
-
-// TODO: not hardcode this localhost value here :)
-const UNSAFE_ACCESS_TOKEN_SIGNING_KEY =
-  '-----BEGIN RSA PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCmrnawc+IN/NFQaZQj8ah/tezi6qiaF5NVsk4eoCyZbCEEef0AfJ96xYKwYWJe/BZebRvomaHv09a9swCW041P3QqjkUJRBfdKZpgqYwvXwcbXxbTw8UcGAIeLT8fDczaMbewZrxBf+VakgXQIYy7ekMPPx6VgQTJyP/tX4YUxC6HxeiPpdFCEc6DbuQqzLqr8I0N6B2jr3Gkw3WFq4Ui4zWfMD8pcgsrOlX6irsBT7MKt0KmyGGm92RFzESU075d9KJKEahNnWfkJfy2yBscF/H+cXUIa3To/Ps6XplG/f5L5ocw15pjJiCMg3prA6eaIRAKkbLmY3+2lj3gyPiArAgMBAAECggEAMfQNXBqOv/Rp4riRjigpgITMRsFe4Dd6j29NnD4Sv7Q5PPc2TMQMo6W34hZ9fcv9BDWc7JvGfXK2Y8nWvl0Od8XeH2E0R8YK88BFkEZ40SOg7R+yd5dH2tOjy6uQSdIoofN7k8L0nF7Eia7GUJExBcDK/mVt+afwb28fa5oJ6cV/m4IvN8tkIUH83erdx2p8zvAKiJT/Ljrq3UhstAAGHLT7k52A9CuKiJK7QiFViFNSpNZhz64VDIMkTalL9tyOHvOlI9Dfvjp6uipf2tGwmien24RckrewZHoK/NkLW0esPSDEoF0/ZBrkRvs+RyCJsEvVDVE9O4HsemWTafpeyQKBgQDdJpnAt5QIjNgmoMlKMiL1uptQ5p7bqNX11Jhz0l0A67cBi2+JzA00JRfOPD0JIV8niqCUhIfXC7u1OJcKXGMAG1pjql4HQWd6z6wLPGX05jq7GljHCf5xpKWiY5oYc6XNIcmE9NrJEqmGmJ4pKJ9NeUqCIoKnsxsjXLbyzVQuDQKBgQDA8odNzm6c6gLp0K/qZDy5z/SAUzWQ6IrL1RPG+HnuF4XwuwAzZ3y1fGPYTIZkUadwkQL6DbK2Zqvw73jEamfL9FYS6flw0joq2i4jL9ZYhOxSxXPNdy70PUuqrFnMnWq0JUeNbVz9dXzQC0nTJjUiI4kRBqyo5jW3ckEETHOxFwKBgBIF3E/tZh4QRGlZfy4RyfGWxKOiN94U82L2cXo28adqjl6M24kyXP0b7MW8+QhudM/HJ3ETH/LxnNmXBBAvGU5f7EzlDIaw2NsUY6QCxxhfTvgCnKuT7+2ZCnqifWNywVdnYoH4ZoAuiixS8cjO67Snpt/WKim6mgKWwr4k57BdAoGBAJqSMJ6+X5LJTagujJ9Dyfo5hHBBOMpr4LVGb9+YM2Xv5ldiF9kWcKubiQlA1PENEQx2v2G/E4pYWipcTe1cKOcVSNdCJZiicgLeYtPBgP/NDN2KXSke77iuWi3SgOYQveivbND56eMK+gBY6r2DAFHnEelX5X4xXpslprxg2tXlAoGACv2y3ImZdzaCtQfmD05mEIA8zQLtDMpteO+XFQ8uNZdeG0iBJCi/N523hi5Nbg4Y1jNccwBQQSpq7A17u/j/d6EmCuduosALVQY3ILpd3P8hf8wDOBO6JfAd6DTO3QcrArmFcoJTB2t2zGud9zqdzL1fWNV9/X3Zow2XmHox+CI=\n-----END RSA PRIVATE KEY-----';
 
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
@@ -38,38 +32,44 @@ export function registerSupertokensAtHome(
   storage: Storage,
   taskScheduler: TaskScheduler,
   crypto: CryptoProvider,
+  rateLimiter: RedisRateLimiter,
+  secrets: {
+    refreshTokenKey: string;
+    accessTokenKey: string;
+  },
 ) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
 
-  const secrets = {
-    refreshTokenKey: UNSAFE_REFRESH_TOKEN_MASTER_KEY,
-    accessTokenSigningKey: UNSAFE_ACCESS_TOKEN_SIGNING_KEY,
-  };
+  const accessTokenKey = new AccessTokenKeyContainer(secrets.accessTokenKey);
 
   server.register(cookie, {
     hook: 'onRequest',
     parseOptions: {},
   });
 
+  function unsetAuthCookies(reply: FastifyReply) {
+    return reply
+      .setCookie('sRefreshToken', '', {
+        httpOnly: true,
+        secure: true,
+        path: '/auth-api/session/refresh',
+        sameSite: 'lax',
+        expires: new Date(0),
+      })
+      .setCookie('sAccessToken', '', {
+        httpOnly: true,
+        secure: true,
+        path: '/',
+        sameSite: 'lax',
+        expires: new Date(0),
+      });
+  }
+
   server.route({
     url: '/auth-api/signout',
     method: 'POST',
-    handler(_req, rep) {
-      rep
-        .setCookie('sRefreshToken', '', {
-          httpOnly: true,
-          secure: true,
-          path: '/auth-api/session/refresh',
-          sameSite: 'lax',
-          expires: new Date(0),
-        })
-        .setCookie('sAccessToken', '', {
-          httpOnly: true,
-          secure: true,
-          path: '/',
-          sameSite: 'lax',
-          expires: new Date(0),
-        })
+    handler(_, rep) {
+      return unsetAuthCookies(rep)
         .header('front-token', 'remove')
         .header('Access-Control-Expose-Headers', 'front-token')
         .send({
@@ -82,6 +82,13 @@ export function registerSupertokensAtHome(
     url: '/auth-api/signup',
     method: 'POST',
     async handler(req, rep) {
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
+
       const parsedBody = SignUpBodyModel.safeParse(req.body);
 
       if (!parsedBody.success) {
@@ -148,7 +155,10 @@ export function registerSupertokensAtHome(
           oidcIntegrationId: null,
           superTokensUserId: user.userId,
         },
-        secrets,
+        {
+          refreshTokenKey: secrets.refreshTokenKey,
+          accessTokenKey,
+        },
       );
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
@@ -201,6 +211,13 @@ export function registerSupertokensAtHome(
     url: '/auth-api/signin',
     method: 'POST',
     async handler(req, rep) {
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
+
       const parsedBody = SignInBodyModel.safeParse(req.body);
 
       if (!parsedBody.success) {
@@ -250,7 +267,10 @@ export function registerSupertokensAtHome(
           oidcIntegrationId: null,
           superTokensUserId: user.userId,
         },
-        secrets,
+        {
+          refreshTokenKey: secrets.refreshTokenKey,
+          accessTokenKey,
+        },
       );
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
@@ -303,6 +323,19 @@ export function registerSupertokensAtHome(
     url: '/auth-api/user/password/reset/token',
     method: 'POST',
     async handler(req, rep) {
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
+
       const parsedBody = UserPasswordResetTokenBodyModel.safeParse(req.body);
 
       if (!parsedBody.success) {
@@ -352,6 +385,13 @@ export function registerSupertokensAtHome(
     url: '/auth-api/user/password/reset',
     method: 'POST',
     async handler(req, rep) {
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
+
       const parsedBody = UserPasswordResetBodyModel.safeParse(req.body);
 
       if (!parsedBody.success) {
@@ -380,6 +420,10 @@ export function registerSupertokensAtHome(
     url: '/auth-api/session/refresh',
     method: 'POST',
     async handler(req, rep) {
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return rep.status(401).send();
+      }
+
       const refreshToken = req.cookies['sRefreshToken'] ?? null;
 
       if (!refreshToken) {
@@ -391,7 +435,7 @@ export function registerSupertokensAtHome(
 
       if (parseResult.type === 'error') {
         req.log.debug('Wrong refresh token version provided. err=%s', parseResult.code);
-        return rep.status(404).send();
+        return unsetAuthCookies(rep).status(404).send();
       }
 
       const { payload } = parseResult;
@@ -401,17 +445,20 @@ export function registerSupertokensAtHome(
 
       if (!session) {
         req.log.debug('The referenced session does not exist.');
-        return rep.status(404).send();
+        return unsetAuthCookies(rep).status(404).send();
       }
 
       if (session.expiresAt < Date.now()) {
         req.log.debug('The session has expired.');
-        return rep.status(404).send();
+        return unsetAuthCookies(rep).status(404).send();
       }
 
-      if (!payload.parentRefreshTokenHash1 && sha256(refreshToken) !== session.refreshTokenHash2) {
+      if (
+        !payload.parentRefreshTokenHash1 &&
+        sha256(sha256(refreshToken)) !== session.refreshTokenHash2
+      ) {
         req.log.debug('The refreshTokenHash2 does not match (first refresh).');
-        return rep.status(404).send();
+        return unsetAuthCookies(rep).status(404).send();
       }
 
       if (
@@ -419,7 +466,7 @@ export function registerSupertokensAtHome(
         session.refreshTokenHash2 !== sha256(payload.parentRefreshTokenHash1)
       ) {
         req.log.debug('The refreshTokenHash2 does not match.');
-        return rep.status(404).send();
+        return unsetAuthCookies(rep).status(404).send();
       }
 
       // 2. create a new refresh token
@@ -445,7 +492,7 @@ export function registerSupertokensAtHome(
         req.log.debug(
           'The session has expired (another refresh for the same access token was completed, while this request was in flight).',
         );
-        return rep.status(404).send();
+        return unsetAuthCookies(rep).status(404).send();
       }
 
       // 3. create a new access token
@@ -457,7 +504,7 @@ export function registerSupertokensAtHome(
           refreshTokenHash1: sha256(newRefreshToken),
           parentRefreshTokenHash1: parentTokenHash,
         },
-        secrets.accessTokenSigningKey,
+        accessTokenKey,
       );
 
       const frontToken = createFrontToken({
@@ -490,6 +537,12 @@ export function registerSupertokensAtHome(
     url: '/auth-api/authorisationurl',
     method: 'GET',
     async handler(req, rep) {
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
       const query = AuthorisationurlQueryParamsModel.safeParse(req.query);
 
       if (!query.success) {
@@ -608,7 +661,13 @@ export function registerSupertokensAtHome(
     url: '/auth-api/signinup',
     method: 'POST',
     async handler(req, rep) {
-      console.log(req.body);
+      if (await rateLimiter.isFastifyRouteRateLimited(req)) {
+        return {
+          status: 'GENERAL_ERROR',
+          message: 'Please try again later.',
+        };
+      }
+
       const parsedBody = ThirdPartySigninupModel.safeParse(req.body);
 
       if (!parsedBody.success) {
@@ -963,7 +1022,10 @@ export function registerSupertokensAtHome(
           oidcIntegrationId: null,
           superTokensUserId: supertokensUser.userId,
         },
-        secrets,
+        {
+          refreshTokenKey: secrets.refreshTokenKey,
+          accessTokenKey,
+        },
       );
       const frontToken = createFrontToken({
         superTokensUserId: supertokensUser.userId,
@@ -1069,7 +1131,7 @@ async function createNewSession(
   },
   secrets: {
     refreshTokenKey: string;
-    accessTokenSigningKey: string;
+    accessTokenKey: AccessTokenKeyContainer;
   },
 ) {
   const sessionHandle = crypto.randomUUID();
@@ -1100,7 +1162,7 @@ async function createNewSession(
     args.superTokensUserId,
     stringifiedPayload,
     stringifiedPayload,
-    sha256(refreshToken),
+    sha256(sha256(refreshToken)),
     expiresAt,
   );
 
@@ -1112,7 +1174,7 @@ async function createNewSession(
       refreshTokenHash1: sha256(refreshToken),
       parentRefreshTokenHash1: null,
     },
-    secrets.accessTokenSigningKey,
+    secrets.accessTokenKey,
   );
 
   return {

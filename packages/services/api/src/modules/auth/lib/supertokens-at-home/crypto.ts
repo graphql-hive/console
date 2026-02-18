@@ -1,5 +1,5 @@
 /**
- * A collection of crypto utilities around.
+ * A collection of supertokens crypto utilities around.
  * - Refresh Tokens
  * - Access Tokens
  * - Front Tokens
@@ -139,6 +139,8 @@ export function parseRefreshToken(refreshToken: string, masterKey: string) {
     } as const;
   }
 
+  console.log(payload);
+
   let refreshTokenPayload: RefreshTokenPayloadType;
   try {
     refreshTokenPayload = RefreshTokenPayloadModel.parse(
@@ -164,6 +166,13 @@ export function parseRefreshToken(refreshToken: string, masterKey: string) {
   } as const;
 }
 
+console.log(
+  parseRefreshToken(
+    'DjWH1zah0hb5DfuNgvMMMLnvWlSX15Pl8ndmugkNfzYc04%2BRZ54Vf2iwfySVuTjAfmbmj6hWASBs9AMKVwS9MY2S44uqaRx7Qac5W811cZybzPQdIVMtmwTYHws9oC0pY6Eia1gRUfnd1FVxOsGnwoIXT2t4JFiO2KaEcxi%2BnJKoRmjEMXNQaIgCbxTp2QV7O7z0g8GmSU9XR%2B5GABCWEzl%2FSPFYYnhOplQM1Zqm8JmK3STMy2E50askaKSJasj1Tei5qlbDMtlK%2BP4hhXu%2B.7e029cdfa5d172f27083ef10cacfb6a7ee1b1ee82a3db84b3d13f5e99017033b.V2',
+    '1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0',
+  ),
+);
+
 export function sha256(str: string) {
   return c.createHash('sha256').update(str).digest('hex');
 }
@@ -176,7 +185,7 @@ export function createAccessToken(
     parentRefreshTokenHash1: string | null;
     sessionData: Record<string, unknown>;
   },
-  accessTokenSigningKey: string,
+  accessTokenKey: AccessTokenKeyContainer,
 ) {
   const now = Math.floor(Date.now() / 1000);
   // Access tokens expires in 6 hours
@@ -184,6 +193,7 @@ export function createAccessToken(
 
   const data: AccessTokenInfo = {
     iat: now,
+    exp: expiresIn,
     sub: args.sub,
     tId: 'public',
     rsub: args.sub,
@@ -194,19 +204,23 @@ export function createAccessToken(
     ...args.sessionData,
   };
 
-  const token = jwt.sign(data, accessTokenSigningKey, {
-    algorithm: 'RS256',
-    expiresIn,
-    keyid: 'd-1770648231409',
+  const token = jwt.sign(data, accessTokenKey.privateKey, {
     header: {
-      kid: 'd-1770648231409',
+      kid: accessTokenKey.keyId,
       typ: 'JWT',
-      version: '5',
       alg: 'RS256',
     },
   });
 
   return { token, expiresIn, d: jwt.decode(token) };
+}
+
+export function parseAccessToken(accessToken: string, accessTokenPublicKey: string) {
+  const token = jwt.verify(accessToken, accessTokenPublicKey, {
+    algorithms: ['RS256'],
+  });
+
+  return AccessTokenInfoModel.parse(token);
 }
 
 export function createFrontToken(args: {
@@ -224,6 +238,7 @@ export function createFrontToken(args: {
 
 const AccessTokenInfoModel = z.object({
   iat: z.number(),
+  exp: z.number(),
   sub: z.string(),
   tId: z.string(),
   rsub: z.string(),
@@ -237,4 +252,17 @@ type AccessTokenInfo = z.TypeOf<typeof AccessTokenInfoModel>;
 
 export function getPasswordResetHash() {
   return c.randomBytes(32).toString('hex');
+}
+
+export class AccessTokenKeyContainer {
+  readonly keyId: string;
+  readonly publicKey: string;
+  readonly privateKey: string;
+
+  constructor(accessTokenKey: string) {
+    const [keyName, publicKey, privateKey] = accessTokenKey.split('|');
+    this.keyId = keyName;
+    this.publicKey = `-----BEGIN PUBLIC KEY-----\n` + publicKey + `\n-----END PUBLIC KEY-----`;
+    this.privateKey = `-----BEGIN PRIVATE KEY-----\n` + privateKey + `\n-----END PRIVATE KEY-----`;
+  }
 }
