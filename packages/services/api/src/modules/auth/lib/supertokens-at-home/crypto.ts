@@ -87,7 +87,7 @@ function encryptRefreshToken(plaintext: string, masterKey: string) {
   // This matches the Java `ByteBuffer` logic.
   const finalBuffer = Buffer.concat([iv, encrypted, authTag]);
 
-  // 7. Base64-encode the final buffer and then URL-encode it for safe transport.
+  // 7. Base64-encode the final buffer
   const base64Data = finalBuffer.toString('base64');
   return base64Data;
 }
