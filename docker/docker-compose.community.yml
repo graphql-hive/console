@@ -142,6 +142,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      SUPERTOKENS_AT_HOME: '1'
       MIGRATOR: 'up'
       CLICKHOUSE_MIGRATOR: 'up'
       POSTGRES_HOST: db
