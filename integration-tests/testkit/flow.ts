@@ -1207,6 +1207,7 @@ export function fetchLatestSchema(token: string) {
               deletedService
             }
           }
+          isValid
           sdl
           supergraph
           schemas {

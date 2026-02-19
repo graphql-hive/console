@@ -1103,7 +1103,7 @@ test.concurrent(
   },
 );
 
-test.concurrent.skip('schema:publish ignores SDL formatting', async ({ expect }) => {
+test.only.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject, organization } = await createOrg();
   await inviteAndJoinMember();
@@ -1135,15 +1135,21 @@ test.concurrent.skip('schema:publish ignores SDL formatting', async ({ expect })
     `);
 
   const latest = await latestSchema();
+  expect(latest.latestVersion?.isValid).toBe(true);
   expect(latest.latestVersion?.schemas.nodes?.[0]?.source).toMatchInlineSnapshot(`
+    directive @inline on FIELD_DEFINITION
+
     """
-    Multi line comment:
+    Multi line description:
     1. Foo
     2. Bar
     3. Should stay in a list format
+
+    # with single line comment
     """
     type Query {
-      status: Status
+      status: Status @inline
+      value: Boolean @deprecated
     }
 
     enum Status {
@@ -1151,25 +1157,36 @@ test.concurrent.skip('schema:publish ignores SDL formatting', async ({ expect })
       INACTIVE
       PENDING
     }
+
+    type User
+
+    extend type User {
+      id: ID!
+      email: String
+    }
   `);
 
-  // API Schema maintains formatting
+  // API Schema maintains the multiline description's formatting
   expect(latest.latestVersion?.sdl).toEqual(
     expect.stringContaining(`"""
-Multi line comment:
+Multi line description:
 1. Foo
 2. Bar
 3. Should stay in a list format
+
+# with single line comment
 """`),
   );
 
   // Supergraph maintains formatting
   expect(latest.latestVersion?.supergraph).toEqual(
     expect.stringContaining(`"""
-Multi line comment:
+Multi line description:
 1. Foo
 2. Bar
 3. Should stay in a list format
+
+# with single line comment
 """`),
   );
 });
