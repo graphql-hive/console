@@ -86,13 +86,20 @@ async function createDbConnection() {
   };
 }
 
-const sharedPool = await createDbConnection();
-
 export function initSeed() {
+  let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
+
+  async function doAuthenticate(email: string, oidcIntegrationId?: string) {
+    if (!sharedDBPoolPromise) {
+      sharedDBPoolPromise = createDbConnection();
+    }
+    const sharedPool = await sharedDBPoolPromise;
+    return await authenticate(sharedPool.pool, email, oidcIntegrationId);
+  }
+
   return {
     createDbConnection,
-    authenticate: (email: string, oidcIntegrationId?: string) =>
-      authenticate(sharedPool.pool, email, oidcIntegrationId),
+    authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
     async purgeOrganizationAccessTokenById(id: string) {
       const registryAddress = await getServiceHost('server', 8082);
@@ -105,7 +112,7 @@ export function initSeed() {
     },
     async createOwner() {
       const ownerEmail = userEmail(generateUnique());
-      const auth = await authenticate(sharedPool.pool, ownerEmail);
+      const auth = await doAuthenticate(ownerEmail);
       const ownerRefreshToken = auth.refresh_token;
       const ownerToken = auth.access_token;
 
@@ -909,11 +916,9 @@ export function initSeed() {
                 },
               );
               const memberEmail = userEmail(generateUnique());
-              const memberToken = await authenticate(
-                sharedPool.pool,
-                memberEmail,
-                oidcIntegrationId,
-              ).then(r => r.access_token);
+              const memberToken = await doAuthenticate(memberEmail, oidcIntegrationId).then(
+                r => r.access_token,
+              );
 
               if (!oidcIntegrationId) {
                 const invitationResult = await inviteToOrganization(
