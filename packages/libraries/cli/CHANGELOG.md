@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.58.2
+
+### Patch Changes
+
+- [#7707](https://github.com/graphql-hive/console/pull/7707)
+  [`4d36f7a`](https://github.com/graphql-hive/console/commit/4d36f7aeb06a911d844b74b9f556e11f353771a8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix schema SDL becoming invalid through
+  minification.
+
 ## 0.58.1
 
 ### Patch Changes
