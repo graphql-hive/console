@@ -26,6 +26,7 @@ const EnvironmentModel = zod.object({
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
   EMAIL_FROM: zod.string().email(),
+  SCHEMA_SERVICE_URL: zod.string().url(),
 });
 
 const SentryModel = zod.union([
@@ -203,6 +204,9 @@ export const env = {
   email: {
     provider: emailProviderConfig,
     emailFrom: base.EMAIL_FROM,
+  },
+  schema: {
+    serviceUrl: base.SCHEMA_SERVICE_URL,
   },
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {

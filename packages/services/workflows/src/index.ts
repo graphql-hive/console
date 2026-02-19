@@ -12,6 +12,7 @@ import {
 import { Context } from './context.js';
 import { env } from './environment.js';
 import { createEmailProvider } from './lib/emails/providers.js';
+import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
 import { createTaskEventEmitter } from './task-events.js';
 
@@ -68,6 +69,10 @@ const context: Context = {
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
   requestBroker: env.requestBroker,
+  schema: schemaProvider({
+    logger,
+    serviceUrl: env.schema.serviceUrl,
+  }),
 };
 
 const server = await createServer({

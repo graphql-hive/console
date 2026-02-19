@@ -22,6 +22,7 @@ export function deployWorkflows({
   postgres,
   observability,
   postmarkSecret,
+  schemaServiceUrl,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -31,6 +32,7 @@ export function deployWorkflows({
   heartbeat?: string;
   sentry: Sentry;
   postmarkSecret: PostmarkSecret;
+  schemaServiceUrl: string;
 }) {
   return (
     new ServiceDeployment(
@@ -47,6 +49,7 @@ export function deployWorkflows({
               ? observability.tracingEndpoint
               : '',
           LOG_JSON: '1',
+          SCHEMA_SERVICE_URL: schemaServiceUrl,
         },
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',
