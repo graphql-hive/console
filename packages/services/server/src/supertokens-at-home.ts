@@ -735,7 +735,7 @@ export async function registerSupertokensAtHome(
 
         const oidClientConfig = new oidClient.Configuration(
           {
-            issuer: oidcIntegration.id,
+            issuer: 'noop',
             authorization_endpoint: oidcIntegration.authorizationEndpoint,
             userinfo_endpoint: oidcIntegration.userinfoEndpoint,
             token_endpoint: oidcIntegration.tokenEndpoint,
