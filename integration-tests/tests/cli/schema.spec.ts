@@ -1103,7 +1103,7 @@ test.concurrent(
   },
 );
 
-test.only.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
+test.concurrent('schema:publish ignores SDL formatting', async ({ expect }) => {
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject, organization } = await createOrg();
   await inviteAndJoinMember();
