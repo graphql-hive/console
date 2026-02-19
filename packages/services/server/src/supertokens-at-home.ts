@@ -1161,6 +1161,7 @@ export async function registerSupertokensAtHome(
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
       } else if (parsedBody.data.thirdPartyId === 'oidc') {
+        req.log.debug('perform oidc signinup flow');
         // for backwards-compatibility purposes we support the case where the frontend modifies the state to append the oidc id
         const [state] = (parsedBody.data.redirectURIInfo.redirectURIQueryParams.state ?? '').split(
           '--',
@@ -1169,6 +1170,7 @@ export async function registerSupertokensAtHome(
         const cacheRecord = await oauthCache.get(state);
 
         if (!cacheRecord?.oidIntegrationId || cacheRecord.method !== 'oidc') {
+          req.log.debug('failed looking up pending oauth cache record.');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Please try again.',
@@ -1187,72 +1189,41 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const oidClientConfig = new oidClient.Configuration(
-          {
-            issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss ?? '',
-            authorization_endpoint: oidcIntegration.authorizationEndpoint,
-            userinfo_endpoint: oidcIntegration.userinfoEndpoint,
-            token_endpoint: oidcIntegration.tokenEndpoint,
-          },
-          oidcIntegration.clientId,
-          {
-            client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
-          },
-        );
-
-        // TODO
-        oidClient.allowInsecureRequests(oidClientConfig);
-
         const current_url = new URL(env.hiveServices.webApp.url);
         current_url.pathname = '/auth/callback/oidc';
-        current_url.searchParams.set(
-          'code',
-          parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
-        );
+
+        req.log.debug('attempt exchanging auth code for auth token');
 
         broadcastLog(
           oidcIntegration.id,
-          `attempt exchanging auth code for auth tokens on endpoint. ${oidcIntegration.tokenEndpoint}`,
+          `attempt exchanging auth code for auth token on endpoint '${oidcIntegration.tokenEndpoint}'.`,
         );
 
-        let result;
-        try {
-          result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url, {
-            pkceCodeVerifier: cacheRecord.pkceVerifier,
-          });
-        } catch (err) {
-          if (err instanceof oidClient.ResponseBodyError) {
-            broadcastLog(
-              oidcIntegration.id,
-              `the token endpoint ${oidcIntegration.tokenEndpoint} responded with ${JSON.stringify(err.cause)}`,
-            );
-          } else {
-            broadcastLog(
-              oidcIntegration.id,
-              `an unexpected error occured while calling the token endpoint ${oidcIntegration.tokenEndpoint}.`,
-            );
-          }
+        const GrantResponseModel = z.object({
+          access_token: z.string(),
+        });
 
-          return rep.status(200).send({
-            status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Sign in failed. Please contact your origanization administrator.',
-          });
-        }
+        const grantResponse = await fetch(oidcIntegration.tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            accept: 'application/json',
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code_verifier: cacheRecord.pkceVerifier,
+            code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
+            redirect_uri: current_url.toString(),
+            client_id: oidcIntegration.clientId,
+            client_secret: crypto.decrypt(oidcIntegration.encryptedClientSecret),
+          }),
+        });
 
-        const codeGrantAccessToken = result.access_token;
-
-        let userInfo;
-
-        try {
-          userInfo = await oidClient.fetchUserInfo(
-            oidClientConfig,
-            codeGrantAccessToken,
-            oidClient.skipSubjectCheck,
-          );
-        } catch (err) {
+        if (grantResponse.status != 200) {
+          req.log.debug('received non 200 status from token endpoint %d', grantResponse.status);
           broadcastLog(
             oidcIntegration.id,
-            `an unexpected error occured while fetching the user info endpoint ${oidcIntegration.userinfoEndpoint}.`,
+            `an unexpected error occured while calling your token endoint '${oidcIntegration.tokenEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${await grantResponse.text()}.`,
           );
 
           return rep.status(200).send({
@@ -1261,34 +1232,136 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        if (!userInfo.email) {
+        const grantResponseRaw = await grantResponse.text();
+        const grantResponseJSON = parseJSONSafe(grantResponseRaw);
+
+        if (grantResponseJSON.type === 'error') {
+          req.log.debug('received malformed json body from token endpoint');
+
           broadcastLog(
             oidcIntegration.id,
-            `the user info endpoint did not include an email. ${oidcIntegration.userinfoEndpoint}.`,
+            `unexpected body received from the token endpoint '${oidcIntegration.tokenEndpoint}'. Failed parsing JSON. HTTP Status: ${grantResponse.status}.'`,
           );
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
-            reason: 'Missing email claim. Please contact your origanization administrator.',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
           });
         }
+
+        const grantBodyResult = GrantResponseModel.safeParse(grantResponseJSON.data);
+
+        if (!grantBodyResult.success) {
+          console.log(grantResponseJSON);
+          req.log.debug('received invalid json body from token endpoint');
+          broadcastLog(
+            oidcIntegration.id,
+            `the response from your token endpoint '${oidcIntegration.tokenEndpoint}' did not contain a 'access_token' property.`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        const codeGrantAccessToken = grantBodyResult.data.access_token;
+        req.log.debug('successfully exchanged code for access token ');
+        req.log.debug('attempt fetching user info');
+
+        const userInfoResponse = await fetch(oidcIntegration.userinfoEndpoint, {
+          method: 'GET',
+          headers: {
+            authorization: `Bearer ${codeGrantAccessToken}`,
+          },
+        });
+
+        if (userInfoResponse.status != 200) {
+          req.log.debug(
+            'received invalid status from user info endpoint %d',
+            userInfoResponse.status,
+          );
+          broadcastLog(
+            oidcIntegration.id,
+            `an unexpected error occured while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${await grantResponse.text()}.`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        const userInfoBodyRaw = await userInfoResponse.text();
+        const userInfoBodyJSON = parseJSONSafe(userInfoBodyRaw);
+
+        if (userInfoBodyJSON.type === 'error') {
+          req.log.debug('received malformed JSON body from user info endpoint');
+          broadcastLog(
+            oidcIntegration.id,
+            `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'. Failed parsing JSON. HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        const userInfoBody = z
+          .object({
+            sub: z.string(),
+            email: z.string().optional().nullable(),
+          })
+          .safeParse(userInfoBodyJSON.data);
+
+        if (!userInfoBody.success) {
+          req.log.debug('received invalid JSON body from user info endpoint');
+          broadcastLog(
+            oidcIntegration.id,
+            `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'. Expected 'sub' and 'email' grant. HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        if (!userInfoBody.data.email) {
+          req.log.debug('user info endpoint response did not contain the email grant');
+          broadcastLog(
+            oidcIntegration.id,
+            `missing email grant received from user info endpoint '${oidcIntegration.userinfoEndpoint}. HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
+          );
+
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        req.log.debug('lookup existing user for sub and oidc integration');
 
         let user = await supertokensStore.findOIDCUserBySubAndOIDCIntegrationId({
           oidcIntegrationId: oidcIntegration.id,
-          sub: userInfo.sub,
+          sub: userInfoBody.data.sub,
         });
 
         if (!user) {
+          req.log.debug('no existing user found. create new one.');
           user = await supertokensStore.createOIDCUser({
-            email: userInfo.email,
+            email: userInfoBody.data.email,
             oidcIntegrationId: oidcIntegration.id,
-            sub: userInfo.sub,
+            sub: userInfoBody.data.sub,
           });
         }
 
+        req.log.debug('supertokens user provisioned. ensure hive user exists');
+
         const ensureUserExists = await storage.ensureUserExists({
           superTokensUserId: user.userId,
-          email: userInfo.email,
+          email: userInfoBody.data.email,
           firstName: null,
           lastName: null,
           oidcIntegration: {
@@ -1298,12 +1371,12 @@ export async function registerSupertokensAtHome(
         });
 
         if (!ensureUserExists.ok) {
+          req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in not allowed.',
           });
         }
-
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
       } else {
@@ -1312,6 +1385,8 @@ export async function registerSupertokensAtHome(
           reason: 'Unsupported sing in method.',
         });
       }
+
+      req.log.debug('create new session for user');
 
       const { session, refreshToken, accessToken } = await createNewSession(
         supertokensStore,
@@ -1419,3 +1494,25 @@ const ThirdPartySigninupModel = z.object({
     }),
   }),
 });
+
+function parseJSONSafe(input: string):
+  | {
+      type: 'error';
+      error: unknown;
+    }
+  | {
+      type: 'success';
+      data: unknown;
+    } {
+  try {
+    return {
+      type: 'success',
+      data: JSON.parse(input),
+    };
+  } catch (error) {
+    return {
+      type: 'error',
+      error,
+    };
+  }
+}
