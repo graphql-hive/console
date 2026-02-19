@@ -2,6 +2,49 @@
 
 This file contains some useful information regarding the supertokens implementation.
 
+## OIDC/Social Provider Login Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Frontend App
+    participant Backend Server
+    participant OIDC Provider
+
+    Browser->>Frontend App: 1. User clicks "Login with Google/GitHub/etc."
+
+    Frontend App->>Backend Server: 2. Requests the provider's authorization URL (e.g., GET /auth/oidc/authorization-url)
+    note right of Backend Server: The backend generates and stores a<br/>`state` value and a `pkce_verifier`<br/> for security. The `code_challenge`<br/>(derived from the verifier) is part of the URL.
+
+    Backend Server-->>Frontend App: 3. Responds with the unique authorization URL
+
+    Frontend App->>Browser: 4. Redirects the browser to the OIDC Provider's URL
+
+    Browser->>OIDC Provider: 5. User logs in with their credentials and grants consent to your application
+
+    OIDC Provider->>Browser: 6. Redirects back to your app's callback URL with an `authorization_code` and the `state` value
+
+    Browser->>Frontend App: 7. The Frontend App loads, capturing the `code` and `state` from the URL parameters
+
+    Frontend App->>Backend Server: 8. Sends the `authorization_code` and `state` to the backend callback endpoint (e.g., POST /auth/oidc/callback)
+    note right of Backend Server: The backend first validates that the received `state`<br/>matches the one it stored earlier to prevent CSRF attacks.
+
+    Backend Server->>OIDC Provider: 9. Exchanges the `code` for tokens (includes `code`, `client_secret`, and the original `pkce_verifier`)
+
+    OIDC Provider-->>Backend Server: 10. Verifies the request and returns an `access_token` and `id_token`
+
+    Backend Server->>OIDC Provider: 11. Uses the `access_token` to request the user's identity from a `/userinfo` endpoint
+
+    OIDC Provider-->>Backend Server: 12. Returns the user's profile information (e.g., email, name, ID)
+    note right of Backend Server: The backend now has trusted information about the user.
+
+    Backend Server->>Backend Server: 13. Finds an existing user or creates a new one in its database and creates a new session
+
+    Backend Server-->>Frontend App: 14. Responds with success and attaches the session cookies (`sAccessToken`, `sRefreshToken`) to the response
+
+    Frontend App->>Browser: 15. The login is complete. The browser now stores the session cookies, and the user is authenticated within your application.
+```
+
 ## Refresh Session Flow
 
 ```mermaid
