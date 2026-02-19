@@ -679,7 +679,7 @@ export async function registerSupertokensAtHome(
         const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
         const redirectUrl = new URL(env.hiveServices.webApp.url);
-        redirectUrl.pathname = '/auth/callback/google';
+        redirectUrl.pathname = '/auth/callback/okta';
         const authorizeUrl = new URL(env.auth.okta.endpoint);
         authorizeUrl.pathname = '/oauth2/v1/authorize';
 
@@ -1084,28 +1084,61 @@ export async function registerSupertokensAtHome(
 
         const current_url = new URL(env.hiveServices.webApp.url);
         current_url.pathname = '/auth/callback/okta';
-        current_url.searchParams.set(
-          'code',
-          parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
-        );
 
-        const oidClientConfig = new oidClient.Configuration(
-          {
-            issuer: parsedBody.data.redirectURIInfo.redirectURIQueryParams.iss ?? '',
-            authorization_endpoint: 'https://noop.noop',
-            userinfo_endpoint: 'https://noop.noop',
-            token_endpoint: env.auth.okta.endpoint + '/oauth2/v1/token',
-          },
-          env.auth.okta.clientId,
-          {
-            client_secret: env.auth.okta.clientSecret,
-          },
-        );
-        const result = await oidClient.authorizationCodeGrant(oidClientConfig, current_url, {
-          pkceCodeVerifier: cacheRecord.pkceVerifier,
+        const GrantResponseModel = z.object({
+          access_token: z.string(),
         });
 
-        const accessToken = result.access_token;
+        const grantResponse = await fetch(env.auth.okta.endpoint + '/oauth2/v1/token', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+            accept: 'application/json',
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code_verifier: cacheRecord.pkceVerifier,
+            code: parsedBody.data.redirectURIInfo.redirectURIQueryParams.code ?? '',
+            redirect_uri: current_url.toString(),
+            client_id: env.auth.okta.clientId,
+            client_secret: env.auth.okta.clientSecret,
+          }),
+        });
+
+        if (grantResponse.status != 200) {
+          req.log.debug(
+            'received non 200 status from token endpoint %d %s',
+            grantResponse.status,
+            await grantResponse.text(),
+          );
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        const grantResponseRaw = await grantResponse.text();
+        const grantResponseJSON = parseJSONSafe(grantResponseRaw);
+
+        if (grantResponseJSON.type === 'error') {
+          req.log.debug('received malformed json body from token endpoint');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        const grantBodyResult = GrantResponseModel.safeParse(grantResponseJSON.data);
+
+        if (!grantBodyResult.success) {
+          req.log.debug('received invalid json body from token endpoint');
+          return rep.status(200).send({
+            status: 'SIGN_IN_UP_NOT_ALLOWED',
+            reason: 'Sign in failed. Please contact your origanization administrator.',
+          });
+        }
+
+        const accessToken = grantBodyResult.data.access_token;
 
         const response = await fetch(`${env.auth.okta.endpoint}/api/v1/users/me`, {
           method: 'GET',
