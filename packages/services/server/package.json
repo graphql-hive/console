@@ -3,6 +3,9 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "exports": {
+    "./supertokens-at-home/shared": "./src/supertokens-at-home/shared.ts"
+  },
   "scripts": {
     "build": "tsx ../../../scripts/runify.ts src/index.ts src/persisted-documents-worker.ts && tsx ./scripts/copy-persisted-operations.mts",
     "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts src/persisted-documents-worker.ts",
