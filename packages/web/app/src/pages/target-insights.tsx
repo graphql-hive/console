@@ -10,7 +10,6 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/List';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { OperationsStats } from '@/components/target/insights/Stats';
-import { Button } from '@/components/ui/button';
 import { TriggerButton } from '@/components/base/trigger-button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
@@ -447,9 +446,12 @@ function OperationsView({
             )}
           </div>
           <div className="flex items-center gap-x-2">
-            <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
-              <RefreshCw className="size-4" />
-            </Button>
+            <TriggerButton
+              layout="iconOnly"
+              icon={RefreshCw}
+              aria-label="Refresh"
+              onClick={() => dateRangeController.refreshResolvedRange()}
+            />
           </div>
         </div>
       </div>

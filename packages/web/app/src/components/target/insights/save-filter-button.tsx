@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useMutation } from 'urql';
 import type { SavedFilterView } from '@/components/base/insights-filters';
+import { TriggerButton } from '@/components/base/trigger-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -176,9 +177,7 @@ function SaveFilterPopover({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
-          Save this filter view
-        </Button>
+        <TriggerButton label="Save this filter view" variant="action" />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
         <div className="mb-3 flex items-center justify-between">
@@ -326,9 +325,7 @@ function UpdateFilterButton({
   return (
     <Popover open={confirmOpen} onOpenChange={setConfirmOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
-          Update "{activeView.name}" filter
-        </Button>
+        <TriggerButton label={`Update "${activeView.name}" filter`} variant="action" />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
         <div className="mb-3 flex items-center justify-between">
