@@ -632,7 +632,7 @@ function SavedFilterRowFilters({
           <FilterDropdown
             label="Operation"
             items={operationItems}
-            value={operationSelections}
+            selectedItems={operationSelections}
             onChange={setOperationSelections}
             onRemove={() => {
               setShowOperationFilter(false);
@@ -645,7 +645,7 @@ function SavedFilterRowFilters({
           <FilterDropdown
             label="Client"
             items={clientItems}
-            value={clientSelections}
+            selectedItems={clientSelections}
             onChange={setClientSelections}
             onRemove={() => {
               setShowClientFilter(false);

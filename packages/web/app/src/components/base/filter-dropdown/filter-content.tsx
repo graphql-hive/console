@@ -8,8 +8,8 @@ export type FilterContentProps = {
   label: string;
   /** Available items and their sub-values */
   items: FilterItem[];
-  /** Currently selected items/values */
-  value: FilterSelection[];
+  /** Currently selected items */
+  selectedItems: FilterSelection[];
   /** Called when selection changes */
   onChange: (value: FilterSelection[]) => void;
   /** Label for the sub-values (e.g. "versions", "endpoints"). Used in accessibility labels. */
@@ -19,7 +19,7 @@ export type FilterContentProps = {
 export function FilterContent({
   label,
   items,
-  value,
+  selectedItems,
   onChange,
   valuesLabel = 'values',
 }: FilterContentProps) {
@@ -36,30 +36,30 @@ export function FilterContent({
 
   function isItemSelected(item: FilterItem) {
     const key = getKey(item);
-    return value.some(s => getKey(s) === key);
+    return selectedItems.some(s => getKey(s) === key);
   }
 
   function getItemSelection(item: FilterItem) {
     const key = getKey(item);
-    return value.find(s => getKey(s) === key) ?? null;
+    return selectedItems.find(s => getKey(s) === key) ?? null;
   }
 
   function toggleItem(item: FilterItem) {
     const key = getKey(item);
     if (isItemSelected(item)) {
-      onChange(value.filter(s => getKey(s) !== key));
+      onChange(selectedItems.filter(s => getKey(s) !== key));
     } else {
-      onChange([...value, { id: item.id, name: item.name, values: null }]);
+      onChange([...selectedItems, { id: item.id, name: item.name, values: null }]);
     }
   }
 
   function updateItemValues(item: FilterItem, values: string[] | null) {
     const key = getKey(item);
-    const existing = value.find(s => getKey(s) === key);
+    const existing = selectedItems.find(s => getKey(s) === key);
     if (existing) {
-      onChange(value.map(s => (getKey(s) === key ? { ...s, values } : s)));
+      onChange(selectedItems.map(s => (getKey(s) === key ? { ...s, values } : s)));
     } else {
-      onChange([...value, { id: item.id, name: item.name, values }]);
+      onChange([...selectedItems, { id: item.id, name: item.name, values }]);
     }
   }
 

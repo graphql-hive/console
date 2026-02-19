@@ -322,7 +322,7 @@ function OperationsView({
               <FilterDropdown
                 label="Operation"
                 items={operationFilterItems}
-                value={operationFilterSelections}
+                selectedItems={operationFilterSelections}
                 onChange={selections => {
                   void navigate({
                     search: prev => ({
@@ -343,7 +343,7 @@ function OperationsView({
               <FilterDropdown
                 label="Client"
                 items={clientFilterItems}
-                value={clientFilterSelections}
+                selectedItems={clientFilterSelections}
                 valuesLabel="versions"
                 onChange={selections => {
                   void navigate({

@@ -14,7 +14,7 @@ export default {
 function StoryWrapper({
   items,
   label,
-  value: initialValue,
+  selectedItems: initialValue,
   valuesLabel,
 }: Omit<FilterDropdownProps, 'onChange' | 'onRemove'>) {
   const [value, setValue] = useState<FilterSelection[]>(initialValue);
@@ -47,7 +47,7 @@ function StoryWrapper({
         label={label}
         onChange={setValue}
         onRemove={() => setValue([])}
-        value={value}
+        selectedItems={value}
         valuesLabel={valuesLabel}
       />
     </div>
@@ -101,7 +101,7 @@ const mockClients: FilterItem[] = [
 ];
 
 export const Default: Story = () => (
-  <StoryWrapper label="Client" items={mockClients} value={[]} valuesLabel="versions" />
+  <StoryWrapper label="Client" items={mockClients} selectedItems={[]} valuesLabel="versions" />
 );
 
 export const WithSelections: Story = () => (
@@ -109,7 +109,7 @@ export const WithSelections: Story = () => (
     label="Client"
     items={mockClients}
     valuesLabel="versions"
-    value={[
+    selectedItems={[
       { name: 'Hive CLI', values: ['0.12.1', '0.12.3'] },
       { name: 'hive-gateway', values: null },
     ]}
@@ -126,7 +126,7 @@ export const CustomLabel: Story = () => (
       { name: 'Asia Pacific', values: ['ap-southeast-1', 'ap-northeast-1'] },
       { name: 'Global', values: [] },
     ]}
-    value={[]}
+    selectedItems={[]}
     valuesLabel="zones"
   />
 );

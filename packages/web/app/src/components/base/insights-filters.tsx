@@ -128,7 +128,7 @@ export function InsightsFilters({
             <FilterContent
               label="operations"
               items={operationFilterItems}
-              value={operationFilterSelections}
+              selectedItems={operationFilterSelections}
               onChange={setOperationSelections}
             />
           </MenuContent>
@@ -139,7 +139,7 @@ export function InsightsFilters({
             <FilterContent
               label="clients"
               items={clientFilterItems}
-              value={clientFilterSelections}
+              selectedItems={clientFilterSelections}
               onChange={setClientSelections}
               valuesLabel="versions"
             />

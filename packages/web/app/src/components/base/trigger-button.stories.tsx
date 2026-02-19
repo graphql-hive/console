@@ -19,7 +19,7 @@ export const WithSelectedValue: Story = () => (
   <Flex>
     <TriggerButton
       label="Operation"
-      value="O9SwSomeOperationName"
+      accessoryInformation="O9SwSomeOperationName"
       onDismiss={() => alert('Cleared!')}
     />
   </Flex>
@@ -27,7 +27,7 @@ export const WithSelectedValue: Story = () => (
 
 export const Active: Story = () => (
   <Flex>
-    <TriggerButton label="Client" badge={2} variant="active" />
+    <TriggerButton label="Client" accessoryInformation="2" variant="active" />
   </Flex>
 );
 
@@ -45,8 +45,8 @@ export const WithMenu: Story = () => {
         <MenuTrigger
           render={
             <TriggerButton
+              accessoryInformation={count > 0 ? count.toString() : undefined}
               label="Client"
-              badge={count > 0 ? count : undefined}
               variant={count > 0 ? 'active' : 'default'}
             />
           }
@@ -63,8 +63,12 @@ export const WithMenu: Story = () => {
 export const AllStates: Story = () => (
   <Flex>
     <TriggerButton label="Filter" icon={<ListFilter className="size-4" />} />
-    <TriggerButton label="Operation" value="O9SwSomeOperationName" onDismiss={() => {}} />
-    <TriggerButton label="Client" badge={2} variant="active" />
+    <TriggerButton
+      label="Operation"
+      accessoryInformation="O9SwSomeOperationName"
+      onDismiss={() => {}}
+    />
+    <TriggerButton label="Client" accessoryInformation="2" variant="active" />
     <TriggerButton label="Last 7 days" />
   </Flex>
 );

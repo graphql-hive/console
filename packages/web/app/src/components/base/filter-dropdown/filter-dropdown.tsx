@@ -15,8 +15,8 @@ export type FilterDropdownProps = {
   label: string;
   /** Available items and their sub-values */
   items: FilterItem[];
-  /** Currently selected items/values */
-  value: FilterSelection[];
+  /** Currently selected items */
+  selectedItems: FilterSelection[];
   /** Called when selection changes */
   onChange: (value: FilterSelection[]) => void;
   /** Called when the entire filter is removed */
@@ -30,7 +30,7 @@ export type FilterDropdownProps = {
 export function FilterDropdown({
   label,
   items,
-  value,
+  selectedItems,
   onChange,
   onRemove,
   valuesLabel = 'values',
@@ -38,16 +38,16 @@ export function FilterDropdown({
 }: FilterDropdownProps) {
   const [open, setOpen] = useState(false);
 
-  const selectedCount = value.length;
+  const selectedCount = selectedItems.length;
 
   return (
     <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
       <MenuTrigger
         render={
           <TriggerButton
-            label={label}
-            badge={selectedCount > 0 ? selectedCount : undefined}
+            accessoryInformation={selectedCount > 0 ? selectedCount.toString() : undefined}
             disabled={disabled}
+            label={label}
           />
         }
       />
@@ -56,7 +56,7 @@ export function FilterDropdown({
         <FilterContent
           label={label}
           items={items}
-          value={value}
+          selectedItems={selectedItems}
           onChange={onChange}
           valuesLabel={valuesLabel}
         />
