@@ -5,6 +5,6 @@
   "main": "index.cjs",
   "devDependencies": {
     "@types/minimatch": "5.1.2",
-    "minimatch": "10.0.1"
+    "minimatch": "10.2.1"
   }
 }
