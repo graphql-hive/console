@@ -172,7 +172,6 @@ const mockOperations: FilterItem[] = [
 export const InsightsFiltersDropdown: Story = () => {
   const [clientSelections, setClientSelections] = useState<FilterSelection[]>([]);
   const [operationSelections, setOperationSelections] = useState<FilterSelection[]>([]);
-
   const allSelections = [
     ...operationSelections.map(s => ({ ...s, category: 'Operation' })),
     ...clientSelections.map(s => ({ ...s, category: 'Client' })),

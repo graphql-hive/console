@@ -1,5 +1,5 @@
-import { ReactElement, useCallback, useMemo } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { ReactElement, useCallback, useEffect, useMemo } from 'react';
+import { ChevronDown, RefreshCw, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
@@ -11,6 +11,7 @@ import { OperationsList } from '@/components/target/insights/List';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { OperationsStats } from '@/components/target/insights/Stats';
 import { Button } from '@/components/ui/button';
+import { TriggerButton } from '@/components/base/trigger-button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -131,6 +132,22 @@ function OperationsView({
     dataRetentionInDays,
     defaultPreset: presetLast7Days,
   });
+
+  // Populate URL with the default date range on initial load so the URL always reflects the active range.
+  // Skipped when from/to are already present (e.g. shared link or saved filter).
+  useEffect(() => {
+    if (search.from === undefined && search.to === undefined) {
+      void navigate({
+        search: prev => ({
+          ...prev,
+          from: presetLast7Days.range.from,
+          to: presetLast7Days.range.to,
+        }),
+        replace: true,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run only on mount
+  }, []);
 
   const [pickerQuery, reexecutePickerQuery] = useQuery({
     query: InsightsFilterPicker_Query,
@@ -264,8 +281,8 @@ function OperationsView({
     () =>
       (search.operations && search.operations.length > 0) ||
       (search.clients && search.clients.length > 0) ||
-      search.from !== undefined ||
-      search.to !== undefined,
+      (search.from !== undefined && search.from !== presetLast7Days.range.from) ||
+      (search.to !== undefined && search.to !== presetLast7Days.range.to),
     [search.operations, search.clients, search.from, search.to],
   );
 
@@ -317,6 +334,38 @@ function OperationsView({
                   }),
                 });
               }}
+            />
+            <DateRangePicker
+              trigger={
+                <TriggerButton
+                  label={dateRangeController.selectedPreset.label}
+                  variant="default"
+                  rightIcon={
+                    search.from !== presetLast7Days.range.from ||
+                    search.to !== presetLast7Days.range.to
+                      ? {
+                          icon: X,
+                          action: () => {
+                            void navigate({
+                              search: prev => ({
+                                ...prev,
+                                from: presetLast7Days.range.from,
+                                to: presetLast7Days.range.to,
+                              }),
+                            });
+                          },
+                          label: 'Reset date range',
+                          withSeparator: true,
+                        }
+                      : { icon: ChevronDown, withSeparator: true }
+                  }
+                />
+              }
+              selectedRange={dateRangeController.selectedPreset.range}
+              onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+              startDate={dateRangeController.startDate}
+              validUnits={['y', 'M', 'w', 'd', 'h']}
+              align="start"
             />
             {operationFilterSelections.length > 0 && (
               <FilterDropdown
@@ -398,13 +447,6 @@ function OperationsView({
             )}
           </div>
           <div className="flex items-center gap-x-2">
-            <DateRangePicker
-              validUnits={['y', 'M', 'w', 'd', 'h']}
-              selectedRange={dateRangeController.selectedPreset.range}
-              startDate={dateRangeController.startDate}
-              align="end"
-              onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
-            />
             <Button variant="outline" onClick={() => dateRangeController.refreshResolvedRange()}>
               <RefreshCw className="size-4" />
             </Button>

@@ -22,9 +22,14 @@ const menuVariants = cva(
         true: 'py-2',
         false: '',
       },
+      autoWidth: {
+        true: 'max-w-none',
+        false: '',
+      },
     },
     defaultVariants: {
       withXPadding: false,
+      autoWidth: false,
     },
   },
 );
@@ -40,6 +45,10 @@ type MenuContentProps = {
   subMenu?: boolean;
   withXPadding?: VariantProps<typeof menuVariants>['withXPadding'];
   withYPadding?: VariantProps<typeof menuVariants>['withYPadding'];
+  /**
+   * Remove max-width constraint, useful for wide content like date pickers
+   */
+  autoWidth?: boolean;
 };
 
 function MenuContent({
@@ -50,6 +59,7 @@ function MenuContent({
   subMenu = false,
   withXPadding = false,
   withYPadding = false,
+  autoWidth = false,
 }: MenuContentProps) {
   if (subMenu) {
     align = 'start';
@@ -60,7 +70,7 @@ function MenuContent({
   return (
     <Menu.Portal>
       <Menu.Positioner side={side} align={align} sideOffset={sideOffset} className="outline-none">
-        <Menu.Popup className={menuVariants({ withXPadding, withYPadding })}>{children}</Menu.Popup>
+        <Menu.Popup className={menuVariants({ withXPadding, withYPadding, autoWidth })}>{children}</Menu.Popup>
       </Menu.Positioner>
     </Menu.Portal>
   );

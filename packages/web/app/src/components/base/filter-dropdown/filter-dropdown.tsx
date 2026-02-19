@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import {
   MenuContent,
   MenuItem,
@@ -48,6 +49,7 @@ export function FilterDropdown({
             accessoryInformation={selectedCount > 0 ? selectedCount.toString() : undefined}
             disabled={disabled}
             label={label}
+            rightIcon={{ icon: ChevronDown, withSeparator: true }}
           />
         }
       />

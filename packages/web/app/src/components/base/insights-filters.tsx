@@ -89,7 +89,9 @@ export function InsightsFilters({
   return (
     <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
       <MenuTrigger
-        render={<TriggerButton label="Filter" icon={<ListFilter className="size-4" />} />}
+        render={
+          <TriggerButton label="Filter" rightIcon={{ icon: ListFilter, withSeparator: true }} />
+        }
       />
       <MenuContent side="bottom" align="start" sideOffset={8} withXPadding withYPadding>
         <MenuSubmenu>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ListFilter } from 'lucide-react';
+import { ChevronDown, ListFilter, X } from 'lucide-react';
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from '@/components/base/menu/menu';
 import type { Story, StoryDefault } from '@ladle/react';
 import { Flex } from './story-utils';
@@ -9,9 +9,15 @@ export default {
   title: 'Base / TriggerButton',
 } satisfies StoryDefault;
 
-export const Default: Story = () => (
+export const rightIconWithSeparator: Story = () => (
   <Flex>
-    <TriggerButton label="Filter" icon={<ListFilter className="size-4" />} />
+    <TriggerButton label="Filter" rightIcon={{ icon: ListFilter, withSeparator: true }} />
+  </Flex>
+);
+
+export const rightIconWithoutSeparator: Story = () => (
+  <Flex>
+    <TriggerButton label="Filter" rightIcon={{ icon: ListFilter, withSeparator: false }} />
   </Flex>
 );
 
@@ -20,20 +26,20 @@ export const WithSelectedValue: Story = () => (
     <TriggerButton
       label="Operation"
       accessoryInformation="O9SwSomeOperationName"
-      onDismiss={() => alert('Cleared!')}
+      rightIcon={{ icon: X, action: () => alert('Cleared!'), label: 'Clear filter', withSeparator: true }}
     />
   </Flex>
 );
 
 export const Active: Story = () => (
   <Flex>
-    <TriggerButton label="Client" accessoryInformation="2" variant="active" />
+    <TriggerButton label="Client" accessoryInformation="2" variant="active" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
   </Flex>
 );
 
 export const DateTrigger: Story = () => (
   <Flex>
-    <TriggerButton label="Last 7 days" />
+    <TriggerButton label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
   </Flex>
 );
 
@@ -48,6 +54,7 @@ export const WithMenu: Story = () => {
               accessoryInformation={count > 0 ? count.toString() : undefined}
               label="Client"
               variant={count > 0 ? 'active' : 'default'}
+              rightIcon={{ icon: ChevronDown, withSeparator: true }}
             />
           }
         />
@@ -62,13 +69,13 @@ export const WithMenu: Story = () => {
 
 export const AllStates: Story = () => (
   <Flex>
-    <TriggerButton label="Filter" icon={<ListFilter className="size-4" />} />
+    <TriggerButton label="Filter" rightIcon={{ icon: ListFilter, withSeparator: true }} />
     <TriggerButton
       label="Operation"
       accessoryInformation="O9SwSomeOperationName"
-      onDismiss={() => {}}
+      rightIcon={{ icon: X, action: () => {}, label: 'Clear filter', withSeparator: true }}
     />
-    <TriggerButton label="Client" accessoryInformation="2" variant="active" />
-    <TriggerButton label="Last 7 days" />
+    <TriggerButton label="Client" accessoryInformation="2" variant="active" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
+    <TriggerButton label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
   </Flex>
 );
