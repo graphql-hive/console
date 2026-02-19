@@ -1285,7 +1285,6 @@ export async function registerSupertokensAtHome(
         const grantBodyResult = GrantResponseModel.safeParse(grantResponseJSON.data);
 
         if (!grantBodyResult.success) {
-          console.log(grantResponseJSON);
           req.log.debug('received invalid json body from token endpoint');
           broadcastLog(
             oidcIntegration.id,
