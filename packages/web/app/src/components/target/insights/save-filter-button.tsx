@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
 import { useMutation } from 'urql';
 import type { SavedFilterView } from '@/components/base/insights-filters';
 import { TriggerButton } from '@/components/base/trigger-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover } from '@/components/base/popover/popover';
 import {
   Select,
   SelectContent,
@@ -175,21 +174,13 @@ function SaveFilterPopover({
   ]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <TriggerButton label="Save this filter view" variant="action" />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-medium">Save to filter collections</span>
-          <button
-            onClick={() => setOpen(false)}
-            className="text-neutral-10 hover:text-neutral-12 rounded-sm p-0.5"
-            aria-label="Close"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      align="start"
+      title="Save to filter collections"
+      trigger={<TriggerButton label="Save this filter view" variant="action" />}
+      content={
         <div className="space-y-3">
           <div>
             <Input
@@ -208,10 +199,10 @@ function SaveFilterPopover({
               value={visibility}
               onValueChange={v => setVisibility(v as SavedFilterVisibilityType)}
             >
-              <SelectTrigger>
+              <SelectTrigger variant="inset">
                 <SelectValue placeholder="Save location" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent variant="inset">
                 <SelectItem value={SavedFilterVisibilityType.Private}>My views</SelectItem>
                 <SelectItem value={SavedFilterVisibilityType.Shared}>Shared views</SelectItem>
               </SelectContent>
@@ -226,8 +217,8 @@ function SaveFilterPopover({
             Save filter
           </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }
 
@@ -323,25 +314,14 @@ function UpdateFilterButton({
   }
 
   return (
-    <Popover open={confirmOpen} onOpenChange={setConfirmOpen}>
-      <PopoverTrigger asChild>
-        <TriggerButton label={`Update "${activeView.name}" filter`} variant="action" />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80">
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-medium">Update saved filter</span>
-          <button
-            onClick={() => setConfirmOpen(false)}
-            className="text-neutral-10 hover:text-neutral-12 rounded-sm p-0.5"
-            aria-label="Close"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-        <p className="text-neutral-11 mb-3 text-sm">
-          This will overwrite the current configuration of "{activeView.name}" with your current
-          filter selections.
-        </p>
+    <Popover
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      align="start"
+      title="Update saved filter"
+      description={`This will overwrite the current configuration of "${activeView.name}" with your current filter selections.`}
+      trigger={<TriggerButton label={`Update "${activeView.name}" filter`} variant="action" />}
+      content={
         <div className="flex gap-2">
           <Button
             variant="primary"
@@ -355,7 +335,7 @@ function UpdateFilterButton({
             Cancel
           </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+      }
+    />
   );
 }

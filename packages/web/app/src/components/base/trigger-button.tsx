@@ -65,13 +65,21 @@ export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
   function TriggerButton(props, ref) {
     const { variant, disabled, ...rest } = props;
 
+    // Remove custom props so they don't get spread onto the DOM element
+    const domProps = rest as Record<string, unknown>;
+    delete domProps.layout;
+    delete domProps.label;
+    delete domProps.rightIcon;
+    delete domProps.accessoryInformation;
+    delete domProps.icon;
+
     return (
       <button
         ref={ref}
         className={triggerButtonVariants({ variant })}
         disabled={disabled}
         style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
-        {...rest}
+        {...domProps}
       >
         {props.layout === 'iconOnly' ? (
           <span className="flex items-center p-1.5">

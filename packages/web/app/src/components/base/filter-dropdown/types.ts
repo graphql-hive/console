@@ -3,6 +3,8 @@ export interface FilterItem {
   id?: string;
   name: string;
   values: string[];
+  /** When true, the item is not found in the current date range stats. */
+  unavailable?: boolean;
 }
 
 export interface FilterSelection {

@@ -17,6 +17,8 @@ const selectVariants = cva(
       variant: {
         default:
           'hover:text-neutral-12 text-neutral-11 hover:bg-neutral-3 dark:hover:bg-neutral-5 bg-neutral-2 dark:bg-neutral-4 hover:border-neutral-6 border-neutral-5 border ring-offset-neutral-2 placeholder:text-neutral-10 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1',
+        inset:
+          'bg-transparent hover:bg-neutral-3 dark:hover:bg-neutral-5 text-neutral-11 hover:text-neutral-12 border-neutral-5 border ring-offset-neutral-2 placeholder:text-neutral-10 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1',
         ghost: '',
       },
     },
@@ -46,15 +48,33 @@ const SelectTrigger = React.forwardRef<
 ));
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
+const selectContentVariants = cva(
+  'animate-in fade-in-80 relative z-50 min-w-[8rem] cursor-pointer overflow-hidden rounded-md border shadow-md',
+  {
+    variants: {
+      variant: {
+        default: 'border-neutral-4 bg-neutral-3 dark:bg-neutral-4 dark:border-neutral-5',
+        inset: 'border-neutral-4 bg-neutral-3 dark:bg-neutral-3 dark:border-neutral-4',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
+  },
+);
+
+type SelectContentProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> &
+  VariantProps<typeof selectContentVariants>;
+
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = 'popper', ...props }, ref) => (
+  SelectContentProps
+>(({ className, children, position = 'popper', variant, ...props }, ref) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'border-neutral-4 bg-neutral-3 dark:bg-neutral-4 dark:border-neutral-5 animate-in fade-in-80 relative z-50 min-w-[8rem] cursor-pointer overflow-hidden rounded-md border shadow-md',
+        selectContentVariants({ variant }),
         position === 'popper' && 'translate-y-1',
         className,
       )}

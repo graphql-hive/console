@@ -11,10 +11,18 @@ interface ItemRowProps {
   selection: FilterSelection | null;
   onValuesChange: (values: string[] | null) => void;
   valuesLabel: string;
+  unavailable?: boolean;
 }
 
-function ItemName({ name }: { name: string }) {
-  return <span className="flex-1 truncate">{name}</span>;
+function ItemName({ name, unavailable }: { name: string; unavailable?: boolean }) {
+  return (
+    <span
+      className={`flex-1 truncate${unavailable ? ' line-through text-neutral-8' : ''}`}
+      title={unavailable ? 'Not found in selected date range' : undefined}
+    >
+      {name}
+    </span>
+  );
 }
 
 export function ItemRow({
@@ -25,6 +33,7 @@ export function ItemRow({
   selection,
   onValuesChange,
   valuesLabel,
+  unavailable,
 }: ItemRowProps) {
   const hasValues = item.values.length > 0;
 
@@ -32,7 +41,7 @@ export function ItemRow({
     return (
       <MenuItem inSubmenu closeOnClick={false} onClick={onToggle}>
         <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
-        <ItemName name={item.name} />
+        <ItemName name={item.name} unavailable={unavailable} />
       </MenuItem>
     );
   }
@@ -48,7 +57,7 @@ export function ItemRow({
         onClick={onToggle}
       >
         <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
-        <ItemName name={item.name} />
+        <ItemName name={item.name} unavailable={unavailable} />
       </MenuItem>
 
       <MenuContent subMenu>

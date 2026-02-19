@@ -435,7 +435,7 @@ function SavedFilterRowFilters({
     // Add any saved hashes that aren't in the current stats (fallback: show hash as name)
     for (const hash of operationHashes) {
       if (!map.has(hash)) {
-        items.push({ id: hash, name: hash, values: [] });
+        items.push({ id: hash, name: hash, values: [], unavailable: true });
       }
     }
 
@@ -455,7 +455,7 @@ function SavedFilterRowFilters({
     // Add saved clients not in current stats, preserving their versions
     for (const cf of clientFilters) {
       if (!clientNameSet.has(cf.name)) {
-        items.push({ name: cf.name, values: cf.versions ?? [] });
+        items.push({ name: cf.name, values: cf.versions ?? [], unavailable: true });
       }
     }
 

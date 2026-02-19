@@ -29,10 +29,11 @@ export function FilterContent({
     return item.id ?? item.name;
   }
 
-  const filteredItems = useMemo(
-    () => items.filter(item => item.name.toLowerCase().includes(search.toLowerCase())),
-    [items, search],
-  );
+  const filteredItems = useMemo(() => {
+    const matched = items.filter(item => item.name.toLowerCase().includes(search.toLowerCase()));
+    // Sort unavailable items to the bottom while preserving relative order
+    return matched.sort((a, b) => (a.unavailable ? 1 : 0) - (b.unavailable ? 1 : 0));
+  }, [items, search]);
 
   function isItemSelected(item: FilterItem) {
     const key = getKey(item);
@@ -67,6 +68,14 @@ export function FilterContent({
     <>
       <FilterListSearch label={label} onSearch={setSearch} value={search} />
 
+      {/* Note about unavailable items */}
+      {items.some(item => item.unavailable) && (
+        <div className="text-neutral-11 mt-2 px-4 py-1 text-xs">
+          <span className="line-through">Struck-through</span> items are not found in the selected
+          date range.
+        </div>
+      )}
+
       {/* Item list */}
       <div className="mt-2 max-h-64 overflow-y-auto">
         {filteredItems.map(item => {
@@ -85,6 +94,7 @@ export function FilterContent({
               selection={selection}
               onValuesChange={values => updateItemValues(item, values)}
               valuesLabel={valuesLabel}
+              unavailable={item.unavailable}
             />
           );
         })}
