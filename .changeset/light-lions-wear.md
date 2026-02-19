@@ -17,6 +17,8 @@ Adjust your docker compose file like the following:
   - `SUPERTOKENS_AT_HOME=1`
   - `SUPERTOKENS_REFRESH_TOKEN_KEY=`
   - `SUPERTOKENS_ACCESS_TOKEN_KEY=`
+- Set the following environment variables for `services.migrations.environment`
+  - `SUPERTOKENS_AT_HOME=1`
 
 ### Set the refresh token key
 
