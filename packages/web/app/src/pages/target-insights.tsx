@@ -4,10 +4,11 @@ import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
-import type { SavedView } from '@/components/base/insights-filters';
+import type { SavedFilterView } from '@/components/base/insights-filters';
 import { InsightsFilters } from '@/components/base/insights-filters';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/List';
+import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { OperationsStats } from '@/components/target/insights/Stats';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -30,6 +31,7 @@ export const InsightsFilterSearch = z.object({
   clients: z.array(InsightsClientFilter).optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  viewId: z.string().optional(),
 });
 
 type InsightsFilterState = z.infer<typeof InsightsFilterSearch>;
@@ -37,13 +39,12 @@ type InsightsFilterState = z.infer<typeof InsightsFilterSearch>;
 function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInput {
   return {
     operationIds: state.operations?.length ? state.operations : undefined,
-    clientVersionFilters:
-      state.clients?.length
-        ? state.clients.map(c => ({
-            clientName: c.name,
-            versions: c.versions,
-          }))
-        : undefined,
+    clientVersionFilters: state.clients?.length
+      ? state.clients.map(c => ({
+          clientName: c.name,
+          versions: c.versions,
+        }))
+      : undefined,
   };
 }
 
@@ -51,6 +52,7 @@ const InsightsFilterPicker_Query = graphql(`
   query InsightsFilterPicker($selector: TargetSelectorInput!, $period: DateRangeInput!) {
     target(reference: { bySelector: $selector }) {
       id
+      viewerCanCreateSavedFilter
       operationsStats(period: $period) {
         operations {
           edges {
@@ -78,6 +80,7 @@ const InsightsFilterPicker_Query = graphql(`
             id
             name
             visibility
+            viewerCanUpdate
             filters {
               operationHashes
               clientFilters {
@@ -129,7 +132,7 @@ function OperationsView({
     defaultPreset: presetLast7Days,
   });
 
-  const [pickerQuery] = useQuery({
+  const [pickerQuery, reexecutePickerQuery] = useQuery({
     query: InsightsFilterPicker_Query,
     variables: {
       selector: { organizationSlug, projectSlug, targetSlug },
@@ -186,16 +189,17 @@ function OperationsView({
     [search.clients],
   );
 
-  const { privateViews, sharedViews } = useMemo(() => {
+  const { privateSavedFilterViews, sharedSavedFilterViews } = useMemo(() => {
     const edges = pickerQuery.data?.target?.savedFilters?.edges ?? [];
-    const privateViews: SavedView[] = [];
-    const sharedViews: SavedView[] = [];
+    const privateSavedFilterViews: SavedFilterView[] = [];
+    const sharedSavedFilterViews: SavedFilterView[] = [];
 
     for (const edge of edges) {
       const node = edge.node;
-      const view: SavedView = {
+      const view: SavedFilterView = {
         id: node.id,
         name: node.name,
+        viewerCanUpdate: node.viewerCanUpdate,
         filters: {
           operationHashes: node.filters.operationHashes,
           clientFilters: node.filters.clientFilters.map(c => ({
@@ -207,19 +211,19 @@ function OperationsView({
       };
 
       if (node.visibility === SavedFilterVisibilityType.Private) {
-        privateViews.push(view);
+        privateSavedFilterViews.push(view);
       } else {
-        sharedViews.push(view);
+        sharedSavedFilterViews.push(view);
       }
     }
 
-    return { privateViews, sharedViews };
+    return { privateSavedFilterViews, sharedSavedFilterViews };
   }, [pickerQuery.data]);
 
   const [, trackView] = useMutation(InsightsTrackView_Mutation);
 
-  const handleApplyView = useCallback(
-    (view: SavedView) => {
+  const handleApplySavedFilter = useCallback(
+    (view: SavedFilterView) => {
       void trackView({
         input: {
           target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
@@ -231,9 +235,7 @@ function OperationsView({
         search: prev => ({
           ...prev,
           operations:
-            view.filters.operationHashes.length > 0
-              ? view.filters.operationHashes
-              : undefined,
+            view.filters.operationHashes.length > 0 ? view.filters.operationHashes : undefined,
           clients:
             view.filters.clientFilters.length > 0
               ? view.filters.clientFilters.map(c => ({
@@ -243,10 +245,28 @@ function OperationsView({
               : undefined,
           from: view.filters.dateRange?.from,
           to: view.filters.dateRange?.to,
+          viewId: view.id,
         }),
       });
     },
     [navigate, trackView, organizationSlug, projectSlug, targetSlug],
+  );
+
+  const viewerCanCreate = pickerQuery.data?.target?.viewerCanCreateSavedFilter ?? false;
+
+  const activeView = useMemo(() => {
+    if (!search.viewId) return null;
+    const allViews = [...privateSavedFilterViews, ...sharedSavedFilterViews];
+    return allViews.find(v => v.id === search.viewId) ?? null;
+  }, [search.viewId, privateSavedFilterViews, sharedSavedFilterViews]);
+
+  const hasActiveFilters = useMemo(
+    () =>
+      (search.operations && search.operations.length > 0) ||
+      (search.clients && search.clients.length > 0) ||
+      search.from !== undefined ||
+      search.to !== undefined,
+    [search.operations, search.clients, search.from, search.to],
   );
 
   const filter = useMemo(() => buildGraphQLFilter(search), [search]);
@@ -265,10 +285,10 @@ function OperationsView({
               operationFilterSelections={operationFilterSelections}
               clientFilterItems={clientFilterItems}
               clientFilterSelections={clientFilterSelections}
-              privateViews={privateViews}
-              sharedViews={sharedViews}
-              onApplyView={handleApplyView}
-              onManageViews={() => {
+              privateSavedFilterViews={privateSavedFilterViews}
+              sharedSavedFilterViews={sharedSavedFilterViews}
+              onApplySavedFilters={handleApplySavedFilter}
+              onManageSavedFilters={() => {
                 void navigate({
                   to: '/$organizationSlug/$projectSlug/$targetSlug/insights/manage-filters',
                   params: { organizationSlug, projectSlug, targetSlug },
@@ -279,9 +299,7 @@ function OperationsView({
                   search: prev => ({
                     ...prev,
                     operations:
-                      selections.length > 0
-                        ? selections.map(s => s.id ?? s.name)
-                        : undefined,
+                      selections.length > 0 ? selections.map(s => s.id ?? s.name) : undefined,
                   }),
                 });
               }}
@@ -310,9 +328,7 @@ function OperationsView({
                     search: prev => ({
                       ...prev,
                       operations:
-                        selections.length > 0
-                          ? selections.map(s => s.id ?? s.name)
-                          : undefined,
+                        selections.length > 0 ? selections.map(s => s.id ?? s.name) : undefined,
                     }),
                   });
                 }}
@@ -347,6 +363,36 @@ function OperationsView({
                   void navigate({
                     search: prev => ({ ...prev, clients: undefined }),
                   });
+                }}
+              />
+            )}
+            {hasActiveFilters && (
+              <SaveFilterButton
+                activeView={activeView}
+                viewerCanCreate={viewerCanCreate}
+                currentFilters={{
+                  operations: search.operations ?? [],
+                  clients: (search.clients ?? []).map(c => ({
+                    name: c.name,
+                    versions: c.versions,
+                  })),
+                  dateRange: {
+                    from: search.from ?? dateRangeController.selectedPreset.range.from,
+                    to: search.to ?? dateRangeController.selectedPreset.range.to,
+                  },
+                }}
+                organizationSlug={organizationSlug}
+                projectSlug={projectSlug}
+                targetSlug={targetSlug}
+                onSaved={viewId => {
+                  void navigate({
+                    search: prev => ({ ...prev, viewId }),
+                  });
+                  reexecutePickerQuery({ requestPolicy: 'network-only' });
+                }}
+                onUpdated={() => {
+                  // Refetch to get updated saved filter data
+                  reexecutePickerQuery({ requestPolicy: 'network-only' });
                 }}
               />
             )}

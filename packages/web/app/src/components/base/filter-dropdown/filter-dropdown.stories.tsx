@@ -211,15 +211,16 @@ export const InsightsFiltersDropdown: Story = () => {
         operationFilterSelections={operationSelections}
         setClientSelections={setClientSelections}
         setOperationSelections={setOperationSelections}
-        privateViews={[
+        privateSavedFilterViews={[
           {
             id: '1',
             name: 'My production filter',
+            viewerCanUpdate: true,
             filters: { operationHashes: [], clientFilters: [], dateRange: null },
           },
         ]}
-        sharedViews={[]}
-        onApplyView={() => {}}
+        sharedSavedFilterViews={[]}
+        onApplySavedFilters={() => {}}
       />
     </div>
   );

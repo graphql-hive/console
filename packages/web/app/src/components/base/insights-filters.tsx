@@ -12,9 +12,10 @@ import {
 } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
 
-export type SavedView = {
+export type SavedFilterView = {
   id: string;
   name: string;
+  viewerCanUpdate: boolean;
   filters: {
     operationHashes: string[];
     clientFilters: Array<{ name: string; versions: string[] | null }>;
@@ -27,24 +28,24 @@ type InsightsFiltersProps = {
   clientFilterSelections: FilterSelection[];
   operationFilterItems: FilterItem[];
   operationFilterSelections: FilterSelection[];
-  privateViews: SavedView[];
-  sharedViews: SavedView[];
+  privateSavedFilterViews: SavedFilterView[];
+  sharedSavedFilterViews: SavedFilterView[];
   setClientSelections: (value: FilterSelection[]) => void;
   setOperationSelections: (value: FilterSelection[]) => void;
-  onApplyView: (view: SavedView) => void;
-  onManageViews?: () => void;
+  onApplySavedFilters: (view: SavedFilterView) => void;
+  onManageSavedFilters?: () => void;
 };
 
-function ViewsList({
-  views,
+function SavedFiltersList({
+  savedFilters,
   emptyMessage,
-  onApplyView,
+  onApplySavedFilters,
 }: {
-  views: SavedView[];
+  savedFilters: SavedFilterView[];
   emptyMessage: string;
-  onApplyView: (view: SavedView) => void;
+  onApplySavedFilters: (view: SavedFilterView) => void;
 }) {
-  if (views.length === 0) {
+  if (savedFilters.length === 0) {
     return (
       <MenuItem inSubmenu disabled>
         {emptyMessage}
@@ -54,9 +55,9 @@ function ViewsList({
 
   return (
     <>
-      {views.map(view => (
-        <MenuItem key={view.id} inSubmenu onClick={() => onApplyView(view)}>
-          {view.name}
+      {savedFilters.map(savedFilter => (
+        <MenuItem key={savedFilter.id} inSubmenu onClick={() => onApplySavedFilters(savedFilter)}>
+          {savedFilter.name}
         </MenuItem>
       ))}
     </>
@@ -68,20 +69,20 @@ export function InsightsFilters({
   clientFilterSelections,
   operationFilterItems,
   operationFilterSelections,
-  privateViews,
-  sharedViews,
+  privateSavedFilterViews,
+  sharedSavedFilterViews,
   setClientSelections,
   setOperationSelections,
-  onApplyView,
-  onManageViews,
+  onApplySavedFilters,
+  onManageSavedFilters,
 }: InsightsFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleApplyView = (view: SavedView) => {
+  const handleApplySavedFilter = (view: SavedFilterView) => {
     setOpen(false);
     // Defer navigation to next frame so the menu portals unmount first
     requestAnimationFrame(() => {
-      onApplyView(view);
+      onApplySavedFilters(view);
     });
   };
 
@@ -92,32 +93,32 @@ export function InsightsFilters({
       />
       <MenuContent side="bottom" align="start" sideOffset={8} withXPadding withYPadding>
         <MenuSubmenu>
-          <MenuItem subMenuTrigger>Views</MenuItem>
+          <MenuItem subMenuTrigger>Saved filters</MenuItem>
           <MenuSeparator />
           <MenuContent subMenu withXPadding withYPadding>
             <MenuSubmenu>
-              <MenuItem subMenuTrigger>My views</MenuItem>
+              <MenuItem subMenuTrigger>My saved filters</MenuItem>
               <MenuContent subMenu withYPadding>
-                <ViewsList
-                  views={privateViews}
+                <SavedFiltersList
+                  savedFilters={privateSavedFilterViews}
                   emptyMessage="No saved private views"
-                  onApplyView={handleApplyView}
+                  onApplySavedFilters={handleApplySavedFilter}
                 />
               </MenuContent>
             </MenuSubmenu>
             <MenuSubmenu>
-              <MenuItem subMenuTrigger>Shared views</MenuItem>
+              <MenuItem subMenuTrigger>Shared saved filters</MenuItem>
               <MenuContent subMenu withYPadding>
-                <ViewsList
-                  views={sharedViews}
+                <SavedFiltersList
+                  savedFilters={sharedSavedFilterViews}
                   emptyMessage="No saved shared views"
-                  onApplyView={handleApplyView}
+                  onApplySavedFilters={handleApplySavedFilter}
                 />
               </MenuContent>
             </MenuSubmenu>
             <MenuSeparator />
-            <MenuItem variant="navigationLink" onClick={onManageViews}>
-              Manage views
+            <MenuItem variant="navigationLink" onClick={onManageSavedFilters}>
+              Manage saved filters
             </MenuItem>
           </MenuContent>
         </MenuSubmenu>

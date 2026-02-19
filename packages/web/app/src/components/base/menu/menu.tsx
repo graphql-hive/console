@@ -7,7 +7,7 @@ const MenuRoot = Menu.Root;
 const MenuTrigger = Menu.Trigger;
 
 const menuVariants = cva(
-  'z-50 max-w-75 min-w-[10rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
+  'z-50 max-w-75 min-w-[12rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
   {
     variants: {
       withPadding: {

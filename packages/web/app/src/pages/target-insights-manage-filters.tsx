@@ -332,6 +332,7 @@ function SavedFilterRow({
                             : undefined,
                         from: filter.filters.dateRange?.from,
                         to: filter.filters.dateRange?.to,
+                        viewId: filter.id,
                       }}
                     />
                   }
