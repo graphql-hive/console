@@ -485,6 +485,7 @@ export async function registerSupertokensAtHome(
 
       if (session.expiresAt < Date.now()) {
         req.log.debug('The session has expired.');
+        await supertokensStore.deleteSession(session.sessionHandle);
         return unsetAuthCookies(rep).status(404).send();
       }
 
@@ -493,6 +494,7 @@ export async function registerSupertokensAtHome(
         sha256(sha256(refreshToken)) !== session.refreshTokenHash2
       ) {
         req.log.debug('The refreshTokenHash2 does not match (first refresh).');
+        await supertokensStore.deleteSession(session.sessionHandle);
         return unsetAuthCookies(rep).status(404).send();
       }
 
@@ -501,6 +503,7 @@ export async function registerSupertokensAtHome(
         session.refreshTokenHash2 !== sha256(payload.parentRefreshTokenHash1)
       ) {
         req.log.debug('The refreshTokenHash2 does not match.');
+        await supertokensStore.deleteSession(session.sessionHandle);
         return unsetAuthCookies(rep).status(404).send();
       }
 
@@ -527,6 +530,7 @@ export async function registerSupertokensAtHome(
         req.log.debug(
           'The session has expired (another refresh for the same access token was completed, while this request was in flight).',
         );
+        await supertokensStore.deleteSession(session.sessionHandle);
         return unsetAuthCookies(rep).status(404).send();
       }
 
