@@ -44,11 +44,7 @@ export const Default: Story = () => (
 );
 
 export const Success: Story = () => (
-  <ToastDemo
-    variant="success"
-    title="Success"
-    description="The saved filter has been updated."
-  />
+  <ToastDemo variant="success" title="Success" description="The saved filter has been updated." />
 );
 
 export const Destructive: Story = () => (
@@ -68,11 +64,7 @@ export const Warning: Story = () => (
 );
 
 export const WithAction: Story = () => (
-  <ToastDemo
-    title="Filter deleted"
-    description="The saved filter has been deleted."
-    action
-  />
+  <ToastDemo title="Filter deleted" description="The saved filter has been deleted." action />
 );
 
 export const TitleOnly: Story = () => <ToastDemo title="Changes saved" />;
@@ -81,7 +73,11 @@ export const AllVariants: Story = () => (
   <div className="flex flex-col gap-4">
     <ToastDemo title="Default" description="This is the default variant." />
     <ToastDemo variant="success" title="Success" description="This is the success variant." />
-    <ToastDemo variant="destructive" title="Destructive" description="This is the destructive variant." />
+    <ToastDemo
+      variant="destructive"
+      title="Destructive"
+      description="This is the destructive variant."
+    />
     <ToastDemo variant="warning" title="Warning" description="This is the warning variant." />
   </div>
 );

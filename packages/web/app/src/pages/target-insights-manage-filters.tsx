@@ -38,7 +38,10 @@ import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 
 export const ManageFilters_SavedFiltersQuery = graphql(`
-  query ManageFilters_SavedFiltersQuery($selector: TargetSelectorInput!, $organizationSlug: String!) {
+  query ManageFilters_SavedFiltersQuery(
+    $selector: TargetSelectorInput!
+    $organizationSlug: String!
+  ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       usageRetentionInDays

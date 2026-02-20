@@ -11,15 +11,15 @@ import type { CreateOperationMutationType } from '@/components/target/laboratory
 import type { DeleteCollectionMutationType } from '@/components/target/laboratory/delete-collection-modal';
 import type { DeleteOperationMutationType } from '@/components/target/laboratory/delete-operation-modal';
 import type { CreateAccessToken_CreateTokenMutation } from '@/components/target/settings/registry-access-token';
-import {
-  ManageFilters_SavedFiltersQuery,
-  type ManageFilters_DeleteSavedFilterMutation,
-} from '@/pages/target-insights-manage-filters';
 import { graphql } from '@/gql';
 import { CollectionsQuery } from '@/lib/hooks/laboratory/use-collections';
 import type { CreateOrganizationMutation } from '@/pages/organization-new';
 import type { DeleteOrganizationDocument } from '@/pages/organization-settings';
 import type { DeleteProjectMutation } from '@/pages/project-settings';
+import {
+  ManageFilters_SavedFiltersQuery,
+  type ManageFilters_DeleteSavedFilterMutation,
+} from '@/pages/target-insights-manage-filters';
 import {
   TokensDocument,
   type DeleteTargetMutation,

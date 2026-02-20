@@ -6,11 +6,11 @@ import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdow
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import type { SavedFilterView } from '@/components/base/insights-filters';
 import { InsightsFilters } from '@/components/base/insights-filters';
+import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/List';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { OperationsStats } from '@/components/target/insights/Stats';
-import { TriggerButton } from '@/components/base/trigger-button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';

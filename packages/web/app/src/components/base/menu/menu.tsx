@@ -70,7 +70,9 @@ function MenuContent({
   return (
     <Menu.Portal>
       <Menu.Positioner side={side} align={align} sideOffset={sideOffset} className="outline-none">
-        <Menu.Popup className={menuVariants({ withXPadding, withYPadding, autoWidth })}>{children}</Menu.Popup>
+        <Menu.Popup className={menuVariants({ withXPadding, withYPadding, autoWidth })}>
+          {children}
+        </Menu.Popup>
       </Menu.Positioner>
     </Menu.Portal>
   );

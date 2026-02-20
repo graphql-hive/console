@@ -19,12 +19,22 @@ export const Default: Story = () => (
 
 export const Active: Story = () => (
   <Flex>
-    <TriggerButton label="Client" accessoryInformation="2" variant="active" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
+    <TriggerButton
+      label="Client"
+      accessoryInformation="2"
+      variant="active"
+      rightIcon={{ icon: ChevronDown, withSeparator: true }}
+    />
     <TriggerButton
       label="Operation"
       accessoryInformation="O9SwSomeOperationName"
       variant="active"
-      rightIcon={{ icon: X, action: () => alert('Cleared!'), label: 'Clear filter', withSeparator: true }}
+      rightIcon={{
+        icon: X,
+        action: () => alert('Cleared!'),
+        label: 'Clear filter',
+        withSeparator: true,
+      }}
     />
   </Flex>
 );
@@ -32,7 +42,11 @@ export const Active: Story = () => (
 export const Action: Story = () => (
   <Flex>
     <TriggerButton label="Save this filter view" variant="action" />
-    <TriggerButton label="Save this filter view" variant="action" rightIcon={{ icon: ChevronDown, withSeparator: false }} />
+    <TriggerButton
+      label="Save this filter view"
+      variant="action"
+      rightIcon={{ icon: ChevronDown, withSeparator: false }}
+    />
   </Flex>
 );
 

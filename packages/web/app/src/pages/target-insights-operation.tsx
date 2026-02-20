@@ -65,10 +65,7 @@ function OperationView({
     dataRetentionInDays,
     defaultPreset: presetLast1Day,
   });
-  const operationFilter = useMemo(
-    () => ({ operationIds: [operationHash] }),
-    [operationHash],
-  );
+  const operationFilter = useMemo(() => ({ operationIds: [operationHash] }), [operationHash]);
 
   const [result] = useQuery({
     query: Operation_View_OperationBodyQuery,

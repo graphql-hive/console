@@ -29,10 +29,7 @@ const triggerButtonVariants = cva(
 
 const separatorClass = 'border-l [border-left-color:inherit]';
 
-type CommonProps = Omit<
-  React.ButtonHTMLAttributes<HTMLButtonElement>,
-  'className' | 'style'
-> &
+type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
   VariantProps<typeof triggerButtonVariants> & {
     /** When true, the button is visually dimmed and non-interactive */
     disabled?: boolean;
@@ -90,9 +87,7 @@ export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
             <span className="px-3 py-1.5 text-[13px]">{props.label}</span>
 
             {props.accessoryInformation != null && (
-              <span className={`${separatorClass} px-3 py-1.5`}>
-                {props.accessoryInformation}
-              </span>
+              <span className={`${separatorClass} px-3 py-1.5`}>{props.accessoryInformation}</span>
             )}
             {props.rightIcon && (
               <span

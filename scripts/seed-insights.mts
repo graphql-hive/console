@@ -20,22 +20,16 @@ process.env.RUN_AGAINST_LOCAL_SERVICES = '1';
 await import('../integration-tests/local-dev.ts');
 
 const { ensureEnv } = await import('../integration-tests/testkit/env');
-const {
-  createOrganization,
-  createProject,
-  createToken,
-  publishSchema,
-} = await import('../integration-tests/testkit/flow');
+const { createOrganization, createProject, createToken, publishSchema } = await import(
+  '../integration-tests/testkit/flow'
+);
 const { execute } = await import('../integration-tests/testkit/graphql');
 const { legacyCollect } = await import('../integration-tests/testkit/usage');
 const { generateUnique, getServiceHost } = await import('../integration-tests/testkit/utils');
-const { TargetAccessScope, ProjectType } = await import(
-  '../integration-tests/testkit/gql/graphql'
+const { TargetAccessScope, ProjectType } = await import('../integration-tests/testkit/gql/graphql');
+const { CreateSavedFilterMutation, TrackSavedFilterViewMutation } = await import(
+  '../integration-tests/testkit/saved-filters'
 );
-const {
-  CreateSavedFilterMutation,
-  TrackSavedFilterViewMutation,
-} = await import('../integration-tests/testkit/saved-filters');
 
 // ---------------------------------------------------------------------------
 // Auth helper — handles both new and existing SuperTokens users
@@ -109,19 +103,16 @@ async function signInOrSignUp(
     oidcIntegrationId: null,
     email,
   };
-  const sessionRes = await fetch(
-    `${supertokensUri}/appid-public/public/recipe/session`,
-    {
-      method: 'POST',
-      headers: { ...headers, rid: 'session' },
-      body: JSON.stringify({
-        enableAntiCsrf: false,
-        userId: superTokensUserId,
-        userDataInDatabase: sessionPayload,
-        userDataInJWT: sessionPayload,
-      }),
-    },
-  );
+  const sessionRes = await fetch(`${supertokensUri}/appid-public/public/recipe/session`, {
+    method: 'POST',
+    headers: { ...headers, rid: 'session' },
+    body: JSON.stringify({
+      enableAntiCsrf: false,
+      userId: superTokensUserId,
+      userDataInDatabase: sessionPayload,
+      userDataInJWT: sessionPayload,
+    }),
+  });
   const sessionData = (await sessionRes.json()) as {
     accessToken?: { token: string };
     refreshToken?: { token: string };
@@ -180,11 +171,25 @@ const HUMAN_SELECTIONS = [
   },
   {
     body: '... on Human { name starships { name length } }',
-    fields: ['Human', 'Human.name', 'Human.starships', 'Starship', 'Starship.name', 'Starship.length'],
+    fields: [
+      'Human',
+      'Human.name',
+      'Human.starships',
+      'Starship',
+      'Starship.name',
+      'Starship.length',
+    ],
   },
   {
     body: '... on Human { name totalCredits starships { name } }',
-    fields: ['Human', 'Human.name', 'Human.totalCredits', 'Human.starships', 'Starship', 'Starship.name'],
+    fields: [
+      'Human',
+      'Human.name',
+      'Human.totalCredits',
+      'Human.starships',
+      'Starship',
+      'Starship.name',
+    ],
   },
 ];
 
@@ -257,7 +262,14 @@ function generateOperations(): OperationDef[] {
         ops.push({
           operation: `query ${name} { hero(episode: ${ep}) { name ${hSel.body} ${dSel.body} } }`,
           operationName: name,
-          fields: ['Query', 'Query.hero', 'Character', 'Character.name', ...hSel.fields, ...dSel.fields],
+          fields: [
+            'Query',
+            'Query.hero',
+            'Character',
+            'Character.name',
+            ...hSel.fields,
+            ...dSel.fields,
+          ],
         });
       }
     }
@@ -307,14 +319,38 @@ function generateOperations(): OperationDef[] {
   // 8. Generate more unique queries to reach ~1000 by varying naming patterns
   // Simulate realistic operation names like a real codebase would have
   const PREFIXES = [
-    'Dashboard', 'Settings', 'Profile', 'Analytics', 'Admin',
-    'Reporting', 'Monitor', 'Search', 'Feed', 'Notification',
-    'Billing', 'Team', 'Onboarding', 'Export', 'Import',
-    'Audit', 'Cache', 'Sync', 'Batch', 'Stream',
+    'Dashboard',
+    'Settings',
+    'Profile',
+    'Analytics',
+    'Admin',
+    'Reporting',
+    'Monitor',
+    'Search',
+    'Feed',
+    'Notification',
+    'Billing',
+    'Team',
+    'Onboarding',
+    'Export',
+    'Import',
+    'Audit',
+    'Cache',
+    'Sync',
+    'Batch',
+    'Stream',
   ];
   const SUFFIXES = [
-    'Query', 'Fetch', 'Load', 'Get', 'List',
-    'Detail', 'Summary', 'Overview', 'Stats', 'Count',
+    'Query',
+    'Fetch',
+    'Load',
+    'Get',
+    'List',
+    'Detail',
+    'Summary',
+    'Overview',
+    'Stats',
+    'Count',
   ];
 
   while (ops.length < 1000) {
@@ -597,11 +633,14 @@ async function main() {
     if (edge.node.operationHash && edge.node.name) {
       // API returns names as "{hashPrefix}_{operationName}", extract the operationName part
       const underscoreIdx = edge.node.name.indexOf('_');
-      const operationName = underscoreIdx >= 0 ? edge.node.name.slice(underscoreIdx + 1) : edge.node.name;
+      const operationName =
+        underscoreIdx >= 0 ? edge.node.name.slice(underscoreIdx + 1) : edge.node.name;
       operationHashMap.set(operationName, edge.node.operationHash);
     }
   }
-  console.log(`   Found ${operationHashMap.size} operations: ${[...operationHashMap.keys()].join(', ')}`);
+  console.log(
+    `   Found ${operationHashMap.size} operations: ${[...operationHashMap.keys()].join(', ')}`,
+  );
 
   async function createSavedFilter(input: {
     name: string;
@@ -823,7 +862,9 @@ async function main() {
     });
     if (result.ok) {
       createdFilters.push({ name: def.name, id: result.ok.savedFilter.id, views: def.views });
-      console.log(`   Created: "${def.name}" (${result.ok.savedFilter.id}) — ${ops.length} ops, ${def.visibility}`);
+      console.log(
+        `   Created: "${def.name}" (${result.ok.savedFilter.id}) — ${ops.length} ops, ${def.visibility}`,
+      );
     } else {
       console.error(`   Failed to create "${def.name}"`);
     }

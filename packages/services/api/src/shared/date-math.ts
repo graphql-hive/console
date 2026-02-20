@@ -40,10 +40,7 @@ function parseDateString(input: string) {
  * Parse a time ISO string or date math expression into an actual Date.
  * Supports: "now", "now-7d", "now+1h", ISO strings, "yyyy-MM-dd HH:mm" strings.
  */
-export function parseDateMathExpression(
-  text: string,
-  now = new UTCDate(),
-): Date | undefined {
+export function parseDateMathExpression(text: string, now = new UTCDate()): Date | undefined {
   if (!text) {
     return undefined;
   }

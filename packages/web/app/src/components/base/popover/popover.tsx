@@ -1,5 +1,5 @@
-import { X } from 'lucide-react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui/react/popover';
 
@@ -70,8 +70,16 @@ function isStructured(props: PopoverProps): props is PopoverStructuredProps {
 }
 
 export function Popover(props: PopoverProps) {
-  const { trigger, side = 'bottom', align, sideOffset = 8, variant, arrow, open, onOpenChange } =
-    props;
+  const {
+    trigger,
+    side = 'bottom',
+    align,
+    sideOffset = 8,
+    variant,
+    arrow,
+    open,
+    onOpenChange,
+  } = props;
 
   let inner: React.ReactNode;
 
@@ -91,9 +99,7 @@ export function Popover(props: PopoverProps) {
             </button>
           )}
         </div>
-        {props.description && (
-          <p className="text-neutral-11 mb-3 text-sm">{props.description}</p>
-        )}
+        {props.description && <p className="text-neutral-11 mb-3 text-sm">{props.description}</p>}
         {props.content}
       </div>
     );

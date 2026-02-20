@@ -1,13 +1,6 @@
 import { useState } from 'react';
 import type { Story, StoryDefault } from '@ladle/react';
-import {
-  availablePresets,
-  DateRangePicker,
-  type DateRangePickerProps,
-  type Preset,
-  presetLast1Day,
-  presetLast7Days,
-} from './date-range-picker';
+import { DateRangePicker, presetLast1Day, presetLast7Days, type Preset } from './date-range-picker';
 
 export default {
   title: 'UI / DateRangePicker',

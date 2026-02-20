@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { MenuItem } from '@/components/base/menu/menu';
 import { FilterListSearch } from '@/components/base/filter-dropdown/filter-list-search';
+import { MenuItem } from '@/components/base/menu/menu';
 
 type ValuesSubPanelProps = {
   itemName: string;
