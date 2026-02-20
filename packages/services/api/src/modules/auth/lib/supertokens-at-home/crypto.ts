@@ -6,6 +6,7 @@
  */
 
 import * as c from 'node:crypto';
+import { promisify } from 'node:util';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import z from 'zod';
@@ -26,7 +27,9 @@ export async function comparePassword(password: string, hash: string) {
   return await bcrypt.compare(password, hash);
 }
 
-function decryptRefreshToken(encodedData: string, masterKey: string) {
+const pbkdf2Async = promisify(c.pbkdf2);
+
+async function decryptRefreshToken(encodedData: string, masterKey: string) {
   // 1. Decode the incoming string (URL -> Base64 -> Buffer).
   const urlDecodedData = decodeURIComponent(encodedData);
   const buffer = Buffer.from(urlDecodedData, 'base64');
@@ -45,7 +48,7 @@ function decryptRefreshToken(encodedData: string, masterKey: string) {
   const keylen = 32; // 32 bytes = 256 bits
   const digest = 'sha512'; // NOTE: This is a guess. See explanation below.
 
-  const secretKey = c.pbkdf2Sync(masterKey, iv, iterations, keylen, digest);
+  const secretKey = await pbkdf2Async(masterKey, iv, iterations, keylen, digest);
 
   // 4. Separate the encrypted data from the authentication tag.
   const authTagLength = 16; // 128 bits
@@ -126,7 +129,7 @@ const RefreshTokenPayloadModel = z.object({
 
 type RefreshTokenPayloadType = z.TypeOf<typeof RefreshTokenPayloadModel>;
 
-export function parseRefreshToken(refreshToken: string, masterKey: string) {
+export async function parseRefreshToken(refreshToken: string, masterKey: string) {
   const [payload, nonce, version] = refreshToken.split('.');
 
   if (version !== 'V2') {
@@ -139,7 +142,7 @@ export function parseRefreshToken(refreshToken: string, masterKey: string) {
   let refreshTokenPayload: RefreshTokenPayloadType;
   try {
     refreshTokenPayload = RefreshTokenPayloadModel.parse(
-      JSON.parse(decryptRefreshToken(payload, masterKey)),
+      JSON.parse(await decryptRefreshToken(payload, masterKey)),
     );
   } catch (err) {
     return {

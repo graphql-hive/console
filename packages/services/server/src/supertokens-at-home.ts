@@ -466,7 +466,7 @@ export async function registerSupertokensAtHome(
         return rep.status(404).send();
       }
 
-      const parseResult = parseRefreshToken(refreshToken, secrets.refreshTokenKey);
+      const parseResult = await parseRefreshToken(refreshToken, secrets.refreshTokenKey);
 
       if (parseResult.type === 'error') {
         req.log.debug('Wrong refresh token version provided. err=%s', parseResult.code);
