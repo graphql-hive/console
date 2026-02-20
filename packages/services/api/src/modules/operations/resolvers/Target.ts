@@ -63,13 +63,13 @@ export const Target: Pick<
     if (clientVersionFilters) {
       if (clientVersionFilters.length > MAX_CLIENT_VERSION_FILTERS) {
         throw new GraphQLError(
-          `clientVersionFilters must contain at most ${MAX_CLIENT_VERSION_FILTERS} elements`,
+          `'OperationStatsFilterInput.clientVersionFilters' must contain at most ${MAX_CLIENT_VERSION_FILTERS} elements`,
         );
       }
       for (const filter of clientVersionFilters) {
         if (filter.versions && filter.versions.length > MAX_VERSIONS_PER_FILTER) {
           throw new GraphQLError(
-            `Each clientVersionFilter.versions must contain at most ${MAX_VERSIONS_PER_FILTER} elements`,
+            `'ClientVersionFilterInput.versions' must contain at most ${MAX_VERSIONS_PER_FILTER} elements`,
           );
         }
       }
