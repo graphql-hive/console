@@ -6,7 +6,6 @@ import type { SavedFilterResolvers } from './../../../__generated__/types';
 
 export const SavedFilter: SavedFilterResolvers = {
   id: filter => filter.id,
-  type: filter => filter.type,
   name: filter => filter.name,
   description: filter => filter.description,
   filters: filter => filter.filters,

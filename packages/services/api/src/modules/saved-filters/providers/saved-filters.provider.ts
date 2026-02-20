@@ -4,7 +4,6 @@ import type { TargetReferenceInput } from '../../../__generated__/types';
 import type {
   InsightsFilterData,
   SavedFilter,
-  SavedFilterType,
   SavedFilterVisibility,
   Target,
 } from '../../../shared/entities';
@@ -50,8 +49,6 @@ const CreateSavedFilterInputModel = zod.object({
   name: zod.string().min(1).max(100),
   description: zod.string().max(500).nullable().optional(),
   visibility: visibilityEnum,
-  type: zod.enum(['INSIGHTS']),
-  // nullable() needed because GraphQL sends null when field is not provided
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
 
@@ -116,16 +113,14 @@ export class SavedFiltersProvider {
 
   async getSavedFilters(
     target: Target,
-    type: SavedFilterType,
     first: number,
     cursor: string | null,
     visibility: SavedFilterVisibility | null,
     search: string | null,
   ) {
     this.logger.debug(
-      'Listing saved filters (projectId=%s, type=%s, visibility=%s, search=%s)',
+      'Listing saved filters (projectId=%s, visibility=%s, search=%s)',
       target.projectId,
-      type,
       visibility,
       search,
     );
@@ -142,7 +137,6 @@ export class SavedFiltersProvider {
 
     return this.savedFiltersStorage.getPaginatedSavedFiltersForProject({
       projectId: target.projectId,
-      type,
       userId: currentUser.id,
       visibility,
       search,
@@ -154,7 +148,6 @@ export class SavedFiltersProvider {
   async createSavedFilter(
     target: TargetReferenceInput,
     input: {
-      type: string;
       name: string;
       description: string | null;
       visibility: string;
@@ -166,9 +159,8 @@ export class SavedFiltersProvider {
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
     this.logger.info(
-      'Creating saved filter (name=%s, type=%s, visibility=%s)',
+      'Creating saved filter (name=%s, visibility=%s)',
       input.name,
-      input.type,
       input.visibility,
     );
 
@@ -209,14 +201,6 @@ export class SavedFiltersProvider {
       });
     }
 
-    // For INSIGHTS type, insightsFilter should be provided
-    if (data.type === 'INSIGHTS' && !input.insightsFilter) {
-      return {
-        type: 'error',
-        message: 'insightsFilter is required for INSIGHTS type',
-      };
-    }
-
     const currentUser = await this.session.getViewer();
 
     const filters: InsightsFilterData = {
@@ -231,7 +215,6 @@ export class SavedFiltersProvider {
 
     const savedFilter = await this.savedFiltersStorage.createSavedFilter({
       projectId,
-      type: data.type as SavedFilterType,
       createdByUserId: currentUser.id,
       name: data.name,
       description: data.description ?? null,
@@ -245,7 +228,6 @@ export class SavedFiltersProvider {
       metadata: {
         filterId: savedFilter.id,
         filterName: savedFilter.name,
-        filterType: savedFilter.type,
         visibility: savedFilter.visibility,
         projectId,
       },
@@ -371,7 +353,6 @@ export class SavedFiltersProvider {
       metadata: {
         filterId: savedFilter.id,
         filterName: savedFilter.name,
-        filterType: savedFilter.type,
         updatedFields: JSON.stringify({
           name: data.name,
           description: data.description,
@@ -461,7 +442,6 @@ export class SavedFiltersProvider {
       metadata: {
         filterId: existingFilter.id,
         filterName: existingFilter.name,
-        filterType: existingFilter.type,
       },
     });
 

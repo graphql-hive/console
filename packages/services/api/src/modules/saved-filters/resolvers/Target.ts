@@ -21,7 +21,6 @@ export const Target: Pick<
       .get(SavedFiltersProvider)
       .getSavedFilters(
         target,
-        args.type,
         args.first,
         args.after ?? null,
         mapVisibility(args.visibility ?? null),

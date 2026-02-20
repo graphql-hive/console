@@ -6,7 +6,6 @@ export const GetSavedFilterQuery = graphql(`
       id
       savedFilter(id: $id) {
         id
-        type
         name
         description
         filters {
@@ -38,7 +37,6 @@ export const GetSavedFilterQuery = graphql(`
 export const GetSavedFiltersQuery = graphql(`
   query GetSavedFilters(
     $selector: TargetSelectorInput!
-    $type: SavedFilterType!
     $first: Int!
     $after: String
     $visibility: SavedFilterVisibilityType
@@ -47,7 +45,6 @@ export const GetSavedFiltersQuery = graphql(`
     target(reference: { bySelector: $selector }) {
       id
       savedFilters(
-        type: $type
         first: $first
         after: $after
         visibility: $visibility
@@ -57,7 +54,6 @@ export const GetSavedFiltersQuery = graphql(`
           cursor
           node {
             id
-            type
             name
             description
             visibility
@@ -90,7 +86,6 @@ export const CreateSavedFilterMutation = graphql(`
       ok {
         savedFilter {
           id
-          type
           name
           description
           filters {
@@ -127,7 +122,6 @@ export const UpdateSavedFilterMutation = graphql(`
       ok {
         savedFilter {
           id
-          type
           name
           description
           filters {

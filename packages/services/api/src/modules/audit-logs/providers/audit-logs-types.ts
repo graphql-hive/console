@@ -359,7 +359,6 @@ export const AuditLogModel = z.union([
     metadata: z.object({
       filterId: z.string().uuid(),
       filterName: z.string(),
-      filterType: z.string(),
       visibility: z.string(),
       projectId: z.string().uuid(),
     }),
@@ -369,7 +368,6 @@ export const AuditLogModel = z.union([
     metadata: z.object({
       filterId: z.string().uuid(),
       filterName: z.string(),
-      filterType: z.string(),
       updatedFields: z.string(),
     }),
   }),
@@ -378,7 +376,6 @@ export const AuditLogModel = z.union([
     metadata: z.object({
       filterId: z.string().uuid(),
       filterName: z.string(),
-      filterType: z.string(),
     }),
   }),
 ]);

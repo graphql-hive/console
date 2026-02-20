@@ -7,7 +7,6 @@ export const createSavedFilter: NonNullable<MutationResolvers['createSavedFilter
   { injector },
 ) => {
   const result = await injector.get(SavedFiltersProvider).createSavedFilter(input.target, {
-    type: input.type,
     name: input.name,
     description: input.description ?? null,
     visibility: input.visibility,

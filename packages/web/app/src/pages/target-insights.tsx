@@ -75,7 +75,7 @@ const InsightsFilterPicker_Query = graphql(`
           }
         }
       }
-      savedFilters(type: INSIGHTS, first: 50) {
+      savedFilters(first: 50) {
         edges {
           node {
             id

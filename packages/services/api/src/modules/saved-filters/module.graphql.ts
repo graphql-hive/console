@@ -1,10 +1,6 @@
 import { gql } from 'graphql-modules';
 
 export const typeDefs = gql`
-  enum SavedFilterType {
-    INSIGHTS
-  }
-
   enum SavedFilterVisibilityType {
     PRIVATE
     SHARED
@@ -12,7 +8,6 @@ export const typeDefs = gql`
 
   type SavedFilter {
     id: ID!
-    type: SavedFilterType!
     name: String!
     description: String
     filters: InsightsFilterConfiguration!
@@ -55,7 +50,6 @@ export const typeDefs = gql`
 
   input CreateSavedFilterInput {
     target: TargetReferenceInput!
-    type: SavedFilterType!
     name: String!
     description: String
     visibility: SavedFilterVisibilityType!
@@ -100,7 +94,6 @@ export const typeDefs = gql`
   extend type Target {
     savedFilter(id: ID!): SavedFilter
     savedFilters(
-      type: SavedFilterType!
       first: Int = 50
       after: String
       visibility: SavedFilterVisibilityType

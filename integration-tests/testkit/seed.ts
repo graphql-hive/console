@@ -509,14 +509,12 @@ export function initSeed() {
                   return result.target?.savedFilter;
                 },
                 async getSavedFilters({
-                  type,
                   first = 20,
                   after,
                   visibility,
                   search,
                   token = ownerToken,
                 }: {
-                  type: GraphQLSchema.SavedFilterType;
                   first?: number;
                   after?: string;
                   visibility?: GraphQLSchema.SavedFilterVisibilityType;
@@ -526,7 +524,6 @@ export function initSeed() {
                   const result = await execute({
                     document: GetSavedFiltersQuery,
                     variables: {
-                      type,
                       first,
                       after,
                       visibility,
@@ -548,14 +545,12 @@ export function initSeed() {
                 async createSavedFilter({
                   name,
                   description,
-                  type,
                   visibility,
                   insightsFilter,
                   token = ownerToken,
                 }: {
                   name: string;
                   description?: string;
-                  type: GraphQLSchema.SavedFilterType;
                   visibility: GraphQLSchema.SavedFilterVisibilityType;
                   insightsFilter?: GraphQLSchema.InsightsFilterConfigurationInput;
                   token?: string;
@@ -573,7 +568,6 @@ export function initSeed() {
                         },
                         name,
                         description,
-                        type,
                         visibility,
                         insightsFilter,
                       },

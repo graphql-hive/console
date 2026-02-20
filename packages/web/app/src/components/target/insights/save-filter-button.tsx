@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
-import { SavedFilterType, SavedFilterVisibilityType } from '@/gql/graphql';
+import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { UpdateFilterButton } from './update-filter-button';
 
 const InsightsCreateSavedFilter_Mutation = graphql(`
@@ -134,7 +134,6 @@ function SaveFilterPopover({
     const result = await createSavedFilter({
       input: {
         target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
-        type: SavedFilterType.Insights,
         name: trimmed,
         visibility,
         insightsFilter: {

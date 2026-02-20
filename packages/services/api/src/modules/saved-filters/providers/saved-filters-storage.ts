@@ -8,7 +8,6 @@ import {
 import type {
   InsightsFilterData,
   SavedFilter,
-  SavedFilterType,
   SavedFilterVisibility,
 } from '../../../shared/entities';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -16,7 +15,6 @@ import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 const SavedFilterModel = zod.object({
   id: zod.string(),
   projectId: zod.string(),
-  type: zod.enum(['INSIGHTS']),
   createdByUserId: zod.string(),
   updatedByUserId: zod.string().nullable(),
   name: zod.string(),
@@ -53,7 +51,6 @@ export class SavedFiltersStorage {
       SELECT
         "id"
         , "project_id" as "projectId"
-        , "type"
         , "created_by_user_id" as "createdByUserId"
         , "updated_by_user_id" as "updatedByUserId"
         , "name"
@@ -78,7 +75,6 @@ export class SavedFiltersStorage {
 
   async getPaginatedSavedFiltersForProject(args: {
     projectId: string;
-    type: SavedFilterType;
     userId: string;
     visibility: SavedFilterVisibility | null;
     search: string | null;
@@ -113,7 +109,6 @@ export class SavedFiltersStorage {
       SELECT
         "id"
         , "project_id" as "projectId"
-        , "type"
         , "created_by_user_id" as "createdByUserId"
         , "updated_by_user_id" as "updatedByUserId"
         , "name"
@@ -127,7 +122,6 @@ export class SavedFiltersStorage {
         "saved_filters"
       WHERE
         "project_id" = ${args.projectId}
-        AND "type" = ${args.type}
         AND ${visibilityCondition}
         ${
           args.search
@@ -154,7 +148,6 @@ export class SavedFiltersStorage {
         }
       ORDER BY
         "project_id" ASC
-        , "type" ASC
         , "created_at" DESC
         , "id" DESC
       LIMIT ${limit + 1}
@@ -192,7 +185,6 @@ export class SavedFiltersStorage {
 
   async createSavedFilter(args: {
     projectId: string;
-    type: SavedFilterType;
     createdByUserId: string;
     name: string;
     description: string | null;
@@ -202,7 +194,6 @@ export class SavedFiltersStorage {
     const result = await this.pool.one(sql`/* createSavedFilter */
       INSERT INTO "saved_filters" (
         "project_id"
-        , "type"
         , "created_by_user_id"
         , "name"
         , "description"
@@ -211,7 +202,6 @@ export class SavedFiltersStorage {
       )
       VALUES (
         ${args.projectId}
-        , ${args.type}
         , ${args.createdByUserId}
         , ${args.name}
         , ${args.description}
@@ -221,7 +211,6 @@ export class SavedFiltersStorage {
       RETURNING
         "id"
         , "project_id" as "projectId"
-        , "type"
         , "created_by_user_id" as "createdByUserId"
         , "updated_by_user_id" as "updatedByUserId"
         , "name"
@@ -259,7 +248,6 @@ export class SavedFiltersStorage {
       RETURNING
         "id"
         , "project_id" as "projectId"
-        , "type"
         , "created_by_user_id" as "createdByUserId"
         , "updated_by_user_id" as "updatedByUserId"
         , "name"

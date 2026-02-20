@@ -48,7 +48,7 @@ export const ManageFilters_SavedFiltersQuery = graphql(`
     }
     target(reference: { bySelector: $selector }) {
       id
-      savedFilters(type: INSIGHTS, first: 50) {
+      savedFilters(first: 50) {
         edges {
           cursor
           node {

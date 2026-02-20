@@ -297,8 +297,6 @@ export type PaginatedDocumentCollectionOperations = Readonly<{
   }>;
 }>;
 
-export type SavedFilterType = 'INSIGHTS';
-
 export type SavedFilterVisibility = 'private' | 'shared';
 
 export interface InsightsFilterData {
@@ -310,7 +308,6 @@ export interface InsightsFilterData {
 export interface SavedFilter {
   id: string;
   projectId: string;
-  type: SavedFilterType;
   createdByUserId: string;
   updatedByUserId: string | null;
   name: string;
