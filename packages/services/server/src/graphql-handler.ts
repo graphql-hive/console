@@ -36,10 +36,6 @@ export interface GraphQLHandlerOptions {
   registry: Registry;
   signature: string;
   tracing?: TracingInstance;
-  supertokens: {
-    connectionUri: string;
-    apiKey: string;
-  };
   isProduction: boolean;
   hiveUsageConfig: HiveUsageConfig;
   hivePersistedDocumentsConfig: HivePersistedDocumentsConfig;

@@ -67,6 +67,7 @@ import migration_2024_06_11T10_10_00_ms_teams_webhook from './actions/2024.06.11
 import migration_2024_07_16T13_44_00_oidc_only_access from './actions/2024.07.16T13-44-00.oidc-only-access';
 import migration_2024_07_17T00_00_00_app_deployments from './actions/2024.07.17T00-00-00.app-deployments';
 import migration_2024_07_23T_09_36_00_schema_cleanup_tracker from './actions/2024.07.23T09.36.00.schema-cleanup-tracker';
+import { env } from './environment';
 import { runMigrations } from './pg-migrator';
 
 export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: string }) =>
@@ -183,5 +184,8 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2026.01.30T00-00-00.account-linking'),
       await import('./actions/2026.02.06T00-00-00.zendesk-unique'),
       await import('./actions/2026.01.30T10-00-00.oidc-require-invitation'),
+      ...(env.useSupertokensAtHome
+        ? [await import('./actions/2026.02.18T00-00-00.ensure-supertokens-tables')]
+        : []),
     ],
   });

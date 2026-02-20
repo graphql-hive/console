@@ -79,7 +79,7 @@ export const frontendConfig = () => {
         },
         override: env.auth.oidc ? getOIDCOverrides() : undefined,
       }),
-      SessionReact.init(),
+      SessionReact.init({}),
     ],
   };
 };

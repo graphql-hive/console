@@ -10,23 +10,33 @@ export const createThirdPartyEmailPasswordReactOIDCProvider = () => ({
 
 const delimiter = '--';
 
+let currentAuthUrl: null | string = null;
+
 export const getOIDCOverrides = (): UserInput['override'] => ({
   functions: originalImplementation => ({
     ...originalImplementation,
     generateStateToSendToOAuthProvider(input) {
-      const hash = originalImplementation.generateStateToSendToOAuthProvider(input);
+      let state: null | string = null;
+      if (currentAuthUrl) {
+        const url = new URL(currentAuthUrl);
+
+        state = url.searchParams.get('state');
+      }
+
+      state ||= originalImplementation.generateStateToSendToOAuthProvider(input);
+
       const oidcId = input?.userContext?.['oidcId'];
 
       if (typeof oidcId === 'string') {
-        return `${hash}${delimiter}${oidcId}`;
+        return `${state}${delimiter}${oidcId}`;
       }
 
-      return hash;
+      return state;
     },
-    getAuthorisationURLFromBackend(input) {
+    async getAuthorisationURLFromBackend(input) {
       const maybeId: unknown = input.userContext['oidcId'];
 
-      return originalImplementation.getAuthorisationURLFromBackend(
+      const result = await originalImplementation.getAuthorisationURLFromBackend(
         typeof maybeId === 'string'
           ? {
               ...input,
@@ -43,6 +53,9 @@ export const getOIDCOverrides = (): UserInput['override'] => ({
             }
           : input,
       );
+
+      currentAuthUrl = result.urlWithQueryParams;
+      return result;
     },
     thirdPartySignInAndUp(input) {
       const locationUrl = new URL(window.location.toString());
