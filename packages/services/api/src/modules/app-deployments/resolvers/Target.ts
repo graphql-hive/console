@@ -26,8 +26,8 @@ export const Target: Pick<
   appDeployments: async (target, args, { injector }) => {
     const sort = args.sort
       ? {
-          field: args.sort.field as 'CREATED_AT' | 'ACTIVATED_AT' | 'LAST_USED',
-          direction: args.sort.direction as 'ASC' | 'DESC',
+          field: args.sort.field,
+          direction: args.sort.direction,
         }
       : null;
 
