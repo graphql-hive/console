@@ -823,6 +823,14 @@ function ManageFiltersContent(props: {
     );
   }
 
+  if (query.fetching && edges.length === 0) {
+    return (
+      <div className="flex h-fit flex-1 items-center justify-center py-28">
+        <Spinner />
+      </div>
+    );
+  }
+
   if (!query.fetching && edges.length === 0) {
     return (
       <div className="py-8">
