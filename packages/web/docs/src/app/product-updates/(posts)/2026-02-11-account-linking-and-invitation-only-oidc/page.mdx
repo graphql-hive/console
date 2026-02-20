@@ -1,0 +1,44 @@
+---
+title: Account Linking and Invitation-Only OIDC
+description:
+  Link multiple login providers to a single account and restrict OIDC organization access with
+  invitation requirements.
+date: 2026-02-11
+authors: [iha]
+---
+
+We're rolling out two updates today to help you manage how you (and your team) access Hive:
+**Account Linking** and **Invitation-Only OIDC**.
+
+### Account Linking
+
+Previously, Hive treated every login method as a distinct identity. If you logged in with Google one
+day and GitHub the next, even with the same email address, you ended up with two separate accounts.
+
+Starting today, Hive will **automatically link login methods based on your email address**.
+
+If you sign up with Google, and later sign in with GitHub using the same email address, you will
+land in the same account. No more accidental duplicate profiles.
+
+> **Note:** If you have already created multiple Hive accounts using the same email address across
+> different login methods, automatic linking is not yet available. We are working on an account
+> merging process to help you consolidate these accounts in the future.
+
+### Invitation-Only OIDC
+
+We have also added a new control layer to our OpenID Connect (OIDC) integration. Previously, any
+user logging in via an OIDC provider was automatically added to the associated organization.
+
+You can now enable the **Require Invitation to Join** option in your organization OIDC settings.
+When enabled, users logging in via OIDC will **only be granted access to the organization if they
+have received an explicit invitation beforehand**. This allows you to keep SSO active for your whole
+company while restricting Hive access to specific team members.
+
+### Summary
+
+- **One Identity:** Use Google, GitHub, or SSO interchangeably without creating ghost accounts.
+- **Stricter Access:** Prevent unintended joins in large organizations by enforcing invitations on
+  top of SSO.
+
+We hope these changes provide a more seamless and secure experience for managing your Hive accounts
+and organizations.
