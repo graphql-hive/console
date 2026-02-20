@@ -29,14 +29,14 @@ If you want to avoid messing with the database, you can also create a new refres
 
 Extract the refresh token key from the supertokens database
 ```sql
-SELECT "refresh_token_key"  FROM "supertokens_key_value" WHERE "name" = 'refresh_token_key';
+SELECT "value" FROM "supertokens_key_value" WHERE "name" = 'refresh_token_key';
 ```
   
-The key should look something like this: `1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0`
+The key should look similar to this: `1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0`
 
 Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment variable value to this string.
 
-### Create from scratch
+#### Create from scratch
 
 Run the following command to create a new refresh key from scratch:
 
