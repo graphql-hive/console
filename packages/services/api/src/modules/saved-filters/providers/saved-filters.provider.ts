@@ -178,7 +178,7 @@ export class SavedFiltersProvider {
     const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
-      action: 'project:modifySettings',
+      action: 'project:describe',
       organizationId,
       params: {
         organizationId,
@@ -195,6 +195,18 @@ export class SavedFiltersProvider {
     }
 
     const data = validationResult.data;
+
+    // Shared filters require the sharedSavedFilter:modify permission
+    if (data.visibility === 'shared') {
+      await this.session.assertPerformAction({
+        action: 'sharedSavedFilter:modify',
+        organizationId,
+        params: {
+          organizationId,
+          projectId,
+        },
+      });
+    }
 
     // For INSIGHTS type, insightsFilter should be provided
     if (data.type === 'INSIGHTS' && !input.insightsFilter) {
@@ -266,7 +278,7 @@ export class SavedFiltersProvider {
     const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
-      action: 'project:modifySettings',
+      action: 'project:describe',
       organizationId,
       params: {
         organizationId,
@@ -309,6 +321,19 @@ export class SavedFiltersProvider {
     }
 
     const data = validationResult.data;
+
+    // Shared filters (or changing visibility to shared) require the sharedSavedFilter:modify permission
+    const newVisibility = (data.visibility as SavedFilterVisibility) ?? null;
+    if (existingFilter.visibility === 'shared' || newVisibility === 'shared') {
+      await this.session.assertPerformAction({
+        action: 'sharedSavedFilter:modify',
+        organizationId,
+        params: {
+          organizationId,
+          projectId,
+        },
+      });
+    }
 
     const filters = data.insightsFilter
       ? {
@@ -369,7 +394,7 @@ export class SavedFiltersProvider {
     const { organizationId, projectId } = resolved;
 
     await this.session.assertPerformAction({
-      action: 'project:modifySettings',
+      action: 'project:describe',
       organizationId,
       params: {
         organizationId,
@@ -391,6 +416,18 @@ export class SavedFiltersProvider {
         type: 'error',
         message: 'Saved filter not found',
       };
+    }
+
+    // Shared filters require the sharedSavedFilter:modify permission
+    if (existingFilter.visibility === 'shared') {
+      await this.session.assertPerformAction({
+        action: 'sharedSavedFilter:modify',
+        organizationId,
+        params: {
+          organizationId,
+          projectId,
+        },
+      });
     }
 
     const currentUser = await this.session.getViewer();

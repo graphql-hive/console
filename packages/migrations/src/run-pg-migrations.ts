@@ -184,5 +184,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2026.01.30T00-00-00.account-linking'),
       await import('./actions/2026.02.06T00-00-00.zendesk-unique'),
       await import('./actions/2026.01.30T10-00-00.oidc-require-invitation'),
+      await import('./actions/2026.02.19T00-00-00.saved-filter-permission'),
     ],
   });

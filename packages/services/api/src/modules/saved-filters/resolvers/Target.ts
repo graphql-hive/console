@@ -10,7 +10,7 @@ function mapVisibility(visibility: GqlVisibility | null): SavedFilterVisibility 
 
 export const Target: Pick<
   TargetResolvers,
-  'savedFilter' | 'savedFilters' | 'viewerCanCreateSavedFilter'
+  'savedFilter' | 'savedFilters' | 'viewerCanCreateSavedFilter' | 'viewerCanShareSavedFilter'
 > = {
   savedFilter: async (target, args, { injector }) => {
     const filter = await injector.get(SavedFiltersProvider).getSavedFilter(target, args.id);
@@ -37,7 +37,17 @@ export const Target: Pick<
   },
   viewerCanCreateSavedFilter: (target, _args, { session }) => {
     return session.canPerformAction({
-      action: 'project:modifySettings',
+      action: 'project:describe',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+      },
+    });
+  },
+  viewerCanShareSavedFilter: (target, _args, { session }) => {
+    return session.canPerformAction({
+      action: 'sharedSavedFilter:modify',
       organizationId: target.orgId,
       params: {
         organizationId: target.orgId,

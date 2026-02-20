@@ -85,6 +85,7 @@ export const ManageFilters_SavedFiltersQuery = graphql(`
         }
       }
       viewerCanCreateSavedFilter
+      viewerCanShareSavedFilter
     }
   }
 `);

@@ -252,7 +252,7 @@ describe('Saved Filters', () => {
     );
 
     test.concurrent(
-      'shared filters should be updatable by any project member with modifySettings permission',
+      'shared filters should be updatable by any project member with sharedSavedFilter:modify permission',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
         const { createProject, inviteAndJoinMember } = await createOrg();
@@ -273,14 +273,14 @@ describe('Saved Filters', () => {
         // First invite a member to get access to createMemberRole
         const { createMemberRole } = await inviteAndJoinMember();
 
-        // Create a role with project:modifySettings permission
+        // Create a role with sharedSavedFilter:modify permission (without project:modifySettings)
         const role = await createMemberRole([
           'organization:describe',
           'project:describe',
-          'project:modifySettings',
+          'sharedSavedFilter:modify',
         ]);
 
-        // Invite and join a member with the modifySettings role
+        // Invite and join a member with the sharedSavedFilter:modify role
         const { memberToken } = await inviteAndJoinMember({ memberRoleId: role.id });
 
         // Member can see the filter
@@ -301,31 +301,84 @@ describe('Saved Filters', () => {
     );
 
     test.concurrent(
-      'create: failure because no access to project:modifySettings',
+      'private filters can be managed by any project member without sharedSavedFilter:modify',
       async ({ expect }) => {
         const { createOrg } = await initSeed().createOwner();
-        const { createProject } = await createOrg();
-        const { createSavedFilter, createTargetAccessToken } = await createProject(
+        const { createProject, inviteAndJoinMember } = await createOrg();
+        const { createSavedFilter, updateSavedFilter, deleteSavedFilter } = await createProject(
           ProjectType.Single,
         );
 
-        const { secret: readOnlyToken } = await createTargetAccessToken({
-          mode: 'readOnly',
+        // First invite a member to get access to createMemberRole
+        const { createMemberRole } = await inviteAndJoinMember();
+
+        // Create a role with only project:describe (no sharedSavedFilter:modify)
+        const role = await createMemberRole(['organization:describe', 'project:describe']);
+
+        // Invite and join a member with the viewer-like role
+        const { memberToken } = await inviteAndJoinMember({ memberRoleId: role.id });
+
+        // Member can create a private filter
+        const createResult = await createSavedFilter({
+          name: 'My Private Filter',
+          type: SavedFilterType.Insights,
+          visibility: SavedFilterVisibilityType.Private,
+          insightsFilter: { operationHashes: ['op1'] },
+          token: memberToken,
         });
 
-        // Try to create a filter with read-only token
+        expect(createResult.error).toBeNull();
+        expect(createResult.ok?.savedFilter.name).toBe('My Private Filter');
+        expect(createResult.ok?.savedFilter.visibility).toBe('PRIVATE');
+
+        const filterId = createResult.ok?.savedFilter.id!;
+
+        // Member can update their own private filter
+        const updateResult = await updateSavedFilter({
+          filterId,
+          name: 'Updated Private Filter',
+          token: memberToken,
+        });
+
+        expect(updateResult.error).toBeNull();
+        expect(updateResult.ok?.savedFilter.name).toBe('Updated Private Filter');
+
+        // Member can delete their own private filter
+        const deleteResult = await deleteSavedFilter({ filterId, token: memberToken });
+        expect(deleteResult.error).toBeNull();
+        expect(deleteResult.ok?.deletedId).toBe(filterId);
+      },
+    );
+
+    test.concurrent(
+      'create shared filter: failure without sharedSavedFilter:modify permission',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject, inviteAndJoinMember } = await createOrg();
+        const { createSavedFilter } = await createProject(ProjectType.Single);
+
+        // First invite a member to get access to createMemberRole
+        const { createMemberRole } = await inviteAndJoinMember();
+
+        // Create a role with only project:describe (no sharedSavedFilter:modify)
+        const role = await createMemberRole(['organization:describe', 'project:describe']);
+
+        // Invite and join a member with the viewer-like role
+        const { memberToken } = await inviteAndJoinMember({ memberRoleId: role.id });
+
+        // Try to create a shared filter - should fail
         await expect(
           createSavedFilter({
-            name: 'Unauthorized Filter',
+            name: 'Unauthorized Shared Filter',
             type: SavedFilterType.Insights,
-            visibility: SavedFilterVisibilityType.Private,
+            visibility: SavedFilterVisibilityType.Shared,
             insightsFilter: { operationHashes: ['op1'] },
-            token: readOnlyToken,
+            token: memberToken,
           }),
         ).rejects.toEqual(
           expect.objectContaining({
             message: expect.stringContaining(
-              `No access (reason: "Missing permission for performing 'project:modifySettings' on resource")`,
+              `No access (reason: "Missing permission for performing 'sharedSavedFilter:modify' on resource")`,
             ),
           }),
         );

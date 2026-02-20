@@ -53,6 +53,7 @@ const InsightsFilterPicker_Query = graphql(`
     target(reference: { bySelector: $selector }) {
       id
       viewerCanCreateSavedFilter
+      viewerCanShareSavedFilter
       operationsStats(period: $period) {
         operations {
           edges {
@@ -269,6 +270,7 @@ function OperationsView({
   );
 
   const viewerCanCreate = pickerQuery.data?.target?.viewerCanCreateSavedFilter ?? false;
+  const viewerCanShare = pickerQuery.data?.target?.viewerCanShareSavedFilter ?? false;
 
   const activeView = useMemo(() => {
     if (!search.viewId) return null;
@@ -418,6 +420,7 @@ function OperationsView({
               <SaveFilterButton
                 activeView={activeView}
                 viewerCanCreate={viewerCanCreate}
+                viewerCanShare={viewerCanShare}
                 currentFilters={{
                   operations: search.operations ?? [],
                   clients: (search.clients ?? []).map(c => ({

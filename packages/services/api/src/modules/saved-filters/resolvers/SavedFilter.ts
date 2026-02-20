@@ -47,14 +47,30 @@ export const SavedFilter: SavedFilterResolvers = {
     return injector.get(Storage).getUserById({ id: filter.updatedByUserId });
   },
   viewerCanUpdate: async (filter, _args, { injector, session }) => {
-    // Only check ownership/visibility - the actual permission check happens in the mutation
-    // This is used for UI hints
+    // For shared filters, check sharedSavedFilter:modify permission
+    if (filter.visibility === 'shared' && filter.orgId) {
+      const canModifyShared = await session.canPerformAction({
+        action: 'sharedSavedFilter:modify',
+        organizationId: filter.orgId,
+        params: { organizationId: filter.orgId, projectId: filter.projectId },
+      });
+      if (!canModifyShared) return false;
+    }
+    // Check ownership (private filters can only be modified by creator)
     const currentUser = await session.getViewer();
     return injector.get(SavedFiltersProvider).canUserModifyFilter(filter, currentUser.id);
   },
   viewerCanDelete: async (filter, _args, { injector, session }) => {
-    // Only check ownership/visibility - the actual permission check happens in the mutation
-    // This is used for UI hints
+    // For shared filters, check sharedSavedFilter:modify permission
+    if (filter.visibility === 'shared' && filter.orgId) {
+      const canModifyShared = await session.canPerformAction({
+        action: 'sharedSavedFilter:modify',
+        organizationId: filter.orgId,
+        params: { organizationId: filter.orgId, projectId: filter.projectId },
+      });
+      if (!canModifyShared) return false;
+    }
+    // Check ownership (private filters can only be modified by creator)
     const currentUser = await session.getViewer();
     return injector.get(SavedFiltersProvider).canUserDeleteFilter(filter, currentUser.id);
   },

@@ -107,6 +107,7 @@ export const typeDefs = gql`
       search: String = null
     ): SavedFilterConnection!
     viewerCanCreateSavedFilter: Boolean!
+    viewerCanShareSavedFilter: Boolean!
   }
 
   extend type Mutation {
