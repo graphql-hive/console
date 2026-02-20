@@ -10,6 +10,8 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type saved_filter_type = 'INSIGHTS';
+export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
@@ -278,11 +280,11 @@ export interface saved_filters {
   id: string;
   name: string;
   project_id: string;
-  type: string;
+  type: saved_filter_type;
   updated_at: Date;
   updated_by_user_id: string | null;
   views_count: number;
-  visibility: string;
+  visibility: saved_filter_visibility;
 }
 
 export interface schema_change_approvals {
