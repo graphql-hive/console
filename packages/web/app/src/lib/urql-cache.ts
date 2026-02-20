@@ -369,6 +369,7 @@ const deleteSavedFilter: TypedDocumentNodeUpdateResolver<
     {
       query: ManageFilters_SavedFiltersQuery,
       variables: {
+        organizationSlug: selector.organizationSlug,
         selector: {
           organizationSlug: selector.organizationSlug,
           projectSlug: selector.projectSlug,

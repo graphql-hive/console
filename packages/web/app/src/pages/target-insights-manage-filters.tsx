@@ -1,14 +1,20 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { formatDate, formatISO } from 'date-fns';
+import { formatDate, formatISO, subDays } from 'date-fns';
 import { ArrowLeft, ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from '@/components/base/menu/menu';
+import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { availablePresets, DateRangePicker } from '@/components/ui/date-range-picker';
+import {
+  availablePresets,
+  buildDateRangeString,
+  DateRangePicker,
+  type Preset,
+} from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Input } from '@/components/ui/input';
 import { Meta } from '@/components/ui/meta';
@@ -32,7 +38,11 @@ import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 
 export const ManageFilters_SavedFiltersQuery = graphql(`
-  query ManageFilters_SavedFiltersQuery($selector: TargetSelectorInput!) {
+  query ManageFilters_SavedFiltersQuery($selector: TargetSelectorInput!, $organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      usageRetentionInDays
+    }
     target(reference: { bySelector: $selector }) {
       id
       savedFilters(type: INSIGHTS, first: 50) {
@@ -191,6 +201,7 @@ function SavedFilterRow({
   organizationSlug,
   projectSlug,
   targetSlug,
+  dataRetentionInDays,
 }: {
   filter: SavedFilterNode;
   expanded: boolean;
@@ -198,6 +209,7 @@ function SavedFilterRow({
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  dataRetentionInDays: number;
 }) {
   const [, deleteSavedFilter] = useMutation(ManageFilters_DeleteSavedFilterMutation);
   const [updateResult, updateSavedFilter] = useMutation(ManageFilters_UpdateSavedFilterMutation);
@@ -408,6 +420,7 @@ function SavedFilterRow({
               organizationSlug={organizationSlug}
               projectSlug={projectSlug}
               targetSlug={targetSlug}
+              dataRetentionInDays={dataRetentionInDays}
             />
           </TableCell>
         </TableRow>
@@ -421,17 +434,40 @@ function SavedFilterRowFilters({
   organizationSlug,
   projectSlug,
   targetSlug,
+  dataRetentionInDays,
 }: {
   filter: SavedFilterNode;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
+  dataRetentionInDays: number;
 }) {
   const { operationHashes, clientFilters } = filter.filters;
 
   // Date range state (relative strings like 'now-7d')
   const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
   const [dateRange, setDateRange] = useState(savedDateRange);
+
+  const startDate = useMemo(() => subDays(new Date(), dataRetentionInDays), [dataRetentionInDays]);
+
+  const selectedPreset = useMemo<Preset>(() => {
+    const match = availablePresets.find(
+      p => p.range.from === dateRange.from && p.range.to === dateRange.to,
+    );
+    if (match) return match;
+
+    const from = parse(dateRange.from);
+    const to = parse(dateRange.to);
+    if (from && to) {
+      return {
+        name: `${dateRange.from}_${dateRange.to}`,
+        label: buildDateRangeString({ from, to }),
+        range: dateRange,
+      };
+    }
+
+    return { name: 'last7d', label: 'Last 7 days', range: DEFAULT_DATE_RANGE };
+  }, [dateRange]);
 
   // Resolve relative date range to ISO strings for the operationsStats query
   const resolvedPeriod = useMemo(() => {
@@ -664,10 +700,18 @@ function SavedFilterRowFilters({
     <div>
       <div className="flex flex-wrap items-center gap-2">
         <DateRangePicker
+          trigger={
+            <TriggerButton
+              label={selectedPreset.label}
+              variant="default"
+              rightIcon={{ icon: ChevronDown, withSeparator: true }}
+            />
+          }
           selectedRange={dateRange}
           onUpdate={({ preset }) => setDateRange(preset.range)}
-          presets={availablePresets}
+          startDate={startDate}
           validUnits={['y', 'M', 'w', 'd', 'h']}
+          align="start"
         />
         {showOperationFilter && operationItems.length > 0 && (
           <FilterDropdown
@@ -731,6 +775,7 @@ function ManageFiltersContent(props: {
   const [query] = useQuery({
     query: ManageFilters_SavedFiltersQuery,
     variables: {
+      organizationSlug: props.organizationSlug,
       selector: {
         organizationSlug: props.organizationSlug,
         projectSlug: props.projectSlug,
@@ -738,6 +783,8 @@ function ManageFiltersContent(props: {
       },
     },
   });
+
+  const dataRetentionInDays = query.data?.organization?.usageRetentionInDays ?? 30;
 
   const toggleRow = useCallback((id: string) => {
     setExpandedRows(prev => {
@@ -815,6 +862,7 @@ function ManageFiltersContent(props: {
                 organizationSlug={props.organizationSlug}
                 projectSlug={props.projectSlug}
                 targetSlug={props.targetSlug}
+                dataRetentionInDays={dataRetentionInDays}
               />
             ))}
           </TableBody>
