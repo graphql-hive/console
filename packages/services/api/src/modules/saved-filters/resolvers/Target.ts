@@ -23,7 +23,7 @@ export const Target: Pick<
         target,
         args.type,
         args.first,
-        args.after,
+        args.after ?? null,
         mapVisibility(args.visibility ?? null),
         args.search ?? null,
       );
