@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import type { TargetReferenceInput } from '../../../__generated__/types';
 import type {
+  InsightsFilterData,
   SavedFilter,
   SavedFilterType,
   SavedFilterVisibility,
@@ -218,14 +219,15 @@ export class SavedFiltersProvider {
 
     const currentUser = await this.session.getViewer();
 
-    const filters =
-      data.type === 'INSIGHTS'
-        ? {
-            operationHashes: data.insightsFilter?.operationHashes ?? [],
-            clientFilters: data.insightsFilter?.clientFilters ?? [],
-            dateRange: data.insightsFilter?.dateRange ?? null,
-          }
-        : {};
+    const filters: InsightsFilterData = {
+      operationHashes: data.insightsFilter?.operationHashes ?? [],
+      clientFilters:
+        data.insightsFilter?.clientFilters?.map(cf => ({
+          name: cf.name,
+          versions: cf.versions ?? null,
+        })) ?? [],
+      dateRange: data.insightsFilter?.dateRange ?? null,
+    };
 
     const savedFilter = await this.savedFiltersStorage.createSavedFilter({
       projectId,
@@ -335,10 +337,14 @@ export class SavedFiltersProvider {
       });
     }
 
-    const filters = data.insightsFilter
+    const filters: InsightsFilterData | null = data.insightsFilter
       ? {
           operationHashes: data.insightsFilter.operationHashes ?? [],
-          clientFilters: data.insightsFilter.clientFilters ?? [],
+          clientFilters:
+            data.insightsFilter.clientFilters?.map(cf => ({
+              name: cf.name,
+              versions: cf.versions ?? null,
+            })) ?? [],
           dateRange: data.insightsFilter.dateRange ?? null,
         }
       : null;

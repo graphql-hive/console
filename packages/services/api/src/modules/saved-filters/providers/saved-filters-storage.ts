@@ -5,7 +5,12 @@ import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
-import type { SavedFilter, SavedFilterType, SavedFilterVisibility } from '../../../shared/entities';
+import type {
+  InsightsFilterData,
+  SavedFilter,
+  SavedFilterType,
+  SavedFilterVisibility,
+} from '../../../shared/entities';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 
 const SavedFilterModel = zod.object({
@@ -16,7 +21,21 @@ const SavedFilterModel = zod.object({
   updatedByUserId: zod.string().nullable(),
   name: zod.string(),
   description: zod.string().nullable(),
-  filters: zod.record(zod.unknown()),
+  filters: zod.object({
+    operationHashes: zod.array(zod.string()),
+    clientFilters: zod.array(
+      zod.object({
+        name: zod.string(),
+        versions: zod.array(zod.string()).nullable(),
+      }),
+    ),
+    dateRange: zod
+      .object({
+        from: zod.string(),
+        to: zod.string(),
+      })
+      .nullable(),
+  }),
   visibility: zod.enum(['private', 'shared']),
   viewsCount: zod.number(),
   createdAt: zod.string(),
@@ -177,7 +196,7 @@ export class SavedFiltersStorage {
     createdByUserId: string;
     name: string;
     description: string | null;
-    filters: Record<string, unknown>;
+    filters: InsightsFilterData;
     visibility: SavedFilterVisibility;
   }): Promise<SavedFilter> {
     const result = await this.pool.one(sql`/* createSavedFilter */
@@ -222,7 +241,7 @@ export class SavedFiltersStorage {
     updatedByUserId: string;
     name: string | null;
     description: string | null;
-    filters: Record<string, unknown> | null;
+    filters: InsightsFilterData | null;
     visibility: SavedFilterVisibility | null;
   }): Promise<SavedFilter | null> {
     const result = await this.pool.maybeOne(sql`/* updateSavedFilter */

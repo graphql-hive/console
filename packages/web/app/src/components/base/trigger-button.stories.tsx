@@ -28,7 +28,7 @@ export const Active: Story = () => (
     <TriggerButton
       label="Operation"
       accessoryInformation="O9SwSomeOperationName"
-      variant="active"
+      variant="default"
       rightIcon={{
         icon: X,
         action: () => alert('Cleared!'),

@@ -4,35 +4,12 @@ import { Storage } from '../../shared/providers/storage';
 import { SavedFiltersProvider } from '../providers/saved-filters.provider';
 import type { SavedFilterResolvers } from './../../../__generated__/types';
 
-type ParsedFilters = {
-  operationHashes: string[];
-  clientFilters: Array<{ name: string; versions: string[] | null }>;
-  dateRange: { from: string; to: string } | null;
-};
-
-function extractFilters(filterData: unknown): ParsedFilters {
-  const filters = filterData as {
-    operationHashes?: string[];
-    clientFilters?: Array<{ name: string; versions?: string[] | null }>;
-    dateRange?: { from: string; to: string } | null;
-  };
-  return {
-    operationHashes: filters.operationHashes ?? [],
-    clientFilters:
-      filters.clientFilters?.map(cf => ({
-        name: cf.name,
-        versions: cf.versions ?? null,
-      })) ?? [],
-    dateRange: filters.dateRange ?? null,
-  };
-}
-
 export const SavedFilter: SavedFilterResolvers = {
   id: filter => filter.id,
   type: filter => filter.type,
   name: filter => filter.name,
   description: filter => filter.description,
-  filters: filter => extractFilters(filter.filters),
+  filters: filter => filter.filters,
   visibility: filter => (filter.visibility === 'private' ? 'PRIVATE' : 'SHARED'),
   viewsCount: filter => filter.viewsCount,
   createdAt: filter => filter.createdAt,
@@ -79,8 +56,7 @@ export const SavedFilter: SavedFilterResolvers = {
       return null;
     }
 
-    const filtersData = extractFilters(filter.filters);
-    const dateRange = filtersData.dateRange ?? { from: 'now-7d', to: 'now' };
+    const dateRange = filter.filters.dateRange ?? { from: 'now-7d', to: 'now' };
     const now = new UTCDate();
     const from = parseDateMathExpression(dateRange.from, now);
     const to = parseDateMathExpression(dateRange.to, now);
@@ -94,9 +70,9 @@ export const SavedFilter: SavedFilterResolvers = {
       project: filter.projectId,
       target: filter.targetId,
       period: { from, to },
-      operations: filtersData.operationHashes,
+      operations: filter.filters.operationHashes,
       clients: [],
-      clientVersionFilters: filtersData.clientFilters.map(cf => ({
+      clientVersionFilters: filter.filters.clientFilters.map(cf => ({
         clientName: cf.name === 'unknown' ? '' : cf.name,
         versions: cf.versions ?? null,
       })),

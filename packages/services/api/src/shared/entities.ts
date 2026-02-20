@@ -301,6 +301,12 @@ export type SavedFilterType = 'INSIGHTS';
 
 export type SavedFilterVisibility = 'private' | 'shared';
 
+export interface InsightsFilterData {
+  operationHashes: string[];
+  clientFilters: Array<{ name: string; versions: string[] | null }>;
+  dateRange: { from: string; to: string } | null;
+}
+
 export interface SavedFilter {
   id: string;
   projectId: string;
@@ -309,7 +315,7 @@ export interface SavedFilter {
   updatedByUserId: string | null;
   name: string;
   description: string | null;
-  filters: unknown;
+  filters: InsightsFilterData;
   visibility: SavedFilterVisibility;
   viewsCount: number;
   createdAt: string;
