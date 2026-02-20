@@ -102,9 +102,9 @@ export const typeDefs = gql`
     savedFilters(
       type: SavedFilterType!
       first: Int = 50
-      after: String = null
-      visibility: SavedFilterVisibilityType = null
-      search: String = null
+      after: String
+      visibility: SavedFilterVisibilityType
+      search: String
     ): SavedFilterConnection!
     viewerCanCreateSavedFilter: Boolean!
     viewerCanShareSavedFilter: Boolean!
