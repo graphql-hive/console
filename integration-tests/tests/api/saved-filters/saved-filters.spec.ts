@@ -105,7 +105,6 @@ describe('Saved Filters', () => {
 
       // List all filters (private + shared for owner)
       const allFilters = await getSavedFilters({
-
         first: 10,
       });
 
@@ -114,7 +113,6 @@ describe('Saved Filters', () => {
 
       // List only private filters
       const privateFilters = await getSavedFilters({
-
         first: 10,
         visibility: SavedFilterVisibilityType.Private,
       });
@@ -126,7 +124,6 @@ describe('Saved Filters', () => {
 
       // List only shared filters
       const sharedFilters = await getSavedFilters({
-
         first: 10,
         visibility: SavedFilterVisibilityType.Shared,
       });
@@ -136,7 +133,6 @@ describe('Saved Filters', () => {
 
       // Search by name
       const searchResults = await getSavedFilters({
-
         first: 10,
         search: 'Private',
       });
@@ -207,7 +203,6 @@ describe('Saved Filters', () => {
 
       // Member cannot see private filter in list
       const memberFilters = await getSavedFilters({
-
         first: 10,
         token: memberToken,
       });
@@ -226,7 +221,7 @@ describe('Saved Filters', () => {
         // Create a shared filter as owner
         const createResult = await createSavedFilter({
           name: 'Shared Filter',
-  
+
           visibility: SavedFilterVisibilityType.Shared,
           insightsFilter: { operationHashes: ['op1'] },
         });
@@ -243,7 +238,6 @@ describe('Saved Filters', () => {
 
         // Member can see shared filter in list
         const memberFilters = await getSavedFilters({
-  
           first: 10,
           token: memberToken,
         });
@@ -263,7 +257,7 @@ describe('Saved Filters', () => {
         // Create a shared filter as owner
         const createResult = await createSavedFilter({
           name: 'Shared Filter',
-  
+
           visibility: SavedFilterVisibilityType.Shared,
           insightsFilter: { operationHashes: ['op1'] },
         });
@@ -321,7 +315,7 @@ describe('Saved Filters', () => {
         // Member can create a private filter
         const createResult = await createSavedFilter({
           name: 'My Private Filter',
-  
+
           visibility: SavedFilterVisibilityType.Private,
           insightsFilter: { operationHashes: ['op1'] },
           token: memberToken,
@@ -370,7 +364,7 @@ describe('Saved Filters', () => {
         await expect(
           createSavedFilter({
             name: 'Unauthorized Shared Filter',
-    
+
             visibility: SavedFilterVisibilityType.Shared,
             insightsFilter: { operationHashes: ['op1'] },
             token: memberToken,
@@ -436,6 +430,5 @@ describe('Saved Filters', () => {
       expect(result.error).not.toBeNull();
       expect(result.error?.message).toContain('Array must contain at most 100 element');
     });
-
   });
 });

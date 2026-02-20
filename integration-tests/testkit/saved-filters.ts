@@ -44,12 +44,7 @@ export const GetSavedFiltersQuery = graphql(`
   ) {
     target(reference: { bySelector: $selector }) {
       id
-      savedFilters(
-        first: $first
-        after: $after
-        visibility: $visibility
-        search: $search
-      ) {
+      savedFilters(first: $first, after: $after, visibility: $visibility, search: $search) {
         edges {
           cursor
           node {
