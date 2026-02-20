@@ -95,36 +95,6 @@ export function InsightsFilters({
       />
       <MenuContent side="bottom" align="start" sideOffset={8} withXPadding withYPadding>
         <MenuSubmenu>
-          <MenuItem subMenuTrigger>Saved filters</MenuItem>
-          <MenuSeparator />
-          <MenuContent subMenu withXPadding withYPadding>
-            <MenuSubmenu>
-              <MenuItem subMenuTrigger>My saved filters</MenuItem>
-              <MenuContent subMenu withYPadding>
-                <SavedFiltersList
-                  savedFilters={privateSavedFilterViews}
-                  emptyMessage="No saved private views"
-                  onApplySavedFilters={handleApplySavedFilter}
-                />
-              </MenuContent>
-            </MenuSubmenu>
-            <MenuSubmenu>
-              <MenuItem subMenuTrigger>Shared saved filters</MenuItem>
-              <MenuContent subMenu withYPadding>
-                <SavedFiltersList
-                  savedFilters={sharedSavedFilterViews}
-                  emptyMessage="No saved shared views"
-                  onApplySavedFilters={handleApplySavedFilter}
-                />
-              </MenuContent>
-            </MenuSubmenu>
-            <MenuSeparator />
-            <MenuItem variant="navigationLink" onClick={onManageSavedFilters}>
-              Manage saved filters
-            </MenuItem>
-          </MenuContent>
-        </MenuSubmenu>
-        <MenuSubmenu>
           <MenuItem subMenuTrigger>Operations</MenuItem>
           <MenuContent subMenu>
             <FilterContent
@@ -147,6 +117,31 @@ export function InsightsFilters({
             />
           </MenuContent>
         </MenuSubmenu>
+        <MenuSeparator />
+        <MenuSubmenu>
+          <MenuItem subMenuTrigger>My saved filters</MenuItem>
+          <MenuContent subMenu withYPadding>
+            <SavedFiltersList
+              savedFilters={privateSavedFilterViews}
+              emptyMessage="No saved private views"
+              onApplySavedFilters={handleApplySavedFilter}
+            />
+          </MenuContent>
+        </MenuSubmenu>
+        <MenuSubmenu>
+          <MenuItem subMenuTrigger>Shared saved filters</MenuItem>
+          <MenuContent subMenu withYPadding>
+            <SavedFiltersList
+              savedFilters={sharedSavedFilterViews}
+              emptyMessage="No saved shared views"
+              onApplySavedFilters={handleApplySavedFilter}
+            />
+          </MenuContent>
+        </MenuSubmenu>
+        <MenuSeparator />
+        <MenuItem variant="navigationLink" onClick={onManageSavedFilters}>
+          Manage saved filters
+        </MenuItem>
       </MenuContent>
     </MenuRoot>
   );

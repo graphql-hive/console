@@ -418,7 +418,7 @@ function SavedFilterRow({
       </TableRow>
       {expanded && (
         <TableRow>
-          <TableCell colSpan={8} className="bg-neutral-2 px-10 py-4">
+          <TableCell colSpan={8} className="px-10 py-4">
             <SavedFilterRowFilters
               filter={filter}
               organizationSlug={organizationSlug}
