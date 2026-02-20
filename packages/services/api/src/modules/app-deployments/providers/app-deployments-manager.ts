@@ -222,13 +222,38 @@ export class AppDeploymentsManager {
 
   async getPaginatedAppDeploymentsForTarget(
     target: Target,
-    args: { cursor: string | null; first: number | null },
+    args: {
+      cursor: string | null;
+      first: number | null;
+      sort: {
+        field: GraphQLSchema.AppDeploymentsSortField;
+        direction: GraphQLSchema.SortDirectionType;
+      } | null;
+    },
   ) {
-    return await this.appDeployments.getPaginatedAppDeployments({
-      targetId: target.id,
-      cursor: args.cursor,
-      first: args.first,
-    });
+    const { sort, cursor, first } = args;
+
+    const pagePromise =
+      sort?.field === 'LAST_USED'
+        ? this.appDeployments.getPaginatedAppDeploymentsSortedByLastUsed({
+            targetId: target.id,
+            cursor,
+            first,
+            direction: sort.direction,
+          })
+        : this.appDeployments.getPaginatedAppDeployments({
+            targetId: target.id,
+            cursor,
+            first,
+            sort: sort ? { field: sort.field, direction: sort.direction } : null,
+          });
+
+    const [page, total] = await Promise.all([
+      pagePromise,
+      this.appDeployments.countAppDeployments(target.id),
+    ]);
+
+    return { ...page, total };
   }
 
   async getActiveAppDeploymentsForTarget(
@@ -243,12 +268,17 @@ export class AppDeploymentsManager {
       };
     },
   ) {
-    return await this.appDeployments.getActiveAppDeployments({
-      targetId: target.id,
-      cursor: args.cursor,
-      first: args.first,
-      filter: args.filter,
-    });
+    const [page, total] = await Promise.all([
+      this.appDeployments.getActiveAppDeployments({
+        targetId: target.id,
+        cursor: args.cursor,
+        first: args.first,
+        filter: args.filter,
+      }),
+      this.appDeployments.countAppDeployments(target.id),
+    ]);
+
+    return { ...page, total };
   }
 
   getDocumentCountForAppDeployment = batch<AppDeploymentRecord, number>(async args => {
