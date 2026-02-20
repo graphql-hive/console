@@ -55,7 +55,7 @@ export function ValuesSubPanel({
   }
 
   return (
-    <div>
+    <div className="pb-2">
       <FilterListSearch
         label={`Search ${valuesLabel} for ${itemName}`}
         onSearch={setSearch}
@@ -63,7 +63,7 @@ export function ValuesSubPanel({
       />
 
       {/* Values list */}
-      <div className="mt-2 max-h-64 overflow-y-auto">
+      <div className="mt-2 max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
         {/* All values toggle */}
         <MenuItem inSubmenu closeOnClick={false} onClick={toggleAllValues}>
           <Checkbox checked={allSelected} size="sm" visual />

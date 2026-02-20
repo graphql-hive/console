@@ -8,8 +8,8 @@ const triggerButtonVariants = cva(
     variants: {
       variant: {
         default: [
-          'bg-neutral-3 border-neutral-4 hover:bg-neutral-4 hover:border-neutral-5 text-neutral-11',
-          'dark:bg-neutral-3 dark:border-neutral-4 dark:hover:bg-neutral-4 dark:hover:border-neutral-5 hover:text-neutral-12',
+          'bg-neutral-2 border-neutral-5 hover:bg-neutral-1 hover:border-neutral-5 text-neutral-9 hover:text-neutral-11',
+          'dark:text-neutral-11 dark:bg-neutral-3 dark:border-neutral-4 dark:hover:bg-neutral-4 dark:hover:border-neutral-5 ',
         ],
         active: [
           'border-neutral-5 dark:border-neutral-6 text-neutral-12',

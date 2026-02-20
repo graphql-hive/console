@@ -65,7 +65,7 @@ export function FilterContent({
   }
 
   return (
-    <>
+    <div className="pb-2">
       <FilterListSearch label={label} onSearch={setSearch} value={search} />
 
       {/* Note about unavailable items */}
@@ -77,7 +77,7 @@ export function FilterContent({
       )}
 
       {/* Item list */}
-      <div className="mt-2 max-h-64 overflow-y-auto">
+      <div className="mt-2 max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
         {filteredItems.map(item => {
           const selected = isItemSelected(item);
           const selection = getItemSelection(item);
@@ -102,6 +102,6 @@ export function FilterContent({
           <div className="text-neutral-8 px-2 py-4 text-center text-sm">No items found</div>
         )}
       </div>
-    </>
+    </div>
   );
 }

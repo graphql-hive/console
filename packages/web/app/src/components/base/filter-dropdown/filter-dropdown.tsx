@@ -65,7 +65,7 @@ export function FilterDropdown({
 
         <MenuSeparator />
 
-        <div className="mb-1">
+        <div className="mb-2">
           <MenuItem
             inSubmenu
             variant="destructiveAction"
