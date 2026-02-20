@@ -67,7 +67,7 @@ PUBLIC_KEY_DATA=$(echo "$PUBLIC_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/)
 echo "${KEY_NAME}|${PUBLIC_KEY_DATA}|${PRIVATE_KEY_DATA}"
 ```
 
-Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment variable value to the formatted string output.
+Update the docker compose `services.server.environment.SUPERTOKENS_ACCESS_TOKEN_KEY` environment variable value to the formatted string output.
 
 ## Conclusion
 
