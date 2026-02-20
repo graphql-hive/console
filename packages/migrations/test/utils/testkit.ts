@@ -1,5 +1,5 @@
 /* eslint-disable import/first */
- 
+
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
@@ -25,11 +25,11 @@ export async function initMigrationTestingEnvironment() {
     ...env.postgres,
     db: 'postgres',
   }));
-  
+
   const dbName = 'migration_test_' + Date.now() + Math.random().toString(16).substring(2);
   console.log('db name:', dbName)
   await db.query(`CREATE DATABASE ${dbName};`);
-  
+
   const connectionString = createConnectionString({
     ...env.postgres,
     db: dbName,
@@ -42,6 +42,13 @@ export async function initMigrationTestingEnvironment() {
   console.log('actionsDirectory', actionsDirectory);
 
   let superTokenUserIdCounter = 1;
+  const counterToUuid = (counter: number) => [
+    Math.floor(counter % (10 ** 32) / (10 ** 24)).toString().padStart(8, '0'),
+    Math.floor(counter % (10 ** 24) / (10 ** 20)).toString().padStart(4, '0'),
+    Math.floor(counter % (10 ** 20) / (10 ** 16)).toString().padStart(4, '0'),
+    Math.floor(counter % (10 ** 16) / (10 ** 12)).toString().padStart(4, '0'),
+    Math.floor(counter % (10 ** 12)).toString().padStart(12, '0'),
+  ].join('-')
 
   return {
     connectionString,
@@ -59,7 +66,7 @@ export async function initMigrationTestingEnvironment() {
         }
       }) {
         return await slonik.one<DbTypes.users>(
-          sql`INSERT INTO users (email, display_name, full_name, supertoken_user_id) VALUES (${user.email}, ${user.name} , ${user.name}, ${superTokenUserIdCounter++}) RETURNING *;`,
+          sql`INSERT INTO users (email, display_name, full_name, supertoken_user_id) VALUES (${user.email}, ${user.name}, ${user.name}, ${counterToUuid(superTokenUserIdCounter++)}) RETURNING *;`,
         );
       },
       async organization({
