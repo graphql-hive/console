@@ -1,5 +1,15 @@
 # @graphql-hive/cli
 
+## 0.58.3
+
+### Patch Changes
+
+- [#7712](https://github.com/graphql-hive/console/pull/7712)
+  [`a95deb7`](https://github.com/graphql-hive/console/commit/a95deb75632ae63cb812731f914000e75c010ea8)
+  Thanks [@jdolle](https://github.com/jdolle)! - Replace custom regex logic that stripped all spaces
+  on publish. Use graphqljs' stripIgnoredCharacters function instead. This maintains the useful
+  spacing in multiline descriptions while stripping out other unnecessary characters
+
 ## 0.58.2
 
 ### Patch Changes
