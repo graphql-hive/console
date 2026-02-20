@@ -24,6 +24,7 @@ export const typeDefs = gql`
     updatedBy: User
     viewerCanUpdate: Boolean!
     viewerCanDelete: Boolean!
+    operationsStats: OperationsStats
   }
 
   type InsightsFilterConfiguration {

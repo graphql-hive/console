@@ -12,10 +12,12 @@ export const Target: Pick<
   TargetResolvers,
   'savedFilter' | 'savedFilters' | 'viewerCanCreateSavedFilter'
 > = {
-  savedFilter: (target, args, { injector }) =>
-    injector.get(SavedFiltersProvider).getSavedFilter(target, args.id),
-  savedFilters: (target, args, { injector }) =>
-    injector
+  savedFilter: async (target, args, { injector }) => {
+    const filter = await injector.get(SavedFiltersProvider).getSavedFilter(target, args.id);
+    return filter ? { ...filter, targetId: target.id, orgId: target.orgId } : null;
+  },
+  savedFilters: async (target, args, { injector }) => {
+    const result = await injector
       .get(SavedFiltersProvider)
       .getSavedFilters(
         target,
@@ -24,7 +26,15 @@ export const Target: Pick<
         args.after,
         mapVisibility(args.visibility ?? null),
         args.search ?? null,
-      ),
+      );
+    return {
+      ...result,
+      edges: result.edges.map(edge => ({
+        ...edge,
+        node: { ...edge.node, targetId: target.id, orgId: target.orgId },
+      })),
+    };
+  },
   viewerCanCreateSavedFilter: (target, _args, { session }) => {
     return session.canPerformAction({
       action: 'project:modifySettings',

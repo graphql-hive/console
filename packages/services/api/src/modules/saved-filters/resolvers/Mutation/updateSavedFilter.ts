@@ -1,3 +1,4 @@
+import { IdTranslator } from '../../../shared/providers/id-translator';
 import { SavedFiltersProvider } from '../../providers/saved-filters.provider';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
@@ -40,9 +41,18 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
     };
   }
 
+  // Attach target context so operationsStats can be resolved
+  const resolved = await injector
+    .get(IdTranslator)
+    .resolveTargetReference({ reference: input.target });
+
   return {
     ok: {
-      savedFilter: result.savedFilter,
+      savedFilter: {
+        ...result.savedFilter,
+        targetId: resolved?.targetId,
+        orgId: resolved?.organizationId,
+      },
     },
   };
 };

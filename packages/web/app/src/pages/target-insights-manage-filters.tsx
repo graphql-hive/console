@@ -27,6 +27,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
+import { toDecimal } from '@/lib/hooks';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 
@@ -62,6 +63,10 @@ export const ManageFilters_SavedFiltersQuery = graphql(`
             }
             viewerCanUpdate
             viewerCanDelete
+            operationsStats {
+              totalRequests
+              totalFailures
+            }
           }
         }
         pageInfo {
@@ -108,6 +113,10 @@ const ManageFilters_UpdateSavedFilterMutation = graphql(`
               to
             }
           }
+          operationsStats {
+            totalRequests
+            totalFailures
+          }
         }
       }
     }
@@ -144,6 +153,32 @@ const ManageFilters_OperationStatsQuery = graphql(`
 `);
 
 const DEFAULT_DATE_RANGE = { from: 'now-7d', to: 'now' };
+
+function SuccessFailureRates({
+  totalRequests,
+  totalFailures,
+}: {
+  totalRequests?: number | null;
+  totalFailures?: number | null;
+}) {
+  const requests = totalRequests ?? 0;
+  const failures = totalFailures ?? 0;
+
+  if (!requests && !failures) {
+    return <span className="text-neutral-10">-</span>;
+  }
+
+  const successRate = toDecimal(((requests - failures) * 100) / requests);
+  const failureRate = toDecimal((failures * 100) / requests);
+
+  return (
+    <span className="whitespace-nowrap text-sm">
+      <span className="text-emerald-500">{successRate}%</span>
+      {' / '}
+      <span className="text-red-500">{failureRate}%</span>
+    </span>
+  );
+}
 
 type SavedFilterNode = NonNullable<
   ResultOf<typeof ManageFilters_SavedFiltersQuery>['target']
@@ -278,6 +313,12 @@ function SavedFilterRow({
             filter.name
           )}
         </TableCell>
+        <TableCell>
+          <SuccessFailureRates
+            totalRequests={filter.operationsStats?.totalRequests}
+            totalFailures={filter.operationsStats?.totalFailures}
+          />
+        </TableCell>
         <TableCell>{filter.viewsCount.toLocaleString()}</TableCell>
         <TableCell>{formatDate(filter.createdAt, 'MMM d, yyyy')}</TableCell>
         <TableCell>{formatDate(filter.updatedAt, 'MMM d, yyyy')}</TableCell>
@@ -361,7 +402,7 @@ function SavedFilterRow({
       </TableRow>
       {expanded && (
         <TableRow>
-          <TableCell colSpan={7} className="bg-neutral-2 px-10 py-4">
+          <TableCell colSpan={8} className="bg-neutral-2 px-10 py-4">
             <SavedFilterRowFilters
               filter={filter}
               organizationSlug={organizationSlug}
@@ -756,6 +797,7 @@ function ManageFiltersContent(props: {
             <TableRow>
               <TableHead className="w-8" />
               <TableHead>Name</TableHead>
+              <TableHead>Success/Failure Rates</TableHead>
               <TableHead>Views</TableHead>
               <TableHead>Created</TableHead>
               <TableHead>Modified</TableHead>
