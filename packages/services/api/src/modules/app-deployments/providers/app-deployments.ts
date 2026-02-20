@@ -797,13 +797,12 @@ export class AppDeployments {
       try {
         cursor = decodeAppDeploymentSortCursor(args.cursor);
       } catch (error) {
-        this.logger.error(
+        this.logger.debug(
           'Failed to decode cursor for getPaginatedAppDeployments (targetId=%s, cursor=%s): %s',
           args.targetId,
           args.cursor,
           error instanceof Error ? error.message : String(error),
         );
-        throw new Error('Invalid cursor format for getPaginatedAppDeployments.');
       }
     }
     if (cursor && cursor.sortField !== sortField) {
@@ -902,13 +901,12 @@ export class AppDeployments {
       try {
         cursor = decodeAppDeploymentSortCursor(args.cursor);
       } catch (error) {
-        this.logger.error(
+        this.logger.debug(
           'Failed to decode cursor for getPaginatedAppDeploymentsSortedByLastUsed (targetId=%s, cursor=%s): %s',
           args.targetId,
           args.cursor,
           error instanceof Error ? error.message : String(error),
         );
-        throw new Error('Invalid cursor format for getPaginatedAppDeploymentsSortedByLastUsed.');
       }
     }
     if (cursor && cursor.sortField !== 'LAST_USED') {

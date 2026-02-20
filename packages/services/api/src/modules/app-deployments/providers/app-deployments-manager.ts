@@ -226,8 +226,8 @@ export class AppDeploymentsManager {
       cursor: string | null;
       first: number | null;
       sort: {
-        field: 'CREATED_AT' | 'ACTIVATED_AT' | 'LAST_USED';
-        direction: 'ASC' | 'DESC';
+        field: GraphQLSchema.AppDeploymentsSortField;
+        direction: GraphQLSchema.SortDirectionType;
       } | null;
     },
   ) {
