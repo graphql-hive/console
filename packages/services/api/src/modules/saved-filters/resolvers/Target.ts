@@ -14,7 +14,7 @@ export const Target: Pick<
 > = {
   savedFilter: async (target, args, { injector }) => {
     const filter = await injector.get(SavedFiltersProvider).getSavedFilter(target, args.id);
-    return filter ? { ...filter, targetId: target.id, orgId: target.orgId } : null;
+    return filter ? { ...filter, orgId: target.orgId } : null;
   },
   savedFilters: async (target, args, { injector }) => {
     const result = await injector
@@ -30,7 +30,7 @@ export const Target: Pick<
       ...result,
       edges: result.edges.map(edge => ({
         ...edge,
-        node: { ...edge.node, targetId: target.id, orgId: target.orgId },
+        node: { ...edge.node, orgId: target.orgId },
       })),
     };
   },

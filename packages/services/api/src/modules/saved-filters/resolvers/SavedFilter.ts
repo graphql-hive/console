@@ -1,5 +1,3 @@
-import { UTCDate } from '@date-fns/utc';
-import { parseDateMathExpression } from '../../../shared/date-math';
 import { Storage } from '../../shared/providers/storage';
 import { SavedFiltersProvider } from '../providers/saved-filters.provider';
 import type { SavedFilterResolvers } from './../../../__generated__/types';
@@ -8,7 +6,22 @@ export const SavedFilter: SavedFilterResolvers = {
   id: filter => filter.id,
   name: filter => filter.name,
   description: filter => filter.description,
-  filters: filter => filter.filters,
+  filters: filter => {
+    const filters = filter.filters as {
+      operationHashes?: string[];
+      clientFilters?: Array<{ name: string; versions?: string[] | null }>;
+      dateRange?: { from: string; to: string } | null;
+    };
+    return {
+      operationHashes: filters.operationHashes ?? [],
+      clientFilters:
+        filters.clientFilters?.map(cf => ({
+          name: cf.name,
+          versions: cf.versions ?? null,
+        })) ?? [],
+      dateRange: filters.dateRange ?? null,
+    };
+  },
   visibility: filter => (filter.visibility === 'private' ? 'PRIVATE' : 'SHARED'),
   viewsCount: filter => filter.viewsCount,
   createdAt: filter => filter.createdAt,
@@ -49,32 +62,5 @@ export const SavedFilter: SavedFilterResolvers = {
     // Check ownership (private filters can only be modified by creator)
     const currentUser = await session.getViewer();
     return injector.get(SavedFiltersProvider).canUserDeleteFilter(filter, currentUser.id);
-  },
-  operationsStats: filter => {
-    if (!filter.targetId || !filter.orgId) {
-      return null;
-    }
-
-    const dateRange = filter.filters.dateRange ?? { from: 'now-7d', to: 'now' };
-    const now = new UTCDate();
-    const from = parseDateMathExpression(dateRange.from, now);
-    const to = parseDateMathExpression(dateRange.to, now);
-
-    if (!from || !to) {
-      return null;
-    }
-
-    return {
-      organization: filter.orgId,
-      project: filter.projectId,
-      target: filter.targetId,
-      period: { from, to },
-      operations: filter.filters.operationHashes,
-      clients: [],
-      clientVersionFilters: filter.filters.clientFilters.map(cf => ({
-        clientName: cf.name === 'unknown' ? '' : cf.name,
-        versions: cf.versions ?? null,
-      })),
-    };
   },
 };

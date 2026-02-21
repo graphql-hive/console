@@ -41,7 +41,7 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
     };
   }
 
-  // Attach target context so operationsStats can be resolved
+  // Attach org context so viewerCanUpdate/viewerCanDelete can check permissions
   const resolved = await injector
     .get(IdTranslator)
     .resolveTargetReference({ reference: input.target });
@@ -50,7 +50,6 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
     ok: {
       savedFilter: {
         ...result.savedFilter,
-        targetId: resolved?.targetId,
         orgId: resolved?.organizationId,
       },
     },
