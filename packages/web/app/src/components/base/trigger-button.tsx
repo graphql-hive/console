@@ -94,6 +94,14 @@ export const TriggerButton = forwardRef<HTMLButtonElement, TriggerButtonProps>(
                 role={props.rightIcon.action ? 'button' : undefined}
                 tabIndex={props.rightIcon.action ? 0 : undefined}
                 aria-label={props.rightIcon.label ?? undefined}
+                onPointerDown={
+                  props.rightIcon.action
+                    ? e => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }
+                    : undefined
+                }
                 onClick={
                   props.rightIcon.action
                     ? e => {
