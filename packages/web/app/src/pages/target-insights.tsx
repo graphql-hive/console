@@ -1,5 +1,5 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
-import { ChevronDown, RefreshCw, X } from 'lucide-react';
+import { ChevronDown, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { z } from 'zod';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
@@ -358,25 +358,7 @@ function OperationsView({
                 <TriggerButton
                   label={dateRangeController.selectedPreset.label}
                   variant="default"
-                  rightIcon={
-                    search.from !== presetLast7Days.range.from ||
-                    search.to !== presetLast7Days.range.to
-                      ? {
-                          icon: X,
-                          action: () => {
-                            void navigate({
-                              search: prev => ({
-                                ...prev,
-                                from: presetLast7Days.range.from,
-                                to: presetLast7Days.range.to,
-                              }),
-                            });
-                          },
-                          label: 'Reset date range',
-                          withSeparator: true,
-                        }
-                      : { icon: ChevronDown, withSeparator: true }
-                  }
+                  rightIcon={{ icon: ChevronDown, withSeparator: true }}
                 />
               }
               selectedRange={dateRangeController.selectedPreset.range}

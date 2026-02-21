@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import {
-  MenuContent,
-  MenuItem,
-  MenuRoot,
-  MenuSeparator,
-  MenuTrigger,
-} from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
@@ -42,42 +36,40 @@ export function FilterDropdown({
   const selectedCount = selectedItems.length;
 
   return (
-    <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
-      <MenuTrigger
-        render={
-          <TriggerButton
-            accessoryInformation={selectedCount > 0 ? selectedCount.toString() : undefined}
-            disabled={disabled}
-            label={label}
-            rightIcon={{ icon: ChevronDown, withSeparator: true }}
-          />
-        }
-      />
-
-      <MenuContent side="bottom" align="start" sideOffset={8}>
+    <Menu
+      trigger={
+        <TriggerButton
+          accessoryInformation={selectedCount > 0 ? selectedCount.toString() : undefined}
+          disabled={disabled}
+          label={label}
+          rightIcon={{ icon: ChevronDown, withSeparator: true }}
+        />
+      }
+      open={open}
+      onOpenChange={setOpen}
+      modal={false}
+      side="bottom"
+      align="start"
+      sections={[
         <FilterContent
+          key="content"
           label={label}
           items={items}
           selectedItems={selectedItems}
           onChange={onChange}
           valuesLabel={valuesLabel}
-        />
-
-        <MenuSeparator />
-
-        <div className="mb-2">
-          <MenuItem
-            inSubmenu
-            variant="destructiveAction"
-            onClick={() => {
-              onRemove();
-              setOpen(false);
-            }}
-          >
-            Remove filter
-          </MenuItem>
-        </div>
-      </MenuContent>
-    </MenuRoot>
+        />,
+        <MenuItem
+          key="remove"
+          variant="destructiveAction"
+          onClick={() => {
+            onRemove();
+            setOpen(false);
+          }}
+        >
+          Remove filter
+        </MenuItem>,
+      ]}
+    />
   );
 }

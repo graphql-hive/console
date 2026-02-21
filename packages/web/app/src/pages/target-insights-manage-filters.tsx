@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, Lock, MoreVertical, Users } from 
 import { useMutation, useQuery } from 'urql';
 import { FilterDropdown } from '@/components/base/filter-dropdown/filter-dropdown';
 import type { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
-import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { Button } from '@/components/ui/button';
@@ -319,59 +319,62 @@ function SavedFilterRow({
           }}
         >
           {(filter.viewerCanUpdate || filter.viewerCanDelete) && (
-            <MenuRoot>
-              <MenuTrigger
-                render={
-                  <Button variant="ghost" className="flex size-8 p-0">
-                    <MoreVertical className="size-4" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                }
-              />
-              <MenuContent align="end" sideOffset={8} withXPadding withYPadding>
-                <MenuItem
-                  render={
-                    <Link
-                      to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-                      params={{ organizationSlug, projectSlug, targetSlug }}
-                      search={{
-                        operations:
-                          filter.filters.operationHashes.length > 0
-                            ? filter.filters.operationHashes
-                            : undefined,
-                        clients:
-                          filter.filters.clientFilters.length > 0
-                            ? filter.filters.clientFilters.map(c => ({
-                                name: c.name,
-                                versions: c.versions ?? null,
-                              }))
-                            : undefined,
-                        from: filter.filters.dateRange?.from,
-                        to: filter.filters.dateRange?.to,
-                        viewId: filter.id,
-                      }}
-                    />
-                  }
-                >
-                  View in Insights
-                </MenuItem>
-                {filter.viewerCanUpdate && (
+            <Menu
+              trigger={
+                <Button variant="ghost" className="flex size-8 p-0">
+                  <MoreVertical className="size-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              }
+              align="end"
+              sections={[
+                [
                   <MenuItem
-                    onClick={() => {
-                      setRenameValue(filter.name);
-                      setIsRenaming(true);
-                    }}
+                    key="view"
+                    render={
+                      <Link
+                        to="/$organizationSlug/$projectSlug/$targetSlug/insights"
+                        params={{ organizationSlug, projectSlug, targetSlug }}
+                        search={{
+                          operations:
+                            filter.filters.operationHashes.length > 0
+                              ? filter.filters.operationHashes
+                              : undefined,
+                          clients:
+                            filter.filters.clientFilters.length > 0
+                              ? filter.filters.clientFilters.map(c => ({
+                                  name: c.name,
+                                  versions: c.versions ?? null,
+                                }))
+                              : undefined,
+                          from: filter.filters.dateRange?.from,
+                          to: filter.filters.dateRange?.to,
+                          viewId: filter.id,
+                        }}
+                      />
+                    }
                   >
-                    Rename
-                  </MenuItem>
-                )}
-                {filter.viewerCanDelete && (
-                  <MenuItem variant="destructiveAction" onClick={handleDelete}>
-                    Delete
-                  </MenuItem>
-                )}
-              </MenuContent>
-            </MenuRoot>
+                    View in Insights
+                  </MenuItem>,
+                  filter.viewerCanUpdate && (
+                    <MenuItem
+                      key="rename"
+                      onClick={() => {
+                        setRenameValue(filter.name);
+                        setIsRenaming(true);
+                      }}
+                    >
+                      Rename
+                    </MenuItem>
+                  ),
+                  filter.viewerCanDelete && (
+                    <MenuItem key="delete" variant="destructiveAction" onClick={handleDelete}>
+                      Delete
+                    </MenuItem>
+                  ),
+                ],
+              ]}
+            />
           )}
         </TableCell>
       </TableRow>

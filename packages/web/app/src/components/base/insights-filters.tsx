@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { ListFilter, X } from 'lucide-react';
 import { FilterContent } from '@/components/base/filter-dropdown/filter-content';
 import { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
-import {
-  MenuContent,
-  MenuItem,
-  MenuRoot,
-  MenuSeparator,
-  MenuSubmenu,
-  MenuTrigger,
-} from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
 
 export type SavedFilterView = {
@@ -48,17 +41,13 @@ function SavedFiltersList({
   onApplySavedFilters: (view: SavedFilterView) => void;
 }) {
   if (savedFilters.length === 0) {
-    return (
-      <MenuItem inSubmenu disabled>
-        {emptyMessage}
-      </MenuItem>
-    );
+    return <MenuItem disabled>{emptyMessage}</MenuItem>;
   }
 
   return (
     <>
       {savedFilters.map(savedFilter => (
-        <MenuItem key={savedFilter.id} inSubmenu onClick={() => onApplySavedFilters(savedFilter)}>
+        <MenuItem key={savedFilter.id} onClick={() => onApplySavedFilters(savedFilter)}>
           {savedFilter.name}
         </MenuItem>
       ))}
@@ -95,70 +84,88 @@ export function InsightsFilters({
   };
 
   return (
-    <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
-      <MenuTrigger
-        render={
-          <TriggerButton
-            label={activeViewName ?? 'Filter'}
-            variant="default"
-            rightIcon={
-              activeViewName && onClearActiveView
-                ? { icon: X, action: onClearActiveView, label: 'Clear active view', withSeparator: true }
-                : { icon: ListFilter, withSeparator: true }
-            }
-          />
-        }
-      />
-      <MenuContent side="bottom" align="start" sideOffset={8} withXPadding withYPadding>
-        <MenuSubmenu>
-          <MenuItem subMenuTrigger>Operations</MenuItem>
-          <MenuContent subMenu>
-            <FilterContent
-              label="operations"
-              items={operationFilterItems}
-              selectedItems={operationFilterSelections}
-              onChange={setOperationSelections}
-            />
-          </MenuContent>
-        </MenuSubmenu>
-        <MenuSubmenu>
-          <MenuItem subMenuTrigger>Clients</MenuItem>
-          <MenuContent subMenu>
-            <FilterContent
-              label="clients"
-              items={clientFilterItems}
-              selectedItems={clientFilterSelections}
-              onChange={setClientSelections}
-              valuesLabel="versions"
-            />
-          </MenuContent>
-        </MenuSubmenu>
-        <MenuSeparator />
-        <MenuSubmenu>
-          <MenuItem subMenuTrigger>My saved filters</MenuItem>
-          <MenuContent subMenu withYPadding>
-            <SavedFiltersList
-              savedFilters={privateSavedFilterViews}
-              emptyMessage="No saved private views"
-              onApplySavedFilters={handleApplySavedFilter}
-            />
-          </MenuContent>
-        </MenuSubmenu>
-        <MenuSubmenu>
-          <MenuItem subMenuTrigger>Shared saved filters</MenuItem>
-          <MenuContent subMenu withYPadding>
-            <SavedFiltersList
-              savedFilters={sharedSavedFilterViews}
-              emptyMessage="No saved shared views"
-              onApplySavedFilters={handleApplySavedFilter}
-            />
-          </MenuContent>
-        </MenuSubmenu>
-        <MenuSeparator />
-        <MenuItem variant="navigationLink" onClick={onManageSavedFilters}>
+    <Menu
+      trigger={
+        <TriggerButton
+          label={activeViewName ?? 'Filter'}
+          variant="default"
+          rightIcon={
+            activeViewName && onClearActiveView
+              ? {
+                  icon: X,
+                  action: onClearActiveView,
+                  label: 'Clear active view',
+                  withSeparator: true,
+                }
+              : { icon: ListFilter, withSeparator: true }
+          }
+        />
+      }
+      open={open}
+      onOpenChange={setOpen}
+      modal={false}
+      side="bottom"
+      align="start"
+      sections={[
+        [
+          <Menu
+            key="operations"
+            trigger={<MenuItem>Operations</MenuItem>}
+            sections={[
+              <FilterContent
+                key="content"
+                label="operations"
+                items={operationFilterItems}
+                selectedItems={operationFilterSelections}
+                onChange={setOperationSelections}
+              />,
+            ]}
+          />,
+          <Menu
+            key="clients"
+            trigger={<MenuItem>Clients</MenuItem>}
+            sections={[
+              <FilterContent
+                key="content"
+                label="clients"
+                items={clientFilterItems}
+                selectedItems={clientFilterSelections}
+                onChange={setClientSelections}
+                valuesLabel="versions"
+              />,
+            ]}
+          />,
+        ],
+        [
+          <Menu
+            key="private"
+            trigger={<MenuItem>My saved filters</MenuItem>}
+            sections={[
+              <SavedFiltersList
+                key="list"
+                savedFilters={privateSavedFilterViews}
+                emptyMessage="No saved private views"
+                onApplySavedFilters={handleApplySavedFilter}
+              />,
+            ]}
+          />,
+          <Menu
+            key="shared"
+            trigger={<MenuItem>Shared saved filters</MenuItem>}
+            sections={[
+              <SavedFiltersList
+                key="list"
+                savedFilters={sharedSavedFilterViews}
+                emptyMessage="No saved shared views"
+                onApplySavedFilters={handleApplySavedFilter}
+              />,
+            ]}
+          />,
+        ],
+        <MenuItem key="manage" variant="navigationLink" onClick={onManageSavedFilters}>
           Manage saved filters
-        </MenuItem>
-      </MenuContent>
-    </MenuRoot>
+        </MenuItem>,
+      ]}
+    />
   );
 }

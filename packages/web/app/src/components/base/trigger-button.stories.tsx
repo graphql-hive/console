@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ListFilter, RefreshCw, X } from 'lucide-react';
-import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '@/components/base/menu/menu';
 import type { Story, StoryDefault } from '@ladle/react';
 import { Flex } from './story-utils';
 import { TriggerButton } from './trigger-button';
@@ -62,22 +62,23 @@ export const WithMenu: Story = () => {
   const [count, setCount] = useState(0);
   return (
     <Flex>
-      <MenuRoot>
-        <MenuTrigger
-          render={
-            <TriggerButton
-              accessoryInformation={count > 0 ? count.toString() : undefined}
-              label="Client"
-              variant={count > 0 ? 'active' : 'default'}
-              rightIcon={{ icon: ChevronDown, withSeparator: true }}
-            />
-          }
-        />
-        <MenuContent align="start">
-          <MenuItem onClick={() => setCount(c => c + 1)}>Add selection</MenuItem>
-          <MenuItem onClick={() => setCount(0)}>Clear</MenuItem>
-        </MenuContent>
-      </MenuRoot>
+      <Menu
+        trigger={
+          <TriggerButton
+            accessoryInformation={count > 0 ? count.toString() : undefined}
+            label="Client"
+            variant={count > 0 ? 'active' : 'default'}
+            rightIcon={{ icon: ChevronDown, withSeparator: true }}
+          />
+        }
+        align="start"
+        sections={[
+          [
+            <MenuItem key="add" onClick={() => setCount(c => c + 1)}>Add selection</MenuItem>,
+            <MenuItem key="clear" onClick={() => setCount(0)}>Clear</MenuItem>,
+          ],
+        ]}
+      />
     </Flex>
   );
 };

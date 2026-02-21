@@ -55,7 +55,7 @@ export function ValuesSubPanel({
   }
 
   return (
-    <div className="pb-2">
+    <div>
       <FilterListSearch
         label={`Search ${valuesLabel} for ${itemName}`}
         onSearch={setSearch}
@@ -63,9 +63,9 @@ export function ValuesSubPanel({
       />
 
       {/* Values list */}
-      <div className="mt-2 max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
+      <div className="max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
         {/* All values toggle */}
-        <MenuItem inSubmenu closeOnClick={false} onClick={toggleAllValues}>
+        <MenuItem closeOnClick={false} onClick={toggleAllValues}>
           <Checkbox checked={allSelected} size="sm" visual />
           <span>All {valuesLabel}</span>
         </MenuItem>
@@ -74,7 +74,7 @@ export function ValuesSubPanel({
         {filteredValues.map(val => {
           const checked = isValueSelected(val);
           return (
-            <MenuItem inSubmenu key={val} closeOnClick={false} onClick={() => toggleValue(val)}>
+            <MenuItem key={val} closeOnClick={false} onClick={() => toggleValue(val)}>
               <Checkbox checked={checked} size="sm" visual />
               <span className="truncate">{val}</span>
             </MenuItem>

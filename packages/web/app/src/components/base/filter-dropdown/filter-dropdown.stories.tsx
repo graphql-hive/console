@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { InsightsFilters } from '@/components/base/insights-filters';
-import { MenuRoot } from '@/components/base/menu/menu';
 import { cn } from '@/lib/utils';
+import { Menu as BaseMenu } from '@base-ui/react/menu';
 import type { Story, StoryDefault } from '@ladle/react';
 import { FilterDropdown, type FilterDropdownProps } from './filter-dropdown';
 import type { FilterItem, FilterSelection } from './types';
@@ -137,7 +137,7 @@ export const SubPanel: Story = () => {
 
   return (
     <div className="p-8">
-      <MenuRoot open modal={false}>
+      <BaseMenu.Root open modal={false}>
         <div
           className={cn(
             'w-56 rounded-md border p-2 shadow-md',
@@ -152,7 +152,7 @@ export const SubPanel: Story = () => {
             valuesLabel="versions"
           />
         </div>
-      </MenuRoot>
+      </BaseMenu.Root>
       <pre className="text-neutral-9 mt-4 text-xs">{JSON.stringify(selectedValues, null, 2)}</pre>
     </div>
   );

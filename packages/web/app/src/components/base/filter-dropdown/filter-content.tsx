@@ -65,9 +65,8 @@ export function FilterContent({
   }
 
   return (
-    <div className="pb-2">
+    <div role="group">
       <FilterListSearch label={label} onSearch={setSearch} value={search} />
-
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
         <div className="text-neutral-11 mt-2 px-4 py-1 text-xs">
@@ -77,7 +76,7 @@ export function FilterContent({
       )}
 
       {/* Item list */}
-      <div className="mt-2 max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
+      <div className="max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
         {filteredItems.map(item => {
           const selected = isItemSelected(item);
           const selection = getItemSelection(item);
@@ -99,7 +98,7 @@ export function FilterContent({
           );
         })}
         {filteredItems.length === 0 && (
-          <div className="text-neutral-8 px-2 py-4 text-center text-sm">No items found</div>
+          <div className="text-neutral-8 px-2 py-2 text-center text-sm">No items found</div>
         )}
       </div>
     </div>

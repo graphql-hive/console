@@ -1,5 +1,5 @@
 import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { MenuContent, MenuItem, MenuSubmenu } from '@/components/base/menu/menu';
+import { Menu, MenuItem } from '@/components/base/menu/menu';
 import type { FilterItem, FilterSelection } from './types';
 import { ValuesSubPanel } from './values-sub-panel';
 
@@ -17,7 +17,7 @@ interface ItemRowProps {
 function ItemName({ name, unavailable }: { name: string; unavailable?: boolean }) {
   return (
     <span
-      className={`flex-1 truncate${unavailable ? 'text-neutral-8 line-through' : ''}`}
+      className={`flex-1 truncate${unavailable ? ' text-neutral-8 line-through' : ''}`}
       title={unavailable ? 'Not found in selected date range' : undefined}
     >
       {name}
@@ -39,7 +39,7 @@ export function ItemRow({
 
   if (!hasValues) {
     return (
-      <MenuItem inSubmenu closeOnClick={false} onClick={onToggle}>
+      <MenuItem closeOnClick={false} onClick={onToggle}>
         <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
         <ItemName name={item.name} unavailable={unavailable} />
       </MenuItem>
@@ -47,28 +47,26 @@ export function ItemRow({
   }
 
   return (
-    <MenuSubmenu>
-      <MenuItem
-        inSubmenu
-        subMenuTrigger
-        openOnHover
-        delay={100}
-        closeDelay={150}
-        onClick={onToggle}
-      >
-        <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
-        <ItemName name={item.name} unavailable={unavailable} />
-      </MenuItem>
-
-      <MenuContent subMenu>
+    <Menu
+      trigger={
+        <MenuItem onClick={onToggle}>
+          <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
+          <ItemName name={item.name} unavailable={unavailable} />
+        </MenuItem>
+      }
+      openOnHover
+      delay={100}
+      closeDelay={150}
+      sections={[
         <ValuesSubPanel
+          key="values"
           itemName={item.name}
           values={item.values}
           selectedValues={selected ? (selection?.values ?? null) : []}
           onValuesChange={onValuesChange}
           valuesLabel={valuesLabel}
-        />
-      </MenuContent>
-    </MenuSubmenu>
+        />,
+      ]}
+    />
   );
 }

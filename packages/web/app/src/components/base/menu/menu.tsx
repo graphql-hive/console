@@ -1,85 +1,39 @@
-import { cva, VariantProps } from 'class-variance-authority';
+import { createContext, Fragment, useContext, type ReactNode } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { ArrowRight, ChevronRight } from 'lucide-react';
-import { Menu } from '@base-ui/react/menu';
+import { Menu as BaseMenu } from '@base-ui/react/menu';
 
-const MenuRoot = Menu.Root;
+// --- Contexts ---
 
-const MenuTrigger = Menu.Trigger;
+const MenuDepthContext = createContext(0);
+
+type SubmenuTriggerContextValue = {
+  openOnHover?: boolean;
+  delay?: number;
+  closeDelay?: number;
+} | null;
+
+const SubmenuTriggerContext = createContext<SubmenuTriggerContextValue>(null);
+
+// --- Styles ---
 
 const menuVariants = cva(
-  'z-50 max-w-75 min-w-[12rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
+  'px-2 pb-2 z-50 max-w-75 min-w-[12rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
   {
     variants: {
-      withPadding: {
-        true: 'p-2',
-        false: '',
-      },
-      withXPadding: {
-        true: 'px-2',
-        false: '',
-      },
-      withYPadding: {
-        true: 'py-2',
-        false: '',
-      },
       autoWidth: {
         true: 'max-w-none',
         false: '',
       },
     },
     defaultVariants: {
-      withXPadding: false,
       autoWidth: false,
     },
   },
 );
 
-type MenuContentProps = {
-  children: React.ReactNode;
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  align?: 'start' | 'center' | 'end';
-  sideOffset?: number;
-  /**
-   * configure positioning and alignment as a submenu
-   */
-  subMenu?: boolean;
-  withXPadding?: VariantProps<typeof menuVariants>['withXPadding'];
-  withYPadding?: VariantProps<typeof menuVariants>['withYPadding'];
-  /**
-   * Remove max-width constraint, useful for wide content like date pickers
-   */
-  autoWidth?: boolean;
-};
-
-function MenuContent({
-  align,
-  children,
-  side = 'bottom',
-  sideOffset = 8,
-  subMenu = false,
-  withXPadding = false,
-  withYPadding = false,
-  autoWidth = false,
-}: MenuContentProps) {
-  if (subMenu) {
-    align = 'start';
-    side = 'right';
-    sideOffset = 6;
-  }
-
-  return (
-    <Menu.Portal>
-      <Menu.Positioner side={side} align={align} sideOffset={sideOffset} className="outline-none">
-        <Menu.Popup className={menuVariants({ withXPadding, withYPadding, autoWidth })}>
-          {children}
-        </Menu.Popup>
-      </Menu.Positioner>
-    </Menu.Portal>
-  );
-}
-
 const menuItemVariants = cva(
-  'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2.5',
+  'flex h-7 cursor-pointer select-none items-center rounded-sm outline-none gap-2.5 first:mt-2',
   {
     variants: {
       variant: {
@@ -87,10 +41,6 @@ const menuItemVariants = cva(
         navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
         action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
         destructiveAction: 'pl-2 text-red-400  hover:bg-red-300/10',
-      },
-      inSubmenu: {
-        true: 'mx-2',
-        false: '',
       },
       highlighted: {
         true: '',
@@ -106,14 +56,11 @@ const menuItemVariants = cva(
       },
     },
     compoundVariants: [
-      { highlighted: true, inSubmenu: false, className: 'bg-neutral-5 text-neutral-12' },
-      { active: true, inSubmenu: false, className: 'bg-neutral-5 text-neutral-12' },
-      { highlighted: true, inSubmenu: true, className: 'text-neutral-12' },
-      { active: true, inSubmenu: true, className: 'text-neutral-12' },
+      { highlighted: true, className: 'bg-neutral-5 text-neutral-12' },
+      { active: true, className: 'bg-neutral-5 text-neutral-12' },
     ],
     defaultVariants: {
       variant: 'default',
-      inSubmenu: false,
       highlighted: false,
       active: false,
       disabled: false,
@@ -121,84 +68,171 @@ const menuItemVariants = cva(
   },
 );
 
-type MenuItemSharedProps = {
-  active?: boolean;
-  variant?: VariantProps<typeof menuItemVariants>['variant'];
-  inSubmenu?: boolean;
-};
-
-type MenuItemAsItem = Omit<Menu.Item.Props, 'className'> &
-  MenuItemSharedProps & { subMenuTrigger?: false };
-
-type MenuItemAsSubmenuTrigger = Omit<Menu.SubmenuTrigger.Props, 'className'> &
-  MenuItemSharedProps & { subMenuTrigger: true };
-
-type MenuItemProps = MenuItemAsItem | MenuItemAsSubmenuTrigger;
+// --- Helpers ---
 
 function menuItemClassName(
   state: { highlighted: boolean; disabled: boolean },
   {
     active,
     variant,
-    inSubmenu,
   }: {
     active?: boolean;
     variant?: VariantProps<typeof menuItemVariants>['variant'];
-    inSubmenu?: boolean;
   },
 ) {
   return menuItemVariants({
     variant,
-    inSubmenu: inSubmenu ?? false,
     highlighted: state.highlighted,
     disabled: state.disabled,
     active: active ?? false,
   });
 }
 
-function MenuItem({
-  active,
-  variant,
-  inSubmenu,
-  subMenuTrigger,
-  children,
-  ...props
-}: MenuItemProps) {
-  if (subMenuTrigger) {
+function renderSections(sections: Array<ReactNode | ReactNode[]>): ReactNode {
+  const result: ReactNode[] = [];
+  let keyCounter = 0;
+
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i];
+    const items = Array.isArray(section) ? section : [section];
+    const filtered = items.filter(Boolean);
+    if (filtered.length === 0) continue;
+
+    if (result.length > 0) {
+      result.push(
+        <div key={`sep-${keyCounter++}`} role="separator" className="bg-neutral-5 my-2 h-px" />,
+      );
+    }
+
+    for (const item of filtered) {
+      result.push(<Fragment key={`item-${keyCounter++}`}>{item}</Fragment>);
+    }
+  }
+
+  return result;
+}
+
+// --- Menu ---
+
+type MenuProps = {
+  trigger: React.ReactElement;
+  sections: Array<ReactNode | ReactNode[]>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  modal?: boolean;
+  side?: 'top' | 'bottom' | 'left' | 'right';
+  align?: 'start' | 'center' | 'end';
+  sideOffset?: number;
+  autoWidth?: boolean;
+  /** Open the submenu when the trigger is hovered (only relevant for nested menus) */
+  openOnHover?: boolean;
+  /** Delay in ms before the submenu opens on hover */
+  delay?: number;
+  /** Delay in ms before the submenu closes when the pointer leaves */
+  closeDelay?: number;
+};
+
+function Menu({
+  trigger,
+  sections,
+  open,
+  onOpenChange,
+  modal,
+  side,
+  align,
+  sideOffset,
+  autoWidth = false,
+  openOnHover,
+  delay,
+  closeDelay,
+}: MenuProps) {
+  const parentDepth = useContext(MenuDepthContext);
+  const isNested = parentDepth > 0;
+  const contentDepth = parentDepth + 1;
+
+  const resolvedSide = side ?? (isNested ? 'right' : 'bottom');
+  const resolvedAlign = align ?? (isNested ? 'start' : undefined);
+  const resolvedSideOffset = sideOffset ?? (isNested ? 6 : 8);
+
+  const popupContent = (
+    <MenuDepthContext.Provider value={contentDepth}>
+      {renderSections(sections)}
+    </MenuDepthContext.Provider>
+  );
+
+  if (isNested) {
     return (
-      <Menu.SubmenuTrigger
-        className={(state: Menu.SubmenuTrigger.State) =>
-          menuItemClassName(state, { active, variant, inSubmenu })
-        }
-        {...(props as Omit<Menu.SubmenuTrigger.Props, 'className'>)}
-      >
-        {children}
-        <ChevronRight className="ml-auto size-3.5" />
-      </Menu.SubmenuTrigger>
+      <BaseMenu.SubmenuRoot>
+        <SubmenuTriggerContext.Provider value={{ openOnHover, delay, closeDelay }}>
+          {trigger}
+        </SubmenuTriggerContext.Provider>
+        <BaseMenu.Portal>
+          <BaseMenu.Positioner
+            side={resolvedSide}
+            align={resolvedAlign}
+            sideOffset={resolvedSideOffset}
+            className="outline-none"
+          >
+            <BaseMenu.Popup className={menuVariants({ autoWidth })}>{popupContent}</BaseMenu.Popup>
+          </BaseMenu.Positioner>
+        </BaseMenu.Portal>
+      </BaseMenu.SubmenuRoot>
     );
   }
 
   return (
-    <Menu.Item
-      className={(state: Menu.Item.State) =>
-        menuItemClassName(state, { active, variant, inSubmenu })
-      }
-      {...(props as Omit<Menu.Item.Props, 'className'>)}
-    >
-      {children}
-      {variant === 'navigationLink' && <ArrowRight className="ml-1 size-3.5" />}
-    </Menu.Item>
+    <BaseMenu.Root open={open} onOpenChange={onOpenChange} modal={modal}>
+      <BaseMenu.Trigger render={trigger} />
+      <BaseMenu.Portal>
+        <BaseMenu.Positioner
+          side={resolvedSide}
+          align={resolvedAlign}
+          sideOffset={resolvedSideOffset}
+          className="outline-none"
+        >
+          <BaseMenu.Popup className={menuVariants({ autoWidth })}>{popupContent}</BaseMenu.Popup>
+        </BaseMenu.Positioner>
+      </BaseMenu.Portal>
+    </BaseMenu.Root>
   );
 }
 
-function MenuSeparator() {
-  return <div role="separator" className="bg-neutral-5 my-2 h-px" />;
+// --- MenuItem ---
+
+type MenuItemProps = Omit<BaseMenu.Item.Props, 'className'> & {
+  active?: boolean;
+  variant?: VariantProps<typeof menuItemVariants>['variant'];
+};
+
+function MenuItem({ active, variant, children, ...props }: MenuItemProps) {
+  const submenuTriggerCtx = useContext(SubmenuTriggerContext);
+
+  if (submenuTriggerCtx) {
+    return (
+      <BaseMenu.SubmenuTrigger
+        className={(state: BaseMenu.SubmenuTrigger.State) =>
+          menuItemClassName(state, { active, variant })
+        }
+        openOnHover={submenuTriggerCtx.openOnHover}
+        delay={submenuTriggerCtx.delay}
+        closeDelay={submenuTriggerCtx.closeDelay}
+        {...(props as Omit<BaseMenu.SubmenuTrigger.Props, 'className'>)}
+      >
+        {children}
+        <ChevronRight className="ml-auto size-3.5" />
+      </BaseMenu.SubmenuTrigger>
+    );
+  }
+
+  return (
+    <BaseMenu.Item
+      className={(state: BaseMenu.Item.State) => menuItemClassName(state, { active, variant })}
+      {...(props as Omit<BaseMenu.Item.Props, 'className'>)}
+    >
+      {children}
+      {variant === 'navigationLink' && <ArrowRight className="ml-1 size-3.5" />}
+    </BaseMenu.Item>
+  );
 }
 
-function MenuLabel({ children }: { className?: string; children: React.ReactNode }) {
-  return <div className="text-neutral-12 px-2 py-1.5 font-semibold">{children}</div>;
-}
-
-const MenuSubmenu = Menu.SubmenuRoot;
-
-export { MenuRoot, MenuTrigger, MenuContent, MenuItem, MenuSeparator, MenuLabel, MenuSubmenu };
+export { Menu, MenuItem };
