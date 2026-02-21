@@ -58,7 +58,9 @@ export const WithSubmenu: Story = () => (
             }
             sections={[
               [
-                <MenuItem key="acme" active>acme-corp</MenuItem>,
+                <MenuItem key="acme" active>
+                  acme-corp
+                </MenuItem>,
                 <MenuItem key="personal">personal</MenuItem>,
                 <MenuItem key="test">test-org</MenuItem>,
               ],

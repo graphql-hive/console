@@ -146,7 +146,6 @@ function OperationsView({
         replace: true,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run only on mount
   }, []);
 
   const [pickerQuery, reexecutePickerQuery] = useQuery({

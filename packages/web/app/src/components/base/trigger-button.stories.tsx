@@ -74,8 +74,12 @@ export const WithMenu: Story = () => {
         align="start"
         sections={[
           [
-            <MenuItem key="add" onClick={() => setCount(c => c + 1)}>Add selection</MenuItem>,
-            <MenuItem key="clear" onClick={() => setCount(0)}>Clear</MenuItem>,
+            <MenuItem key="add" onClick={() => setCount(c => c + 1)}>
+              Add selection
+            </MenuItem>,
+            <MenuItem key="clear" onClick={() => setCount(0)}>
+              Clear
+            </MenuItem>,
           ],
         ]}
       />
