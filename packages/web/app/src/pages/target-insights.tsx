@@ -241,13 +241,6 @@ function OperationsView({
 
   const handleApplySavedFilter = useCallback(
     (view: SavedFilterView) => {
-      void trackView({
-        input: {
-          target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
-          id: view.id,
-        },
-      });
-
       void navigate({
         search: prev => ({
           ...prev,
@@ -266,7 +259,7 @@ function OperationsView({
         }),
       });
     },
-    [navigate, trackView, organizationSlug, projectSlug, targetSlug],
+    [navigate, organizationSlug, projectSlug, targetSlug],
   );
 
   const viewerCanCreate = pickerQuery.data?.target?.viewerCanCreateSavedFilter ?? false;
@@ -277,6 +270,17 @@ function OperationsView({
     const allViews = [...privateSavedFilterViews, ...sharedSavedFilterViews];
     return allViews.find(v => v.id === search.viewId) ?? null;
   }, [search.viewId, privateSavedFilterViews, sharedSavedFilterViews]);
+
+  useEffect(() => {
+    if (search.viewId) {
+      void trackView({
+        input: {
+          target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
+          id: search.viewId,
+        },
+      });
+    }
+  }, [search.viewId]);
 
   const hasActiveFilters = useMemo(
     () =>
