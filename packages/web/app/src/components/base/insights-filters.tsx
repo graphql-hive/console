@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ListFilter } from 'lucide-react';
+import { ListFilter, X } from 'lucide-react';
 import { FilterContent } from '@/components/base/filter-dropdown/filter-content';
 import { FilterItem, FilterSelection } from '@/components/base/filter-dropdown/types';
 import {
@@ -34,6 +34,8 @@ type InsightsFiltersProps = {
   setOperationSelections: (value: FilterSelection[]) => void;
   onApplySavedFilters: (view: SavedFilterView) => void;
   onManageSavedFilters?: () => void;
+  activeViewId?: string;
+  onClearActiveView?: () => void;
 };
 
 function SavedFiltersList({
@@ -75,8 +77,14 @@ export function InsightsFilters({
   setOperationSelections,
   onApplySavedFilters,
   onManageSavedFilters,
+  activeViewId,
+  onClearActiveView,
 }: InsightsFiltersProps) {
   const [open, setOpen] = useState(false);
+
+  const activeViewName = activeViewId
+    ? [...privateSavedFilterViews, ...sharedSavedFilterViews].find(v => v.id === activeViewId)?.name
+    : undefined;
 
   const handleApplySavedFilter = (view: SavedFilterView) => {
     setOpen(false);
@@ -90,7 +98,15 @@ export function InsightsFilters({
     <MenuRoot open={open} onOpenChange={setOpen} modal={false}>
       <MenuTrigger
         render={
-          <TriggerButton label="Filter" rightIcon={{ icon: ListFilter, withSeparator: true }} />
+          <TriggerButton
+            label={activeViewName ?? 'Filter'}
+            variant="default"
+            rightIcon={
+              activeViewName && onClearActiveView
+                ? { icon: X, action: onClearActiveView, label: 'Clear active view', withSeparator: true }
+                : { icon: ListFilter, withSeparator: true }
+            }
+          />
         }
       />
       <MenuContent side="bottom" align="start" sideOffset={8} withXPadding withYPadding>

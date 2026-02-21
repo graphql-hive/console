@@ -310,6 +310,19 @@ function OperationsView({
               privateSavedFilterViews={privateSavedFilterViews}
               sharedSavedFilterViews={sharedSavedFilterViews}
               onApplySavedFilters={handleApplySavedFilter}
+              activeViewId={search.viewId}
+              onClearActiveView={() => {
+                void navigate({
+                  search: prev => ({
+                    ...prev,
+                    viewId: undefined,
+                    operations: undefined,
+                    clients: undefined,
+                    from: undefined,
+                    to: undefined,
+                  }),
+                });
+              }}
               onManageSavedFilters={() => {
                 void navigate({
                   to: '/$organizationSlug/$projectSlug/$targetSlug/insights/manage-filters',
