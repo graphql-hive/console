@@ -13,7 +13,7 @@ export function PricingSlider({
   onChange: (value: number) => void;
 }) {
   const min = 1;
-  const max = 300;
+  const max = 5000;
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -64,7 +64,7 @@ export function PricingSlider({
             onChange(value);
           }}
         />
-        <span className="font-medium">{max}M</span>
+        <span className="font-medium">5B</span>
       </div>
       <Root delayDuration={0} open={popoverOpen} onOpenChange={setPopoverOpen}>
         <Trigger asChild>
