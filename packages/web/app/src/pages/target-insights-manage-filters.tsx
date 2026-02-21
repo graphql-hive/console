@@ -785,7 +785,7 @@ function ManageFiltersContent(props: {
     );
   }
 
-  if (query.fetching && edges.length === 0) {
+  if (!query.data?.target) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
         <Spinner />
@@ -793,7 +793,7 @@ function ManageFiltersContent(props: {
     );
   }
 
-  if (!query.fetching && edges.length === 0) {
+  if (edges.length === 0) {
     return (
       <div className="py-8">
         <EmptyList
