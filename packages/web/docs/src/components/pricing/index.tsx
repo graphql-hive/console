@@ -86,7 +86,7 @@ export function Pricing({ className }: { className?: string }): ReactElement {
         <PricingSlider
           className="mt-6 lg:mt-12"
           onChange={value => {
-            const newPlan = value === 1 ? 'Hobby' : value < 280 ? 'Pro' : 'Enterprise';
+            const newPlan = value === 1 ? 'Hobby' : value < 4800 ? 'Pro' : 'Enterprise';
             if (newPlan !== highlightedPlan) {
               setHighlightedPlan(newPlan);
               if (!scrollviewRef.current) return;
