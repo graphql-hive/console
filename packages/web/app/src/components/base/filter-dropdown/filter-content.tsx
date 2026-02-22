@@ -98,7 +98,9 @@ export function FilterContent({
           );
         })}
         {filteredItems.length === 0 && (
-          <div className="text-neutral-8 px-2 py-2 text-center text-sm">No items found</div>
+          <div className="text-neutral-10 pb-2 pt-4 text-center text-[13px] italic">
+            No items found
+          </div>
         )}
       </div>
     </div>
