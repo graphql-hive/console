@@ -30,6 +30,7 @@ test.concurrent('owner of an organization should have all scopes', async ({ expe
       project:delete,
       project:modifySettings,
       projectAccessToken:modify,
+      sharedSavedFilter:modify,
       schemaLinting:modifyProjectRules,
       target:create,
       alert:modify,

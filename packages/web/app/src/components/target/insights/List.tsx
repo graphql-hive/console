@@ -11,9 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { DateRangeInput } from '@/gql/graphql';
+import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { useDecimal, useFormattedDuration, useFormattedNumber } from '@/lib/hooks';
-import { pick } from '@/lib/object';
 import { ChevronUpIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import {
   createColumnHelper,
@@ -79,11 +78,10 @@ function OperationRow({
                   operationName: operation.name,
                   operationHash: operation.hash,
                 }}
-                search={searchParams => ({
-                  ...pick(searchParams, ['clients']),
+                search={{
                   from: selectedPeriod?.from ? encodeURIComponent(selectedPeriod.from) : undefined,
                   to: selectedPeriod?.to ? encodeURIComponent(selectedPeriod.to) : undefined,
-                })}
+                }}
               >
                 {operation.name}
               </Link>
@@ -501,8 +499,7 @@ export function OperationsList({
   projectSlug,
   targetSlug,
   period,
-  operationsFilter = [],
-  clientNamesFilter = [],
+  filter,
   selectedPeriod,
 }: {
   className?: string;
@@ -510,9 +507,7 @@ export function OperationsList({
   projectSlug: string;
   targetSlug: string;
   period: DateRangeInput;
-  /** Operation IDs to filter on */
-  operationsFilter: string[];
-  clientNamesFilter: string[];
+  filter: OperationStatsFilterInput;
   selectedPeriod: null | { to: string; from: string };
 }): ReactElement {
   const [clientFilter, setClientFilter] = useState<string | null>(null);
@@ -525,10 +520,7 @@ export function OperationsList({
         targetSlug,
       },
       period,
-      filter: {
-        operationIds: operationsFilter,
-        clientNames: clientNamesFilter,
-      },
+      filter,
     },
   });
 

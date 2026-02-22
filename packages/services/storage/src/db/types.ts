@@ -10,6 +10,7 @@
 export type alert_channel_type = 'MSTEAMS_WEBHOOK' | 'SLACK' | 'WEBHOOK';
 export type alert_type = 'SCHEMA_CHANGE_NOTIFICATIONS';
 export type breaking_change_formula = 'PERCENTAGE' | 'REQUEST_COUNT';
+export type saved_filter_visibility = 'private' | 'shared';
 export type schema_policy_resource = 'ORGANIZATION' | 'PROJECT';
 export type schema_proposal_stage = 'APPROVED' | 'CLOSED' | 'DRAFT' | 'IMPLEMENTED' | 'OPEN';
 export type user_role = 'ADMIN' | 'MEMBER';
@@ -270,6 +271,20 @@ export interface projects {
   validation_url: string | null;
 }
 
+export interface saved_filters {
+  created_at: Date;
+  created_by_user_id: string;
+  description: string | null;
+  filters: any;
+  id: string;
+  name: string;
+  project_id: string;
+  updated_at: Date;
+  updated_by_user_id: string | null;
+  views_count: number;
+  visibility: saved_filter_visibility;
+}
+
 export interface schema_change_approvals {
   context_id: string;
   created_at: Date;
@@ -520,6 +535,7 @@ export interface DBTables {
   organizations: organizations;
   organizations_billing: organizations_billing;
   projects: projects;
+  saved_filters: saved_filters;
   schema_change_approvals: schema_change_approvals;
   schema_checks: schema_checks;
   schema_coordinate_status: schema_coordinate_status;

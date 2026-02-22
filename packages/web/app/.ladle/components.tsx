@@ -1,4 +1,5 @@
 import '../src/index.css';
+import './ladle.css';
 import { useEffect } from 'react';
 import type { GlobalProvider } from '@ladle/react';
 import { ThemeProvider, useTheme } from '../src/components/theme/theme-provider';
