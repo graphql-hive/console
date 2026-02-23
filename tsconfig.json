@@ -41,6 +41,7 @@
       ],
       "@hive/cdn-script/aws": ["./packages/services/cdn-worker/src/aws.ts"],
       "@hive/server": ["./packages/services/server/src/api.ts"],
+      "@hive/server/*": ["./packages/services/server/src/*"],
       "@hive/schema": ["./packages/services/schema/src/api.ts"],
       "@hive/schema/*": ["./packages/services/schema/src/*"],
       "@hive/usage-common": ["./packages/services/usage-common/src/index.ts"],
