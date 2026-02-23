@@ -111,6 +111,7 @@ export function InsightsFilters({
           <Menu
             key="operations"
             trigger={<MenuItem>Operations</MenuItem>}
+            autoWidth
             sections={[
               <FilterContent
                 key="content"
@@ -124,6 +125,7 @@ export function InsightsFilters({
           <Menu
             key="clients"
             trigger={<MenuItem>Clients</MenuItem>}
+            autoWidth
             sections={[
               <FilterContent
                 key="content"

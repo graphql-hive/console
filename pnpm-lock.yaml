@@ -1869,6 +1869,9 @@ importers:
       '@tanstack/react-table':
         specifier: 8.20.6
         version: 8.20.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-virtual':
+        specifier: ^3.13.18
+        version: 3.13.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/router-devtools':
         specifier: 1.34.9
         version: 1.34.9(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(csstype@3.1.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1908,9 +1911,6 @@ importers:
       '@types/react-virtualized-auto-sizer':
         specifier: 1.0.4
         version: 1.0.4
-      '@types/react-window':
-        specifier: 1.8.8
-        version: 1.8.8
       '@urql/core':
         specifier: 5.0.3
         version: 5.0.3(graphql@16.9.0)
@@ -2061,9 +2061,6 @@ importers:
       react-virtuoso:
         specifier: 4.12.3
         version: 4.12.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-window:
-        specifier: 1.8.11
-        version: 1.8.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       recharts:
         specifier: 2.15.1
         version: 2.15.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -9402,11 +9399,11 @@ packages:
       react: '>=16.8'
       react-dom: '>=16.8'
 
-  '@tanstack/react-virtual@3.8.1':
-    resolution: {integrity: sha512-dP5a7giEM4BQWLJ7K07ToZv8rF51mzbrBMkf0scg1QNYuFx3utnPUBPUHdzaowZhIez1K2XS78amuzD+YGRA5Q==}
+  '@tanstack/react-virtual@3.13.18':
+    resolution: {integrity: sha512-dZkhyfahpvlaV0rIKnvQiVoWPyURppl6w4m9IwMDpuIjcJ1sD9YGWrt0wISvgU7ewACXx2Ct46WPgI6qAD4v6A==}
     peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@tanstack/router-core@1.139.13':
     resolution: {integrity: sha512-vqBEBiFHHGt82fdtMqGRQFs9BRE8UKI17pVoYurEpIxafI7t8go1LoIxYbva2l8Q+44z0NZNQ2kqVZJwtEwgkg==}
@@ -9447,8 +9444,8 @@ packages:
     resolution: {integrity: sha512-P9dF7XbibHph2PFRz8gfBKEXEY/HJPOhym8CHmjF8y3q5mWpKx9xtZapXQUWCgkqvsK0R46Azuz+VaxD4Xl+Tg==}
     engines: {node: '>=12'}
 
-  '@tanstack/virtual-core@3.8.1':
-    resolution: {integrity: sha512-uNtAwenT276M9QYCjTBoHZ8X3MUeCRoGK59zPi92hMIxdfS9AyHjkDWJ94WroDxnv48UE+hIeo21BU84jKc8aQ==}
+  '@tanstack/virtual-core@3.13.18':
+    resolution: {integrity: sha512-Mx86Hqu1k39icq2Zusq+Ey2J6dDWTjDvEv43PJtRCoEYTLyfaPnxIQ6iy7YAOK0NV/qOEmZQ/uCufrppZxTgcg==}
 
   '@tanstack/zod-adapter@1.120.5':
     resolution: {integrity: sha512-EXFVr2rw9qy5Ad9fogxo++A10A555XrhNyKZ7pnPV84HU/Xy3C2zP8UaaoTlTDr+/BJ2yzyyM47yK62a03ofbA==}
@@ -9948,9 +9945,6 @@ packages:
 
   '@types/react-virtualized-auto-sizer@1.0.4':
     resolution: {integrity: sha512-nhYwlFiYa8M3S+O2T9QO/e1FQUYMr/wJENUdf/O0dhRi1RS/93rjrYQFYdbUqtdFySuhrtnEDX29P6eKOttY+A==}
-
-  '@types/react-window@1.8.8':
-    resolution: {integrity: sha512-8Ls660bHR1AUA2kuRvVG9D/4XpRC6wjAaPT9dil7Ckc76eP9TKWZwwmgfq8Q1LANX3QNDnoU4Zp48A3w+zK69Q==}
 
   '@types/react@18.3.18':
     resolution: {integrity: sha512-t4yC+vtgnkYjNSKlFx1jkAhH8LgTo2N/7Qvi83kdEaUtMDiwpbLAktKDaAMlRcJ5eSxZkH74eEGt1ky31d7kfQ==}
@@ -16845,13 +16839,6 @@ packages:
     peerDependencies:
       react: '>=16 || >=17 || >= 18'
       react-dom: '>=16 || >=17 || >= 18'
-
-  react-window@1.8.11:
-    resolution: {integrity: sha512-+SRbUVT2scadgFSWx+R1P754xHPEqvcfSfVX10QYg6POOz+WNgkN48pS+BtZNIMGiL1HYrSEiCkwsMS15QogEQ==}
-    engines: {node: '>8.0.0'}
-    peerDependencies:
-      react: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
@@ -25715,7 +25702,7 @@ snapshots:
 
   '@headlessui/react@1.7.19(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/react-virtual': 3.8.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-virtual': 3.13.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       client-only: 0.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -25725,7 +25712,7 @@ snapshots:
       '@floating-ui/react': 0.26.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/focus': 3.17.1(react@18.3.1)
       '@react-aria/interactions': 3.21.3(react@18.3.1)
-      '@tanstack/react-virtual': 3.8.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-virtual': 3.13.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
@@ -25734,7 +25721,7 @@ snapshots:
       '@floating-ui/react': 0.26.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@react-aria/focus': 3.17.1(react@19.2.4)
       '@react-aria/interactions': 3.21.3(react@19.2.4)
-      '@tanstack/react-virtual': 3.8.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@tanstack/react-virtual': 3.13.18(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
@@ -31091,15 +31078,15 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/react-virtual@3.8.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tanstack/react-virtual@3.13.18(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/virtual-core': 3.8.1
+      '@tanstack/virtual-core': 3.13.18
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@tanstack/react-virtual@3.8.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@tanstack/react-virtual@3.13.18(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@tanstack/virtual-core': 3.8.1
+      '@tanstack/virtual-core': 3.13.18
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
@@ -31157,7 +31144,7 @@ snapshots:
 
   '@tanstack/table-core@8.20.5': {}
 
-  '@tanstack/virtual-core@3.8.1': {}
+  '@tanstack/virtual-core@3.13.18': {}
 
   '@tanstack/zod-adapter@1.120.5(@tanstack/react-router@1.34.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)':
     dependencies:
@@ -31788,10 +31775,6 @@ snapshots:
       '@types/react': 18.3.18
 
   '@types/react-virtualized-auto-sizer@1.0.4':
-    dependencies:
-      '@types/react': 18.3.18
-
-  '@types/react-window@1.8.8':
     dependencies:
       '@types/react': 18.3.18
 
@@ -40191,13 +40174,6 @@ snapshots:
 
   react-virtuoso@4.12.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-
-  react-window@1.8.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      '@babel/runtime': 7.26.10
-      memoize-one: 5.2.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 

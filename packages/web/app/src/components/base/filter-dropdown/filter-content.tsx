@@ -1,7 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { FilterListSearch } from '@/components/base/filter-dropdown/filter-list-search';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ItemRow } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
+
+const ITEM_HEIGHT = 28; // h-7
+const MAX_LIST_HEIGHT = 256; // max-h-64
+
+function getKey(item: FilterItem | FilterSelection): string {
+  return item.id ?? item.name;
+}
+
+function isItemSelected(item: FilterItem, selectedItems: FilterSelection[]): boolean {
+  const key = getKey(item);
+  return selectedItems.some(s => getKey(s) === key);
+}
+
+function getItemSelection(
+  item: FilterItem,
+  selectedItems: FilterSelection[],
+): FilterSelection | null {
+  const key = getKey(item);
+  return selectedItems.find(s => getKey(s) === key) ?? null;
+}
 
 export type FilterContentProps = {
   /** Used in the search input's aria-label */
@@ -24,10 +45,7 @@ export function FilterContent({
   valuesLabel = 'values',
 }: FilterContentProps) {
   const [search, setSearch] = useState('');
-
-  function getKey(item: FilterItem | FilterSelection): string {
-    return item.id ?? item.name;
-  }
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const filteredItems = useMemo(() => {
     const matched = items.filter(item => item.name.toLowerCase().includes(search.toLowerCase()));
@@ -35,19 +53,17 @@ export function FilterContent({
     return matched.sort((a, b) => (a.unavailable ? 1 : 0) - (b.unavailable ? 1 : 0));
   }, [items, search]);
 
-  function isItemSelected(item: FilterItem) {
-    const key = getKey(item);
-    return selectedItems.some(s => getKey(s) === key);
-  }
-
-  function getItemSelection(item: FilterItem) {
-    const key = getKey(item);
-    return selectedItems.find(s => getKey(s) === key) ?? null;
-  }
+  const virtualizer = useVirtualizer({
+    count: filteredItems.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5,
+    paddingStart: 8,
+  });
 
   function toggleItem(item: FilterItem) {
     const key = getKey(item);
-    if (isItemSelected(item)) {
+    if (isItemSelected(item, selectedItems)) {
       onChange(selectedItems.filter(s => getKey(s) !== key));
     } else {
       onChange([...selectedItems, { id: item.id, name: item.name, values: null }]);
@@ -64,6 +80,8 @@ export function FilterContent({
     }
   }
 
+  const listHeight = Math.min(virtualizer.getTotalSize(), MAX_LIST_HEIGHT);
+
   return (
     <div role="group">
       <FilterListSearch label={label} onSearch={setSearch} value={search} />
@@ -76,33 +94,53 @@ export function FilterContent({
       )}
 
       {/* Item list */}
-      <div className="max-h-64 overflow-y-auto [scrollbar-color:var(--color-neutral-7)_transparent] [scrollbar-width:thin]">
-        {filteredItems.map(item => {
-          const selected = isItemSelected(item);
-          const selection = getItemSelection(item);
-          const hasPartialValues =
-            selected && selection?.values !== null && (selection?.values?.length ?? 0) > 0;
+      {filteredItems.length > 0 ? (
+        <div
+          ref={scrollRef}
+          className="[&>div>div>div>*]:mt-0!"
+          style={{
+            height: listHeight,
+            overflow: 'auto',
+            scrollbarColor: 'var(--color-neutral-7) transparent',
+            scrollbarWidth: 'thin',
+          }}
+        >
+          <div style={{ height: virtualizer.getTotalSize() }}>
+            <div
+              style={{
+                transform: `translateY(${virtualizer.getVirtualItems()[0]?.start ?? 0}px)`,
+              }}
+            >
+              {virtualizer.getVirtualItems().map(virtualItem => {
+                const item = filteredItems[virtualItem.index];
+                const selected = isItemSelected(item, selectedItems);
+                const selection = getItemSelection(item, selectedItems);
+                const hasPartialValues =
+                  selected && selection?.values !== null && (selection?.values?.length ?? 0) > 0;
 
-          return (
-            <ItemRow
-              key={getKey(item)}
-              item={item}
-              selected={selected}
-              indeterminate={hasPartialValues}
-              onToggle={() => toggleItem(item)}
-              selection={selection}
-              onValuesChange={values => updateItemValues(item, values)}
-              valuesLabel={valuesLabel}
-              unavailable={item.unavailable}
-            />
-          );
-        })}
-        {filteredItems.length === 0 && (
-          <div className="text-neutral-10 pb-2 pt-4 text-center text-[13px] italic">
-            No items found
+                return (
+                  <div key={getKey(item)} style={{ height: virtualItem.size }}>
+                    <ItemRow
+                      item={item}
+                      selected={selected}
+                      indeterminate={hasPartialValues}
+                      onToggle={() => toggleItem(item)}
+                      selection={selection}
+                      onValuesChange={values => updateItemValues(item, values)}
+                      valuesLabel={valuesLabel}
+                      unavailable={item.unavailable}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="text-neutral-10 pb-2 pt-4 text-center text-[13px] italic">
+          No items found
+        </div>
+      )}
     </div>
   );
 }
