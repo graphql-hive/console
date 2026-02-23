@@ -31,7 +31,7 @@ Gateway using the Rust Query Planner and a purpose-built executor for Hive Gatew
 Then, configure your Hive Gateway to use the Rust Query Planner by updating your gateway's
 configuration:
 
-<Tabs items={['CLI', "Programmatic Usage"]}>
+<Tabs items={['CLI', "Programmatic Usage", "Docker"]}>
 
 <Tabs.Tab>
 
@@ -69,6 +69,19 @@ import { unifiedGraphHandler } from '@graphql-hive/router-runtime'
 export const gateway = createGatewayRuntime({
   unifiedGraphHandler
 })
+```
+
+</Tabs.Tab>
+
+<Tabs.Tab>
+You can add environment variable `HIVE_ROUTER_RUNTIME` to your Dockerfile when starting the container.
+
+```sh
+docker run \
+  -e HIVE_ROUTER_RUNTIME=true \
+  -p 8080:8080 \
+  -v "$(pwd)/supergraph.graphql:/gateway/supergraph.graphql" \
+  ghcr.io/graphql-hive/gateway supergraph --port=8080
 ```
 
 </Tabs.Tab>
