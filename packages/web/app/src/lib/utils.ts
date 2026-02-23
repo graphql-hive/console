@@ -8,34 +8,40 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-function getNeutralColor() {
-  return getComputedStyle(document.documentElement).getPropertyValue('--color-neutral-12').trim();
+function readChartStyles() {
+  const s = getComputedStyle(document.documentElement);
+  const textColor = s.getPropertyValue('--color-neutral-12').trim();
+  const hsl = (name: string) => `hsl(${s.getPropertyValue(name).trim()})`;
+  return {
+    styles: {
+      backgroundColor: 'transparent' as const,
+      textStyle: { color: textColor },
+      legend: { textStyle: { color: textColor } },
+    },
+    colors: {
+      primary: hsl('--chart-1'),
+      error: hsl('--chart-2'),
+      p75: hsl('--chart-3'),
+      p90: hsl('--chart-4'),
+      p95: hsl('--chart-5'),
+      p99: hsl('--chart-6'),
+      grid: hsl('--chart-grid'),
+    },
+  };
 }
 
 export function useChartStyles() {
   const { resolvedTheme } = useTheme();
-  const [textColor, setTextColor] = useState(() => {
-    // Read CSS variable on initial mount
-    return getNeutralColor();
-  });
+  const [value, setValue] = useState(() => readChartStyles());
 
   useLayoutEffect(() => {
-    // Use requestAnimationFrame to ensure DOM updates are complete
     const rafId = requestAnimationFrame(() => {
-      const color = getNeutralColor();
-      setTextColor(color);
+      setValue(readChartStyles());
     });
-
     return () => cancelAnimationFrame(rafId);
   }, [resolvedTheme]);
 
-  return {
-    backgroundColor: 'transparent',
-    textStyle: { color: textColor },
-    legend: {
-      textStyle: { color: textColor },
-    },
-  };
+  return value;
 }
 
 // Strings
