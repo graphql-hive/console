@@ -45,7 +45,7 @@ export function deployCommerce({
     {
       image,
       imagePullSecret: docker.secret,
-      replicas: environment.podsConfig.general.replicas,
+      replicas: environment.resources.general.replicas,
       readinessProbe: '/_readiness',
       livenessProbe: '/_health',
       startupProbe: '/_health',

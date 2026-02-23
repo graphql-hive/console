@@ -42,7 +42,7 @@ export function deployUsageIngestor({
     {
       image,
       imagePullSecret: docker.secret,
-      replicas: environment.podsConfig.usageIngestorService.replicas,
+      replicas: environment.resources.usageIngestorService.replicas,
       readinessProbe: '/_readiness',
       livenessProbe: '/_health',
       availabilityOnEveryNode: true,
@@ -63,10 +63,10 @@ export function deployUsageIngestor({
       pdb: true,
       autoScaling: {
         cpu: {
-          cpuAverageToScale: environment.podsConfig.usageIngestorService.cpuAverageToScale,
-          limit: environment.podsConfig.usageIngestorService.cpuLimit,
+          cpuAverageToScale: environment.resources.usageIngestorService.cpuAverageToScale,
+          limit: environment.resources.usageIngestorService.cpuLimit,
         },
-        maxReplicas: environment.podsConfig.usageIngestorService.maxReplicas,
+        maxReplicas: environment.resources.usageIngestorService.maxReplicas,
       },
     },
     [clickhouse.deployment, clickhouse.service, dbMigrations].filter(Boolean),

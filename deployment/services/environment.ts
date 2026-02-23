@@ -44,7 +44,7 @@ export function prepareEnvironment(input: {
     appDns,
     apiDns,
     rootDns: input.rootDns,
-    podsConfig: {
+    resources: {
       general: {
         replicas: isProduction || isStaging ? 3 : 1,
       },
@@ -83,6 +83,10 @@ export function prepareEnvironment(input: {
         cpuLimit: isProduction || isStaging ? '1000m' : '100m',
         memoryLimit: isProduction || isStaging ? '1000Mi' : '512Mi',
         maxReplicas: isProduction || isStaging ? 3 : 1,
+      },
+      cdnAwsMirror: {
+        memory: 448,
+        executionTimeout: 10,
       },
     },
   };

@@ -39,7 +39,7 @@ export function deployTokens({
       startupProbe: '/_health',
       exposesMetrics: true,
       availabilityOnEveryNode: true,
-      replicas: environment.podsConfig.general.replicas,
+      replicas: environment.resources.general.replicas,
       image,
       env: {
         ...environment.envVars,

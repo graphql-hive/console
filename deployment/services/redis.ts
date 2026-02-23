@@ -20,8 +20,8 @@ export function deployRedis(input: { environment: Environment }) {
     password: redisPassword,
   }).deploy({
     limits: {
-      memory: input.environment.podsConfig.redis.memoryLimit,
-      cpu: input.environment.podsConfig.redis.cpuLimit,
+      memory: input.environment.resources.redis.memoryLimit,
+      cpu: input.environment.resources.redis.cpuLimit,
     },
   });
 

@@ -32,7 +32,7 @@ export function deploySchemaPolicy({
     livenessProbe: '/_health',
     startupProbe: '/_health',
     exposesMetrics: true,
-    replicas: environment.podsConfig.general.replicas,
+    replicas: environment.resources.general.replicas,
     pdb: true,
   })
     .withConditionalSecret(sentry.enabled, 'SENTRY_DSN', sentry.secret, 'dsn')

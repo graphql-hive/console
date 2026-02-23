@@ -1,3 +1,4 @@
+import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import { deployApp } from './services/app';
 import { deployAWSArtifactsLambdaFunction } from './services/aws-artifacts-lambda-function';
@@ -99,6 +100,7 @@ const cdn = deployCFCDN({
 const lambdaFunction = deployAWSArtifactsLambdaFunction({
   s3Mirror,
   environment,
+  region: aws.getRegionOutput().region,
 });
 
 const broker = deployCFBroker({

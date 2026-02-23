@@ -5,10 +5,18 @@ import * as pulumi from '@pulumi/pulumi';
 import { Environment } from './environment';
 import { S3 } from './s3';
 
+// We do this here in order to fail early if the file is missing
+const LAMBDA_ARTIFACT_CONTENT = readFileSync(
+  process.env.AWS_LAMBDA_ARTIFACT_PATH ||
+    resolve(__dirname, '../../packages/services/cdn-worker/dist/index.lambda.mjs'),
+  'utf-8',
+);
+
 export function deployAWSArtifactsLambdaFunction(args: {
   environment: Environment;
   /** Note: We run this mirror only on the AWS S3 Bucket on purpose. */
   s3Mirror: S3;
+  region: pulumi.Output<string>;
 }) {
   const lambdaRole = new aws.iam.Role('awsLambdaArtifactsHandlerRole', {
     assumeRolePolicy: {
@@ -35,16 +43,10 @@ export function deployAWSArtifactsLambdaFunction(args: {
     packageType: 'Zip',
     architectures: ['arm64'],
     code: new pulumi.asset.AssetArchive({
-      'index.mjs': new pulumi.asset.StringAsset(
-        readFileSync(
-          process.env.AWS_LAMBDA_ARTIFACT_PATH ||
-            resolve(__dirname, '../../packages/services/cdn-worker/dist/index.lambda.mjs'),
-          'utf-8',
-        ),
-      ),
+      'index.mjs': new pulumi.asset.StringAsset(LAMBDA_ARTIFACT_CONTENT),
     }),
     role: lambdaRole.arn,
-    region: 'us-east-2',
+    region: args.region,
     environment: {
       variables: {
         // This could be done better with secrets manager etc.
@@ -55,17 +57,15 @@ export function deployAWSArtifactsLambdaFunction(args: {
         AWS_S3_ACCESSS_KEY_SECRET: args.s3Mirror.secret.raw.secretAccessKey,
       },
     },
-    // 448mb
-    memorySize: 448,
-    // 10 seconds
-    timeout: 10,
+    memorySize: args.environment.resources.cdnAwsMirror.memory,
+    timeout: args.environment.resources.cdnAwsMirror.executionTimeout,
   });
 
   const example = new aws.lambda.FunctionUrl('awsLambdaArtifactsHandlerUrl', {
     functionName: awsLambdaArtifactsHandler.arn,
     authorizationType: 'NONE',
     invokeMode: 'BUFFERED',
-    region: 'us-east-2',
+    region: args.region,
   });
 
   return {

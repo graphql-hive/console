@@ -121,8 +121,8 @@ export class Observability {
       replicaCount: 1,
       resources: {
         limits: {
-          cpu: this.environment.podsConfig.internalObservability.cpuLimit,
-          memory: this.environment.podsConfig.internalObservability.memoryLimit,
+          cpu: this.environment.resources.internalObservability.cpuLimit,
+          memory: this.environment.resources.internalObservability.memoryLimit,
         },
       },
       podAnnotations: {

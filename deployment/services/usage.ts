@@ -47,7 +47,7 @@ export function deployUsage({
       {
         image,
         imagePullSecret: docker.secret,
-        replicas: environment.podsConfig.usageService.replicas,
+        replicas: environment.resources.usageService.replicas,
         readinessProbe: {
           initialDelaySeconds: 10,
           periodSeconds: 5,
@@ -83,10 +83,10 @@ export function deployUsage({
         pdb: true,
         autoScaling: {
           cpu: {
-            cpuAverageToScale: environment.podsConfig.usageService.cpuAverageToScale,
-            limit: environment.podsConfig.usageService.cpuLimit,
+            cpuAverageToScale: environment.resources.usageService.cpuAverageToScale,
+            limit: environment.resources.usageService.cpuLimit,
           },
-          maxReplicas: environment.podsConfig.usageService.maxReplicas,
+          maxReplicas: environment.resources.usageService.maxReplicas,
         },
       },
       [

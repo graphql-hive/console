@@ -46,7 +46,7 @@ export function deployApp({
     'app',
     {
       image,
-      replicas: environment.podsConfig.general.replicas,
+      replicas: environment.resources.general.replicas,
       imagePullSecret: docker.secret,
       readinessProbe: '/api/health',
       livenessProbe: '/api/health',

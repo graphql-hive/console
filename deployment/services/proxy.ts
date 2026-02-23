@@ -35,9 +35,9 @@ export function deployProxy({
   })
     .deployProxy({
       envoy: {
-        replicas: environment.podsConfig.envoy.replicas,
-        cpu: environment.podsConfig.envoy.cpuLimit,
-        memory: environment.podsConfig.envoy.memoryLimit,
+        replicas: environment.resources.envoy.replicas,
+        cpu: environment.resources.envoy.cpuLimit,
+        memory: environment.resources.envoy.memoryLimit,
       },
       tracing: observability.enabled
         ? { collectorService: observability.observability!.otlpCollectorService }

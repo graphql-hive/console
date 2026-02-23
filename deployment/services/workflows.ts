@@ -53,7 +53,7 @@ export function deployWorkflows({
         startupProbe: '/_health',
         exposesMetrics: true,
         image,
-        replicas: environment.podsConfig.general.replicas,
+        replicas: environment.resources.general.replicas,
       },
       [],
     )
