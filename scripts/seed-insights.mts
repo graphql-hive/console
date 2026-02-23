@@ -26,7 +26,9 @@ const { createOrganization, createProject, createToken, publishSchema } = await 
 const { execute } = await import('../integration-tests/testkit/graphql');
 const { legacyCollect } = await import('../integration-tests/testkit/usage');
 const { generateUnique, getServiceHost } = await import('../integration-tests/testkit/utils');
-const { TargetAccessScope, ProjectType } = await import('../integration-tests/testkit/gql/graphql');
+const { TargetAccessScope, ProjectType, SavedFilterVisibilityType } = await import(
+  '../integration-tests/testkit/gql/graphql',
+);
 const { CreateSavedFilterMutation, TrackSavedFilterViewMutation } = await import(
   '../integration-tests/testkit/saved-filters'
 );
@@ -645,8 +647,7 @@ async function main() {
   async function createSavedFilter(input: {
     name: string;
     description?: string;
-    type: string;
-    visibility: string;
+    visibility: (typeof SavedFilterVisibilityType)[keyof typeof SavedFilterVisibilityType];
     insightsFilter?: Record<string, unknown>;
   }) {
     const result = await execute({
@@ -656,7 +657,6 @@ async function main() {
           target: { bySelector: targetSelector },
           name: input.name,
           description: input.description,
-          type: input.type,
           visibility: input.visibility,
           insightsFilter: input.insightsFilter,
         },
@@ -696,7 +696,7 @@ async function main() {
   const savedFilterDefs: Array<{
     name: string;
     description?: string;
-    visibility: 'SHARED' | 'PRIVATE';
+    visibility: (typeof SavedFilterVisibilityType)[keyof typeof SavedFilterVisibilityType];
     operationNames: string[];
     clientFilters?: Array<{ name: string; versions?: string[] }>;
     dateRange?: { from: string; to: string };
@@ -705,7 +705,7 @@ async function main() {
     {
       name: 'High Traffic Operations',
       description: 'Most frequently called queries',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(0, 20),
       clientFilters: [{ name: 'web-app' }, { name: 'ios-app' }],
       dateRange: { from: 'now-7d', to: 'now' },
@@ -714,7 +714,7 @@ async function main() {
     {
       name: 'Mobile Clients',
       description: 'iOS and Android traffic',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(10, 25),
       clientFilters: [
         { name: 'ios-app', versions: ['2.0.0', '2.5.0', '2.10.0', '2.20.0'] },
@@ -726,7 +726,7 @@ async function main() {
     {
       name: 'My Debug View',
       description: 'Debugging slow mutations',
-      visibility: 'PRIVATE',
+      visibility: SavedFilterVisibilityType.Private,
       operationNames: allOpNames.slice(30, 35),
       clientFilters: [{ name: 'graphql-playground' }],
       dateRange: { from: 'now-1d', to: 'now' },
@@ -735,7 +735,7 @@ async function main() {
     {
       name: 'Web App — All Queries',
       description: 'All query operations from the web app',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(0, 50),
       clientFilters: [{ name: 'web-app' }],
       dateRange: { from: 'now-7d', to: 'now' },
@@ -744,7 +744,7 @@ async function main() {
     {
       name: 'Mutations Only',
       description: 'All mutation operations across all clients',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.filter(n => n.startsWith('CreateReview')),
       dateRange: { from: 'now-14d', to: 'now' },
       views: 89,
@@ -752,7 +752,7 @@ async function main() {
     {
       name: 'Admin Dashboard',
       description: 'Operations from the admin dashboard client',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.filter(n => n.startsWith('Dashboard')),
       clientFilters: [{ name: 'admin-dashboard' }],
       dateRange: { from: 'now-7d', to: 'now' },
@@ -761,7 +761,7 @@ async function main() {
     {
       name: 'BFF Layer',
       description: 'Mobile BFF service traffic',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(50, 80),
       clientFilters: [{ name: 'mobile-bff' }],
       dateRange: { from: 'now-30d', to: 'now' },
@@ -770,7 +770,7 @@ async function main() {
     {
       name: 'Error Investigation',
       description: 'Operations with known error patterns',
-      visibility: 'PRIVATE',
+      visibility: SavedFilterVisibilityType.Private,
       operationNames: allOpNames.slice(80, 90),
       clientFilters: [{ name: 'android-app', versions: ['3.0.0'] }],
       dateRange: { from: 'now-7d', to: 'now' },
@@ -779,7 +779,7 @@ async function main() {
     {
       name: 'Character Detail Queries',
       description: 'All character detail operations',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.filter(n => n.startsWith('GetCharacterDetails')),
       dateRange: { from: 'now-90d', to: 'now' },
       views: 195,
@@ -787,7 +787,7 @@ async function main() {
     {
       name: 'Deep Queries',
       description: 'Queries with nested friend relationships',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(3, 8),
       dateRange: { from: 'now-14d', to: 'now' },
       views: 43,
@@ -795,7 +795,7 @@ async function main() {
     {
       name: 'iOS Latest Versions',
       description: 'Recent iOS app versions only',
-      visibility: 'PRIVATE',
+      visibility: SavedFilterVisibilityType.Private,
       operationNames: allOpNames.slice(0, 15),
       clientFilters: [{ name: 'ios-app', versions: ['2.20.0', '2.24.0'] }],
       dateRange: { from: 'now-7d', to: 'now' },
@@ -804,7 +804,7 @@ async function main() {
     {
       name: 'Analytics Worker',
       description: 'Background analytics service operations',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.filter(n => n.startsWith('Analytics')),
       clientFilters: [{ name: 'analytics-worker' }],
       dateRange: { from: 'now-30d', to: 'now' },
@@ -813,7 +813,7 @@ async function main() {
     {
       name: 'Playground Exploration',
       description: 'Ad-hoc queries from GraphQL Playground',
-      visibility: 'PRIVATE',
+      visibility: SavedFilterVisibilityType.Private,
       operationNames: allOpNames.slice(100, 120),
       clientFilters: [{ name: 'graphql-playground' }],
       dateRange: { from: 'now-1d', to: 'now' },
@@ -822,7 +822,7 @@ async function main() {
     {
       name: 'Droid & Human Types',
       description: 'Operations touching Droid and Human types',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: [
         ...allOpNames.filter(n => n.startsWith('GetDroid')),
         ...allOpNames.filter(n => n.startsWith('GetHuman')),
@@ -833,7 +833,7 @@ async function main() {
     {
       name: 'Production Canary',
       description: 'Canary release monitoring — latest client versions',
-      visibility: 'SHARED',
+      visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(0, 10),
       clientFilters: [
         { name: 'web-app', versions: ['1.14.0'] },
@@ -852,7 +852,6 @@ async function main() {
     const result = await createSavedFilter({
       name: def.name,
       description: def.description,
-      type: 'INSIGHTS',
       visibility: def.visibility,
       insightsFilter: {
         operationHashes: ops,
