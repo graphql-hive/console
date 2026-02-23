@@ -74,6 +74,7 @@ export function deployGraphQL({
   sentry: Sentry;
 }) {
   const apiConfig = new pulumi.Config('api');
+  const supertokensConfig = new pulumi.Config('supertokens');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
 
   const hiveConfig = new pulumi.Config('hive');
@@ -94,9 +95,9 @@ export function deployGraphQL({
   const hiveUsageSecret = new ServiceSecret('hive-usage', {
     usageAccessToken: hiveConfig.requireSecret('usageAccessToken'),
   });
-  const supertokensSecrets = new ServiceSecret('supertokens', {
-    refreshTokenKey: apiConfig.requireSecret('refreshTokenKey'),
-    accessTokenKey: apiConfig.requireSecret('accessTokenKey'),
+  const supertokensSecrets = new ServiceSecret('supertokens-at-home', {
+    refreshTokenKey: supertokensConfig.requireSecret('refreshTokenKey'),
+    accessTokenKey: supertokensConfig.requireSecret('accessTokenKey'),
   });
 
   return (
