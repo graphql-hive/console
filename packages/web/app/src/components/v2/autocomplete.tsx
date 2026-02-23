@@ -1,5 +1,4 @@
 import { ComponentPropsWithRef, ReactElement, useEffect, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown } from 'lucide-react';
 import Highlighter from 'react-highlight-words';
 import Select, {
@@ -10,6 +9,7 @@ import Select, {
   Props as SelectProps,
   StylesConfig,
 } from 'react-select';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { SelectOption } from './radix-select';
 
 const ITEM_HEIGHT = 40;

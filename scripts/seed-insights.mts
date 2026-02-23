@@ -27,7 +27,7 @@ const { execute } = await import('../integration-tests/testkit/graphql');
 const { legacyCollect } = await import('../integration-tests/testkit/usage');
 const { generateUnique, getServiceHost } = await import('../integration-tests/testkit/utils');
 const { TargetAccessScope, ProjectType, SavedFilterVisibilityType } = await import(
-  '../integration-tests/testkit/gql/graphql',
+  '../integration-tests/testkit/gql/graphql'
 );
 const { CreateSavedFilterMutation, TrackSavedFilterViewMutation } = await import(
   '../integration-tests/testkit/saved-filters'
