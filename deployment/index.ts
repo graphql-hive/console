@@ -100,7 +100,6 @@ const cdn = deployCFCDN({
 const lambdaFunction = deployAWSArtifactsLambdaFunction({
   s3Mirror,
   environment,
-  region: aws.getRegionOutput().region,
 });
 
 const broker = deployCFBroker({

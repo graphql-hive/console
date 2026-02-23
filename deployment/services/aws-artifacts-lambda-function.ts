@@ -16,7 +16,6 @@ export function deployAWSArtifactsLambdaFunction(args: {
   environment: Environment;
   /** Note: We run this mirror only on the AWS S3 Bucket on purpose. */
   s3Mirror: S3;
-  region: pulumi.Output<string>;
 }) {
   const lambdaRole = new aws.iam.Role('awsLambdaArtifactsHandlerRole', {
     assumeRolePolicy: {
@@ -46,7 +45,6 @@ export function deployAWSArtifactsLambdaFunction(args: {
       'index.mjs': new pulumi.asset.StringAsset(LAMBDA_ARTIFACT_CONTENT),
     }),
     role: lambdaRole.arn,
-    region: args.region,
     environment: {
       variables: {
         // This could be done better with secrets manager etc.
@@ -65,7 +63,6 @@ export function deployAWSArtifactsLambdaFunction(args: {
     functionName: awsLambdaArtifactsHandler.arn,
     authorizationType: 'NONE',
     invokeMode: 'BUFFERED',
-    region: args.region,
   });
 
   return {
