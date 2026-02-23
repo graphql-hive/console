@@ -530,7 +530,7 @@ export function OperationsList({
     if (!query.fetching) {
       refetch();
     }
-  }, [period]);
+  }, [period, filter]);
 
   return (
     <OperationsFallback

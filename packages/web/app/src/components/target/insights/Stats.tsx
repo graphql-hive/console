@@ -1086,7 +1086,7 @@ export function OperationsStats({
     if (!query.fetching) {
       refetch();
     }
-  }, [period]);
+  }, [period, filter]);
 
   const isFetching = query.fetching;
   const isError = !!query.error;
