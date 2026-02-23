@@ -62,6 +62,7 @@ import { PG_POOL_CONFIG } from './modules/shared/providers/pg-pool';
 import { PrometheusConfig } from './modules/shared/providers/prometheus-config';
 import { HivePubSub, PUB_SUB_CONFIG } from './modules/shared/providers/pub-sub';
 import { REDIS_INSTANCE } from './modules/shared/providers/redis';
+import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter';
 import { S3_CONFIG, type S3Config } from './modules/shared/providers/s3-config';
 import { Storage } from './modules/shared/providers/storage';
 import { RateLimitConfig, WEB_APP_URL } from './modules/shared/providers/tokens';
@@ -220,6 +221,7 @@ export function createRegistry({
     CryptoProvider,
     InMemoryRateLimitStore,
     InMemoryRateLimiter,
+    RedisRateLimiter,
     {
       provide: AuditLogS3Config,
       useValue: auditLogS3Config,

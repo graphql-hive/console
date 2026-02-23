@@ -296,3 +296,6 @@ type GraphQLPayload = {
       documentId: string;
     }
 );
+
+// @ts-expect-error for testing purposes ok
+window.__YOU_ARE_FIRED_attemptSessionRefresh = () => Session.attemptRefreshingSession();
