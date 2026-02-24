@@ -53,21 +53,6 @@ function createExternalConfig(config: Project['externalComposition']) {
 
 export type SchemaProvider = ReturnType<typeof schemaProvider>;
 
-function toUpperSnakeCase(str: string) {
-  // Use a regular expression to find uppercase letters and insert underscores
-  // The 'g' flag ensures all occurrences are replaced.
-  // The 'replace' function uses a callback to add an underscore before the matched uppercase letter.
-  const snakeCaseString = str.replace(/([A-Z])/g, (match, p1, offset) => {
-    // If it's the first character, don't add an underscore
-    if (offset === 0) {
-      return p1;
-    }
-    return `_${p1}`;
-  });
-
-  return snakeCaseString.toUpperCase();
-}
-
 export function convertProjectType(t: ProjectType) {
   return (
     {
