@@ -159,6 +159,7 @@ export function createRegistry({
     baseUrl: string;
     rateLimit: null | {
       ipHeaderName: string;
+      bypassKey: string | null;
     };
   } | null;
   schemaConfig: SchemaModuleConfig;
