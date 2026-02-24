@@ -62,18 +62,20 @@ export class RedisRateLimiter {
       ip = req.headers[this.config.config.ipHeaderName] as string;
     }
 
-    const key = `server-rate-limiter:${req.routeOptions.url}:${sha256(ip)}`;
+    const ipHash = sha256(ip);
+
+    const key = `server-rate-limiter:${req.routeOptions.url}:${ipHash}`;
 
     const current = await this.redis.incr(key);
     if (current === 1) {
       await this.redis.expire(key, timeWindowSeconds);
     }
     if (current > maxActionsPerTimeWindow) {
-      this.logger.debug('request is rate limited (ip=%s)', ip);
+      this.logger.debug('request is rate limited (ip_hash=%s)', ipHash);
       return true;
     }
 
-    this.logger.debug('request is not rate limited (ip=%s)', ip);
+    this.logger.debug('request is not rate limited (ip_hash=%s)', ipHash);
     return false;
   }
 }
