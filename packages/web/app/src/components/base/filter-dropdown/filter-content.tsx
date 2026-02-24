@@ -47,11 +47,22 @@ export function FilterContent({
   const [search, setSearch] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Snapshot which items were selected when the dropdown opened.
+  // This sort order is frozen — toggling items won't move them.
+  // Resets naturally when the portal unmounts on close and remounts on reopen.
+  const [initialSelectedKeys] = useState(() => new Set(selectedItems.map(getKey)));
+
   const filteredItems = useMemo(() => {
     const matched = items.filter(item => item.name.toLowerCase().includes(search.toLowerCase()));
-    // Sort unavailable items to the bottom while preserving relative order
-    return matched.sort((a, b) => (a.unavailable ? 1 : 0) - (b.unavailable ? 1 : 0));
-  }, [items, search]);
+    return matched.sort((a, b) => {
+      // Initially-selected items first
+      const aSelected = initialSelectedKeys.has(getKey(a)) ? 0 : 1;
+      const bSelected = initialSelectedKeys.has(getKey(b)) ? 0 : 1;
+      if (aSelected !== bSelected) return aSelected - bSelected;
+      // Unavailable items to the bottom within each group
+      return (a.unavailable ? 1 : 0) - (b.unavailable ? 1 : 0);
+    });
+  }, [items, search, initialSelectedKeys]);
 
   const virtualizer = useVirtualizer({
     count: filteredItems.length,
