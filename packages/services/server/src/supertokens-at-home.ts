@@ -1428,7 +1428,7 @@ export async function registerSupertokensAtHome(
         supertokensStore,
         {
           hiveUser: hiveUser,
-          oidcIntegrationId: null,
+          oidcIntegrationId: oidcIntegration.id,
           superTokensUserId: supertokensUser.userId,
         },
         {
