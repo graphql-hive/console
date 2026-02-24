@@ -1,4 +1,12 @@
-import { createContext, Fragment, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
+import {
+  createContext,
+  Fragment,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { ArrowRight, ChevronRight } from 'lucide-react';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
@@ -243,7 +251,9 @@ function Menu({
             sideOffset={resolvedSideOffset}
             className="outline-none"
           >
-            <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth })}>{popupContent}</BaseMenu.Popup>
+            <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth })}>
+              {popupContent}
+            </BaseMenu.Popup>
           </BaseMenu.Positioner>
         </BaseMenu.Portal>
       </BaseMenu.SubmenuRoot>
@@ -260,7 +270,9 @@ function Menu({
           sideOffset={resolvedSideOffset}
           className="outline-none"
         >
-          <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth })}>{popupContent}</BaseMenu.Popup>
+          <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth })}>
+            {popupContent}
+          </BaseMenu.Popup>
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
     </BaseMenu.Root>
