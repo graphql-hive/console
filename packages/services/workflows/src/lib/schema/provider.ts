@@ -29,6 +29,7 @@ const SchemaProposalChangesModel = z.object({
   serviceName: z.string().optional(),
   serviceUrl: z.string().optional(),
   schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
+  createdAt: z.string(),
 });
 
 function createExternalConfig(config: Project['externalComposition']) {
@@ -233,7 +234,8 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
       }
 
-      // fetch all latest schemas
+      // fetch all latest schemas. Support up to 2_000 subgraphs.
+      const maxLoops = 100;
       const services = await this.latestComposableSchemas({
         targetId: args.targetId,
         pool: args.pool,
@@ -241,6 +243,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
 
       let nextCursor = cursor;
       // collect changes in paginated requests to avoid stalling the db
+      let i = 0;
       do {
         const result = await args.pool.query<unknown>(sql`
           SELECT
@@ -248,6 +251,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             , c."service_name" as "serviceName"
             , c."service_url" as "serviceUrl"
             , c."schema_proposal_changes" as "schemaProposalChanges"
+            , c.created_at as "createdAt"
           FROM
             "schema_checks" as c
             INNER JOIN (
@@ -273,7 +277,8 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
               AND COALESCE(c."service_name", '') = cc."service"
               AND c."created_at" = cc."maxdate"
           WHERE
-            c."schema_proposal_id" = ${args.proposalId}
+            c."target_id" = ${args.targetId}
+            AND c."schema_proposal_id" = ${args.proposalId}
             ${
               cursor
                 ? sql`
@@ -313,7 +318,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         if (changes.length === 20) {
           nextCursor = {
             // Keep the created at because we want the same set of checks when joining on the "latest".
-            createdAt: nextCursor?.createdAt ?? now,
+            createdAt: nextCursor?.createdAt ?? changes[0]?.createdAt ?? now,
             id: changes[changes.length - 1].id,
           };
         } else {
@@ -332,7 +337,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             }
           }
         }
-      } while (nextCursor);
+      } while (nextCursor && ++i < maxLoops);
 
       return services;
     },
