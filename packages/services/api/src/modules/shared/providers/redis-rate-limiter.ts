@@ -1,6 +1,7 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { type Redis } from 'ioredis';
 import { type FastifyRequest } from '@hive/service-common';
+import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from './logger';
 import { REDIS_INSTANCE } from './redis';
 import { RateLimitConfig } from './tokens';
@@ -34,6 +35,15 @@ export class RedisRateLimiter {
       return false;
     }
 
+    if (this.config.config.bypassKey) {
+      const bypassRateLimitKey = req.cookies?.['sBypassRateLimitKey'];
+
+      if (bypassRateLimitKey === this.config.config.bypassKey) {
+        this.logger.debug('rate limit bypassed via provided key');
+        return false;
+      }
+    }
+
     req.routeOptions.url;
 
     let ip = req.ip;
@@ -46,18 +56,18 @@ export class RedisRateLimiter {
       ip = req.headers[this.config.config.ipHeaderName] as string;
     }
 
-    const key = `server-rate-limiter:${req.routeOptions.url}:${ip}`;
+    const key = `server-rate-limiter:${req.routeOptions.url}:${sha256(ip)}`;
 
     const current = await this.redis.incr(key);
     if (current === 1) {
       await this.redis.expire(key, timeWindowSeconds);
     }
     if (current > maxActionsPerTimeWindow) {
-      this.logger.debug('request is rate limited');
+      this.logger.debug('request is rate limited (ip=%s)', ip);
       return true;
     }
 
-    this.logger.debug('request is not rate limited');
+    this.logger.debug('request is not rate limited (ip=%s)', ip);
     return false;
   }
 }
