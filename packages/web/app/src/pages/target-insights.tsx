@@ -317,8 +317,8 @@ function OperationsView({
                     viewId: undefined,
                     operations: undefined,
                     clients: undefined,
-                    from: undefined,
-                    to: undefined,
+                    from: presetLast7Days.range.from,
+                    to: presetLast7Days.range.to,
                   }),
                 });
               }}
