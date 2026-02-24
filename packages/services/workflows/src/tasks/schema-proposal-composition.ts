@@ -6,9 +6,8 @@
  */
 
 import { z } from 'zod';
-// @todo -- duplicate this or export it from @hive/api to avoid using a file path
-import { createSchemaObject, ProjectType } from '@hive/api/shared/entities.js';
 import { defineTask, implementTask } from '../kit.js';
+import { createSchemaObject } from '../lib/schema/provider';
 
 function extendWithBase(schemas: Array<{ sdl: string }>, baseSchema: string | null) {
   if (!baseSchema) {
@@ -55,7 +54,7 @@ export const task = implementTask(SchemaProposalCompositionTask, async args => {
 
   try {
     const result = await args.context.schema.composeAndValidate(
-      schemas[0].type as ProjectType,
+      schemas[0].type,
       extendWithBase(schemas, baseSchema).map(s => createSchemaObject(s)),
       {
         /** Whether external composition should be used (only Federation) */

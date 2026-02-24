@@ -1,9 +1,9 @@
 import type { DatabasePool } from 'slonik';
 import type { Logger } from '@graphql-hive/logger';
-import type { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub.js';
+import type { HivePubSub } from '@graphql-hive/pubsub';
 import type { EmailProvider } from './lib/emails/providers.js';
-import { SchemaProvider } from './lib/schema/provider.js';
-import { RequestBroker } from './lib/webhooks/send-webhook.js';
+import type { SchemaProvider } from './lib/schema/provider.js';
+import type { RequestBroker } from './lib/webhooks/send-webhook.js';
 
 export type Context = {
   logger: Logger;

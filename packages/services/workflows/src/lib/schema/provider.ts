@@ -1,11 +1,11 @@
-import { parse, print } from 'graphql';
+import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
 import { DatabasePool, sql } from 'slonik';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
 import type { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
-import { Project, SchemaObject } from '@hive/api';
-import { ComposeAndValidateResult, ProjectType } from '@hive/api/shared/entities';
+import type { Project, SchemaObject } from '@hive/api';
+import type { ComposeAndValidateResult } from '@hive/api/shared/entities';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
 import { decodeCreatedAtAndUUIDIdBasedCursor, HiveSchemaChangeModel } from '@hive/storage';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
@@ -52,16 +52,58 @@ function createExternalConfig(config: Project['externalComposition']) {
   return null;
 }
 
+export class GraphQLDocumentStringInvalidError extends Error {
+  constructor(message: string, location?: SourceLocation) {
+    const locationString = location ? ` at line ${location.line}, column ${location.column}` : '';
+    super(`The provided SDL is not valid${locationString}\n: ${message}`);
+  }
+}
+
+export type CreateSchemaObjectInput = {
+  sdl: string;
+  serviceName?: string | null;
+  serviceUrl?: string | null;
+};
+
+export const emptySource = '*';
+
+export function createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {
+  let document: DocumentNode;
+
+  try {
+    document = parse(schema.sdl, {
+      noLocation: true,
+    });
+  } catch (err) {
+    if (err instanceof GraphQLError) {
+      throw new GraphQLDocumentStringInvalidError(err.message, err.locations?.[0]);
+    }
+    throw err;
+  }
+
+  return {
+    document,
+    raw: schema.sdl,
+    source: schema.serviceName ?? emptySource,
+    url: schema.serviceUrl ?? null,
+  };
+}
+
 export type SchemaProvider = ReturnType<typeof schemaProvider>;
 
-export function convertProjectType(t: ProjectType) {
-  return (
+export function convertProjectType(t: string) {
+  const result = (
     {
-      [ProjectType.FEDERATION]: 'federation',
-      [ProjectType.SINGLE]: 'single',
-      [ProjectType.STITCHING]: 'stitching',
+      ['FEDERATION']: 'federation',
+      ['SINGLE']: 'single',
+      ['STITCHING']: 'stitching',
     } as const
   )[t];
+
+  if (!result) {
+    throw new Error('Invalid project type.');
+  }
+  return result;
 }
 
 export function schemaProvider(providerConfig: SchemaProviderConfig) {
@@ -82,7 +124,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
      * - In case the incoming request is canceled, the call to the schema service is aborted
      */
     async composeAndValidate(
-      projectType: ProjectType,
+      projectType: string,
       schemas: SchemaObject[],
       config: {
         /** Whether external composition should be used (only Federation) */

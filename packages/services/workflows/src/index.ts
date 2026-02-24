@@ -2,9 +2,8 @@ import { run } from 'graphile-worker';
 import { createPubSub } from 'graphql-yoga';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
+import type { HivePubSub } from '@graphql-hive/pubsub';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
-import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
-import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import {
   createServer,
   registerShutdown,
@@ -18,6 +17,7 @@ import { env } from './environment.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
+import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
 
 if (env.sentry) {
