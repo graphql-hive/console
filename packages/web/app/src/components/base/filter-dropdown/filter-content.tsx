@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
 import { FilterListSearch } from '@/components/base/filter-dropdown/filter-list-search';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ItemRow } from './item-row';
@@ -45,24 +45,30 @@ export function FilterContent({
   valuesLabel = 'values',
 }: FilterContentProps) {
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Snapshot which items were selected when the dropdown opened.
   // This sort order is frozen — toggling items won't move them.
   // Resets naturally when the portal unmounts on close and remounts on reopen.
-  const [initialSelectedKeys] = useState(() => new Set(selectedItems.map(getKey)));
+  const initialSelectedKeys = useRef<Set<string>>(null!);
+  if (initialSelectedKeys.current === null) {
+    initialSelectedKeys.current = new Set(selectedItems.map(getKey));
+  }
 
   const filteredItems = useMemo(() => {
-    const matched = items.filter(item => item.name.toLowerCase().includes(search.toLowerCase()));
+    const matched = items.filter(item =>
+      item.name.toLowerCase().includes(deferredSearch.toLowerCase()),
+    );
     return matched.sort((a, b) => {
       // Initially-selected items first
-      const aSelected = initialSelectedKeys.has(getKey(a)) ? 0 : 1;
-      const bSelected = initialSelectedKeys.has(getKey(b)) ? 0 : 1;
+      const aSelected = initialSelectedKeys.current.has(getKey(a)) ? 0 : 1;
+      const bSelected = initialSelectedKeys.current.has(getKey(b)) ? 0 : 1;
       if (aSelected !== bSelected) return aSelected - bSelected;
       // Unavailable items to the bottom within each group
       return (a.unavailable ? 1 : 0) - (b.unavailable ? 1 : 0);
     });
-  }, [items, search, initialSelectedKeys]);
+  }, [items, deferredSearch]);
 
   const virtualizer = useVirtualizer({
     count: filteredItems.length,
@@ -72,24 +78,36 @@ export function FilterContent({
     paddingStart: 8,
   });
 
-  function toggleItem(item: FilterItem) {
-    const key = getKey(item);
-    if (isItemSelected(item, selectedItems)) {
-      onChange(selectedItems.filter(s => getKey(s) !== key));
-    } else {
-      onChange([...selectedItems, { id: item.id, name: item.name, values: null }]);
-    }
-  }
+  // Keep a ref to selectedItems so callbacks below stay stable across renders.
+  const selectedItemsRef = useRef(selectedItems);
+  selectedItemsRef.current = selectedItems;
 
-  function updateItemValues(item: FilterItem, values: string[] | null) {
-    const key = getKey(item);
-    const existing = selectedItems.find(s => getKey(s) === key);
-    if (existing) {
-      onChange(selectedItems.map(s => (getKey(s) === key ? { ...s, values } : s)));
-    } else {
-      onChange([...selectedItems, { id: item.id, name: item.name, values }]);
-    }
-  }
+  const toggleItem = useCallback(
+    (item: FilterItem) => {
+      const key = getKey(item);
+      const current = selectedItemsRef.current;
+      if (current.some(s => getKey(s) === key)) {
+        onChange(current.filter(s => getKey(s) !== key));
+      } else {
+        onChange([...current, { id: item.id, name: item.name, values: null }]);
+      }
+    },
+    [onChange],
+  );
+
+  const updateItemValues = useCallback(
+    (item: FilterItem, values: string[] | null) => {
+      const key = getKey(item);
+      const current = selectedItemsRef.current;
+      const existing = current.find(s => getKey(s) === key);
+      if (existing) {
+        onChange(current.map(s => (getKey(s) === key ? { ...s, values } : s)));
+      } else {
+        onChange([...current, { id: item.id, name: item.name, values }]);
+      }
+    },
+    [onChange],
+  );
 
   const listHeight = Math.min(virtualizer.getTotalSize(), MAX_LIST_HEIGHT);
 
@@ -135,9 +153,9 @@ export function FilterContent({
                       item={item}
                       selected={selected}
                       indeterminate={hasPartialValues}
-                      onToggle={() => toggleItem(item)}
+                      onToggle={toggleItem}
                       selection={selection}
-                      onValuesChange={values => updateItemValues(item, values)}
+                      onValuesChange={updateItemValues}
                       valuesLabel={valuesLabel}
                       unavailable={item.unavailable}
                     />

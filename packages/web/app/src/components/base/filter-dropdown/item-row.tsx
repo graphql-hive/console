@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Menu, MenuItem } from '@/components/base/menu/menu';
 import type { FilterItem, FilterSelection } from './types';
@@ -7,9 +8,9 @@ interface ItemRowProps {
   item: FilterItem;
   selected: boolean;
   indeterminate: boolean;
-  onToggle: () => void;
+  onToggle: (item: FilterItem) => void;
   selection: FilterSelection | null;
-  onValuesChange: (values: string[] | null) => void;
+  onValuesChange: (item: FilterItem, values: string[] | null) => void;
   valuesLabel: string;
   unavailable?: boolean;
 }
@@ -25,7 +26,7 @@ function ItemName({ name, unavailable }: { name: string; unavailable?: boolean }
   );
 }
 
-export function ItemRow({
+export const ItemRow = memo(function ItemRow({
   item,
   selected,
   indeterminate,
@@ -39,7 +40,7 @@ export function ItemRow({
 
   if (!hasValues) {
     return (
-      <MenuItem closeOnClick={false} onClick={onToggle}>
+      <MenuItem closeOnClick={false} onClick={() => onToggle(item)}>
         <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
         <ItemName name={item.name} unavailable={unavailable} />
       </MenuItem>
@@ -49,7 +50,7 @@ export function ItemRow({
   return (
     <Menu
       trigger={
-        <MenuItem onClick={onToggle}>
+        <MenuItem onClick={() => onToggle(item)}>
           <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
           <ItemName name={item.name} unavailable={unavailable} />
         </MenuItem>
@@ -63,10 +64,10 @@ export function ItemRow({
           itemName={item.name}
           values={item.values}
           selectedValues={selected ? (selection?.values ?? null) : []}
-          onValuesChange={onValuesChange}
+          onValuesChange={values => onValuesChange(item, values)}
           valuesLabel={valuesLabel}
         />,
       ]}
     />
   );
-}
+});

@@ -1,6 +1,6 @@
 type FilterListSearchProps = {
   label: string;
-  onSearch: (value: React.SetStateAction<string>) => void;
+  onSearch: (value: string) => void;
   value: string;
 };
 
