@@ -368,6 +368,9 @@ export interface schema_proposal_reviews {
 export interface schema_proposals {
   author: string;
   comments_count: number;
+  composition_status: string | null;
+  composition_status_reason: string | null;
+  composition_timestamp: Date | null;
   created_at: Date;
   description: string;
   id: string;
