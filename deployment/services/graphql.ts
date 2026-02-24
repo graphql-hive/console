@@ -74,6 +74,7 @@ export function deployGraphQL({
   sentry: Sentry;
 }) {
   const apiConfig = new pulumi.Config('api');
+  const supertokensConfig = new pulumi.Config('supertokens');
   const apiEnv = apiConfig.requireObject<Record<string, string>>('env');
 
   const hiveConfig = new pulumi.Config('hive');
@@ -93,6 +94,10 @@ export function deployGraphQL({
   });
   const hiveUsageSecret = new ServiceSecret('hive-usage', {
     usageAccessToken: hiveConfig.requireSecret('usageAccessToken'),
+  });
+  const supertokensSecrets = new ServiceSecret('supertokens-at-home', {
+    refreshTokenKey: supertokensConfig.requireSecret('refreshTokenKey'),
+    accessTokenKey: supertokensConfig.requireSecret('accessTokenKey'),
   });
 
   return (
@@ -149,6 +154,7 @@ export function deployGraphQL({
               ? observability.tracingEndpoint
               : '',
           S3_MIRROR: '1',
+          SUPERTOKENS_AT_HOME: '1',
         },
         exposesMetrics: true,
         port: 4000,
@@ -215,6 +221,9 @@ export function deployGraphQL({
         persistedDocumentsSecret,
         'cdnAccessKeyId',
       )
+      // Supertokens
+      .withSecret('SUPERTOKENS_REFRESH_TOKEN_KEY', supertokensSecrets, 'refreshTokenKey')
+      .withSecret('SUPERTOKENS_ACCESS_TOKEN_KEY', supertokensSecrets, 'accessTokenKey')
       // Zendesk
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_SUBDOMAIN', zendesk.secret, 'subdomain')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_USERNAME', zendesk.secret, 'username')
