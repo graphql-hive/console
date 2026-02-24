@@ -854,6 +854,9 @@ importers:
       got:
         specifier: 14.4.7
         version: 14.4.7(patch_hash=f7660444905ddadee251ff98241119fb54f5fec1e673a428192da361d5636299)
+      graphile-worker:
+        specifier: 0.16.6
+        version: 0.16.6(typescript@5.7.3)
       graphql:
         specifier: 16.9.0
         version: 16.9.0
@@ -1636,6 +1639,9 @@ importers:
       '@graphql-hive/logger':
         specifier: 1.0.9
         version: 1.0.9(pino@10.3.0)
+      '@graphql-inspector/core':
+        specifier: 7.1.2
+        version: 7.1.2(graphql@16.9.0)
       '@graphql-inspector/patch':
         specifier: 0.1.2
         version: 0.1.2(graphql@16.9.0)

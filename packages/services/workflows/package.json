@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@graphql-hive/logger": "1.0.9",
+    "@graphql-inspector/core": "7.1.2",
     "@graphql-inspector/patch": "0.1.2",
     "@graphql-yoga/redis-event-target": "3.0.3",
     "@hive/api": "workspace:*",

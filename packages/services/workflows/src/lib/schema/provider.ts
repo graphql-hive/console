@@ -2,7 +2,7 @@ import { parse, print } from 'graphql';
 import { DatabasePool, sql } from 'slonik';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import { Change } from '@graphql-inspector/core';
+import type { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
 import { Project, SchemaObject } from '@hive/api';
 import { ComposeAndValidateResult, ProjectType } from '@hive/api/shared/entities';
@@ -169,7 +169,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
     }) {
       const { pool, ...state } = args;
       await pool.query<unknown>(
-        sql`/* updateSchemaProposalComposition */ UPDATE schema_proposals SET composition_status = ${args.status}, composition_timestamp = ${args.timestamp} WHERE id=${args.proposalId}`,
+        sql`/* updateSchemaProposalComposition */ UPDATE schema_proposals SET composition_status = ${state.status}, composition_timestamp = ${state.timestamp} WHERE id=${state.proposalId}`,
       );
     },
 
