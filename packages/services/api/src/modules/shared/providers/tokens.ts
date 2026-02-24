@@ -7,6 +7,7 @@ export class RateLimitConfig {
   constructor(
     public readonly config: null | {
       ipHeaderName: string;
+      bypassKey: string | null;
     },
   ) {}
 }

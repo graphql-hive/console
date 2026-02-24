@@ -1,3 +1,5 @@
+import c from 'node:crypto';
+import { parse as parseCookie } from 'cookie-es';
 import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
@@ -8,7 +10,17 @@ import { OrganizationMembers } from '../../organization/providers/organization-m
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
 import { EmailVerification } from '../providers/email-verification';
+import { SessionInfo, SuperTokensStore } from '../providers/supertokens-store';
 import { AuthNStrategy, AuthorizationPolicyStatement, Session, UserActor } from './authz';
+import {
+  AccessTokenKeyContainer,
+  isAccessToken,
+  parseAccessToken,
+} from './supertokens-at-home/crypto';
+
+function sha256(str: string) {
+  return c.createHash('sha256').update(str).digest('hex');
+}
 
 export class SuperTokensCookieBasedSession extends Session {
   public superTokensUserId: string;
@@ -155,32 +167,27 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
+  private supertokensStore: SuperTokensStore;
   private emailVerification: EmailVerification | null;
+  private accessTokenKey: AccessTokenKeyContainer | null;
 
   constructor(deps: {
     logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
     emailVerification: EmailVerification | null;
+    accessTokenKey: AccessTokenKeyContainer | null;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
     this.emailVerification = deps.emailVerification;
+    this.supertokensStore = new SuperTokensStore(deps.storage.pool, deps.logger);
+    this.accessTokenKey = deps.accessTokenKey;
   }
 
-  private async verifySuperTokensSession(args: {
-    req: FastifyRequest;
-    reply: FastifyReply;
-  }): Promise<SuperTokensSessionPayload | null> {
-    this.logger.debug('Attempt verifying SuperTokens session');
-
-    if (args.req.headers['ignore-session']) {
-      this.logger.debug('Ignoring session due to header');
-      return null;
-    }
-
+  private async _verifySuperTokensCoreSession(args: { req: FastifyRequest; reply: FastifyReply }) {
     let session: SessionNode.SessionContainer | undefined;
 
     try {
@@ -219,11 +226,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
 
     const payload = session.getAccessTokenPayload();
 
-    if (!payload) {
-      this.logger.error('No access token payload found');
-      return null;
-    }
-
     const result = SuperTokensSessionPayloadModel.safeParse(payload);
 
     if (result.success === false) {
@@ -240,13 +242,133 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       });
     }
 
+    return result.data;
+  }
+
+  private async _verifySuperTokensAtHomeSession(
+    args: {
+      req: FastifyRequest;
+      reply: FastifyReply;
+    },
+    accessTokenKey: AccessTokenKeyContainer,
+  ) {
+    let session: SessionInfo | null = null;
+
+    args.req.log.debug('attempt parsing access token from cookie');
+
+    const cookie = parseCookie(args.req.headers.cookie ?? '');
+    let rawAccessToken: string | undefined = cookie['sAccessToken'];
+
+    if (!rawAccessToken) {
+      args.req.log.debug('attempt parsing access token authorization header');
+      rawAccessToken = args.req.headers.authorization?.replace('Bearer ', '')?.trim();
+    }
+
+    if (!rawAccessToken || !isAccessToken(rawAccessToken)) {
+      args.req.log.debug('access token is not identified as a supertokens access token.');
+      return null;
+    }
+
+    let accessToken;
+    try {
+      accessToken = parseAccessToken(rawAccessToken, accessTokenKey.publicKey);
+    } catch (err) {
+      args.req.log.debug('Failed verifying the access token. Ask for refresh.');
+      throw new HiveError('Invalid session', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
+    if (accessToken.exp < Date.now() / 1000) {
+      args.req.log.debug('The access token is expired. Ask for refresh.');
+      throw new HiveError('Invalid session', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
+    session = await this.supertokensStore.getSessionInfo(accessToken.sessionHandle);
+
+    if (!session) {
+      args.req.log.debug('The access token is expired, no session was found. Ask for refresh.');
+      return null;
+    }
+
+    if (session.expiresAt < Date.now()) {
+      args.req.log.debug('The session is expired.');
+      throw new HiveError('Invalid session.', {
+        extensions: {
+          code: 'UNAUTHENTICATED',
+        },
+      });
+    }
+
+    if (
+      accessToken.parentRefreshTokenHash1 &&
+      sha256(accessToken.parentRefreshTokenHash1) !== session.refreshTokenHash2
+    ) {
+      args.req.log.debug(
+        'The access token is expired. A new access token has been issued for this session. Require refresh.',
+      );
+
+      // old access token in use, there was alreadya refresh
+      throw new HiveError('Invalid session.', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
+    const result = SuperTokensSessionPayloadModel.safeParse(JSON.parse(session.sessionData));
+
+    if (result.success === false) {
+      this.logger.error('SuperTokens session payload is invalid');
+      this.logger.debug('SuperTokens session payload: %s', session.sessionData);
+      this.logger.debug(
+        'SuperTokens session parsing errors: %s',
+        JSON.stringify(result.error.flatten().fieldErrors),
+      );
+      throw new HiveError('Invalid access token provided', {
+        extensions: {
+          code: 'UNAUTHENTICATED',
+        },
+      });
+    }
+
+    return result.data;
+  }
+
+  private async verifySuperTokensSession(args: {
+    req: FastifyRequest;
+    reply: FastifyReply;
+  }): Promise<SuperTokensSessionPayload | null> {
+    this.logger.debug('Attempt verifying SuperTokens session');
+
+    if (args.req.headers['ignore-session']) {
+      this.logger.debug('Ignoring session due to header');
+      return null;
+    }
+
+    const sessionData = this.accessTokenKey
+      ? await this._verifySuperTokensAtHomeSession(args, this.accessTokenKey)
+      : await this._verifySuperTokensCoreSession(args);
+
+    if (!sessionData) {
+      this.logger.debug('No session found');
+      return null;
+    }
+
     if (this.emailVerification) {
       // Check whether the email is already verified.
       // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
       const { verified } = await this.emailVerification.checkUserEmailVerified({
-        userIdentityId: session.getUserId(),
-        email: result.data.email,
+        userIdentityId: sessionData.superTokensUserId,
+        email: sessionData.email,
       });
+
       if (!verified) {
         throw new HiveError('Your account is not verified. Please verify your email address.', {
           extensions: {
@@ -257,7 +379,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     }
 
     this.logger.debug('SuperTokens session resolved.');
-    return result.data;
+    return sessionData;
   }
 
   async parse(args: {
