@@ -12,6 +12,7 @@ const setLocalStorage = (key: string, value: unknown) => {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Laboratory
+    theme="dark"
     defaultEndpoint={getLocalStorage('endpoint') ?? null}
     onEndpointChange={endpoint => {
       setLocalStorage('endpoint', endpoint ?? '');

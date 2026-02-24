@@ -8,9 +8,19 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/v2/toggle-group';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
@@ -20,13 +30,6 @@ import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Laboratory,
   LaboratoryCollection,
   LaboratoryCollectionOperation,
@@ -36,9 +39,6 @@ import {
   LaboratoryPreflight,
   LaboratorySettings,
   LaboratoryTab,
-  Tabs,
-  TabsList,
-  TabsTrigger,
 } from '@graphql-hive/laboratory';
 import { Link as RouterLink } from '@tanstack/react-router';
 
@@ -656,7 +656,7 @@ function LaboratoryPageContent(props: {
                   </TabsTrigger>
                   <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                     Hive Laboratory
-                    <div className="bg-neutral-2 size-2 rounded-full" />
+                    <div className="bg-accent ml-1 size-2 rounded-full" />
                   </TabsTrigger>
                 </TabsList>
               </Tabs>

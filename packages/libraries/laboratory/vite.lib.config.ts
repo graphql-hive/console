@@ -39,10 +39,8 @@ export default defineConfig({
       exclude: ['src/main.tsx'],
       insertTypesEntry: true,
       staticImport: true,
-      outDir: 'dist',
+      outDirs: ['dist'],
       tsconfigPath: './tsconfig.app.json',
-      skipDiagnostics: true,
-      logDiagnostics: false,
     }),
   ],
   resolve: {

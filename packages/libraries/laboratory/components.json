@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/labaratory/components",
-    "utils": "@/labaratory/lib/utils",
-    "ui": "@/labaratory/components/ui",
-    "lib": "@/labaratory/lib",
-    "hooks": "@/labaratory/hooks"
+    "components": "@/laboratory/components",
+    "utils": "@/laboratory/lib/utils",
+    "ui": "@/laboratory/components/ui",
+    "lib": "@/laboratory/lib",
+    "hooks": "@/laboratory/hooks"
   },
   "registries": {}
 }

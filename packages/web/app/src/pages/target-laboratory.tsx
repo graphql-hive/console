@@ -58,9 +58,9 @@ import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRedirect } from '@/lib/access/common';
 import { Kit } from '@/lib/kit';
-import { Tabs, TabsList, TabsTrigger } from '@graphql-hive/laboratory';
 
 const explorer = explorerPlugin();
 
@@ -474,7 +474,7 @@ function LaboratoryPageContent(props: {
                 </TabsTrigger>
                 <TabsTrigger value="hive-laboratory" className="px-2 py-0">
                   Hive Laboratory
-                  <div className="bg-neutral-2 size-2 rounded-full" />
+                  <div className="bg-accent ml-1 size-2 rounded-full" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
