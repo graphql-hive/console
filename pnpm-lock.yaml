@@ -648,7 +648,6 @@ importers:
       vitest:
         specifier: 4.0.9
         version: 4.0.9(@types/debug@4.1.12)(@types/node@25.0.2)(jiti@2.6.1)(less@4.2.0)(lightningcss@1.31.1)(msw@2.12.7(@types/node@25.0.2)(typescript@5.7.3))(terser@5.37.0)(tsx@4.19.2)(yaml@2.5.0)
-    publishDirectory: dist
 
   packages/libraries/router: {}
 
@@ -782,7 +781,7 @@ importers:
         version: link:../../libraries/core/dist
       '@graphql-hive/pubsub':
         specifier: workspace:*
-        version: link:../../libraries/pubsub/dist
+        version: link:../../libraries/pubsub
       '@graphql-hive/signal':
         specifier: 1.0.0
         version: 1.0.0
@@ -1681,7 +1680,7 @@ importers:
         version: 1.0.9(pino@10.3.0)
       '@graphql-hive/pubsub':
         specifier: workspace:*
-        version: link:../../libraries/pubsub/dist
+        version: link:../../libraries/pubsub
       '@graphql-inspector/core':
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
@@ -1724,9 +1723,6 @@ importers:
       graphql:
         specifier: 16.9.0
         version: 16.9.0
-      graphql-modules:
-        specifier: 3.1.1
-        version: 3.1.1(graphql@16.9.0)
       graphql-yoga:
         specifier: 5.13.3
         version: 5.13.3(graphql@16.9.0)
