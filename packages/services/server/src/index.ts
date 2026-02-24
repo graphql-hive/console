@@ -10,7 +10,6 @@ import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
-import { hostname } from 'os';
 import { createPubSub } from 'graphql-yoga';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
@@ -22,9 +21,12 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
+import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
+import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
+import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
 import { TargetsBySlugCache } from '@hive/api/modules/target/providers/targets-by-slug-cache';
 import { createArtifactRequestHandler } from '@hive/cdn-script/artifact-handler';
@@ -38,23 +40,13 @@ import {
   registerShutdown,
   registerTRPC,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
 import { createConnectionString, createStorage as createPostgreSQLStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
-import {
-  contextLinesIntegration,
-  dedupeIntegration,
-  extraErrorDataIntegration,
-} from '@sentry/integrations';
-import {
-  captureException,
-  httpIntegration,
-  init,
-  linkedErrorsIntegration,
-  SeverityLevel,
-} from '@sentry/node';
+import { captureException, SeverityLevel } from '@sentry/node';
 import { createServerAdapter } from '@whatwg-node/server';
 import { AuthN } from '../../api/src/modules/auth/lib/authz';
 import { OrganizationAccessTokenStrategy } from '../../api/src/modules/auth/lib/organization-access-token-strategy';
@@ -70,6 +62,7 @@ import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
 import { initSupertokens, oidcIdLookup } from './supertokens';
+import { registerSupertokensAtHome } from './supertokens-at-home';
 
 class CorsError extends Error {
   constructor() {
@@ -92,33 +85,15 @@ export async function main() {
     tracing.setup();
   }
 
-  init({
-    serverName: hostname(),
-    dist: 'server',
-    enabled: !!env.sentry,
-    environment: env.environment,
-    dsn: env.sentry?.dsn,
-    enableTracing: false,
-    tracesSampleRate: 1,
-    ignoreTransactions: [
-      'POST /graphql', // Transaction created for a cached response (@graphql-yoga/plugin-response-cache)
-    ],
-    release: env.release,
-    integrations: [
-      httpIntegration({ tracing: false }),
-      contextLinesIntegration({
-        frameContextLines: 0,
-      }),
-      linkedErrorsIntegration(),
-      extraErrorDataIntegration({
-        depth: 2,
-      }),
-      dedupeIntegration(),
-    ],
-    maxBreadcrumbs: 10,
-    defaultIntegrations: false,
-    autoSessionTracking: false,
-  });
+  if (env.sentry) {
+    sentryInit({
+      dist: 'server',
+      enabled: !!env.sentry,
+      environment: env.environment,
+      dsn: env.sentry.dsn,
+      release: env.release,
+    });
+  }
 
   const server = await createServer({
     name: 'graphql-api',
@@ -157,10 +132,14 @@ export async function main() {
       return res.status(403).send(err.message);
     }
 
-    // We can not upgrade Supertokens Node as it removed some APIs we rely on for
-    // our SSO flow. This the as `any` cast here.
-    // The code is still compatible and purely a type error.
-    return supertokensErrorHandler()(err, req, res as any);
+    if (env.supertokens.type === 'core') {
+      // We can not upgrade Supertokens Node as it removed some APIs we rely on for
+      // our SSO flow. This the as `any` cast here.
+      // The code is still compatible and purely a type error.
+      return supertokensErrorHandler()(err, req, res as any);
+    }
+    server.log.error(err);
+    return res.status(500);
   });
   await server.register(cors, (_: unknown): FastifyCorsOptionsDelegateCallback => {
     return (req, callback) => {
@@ -188,7 +167,9 @@ export async function main() {
           'graphql-client-name',
           'ignore-session',
           'x-request-id',
-          ...supertokens.getAllCORSHeaders(),
+          ...(env.supertokens.type === 'atHome'
+            ? ['rid', 'fdi-version', 'anti-csrf', 'authorization', 'st-auth-mode']
+            : supertokens.getAllCORSHeaders()),
         ],
       });
     };
@@ -398,10 +379,6 @@ export async function main() {
       graphiqlEndpoint: graphqlPath,
       registry,
       signature,
-      supertokens: {
-        connectionUri: env.supertokens.connectionURI,
-        apiKey: env.supertokens.apiKey,
-      },
       isProduction: env.environment !== 'development',
       release: env.release,
       hiveUsageConfig: env.hive,
@@ -422,6 +399,10 @@ export async function main() {
               emailVerification: env.auth.requireEmailVerification
                 ? registry.injector.get(EmailVerification)
                 : null,
+              accessTokenKey:
+                env.supertokens.type === 'atHome'
+                  ? new AccessTokenKeyContainer(env.supertokens.secrets.accessTokenKey)
+                  : null,
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>
@@ -472,22 +453,28 @@ export async function main() {
 
     const crypto = new CryptoProvider(env.encryptionSecret);
 
-    initSupertokens({
-      storage,
-      crypto,
-      logger: server.log,
-      redis,
-      taskScheduler,
-      broadcastLog(id, message) {
-        pubSub.publish('oidcIntegrationLogs', id, {
-          timestamp: new Date().toISOString(),
-          message,
-        });
-      },
-    });
+    function broadcastLog(oidcId: string, message: string) {
+      pubSub.publish('oidcIntegrationLogs', oidcId, {
+        timestamp: new Date().toISOString(),
+        message,
+      });
+    }
+
+    if (env.supertokens.type == 'core') {
+      initSupertokens({
+        storage,
+        crypto,
+        logger: server.log,
+        redis,
+        taskScheduler,
+        broadcastLog,
+      });
+    }
 
     await server.register(formDataPlugin);
-    await server.register(supertokensFastifyPlugin);
+    if (env.supertokens.type == 'core') {
+      await server.register(supertokensFastifyPlugin);
+    }
 
     await registerTRPC(server, {
       router: internalApiRouter,
@@ -595,6 +582,19 @@ export async function main() {
       });
       return;
     });
+
+    if (env.supertokens.type === 'atHome') {
+      await registerSupertokensAtHome(
+        server,
+        storage,
+        registry.injector.get(TaskScheduler),
+        registry.injector.get(CryptoProvider),
+        registry.injector.get(RedisRateLimiter),
+        registry.injector.get(OAuthCache),
+        broadcastLog,
+        env.supertokens.secrets,
+      );
+    }
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

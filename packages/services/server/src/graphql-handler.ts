@@ -1,14 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { FastifyBaseLogger, FastifyReply, FastifyRequest, RouteHandlerMethod } from 'fastify';
-import {
-  GraphQLError,
-  Kind,
-  print,
-  ValidationContext,
-  ValidationRule,
-  type DefinitionNode,
-  type OperationDefinitionNode,
-} from 'graphql';
+import { GraphQLError, ValidationContext, ValidationRule } from 'graphql';
 import {
   createYoga,
   Plugin,
@@ -20,19 +12,18 @@ import hyperid from 'hyperid';
 import { isGraphQLError } from '@envelop/core';
 import { useGraphQlJit } from '@envelop/graphql-jit';
 import { useGraphQLModules } from '@envelop/graphql-modules';
-import { useSentry } from '@envelop/sentry';
 import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry';
 import { hive, trace } from '@graphql-hive/plugin-opentelemetry/api';
 import { useHive } from '@graphql-hive/yoga';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
+import { SuperTokensCookieBasedSession } from '@hive/api/modules/auth/lib/supertokens-strategy';
 import { cleanRequestId, type TracingInstance } from '@hive/service-common';
-import { runWithAsyncContext } from '@sentry/node';
+import { captureException, runWithAsyncContext, withScope } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
 import { asyncStorage } from './async-storage';
 import type { HivePersistedDocumentsConfig, HiveUsageConfig } from './environment';
 import { useArmor } from './use-armor';
-import { extractUserId, useSentryUser } from './use-sentry-user';
 
 export const reqIdGenerate = hyperid({ fixedLength: true });
 
@@ -45,10 +36,6 @@ export interface GraphQLHandlerOptions {
   registry: Registry;
   signature: string;
   tracing?: TracingInstance;
-  supertokens: {
-    connectionUri: string;
-    apiKey: string;
-  };
   isProduction: boolean;
   hiveUsageConfig: HiveUsageConfig;
   hivePersistedDocumentsConfig: HivePersistedDocumentsConfig;
@@ -61,6 +48,10 @@ export interface Context extends RegistryContext {
   req: FastifyRequest;
   reply: FastifyReply;
   session: Session;
+  params?: {
+    query: string;
+    operationName?: string | null;
+  };
 }
 
 const NoIntrospection: ValidationRule = (context: ValidationContext) => ({
@@ -81,26 +72,81 @@ function hasFastifyRequest(ctx: unknown): ctx is {
   return !!ctx && typeof ctx === 'object' && 'req' in ctx;
 }
 
-export function useHiveErrorHandler(fallbackHandler: (err: Error) => void): Plugin {
-  return useErrorHandler(({ errors, context }): void => {
-    // Not sure what changed, but the `context` is now an object with a contextValue property.
-    // We previously relied on the `context` being the `contextValue` itself.
-    const ctx = ('contextValue' in context ? context.contextValue : context) as Context;
+export function useHiveErrorHandler(unexpectedErrorLogger: (err: unknown) => void): Plugin {
+  return useErrorHandler(({ errors, context: unsafeContest, phase }): void => {
+    // these are not errors we need to report ever, the user send wrong input
+    if (phase === 'parse' || phase === 'validate') {
+      return;
+    }
 
-    for (const error of errors) {
-      if (isGraphQLError(error) && error.originalError) {
-        console.error(error);
-        console.error(error.originalError);
-        continue;
-      } else {
-        console.error(error);
-      }
+    // `contextValue` is present if the error comes up during execution, otherwise the context itself is the context :D
+    const context: Context = (unsafeContest.contextValue ?? unsafeContest) as any;
 
-      if (hasFastifyRequest(ctx)) {
-        ctx.req.log.error(error);
-      } else {
-        fallbackHandler(error);
+    function reportError(error: Error) {
+      withScope(scope => {
+        const userId = (context?.session as SuperTokensCookieBasedSession | null | undefined)
+          ?.userId;
+
+        scope.setTransactionName(context.params?.operationName ?? 'unknown graphql operation');
+        scope.setContext('Extra Info', {
+          operationName: context.params?.operationName,
+          operation: context.params?.query,
+          userId,
+        });
+
+        scope.setUser({
+          id: userId ?? undefined,
+        });
+
+        scope.setTags({
+          supertokens_user_id: (
+            context?.session as SuperTokensCookieBasedSession | null | undefined
+          )?.superTokensUserId,
+          hive_user_id: userId,
+          request_id: context.requestId,
+        });
+
+        if (error instanceof GraphQLError) {
+          const path = error.path?.join(' > ') ?? '';
+
+          captureException(error.originalError ?? error, {
+            fingerprint: ['graphql', path],
+          });
+          return;
+        }
+
+        captureException(error, {
+          fingerprint: ['graphql'],
+        });
+      });
+    }
+
+    try {
+      for (const error of errors) {
+        // always log the error (this is always the unmasked error)
+        context.req.log.error(error);
+
+        if (isGraphQLError(error)) {
+          // in this case it is a GraphQL validation error
+          // or an expected error we do not need to log/report
+          if (!error.originalError || isGraphQLError(error.originalError)) {
+            continue;
+          }
+
+          context.req.log.error(error.originalError);
+          reportError(error);
+          continue;
+        } else {
+          // if the error is not a GraphQL error we should always report.
+          reportError(error);
+        }
       }
+    } catch (err) {
+      // this should never never happen - but in case it does we better capture it :)
+      captureException(err);
+      // in case contextual logging (based on request) is not possible
+      unexpectedErrorLogger(err);
+      throw err;
     }
   });
 }
@@ -118,49 +164,6 @@ function useNoIntrospection(params: {
       addValidationRule(NoIntrospection);
     },
   };
-}
-
-export function useHiveSentry() {
-  return useSentry({
-    startTransaction: false,
-    renameTransaction: false,
-    /**
-     * When it's not `null`, the plugin modifies the error object.
-     * We end up with an unintended error masking, because the GraphQLYogaError is replaced with GraphQLError (without error.originalError).
-     */
-    eventIdKey: null,
-    operationName: () => 'graphql',
-    includeRawResult: false,
-    includeResolverArgs: false,
-    includeExecuteVariables: true,
-    configureScope(args, scope) {
-      // Get the operation name from the request, or use the operation name from the document.
-      const operationName =
-        args.operationName ??
-        args.document.definitions.find(isOperationDefinitionNode)?.name?.value ??
-        'unknown';
-
-      scope.setContext('Extra Info', {
-        operationName,
-        variables: JSON.stringify(args.variableValues),
-        operation: print(args.document),
-        userId: extractUserId(args.contextValue as any),
-      });
-    },
-    appendTags: ({ contextValue }) => {
-      const supertokens_user_id = extractUserId(contextValue as any);
-      const request_id = (contextValue as Context).requestId;
-
-      return {
-        supertokens_user_id,
-        request_id,
-      };
-    },
-    skip(args) {
-      // It's the readiness check
-      return args.operationName === 'readiness';
-    },
-  });
 }
 
 export function useHiveTracing(): Plugin {
@@ -192,10 +195,8 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
     logging: options.logger,
     plugins: [
       useArmor(),
-      useHiveSentry(),
-      useSentryUser(),
-      useHiveErrorHandler(error => {
-        server.logger.error(error);
+      useHiveErrorHandler(err => {
+        options.logger.error(err, 'Unexpected error occured while handling exception.');
       }),
       useExtendContext(async context => ({
         session: await options.authN.authenticate(context),
@@ -318,7 +319,3 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
     );
   };
 };
-
-function isOperationDefinitionNode(def: DefinitionNode): def is OperationDefinitionNode {
-  return def.kind === Kind.OPERATION_DEFINITION;
-}

@@ -363,6 +363,7 @@ export class OIDCIntegrationsProvider {
     oidcIntegrationId: string;
     oidcUserJoinOnly: boolean | null;
     oidcUserAccessOnly: boolean | null;
+    requireInvitation: boolean | null;
   }) {
     if (this.isEnabled() === false) {
       return {

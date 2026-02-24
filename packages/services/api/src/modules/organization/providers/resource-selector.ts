@@ -147,6 +147,10 @@ export class ResourceSelector {
       return null;
     }
 
+    if (target.projectId !== project.projectId) {
+      return null;
+    }
+
     return {
       ...project,
       targetId: target.id,
@@ -160,7 +164,7 @@ export class ResourceSelector {
     }
     const latest = await this.storage.getMaybeLatestValidVersion({ targetId: target.targetId });
     if (latest) {
-      return await this.storage.pool.manyFirst<string>(
+      return await this.storage.pool.anyFirst<string>(
         sql`/* getServicesFromTargetForResourceSelector */
           SELECT
             lower(sl.service_name) as service_name
@@ -181,7 +185,7 @@ export class ResourceSelector {
   }
 
   async getAppDeploymentsFromTargetForResourceSelector(target: TargetForResourceSelector) {
-    const apps = await this.storage.pool.manyFirst<string>(
+    const apps = await this.storage.pool.anyFirst<string>(
       sql`
         SELECT DISTINCT ON ("name")
           "name"

@@ -1,4 +1,4 @@
-import { concatAST, print } from 'graphql';
+import { concatAST, print, stripIgnoredCharacters } from 'graphql';
 import { CodeFileLoader } from '@graphql-tools/code-file-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import { JsonFileLoader } from '@graphql-tools/json-file-loader';
@@ -167,6 +167,6 @@ export async function loadSchema(
   return print(concatAST(sources.map(s => s.document!)));
 }
 
-export function minifySchema(schema: string): string {
-  return schema.replace(/\s+/g, ' ').trim();
+export function minifySchema(schema: string) {
+  return stripIgnoredCharacters(schema);
 }

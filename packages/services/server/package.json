@@ -3,22 +3,25 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "exports": {
+    "./supertokens-at-home/shared": "./src/supertokens-at-home/shared.ts"
+  },
   "scripts": {
     "build": "tsx ../../../scripts/runify.ts src/index.ts src/persisted-documents-worker.ts && tsx ./scripts/copy-persisted-operations.mts",
     "dev": "tsup-node --config ../../../configs/tsup/dev.config.node.ts src/dev.ts src/persisted-documents-worker.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@envelop/core": "5.0.2",
+    "@envelop/core": "5.5.1",
     "@envelop/graphql-jit": "8.0.3",
     "@envelop/graphql-modules": "9.1.0",
     "@envelop/opentelemetry": "6.3.1",
-    "@envelop/sentry": "7.1.1",
     "@envelop/types": "5.0.0",
     "@escape.tech/graphql-armor-max-aliases": "2.6.2",
     "@escape.tech/graphql-armor-max-depth": "2.4.2",
     "@escape.tech/graphql-armor-max-directives": "2.3.1",
     "@escape.tech/graphql-armor-max-tokens": "2.5.1",
+    "@fastify/cookie": "11.0.2",
     "@fastify/cors": "11.2.0",
     "@fastify/formbody": "8.0.2",
     "@graphql-hive/plugin-opentelemetry": "1.3.0",
@@ -32,7 +35,6 @@
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@hive/workflows": "workspace:*",
-    "@sentry/integrations": "7.114.0",
     "@sentry/node": "7.120.2",
     "@swc/core": "1.13.5",
     "@theguild/federation-composition": "0.21.3",
@@ -46,6 +48,7 @@
     "graphql-yoga": "5.13.3",
     "hyperid": "3.3.0",
     "ioredis": "5.8.2",
+    "openid-client": "6.8.2",
     "pino-pretty": "11.3.0",
     "prom-client": "15.1.3",
     "reflect-metadata": "0.2.2",

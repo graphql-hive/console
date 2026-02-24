@@ -30,3 +30,23 @@ export async function clickHouseQuery<T>(query: string): Promise<{
 
   return response.json();
 }
+
+export async function clickHouseInsert<T>(query: string): Promise<void> {
+  const clickhouseAddress = await getServiceHost('clickhouse', 8123);
+  const endpoint = `http://${clickhouseAddress}/?default_format=JSON`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    body: query,
+    headers: {
+      Accept: 'application/json',
+      'Accept-Encoding': 'gzip',
+      Authorization: `Basic ${credentials}`,
+    },
+  });
+
+  if (response.status !== 200) {
+    const body = await response.text();
+
+    throw new Error(`Failed CH query ${query} with status ${response.status} and body:\n${body}`);
+  }
+}

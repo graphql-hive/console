@@ -10,6 +10,9 @@ const commonAuthorFields = z.object({
 
 export const staticImageDataSchema = z.object({
   src: z.string(),
+  width: z.number(),
+  height: z.number(),
+  blurDataURL: z.string().optional(),
 }) as unknown as z.ZodType<StaticImageData>;
 
 export const Author = z.intersection(
@@ -271,6 +274,11 @@ export const authors = {
     name: 'Michael Skorokhodov',
     link: 'https://github.com/mskorokhodov',
     github: 'mskorokhodov',
+  },
+  iha: {
+    name: 'Iha Shin',
+    link: 'https://github.com/XiNiHa',
+    github: 'XiNiHa',
   },
 } satisfies Record<string, Author>;
 

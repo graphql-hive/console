@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
-import { hostname } from 'os';
 import Redis from 'ioredis';
 import { PrometheusConfig } from '@hive/api/modules/shared/providers/prometheus-config';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -10,6 +9,7 @@ import {
   createServer,
   registerShutdown,
   reportReadiness,
+  sentryInit,
   startMetrics,
   TracingInstance,
 } from '@hive/service-common';
@@ -44,8 +44,7 @@ async function main() {
   }
 
   if (env.sentry) {
-    Sentry.init({
-      serverName: hostname(),
+    sentryInit({
       dist: 'usage',
       enabled: !!env.sentry,
       environment: env.environment,

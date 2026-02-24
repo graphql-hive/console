@@ -1,0 +1,26 @@
+directive @inline on FIELD_DEFINITION
+
+"""
+Multi line description:
+1. Foo
+2. Bar
+3. Should stay in a list format
+
+# with single line comment
+"""
+type Query {
+  # shows the status
+  # with comments on
+  # multiple lines
+  status: Status @inline value: Boolean @deprecated
+}
+
+# Another comment here
+enum Status {
+  ACTIVE INACTIVE
+  PENDING
+}
+
+type User
+extend type User { id: ID! # comment on same line
+  email: String }

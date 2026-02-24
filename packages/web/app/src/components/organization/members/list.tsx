@@ -282,7 +282,7 @@ function MemberRole(props: {
       {organization.viewerCanAssignUserRoles && (
         <Sheet.Sheet open={isOpen} onOpenChange={isOpen => setIsOpen(isOpen)}>
           <Sheet.SheetTrigger asChild>
-            <button className="text-neutral-2 font-medium transition-colors hover:underline">
+            <button className="text-accent font-medium transition-colors hover:underline">
               change
             </button>
           </Sheet.SheetTrigger>

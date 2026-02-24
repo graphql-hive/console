@@ -51,12 +51,30 @@ const artifactHandler = createArtifactRequestHandler({
 
 const artifactRouteHandler = createServerAdapter(artifactHandler as any);
 
+function tryParseEventUrl(rawPath: string): URL | null {
+  try {
+    return new URL(rawPath, 'http://localhost');
+  } catch (e) {
+    console.error(`Failed to parse URL: ${rawPath}`, e);
+    return null;
+  }
+}
+
 export async function handler(
   event: APIGatewayProxyEventV2,
   lambdaContext: Context,
 ): Promise<APIGatewayProxyResult> {
   console.log(event.requestContext.http.method, event.rawPath);
-  const url = new URL(event.rawPath, 'http://localhost');
+  const url = tryParseEventUrl(event.rawPath);
+
+  if (!url) {
+    return {
+      statusCode: 400,
+      body: 'Invalid URL',
+      isBase64Encoded: false,
+    };
+  }
+
   if (event.queryStringParameters != null) {
     for (const name in event.queryStringParameters) {
       const value = event.queryStringParameters[name];

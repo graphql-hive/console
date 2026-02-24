@@ -605,6 +605,26 @@ export default gql`
     """
     version: String! @tag(name: "public")
     """
+    The timestamp when the app deployment was created.
+    """
+    createdAt: DateTime @tag(name: "public")
+    """
+    The timestamp when the app deployment was activated.
+    """
+    activatedAt: DateTime @tag(name: "public")
+    """
+    The current status of the app deployment.
+    """
+    status: AppDeploymentStatus!
+    """
+    The timestamp when the app deployment was retired. Only present for retired deployments.
+    """
+    retiredAt: DateTime @tag(name: "public")
+    """
+    The last time a GraphQL request that used the app deployment was reported.
+    """
+    lastUsed: DateTime @tag(name: "public")
+    """
     The operations within this app deployment that use the affected schema coordinate.
     """
     affectedOperations(
