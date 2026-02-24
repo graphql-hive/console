@@ -98,6 +98,7 @@ export function deployGraphQL({
   const supertokensSecrets = new ServiceSecret('supertokens-at-home', {
     refreshTokenKey: supertokensConfig.requireSecret('refreshTokenKey'),
     accessTokenKey: supertokensConfig.requireSecret('accessTokenKey'),
+    bypassRateLimitKey: supertokensConfig.requireSecret('bypassRateLimitKey'),
   });
 
   return (
@@ -224,6 +225,7 @@ export function deployGraphQL({
       // Supertokens
       .withSecret('SUPERTOKENS_REFRESH_TOKEN_KEY', supertokensSecrets, 'refreshTokenKey')
       .withSecret('SUPERTOKENS_ACCESS_TOKEN_KEY', supertokensSecrets, 'accessTokenKey')
+      .withSecret('SUPERTOKENS_RATE_LIMIT_BYPASS_KEY', supertokensSecrets, 'bypassRateLimitKey')
       // Zendesk
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_SUBDOMAIN', zendesk.secret, 'subdomain')
       .withConditionalSecret(zendesk.enabled, 'ZENDESK_USERNAME', zendesk.secret, 'username')
