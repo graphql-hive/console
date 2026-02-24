@@ -322,6 +322,7 @@ services:
       SENTRY_DSN: '${SENTRY_DSN:-}'
       PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
       LOG_JSON: '1'
+      SCHEMA_ENDPOINT: http://schema:3002
 
   usage:
     image: '${DOCKER_REGISTRY}usage${DOCKER_TAG}'

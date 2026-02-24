@@ -51,7 +51,7 @@ export function deployWorkflows({
               ? observability.tracingEndpoint
               : '',
           LOG_JSON: '1',
-          SCHEMA_SERVICE_URL: serviceLocalEndpoint(schema.service),
+          SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
         },
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',
