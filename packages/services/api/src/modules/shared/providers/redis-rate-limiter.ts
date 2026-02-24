@@ -27,7 +27,7 @@ export class RedisRateLimiter {
     /** duration of the time window */
     timeWindowSeconds = 5 * 60,
     /** maximum amount of requests allowed in the time window */
-    maxActionsPerTimeWindow = 10,
+    maxActionsPerTimeWindow = 30,
   ) {
     if (!this.config.config) {
       this.logger.debug('rate limiting is disabled');
