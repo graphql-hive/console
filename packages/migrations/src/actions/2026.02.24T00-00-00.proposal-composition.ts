@@ -9,6 +9,7 @@ export default {
         ALTER TABLE IF EXISTS "schema_proposals"
             ADD COLUMN IF NOT EXISTS "composition_status" TEXT
           , ADD COLUMN IF NOT EXISTS "composition_timestamp" TIMESTAMPTZ
+          , ADD COLUMN IF NOT EXISTS "composition_status_reason" TEXT
         ;
       `,
     },

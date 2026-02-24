@@ -164,12 +164,19 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
     async updateSchemaProposalComposition(args: {
       proposalId: string;
       timestamp: string;
+      reason: string | null;
       status: 'error' | 'success' | 'fail';
       pool: DatabasePool;
     }) {
       const { pool, ...state } = args;
       await pool.query<unknown>(
-        sql`/* updateSchemaProposalComposition */ UPDATE schema_proposals SET composition_status = ${state.status}, composition_timestamp = ${state.timestamp} WHERE id=${state.proposalId}`,
+        sql`/* updateSchemaProposalComposition */
+          UPDATE schema_proposals
+          SET
+              composition_status = ${state.status}
+            , composition_timestamp = ${state.timestamp}
+            , composition_status_reason = ${state.reason}
+          WHERE id=${state.proposalId}`,
       );
     },
 
@@ -251,7 +258,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             , c."service_name" as "serviceName"
             , c."service_url" as "serviceUrl"
             , c."schema_proposal_changes" as "schemaProposalChanges"
-            , c.created_at as "createdAt"
+            , to_json(c."created_at") as "createdAt"
           FROM
             "schema_checks" as c
             INNER JOIN (
