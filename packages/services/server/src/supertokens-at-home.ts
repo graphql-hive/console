@@ -103,14 +103,14 @@ export async function registerSupertokensAtHome(
         parsedBody.data.formFields.find(field => field.id === 'firstName')?.value ?? null;
       const lastName =
         parsedBody.data.formFields.find(field => field.id === 'lastName')?.value ?? null;
-      const email = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
+      const rawEmail = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
-      const emailRegex = /^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/gim;
+      const emailResult = z.string().email().safeParse(rawEmail);
 
       // Verify email
-      if (!emailRegex.test(email)) {
+      if (!emailResult.success) {
         return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Invalid email provided.',
@@ -118,7 +118,7 @@ export async function registerSupertokensAtHome(
       }
 
       // Lookup user
-      let user = await supertokensStore.lookupEmailUserByEmail(email);
+      let user = await supertokensStore.lookupEmailUserByEmail(rawEmail);
 
       if (user) {
         return rep.send({
@@ -151,13 +151,13 @@ export async function registerSupertokensAtHome(
 
       // create user
       user = await supertokensStore.createEmailPasswordUser({
-        email,
+        email: emailResult.data,
         passwordHash,
       });
 
       const ensureUserResult = await storage.ensureUserExists({
         superTokensUserId: user.userId,
-        email,
+        email: emailResult.data,
         oidcIntegration: null,
         firstName,
         lastName,
