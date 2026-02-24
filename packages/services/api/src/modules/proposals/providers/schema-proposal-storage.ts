@@ -84,14 +84,10 @@ export class SchemaProposalStorage {
     };
     native: boolean;
   }) {
-    // @todo inject the graphile worker util instead of making it here?
     const tools: WorkerUtils = await makeWorkerUtils({
       pgPool: this.pool.pool,
-      // @todo
-      logger: bridgeGraphileLogger(this.logger as any), // as GraphQLHiveLogger),
+      logger: bridgeGraphileLogger(this.logger),
     });
-
-    // SchemaProposalCompositionTask
     await tools.addJob('schemaProposalComposition', { input });
   }
 
