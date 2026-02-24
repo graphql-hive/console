@@ -48,8 +48,11 @@ export function FilterDropdown({
       open={open}
       onOpenChange={setOpen}
       modal={false}
+      lockScroll
       side="bottom"
       align="start"
+      maxWidth="lg"
+      stableWidth
       sections={[
         <FilterContent
           key="content"

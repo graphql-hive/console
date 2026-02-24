@@ -320,27 +320,28 @@ function generateOperations(): OperationDef[] {
 
   // 8. Generate more unique queries to reach ~1000 by varying naming patterns
   // Simulate realistic operation names like a real codebase would have
+  // Mix of short and long prefixes to test truncation at varying widths
   const PREFIXES = [
     'Dashboard',
     'Settings',
     'Profile',
-    'Analytics',
     'Admin',
-    'Reporting',
-    'Monitor',
     'Search',
     'Feed',
-    'Notification',
-    'Billing',
-    'Team',
-    'Onboarding',
-    'Export',
-    'Import',
-    'Audit',
-    'Cache',
     'Sync',
-    'Batch',
-    'Stream',
+    'OrganizationBillingSubscriptionDetails',
+    'TargetSchemaVersionComparison',
+    'ProjectAccessTokenPermissionsManagement',
+    'UserNotificationPreferencesUpdate',
+    'SchemaRegistryExplorerTypeDetails',
+    'IntegrationWebhookDeliveryStatus',
+    'AlertChannelConfigurationValidation',
+    'PersistedOperationCollectionSync',
+    'GraphQLEndpointLatencyPercentiles',
+    'CDNAccessTokenRotation',
+    'SchemaContractCompositionValidation',
+    'MemberRoleAssignmentAuditLog',
+    'OperationBodyNormalizationPreview',
   ];
   const SUFFIXES = [
     'Query',
@@ -353,6 +354,9 @@ function generateOperations(): OperationDef[] {
     'Overview',
     'Stats',
     'Count',
+    'WithPaginationAndFilters',
+    'ByOrganizationSlug',
+    'ForDateRangeComparison',
   ];
 
   while (ops.length < 1000) {
@@ -387,14 +391,19 @@ function generateVersions(prefix: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => `${prefix}.${i}.0`);
 }
 
+// Mix of short and long client names to test truncation at varying widths
 const CLIENTS: ClientDef[] = [
   { name: 'web-app', versions: generateVersions('1', 15), weight: 30 },
-  { name: 'ios-app', versions: generateVersions('2', 25), weight: 25 },
-  { name: 'android-app', versions: generateVersions('3', 10), weight: 15 },
+  { name: 'ios', versions: generateVersions('2', 25), weight: 25 },
+  { name: 'android', versions: generateVersions('3', 10), weight: 15 },
   { name: 'graphql-playground', versions: [], weight: 5 },
-  { name: 'admin-dashboard', versions: generateVersions('1', 5), weight: 8 },
-  { name: 'mobile-bff', versions: generateVersions('0', 30), weight: 12 },
-  { name: 'analytics-worker', versions: generateVersions('1', 8), weight: 5 },
+  { name: 'admin-dashboard-internal-tools', versions: generateVersions('1', 5), weight: 8 },
+  {
+    name: 'mobile-backend-for-frontend-service',
+    versions: generateVersions('0', 30),
+    weight: 12,
+  },
+  { name: 'analytics-pipeline-worker-v2', versions: generateVersions('1', 8), weight: 5 },
 ];
 
 const TOTAL_WEIGHT = CLIENTS.reduce((s, c) => s + c.weight, 0);
@@ -707,7 +716,7 @@ async function main() {
       description: 'Most frequently called queries',
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(0, 20),
-      clientFilters: [{ name: 'web-app' }, { name: 'ios-app' }],
+      clientFilters: [{ name: 'web-app' }, { name: 'ios' }],
       dateRange: { from: 'now-7d', to: 'now' },
       views: 372,
     },
@@ -717,8 +726,8 @@ async function main() {
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(10, 25),
       clientFilters: [
-        { name: 'ios-app', versions: ['2.0.0', '2.5.0', '2.10.0', '2.20.0'] },
-        { name: 'android-app', versions: ['3.0.0', '3.5.0', '3.9.0'] },
+        { name: 'ios', versions: ['2.0.0', '2.5.0', '2.10.0', '2.20.0'] },
+        { name: 'android', versions: ['3.0.0', '3.5.0', '3.9.0'] },
       ],
       dateRange: { from: 'now-30d', to: 'now' },
       views: 156,
@@ -754,7 +763,7 @@ async function main() {
       description: 'Operations from the admin dashboard client',
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.filter(n => n.startsWith('Dashboard')),
-      clientFilters: [{ name: 'admin-dashboard' }],
+      clientFilters: [{ name: 'admin-dashboard-internal-tools' }],
       dateRange: { from: 'now-7d', to: 'now' },
       views: 64,
     },
@@ -763,7 +772,7 @@ async function main() {
       description: 'Mobile BFF service traffic',
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.slice(50, 80),
-      clientFilters: [{ name: 'mobile-bff' }],
+      clientFilters: [{ name: 'mobile-backend-for-frontend-service' }],
       dateRange: { from: 'now-30d', to: 'now' },
       views: 118,
     },
@@ -772,7 +781,7 @@ async function main() {
       description: 'Operations with known error patterns',
       visibility: SavedFilterVisibilityType.Private,
       operationNames: allOpNames.slice(80, 90),
-      clientFilters: [{ name: 'android-app', versions: ['3.0.0'] }],
+      clientFilters: [{ name: 'android', versions: ['3.0.0'] }],
       dateRange: { from: 'now-7d', to: 'now' },
       views: 7,
     },
@@ -797,7 +806,7 @@ async function main() {
       description: 'Recent iOS app versions only',
       visibility: SavedFilterVisibilityType.Private,
       operationNames: allOpNames.slice(0, 15),
-      clientFilters: [{ name: 'ios-app', versions: ['2.20.0', '2.24.0'] }],
+      clientFilters: [{ name: 'ios', versions: ['2.20.0', '2.24.0'] }],
       dateRange: { from: 'now-7d', to: 'now' },
       views: 31,
     },
@@ -806,7 +815,7 @@ async function main() {
       description: 'Background analytics service operations',
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: allOpNames.filter(n => n.startsWith('Analytics')),
-      clientFilters: [{ name: 'analytics-worker' }],
+      clientFilters: [{ name: 'analytics-pipeline-worker-v2' }],
       dateRange: { from: 'now-30d', to: 'now' },
       views: 12,
     },
@@ -837,8 +846,8 @@ async function main() {
       operationNames: allOpNames.slice(0, 10),
       clientFilters: [
         { name: 'web-app', versions: ['1.14.0'] },
-        { name: 'ios-app', versions: ['2.24.0'] },
-        { name: 'android-app', versions: ['3.9.0'] },
+        { name: 'ios', versions: ['2.24.0'] },
+        { name: 'android', versions: ['3.9.0'] },
       ],
       dateRange: { from: 'now-7d', to: 'now' },
       views: 203,

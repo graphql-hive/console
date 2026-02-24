@@ -17,8 +17,8 @@ interface ItemRowProps {
 function ItemName({ name, unavailable }: { name: string; unavailable?: boolean }) {
   return (
     <span
-      className={`flex-1 whitespace-nowrap ${unavailable ? 'text-neutral-8 line-through' : ''}`}
-      title={unavailable ? 'Not found in selected date range' : undefined}
+      className={`flex-1 truncate ${unavailable ? 'text-neutral-8 line-through' : ''}`}
+      title={name}
     >
       {name}
     </span>

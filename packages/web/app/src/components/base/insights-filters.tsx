@@ -104,6 +104,7 @@ export function InsightsFilters({
       open={open}
       onOpenChange={setOpen}
       modal={false}
+      lockScroll
       side="bottom"
       align="start"
       sections={[
@@ -111,7 +112,8 @@ export function InsightsFilters({
           <Menu
             key="operations"
             trigger={<MenuItem>Operations</MenuItem>}
-            autoWidth
+            maxWidth="lg"
+            stableWidth
             sections={[
               <FilterContent
                 key="content"
@@ -125,7 +127,8 @@ export function InsightsFilters({
           <Menu
             key="clients"
             trigger={<MenuItem>Clients</MenuItem>}
-            autoWidth
+            maxWidth="lg"
+            stableWidth
             sections={[
               <FilterContent
                 key="content"
