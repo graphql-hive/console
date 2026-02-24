@@ -20,6 +20,7 @@ import {
   SuperTokensStore,
 } from '@hive/api/modules/auth/providers/supertokens-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
+import type { OIDCIntegration } from '@hive/api/shared/entities';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
@@ -811,6 +812,7 @@ export async function registerSupertokensAtHome(
 
       let supertokensUser: EmailPasswordOrThirdPartyUser;
       let hiveUser: User;
+      let oidcIntegration: OIDCIntegration | null = null;
 
       if (parsedBody.data.thirdPartyId === 'github') {
         if (!env.auth.github) {
@@ -1214,7 +1216,7 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const oidcIntegration = await storage.getOIDCIntegrationById({
+        oidcIntegration = await storage.getOIDCIntegrationById({
           oidcIntegrationId: cacheRecord.oidIntegrationId,
         });
 
@@ -1428,7 +1430,7 @@ export async function registerSupertokensAtHome(
         supertokensStore,
         {
           hiveUser: hiveUser,
-          oidcIntegrationId: oidcIntegration.id,
+          oidcIntegrationId: oidcIntegration?.id ?? null,
           superTokensUserId: supertokensUser.userId,
         },
         {
