@@ -460,7 +460,7 @@ export async function registerSupertokensAtHome(
         return rep.status(401).send();
       }
 
-      const refreshToken = req.cookies['sRefreshToken'] ?? null;
+      const refreshToken = req.cookies?.['sRefreshToken'] ?? null;
 
       if (!refreshToken) {
         req.log.debug('No refresh token provided.');

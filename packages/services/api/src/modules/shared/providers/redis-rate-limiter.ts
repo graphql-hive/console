@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { type Redis } from 'ioredis';
 import { type FastifyRequest } from '@hive/service-common';
@@ -10,7 +11,8 @@ import { RateLimitConfig } from './tokens';
   scope: Scope.Singleton,
 })
 export class RedisRateLimiter {
-  logger: Logger;
+  private logger: Logger;
+  private bypassKey: Buffer | null;
 
   constructor(
     @Inject(REDIS_INSTANCE) private redis: Redis,
@@ -18,6 +20,7 @@ export class RedisRateLimiter {
     logger: Logger,
   ) {
     this.logger = logger.child({ module: 'RateLimiter' });
+    this.bypassKey = config.config?.bypassKey ? Buffer.from(config.config.bypassKey) : null;
   }
 
   /**
@@ -35,10 +38,13 @@ export class RedisRateLimiter {
       return false;
     }
 
-    if (this.config.config.bypassKey) {
-      const bypassRateLimitKey = req.cookies?.['sBypassRateLimitKey'];
+    if (this.bypassKey !== null && req.cookies?.['sBypassRateLimitKey']) {
+      const incomingBypassKey = Buffer.from(req.cookies['sBypassRateLimitKey']);
 
-      if (bypassRateLimitKey === this.config.config.bypassKey) {
+      if (
+        this.bypassKey.length === incomingBypassKey.length &&
+        timingSafeEqual(incomingBypassKey, this.bypassKey)
+      ) {
         this.logger.debug('rate limit bypassed via provided key');
         return false;
       }
