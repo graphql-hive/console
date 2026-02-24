@@ -38,8 +38,10 @@ export class RedisRateLimiter {
       return false;
     }
 
-    if (this.bypassKey !== null && req.cookies?.['sBypassRateLimitKey']) {
-      const incomingBypassKey = Buffer.from(req.cookies['sBypassRateLimitKey']);
+    const cookies: undefined | Record<string, undefined | string> = (req as any).cookies;
+
+    if (this.bypassKey !== null && cookies?.['sBypassRateLimitKey']) {
+      const incomingBypassKey = Buffer.from(cookies['sBypassRateLimitKey']);
 
       if (
         this.bypassKey.length === incomingBypassKey.length &&

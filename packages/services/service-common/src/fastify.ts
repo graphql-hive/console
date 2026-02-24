@@ -7,12 +7,6 @@ import { useRequestLogging } from './request-logs';
 
 export type { FastifyBaseLogger, FastifyRequest, FastifyReply } from 'fastify';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    cookies?: { [cookieName: string]: string | undefined };
-  }
-}
-
 /* eslint-disable prefer-spread */
 
 // Using spread causes typescript errors
