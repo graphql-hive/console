@@ -38,6 +38,7 @@ export function addTypeForExtensions(ast: DocumentNode) {
       const name = node.name.value;
       const entry = trackTypeDefs.get(name);
       if (isTypeExtensionNode(node)) {
+        console.log(node.kind);
         if (!entry) {
           trackTypeDefs.set(name, { state: 'EXTENSION_ONLY', kind: node.kind });
         } else if (entry.state === 'TYPE_ONLY') {

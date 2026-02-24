@@ -1,13 +1,14 @@
 /**
  * This wraps the higher level logic with schema proposals.
  */
-import { Injectable, Scope } from 'graphql-modules';
+import { Inject, Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import type { SchemaProposalStage } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
+import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
 import { SchemaProposalStorage } from './schema-proposal-storage';
 
@@ -23,8 +24,37 @@ export class SchemaProposalManager {
     private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
+    @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalsManager' });
+  }
+
+  async subscribeToSchemaProposalCompositions(args: { proposalId: string }) {
+    const proposal = await this.proposalStorage.getProposal({
+      id: args.proposalId,
+    });
+
+    if (!proposal) {
+      throw new HiveError('Proposal not found.');
+    }
+
+    const target = await this.storage.getTargetById(proposal.targetId);
+
+    if (!target) {
+      throw new HiveError('Proposal target lookup failed.');
+    }
+
+    await this.session.assertPerformAction({
+      organizationId: target.orgId,
+      action: 'schemaProposal:describe',
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+      },
+    });
+
+    return this.pubSub.subscribe('schemaProposalComposition', proposal.id);
   }
 
   async proposeSchema(args: {
@@ -131,6 +161,11 @@ export class SchemaProposalManager {
 
     // @todo check permissions for user
     const proposal = await this.proposalStorage.getProposal({ id: args.proposalId });
+
+    if (!proposal) {
+      throw new HiveError('Proposal target lookup failed.');
+    }
+
     const user = await this.session.getViewer();
     const target = await this.storage.getTargetById(proposal.targetId);
 

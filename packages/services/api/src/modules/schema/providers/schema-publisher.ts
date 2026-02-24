@@ -728,6 +728,18 @@ export class SchemaPublisher {
     const retention = await this.rateLimit.getRetention({ targetId: target.id });
     const expiresAt = retention ? new Date(Date.now() + retention * millisecondsPerDay) : null;
 
+    if (input.schemaProposalId) {
+      // @todo
+      await this.schemaProposals.runBackgroundComposition({
+        externalComposition: {
+          enabled: false,
+        },
+        native: true,
+        proposalId: input.schemaProposalId,
+        targetId: target.id,
+      });
+    }
+
     if (checkResult.conclusion === SchemaCheckConclusion.Failure) {
       schemaCheck = await this.storage.createSchemaCheck({
         schemaSDL: sdl,

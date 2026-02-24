@@ -83,6 +83,15 @@ const EmailProviderModel = zod.union([
   SendmailEmailModel,
 ]);
 
+const RedisModel = zod.object({
+  REDIS_HOST: zod.string(),
+  REDIS_PORT: NumberFromString,
+  REDIS_PASSWORD: zod.string(),
+  REDIS_TLS_ENABLED: emptyString(
+    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+  ).default('0'),
+});
+
 const RequestBrokerModel = zod.union([
   zod.object({
     REQUEST_BROKER: emptyString(zod.literal('0').optional()),
@@ -128,6 +137,7 @@ const configs = {
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
+  redis: RedisModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -159,6 +169,7 @@ const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
 const requestBroker = extractConfig(configs.requestBroker);
+const redis = extractConfig(configs.redis);
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -239,4 +250,10 @@ export const env = {
         } satisfies RequestBroker)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
+  redis: {
+    host: redis.REDIS_HOST,
+    port: redis.REDIS_PORT,
+    password: redis.REDIS_PASSWORD ?? '',
+    tlsEnabled: redis.REDIS_TLS_ENABLED === '1',
+  },
 } as const;

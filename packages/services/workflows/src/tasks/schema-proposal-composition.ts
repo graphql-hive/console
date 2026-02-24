@@ -6,9 +6,26 @@
  */
 
 import { z } from 'zod';
-// @todo
-import { createSchemaObject } from '@hive/api/shared/entities.js';
+// @todo -- duplicate this or export it from @hive/api to avoid using a file path
+import { createSchemaObject, ProjectType } from '@hive/api/shared/entities.js';
 import { defineTask, implementTask } from '../kit.js';
+
+function extendWithBase(schemas: Array<{ sdl: string }>, baseSchema: string | null) {
+  if (!baseSchema) {
+    return schemas;
+  }
+
+  return schemas.map((schema, index) => {
+    if (index === 0) {
+      return {
+        ...schema,
+        sdl: baseSchema + ' ' + schema.sdl,
+      };
+    }
+
+    return schema;
+  });
+}
 
 export const SchemaProposalCompositionTask = defineTask({
   name: 'schemaProposalComposition',
@@ -31,20 +48,38 @@ export const task = implementTask(SchemaProposalCompositionTask, async args => {
     targetId: args.input.targetId,
   });
 
-  const result = await args.context.schema.composeAndValidate(
-    schemas[0].type as 'federation' | 'single' | 'stitching', // is this right?
-    schemas.map(s => createSchemaObject(s)),
-    {
-      /** Whether external composition should be used (only Federation) */
-      external: args.input.externalComposition,
-      /** Whether native composition should be used (only Federation) */
-      native: args.input.native,
-      /** Specified contracts (only Federation) */
-      // @todo consider passing contracts...
-      contracts: null,
-    },
-  );
-  if (result.errors.length) {
-    args.logger.error('Composition error found: --------\n%o', result.errors);
+  const baseSchema = await args.context.schema.getBaseSchema({
+    pool: args.context.pg,
+    targetId: args.input.targetId,
+  });
+
+  try {
+    const result = await args.context.schema.composeAndValidate(
+      schemas[0].type as ProjectType,
+      extendWithBase(schemas, baseSchema).map(s => createSchemaObject(s)),
+      {
+        /** Whether external composition should be used (only Federation) */
+        external: args.input.externalComposition,
+        /** Whether native composition should be used (only Federation) */
+        native: args.input.native,
+        /** Proposals currently ignore contracts. */
+        contracts: null,
+      },
+    );
+
+    const payload: { timestamp: string; status: 'error' | 'success' } = {
+      timestamp: new Date().toISOString(),
+      status: result.errors.length ? 'error' : 'success',
+    };
+    await args.context.schema.updateSchemaProposalComposition({
+      ...payload,
+      proposalId: args.input.proposalId,
+      pool: args.context.pg,
+    });
+    args.context.pubSub.publish('schemaProposalComposition', args.input.proposalId, payload);
+  } catch (e) {
+    // if the internal error persists, then this will be ran multiple times.
+    args.logger.error('Something went wrong. %s', (e as Error).message);
+    throw e;
   }
 });

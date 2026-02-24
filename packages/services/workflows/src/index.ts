@@ -1,6 +1,10 @@
 import { run } from 'graphile-worker';
+import { createPubSub } from 'graphql-yoga';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
+import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
+import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import {
   createServer,
   registerShutdown,
@@ -40,6 +44,7 @@ const modules = await Promise.all([
   import('./tasks/schema-change-notification.js'),
   import('./tasks/usage-rate-limit-exceeded.js'),
   import('./tasks/usage-rate-limit-warning.js'),
+  import('./tasks/schema-proposal-composition.js'),
 ]);
 
 const crontab = `
@@ -64,6 +69,25 @@ const stopHttpHeartbeat = env.httpHeartbeat
     })
   : null;
 
+const server = await createServer({
+  sentryErrorHandler: !!env.sentry,
+  name: 'workflows',
+  log: logger,
+});
+
+const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
+
+const pubSub = createPubSub({
+  eventTarget: createRedisEventTarget({
+    publishClient: redis,
+    subscribeClient: createRedisClient(
+      'subscriber',
+      env.redis,
+      server.log.child({ source: 'RedisSubscribe' }),
+    ),
+  }),
+}) as HivePubSub;
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
@@ -71,15 +95,10 @@ const context: Context = {
   requestBroker: env.requestBroker,
   schema: schemaProvider({
     logger,
-    serviceUrl: env.schema.serviceUrl,
+    schemaServiceUrl: env.schema.serviceUrl,
   }),
+  pubSub,
 };
-
-const server = await createServer({
-  sentryErrorHandler: !!env.sentry,
-  name: 'workflows',
-  log: logger,
-});
 
 server.route({
   method: ['GET', 'HEAD'],
@@ -137,6 +156,8 @@ registerShutdown({
       logger.info('Shutdown postgres connection.');
       await pg.end();
       logger.info('Shutdown postgres connection successful.');
+      logger.info('Shutdown redis connection.');
+      redis.disconnect(false);
       if (shutdownMetrics) {
         logger.info('Stopping prometheus endpoint');
         await shutdownMetrics();

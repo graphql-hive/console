@@ -250,8 +250,8 @@ export class CompositeModel {
         modifiedSdl: incoming.sdl,
       }),
     ]);
-    this.logger.info('diff check status: %o', diffCheck);
-    this.logger.info('policy check status: %o', policyCheck);
+    this.logger.debug('diff check status: %o', diffCheck);
+    this.logger.debug('policy check status: %o', policyCheck);
 
     if (
       compositionCheck.status === 'failed' ||

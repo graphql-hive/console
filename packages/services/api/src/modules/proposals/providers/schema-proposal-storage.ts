@@ -1,6 +1,12 @@
 /**
  * This wraps the database calls for schema proposals and required validation
  */
+import {
+  Logger as GraphileLogger,
+  LogLevel as GraphileLogLevel,
+  makeWorkerUtils,
+  WorkerUtils,
+} from 'graphile-worker';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
@@ -13,6 +19,31 @@ import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import { SCHEMA_PROPOSALS_ENABLED } from './schema-proposals-enabled-token';
+
+// @todo do not repeat this definition with workflows service
+function logLevel(level: GraphileLogLevel) {
+  switch (level) {
+    case 'warning':
+      return 'warn' as const;
+    case 'info': {
+      return 'info' as const;
+    }
+    case 'debug': {
+      return 'debug' as const;
+    }
+    case 'error': {
+      return 'error' as const;
+    }
+  }
+
+  return 'info';
+}
+
+export function bridgeGraphileLogger(logger: Logger) {
+  return new GraphileLogger(_scope => (level, message, _meta) => {
+    logger[logLevel(level)](message);
+  });
+}
 
 const SchemaProposalsTitleModel = z
   .string()
@@ -41,6 +72,27 @@ export class SchemaProposalStorage {
     @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean, // @todo
   ) {
     this.logger = logger.child({ source: 'SchemaProposalStorage' });
+  }
+
+  async runBackgroundComposition(input: {
+    proposalId: string;
+    targetId: string;
+    externalComposition: {
+      enabled: boolean;
+      endpoint?: string | null;
+      encryptedSecret?: string | null;
+    };
+    native: boolean;
+  }) {
+    // @todo inject the graphile worker util instead of making it here?
+    const tools: WorkerUtils = await makeWorkerUtils({
+      pgPool: this.pool.pool,
+      // @todo
+      logger: bridgeGraphileLogger(this.logger as any), // as GraphQLHiveLogger),
+    });
+
+    // SchemaProposalCompositionTask
+    await tools.addJob('schemaProposalComposition', { input });
   }
 
   private async assertSchemaProposalsEnabled(args: {
@@ -202,9 +254,9 @@ export class SchemaProposalStorage {
             "sp"."id" = ${args.id}
         `,
       )
-      .then(row => SchemaProposalModel.parse(row));
+      .then(row => SchemaProposalModel.safeParse(row));
 
-    return result;
+    return result.data ?? null;
   }
 
   async getPaginatedProposals(args: {
@@ -344,7 +396,7 @@ export class SchemaProposalStorage {
 }
 
 const schemaProposalFields = sql`
-  sp."id"
+    sp."id"
   , to_json(sp."created_at") as "createdAt"
   , to_json(sp."updated_at") as "updatedAt"
   , sp."title"
@@ -352,6 +404,8 @@ const schemaProposalFields = sql`
   , sp."stage"
   , sp."target_id" as "targetId"
   , sp."author"
+  , sp."composition_status" as "compositionStatus"
+  , sp."composition_timestamp" as "compositionTimestamp"
 `;
 
 const schemaProposalReviewFields = sql`

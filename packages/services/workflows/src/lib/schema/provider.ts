@@ -1,18 +1,35 @@
 import { parse, print } from 'graphql';
 import { DatabasePool, sql } from 'slonik';
+import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
+import { Change } from '@graphql-inspector/core';
 import { errors, patch } from '@graphql-inspector/patch';
 import { Project, SchemaObject } from '@hive/api';
-import { ComposeAndValidateResult } from '@hive/api/shared/entities';
+import { ComposeAndValidateResult, ProjectType } from '@hive/api/shared/entities';
 import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
-import { decodeCreatedAtAndUUIDIdBasedCursor } from '@hive/storage';
+import { decodeCreatedAtAndUUIDIdBasedCursor, HiveSchemaChangeModel } from '@hive/storage';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 
 type SchemaProviderConfig = {
   /** URL of the Schema Service */
-  serviceUrl: string;
+  schemaServiceUrl: string;
   logger: Logger;
 };
+
+const SchemaModel = z.object({
+  id: z.string().uuid(),
+  sdl: z.string(),
+  serviceName: z.optional(z.string()),
+  serviceUrl: z.optional(z.string()),
+  type: z.string(),
+});
+
+const SchemaProposalChangesModel = z.object({
+  id: z.string().uuid(),
+  serviceName: z.string().optional(),
+  serviceUrl: z.string().optional(),
+  schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
+});
 
 function createExternalConfig(config: Project['externalComposition']) {
   // : ExternalCompositionConfig {
@@ -36,15 +53,37 @@ function createExternalConfig(config: Project['externalComposition']) {
 
 export type SchemaProvider = ReturnType<typeof schemaProvider>;
 
+function toUpperSnakeCase(str: string) {
+  // Use a regular expression to find uppercase letters and insert underscores
+  // The 'g' flag ensures all occurrences are replaced.
+  // The 'replace' function uses a callback to add an underscore before the matched uppercase letter.
+  const snakeCaseString = str.replace(/([A-Z])/g, (match, p1, offset) => {
+    // If it's the first character, don't add an underscore
+    if (offset === 0) {
+      return p1;
+    }
+    return `_${p1}`;
+  });
+
+  return snakeCaseString.toUpperCase();
+}
+
+export function convertProjectType(t: ProjectType) {
+  return (
+    {
+      [ProjectType.FEDERATION]: 'federation',
+      [ProjectType.SINGLE]: 'single',
+      [ProjectType.STITCHING]: 'stitching',
+    } as const
+  )[t];
+}
+
 export function schemaProvider(providerConfig: SchemaProviderConfig) {
   const schemaService = createTRPCProxyClient<SchemaBuilderApi>({
     links: [
       httpLink({
-        url: `${providerConfig.serviceUrl}/trpc`,
+        url: `${providerConfig.schemaServiceUrl}/trpc`,
         fetch,
-        // headers: {
-        //   'x-request-id': `job-${args.job.id}`,
-        // },
       }),
     ],
   });
@@ -57,7 +96,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
      * - In case the incoming request is canceled, the call to the schema service is aborted
      */
     async composeAndValidate(
-      compositionType: 'federation' | 'single' | 'stitching',
+      projectType: ProjectType,
       schemas: SchemaObject[],
       config: {
         /** Whether external composition should be used (only Federation) */
@@ -68,6 +107,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         contracts: ContractsInputType | null;
       },
     ) {
+      const compositionType = convertProjectType(projectType);
       providerConfig.logger.debug(
         'Composing and validating schemas (type=%s, method=%s)',
         compositionType,
@@ -135,12 +175,24 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       }
     },
 
-    async latestSchemas(args: { targetId: string; pool: DatabasePool }) {
+    async updateSchemaProposalComposition(args: {
+      proposalId: string;
+      timestamp: string;
+      status: 'error' | 'success' | 'fail';
+      pool: DatabasePool;
+    }) {
+      const { pool, ...state } = args;
+      await pool.query<unknown>(
+        sql`/* updateSchemaProposalComposition */ UPDATE schema_proposals SET composition_status = ${args.status}, composition_timestamp = ${args.timestamp} WHERE id=${args.proposalId}`,
+      );
+    },
+
+    async latestComposableSchemas(args: { targetId: string; pool: DatabasePool }) {
       const latestVersion = await args.pool.maybeOne<{ id: string }>(
-        sql`/* findLatestSchemaVersion */
+        sql`/* findLatestComposableSchemaVersion */
         SELECT sv.id
         FROM schema_versions as sv
-        WHERE sv.target_id = ${args.targetId}
+        WHERE sv.target_id = ${args.targetId} AND sv.is_composable IS TRUE
         ORDER BY sv.created_at DESC
         LIMIT 1
       `,
@@ -151,20 +203,14 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       }
 
       const version = latestVersion.id;
-      const result = await args.pool.query<{
-        id: string;
-        sdl: string;
-        serviceName: string;
-        serviceUrl: string;
-        type: string;
-      }>(
+      const result = await args.pool.query<unknown>(
         sql`/* getSchemasOfVersion */
           SELECT
-            sl.id,
-            sl.sdl,
-            lower(sl.service_name) as serviceName,
-            sl.service_url as serviceUrl,
-            p.type
+              sl.id
+            , sl.sdl
+            , lower(sl.service_name) as "serviceName"
+            , sl.service_url as "serviceUrl"
+            , p.type
           FROM schema_version_to_log AS svl
           LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
           LEFT JOIN projects as p ON (p.id = sl.project_id)
@@ -176,9 +222,14 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             sl.created_at DESC
         `,
       );
+      return result.rows.map(row => SchemaModel.parse(row));
+    },
 
-      // @todo Consider parsing using zod parser.
-      return [...result.rows];
+    async getBaseSchema(args: { targetId: string; pool: DatabasePool }) {
+      const data = await args.pool.maybeOne<Record<string, string>>(
+        sql`/* getBaseSchema */ SELECT base_schema FROM targets WHERE id=${args.targetId}`,
+      );
+      return data?.base_schema ?? null;
     },
 
     async proposedSchemas(args: {
@@ -198,7 +249,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       }
 
       // fetch all latest schemas
-      const services = await this.latestSchemas({
+      const services = await this.latestComposableSchemas({
         targetId: args.targetId,
         pool: args.pool,
       });
@@ -206,12 +257,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       let nextCursor = cursor;
       // collect changes in paginated requests to avoid stalling the db
       do {
-        const result = await args.pool.any<{
-          id: string;
-          serviceName: string | null;
-          serviceUrl: string | null;
-          schemaProposalChanges: any[];
-        }>(sql`
+        const result = await args.pool.query<unknown>(sql`
           SELECT
               c."id"
             , c."service_name" as "serviceName"
@@ -262,28 +308,42 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           LIMIT 20
         `);
 
-        // Use the last id since we don't need to return whether there's a next page or not.
-        // This may result in one extra DB call if there's exactly mod 20 results. Otherwise, avoids
-        // fetching extra data.
-        if (result.length === 20) {
+        const changes = result.rows.map(row => {
+          const value = SchemaProposalChangesModel.parse(row);
+          return {
+            ...value,
+            schemaProposalChanges: value.schemaProposalChanges.map(c => {
+              const change: Change<any> = {
+                ...c,
+                path: c.path ?? undefined,
+                criticality: {
+                  level: c.criticality,
+                },
+              };
+              return change;
+            }),
+          };
+        });
+
+        if (changes.length === 20) {
           nextCursor = {
+            // Keep the created at because we want the same set of checks when joining on the "latest".
             createdAt: nextCursor?.createdAt ?? now,
-            id: result[result.length - 1].id,
+            id: changes[changes.length - 1].id,
           };
         } else {
           nextCursor = null;
         }
 
-        for (const row of result) {
-          const service = services.find(s => row.serviceName === s.serviceName);
+        for (const change of changes) {
+          const service = services.find(s => change.serviceName === s.serviceName);
           if (service) {
             const ast = parse(service.sdl, { noLocation: true });
             service.sdl = print(
-              patch(ast, row.schemaProposalChanges, { onError: errors.looseErrorHandler }),
+              patch(ast, change.schemaProposalChanges, { onError: errors.looseErrorHandler }),
             );
-
-            if (row.serviceUrl) {
-              service.serviceUrl = row.serviceUrl;
+            if (change.serviceUrl) {
+              service.serviceUrl = change.serviceUrl;
             }
           }
         }
