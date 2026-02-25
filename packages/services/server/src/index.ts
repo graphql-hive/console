@@ -1,11 +1,6 @@
 #!/usr/bin/env node
 import got from 'got';
 import { GraphQLError, stripIgnoredCharacters } from 'graphql';
-import supertokens from 'supertokens-node';
-import {
-  errorHandler as supertokensErrorHandler,
-  plugin as supertokensFastifyPlugin,
-} from 'supertokens-node/framework/fastify/index.js';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
@@ -61,7 +56,7 @@ import { graphqlHandler } from './graphql-handler';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 import { createOtelAuthEndpoint } from './otel-auth-endpoint';
 import { createPublicGraphQLHandler } from './public-graphql-handler';
-import { initSupertokens, oidcIdLookup } from './supertokens';
+import { oidcIdLookup } from './supertokens';
 import { registerSupertokensAtHome } from './supertokens-at-home';
 
 class CorsError extends Error {
@@ -132,12 +127,6 @@ export async function main() {
       return res.status(403).send(err.message);
     }
 
-    if (env.supertokens.type === 'core') {
-      // We can not upgrade Supertokens Node as it removed some APIs we rely on for
-      // our SSO flow. This the as `any` cast here.
-      // The code is still compatible and purely a type error.
-      return supertokensErrorHandler()(err, req, res as any);
-    }
     server.log.error(err);
     return res.status(500);
   });
@@ -167,9 +156,11 @@ export async function main() {
           'graphql-client-name',
           'ignore-session',
           'x-request-id',
-          ...(env.supertokens.type === 'atHome'
-            ? ['rid', 'fdi-version', 'anti-csrf', 'authorization', 'st-auth-mode']
-            : supertokens.getAllCORSHeaders()),
+          'rid',
+          'fdi-version',
+          'anti-csrf',
+          'authorization',
+          'st-auth-mode',
         ],
       });
     };
@@ -399,10 +390,7 @@ export async function main() {
               emailVerification: env.auth.requireEmailVerification
                 ? registry.injector.get(EmailVerification)
                 : null,
-              accessTokenKey:
-                env.supertokens.type === 'atHome'
-                  ? new AccessTokenKeyContainer(env.supertokens.secrets.accessTokenKey)
-                  : null,
+              accessTokenKey: new AccessTokenKeyContainer(env.supertokens.secrets.accessTokenKey),
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>
@@ -460,21 +448,7 @@ export async function main() {
       });
     }
 
-    if (env.supertokens.type == 'core') {
-      initSupertokens({
-        storage,
-        crypto,
-        logger: server.log,
-        redis,
-        taskScheduler,
-        broadcastLog,
-      });
-    }
-
     await server.register(formDataPlugin);
-    if (env.supertokens.type == 'core') {
-      await server.register(supertokensFastifyPlugin);
-    }
 
     await registerTRPC(server, {
       router: internalApiRouter,
@@ -583,18 +557,16 @@ export async function main() {
       return;
     });
 
-    if (env.supertokens.type === 'atHome') {
-      await registerSupertokensAtHome(
-        server,
-        storage,
-        registry.injector.get(TaskScheduler),
-        registry.injector.get(CryptoProvider),
-        registry.injector.get(RedisRateLimiter),
-        registry.injector.get(OAuthCache),
-        broadcastLog,
-        env.supertokens.secrets,
-      );
-    }
+    await registerSupertokensAtHome(
+      server,
+      storage,
+      registry.injector.get(TaskScheduler),
+      registry.injector.get(CryptoProvider),
+      registry.injector.get(RedisRateLimiter),
+      registry.injector.get(OAuthCache),
+      broadcastLog,
+      env.supertokens.secrets,
+    );
 
     if (env.cdn.providers.api !== null) {
       const s3 = {

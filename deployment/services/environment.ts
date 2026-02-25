@@ -48,9 +48,6 @@ export function prepareEnvironment(input: {
       general: {
         replicas: isProduction || isStaging ? 3 : 1,
       },
-      supertokens: {
-        replicas: isProduction || isStaging ? 3 : 1,
-      },
       envoy: {
         replicas: isProduction || isStaging ? 3 : 1,
         cpuLimit: isProduction ? '1500m' : '120m',

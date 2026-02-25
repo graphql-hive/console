@@ -47,7 +47,6 @@ export function deployDbMigrations({
         // Since K8s job are immutable, we can't edit or ask K8s to re-run a Job, so we are doing a
         // pseudo change to an env var, which causes Pulumi to re-create the Job.
         IGNORE_RERUN_NONCE: force ? Date.now().toString() : '0',
-        SUPERTOKENS_AT_HOME: '1',
       },
     },
     [clickhouse.deployment, clickhouse.service, ...(dependencies || [])],
