@@ -33,6 +33,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
+import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 
@@ -335,22 +336,7 @@ function SavedFilterRow({
                       <Link
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                         params={{ organizationSlug, projectSlug, targetSlug }}
-                        search={{
-                          operations:
-                            filter.filters.operationHashes.length > 0
-                              ? filter.filters.operationHashes
-                              : undefined,
-                          clients:
-                            filter.filters.clientFilters.length > 0
-                              ? filter.filters.clientFilters.map(c => ({
-                                  name: c.name,
-                                  ...(c.versions ? { versions: c.versions } : {}),
-                                }))
-                              : undefined,
-                          from: filter.filters.dateRange?.from,
-                          to: filter.filters.dateRange?.to,
-                          viewId: filter.id,
-                        }}
+                        search={savedFilterToSearchParams(filter)}
                       />
                     }
                   >
