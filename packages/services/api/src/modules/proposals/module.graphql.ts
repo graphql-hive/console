@@ -258,6 +258,7 @@ export default gql`
 
     compositionStatus: String
     compositionTimestamp: DateTime
+    compositionStatusReason: String
   }
 
   input SchemaProposalChecksInput {

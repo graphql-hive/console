@@ -401,7 +401,8 @@ const schemaProposalFields = sql`
   , sp."target_id" as "targetId"
   , sp."author"
   , sp."composition_status" as "compositionStatus"
-  , sp."composition_timestamp" as "compositionTimestamp"
+  , to_json(sp."composition_timestamp") as "compositionTimestamp"
+  , sp."composition_status_reason" as "compositionStatusReason"
 `;
 
 const schemaProposalReviewFields = sql`
@@ -438,6 +439,9 @@ const SchemaProposalModel = z.object({
   stage: StageModel,
   targetId: z.string(),
   author: z.string(),
+  compositionStatus: z.string().optional(),
+  compositionStatusReason: z.string().optional(),
+  compositionTimestamp: z.string().optional(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;

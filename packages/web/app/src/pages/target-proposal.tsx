@@ -15,13 +15,14 @@ import {
   VersionSelect,
 } from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
-import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
+import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -80,6 +81,9 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       stage
       title
       description
+      compositionStatus
+      compositionTimestamp
+      compositionStatusReason
       versions: checks(after: null, input: {}) {
         ...ProposalQuery_VersionsListFragment
       }
@@ -453,7 +457,37 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 </div>
               </div>
               <div className="p-4 py-8">
-                <Title>{proposal.title}</Title>
+                <Title>
+                  {proposal.title}
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        {proposal?.compositionStatus === 'error' ? (
+                          <XIcon className="text-red-600" />
+                        ) : null}
+                        {proposal?.compositionStatus === 'success' ? (
+                          <CheckIcon className="text-emerald-500" />
+                        ) : null}
+                      </TooltipTrigger>
+                      <TooltipContent align="start">
+                        {proposal?.compositionStatus === 'error' ? (
+                          <>
+                            Composition Error{' '}
+                            {proposal.compositionTimestamp ? (
+                              <>
+                                (<TimeAgo date={proposal.compositionTimestamp} />)
+                              </>
+                            ) : null}
+                            {proposal.compositionStatusReason
+                              ?.split('\n')
+                              .map(e => <div>- {e}</div>) ?? 'Unknown cause.'}{' '}
+                          </>
+                        ) : null}
+                        {proposal?.compositionStatus === 'success' ? 'Composes Successfully' : null}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Title>
                 <div className="text-neutral-10 text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
