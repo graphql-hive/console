@@ -1,9 +1,7 @@
 import c from 'node:crypto';
 import { parse as parseCookie } from 'cookie-es';
-import SessionNode from 'supertokens-node/recipe/session/index.js';
 import * as zod from 'zod';
 import type { FastifyReply, FastifyRequest } from '@hive/service-common';
-import { captureException } from '@sentry/node';
 import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
@@ -169,14 +167,14 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
   private storage: Storage;
   private supertokensStore: SuperTokensStore;
   private emailVerification: EmailVerification | null;
-  private accessTokenKey: AccessTokenKeyContainer | null;
+  private accessTokenKey: AccessTokenKeyContainer;
 
   constructor(deps: {
     logger: Logger;
     storage: Storage;
     organizationMembers: OrganizationMembers;
     emailVerification: EmailVerification | null;
-    accessTokenKey: AccessTokenKeyContainer | null;
+    accessTokenKey: AccessTokenKeyContainer;
   }) {
     super();
     this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
@@ -185,64 +183,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     this.emailVerification = deps.emailVerification;
     this.supertokensStore = new SuperTokensStore(deps.storage.pool, deps.logger);
     this.accessTokenKey = deps.accessTokenKey;
-  }
-
-  private async _verifySuperTokensCoreSession(args: { req: FastifyRequest; reply: FastifyReply }) {
-    let session: SessionNode.SessionContainer | undefined;
-
-    try {
-      session = await SessionNode.getSession(args.req, args.reply, {
-        sessionRequired: false,
-        antiCsrfCheck: false,
-        checkDatabase: true,
-      });
-      this.logger.debug('Session resolution ended successfully');
-    } catch (error) {
-      this.logger.debug('Session resolution failed');
-      if (SessionNode.Error.isErrorFromSuperTokens(error)) {
-        if (
-          error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
-          error.type === SessionNode.Error.UNAUTHORISED
-        ) {
-          throw new HiveError('Invalid session', {
-            extensions: {
-              code: 'NEEDS_REFRESH',
-            },
-          });
-        }
-      }
-
-      this.logger.error('Error while resolving user');
-      console.log(error);
-      captureException(error);
-
-      throw error;
-    }
-
-    if (!session) {
-      this.logger.debug('No session found');
-      return null;
-    }
-
-    const payload = session.getAccessTokenPayload();
-
-    const result = SuperTokensSessionPayloadModel.safeParse(payload);
-
-    if (result.success === false) {
-      this.logger.error('SuperTokens session payload is invalid');
-      this.logger.debug('SuperTokens session payload: %s', JSON.stringify(payload));
-      this.logger.debug(
-        'SuperTokens session parsing errors: %s',
-        JSON.stringify(result.error.flatten().fieldErrors),
-      );
-      throw new HiveError('Invalid access token provided', {
-        extensions: {
-          code: 'UNAUTHENTICATED',
-        },
-      });
-    }
-
-    return result.data;
   }
 
   private async _verifySuperTokensAtHomeSession(
@@ -352,9 +292,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    const sessionData = this.accessTokenKey
-      ? await this._verifySuperTokensAtHomeSession(args, this.accessTokenKey)
-      : await this._verifySuperTokensCoreSession(args);
+    const sessionData = await this._verifySuperTokensAtHomeSession(args, this.accessTokenKey);
 
     if (!sessionData) {
       this.logger.debug('No session found');

@@ -25,7 +25,8 @@ import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
 import { createNewSession, validatePassword } from './supertokens-at-home/shared';
-import { type BroadcastOIDCIntegrationLog } from './supertokens/oidc-provider';
+
+type BroadcastOIDCIntegrationLog = (oidcOrganizationId: string, message: string) => void;
 
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
@@ -735,7 +736,7 @@ export async function registerSupertokensAtHome(
 
         const oidClientConfig = new oidClient.Configuration(
           {
-            issuer: oidcIntegration.id,
+            issuer: 'noop',
             authorization_endpoint: oidcIntegration.authorizationEndpoint,
             userinfo_endpoint: oidcIntegration.userinfoEndpoint,
             token_endpoint: oidcIntegration.tokenEndpoint,

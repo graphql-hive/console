@@ -43,7 +43,6 @@ components:
   [Azure Event Hubs](https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-about))
 - [ClickHouse database](https://clickhouse.com/)
 - [Redis](https://redis.io/)
-- [SuperTokens instance](https://supertokens.com/)
 - [S3 storage](https://aws.amazon.com/s3/) (or any other S3-compatible solution, like
   [minio](https://min.io/) or [CloudFlare R2](https://www.cloudflare.com/developer-platform/r2/))
 - Hive microservices
@@ -93,7 +92,6 @@ The following diagram shows the architecture of a self-hosted Hive Console insta
 
 #### Microservices
 
-- **SuperTokens**: an open-source project used for authentication and authorization.
 - `webapp`: the main Hive Console web application.
 - `server`: the main Hive Console server, responsible for serving the GraphQL API and orchestrating
   calls to other services.
@@ -192,7 +190,6 @@ export DOCKER_TAG=":9.4.1" # Pin this to an exact version
 export HIVE_ENCRYPTION_SECRET=$(openssl rand -hex 16)
 export HIVE_APP_BASE_URL="http://localhost:8080"
 export HIVE_EMAIL_FROM="no-reply@graphql-hive.com"
-export SUPERTOKENS_API_KEY=$(openssl rand -hex 16)
 export CLICKHOUSE_USER="clickhouse"
 export CLICKHOUSE_PASSWORD=$(openssl rand -hex 16)
 export REDIS_PASSWORD=$(openssl rand -hex 16)
@@ -202,6 +199,13 @@ export POSTGRES_DB="registry"
 export MINIO_ROOT_USER="minioadmin"
 export MINIO_ROOT_PASSWORD="minioadmin"
 export CDN_AUTH_PRIVATE_KEY=$(openssl rand -hex 16)
+export SUPERTOKENS_REFRESH_TOKEN_KEY=$(echo "1000:$(openssl rand -hex 64):$(openssl rand -hex 64)")
+KEY_NAME=$(uuidgen)
+PRIVATE_KEY_PEM=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048)
+PUBLIC_KEY_PEM=$(echo "$PRIVATE_KEY_PEM" | openssl rsa -pubout)
+PRIVATE_KEY_DATA=$(echo "$PRIVATE_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+PUBLIC_KEY_DATA=$(echo "$PUBLIC_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+export SUPERTOKENS_ACCESS_TOKEN_KEY=$(echo "${KEY_NAME}|${PUBLIC_KEY_DATA}|${PRIVATE_KEY_DATA}")
 ```
 
 <Callout type="info">
@@ -390,8 +394,6 @@ After doing your first testing with Hive Console you should consider the followi
   new releases and updates.
 - Set up a weekly reminder for updating your Hive Console instance to the latest version and
   applying maintenance.
-- Get yourself familiar with SuperTokens and follow their changelogs in order to keep your
-  SuperTokens instance up-to-date.
 - In order to use longer retention periods e.g. for conditional breaking changes or schema explorer
   overviews do the following: Open the postgres database, go to the table `organization`, find your
   organization and change `plan_name` to ENTERPRISE, `limit_operations_monthly` to 0 and

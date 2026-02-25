@@ -21,7 +21,6 @@ overrides:
   '@tailwindcss/node>tailwindcss': 4.1.18
   '@tailwindcss/vite>tailwindcss': 4.1.18
   estree-util-value-to-estree: ^3.3.3
-  nodemailer@^6.0.0: ^7.0.11
   '@types/nodemailer>@aws-sdk/client-sesv2': '-'
   tar@6.x.x: ^7.5.3
   diff@<8.0.3: ^8.0.3
@@ -907,9 +906,6 @@ importers:
       stripe:
         specifier: 17.5.0
         version: 17.5.0
-      supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1328,12 +1324,6 @@ importers:
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
-      supertokens-js-override:
-        specifier: 0.0.4
-        version: 0.0.4
-      supertokens-node:
-        specifier: 16.7.5
-        version: 16.7.5(encoding@0.1.13)
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -13612,10 +13602,6 @@ packages:
     resolution: {integrity: sha512-m6FAo/spmsW2Ab2fU35JTYwtOKa2yAwXSwgjSv1TJzh4Mh7mC3lzAOVLBprb72XsTrgkEIsl7YrFNAiDiRhIGg==}
     engines: {node: '>=12'}
 
-  inflation@2.1.0:
-    resolution: {integrity: sha512-t54PPJHG1Pp7VQvxyVCJ9mBbjG3Hqryges9bXoOO6GExCPa+//i/d5GSuFtpx3ALLd7lgIAur6zrIlBQyJuMlQ==}
-    engines: {node: '>= 0.8.0'}
-
   inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
     deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
@@ -14357,9 +14343,6 @@ packages:
 
   libmime@2.1.3:
     resolution: {integrity: sha512-ABr2f4O+K99sypmkF/yPz2aXxUFHEZzv+iUkxItCeKZWHHXdQPpDXd6rV1kBBwL4PserzLU09EIzJ2lxC9hPfQ==}
-
-  libphonenumber-js@1.12.17:
-    resolution: {integrity: sha512-bsxi8FoceAYR/bjHcLYc2ShJ/aVAzo5jaxAYiMHF0BD+NTp47405CGuPNKYpw+lHadN9k/ClFGc9X5vaZswIrA==}
 
   libqp@1.1.0:
     resolution: {integrity: sha512-4Rgfa0hZpG++t1Vi2IiqXG9Ad1ig4QTmtuZF946QJP4bPqOYC78ixUXgz5TW/wE7lNaNKlplSYTxQ+fR2KZ0EA==}
@@ -16188,9 +16171,6 @@ packages:
     resolution: {integrity: sha512-8V9+HQPupnaXMA23c5hvl69zXvTwTzyAYasnkb0Tts4XvO4CliqONMOnvlq26rkhLC3nWDFBJf73LU1e1VZLaQ==}
     engines: {node: '>= 6'}
 
-  pkce-challenge@3.1.0:
-    resolution: {integrity: sha512-bQ/0XPZZ7eX+cdAkd61uYWpfMhakH3NeteUF1R8GNa+LMqX8QFAkbCLqq+AYAns1/ueACBu/BMWhrlKGrdvGZg==}
-
   pkg-types@1.3.0:
     resolution: {integrity: sha512-kS7yWjVFCkIw9hqdJBoMxDdzEngmkr5FXeWZZfQ6GoYacjVnsW6l2CcYW/0ThD0vF4LPJgVYnrg4d0uuhwYQbg==}
 
@@ -16559,9 +16539,6 @@ packages:
   pseudomap@1.0.2:
     resolution: {integrity: sha512-b/YwNhb8lk1Zz2+bXXpS/LK9OisiZZ1SNsSLxN1x2OXVEhW2Ckr/7mWE5vrC1ZTiJlD9g19jWszTmJsB+oEpFQ==}
 
-  psl@1.8.0:
-    resolution: {integrity: sha512-RIdOzyoavK+hA18OGGWDqUTsCLhtA7IcZ/6NCs4fFJaHBDab+pDDmDIByWFRQJq2Cd7r1OoQxBGKOaztq+hjIQ==}
-
   pump@3.0.0:
     resolution: {integrity: sha512-LwZy+p3SFs1Pytd/jYct4wpv49HiYCqd9Rlc5ZVdk0V+8Yzv6jR5Blk3TRmPL1ft69TxP0IMZGJ+WPFU2BFhww==}
 
@@ -16593,9 +16570,6 @@ packages:
   query-string@9.1.1:
     resolution: {integrity: sha512-MWkCOVIcJP9QSKU52Ngow6bsAWAPlPK2MludXvcrS2bGZSl+T1qX9MZvRIkqUIkGLJquMJHWfsT6eRqUpp4aWg==}
     engines: {node: '>=18'}
-
-  querystringify@2.2.0:
-    resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -17090,9 +17064,6 @@ packages:
   require-main-filename@2.0.0:
     resolution: {integrity: sha512-NKN5kMDylKuldxYLSUfrbo5Tuzh4hd+2E8NPPX02mZtn1VuREQToYe/ZdlJy+J3uCpfaiGF05e7B8W0iXbQHmg==}
 
-  requires-port@1.0.0:
-    resolution: {integrity: sha512-KigOCHcocU3XODJxsu8i/j8T9tzT4adHiecwORRQ0ZZFcp7ahwXuRU1m+yuO90C5ZUyGeGfocHDI14M3L3yDAQ==}
-
   reselect@5.1.1:
     resolution: {integrity: sha512-K/BG6eIky/SBpzfHZv/dd+9JBFiS4SWV7FIujVyJRux6e45+73RaUHXLmIR1f7WOMaQ0U1km6qwklRQxpJJY0w==}
 
@@ -17276,10 +17247,6 @@ packages:
 
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
-
-  scmp@2.1.0:
-    resolution: {integrity: sha512-o/mRQGk9Rcer/jEEw/yw4mwo3EU/NvYvp577/Btqrym9Qy5/MdWGBqipbALgd2lrdWTJ5/gqDusxfnQBxOxT2Q==}
-    deprecated: Just use Node.js's crypto.timingSafeEqual()
 
   scroll-into-view-if-needed@3.1.0:
     resolution: {integrity: sha512-49oNpRjWRvnU8NyGVmUaYG4jtTkNonFZI86MmGRDqBphEK2EXT9gdEUoQPZhuBM8yWHxCWbobltqYO5M4XrUvQ==}
@@ -17863,9 +17830,6 @@ packages:
   supertokens-js-override@0.0.4:
     resolution: {integrity: sha512-r0JFBjkMIdep3Lbk3JA+MpnpuOtw4RSyrlRAbrzMcxwiYco3GFWl/daimQZ5b1forOiUODpOlXbSOljP/oyurg==}
 
-  supertokens-node@16.7.5:
-    resolution: {integrity: sha512-xrVwi0GfgLIqHKaWXEp7fCgmVQ2wTiJTHG2CQGLkGMvrO9dUcxY+H6qozn3EvyXxbkm1BmflYD8N7ILNSIbR1g==}
-
   supertokens-web-js@0.9.0:
     resolution: {integrity: sha512-7DucVUWxImrcjckza0oW6tkPfMzScj8V/qiQNZeUT/EfCqIbslNSO8holBHc9Eykc0vG/CC0d9ne5TRhAmRcxg==}
 
@@ -18298,10 +18262,6 @@ packages:
   tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}
 
-  twilio@4.23.0:
-    resolution: {integrity: sha512-LdNBQfOe0dY2oJH2sAsrxazpgfFQo5yXGxe96QA8UWB5uu+433PrUbkv8gQ5RmrRCqUTPQ0aOrIyAdBr1aB03Q==}
-    engines: {node: '>=14.0'}
-
   twoslash-protocol@0.2.12:
     resolution: {integrity: sha512-5qZLXVYfZ9ABdjqbvPc4RWMr7PrpPaaDSeaYY55vl/w1j6H6kzsWK/urAEIXlzYlyrFmyz1UbwIt+AA0ck+wbg==}
 
@@ -18546,9 +18506,6 @@ packages:
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
-
-  url-parse@1.5.10:
-    resolution: {integrity: sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==}
 
   urlpattern-polyfill@10.0.0:
     resolution: {integrity: sha512-H/A06tKD7sS1O1X2SshBVeA5FLycRpjqiBeqGKmBwBDBy28EnRjORxTNe269KSSr5un5qyWi1iL61wLxpd+ZOg==}
@@ -19092,10 +19049,6 @@ packages:
 
   xml@1.0.1:
     resolution: {integrity: sha512-huCv9IH9Tcf95zuYCsQraZtWnJvBtLVE0QHMOs8bWyZAFZNDcYjsPq1nEx8jKA9y+Beo9v+7OBPRisQTjinQMw==}
-
-  xmlbuilder@13.0.2:
-    resolution: {integrity: sha512-Eux0i2QdDYKbdbA6AM6xE4m6ZTZr4G4xF9kahI2ukSEMCzwce2eX9WlTI5J3s+NU7hpasFsr8hWIONae7LluAQ==}
-    engines: {node: '>=6.0'}
 
   xorshift@1.2.0:
     resolution: {integrity: sha512-iYgNnGyeeJ4t6U11NpA/QiKy+PXn5Aa3Azg5qkwIFz1tBLllQrjjsk9yzD7IAK0naNU4JxdeDgqW9ov4u/hc4g==}
@@ -22860,7 +22813,7 @@ snapshots:
       '@graphql-mesh/hmac-upstream-signature': 2.0.8(graphql@16.12.0)
       '@graphql-mesh/plugin-response-cache': 0.104.18(graphql@16.12.0)
       '@graphql-mesh/transport-common': 1.0.12(graphql@16.12.0)(pino@10.3.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-mesh/utils': 0.104.16(graphql@16.12.0)
       '@graphql-tools/batch-delegate': 10.0.8(graphql@16.12.0)
       '@graphql-tools/delegate': 12.0.2(graphql@16.12.0)
@@ -23086,7 +23039,7 @@ snapshots:
       '@graphql-hive/logger': 1.0.9(pino@10.3.0)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.12.0)
       '@graphql-mesh/transport-common': 1.0.12(graphql@16.12.0)(pino@10.3.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-mesh/utils': 0.104.16(graphql@16.12.0)
       '@graphql-tools/utils': 10.11.0(graphql@16.12.0)
       '@opentelemetry/api': 1.9.0
@@ -23605,7 +23558,7 @@ snapshots:
       '@graphql-hive/logger': 1.0.9(pino@10.3.0)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.12.0)
       '@graphql-mesh/transport-common': 1.0.12(graphql@16.12.0)(pino@10.3.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-mesh/utils': 0.104.16(graphql@16.12.0)
       '@graphql-tools/batch-execute': 10.0.4(graphql@16.12.0)
       '@graphql-tools/delegate': 12.0.2(graphql@16.12.0)
@@ -23663,7 +23616,7 @@ snapshots:
   '@graphql-mesh/hmac-upstream-signature@2.0.8(graphql@16.12.0)':
     dependencies:
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.12.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-mesh/utils': 0.104.16(graphql@16.12.0)
       '@graphql-tools/executor-common': 1.0.5(graphql@16.12.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.12.0)
@@ -23790,7 +23743,7 @@ snapshots:
       '@envelop/response-cache': 9.0.0(@envelop/core@5.5.1)(graphql@16.12.0)
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.12.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.12.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-mesh/utils': 0.104.16(graphql@16.12.0)
       '@graphql-tools/utils': 10.9.1(graphql@16.12.0)
       '@graphql-yoga/plugin-response-cache': 3.15.4(graphql-yoga@5.16.2(graphql@16.12.0))(graphql@16.12.0)
@@ -23896,7 +23849,7 @@ snapshots:
       '@graphql-hive/logger': 1.0.9(pino@10.3.0)
       '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
       '@graphql-hive/signal': 2.0.0
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-tools/executor': 1.4.13(graphql@16.12.0)
       '@graphql-tools/executor-common': 1.0.5(graphql@16.12.0)
       '@graphql-tools/utils': 10.10.3(graphql@16.12.0)
@@ -23995,6 +23948,21 @@ snapshots:
       - utf-8-validate
       - winston
 
+  '@graphql-mesh/types@0.104.16(graphql@16.12.0)':
+    dependencies:
+      '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
+      '@graphql-tools/batch-delegate': 10.0.5(graphql@16.12.0)
+      '@graphql-tools/delegate': 11.1.3(graphql@16.12.0)
+      '@graphql-tools/utils': 10.9.1(graphql@16.12.0)
+      '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
+      '@repeaterjs/repeater': 3.0.6
+      '@whatwg-node/disposablestack': 0.0.6
+      graphql: 16.12.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - '@nats-io/nats-core'
+      - ioredis
+
   '@graphql-mesh/types@0.104.16(graphql@16.12.0)(ioredis@5.8.2)':
     dependencies:
       '@graphql-hive/pubsub': 2.1.1(ioredis@5.8.2)
@@ -24030,7 +23998,7 @@ snapshots:
       '@envelop/instrumentation': 1.0.0
       '@graphql-mesh/cross-helpers': 0.4.10(graphql@16.12.0)
       '@graphql-mesh/string-interpolation': 0.5.9(graphql@16.12.0)
-      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)(ioredis@5.8.2)
+      '@graphql-mesh/types': 0.104.16(graphql@16.12.0)
       '@graphql-tools/batch-delegate': 10.0.5(graphql@16.12.0)
       '@graphql-tools/delegate': 11.1.3(graphql@16.12.0)
       '@graphql-tools/utils': 10.9.1(graphql@16.12.0)
@@ -29959,7 +29927,7 @@ snapshots:
       '@slack/types': 2.16.0
       '@types/node': 22.10.5
       '@types/retry': 0.12.0
-      axios: 1.13.5(debug@4.4.1)
+      axios: 1.13.5
       eventemitter3: 5.0.1
       form-data: 4.0.4
       is-electron: 2.2.2
@@ -32534,9 +32502,9 @@ snapshots:
 
   axe-core@4.7.0: {}
 
-  axios@1.13.5(debug@4.4.1):
+  axios@1.13.5:
     dependencies:
-      follow-redirects: 1.15.11(debug@4.4.1)
+      follow-redirects: 1.15.11
       form-data: 4.0.5
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -35092,9 +35060,7 @@ snapshots:
 
   fn-name@3.0.0: {}
 
-  follow-redirects@1.15.11(debug@4.4.1):
-    optionalDependencies:
-      debug: 4.4.1(supports-color@8.1.1)
+  follow-redirects@1.15.11: {}
 
   for-each@0.3.3:
     dependencies:
@@ -36381,8 +36347,6 @@ snapshots:
 
   indent-string@5.0.0: {}
 
-  inflation@2.1.0: {}
-
   inflight@1.0.6:
     dependencies:
       once: 1.4.0
@@ -37130,8 +37094,6 @@ snapshots:
       iconv-lite: 0.4.15
       libbase64: 0.1.0
       libqp: 1.1.0
-
-  libphonenumber-js@1.12.17: {}
 
   libqp@1.1.0: {}
 
@@ -39589,10 +39551,6 @@ snapshots:
 
   pirates@4.0.5: {}
 
-  pkce-challenge@3.1.0:
-    dependencies:
-      crypto-js: 4.2.0
-
   pkg-types@1.3.0:
     dependencies:
       confbox: 0.1.8
@@ -39898,8 +39856,6 @@ snapshots:
 
   pseudomap@1.0.2: {}
 
-  psl@1.8.0: {}
-
   pump@3.0.0:
     dependencies:
       end-of-stream: 1.4.4
@@ -39928,8 +39884,6 @@ snapshots:
       decode-uri-component: 0.4.1
       filter-obj: 5.1.0
       split-on-first: 3.0.0
-
-  querystringify@2.2.0: {}
 
   queue-microtask@1.2.3: {}
 
@@ -40558,8 +40512,6 @@ snapshots:
 
   require-main-filename@2.0.0: {}
 
-  requires-port@1.0.0: {}
-
   reselect@5.1.1: {}
 
   resolve-alpn@1.2.1: {}
@@ -40797,8 +40749,6 @@ snapshots:
       loose-envify: 1.4.0
 
   scheduler@0.27.0: {}
-
-  scmp@2.1.0: {}
 
   scroll-into-view-if-needed@3.1.0:
     dependencies:
@@ -41515,24 +41465,6 @@ snapshots:
 
   supertokens-js-override@0.0.4: {}
 
-  supertokens-node@16.7.5(encoding@0.1.13):
-    dependencies:
-      content-type: 1.0.5
-      cookie: 0.7.2
-      cross-fetch: 3.1.8(encoding@0.1.13)
-      debug: 4.4.1(supports-color@8.1.1)
-      inflation: 2.1.0
-      jose: 4.15.9
-      libphonenumber-js: 1.12.17
-      nodemailer: 7.0.11
-      pkce-challenge: 3.1.0
-      psl: 1.8.0
-      supertokens-js-override: 0.0.4
-      twilio: 4.23.0(debug@4.4.1)
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
-
   supertokens-web-js@0.9.0:
     dependencies:
       supertokens-js-override: 0.0.4
@@ -42018,20 +41950,6 @@ snapshots:
 
   tweetnacl@0.14.5: {}
 
-  twilio@4.23.0(debug@4.4.1):
-    dependencies:
-      axios: 1.13.5(debug@4.4.1)
-      dayjs: 1.11.13
-      https-proxy-agent: 5.0.1
-      jsonwebtoken: 9.0.3
-      qs: 6.14.2
-      scmp: 2.1.0
-      url-parse: 1.5.10
-      xmlbuilder: 13.0.2
-    transitivePeerDependencies:
-      - debug
-      - supports-color
-
   twoslash-protocol@0.2.12: {}
 
   twoslash@0.2.12(typescript@5.7.3):
@@ -42317,11 +42235,6 @@ snapshots:
   uri-js@4.4.1:
     dependencies:
       punycode: 2.1.1
-
-  url-parse@1.5.10:
-    dependencies:
-      querystringify: 2.2.0
-      requires-port: 1.0.0
 
   urlpattern-polyfill@10.0.0: {}
 
@@ -42942,8 +42855,6 @@ snapshots:
       is-wsl: 3.1.0
 
   xml@1.0.1: {}
-
-  xmlbuilder@13.0.2: {}
 
   xorshift@1.2.0: {}
 

@@ -16,7 +16,6 @@ import { Redis } from './redis';
 import { S3 } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
-import { Supertokens } from './supertokens';
 import { Tokens } from './tokens';
 import { Usage } from './usage';
 import { Zendesk } from './zendesk';
@@ -40,7 +39,6 @@ export function deployGraphQL({
   usage,
   commerce,
   dbMigrations,
-  supertokens,
   s3,
   s3Mirror,
   s3AuditLog,
@@ -68,7 +66,6 @@ export function deployGraphQL({
   usage: Usage;
   dbMigrations: DbMigrations;
   commerce: CommerceService;
-  supertokens: Supertokens;
   zendesk: Zendesk;
   docker: Docker;
   sentry: Sentry;
@@ -144,7 +141,6 @@ export function deployGraphQL({
           ZENDESK_SUPPORT: zendesk.enabled ? '1' : '0',
           INTEGRATION_GITHUB: '1',
           // Auth
-          SUPERTOKENS_CONNECTION_URI: supertokens.localEndpoint,
           AUTH_GITHUB: '1',
           AUTH_GOOGLE: '1',
           AUTH_ORGANIZATION_OIDC: '1',
@@ -155,7 +151,6 @@ export function deployGraphQL({
               ? observability.tracingEndpoint
               : '',
           S3_MIRROR: '1',
-          SUPERTOKENS_AT_HOME: '1',
         },
         exposesMetrics: true,
         port: 4000,
@@ -209,7 +204,6 @@ export function deployGraphQL({
       .withSecret('S3_AUDIT_LOG_BUCKET_NAME', s3AuditLog.secret, 'bucket')
       .withSecret('S3_AUDIT_LOG_ENDPOINT', s3AuditLog.secret, 'endpoint')
       // Auth
-      .withSecret('SUPERTOKENS_API_KEY', supertokens.secret, 'apiKey')
       .withSecret('AUTH_GITHUB_CLIENT_ID', githubOAuthSecret, 'clientId')
       .withSecret('AUTH_GITHUB_CLIENT_SECRET', githubOAuthSecret, 'clientSecret')
       .withSecret('AUTH_GOOGLE_CLIENT_ID', googleOAuthSecret, 'clientId')
