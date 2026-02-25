@@ -729,12 +729,9 @@ export class SchemaPublisher {
     const expiresAt = retention ? new Date(Date.now() + retention * millisecondsPerDay) : null;
 
     if (input.schemaProposalId) {
-      // @todo use saved composition settings
       await this.schemaProposals.runBackgroundComposition({
-        externalComposition: {
-          enabled: false,
-        },
-        native: true,
+        externalComposition: project.externalComposition,
+        native: project.nativeFederation,
         proposalId: input.schemaProposalId,
         targetId: target.id,
       });

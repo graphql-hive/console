@@ -33,8 +33,8 @@ export const SchemaProposalCompositionTask = defineTask({
     targetId: z.string(),
     externalComposition: z.object({
       enabled: z.boolean(),
-      endpoint: z.optional(z.string()),
-      encryptedSecret: z.optional(z.string()),
+      endpoint: z.string().nullable().optional(),
+      encryptedSecret: z.string().nullable().optional(),
     }),
     native: z.boolean(),
   }),
