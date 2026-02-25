@@ -1,11 +1,17 @@
+import { createHash } from 'crypto';
 import { buildSchema, DocumentNode, GraphQLError, Kind, parse, TypeInfo, validate } from 'graphql';
 import PromiseQueue from 'p-queue';
 import { z } from 'zod';
 import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/core';
-import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
+import {
+  buildOperationS3BucketKey,
+  buildOperationS3BucketKeyV2,
+} from '@hive/cdn-script/artifact-storage-reader';
 import { ServiceLogger } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
 import { S3Config } from '../../shared/providers/s3-config';
+
+const DEFAULT_S3_UPLOAD_CONCURRENCY = 100;
 
 type DocumentRecord = {
   appDeploymentId: string;
@@ -18,7 +24,26 @@ type DocumentRecord = {
   schemaCoordinates: Array<string>;
 };
 
+export type ProcessingTiming = {
+  totalMs: number;
+  parsingMs: number;
+  validationMs: number;
+  coordinateExtractionMs: number;
+  clickhouseMs: number;
+  s3Ms: number;
+  documentsProcessed: number;
+};
+
 const AppDeploymentOperationHashModel = z
+  .string()
+  .trim()
+  .regex(
+    /^(sha256:)?[a-f0-9]{64}$/i,
+    'Hash must be a sha256 hash (64 hexadecimal characters, optionally prefixed with "sha256:"). ' +
+      'This is required for safe cross-version document deduplication.',
+  );
+
+const AppDeploymentOperationHashModelLegacy = z
   .string()
   .trim()
   .min(1, 'Hash must be at least 1 characters long')
@@ -42,6 +67,7 @@ export type BatchProcessEvent = {
       version: string;
     };
     documents: ReadonlyArray<{ hash: string; body: string }>;
+    isV1Format?: boolean;
   };
 };
 
@@ -63,6 +89,7 @@ export type BatchProcessedEvent = {
       }
     | {
         type: 'success';
+        timing: ProcessingTiming;
       };
 };
 
@@ -87,7 +114,7 @@ export type OnDocumentsPersistedCallback = (
 ) => Promise<void>;
 
 export class PersistedDocumentIngester {
-  private promiseQueue = new PromiseQueue({ concurrency: 30 });
+  private promiseQueue: PromiseQueue;
   private logger: ServiceLogger;
 
   constructor(
@@ -95,8 +122,10 @@ export class PersistedDocumentIngester {
     private s3: S3Config,
     logger: ServiceLogger,
     private onDocumentsPersisted?: OnDocumentsPersistedCallback,
+    s3UploadConcurrency: number = DEFAULT_S3_UPLOAD_CONCURRENCY,
   ) {
     this.logger = logger.child({ source: 'PersistedDocumentIngester' });
+    this.promiseQueue = new PromiseQueue({ concurrency: s3UploadConcurrency });
   }
 
   async processBatch(data: BatchProcessEvent['data']) {
@@ -107,13 +136,23 @@ export class PersistedDocumentIngester {
       data.documents.length,
     );
 
+    const timingStart = performance.now();
+    let parsingMs = 0;
+    let validationMs = 0;
+    let coordinateExtractionMs = 0;
+
     const schema = buildSchema(data.schemaSdl);
     const typeInfo = new TypeInfo(schema);
     const documents: Array<DocumentRecord> = [];
 
+    // Use different hash validation based on format (V1 allows any hash, V2 requires sha256)
+    const hashModel = data.isV1Format
+      ? AppDeploymentOperationHashModelLegacy
+      : AppDeploymentOperationHashModel;
+
     let index = 0;
     for (const operation of data.documents) {
-      const hashValidation = AppDeploymentOperationHashModel.safeParse(operation.hash);
+      const hashValidation = hashModel.safeParse(operation.hash);
       const bodyValidation = AppDeploymentOperationBodyModel.safeParse(operation.body);
 
       if (hashValidation.success === false || bodyValidation.success === false) {
@@ -127,7 +166,6 @@ export class PersistedDocumentIngester {
         return {
           type: 'error' as const,
           error: {
-            // TODO: we should add more details (what hash is affected etc.)
             message: 'Invalid input, please check the operations.',
             details: {
               index,
@@ -139,13 +177,41 @@ export class PersistedDocumentIngester {
           },
         };
       }
+
+      // For v2 format, verify hash matches content (sha256 of body)
+      if (!data.isV1Format) {
+        const computedHash = createHash('sha256').update(operation.body).digest('hex');
+        const providedHash = operation.hash.replace(/^sha256:/i, '').toLowerCase();
+
+        if (computedHash !== providedHash) {
+          this.logger.debug(
+            'Hash does not match document content. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
+            data.targetId,
+            data.appDeployment.id,
+            index,
+          );
+
+          return {
+            type: 'error' as const,
+            error: {
+              message: 'Hash does not match document content.',
+              details: {
+                index,
+                message: `Expected sha256: ${computedHash}, got: ${providedHash}`,
+              },
+            },
+          };
+        }
+      }
+
       let documentNode: DocumentNode;
+      const parseStart = performance.now();
       try {
         documentNode = parse(operation.body);
       } catch (err) {
         if (err instanceof GraphQLError) {
-          console.error(err);
           this.logger.debug(
+            { err },
             'Failed parsing GraphQL operation. (targetId=%s, appDeploymentId=%s, operationIndex=%d)',
             data.targetId,
             data.appDeployment.id,
@@ -165,9 +231,12 @@ export class PersistedDocumentIngester {
         }
         throw err;
       }
+      parsingMs += performance.now() - parseStart;
+      const validateStart = performance.now();
       const errors = validate(schema, documentNode, undefined, {
         maxErrors: 1,
       });
+      validationMs += performance.now() - validateStart;
 
       if (errors.length > 0) {
         this.logger.debug(
@@ -206,6 +275,7 @@ export class PersistedDocumentIngester {
 
       const operationName = operationNames[0] ?? null;
 
+      const coordsStart = performance.now();
       const schemaCoordinates = collectSchemaCoordinates({
         documentNode,
         processVariables: false,
@@ -213,6 +283,7 @@ export class PersistedDocumentIngester {
         schema,
         typeInfo,
       });
+      coordinateExtractionMs += performance.now() - coordsStart;
 
       const normalizedOperation = preprocessOperation({
         document: documentNode,
@@ -232,6 +303,9 @@ export class PersistedDocumentIngester {
       index++;
     }
 
+    let clickhouseMs = 0;
+    let s3Ms = 0;
+
     if (documents.length) {
       this.logger.debug(
         'inserting documents into clickhouse and s3. (targetId=%s, appDeployment=%s, documentCount=%d)',
@@ -240,15 +314,29 @@ export class PersistedDocumentIngester {
         documents.length,
       );
 
-      await this.insertDocuments({
+      const timing = await this.insertDocuments({
         targetId: data.targetId,
         appDeployment: data.appDeployment,
         documents: documents,
+        isV1Format: data.isV1Format,
       });
+      clickhouseMs = timing.clickhouseMs;
+      s3Ms = timing.s3Ms;
     }
+
+    const totalMs = performance.now() - timingStart;
 
     return {
       type: 'success' as const,
+      timing: {
+        totalMs: Math.round(totalMs),
+        parsingMs: Math.round(parsingMs),
+        validationMs: Math.round(validationMs),
+        coordinateExtractionMs: Math.round(coordinateExtractionMs),
+        clickhouseMs: Math.round(clickhouseMs),
+        s3Ms: Math.round(s3Ms),
+        documentsProcessed: documents.length,
+      },
     };
   }
 
@@ -306,44 +394,70 @@ export class PersistedDocumentIngester {
       version: string;
     };
     documents: Array<DocumentRecord>;
+    isV1Format?: boolean;
   }) {
     this.logger.debug(
-      'Inserting documents into S3. (targetId=%s, appDeployment=%s, documentCount=%d)',
+      'Inserting documents into S3. (targetId=%s, appDeployment=%s, documentCount=%d, isV1Format=%s)',
       args.targetId,
       args.appDeployment.id,
       args.documents.length,
+      args.isV1Format ?? false,
     );
 
     /** We parallelize and queue the requests. */
     const tasks: Array<Promise<void>> = [];
 
     for (const document of args.documents) {
-      const s3Key = buildOperationS3BucketKey(
-        args.targetId,
-        args.appDeployment.name,
-        args.appDeployment.version,
-        document.hash,
-      );
+      const s3Key = args.isV1Format
+        ? buildOperationS3BucketKey(
+            args.targetId,
+            args.appDeployment.name,
+            args.appDeployment.version,
+            document.hash,
+          )
+        : buildOperationS3BucketKeyV2(args.targetId, args.appDeployment.name, document.hash);
 
       tasks.push(
         this.promiseQueue.add(async () => {
           for (const s3 of this.s3) {
-            const response = await s3.client.fetch([s3.endpoint, s3.bucket, s3Key].join('/'), {
-              method: 'PUT',
-              headers: {
-                'content-type': 'text/plain',
-              },
-              body: document.body,
-              aws: {
-                // This boolean makes Google Cloud Storage & AWS happy.
-                signQuery: true,
-              },
-            });
+            try {
+              const response = await s3.client.fetch([s3.endpoint, s3.bucket, s3Key].join('/'), {
+                method: 'PUT',
+                headers: {
+                  'content-type': 'text/plain',
+                },
+                body: document.body,
+                aws: {
+                  // This boolean makes Google Cloud Storage & AWS happy.
+                  signQuery: true,
+                },
+              });
 
-            if (response.statusCode !== 200) {
-              throw new Error(
-                `Failed to upload operation to S3: [${response.statusCode}] ${response.statusMessage}`,
+              if (response.statusCode !== 200) {
+                this.logger.error(
+                  { statusCode: response.statusCode, statusMessage: response.statusMessage, s3Key },
+                  'Failed to upload document to S3. (targetId=%s, appDeploymentId=%s, documentHash=%s, endpoint=%s)',
+                  args.targetId,
+                  args.appDeployment.id,
+                  document.hash,
+                  s3.endpoint,
+                );
+                throw new Error(
+                  `Failed to upload operation to S3: [${response.statusCode}] ${response.statusMessage} (key: ${s3Key})`,
+                );
+              }
+            } catch (err) {
+              if (err instanceof Error && err.message.includes('Failed to upload operation')) {
+                throw err;
+              }
+              this.logger.error(
+                { err, s3Key },
+                'S3 upload failed unexpectedly. (targetId=%s, appDeploymentId=%s, documentHash=%s)',
+                args.targetId,
+                args.appDeployment.id,
+                document.hash,
               );
+              throw err;
             }
           }
         }),
@@ -375,13 +489,14 @@ export class PersistedDocumentIngester {
           args.appDeployment.id,
           docsForCache.length,
         );
-      } catch (error) {
+      } catch (err) {
         // Don't fail the deployment for cache prefill failures
-        this.logger.warn(
-          { error },
-          'Cache prefill callback failed. (targetId=%s, appDeployment=%s)',
+        this.logger.error(
+          { err },
+          'Cache prefill callback failed. (targetId=%s, appDeployment=%s, documentCount=%d)',
           args.targetId,
           args.appDeployment.id,
+          docsForCache.length,
         );
       }
     }
@@ -396,12 +511,22 @@ export class PersistedDocumentIngester {
       version: string;
     };
     documents: Array<DocumentRecord>;
-  }) {
-    await Promise.all([
-      // prettier-ignore
-      this.insertClickHouseDocuments(args),
-      this.insertS3Documents(args),
+    isV1Format?: boolean;
+  }): Promise<{ clickhouseMs: number; s3Ms: number }> {
+    const [clickhouseMs, s3Ms] = await Promise.all([
+      (async () => {
+        const start = performance.now();
+        await this.insertClickHouseDocuments(args);
+        return performance.now() - start;
+      })(),
+      (async () => {
+        const start = performance.now();
+        await this.insertS3Documents({ ...args, isV1Format: args.isV1Format });
+        return performance.now() - start;
+      })(),
     ]);
+
+    return { clickhouseMs, s3Ms };
   }
 }
 

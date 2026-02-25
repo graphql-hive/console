@@ -254,6 +254,7 @@ export class AppDeployments {
       hash: string;
       body: string;
     }>;
+    isV1Format: boolean;
   }) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
@@ -344,6 +345,7 @@ export class AppDeployments {
           version: args.appDeployment.version,
         },
         documents: args.operations,
+        isV1Format: args.isV1Format,
       });
 
       if (result.type === 'error') {
@@ -352,11 +354,18 @@ export class AppDeployments {
           error: result.error,
         };
       }
+
+      return {
+        type: 'success' as const,
+        appDeployment,
+        timing: result.timing,
+      };
     }
 
     return {
       type: 'success' as const,
       appDeployment,
+      timing: null,
     };
   }
 
@@ -1771,6 +1780,55 @@ export class AppDeployments {
       totalOperations: totalOps,
       appDeploymentOperations: appDeploymentOps,
     };
+  }
+
+  async getExistingDocumentHashes(args: { targetId: string; appName: string }): Promise<string[]> {
+    this.logger.debug(
+      'get existing document hashes (targetId=%s, appName=%s)',
+      args.targetId,
+      args.appName,
+    );
+
+    let result;
+    try {
+      result = await this.clickhouse.query({
+        query: cSql`
+          SELECT document_hash AS hash
+          FROM app_deployment_documents
+          PREWHERE app_deployment_id IN (
+            SELECT app_deployment_id
+            FROM app_deployments
+            PREWHERE target_id = ${args.targetId}
+              AND app_name = ${args.appName}
+            GROUP BY app_deployment_id
+          )
+          GROUP BY document_hash
+        `,
+        queryId: 'get-existing-document-hashes',
+        timeout: 30_000,
+      });
+    } catch (error) {
+      this.logger.error(
+        'Failed to query existing document hashes from ClickHouse (targetId=%s, appName=%s): %s',
+        args.targetId,
+        args.appName,
+        error instanceof Error ? error.message : String(error),
+      );
+      throw error;
+    }
+
+    const model = z.array(z.object({ hash: z.string() }));
+    const parsed = model.parse(result.data);
+    const hashes = parsed.map(row => row.hash);
+
+    this.logger.debug(
+      'found %d existing document hashes (targetId=%s, appName=%s)',
+      hashes.length,
+      args.targetId,
+      args.appName,
+    );
+
+    return hashes;
   }
 }
 

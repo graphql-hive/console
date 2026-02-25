@@ -14,7 +14,11 @@ import type { TargetResolvers } from './../../../__generated__/types';
  */
 export const Target: Pick<
   TargetResolvers,
-  'activeAppDeployments' | 'appDeployment' | 'appDeployments' | 'viewerCanViewAppDeployments'
+  | 'activeAppDeployments'
+  | 'appDeployment'
+  | 'appDeploymentDocumentHashes'
+  | 'appDeployments'
+  | 'viewerCanViewAppDeployments'
 > = {
   /* Implement Target resolver logic here */
   appDeployment: async (target, args, { injector }) => {
@@ -52,5 +56,29 @@ export const Target: Pick<
         neverUsedAndCreatedBefore: args.filter.neverUsedAndCreatedBefore?.toISOString() ?? null,
       },
     });
+  },
+  appDeploymentDocumentHashes: async (target, args, { injector }) => {
+    const result = await injector.get(AppDeploymentsManager).getExistingDocumentHashes({
+      organizationId: target.orgId,
+      projectId: target.projectId,
+      targetId: target.id,
+      appName: args.appName,
+    });
+
+    if (result.type === 'error') {
+      return {
+        ok: null,
+        error: {
+          message: result.error.message,
+        },
+      };
+    }
+
+    return {
+      ok: {
+        hashes: result.hashes,
+      },
+      error: null,
+    };
   },
 };

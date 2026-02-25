@@ -187,6 +187,7 @@ const S3Model = zod.object({
   S3_SECRET_ACCESS_KEY: zod.string(),
   S3_SESSION_TOKEN: emptyString(zod.string().optional()),
   S3_BUCKET_NAME: zod.string(),
+  S3_UPLOAD_CONCURRENCY: emptyString(NumberFromString.optional()),
 });
 
 const S3MirrorModel = zod.union([
@@ -533,6 +534,7 @@ export const env = {
       secretAccessKey: s3.S3_SECRET_ACCESS_KEY,
       sessionToken: s3.S3_SESSION_TOKEN,
     },
+    uploadConcurrency: s3.S3_UPLOAD_CONCURRENCY ?? 100,
   },
   s3Mirror:
     s3Mirror.S3_MIRROR === '1'
