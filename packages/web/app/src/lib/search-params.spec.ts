@@ -65,7 +65,7 @@ describe('search params serialization (jsurl2)', () => {
   });
 
   it('round-trips number params (proposal timestamp)', () => {
-    expect(roundTrip(1709251200)).toBe(1709251200);
+    expect(roundTrip(1_709_251_200)).toBe(1_709_251_200);
   });
 
   it('round-trips array of strings (operations, proposals stage/user)', () => {
@@ -75,10 +75,7 @@ describe('search params serialization (jsurl2)', () => {
   });
 
   it('round-trips array of objects (insights clients)', () => {
-    const clients = [
-      { name: 'Hive CLI' },
-      { name: 'WebApp', versions: ['v1', 'v2'] },
-    ];
+    const clients = [{ name: 'Hive CLI' }, { name: 'WebApp', versions: ['v1', 'v2'] }];
     expect(roundTrip(clients)).toEqual(clients);
   });
 

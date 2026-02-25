@@ -10,6 +10,11 @@ import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
+import {
+  savedFilterToSearchParams,
+  selectionsToClients,
+  selectionsToOperations,
+} from '@/components/target/insights/search-params';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
@@ -19,11 +24,6 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import {
-  savedFilterToSearchParams,
-  selectionsToClients,
-  selectionsToOperations,
-} from '@/components/target/insights/search-params';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 const InsightsClientFilter = z.object({

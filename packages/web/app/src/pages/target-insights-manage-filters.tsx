@@ -7,6 +7,7 @@ import type { FilterItem, FilterSelection } from '@/components/base/filter-dropd
 import { Menu, MenuItem } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -33,7 +34,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
-import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 

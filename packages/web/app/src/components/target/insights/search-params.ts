@@ -2,9 +2,7 @@ import type { FilterSelection } from '@/components/base/filter-dropdown/types';
 import { stripNullValues } from '@/lib/route-utils';
 
 /** Convert operation filter selections to URL search param format. */
-export function selectionsToOperations(
-  selections: FilterSelection[],
-): string[] | undefined {
+export function selectionsToOperations(selections: FilterSelection[]): string[] | undefined {
   return selections.length > 0 ? selections.map(s => s.id ?? s.name) : undefined;
 }
 
