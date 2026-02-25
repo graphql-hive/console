@@ -47,9 +47,7 @@
     "ioredis": "^5.0.0"
   },
   "dependencies": {
-    "@graphql-hive/logger": "^1.0.9",
     "@graphql-yoga/redis-event-target": "3.0.3",
-    "@whatwg-node/fetch": "^0.10.13",
     "graphql-yoga": "5.13.3"
   },
   "devDependencies": {

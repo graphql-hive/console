@@ -1,9 +1,7 @@
 import { run } from 'graphile-worker';
-import { createPubSub } from 'graphql-yoga';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
-import type { HivePubSub } from '@graphql-hive/pubsub';
-import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
+import { bridgeGraphileLogger, createHivePubSub } from '@graphql-hive/pubsub';
 import {
   createServer,
   registerShutdown,
@@ -16,7 +14,7 @@ import { Context } from './context.js';
 import { env } from './environment.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
-import { bridgeFastifyLogger, bridgeGraphileLogger } from './logger.js';
+import { bridgeFastifyLogger } from './logger.js';
 import { createRedisClient } from './redis';
 import { createTaskEventEmitter } from './task-events.js';
 
@@ -77,16 +75,14 @@ const server = await createServer({
 
 const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
-const pubSub = createPubSub({
-  eventTarget: createRedisEventTarget({
-    publishClient: redis,
-    subscribeClient: createRedisClient(
-      'subscriber',
-      env.redis,
-      server.log.child({ source: 'RedisSubscribe' }),
-    ),
-  }),
-}) as HivePubSub;
+const pubSub = createHivePubSub({
+  publisher: redis,
+  subscriber: createRedisClient(
+    'subscriber',
+    env.redis,
+    server.log.child({ source: 'RedisSubscribe' }),
+  ),
+});
 
 const context: Context = {
   logger,

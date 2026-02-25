@@ -4,18 +4,12 @@
  **/
 import type { Redis as RedisInstance, RedisOptions } from 'ioredis';
 import Redis from 'ioredis';
+import type { Logger } from '@graphql-hive/pubsub';
 
 export type { RedisInstance as Redis };
 
 export type RedisConfig = Required<Pick<RedisOptions, 'host' | 'port' | 'password'>> & {
   tlsEnabled: boolean;
-};
-
-type Logger = {
-  error(msg: string, ...interpol: unknown[]): void;
-  warn(msg: string, ...interpol: unknown[]): void;
-  info(msg: string, ...interpol: unknown[]): void;
-  debug(msg: string, ...interpol: unknown[]): void;
 };
 
 export function createRedisClient(label: string, config: RedisConfig, logger: Logger) {

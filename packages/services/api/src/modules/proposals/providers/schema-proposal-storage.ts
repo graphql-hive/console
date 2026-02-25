@@ -1,15 +1,11 @@
 /**
  * This wraps the database calls for schema proposals and required validation
  */
-import {
-  Logger as GraphileLogger,
-  LogLevel as GraphileLogLevel,
-  makeWorkerUtils,
-  WorkerUtils,
-} from 'graphile-worker';
+import { makeWorkerUtils, WorkerUtils } from 'graphile-worker';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
+import { bridgeGraphileLogger } from '@graphql-hive/pubsub';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
@@ -19,31 +15,6 @@ import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { Storage } from '../../shared/providers/storage';
 import { SCHEMA_PROPOSALS_ENABLED } from './schema-proposals-enabled-token';
-
-// @todo do not repeat this definition with workflows service
-function logLevel(level: GraphileLogLevel) {
-  switch (level) {
-    case 'warning':
-      return 'warn' as const;
-    case 'info': {
-      return 'info' as const;
-    }
-    case 'debug': {
-      return 'debug' as const;
-    }
-    case 'error': {
-      return 'error' as const;
-    }
-  }
-
-  return 'info';
-}
-
-export function bridgeGraphileLogger(logger: Logger) {
-  return new GraphileLogger(_scope => (level, message, _meta) => {
-    logger[logLevel(level)](message);
-  });
-}
 
 const SchemaProposalsTitleModel = z
   .string()
