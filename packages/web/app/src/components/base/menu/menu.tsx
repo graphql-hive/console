@@ -180,9 +180,9 @@ type MenuProps = {
    */
   lockScroll?: boolean;
   /**
-   * Prevent the popup from shrinking while open. The width ratchets upward
-   * as wider content scrolls into view (e.g. virtualized lists) but never
-   * jumps narrower. Resets each time the popup reopens.
+   * Lock the popup width after the first layout so it never changes while open.
+   * Useful for virtualized lists where items scroll in/out of view.
+   * Resets each time the popup reopens.
    */
   stableWidth?: boolean;
 };
