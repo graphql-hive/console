@@ -23,7 +23,7 @@ import {
   PaginationState,
   useReactTable,
 } from '@tanstack/react-table';
-import { OperationsFallback } from './Fallback';
+import { OperationsFallback } from './fallback';
 
 interface Operation {
   id: string;

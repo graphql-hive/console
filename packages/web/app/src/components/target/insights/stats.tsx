@@ -22,7 +22,7 @@ import { createAdaptiveTimeFormatter } from '@/lib/date-time';
 import {
   formatDuration,
   formatNumber,
-  formatThroughput,
+  formatRpm,
   toDecimal,
   useFormattedDuration,
   useFormattedNumber,
@@ -31,7 +31,7 @@ import {
 import { pick } from '@/lib/object';
 import { useChartStyles } from '@/lib/utils';
 import { useRouter } from '@tanstack/react-router';
-import { OperationsFallback } from './Fallback';
+import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
 
 const Stats_GeneralOperationsStatsQuery = graphql(`
@@ -947,8 +947,7 @@ function RpmOverTimeStats({
   const { requestsOverTime: requests = [] } =
     useFragment(RpmOverTimeStats_OperationStatsFragment, operationStats) ?? {};
 
-  const interval = resolutionToMilliseconds(resolution, period);
-  const windowInM = interval / (60 * 1000);
+  const windowInM = resolutionToMilliseconds(resolution, period) / (60 * 1000);
   const rpmOverTime = useMemo(() => {
     if (requests.length) {
       return requests.map<[string, number]>(node => [
@@ -1005,7 +1004,7 @@ function RpmOverTimeStats({
                   boundaryGap: false,
                   min: 0,
                   axisLabel: {
-                    formatter: (value: number) => formatThroughput(value * 10, interval),
+                    formatter: (value: number) => formatRpm(value),
                   },
                   splitLine: {
                     lineStyle: {
