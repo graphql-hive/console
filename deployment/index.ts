@@ -24,7 +24,6 @@ import { deployS3, deployS3AuditLog, deployS3Mirror } from './services/s3';
 import { deploySchema } from './services/schema';
 import { configureSentry } from './services/sentry';
 import { configureSlackApp } from './services/slack-app';
-import { deploySuperTokens } from './services/supertokens';
 import { deployTokens } from './services/tokens';
 import { deployUsage } from './services/usage';
 import { deployUsageIngestor } from './services/usage-ingestor';
@@ -203,7 +202,6 @@ deployWorkflows({
   redis,
 });
 
-const supertokens = deploySuperTokens(postgres, { dependencies: [dbMigrations] }, environment);
 const zendesk = configureZendesk({ environment });
 const githubApp = configureGithubApp();
 const slackApp = configureSlackApp();
@@ -222,7 +220,6 @@ const graphql = deployGraphQL({
   usage,
   cdn,
   commerce,
-  supertokens,
   s3,
   s3Mirror,
   s3AuditLog,
