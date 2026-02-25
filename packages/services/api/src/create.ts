@@ -39,6 +39,7 @@ import {
 import { projectModule } from './modules/project';
 import { proposalsModule } from './modules/proposals';
 import { SCHEMA_PROPOSALS_ENABLED } from './modules/proposals/providers/schema-proposals-enabled-token';
+import { savedFiltersModule } from './modules/saved-filters';
 import { schemaModule } from './modules/schema';
 import { ArtifactStorageWriter } from './modules/schema/providers/artifact-storage-writer';
 import { provideSchemaModuleConfig, SchemaModuleConfig } from './modules/schema/providers/config';
@@ -89,6 +90,7 @@ const modules = [
   oidcIntegrationsModule,
   schemaPolicyModule,
   collectionModule,
+  savedFiltersModule,
   appDeploymentsModule,
   auditLogsModule,
   proposalsModule,

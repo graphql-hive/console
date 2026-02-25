@@ -4100,6 +4100,7 @@ export async function createStorage(
 
       return DocumentCollectionDocumentModel.parse(result);
     },
+
     async createSchemaCheck(args) {
       const result = await tracedTransaction('createSchemaCheck', pool, async trx => {
         const sdlStoreInserts: Array<Promise<unknown>> = [];

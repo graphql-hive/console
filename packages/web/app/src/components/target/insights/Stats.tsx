@@ -16,8 +16,8 @@ import { useQuery } from 'urql';
 import { Section } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { OperationStatsFilterInput } from '@/gql/graphql';
 import { createAdaptiveTimeFormatter } from '@/lib/date-time';
 import {
   formatDuration,
@@ -270,7 +270,7 @@ function OverTimeStats({
   const { failuresOverTime = [], requestsOverTime = [] } =
     useFragment(OverTimeStats_OperationsStatsFragment, operationStats) ?? {};
 
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
 
   const requests = useMemo(() => {
     if (requestsOverTime?.length) {
@@ -327,7 +327,7 @@ function OverTimeStats({
                   min: 0,
                   splitLine: {
                     lineStyle: {
-                      color: '#595959',
+                      color: colors.grid,
                       type: 'dashed',
                     },
                   },
@@ -340,7 +340,7 @@ function OverTimeStats({
                   min: 0,
                   splitLine: {
                     lineStyle: {
-                      color: '#595959',
+                      color: colors.grid,
                       type: 'dashed',
                     },
                   },
@@ -355,7 +355,7 @@ function OverTimeStats({
                   name: 'Requests',
                   showSymbol: false,
                   smooth: false,
-                  color: CHART_PRIMARY_COLOR,
+                  color: colors.primary,
                   areaStyle: {},
                   emphasis: {
                     focus: 'series',
@@ -368,7 +368,7 @@ function OverTimeStats({
                   name: 'Failures',
                   showSymbol: false,
                   smooth: false,
-                  color: '#ef4444',
+                  color: colors.error,
                   areaStyle: {},
                   emphasis: {
                     focus: 'series',
@@ -434,7 +434,7 @@ function ClientsStats(props: {
   targetSlug: string;
 }): ReactElement {
   const router = useRouter();
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
   const operationStats = useFragment(ClientsStats_OperationsStatsFragment, props.operationStats);
   const sortedClients = useMemo(() => {
     return operationStats?.clients.edges?.length
@@ -626,7 +626,7 @@ function ClientsStats(props: {
                     type: 'value',
                     splitLine: {
                       lineStyle: {
-                        color: '#595959',
+                        color: colors.grid,
                         type: 'dashed',
                       },
                     },
@@ -643,7 +643,7 @@ function ClientsStats(props: {
                     {
                       type: 'bar',
                       data: byClient.values,
-                      color: CHART_PRIMARY_COLOR,
+                      color: colors.primary,
                     },
                   ],
                 }}
@@ -667,7 +667,7 @@ function ClientsStats(props: {
                     type: 'value',
                     splitLine: {
                       lineStyle: {
-                        color: '#595959',
+                        color: colors.grid,
                         type: 'dashed',
                       },
                     },
@@ -683,7 +683,7 @@ function ClientsStats(props: {
                     {
                       type: 'bar',
                       data: byVersion.values,
-                      color: CHART_PRIMARY_COLOR,
+                      color: colors.primary,
                     },
                   ],
                 }}
@@ -744,7 +744,8 @@ function ClientsStats(props: {
                           a: {
                             padding: 4,
                             height: 15,
-                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            color: colors.overlayText,
+                            backgroundColor: colors.overlayBg,
                           },
                         },
                       },
@@ -752,18 +753,18 @@ function ClientsStats(props: {
                         show: true,
                         height: 30,
                         formatter: '{b}',
-                        color: '#fff',
+                        color: styles.textStyle.color,
                         backgroundColor: 'transparent',
                         padding: 5,
                         fontWeight: 'bold',
                         overflow: 'none',
                       },
                       itemStyle: {
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderColor: colors.overlayBorder,
                       },
                       levels: getLevelOption(),
                       data: byClientAndVersion,
-                      color: CHART_PRIMARY_COLOR,
+                      color: colors.primary,
                     },
                   ],
                 }}
@@ -806,7 +807,7 @@ function LatencyOverTimeStats({
 }: {
   operationStats?: FragmentType<typeof LatencyOverTimeStats_OperationStatsFragment> | null;
 }): ReactElement {
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
   const { durationOverTime: duration = [] } =
     useFragment(LatencyOverTimeStats_OperationStatsFragment, operationStats) ?? {};
   const p75 = useMemo(() => {
@@ -852,10 +853,10 @@ function LatencyOverTimeStats({
   }
 
   const series = [
-    createSeries('p75', '#10b981', p75),
-    createSeries('p90', '#0ea5e9', p90),
-    createSeries('p95', '#8b5cf6', p95),
-    createSeries('p99', '#ec4899', p99),
+    createSeries('p75', colors.p75, p75),
+    createSeries('p90', colors.p90, p90),
+    createSeries('p95', colors.p95, p95),
+    createSeries('p99', colors.p99, p99),
   ];
 
   return (
@@ -887,7 +888,7 @@ function LatencyOverTimeStats({
                   boundaryGap: false,
                   splitLine: {
                     lineStyle: {
-                      color: '#595959',
+                      color: colors.grid,
                       type: 'dashed',
                     },
                   },
@@ -903,7 +904,7 @@ function LatencyOverTimeStats({
                   min: 0,
                   splitLine: {
                     lineStyle: {
-                      color: '#595959',
+                      color: colors.grid,
                       type: 'dashed',
                     },
                   },
@@ -942,7 +943,7 @@ function RpmOverTimeStats({
   resolution: number;
   operationStats: FragmentType<typeof RpmOverTimeStats_OperationStatsFragment> | null;
 }): ReactElement {
-  const styles = useChartStyles();
+  const { styles, colors } = useChartStyles();
   const { requestsOverTime: requests = [] } =
     useFragment(RpmOverTimeStats_OperationStatsFragment, operationStats) ?? {};
 
@@ -985,7 +986,7 @@ function RpmOverTimeStats({
                   boundaryGap: false,
                   splitLine: {
                     lineStyle: {
-                      color: '#595959',
+                      color: colors.grid,
                       type: 'dashed',
                     },
                   },
@@ -1008,7 +1009,7 @@ function RpmOverTimeStats({
                   },
                   splitLine: {
                     lineStyle: {
-                      color: '#595959',
+                      color: colors.grid,
                       type: 'dashed',
                     },
                   },
@@ -1021,12 +1022,12 @@ function RpmOverTimeStats({
                   symbol: 'none',
                   smooth: false,
                   areaStyle: {
-                    color: CHART_PRIMARY_COLOR,
+                    color: colors.primary,
                   },
                   lineStyle: {
-                    color: CHART_PRIMARY_COLOR,
+                    color: colors.primary,
                   },
-                  color: CHART_PRIMARY_COLOR,
+                  color: colors.primary,
                   large: true,
                   data: rpmOverTime,
                 },
@@ -1044,8 +1045,7 @@ export function OperationsStats({
   projectSlug,
   targetSlug,
   period,
-  operationsFilter,
-  clientNamesFilter,
+  filter,
   resolution,
   mode,
   dateRangeText,
@@ -1059,8 +1059,7 @@ export function OperationsStats({
   };
   dateRangeText: string;
   resolution: number;
-  operationsFilter: string[];
-  clientNamesFilter: Array<string>;
+  filter: OperationStatsFilterInput;
   mode: 'operation-page' | 'operation-list';
 }): ReactElement {
   const [query, refetchQuery] = useQuery({
@@ -1072,10 +1071,7 @@ export function OperationsStats({
         targetSlug,
       },
       period,
-      filter: {
-        operationIds: operationsFilter,
-        clientNames: clientNamesFilter,
-      },
+      filter,
       resolution,
     },
   });
@@ -1090,7 +1086,7 @@ export function OperationsStats({
     if (!query.fetching) {
       refetch();
     }
-  }, [period]);
+  }, [period, filter]);
 
   const isFetching = query.fetching;
   const isError = !!query.error;

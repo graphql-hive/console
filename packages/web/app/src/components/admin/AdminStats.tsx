@@ -22,7 +22,6 @@ import {
   Tooltip,
   Tr,
 } from '@/components/v2';
-import { CHART_PRIMARY_COLOR } from '@/constants';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { theme } from '@/lib/charts';
@@ -85,7 +84,7 @@ function CollectedOperationsOverTime(props: {
   const dataRef = useRef<[string, number][]>();
   dataRef.current ||= operations.map(node => [node.date, node.count]);
   const data = dataRef.current;
-  const chartStyles = useChartStyles();
+  const { styles: chartStyles, colors } = useChartStyles();
 
   return (
     <AutoSizer disableHeight>
@@ -117,7 +116,7 @@ function CollectedOperationsOverTime(props: {
                 min: 0,
                 splitLine: {
                   lineStyle: {
-                    color: '#595959',
+                    color: colors.grid,
                     type: 'dashed',
                   },
                 },
@@ -132,7 +131,7 @@ function CollectedOperationsOverTime(props: {
                 name: 'Collected operations',
                 showSymbol: false,
                 smooth: true,
-                color: CHART_PRIMARY_COLOR,
+                color: colors.primary,
                 areaStyle: {},
                 emphasis: {
                   focus: 'series',

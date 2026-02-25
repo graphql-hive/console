@@ -404,6 +404,7 @@ const permissionsByLevel = {
     z.literal('schemaLinting:modifyProjectRules'),
     z.literal('target:create'),
     z.literal('projectAccessToken:modify'),
+    z.literal('sharedSavedFilter:modify'),
   ],
   target: [
     z.literal('targetAccessToken:modify'),

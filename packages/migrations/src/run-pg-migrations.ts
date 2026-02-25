@@ -181,9 +181,11 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       await import('./actions/2026.01.25T00-00-00.checks-proposals-changes'),
       await import('./actions/2026.01.27T00-00-00.app-deployment-protection'),
       await import('./actions/2026.01.09T00-00-00.email-verifications'),
+      await import('./actions/2026.02.07T00-00-00.saved-filters'),
       await import('./actions/2026.01.30T00-00-00.account-linking'),
       await import('./actions/2026.02.06T00-00-00.zendesk-unique'),
       await import('./actions/2026.01.30T10-00-00.oidc-require-invitation'),
+      await import('./actions/2026.02.19T00-00-00.saved-filter-permission'),
       ...(env.useSupertokensAtHome
         ? [await import('./actions/2026.02.18T00-00-00.ensure-supertokens-tables')]
         : []),
