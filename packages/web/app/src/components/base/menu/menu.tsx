@@ -125,14 +125,13 @@ function renderSections(sections: Array<ReactNode | ReactNode[]>): ReactNode {
 // --- Hooks ---
 
 /**
- * Returns a callback ref that prevents a popup from shrinking while open.
- * Uses a ResizeObserver to track the widest size seen and sets it as min-width,
- * so the popup can grow as wider content scrolls into view but never jumps narrower.
+ * Returns a callback ref that locks a popup's width after first layout.
+ * Reads the natural width from the initial visible content and freezes it,
+ * so the popup never changes size as virtualized items scroll in/out of view.
  * Resets when the element unmounts (i.e. popup closes).
  */
 function useStableWidth(enabled: boolean) {
   const observerRef = useRef<ResizeObserver | null>(null);
-  const maxWidthSeen = useRef(0);
 
   return useCallback(
     (node: HTMLElement | null) => {
@@ -140,16 +139,13 @@ function useStableWidth(enabled: boolean) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
-      maxWidthSeen.current = 0;
 
       if (!node || !enabled) return;
 
       const observer = new ResizeObserver(() => {
-        const w = node.offsetWidth;
-        if (w > maxWidthSeen.current) {
-          maxWidthSeen.current = w;
-          node.style.minWidth = `${w}px`;
-        }
+        observer.disconnect();
+        observerRef.current = null;
+        node.style.width = `${node.offsetWidth}px`;
       });
 
       observer.observe(node);
@@ -184,9 +180,9 @@ type MenuProps = {
    */
   lockScroll?: boolean;
   /**
-   * Prevent the popup from shrinking while open. The width ratchets upward
-   * as wider content scrolls into view (e.g. virtualized lists) but never
-   * jumps narrower. Resets each time the popup reopens.
+   * Lock the popup width after the first layout so it never changes while open.
+   * Useful for virtualized lists where items scroll in/out of view.
+   * Resets each time the popup reopens.
    */
   stableWidth?: boolean;
 };
