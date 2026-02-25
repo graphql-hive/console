@@ -480,7 +480,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                             ) : null}
                             {proposal.compositionStatusReason
                               ?.split('\n')
-                              .map(e => <div>- {e}</div>) ?? 'Unknown cause.'}{' '}
+                              .map((e, i) => <div key={i}>- {e}</div>) ?? 'Unknown cause.'}{' '}
                           </>
                         ) : null}
                         {proposal?.compositionStatus === 'success' ? 'Composes Successfully' : null}
