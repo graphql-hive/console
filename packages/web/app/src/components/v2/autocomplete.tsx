@@ -1,4 +1,4 @@
-import { ComponentPropsWithRef, ReactElement } from 'react';
+import { ComponentPropsWithRef, ReactElement, useEffect, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import Highlighter from 'react-highlight-words';
 import Select, {
@@ -9,26 +9,50 @@ import Select, {
   Props as SelectProps,
   StylesConfig,
 } from 'react-select';
-import { FixedSizeList } from 'react-window';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { SelectOption } from './radix-select';
 
-const height = 40;
+const ITEM_HEIGHT = 40;
 
 function MenuList(props: any): ReactElement {
   const { options, children, maxHeight, getValue } = props;
   const [value] = getValue();
-  const initialOffset = options.indexOf(value) * height;
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: children.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5,
+  });
+
+  useEffect(() => {
+    const index = options.indexOf(value);
+    if (index > 0) {
+      virtualizer.scrollToIndex(index);
+    }
+  }, []);
 
   return (
-    <FixedSizeList
-      width="100%"
-      height={maxHeight}
-      itemCount={children.length}
-      itemSize={height}
-      initialScrollOffset={initialOffset}
-    >
-      {({ index, style }) => <div style={style}>{children[index]}</div>}
-    </FixedSizeList>
+    <div ref={scrollRef} style={{ maxHeight, overflow: 'auto' }}>
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+        {virtualizer.getVirtualItems().map(virtualItem => (
+          <div
+            key={virtualItem.index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: virtualItem.size,
+              transform: `translateY(${virtualItem.start}px)`,
+            }}
+          >
+            {children[virtualItem.index]}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

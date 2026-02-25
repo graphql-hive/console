@@ -26,6 +26,14 @@ export default defineConfig({
         '../packages/services/service-common/src/index.ts',
         import.meta.url,
       ).pathname,
+      '@hive/server/supertokens-at-home/shared': new URL(
+        '../packages/services/server/src/supertokens-at-home/shared.ts',
+        import.meta.url,
+      ).pathname,
+      '@hive/api/modules/auth/lib/supertokens-at-home/crypto': new URL(
+        '../packages/services/api/src/modules/auth/lib/supertokens-at-home/crypto.ts',
+        import.meta.url,
+      ).pathname,
     },
     setupFiles,
     testTimeout: 90_000,

@@ -51,6 +51,8 @@ export const urqlClient = createClient({
         SchemaCoordinateStats: noKey,
         ClientStats: noKey,
         ClientStatsValues: noKey,
+        ClientVersionStatsValues: noKey,
+        InsightsDateRange: noKey,
         OperationsStats: noKey,
         OperationStatsValues: noKey,
         DurationValues: noKey,
@@ -90,6 +92,8 @@ export const urqlClient = createClient({
         ProjectTargetsResourceAssignment: noKey,
         ProjectResourceAssignment: noKey,
         BillingConfiguration: noKey,
+        InsightsFilterConfiguration: noKey,
+        ClientFilter: noKey,
         SchemaChangeMeta: noKey,
         SchemaCheckMeta: noKey,
         FieldArgumentDescriptionChanged: noKey,
@@ -292,3 +296,6 @@ type GraphQLPayload = {
       documentId: string;
     }
 );
+
+// @ts-expect-error for testing purposes ok
+window.__YOU_ARE_FIRED_attemptSessionRefresh = () => Session.attemptRefreshingSession();
