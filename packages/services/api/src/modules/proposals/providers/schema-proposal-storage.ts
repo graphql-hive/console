@@ -410,9 +410,9 @@ const SchemaProposalModel = z.object({
   stage: StageModel,
   targetId: z.string(),
   author: z.string(),
-  compositionStatus: z.string().optional(),
-  compositionStatusReason: z.string().optional(),
-  compositionTimestamp: z.string().optional(),
+  compositionStatus: z.string().nullable(),
+  compositionStatusReason: z.string().nullable(),
+  compositionTimestamp: z.string().nullable(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;
