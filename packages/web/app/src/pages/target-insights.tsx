@@ -249,7 +249,7 @@ function OperationsView({
             view.filters.clientFilters.length > 0
               ? view.filters.clientFilters.map(c => ({
                   name: c.name,
-                  versions: c.versions,
+                  ...(c.versions ? { versions: c.versions } : {}),
                 }))
               : undefined,
           from: view.filters.dateRange?.from,
@@ -345,7 +345,7 @@ function OperationsView({
                       selections.length > 0
                         ? selections.map(s => ({
                             name: s.name,
-                            versions: s.values,
+                            ...(s.values ? { versions: s.values } : {}),
                           }))
                         : undefined,
                   }),
@@ -401,7 +401,7 @@ function OperationsView({
                         selections.length > 0
                           ? selections.map(s => ({
                               name: s.name,
-                              versions: s.values,
+                              ...(s.values ? { versions: s.values } : {}),
                             }))
                           : undefined,
                     }),

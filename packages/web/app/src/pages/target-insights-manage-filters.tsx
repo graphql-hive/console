@@ -344,7 +344,7 @@ function SavedFilterRow({
                             filter.filters.clientFilters.length > 0
                               ? filter.filters.clientFilters.map(c => ({
                                   name: c.name,
-                                  versions: c.versions ?? null,
+                                  ...(c.versions ? { versions: c.versions } : {}),
                                 }))
                               : undefined,
                           from: filter.filters.dateRange?.from,
