@@ -10,10 +10,6 @@ import {
 } from '@/components/target/proposals';
 import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import {
-  ProposalQuery_VersionsListFragment,
-  VersionSelect,
-} from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
 import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
@@ -84,9 +80,6 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       compositionStatus
       compositionTimestamp
       compositionStatusReason
-      versions: checks(after: null, input: {}) {
-        ...ProposalQuery_VersionsListFragment
-      }
       checks(after: $version, input: {}) {
         ...ProposalOverview_ChecksFragment
       }
@@ -378,7 +371,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         services={services ?? []}
         reviews={proposal.reviews ?? {}}
         checks={proposal.checks ?? null}
-        versions={proposal.versions ?? null}
         isDistributedGraph={isDistributedGraph}
         proposal={proposal}
         target={query.data.target}
@@ -436,29 +428,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         ) : (
           proposal && (
             <>
-              <div className="grid grid-cols-2">
-                <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
-                <div className="flex justify-end">
-                  <StageTransitionSelect
-                    stage={proposal.stage}
-                    onSelect={async stage => {
-                      const _review = await reviewSchemaProposal({
-                        input: {
-                          schemaProposalId: props.proposalId,
-                          stageTransition: stage,
-                          // for monorepos and non-service related comments, use an empty string
-                          serviceName: '',
-                        },
-                      });
-                      // @todo use urqlCache to invalidate the proposal and refresh?
-                      refreshProposal();
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="p-4 py-8">
-                <Title>
-                  {proposal.title}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
+                <Title className="flex grow flex-row items-center gap-2 truncate">
+                  <div className="truncate">{proposal.title}</div>
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger>
@@ -488,10 +461,30 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                     </Tooltip>
                   </TooltipProvider>
                 </Title>
-                <div className="text-neutral-10 text-xs">
+                <div className="flex-col justify-end">
+                  <StageTransitionSelect
+                    className="w-full sm:w-auto"
+                    stage={proposal.stage}
+                    onSelect={async stage => {
+                      const _review = await reviewSchemaProposal({
+                        input: {
+                          schemaProposalId: props.proposalId,
+                          stageTransition: stage,
+                          // for monorepos and non-service related comments, use an empty string
+                          serviceName: '',
+                        },
+                      });
+                      // @todo use urqlCache to invalidate the proposal and refresh?
+                      refreshProposal();
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="mb-6 mt-2">
+                <div className="w-full border-l-2 p-4">{proposal.description}</div>
+                <div className="text-neutral-10 mt-4 pr-2 text-right text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
-                <div className="w-full p-2 pt-4">{proposal.description}</div>
               </div>
             </>
           )
@@ -512,7 +505,6 @@ function TabbedContent(props: {
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof Proposal_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
-  versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
@@ -520,7 +512,7 @@ function TabbedContent(props: {
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
-      <TabsList variant="menu" className="w-full">
+      <TabsList variant="menu" className="border-b-1 w-full">
         <TabsTrigger variant="menu" value={Tab.DETAILS} asChild>
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"

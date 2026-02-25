@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-extraneous-dependencies -- test file
+ 
 import { expect, test } from '@playwright/test';
 
 test.describe('Search User Journeys', () => {

@@ -44,11 +44,11 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "graphile-worker": "^0.16.0",
     "ioredis": "^5.0.0"
   },
   "dependencies": {
     "@graphql-yoga/redis-event-target": "3.0.3",
+    "graphile-worker": "^0.16.0",
     "graphql-yoga": "5.13.3"
   },
   "devDependencies": {

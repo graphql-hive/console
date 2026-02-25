@@ -138,8 +138,8 @@ importers:
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
       '@graphql-inspector/patch':
-        specifier: 0.1.2
-        version: 0.1.2(graphql@16.9.0)
+        specifier: 0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7
+        version: 0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7(graphql@16.9.0)
       '@graphql-tools/load':
         specifier: 8.1.2
         version: 8.1.2(graphql@16.9.0)
@@ -1682,8 +1682,8 @@ importers:
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
       '@graphql-inspector/patch':
-        specifier: 0.1.2
-        version: 0.1.2(graphql@16.9.0)
+        specifier: 0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7
+        version: 0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7(graphql@16.9.0)
       '@graphql-yoga/redis-event-target':
         specifier: 3.0.3
         version: 3.0.3(ioredis@5.8.2)
@@ -1784,8 +1784,8 @@ importers:
         specifier: 7.1.2
         version: 7.1.2(graphql@16.9.0)
       '@graphql-inspector/patch':
-        specifier: 0.1.2
-        version: 0.1.2(graphql@16.9.0)
+        specifier: 0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7
+        version: 0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7(graphql@16.9.0)
       '@graphql-tools/mock':
         specifier: 9.0.25
         version: 9.0.25(graphql@16.9.0)
@@ -4399,8 +4399,8 @@ packages:
     resolution: {integrity: sha512-rEo+HoQt+qjdayy7p5vcR9GeGTdKXmN0LbIm3W+jKKoXeAMlV4zHxnOW6jEhO6E0eVQxf8Sc1TlcH78i2P2a9w==}
     engines: {node: '>=18.0.0'}
 
-  '@graphql-inspector/patch@0.1.2':
-    resolution: {integrity: sha512-iSuRozeQmWm4cX3iNA19+1ADDLdN+qyptkfedKcm1WbGaT7UDDdbh7/RyfAeomVagnhbBKFLLsf3S7I9jV5Iew==}
+  '@graphql-inspector/patch@0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7':
+    resolution: {integrity: sha512-r+sW5w1Gu8njCKZd0sR4Z4oXXJ2mvoeJuufZM78iAdu68JxGSBvAuKE9wIlZxp+1Q2GQcAQ9EpB/ofgj/vnojg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
@@ -23279,7 +23279,7 @@ snapshots:
       std-env: 3.7.0
       tslib: 2.6.2
 
-  '@graphql-inspector/patch@0.1.2(graphql@16.9.0)':
+  '@graphql-inspector/patch@0.1.3-alpha-20260225183305-b1e68e3f363401fe16845d7f731ff8ed3467f5a7(graphql@16.9.0)':
     dependencies:
       '@graphql-tools/utils': 10.9.1(graphql@16.9.0)
       graphql: 16.9.0
