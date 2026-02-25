@@ -4,7 +4,7 @@ import { useQuery } from 'urql';
 import { Section } from '@/components/common';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { OperationsStats } from '@/components/target/insights/Stats';
+import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
