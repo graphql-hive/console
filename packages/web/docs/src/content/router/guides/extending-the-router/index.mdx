@@ -2,69 +2,90 @@
 title: 'Extending the Router'
 ---
 
+import { Steps } from '@theguild/components'
+
 # Extending the Router
 
-Hive Router is designed to be flexible and extensible, allowing you to customize its behavior to fit your specific needs. This guide demonstrate how to extend the router's functionality using custom plugins written in Rust. 
+Hive Router is designed to be flexible and extensible, allowing you to customize its behavior to fit
+your specific needs. This guide demonstrate how to extend the router's functionality using
+[custom plugins written in Rust](../extensibility/plugin_system).
 
-## Getting Started
+Refer also to the
+[technical documentation and the API reference of the Router plugin system](../extensibility/plugin_system).
+
+## Creating a Custom Plugin
 
 Hive Router is built using Rust, which allows for high performance and safety. One of the powerful
 features of Hive Router is the ability to create custom builds with your own Rust plugins. This
 enables you to add new capabilities or modify existing ones to better suit your requirements.
 
+<Steps>
+
 ### Create a new Rust project
 
 First, ensure you have the necessary development environment set up for
-[Rust 1.91.1 or later](https://rust-lang.org/tools/install/). Then, you need to create a new Rust
-project for your custom router;
+[Rust](https://rust-lang.org/tools/install/).
+
+Then, start by creating a new Rust project for your custom router:
 
 ```bash
 cargo new --bin my_custom_router
 cd my_custom_router
 ```
 
-### Installing Dependencies
+### Install Dependencies
 
 Install `hive-router` and `serde` as a dependency by adding it to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-hive-router = "0.0.39"
+hive-router = "<HIVE_ROUTER_VERSION>" # see https://crates.io/crates/hive-router for latest version
 serde = "1"
 ```
 
-### Create an entrypoint for your custom router
+### `main` and router entrypoint
 
 Next, you need to create an entrypoint for your custom router. This is where you'll initialize the
 router and register your plugins. Create a new file `src/main.rs` and add the following code:
 
 ```rust
 use hive_router::{
-    error::RouterInitError, init_rustls_crypto_provider, router_entrypoint, DefaultGlobalAllocator,
+    configure_global_allocator, RouterGlobalAllocator,
+    error::RouterInitError, init_rustls_crypto_provider, router_entrypoint,
     PluginRegistry,
 };
 
-#[global_allocator]
-static GLOBAL: DefaultGlobalAllocator = DefaultGlobalAllocator;
+// Configure the global allocator that's used by Hive Router
+configure_global_allocator!();
 
-#[ntex::main]
+#[hive_router::main]
 async fn main() -> Result<(), RouterInitError> {
+    // Configure TLS so your router will be able to make HTTPS requests
+    // By default, Router is using the system's default certificate store.
     init_rustls_crypto_provider();
 
-    /// Start the Hive Router with the plugin registry
+    // Start the Hive Router with the plugin registry
     router_entrypoint(PluginRegistry::new()).await
 }
 ```
 
-### Provide an example supergraph
+### Configure your Router
 
-You can use our example supergraph as a starting point;
+To use the Router, you'll need to create a `router.config.yaml` file in the root of your project.
+
+This file will contain the configuration for your router, including the supergraph source and any
+plugins you want to use.
+
+Also, this configuration file needs to point to a valid, composed, Supergraph file.
+
+If you already have your own Supergraph that can be used for testing, then place it in your
+development directory. Alternatively, you can use our example supergraph as a starting point:
 
 ```bash
 curl -sSL https://federation-demo.theguild.workers.dev/supergraph.graphql > supergraph.graphql
 ```
 
-Then point to that supergraph in your `router.config.yaml`:
+Then, point to your Supergraph in your `router.config.yaml`:
 
 ```yaml filename="router.config.yaml"
 supergraph:
@@ -72,14 +93,27 @@ supergraph:
   path: ./supergraph.graphql
 ```
 
-Or you can use other ways to provide the supergraph, see
-[Supergraph Sources](https://the-guild.dev/graphql/hive/docs/router/supergraph).
+> Hive Router allows you to load the Supergraph for additional source, refer to
+> [Supergraph Sources documentation page](https://the-guild.dev/graphql/hive/docs/router/supergraph).
+
+### Run your custom router
+
+At this point, you should be able to run your router by executing the following command:
+
+```bash
+cargo run
+```
+
+The Router default configuration is to serve at port `4000`, so go ahead and try to open
+[`http://localhost:4000/graphql`](http://localhost:4000/graphql) in your browser to see the GraphQL
+interactive playground.
 
 ### Create a custom plugin
 
-Now you can create a custom plugin by implementing the `RouterPlugin` trait. For example, let's say
-you want to create a plugin that logs the incoming GraphQL operations. You can create a new file
-`src/plugin.rs` and add the following code:
+Now you can create a custom plugin by implementing the
+[`RouterPlugin` trait](../extensibility/plugin_system).
+
+Then, create a `src/plugin.rs` file with the following template:
 
 ```rust
 use hive_router::{
@@ -98,35 +132,45 @@ pub struct MyPlugin;
 #[async_trait]
 impl RouterPlugin for MyPlugin {
     type Config = ();
+
     fn plugin_name() -> &'static str {
         "my_plugin"
     }
+
     fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
         payload.initialize_plugin_with_defaults()
     }
+
     async fn on_graphql_params<'exec>(
         &'exec self,
         payload: OnGraphQLParamsStartHookPayload<'exec>,
     ) -> OnGraphQLParamsStartHookResult<'exec> {
-        tracing::info!("Received GraphQL operation: {:?}", payload.graphql_params.query);
+        println!("Received GraphQL operation: {:?}", payload.graphql_params.query);
+
         payload.proceed()
     }
 }
-
 ```
 
-Then register your plugin in the `main.rs`:
+The plugin above uses the [Plugin System Hooks API](../extensibility/plugin_system#hooks), and hooks
+into `on_graphql_params` phase, to print the received GraphQL operation to the log.
+
+> You can find a plugin template in the
+> [Router GitHub repository](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs).
+
+### Register your plugin
+
+Now, register your plugin in the `main.rs`:
 
 ```diff
 use hive_router::{
     error::RouterInitError, init_rustls_crypto_provider, ntex, router_entrypoint,
-    DefaultGlobalAllocator, PluginRegistry,
+    RouterGlobalAllocator, configure_global_allocator, PluginRegistry,
 };
 + mod plugin;
 + use plugin::MyPlugin;
 
-#[global_allocator]
-static GLOBAL: DefaultGlobalAllocator = DefaultGlobalAllocator;
+configure_global_allocator!();
 
 #[hive_router::main]
 async fn main() -> Result<(), RouterInitError> {
@@ -139,203 +183,65 @@ async fn main() -> Result<(), RouterInitError> {
 }
 ```
 
-### Configure your plugins in `router.config.yaml`
+### Enable and configure your plugin
 
-`plugins` section in your `router.config.yaml` allows you to configure your custom plugins. Here is
-an example configuration:
+Now that you have registered your plugin, the Router can start using it, and as a user of the
+router, you'll need to enabled configure your plugin in the `router.config.yaml` file:
 
 ```yaml filename="router.config.yaml"
+supergraph:
+  source: file
+  path: ./supergraph.graphql
 plugins:
   my_plugin:
     enabled: true
 ```
 
-During this phase of development, you need to learn more about the Hive Router plugin system and how
-the hooks are structured.
+### Try your plugin
 
-### Run your custom router
-
-Finally, you can build and run your custom router using Cargo:
+You can now compile and run your Router again:
 
 ```bash
 cargo run
 ```
 
-## Configuration of Plugins
+And use the interactive GraphQL playground at
+[`http://localhost:4000/graphql`](http://localhost:4000/graphql) to run any query. If your plugin is
+registered, configured an enabled correctly, running any GraphQL operation will print a log message
+as defined in `on_graphql_params` hook of the custom plugin.
 
-Plugins can be configured via the `router.config.yaml` file. Each plugin can have its own entry
-under `plugins` section, where you can specify various options and settings specific to that plugin.
+> This simplest GraphQL operation you can run that doesn't require subgraphs runnning is:
+> `query { __typename }`.
 
-The configuration `struct` should be `serde` compliant, so that it can be deserialized from the YAML
-file.
+### Build your Router
 
-So we can have a configuration struct like below;
+Now that you have a custom plugin that extends the Router behavior, you'll need to compile it in
+Release mode in order to be able to use is in production.
 
-```rust filename="src/dynamic_auth.rs"
-use serde::Deserialize;
+To do that, verify that your `Cargo.toml` file has a defined binary and entrypoint:
 
-#[derive(Deserialize)]
-pub struct AllowClientIdConfig {
-    pub header: String,
-    pub path: String,
-}
-```
-
-Then attach it to the plugin struct;
-
-```rust filename="src/dynamic_auth.rs"
-impl RouterPlugin for AllowClientIdFromFilePlugin {
-    type Config = AllowClientIdConfig;
-    fn plugin_name() -> &'static str {
-        "allow_client_id_from_file"
-    }
-    fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
-        // Payload config method will deserialize the config section
-        // for this plugin from the router.config.yaml file into the AllowClientIdConfig struct
-        let config = payload.config()?;
-        payload.initialize_plugin(Self {
-            header_key: config.header,
-            allowed_ids_path: PathBuf::from(config.path),
-        })
-    }
-}
-```
-
-`plugin_name` method should return the name of the plugin as it appears in the `router.config.yaml`
-file. The `on_plugin_init` hook is responsible for creating an instance of the plugin from the
-provided configuration.
-
-With this setup, you can now configure the `allow_client_id_from_file` plugin in your
-`router.config.yaml` file like this:
-
-```yaml filename="router.config.yaml"
-plugins:
-  allow_client_id_from_file:
-    enabled: true
-    config:
-      header: 'x-client-id'
-```
-
-[See the full `async_auth` example here](https://github.com/graphql-hive/router/tree/main/plugin_examples/async_auth)
-
-## Registration of Plugins
-
-Finally, to use your custom plugin, you need to register it with the `PluginRegistry` in your
-`main.rs` file.
-
-```rust filename="src/main.rs" {9-14}
-    PluginRegistry::new()
-        .register_plugin::<AllowClientIdFromFilePlugin>()
-```
-
-Then pass the `plugin_registry` to the `router_entrypoint` function as shown earlier.
-
-```rust filename="src/main.rs" {15}
-    router_entrypoint(
-        PluginRegistry::new()
-            .register_plugin::<AllowClientIdFromFilePlugin>()
-    ).await
-```
-
-## Understanding the hotpath
-
-When creating custom plugins, it's important to understand the hotpath of the request processing.
-The hotpath refers to the critical path that affects the performance of the router. When
-implementing the request lifecycle hooks like `on_graphql_params`, `on_graphql_validation`,
-`on_query_plan`, `on_execute`, etc., you should be mindful of the performance implications of your
-code. Avoid doing heavy computations or blocking operations in these hooks, as they can
-significantly impact the latency of your GraphQL requests.
-
-```rust
-// We use thread-safe `DashMap` here to cache the schema with feature flags applied
-// So that we can avoid visiting the schema for each request, and instead cache the result based on some cache key
-// We keep it in `Arc` to avoid cloning the schema for each request, since the schema can be quite large
-pub struct FeatureFlagsPlugin {
-    schema_with_flags_cache: DashMap<String, Arc<SchemaDocument>>,
-}
-
-#[async_trait]
-impl RouterPlugin for FeatureFlagsPlugin {
-    async fn on_graphql_validation<'exec>(
-        &'exec self,
-        payload: OnGraphQLValidationStartHookPayload<'exec>,
-    ) -> OnGraphQLValidationStartHookResult<'exec> {
-        // Generate a cache key based on the request properties, for example using the headers
-        let cache_key = generate_cache_key_from_header(&payload.router_http_request);
-
-        // Do not repeat the expensive schema transformation for each request, instead cache the result based on the cache key
-        let cached_schema = self
-            .schema_with_flags_cache
-            .entry(cache_key)
-            .or_insert_with(|| {
-                let visitor = FeatureFlagsVisitor { feature_flags };
-
-                visitor
-                    .visit_schema_document(SchemaDocument::clone(&payload.schema.document), &mut ())
-                    .unwrap()
-                    .into()
-            })
-            .value()
-            .clone();
-
-        payload.with_schema(cached_schema).proceed()
-    }
-}
-```
-
-[See the full of `feature_flags` example](https://github.com/graphql-hive/router/tree/main/plugin_examples/feature_flags)
-
-## Build and distribute the custom build
-
-Finally, after you have implemented your custom router with the necessary plugins, you can build and
-distribute it. You can build a binary using Cargo and share it with others or deploy it in
-production.
-
-### Executable single binary with Cargo
-
-After you have implemented your custom router with the necessary plugins, you can build a
-distributable binary using Cargo. This will allow you to deploy your custom router in production or
-share it with others when necessary.
-
-Make sure the `Cargo.toml` file has the correct configuration for building a binary, and the name of
-the binary is named as desired;
-
-```toml filename="Cargo.toml"
-[package]
-name = "my-plugin-example"
-version = "0.0.1"
-edition = "2021"
-license = "MIT"
-
-[lib]
-
+```toml
 [[bin]]
 name = "hive_router_with_my_plugin" # Name of the binary
 path = "src/main.rs"
-
-[dependencies]
-hive-router = "0.0.39"
-serde = "1"
 ```
 
-```bash
+And then use Rust compiler in release mode:
+
+```rust
 cargo build --release
 ```
 
-This command will create an optimized binary in the `target/release` directory. You can then run the
-binary directly:
+Your artifact will now be located in `./target/release/hive_router_with_my_plugin` and you can run
+it as-is.
 
-```bash
-./target/release/hive_router_with_my_plugin
-```
+### Distribute your custom Router
 
-### Containerize with Docker
-
-To containerize your custom router, you can create a `Dockerfile` in the root of your project. Here
-is an example `Dockerfile` that builds and runs your custom router:
+We recommend wrapping your custom Router with a Docker image, and build it using a `Dockerfile`:
 
 ```dockerfile name="Dockerfile"
 # Use the official Rust image as the base image
+# Please consider to pin the Rust version
 FROM rust:latest
 
 # Set the working directory inside the container
@@ -354,7 +260,7 @@ EXPOSE 4000
 CMD ["./target/release/hive_router_with_my_plugin"]
 ```
 
-You can then build the Docker image using the following command:
+Then, run the following Docker build command:
 
 ```bash
 docker build -t my-custom-router .
@@ -363,5 +269,20 @@ docker build -t my-custom-router .
 After the image is built, you can run a container from it:
 
 ```bash
-docker run -p 4000:4000 my-custom-router
+docker run \
+  -p 4000:4000 \
+  -v ./supergraph.graphql:/app/supergraph.graphql \
+  -v ./router.config.yaml:/app/router.config.yaml \
+  my-custom-router
 ```
+
+</Steps>
+
+## Additional Resources
+
+We've collected a links and examples that can help you to implement custom plugins and extend the
+Router in different ways.
+
+- [Plugin System documentation and API Reference](../extensibility/plugin_system)
+- [Example plugins](https://github.com/graphql-hive/router/tree/main/plugin_examples)
+- [Plugin template](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs)
