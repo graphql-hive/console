@@ -223,7 +223,7 @@ access the `context` field.
 For example, you can store some data in the context during the `on_graphql_params` hook and retrieve
 it later in the `on_subgraph_execute` hook.
 
-```rust filename="src/context_data.rs"
+```rust
 pub struct ContextData {
     incoming_data: &'static str,
 }
@@ -1450,11 +1450,10 @@ are also available to simplify creating early responses.
 To make it easier to create early responses, Hive Router provides some helper methods on the hook
 payloads.
 
-- `end_with_response(response: Response)` - Accepts a
-  `serde`-serializable body, automatically serializes it to JSON, and sets the appropriate headers.
-  To simplify the above example:
+- `end_with_response(response: Response)` - Accepts a `serde`-serializable body, automatically
+  serializes it to JSON, and sets the appropriate headers. To simplify the above example:
 
-```rust filename="src/forbid_anon_ops.rs" {33-52}
+```rust
                 let body = json!({
                     "errors": [
                         {
@@ -1465,7 +1464,7 @@ payloads.
                         }
                     ]
                 });
-                
+
                 // Here we short-circuit the request processing by returning an early response
                 return payload.end_with_response(
                     Response::with_body(
@@ -1478,7 +1477,7 @@ payloads.
 - `end_with_graphql_error(error: GraphQLError, status: StatusCode)` - Accepts a `GraphQLError`
   directly and constructs the appropriate GraphQL error response.
 
-```rust filename="src/forbid_anon_ops.rs" {33-52}
+```rust
                 let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
                 // Here we short-circuit the request processing by returning an early response
                 return payload.end_with_graphql_error(
