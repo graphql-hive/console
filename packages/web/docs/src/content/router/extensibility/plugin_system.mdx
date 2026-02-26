@@ -1450,7 +1450,7 @@ are also available to simplify creating early responses.
 To make it easier to create early responses, Hive Router provides some helper methods on the hook
 payloads.
 
-- `end_with_response_body(body: Serialize, status_code: StatusCode)` - Accepts a
+- `end_with_response(response: Response)` - Accepts a
   `serde`-serializable body, automatically serializes it to JSON, and sets the appropriate headers.
   To simplify the above example:
 
@@ -1465,10 +1465,13 @@ payloads.
                         }
                     ]
                 });
+                
                 // Here we short-circuit the request processing by returning an early response
-                return payload.end_with_response_body(
-                    body,
-                    StatusCode::BAD_REQUEST,
+                return payload.end_with_response(
+                    Response::with_body(
+                        StatusCode::BAD_REQUEST,
+                        body.to_string().into(),
+                    )
                 );
 ```
 
