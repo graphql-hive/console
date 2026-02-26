@@ -4,7 +4,7 @@
  **/
 import type { Redis as RedisInstance, RedisOptions } from 'ioredis';
 import Redis from 'ioredis';
-import type { Logger } from '@graphql-hive/pubsub';
+import type { Logger } from '@hive/pubsub';
 
 export type { RedisInstance as Redis };
 

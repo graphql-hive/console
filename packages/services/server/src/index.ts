@@ -11,7 +11,6 @@ import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
 import 'reflect-metadata';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
-import { createHivePubSub } from '@graphql-hive/pubsub';
 import {
   createRegistry,
   CryptoProvider,
@@ -32,6 +31,7 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
+import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createServer,

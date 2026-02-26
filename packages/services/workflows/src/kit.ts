@@ -4,7 +4,7 @@ import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphi
 import type { Pool } from 'pg';
 import { z } from 'zod';
 import { Logger } from '@graphql-hive/logger';
-import { bridgeGraphileLogger } from '@graphql-hive/pubsub';
+import { bridgeGraphileLogger } from '@hive/pubsub';
 import type { Context } from './context';
 
 export type TaskDefinition<TName extends string, TModel> = {

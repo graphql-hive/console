@@ -1,7 +1,7 @@
 import { run } from 'graphile-worker';
 import { createPool } from 'slonik';
 import { Logger } from '@graphql-hive/logger';
-import { bridgeGraphileLogger, createHivePubSub } from '@graphql-hive/pubsub';
+import { bridgeGraphileLogger, createHivePubSub } from '@hive/pubsub';
 import {
   createServer,
   registerShutdown,

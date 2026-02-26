@@ -5,7 +5,7 @@ import { makeWorkerUtils, WorkerUtils } from 'graphile-worker';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { bridgeGraphileLogger } from '@graphql-hive/pubsub';
+import { bridgeGraphileLogger } from '@hive/pubsub';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
