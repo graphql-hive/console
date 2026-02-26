@@ -30,12 +30,12 @@ export class SchemaProposalManager {
   }
 
   async subscribeToSchemaProposalCompositions(args: { proposalId: string }) {
-    const proposal = await this.proposalStorage.getProposal({
+    const proposal = await this.proposalStorage.getProposalTargetId({
       id: args.proposalId,
     });
 
     if (!proposal) {
-      throw new HiveError('Proposal not found.');
+      this.session.raise('schemaProposal:describe');
     }
 
     const selector = await this.idTranslator.resolveTargetReference({
@@ -45,7 +45,7 @@ export class SchemaProposalManager {
     });
 
     if (!selector) {
-      throw new HiveError('Proposal not found.');
+      this.session.raise('schemaProposal:describe');
     }
 
     await this.session.assertPerformAction({
@@ -54,7 +54,9 @@ export class SchemaProposalManager {
       params: selector,
     });
 
-    return this.pubSub.subscribe('schemaProposalComposition', proposal.id);
+    this.logger.info(`Subscribed to "schemaProposalComposition" (id=${args.proposalId})`);
+
+    return this.pubSub.subscribe('schemaProposalComposition', args.proposalId);
   }
 
   async proposeSchema(args: {

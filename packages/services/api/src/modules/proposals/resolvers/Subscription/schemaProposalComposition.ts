@@ -8,5 +8,5 @@ export const schemaProposalComposition: NonNullable<
     injector
       .get(SchemaProposalManager)
       .subscribeToSchemaProposalCompositions({ proposalId: args.input.proposalId }),
-  resolve: (payload: { status: string; timestamp: string }) => payload,
+  resolve: (payload: { status: string; timestamp: string; reason?: string | null }) => payload,
 };

@@ -19,15 +19,15 @@ type SchemaProviderConfig = {
 const SchemaModel = z.object({
   id: z.string().uuid(),
   sdl: z.string(),
-  serviceName: z.optional(z.string()),
-  serviceUrl: z.optional(z.string()),
+  serviceName: z.string().nullable(),
+  serviceUrl: z.string().nullable(),
   type: z.string(),
 });
 
 const SchemaProposalChangesModel = z.object({
   id: z.string().uuid(),
-  serviceName: z.string().optional(),
-  serviceUrl: z.string().optional(),
+  serviceName: z.string().nullable(),
+  serviceUrl: z.string().nullable(),
   schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
   createdAt: z.string(),
 });

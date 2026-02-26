@@ -13,6 +13,7 @@ import 'reflect-metadata';
 import { createPubSub } from 'graphql-yoga';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
+import { createHivePubSub } from '@graphql-hive/pubsub';
 import {
   createRegistry,
   CryptoProvider,
@@ -184,16 +185,14 @@ export async function main() {
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
-  const pubSub = createPubSub({
-    eventTarget: createRedisEventTarget({
-      publishClient: redis,
-      subscribeClient: createRedisClient(
-        'subscriber',
-        env.redis,
-        server.log.child({ source: 'RedisSubscribe' }),
-      ),
-    }),
-  }) as HivePubSub;
+  const pubSub = createHivePubSub({
+    publisher: redis,
+    subscriber: createRedisClient(
+      'subscriber',
+      env.redis,
+      server.log.child({ source: 'RedisSubscribe' }),
+    ),
+  });
 
   registerShutdown({
     logger: server.log,

@@ -22,7 +22,7 @@ export function ServiceHeading(props: {
     <div
       className={cn(
         'text-accent bg-accent_10 mt-2 flex flex-row items-center rounded-sm px-4 py-2 text-base font-semibold',
-        props.onClick !== undefined && 'cursor-pointer',
+        props.onClick !== undefined && 'hover:bg-accent_30 cursor-pointer',
         props.onClick !== undefined && isOpen && 'rounded-b-none',
       )}
       onClick={e => {
