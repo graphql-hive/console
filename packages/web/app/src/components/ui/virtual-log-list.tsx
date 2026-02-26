@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
@@ -12,6 +12,7 @@ const ITEM_HEIGHT = 24;
 export function VirtualLogList(props: { logs: LogEntry[]; className?: string }) {
   const { logs } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
+  const atBottomRef = useRef(true);
 
   const virtualizer = useVirtualizer({
     count: logs.length,
@@ -21,10 +22,25 @@ export function VirtualLogList(props: { logs: LogEntry[]; className?: string }) 
   });
 
   useEffect(() => {
-    if (logs.length > 0) {
-      virtualizer.scrollToIndex(logs.length - 1, { behavior: 'smooth' });
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+
+    const handleScroll = () => {
+      const { scrollHeight, scrollTop, clientHeight } = scrollEl;
+      atBottomRef.current = scrollHeight - scrollTop - clientHeight < ITEM_HEIGHT;
+    };
+
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => scrollEl.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (atBottomRef.current && logs.length > 0) {
+      virtualizer.scrollToIndex(logs.length - 1, { behavior: 'smooth', align: 'end' });
     }
-  }, [logs.length]);
+  }, [logs.length, virtualizer]);
 
   return (
     <div ref={scrollRef} className={props.className} style={{ overflow: 'auto' }}>
