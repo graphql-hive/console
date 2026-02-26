@@ -7,6 +7,7 @@ import { GraphQL } from './graphql';
 import { Observability } from './observability';
 import { OTELCollector } from './otel-collector';
 import { type PublicGraphQLAPIGateway } from './public-graphql-api-gateway';
+import { type PublicGraphQLAPIRouter } from './public-graphql-api-router';
 import { Usage } from './usage';
 
 export function deployProxy({
@@ -16,6 +17,7 @@ export function deployProxy({
   environment,
   observability,
   publicGraphQLAPIGateway,
+  publicGraphQLAPIRouter,
   otelCollector,
 }: {
   observability: Observability;
@@ -24,6 +26,7 @@ export function deployProxy({
   app: App;
   usage: Usage;
   publicGraphQLAPIGateway: PublicGraphQLAPIGateway;
+  publicGraphQLAPIRouter: PublicGraphQLAPIRouter;
   otelCollector: OTELCollector;
 }) {
   const { tlsIssueName } = new CertManager().deployCertManagerAndIssuer();
@@ -109,18 +112,22 @@ export function deployProxy({
     ])
     .registerService({ record: environment.apiDns }, [
       {
-        name: 'public-graphql-api',
-        path: '/graphql',
-        customRewrite: '/graphql',
-        service: publicGraphQLAPIGateway.service,
-        requestTimeout: '60s',
-        retriable: true,
-      },
-      {
         name: 'otel-traces',
         path: '/otel/v1/traces',
         customRewrite: '/v1/traces',
         service: otelCollector.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
+      {
+        name: 'public-graphql-api',
+        path: '/graphql',
+        customRewrite: '/graphql',
+        // Here we split traffic between the two services: Hive Gateway and Hive Router
+        service: [
+          { upstream: publicGraphQLAPIGateway.service, weight: 50 },
+          { upstream: publicGraphQLAPIRouter.service, weight: 50 },
+        ],
         requestTimeout: '60s',
         retriable: true,
       },
