@@ -1,3 +1,4 @@
+import dns from 'node:dns/promises';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { maskToken } from '@hive/service-common';
@@ -12,6 +13,7 @@ import { CryptoProvider } from '../../shared/providers/crypto';
 import { Logger } from '../../shared/providers/logger';
 import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
+import { OIDCIntegrationStore } from './oidc-integration.store';
 import { OIDC_INTEGRATIONS_ENABLED } from './tokens';
 
 @Injectable({
@@ -30,6 +32,7 @@ export class OIDCIntegrationsProvider {
     @Inject(OIDC_INTEGRATIONS_ENABLED) private enabled: boolean,
     private session: Session,
     private resourceAssignments: ResourceAssignments,
+    private oidcIntegrationStore: OIDCIntegrationStore,
   ) {
     this.logger = logger.child({ source: 'OIDCIntegrationsProvider' });
   }
@@ -534,6 +537,162 @@ export class OIDCIntegrationsProvider {
 
     return this.pubSub.subscribe('oidcIntegrationLogs', integration.id);
   }
+
+  async registerDomain(args: { oidcIntegrationId: string; domain: string }) {
+    const parsedId = zod.string().uuid().safeParse(args.oidcIntegrationId);
+
+    if (parsedId.error) {
+      this.session.raise('oidc:modify');
+    }
+
+    const integration = await this.storage.getOIDCIntegrationById({
+      oidcIntegrationId: parsedId.data,
+    });
+
+    if (!integration) {
+      this.session.raise('oidc:modify');
+    }
+
+    await this.session.assertPerformAction({
+      organizationId: integration.linkedOrganizationId,
+      action: 'oidc:modify',
+      params: {
+        organizationId: integration.linkedOrganizationId,
+      },
+    });
+
+    const fqdnResult = FQDNModel.safeParse(args.domain);
+
+    if (fqdnResult.error) {
+      return {
+        type: 'error' as const,
+        message: 'Invalid FQDN provided.',
+      };
+    }
+
+    const domain = await this.oidcIntegrationStore.createDomain(integration.id, args.domain);
+    const challenge = await this.oidcIntegrationStore.createDomainChallenge(domain.id);
+
+    return {
+      type: 'result' as const,
+      domain,
+      challenge,
+    };
+  }
+
+  async verifyChallenge(args: { domainId: string }) {
+    const parsedId = zod.string().uuid().safeParse(args.domainId);
+
+    if (parsedId.error) {
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
+
+    let domain = await this.oidcIntegrationStore.findDomainById(parsedId.data);
+
+    if (
+      !domain ||
+      (await this.session.canPerformAction({
+        organizationId: domain.oidcIntegrationId,
+        action: 'oidc:modify',
+        params: {
+          organizationId: domain.oidcIntegrationId,
+        },
+      })) === false
+    ) {
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
+
+    const challenge = await this.oidcIntegrationStore.getDomainChallenge(domain.id);
+
+    if (!challenge) {
+      return {
+        type: 'error' as const,
+        message: 'Pending challenge not found.',
+      };
+    }
+
+    const txtResult = await dns.resolveTxt(domain.domainName);
+
+    const prefix = challenge.recordName + '=';
+    let record = txtResult.flatMap(record => record).find(record => record.startsWith(prefix));
+
+    if (!record) {
+      return {
+        type: 'error' as const,
+        message: 'Could not resolve TXT record.',
+      };
+    }
+
+    record = record.replace(prefix, '');
+
+    if (record !== challenge.value) {
+      return {
+        type: 'error' as const,
+        message: 'Invalid TXT record value.',
+      };
+    }
+
+    domain = await this.oidcIntegrationStore.updateDomainVerifiedAt(domain.id);
+
+    if (!domain) {
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
+
+    await this.oidcIntegrationStore.deleteDomainChallenge(domain.id);
+
+    return {
+      type: 'success' as const,
+      domain,
+    };
+  }
+
+  async deleteDomain(args: { domainId: string }) {
+    const parsedId = zod.string().uuid().safeParse(args.domainId);
+
+    if (parsedId.error) {
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
+
+    const domain = await this.oidcIntegrationStore.findDomainById(parsedId.data);
+
+    if (
+      !domain ||
+      (await this.session.canPerformAction({
+        organizationId: domain.oidcIntegrationId,
+        action: 'oidc:modify',
+        params: {
+          organizationId: domain.oidcIntegrationId,
+        },
+      })) === false
+    ) {
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
+
+    await this.oidcIntegrationStore.deleteDomain(args.domainId);
+
+    return {
+      type: 'success' as const,
+    };
+  }
+
+  async getRegisteredDomainsForOIDCIntegration(integration: OIDCIntegration) {
+    return await this.oidcIntegrationStore.getDomainsForOIDCIntegrationId(integration.id);
+  }
 }
 
 const OIDCIntegrationClientIdModel = zod
@@ -560,3 +719,12 @@ const OIDCAdditionalScopesModel = zod
   .max(20, 'Can not be more than 20 items.');
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);
+
+const FQDNModel = zod
+  .string()
+  .min(3, 'Must be at least 3 characters long')
+  .max(255, 'Must be at most 255 characters long.')
+  .regex(
+    /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-][a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-][a-zA-Z0-9]))$/,
+    'Invalid characters provided.',
+  );

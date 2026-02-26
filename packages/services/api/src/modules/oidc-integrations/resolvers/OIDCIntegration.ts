@@ -51,4 +51,9 @@ export const OIDCIntegration: OidcIntegrationResolvers = {
       resources: oidcIntegration.defaultResourceAssignment,
     });
   },
+  registeredDomains: async (oidcIntegration, _arg, { injector }) => {
+    return injector
+      .get(OIDCIntegrationsProvider)
+      .getRegisteredDomainsForOIDCIntegration(oidcIntegration);
+  },
 };

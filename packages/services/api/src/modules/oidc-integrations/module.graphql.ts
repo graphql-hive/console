@@ -23,6 +23,10 @@ export default gql`
     requireInvitation: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
+    """
+    List of domains registered with this OIDC integration.
+    """
+    registeredDomains: [OIDCIntergrationDomain!]!
   }
 
   extend type Mutation {
@@ -36,6 +40,79 @@ export default gql`
     updateOIDCDefaultResourceAssignment(
       input: UpdateOIDCDefaultResourceAssignmentInput!
     ): UpdateOIDCDefaultResourceAssignmentResult!
+    """
+    Register a domain for the OIDC provider for a verification challenge.
+    """
+    registerOIDCDomain(input: RegisterOIDCDomainInput!): RegisterOIDCDomainResult!
+    """
+    Remove a domain from the OIDC provider list.
+    """
+    deleteOIDCDomain(input: DeleteOIDCDomainInput!): DeleteOIDCDomainResult!
+    """
+    Verify the domain verification challenge
+    """
+    verifyOIDCDomainChallenge(
+      input: VerifyOIDCDomainChallengeInput!
+    ): VerifyOIDCDomainChallengeResult!
+  }
+
+  input RegisterOIDCDomainInput {
+    oidcIntegrationId: ID!
+    domainName: String!
+  }
+
+  type RegisterOIDCDomainResult {
+    ok: RegisterOIDCDomainResultOk
+    error: RegisterOIDCDomainResultError
+  }
+
+  type RegisterOIDCDomainResultOk {
+    createdOIDCIntegrationDomain: OIDCIntergrationDomain!
+  }
+
+  type RegisterOIDCDomainResultError {
+    message: String!
+  }
+
+  input DeleteOIDCDomainInput {
+    oidcDomainId: ID!
+  }
+
+  type DeleteOIDCDomainResult {
+    ok: DeleteOIDCDomainOk
+    error: DeleteOIDCDomainError
+  }
+
+  type DeleteOIDCDomainOk {
+    deletedOIDCIntegrationId: ID!
+  }
+
+  type DeleteOIDCDomainError {
+    message: String!
+  }
+
+  input VerifyOIDCDomainChallengeInput {
+    oidcDomainId: ID!
+  }
+
+  type VerifyOIDCDomainChallengeResult {
+    ok: VerifyOIDCDomainChallengeOk
+    error: VerifyOIDCDomainChallengeError
+  }
+
+  type VerifyOIDCDomainChallengeOk {
+    verifiedOIDCIntegrationDomain: OIDCIntergrationDomain!
+  }
+
+  type VerifyOIDCDomainChallengeError {
+    message: String!
+  }
+
+  type OIDCIntergrationDomain {
+    id: ID!
+    domainName: String!
+    createdAt: Date!
+    verifiedAt: Date
   }
 
   """
