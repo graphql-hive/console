@@ -12,7 +12,7 @@ Hive Router provides a plugin system that allows developers to extend its functi
 
 Just like the Hive Router itself, custom plugins are written in Rust, which allows for high performance and safety. To ease the development process, Hive Router is also published to [Crates.io](https://crates.io/crates/hive-router) as a single package `hive-router` that contains everything you need in order to focus on building your plugin, without configuring or re-building other parts of the service.
 
-This pages documents the API, hooks, and different implementation options that are available for plugin developers. If you are looking for a guide on how to write, test and distribute a custom plugin, please refer to [Extending the Router guide](../guides/extending-the-router).
+This page documents the API, hooks, and different implementation options that are available for plugin developers. If you are looking for a guide on how to write, test and distribute a custom plugin, please refer to [Extending the Router guide](../guides/extending-the-router).
 
 ## `hive-router` Crate
 
@@ -24,7 +24,7 @@ Please refer to [the Crate's `lib.rs` entrypoint](https://github.com/graphql-hiv
 
 ## `trait RouterPlugin`
 
-The basic interface that exposes the plugin system is called `RouterPlugin`. To implement a custom plugin, you'll need to `impl` the `RouterPlugin` for your custom plugin's`struct`. Due to the async nature of the plugin system, a usage of `#[async_trait]` is also needed. 
+The basic interface that exposes the plugin system is called `RouterPlugin`. To implement a custom plugin, you'll need to `impl` the `RouterPlugin` for your custom plugin's `struct`. Due to the async nature of the plugin system, a usage of `#[async_trait]` is also needed. 
 
 ```rust
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -42,7 +42,7 @@ impl RouterPlugin for MyPlugin {
 }
 ```
 
-The plugin above will be instansiated using the following Router YAML config:
+The plugin above will be instantiated using the following Router YAML config:
 
 ```yaml
 plugins:
@@ -57,7 +57,7 @@ A plugin may implement one or more hooks, and have the following concepts implem
 
 The `RouterPlugin` trait also accepts a generic type for the configuration of the plugin. 
 
-The configuration type requires to implement `DeserializeOwned + Sync` since the Router will be in charge of loading and deserializaing the configuration from the Router config file. 
+The configuration type requires to implement `DeserializeOwned + Sync` since the Router will be in charge of loading and deserializing the configuration from the Router config file. 
 
 The [`on_plugin_init`](#on_plugin_init) can help you to access the plugin's configuration.
 
@@ -87,7 +87,7 @@ impl RouterPlugin for MyPlugin {
 }
 ```
 
-The plugin above will be instansiated using the following Router YAML config:
+The plugin above will be instantiated using the following Router YAML config:
 
 ```yaml
 plugins:
@@ -101,7 +101,7 @@ plugins:
 
 A plugin may implement one or more hooks, and take part in different parts of the Router execution and lifecycle. 
 
-Hooks allow the developer to be part of the control-flow and change the behavior of the router, by returning differnt return types from the hook function.
+Hooks allow the developer to be part of the control-flow and change the behavior of the router, by returning different return types from the hook function.
 
 As a plugin developer, you can use the plugin system API in order to hook into the router execution flow, in the following areas of the Router: 
 
@@ -194,7 +194,7 @@ impl RouterPlugin for MyPlugin {
 
 ### Context Data Sharing
 
-In cases where you need to share data between hooks, you can use the a custom context struct. Define a custom struct to hold the data you would like to share between hooks, and use the hooks' payload to access the `context` field. 
+In cases where you need to share data between hooks, you can use a custom context struct. Define a custom struct to hold the data you would like to share between hooks, and use the hooks' payload to access the `context` field. 
 
 For example, you can store some data in the context during the `on_graphql_params` hook and retrieve
 it later in the `on_subgraph_execute` hook.
@@ -431,7 +431,7 @@ fn on_http_request<'req>(
 This hook is called after the router has determined that the incoming request is a GraphQL request,
 and it decides to parse the GraphQL parameters (query, variables, operation name, etc.). 
 
-This hooks allow you to implement different strategies for handling the detection and the extraction of the GraphQL request parameters. You may also prevent the execution of the GraphQL request if certain conditions are met.
+This hook allows you to implement different strategies for handling the detection and the extraction of the GraphQL request parameters. You may also prevent the execution of the GraphQL request if certain conditions are met.
 
 ```rust
 async fn on_graphql_params<'exec>(
@@ -584,11 +584,11 @@ impl ValidationRule for MaxAliasesRule {
     }
 }
 
-sync fn on_graphql_validation<'exec>(
+async fn on_graphql_validation<'exec>(
         &'exec self,
         payload: OnGraphQLValidationStartHookPayload<'exec>,
     ) -> OnGraphQLValidationStartHookResult<'exec> {
-        let rule = MyCustomerValidationRule::new()
+        let rule = MyCustomValidationRule::new()
 
         payload.with_validation_rule(rule).proceed()
     }
@@ -612,7 +612,7 @@ sync fn on_graphql_validation<'exec>(
 
 ### `on_query_plan`
 
-This hook is invoked during the Federation query planning process. At this stage, the Router already extracted, parsed and validated the GraphQL operation, and it ready to plan how to execute the operation across subgraphs.
+This hook is invoked during the Federation query planning process. At this stage, the Router already extracted, parsed and validated the GraphQL operation, and it is ready to plan how to execute the operation across subgraphs.
 
 Plugins using this hook can have access to the Router internal process of query planning, modify the operation to plan, access the full plan, and modify it.
 
@@ -661,9 +661,9 @@ async fn on_query_plan<'exec>(
 
 ### `on_execute`
 
-This hook is invoked during the Federation query planning process. At this stage, the Router already extracted, parsed and validated the GraphQL operation. Also, a query plan has been constructed and is ready to be executed. 
+This hook is invoked during the Federation query execution process. At this stage, the Router already extracted, parsed and validated the GraphQL operation. Also, a query plan has been constructed and is ready to be executed. 
 
-Plugins using this hook can have access to the Router's execution process, implement solutions like caching and other flows that replaces the execution process as whole. 
+Plugins using this hook can have access to the Router's execution process, implement solutions like caching and other flows that replace the execution process as a whole. 
 
 ```rust
 async fn on_execute<'exec>(
@@ -732,7 +732,7 @@ async fn on_execute<'exec>(
 
 ### `on_subgraph_execute`
 
-This hook is called during the preparation prcoess of every subgraph request, based on the query plan.
+This hook is called during the preparation process of every subgraph request, based on the query plan.
 At this stage, we have the subgraph name, the execution request that would be sent to the subgraph,
 and other contextual information.
 
@@ -766,7 +766,7 @@ async fn on_subgraph_execute<'exec>(
 
 This hook is called during the actual HTTP call made to the subgraph. In this hook, you have access to the full HTTP request that will be sent to the subgraph.
 
-Plugins using this hook can extend or modify the HTTP request, HTTP headers, path and other ascepts on communicating with the subgraph. 
+Plugins using this hook can extend or modify the HTTP request, HTTP headers, path and other aspects of communicating with the subgraph. 
 
 In addition, you can use this hook for passing along or storing information and data that comes from subgraphs. 
 
@@ -1005,7 +1005,7 @@ impl RouterPlugin for APQPlugin {
 
 ### OpenTelemetry Traces 
 
-Hive Router is using the [`tracing` Crate](https://docs.rs/tracing/latest/tracing/) for it collecting, processing and exporting OpenTelemetry trace information.
+Hive Router is using the [`tracing` Crate](https://docs.rs/tracing/latest/tracing/) for collecting, processing and exporting OpenTelemetry trace information.
 
 You may use `tracing` API to [create spans](https://docs.rs/tracing/latest/tracing/index.html#spans) and enrich the exported information with custom spans:
 
