@@ -323,6 +323,9 @@ services:
       PROMETHEUS_METRICS: '${PROMETHEUS_METRICS:-}'
       LOG_JSON: '1'
       SCHEMA_ENDPOINT: http://schema:3002
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: '${REDIS_PASSWORD}'
 
   usage:
     image: '${DOCKER_REGISTRY}usage${DOCKER_TAG}'

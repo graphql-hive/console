@@ -86,10 +86,8 @@ const EmailProviderModel = zod.union([
 const RedisModel = zod.object({
   REDIS_HOST: zod.string(),
   REDIS_PORT: NumberFromString,
-  REDIS_PASSWORD: zod.string(),
-  REDIS_TLS_ENABLED: emptyString(
-    zod.union([zod.literal('0'), zod.literal('1')]).optional(),
-  ).default('0'),
+  REDIS_PASSWORD: emptyString(zod.string().optional()),
+  REDIS_TLS_ENABLED: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 
 const RequestBrokerModel = zod.union([

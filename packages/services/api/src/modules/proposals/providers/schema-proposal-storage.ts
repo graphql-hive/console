@@ -208,6 +208,29 @@ export class SchemaProposalStorage {
     };
   }
 
+  /**
+   * A stripped down version of getProposal that only returns the ID. This is intended
+   * to be used
+   */
+  async getProposalTargetId(args: { id: string }) {
+    this.logger.debug('Get proposal target ID (proposal=%s)', args.id);
+    const result = await this.pool
+      .maybeOne<unknown>(
+        sql`
+          SELECT
+              id
+            , target_id as "targetId"
+          FROM
+            "schema_proposals"
+          WHERE
+            id=${args.id}
+        `,
+      )
+      .then(row => SchemaProposalTargetIdModel.safeParse(row));
+
+    return result.data ?? null;
+  }
+
   async getProposal(args: { id: string }) {
     this.logger.debug('Get proposal (proposal=%s)', args.id);
     const result = await this.pool
@@ -413,6 +436,14 @@ const SchemaProposalModel = z.object({
   compositionStatus: z.string().nullable(),
   compositionStatusReason: z.string().nullable(),
   compositionTimestamp: z.string().nullable(),
+});
+
+/**
+ * Minimal model for extracting just the target Id for permission checks.
+ */
+const SchemaProposalTargetIdModel = z.object({
+  id: z.string(),
+  targetId: z.string(),
 });
 
 export type SchemaProposalRecord = z.infer<typeof SchemaProposalModel>;

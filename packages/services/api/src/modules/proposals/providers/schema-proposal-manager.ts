@@ -38,20 +38,20 @@ export class SchemaProposalManager {
       throw new HiveError('Proposal not found.');
     }
 
-    const target = await this.storage.getTargetById(proposal.targetId);
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: {
+        byId: proposal.targetId,
+      },
+    });
 
-    if (!target) {
-      throw new HiveError('Proposal target lookup failed.');
+    if (!selector) {
+      throw new HiveError('Proposal not found.');
     }
 
     await this.session.assertPerformAction({
-      organizationId: target.orgId,
+      organizationId: selector.organizationId,
       action: 'schemaProposal:describe',
-      params: {
-        organizationId: target.orgId,
-        projectId: target.projectId,
-        targetId: target.id,
-      },
+      params: selector,
     });
 
     return this.pubSub.subscribe('schemaProposalComposition', proposal.id);
@@ -68,6 +68,12 @@ export class SchemaProposalManager {
     if (selector === null) {
       this.session.raise('schemaProposal:modify');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:modify',
+      organizationId: selector.organizationId,
+      params: selector,
+    });
 
     const createProposalResult = await this.proposalStorage.createProposal({
       organizationId: selector.organizationId,
@@ -109,7 +115,24 @@ export class SchemaProposalManager {
   }
 
   async getProposal(args: { id: string }) {
-    return this.proposalStorage.getProposal(args);
+    const proposal = await this.proposalStorage.getProposal(args);
+
+    if (proposal) {
+      const selector = await this.idTranslator.resolveTargetReference({
+        reference: {
+          byId: proposal.targetId,
+        },
+      });
+      if (selector === null) {
+        this.session.raise('schemaProposal:describe');
+      }
+      await this.session.assertPerformAction({
+        action: 'schemaProposal:describe',
+        organizationId: selector.organizationId,
+        params: selector,
+      });
+    }
+    return proposal;
   }
 
   async getPaginatedReviews(args: {
@@ -120,6 +143,23 @@ export class SchemaProposalManager {
     authors: string[];
   }) {
     this.logger.debug('Get paginated reviews (target=%s, after=%s)', args.proposalId, args.after);
+    const proposal = await this.proposalStorage.getProposalTargetId({ id: args.proposalId });
+
+    if (proposal) {
+      const selector = await this.idTranslator.resolveTargetReference({
+        reference: {
+          byId: proposal.targetId,
+        },
+      });
+      if (selector === null) {
+        this.session.raise('schemaProposal:describe');
+      }
+      await this.session.assertPerformAction({
+        action: 'schemaProposal:describe',
+        organizationId: selector.organizationId,
+        params: selector,
+      });
+    }
 
     return this.proposalStorage.getPaginatedReviews(args);
   }
@@ -140,8 +180,14 @@ export class SchemaProposalManager {
       reference: args.target,
     });
     if (selector === null) {
-      this.session.raise('schemaProposal:modify');
+      this.session.raise('schemaProposal:describe');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:describe',
+      organizationId: selector.organizationId,
+      params: selector,
+    });
 
     return this.proposalStorage.getPaginatedProposals({
       targetId: selector.targetId,
@@ -159,8 +205,7 @@ export class SchemaProposalManager {
   }) {
     this.logger.debug(`Reviewing proposal (proposal=%s, stage=%s)`, args.proposalId, args.stage);
 
-    // @todo check permissions for user
-    const proposal = await this.proposalStorage.getProposal({ id: args.proposalId });
+    const proposal = await this.proposalStorage.getProposalTargetId({ id: args.proposalId });
 
     if (!proposal) {
       throw new HiveError('Proposal target lookup failed.');
@@ -172,6 +217,16 @@ export class SchemaProposalManager {
     if (!target) {
       throw new HiveError('Proposal target lookup failed.');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:describe',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: proposal.targetId,
+      },
+    });
 
     if (args.stage) {
       const review = await this.proposalStorage.manuallyTransitionProposal({
