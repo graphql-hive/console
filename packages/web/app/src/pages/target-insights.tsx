@@ -10,6 +10,11 @@ import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
+import {
+  savedFilterToSearchParams,
+  selectionsToClients,
+  selectionsToOperations,
+} from '@/components/target/insights/search-params';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
@@ -241,21 +246,7 @@ function OperationsView({
   const handleApplySavedFilter = useCallback(
     (view: SavedFilterView) => {
       void navigate({
-        search: prev => ({
-          ...prev,
-          operations:
-            view.filters.operationHashes.length > 0 ? view.filters.operationHashes : undefined,
-          clients:
-            view.filters.clientFilters.length > 0
-              ? view.filters.clientFilters.map(c => ({
-                  name: c.name,
-                  versions: c.versions,
-                }))
-              : undefined,
-          from: view.filters.dateRange?.from,
-          to: view.filters.dateRange?.to,
-          viewId: view.id,
-        }),
+        search: prev => ({ ...prev, ...savedFilterToSearchParams(view) }),
       });
     },
     [navigate, organizationSlug, projectSlug, targetSlug],
@@ -330,25 +321,12 @@ function OperationsView({
               }}
               setOperationSelections={selections => {
                 void navigate({
-                  search: prev => ({
-                    ...prev,
-                    operations:
-                      selections.length > 0 ? selections.map(s => s.id ?? s.name) : undefined,
-                  }),
+                  search: prev => ({ ...prev, operations: selectionsToOperations(selections) }),
                 });
               }}
               setClientSelections={selections => {
                 void navigate({
-                  search: prev => ({
-                    ...prev,
-                    clients:
-                      selections.length > 0
-                        ? selections.map(s => ({
-                            name: s.name,
-                            versions: s.values,
-                          }))
-                        : undefined,
-                  }),
+                  search: prev => ({ ...prev, clients: selectionsToClients(selections) }),
                 });
               }}
             />
@@ -373,11 +351,7 @@ function OperationsView({
                 selectedItems={operationFilterSelections}
                 onChange={selections => {
                   void navigate({
-                    search: prev => ({
-                      ...prev,
-                      operations:
-                        selections.length > 0 ? selections.map(s => s.id ?? s.name) : undefined,
-                    }),
+                    search: prev => ({ ...prev, operations: selectionsToOperations(selections) }),
                   });
                 }}
                 onRemove={() => {
@@ -395,16 +369,7 @@ function OperationsView({
                 valuesLabel="versions"
                 onChange={selections => {
                   void navigate({
-                    search: prev => ({
-                      ...prev,
-                      clients:
-                        selections.length > 0
-                          ? selections.map(s => ({
-                              name: s.name,
-                              versions: s.values,
-                            }))
-                          : undefined,
-                    }),
+                    search: prev => ({ ...prev, clients: selectionsToClients(selections) }),
                   });
                 }}
                 onRemove={() => {

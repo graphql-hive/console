@@ -7,6 +7,7 @@ import type { FilterItem, FilterSelection } from '@/components/base/filter-dropd
 import { Menu, MenuItem } from '@/components/base/menu/menu';
 import { TriggerButton } from '@/components/base/trigger-button';
 import { Page, TargetLayout } from '@/components/layouts/target';
+import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -335,22 +336,7 @@ function SavedFilterRow({
                       <Link
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                         params={{ organizationSlug, projectSlug, targetSlug }}
-                        search={{
-                          operations:
-                            filter.filters.operationHashes.length > 0
-                              ? filter.filters.operationHashes
-                              : undefined,
-                          clients:
-                            filter.filters.clientFilters.length > 0
-                              ? filter.filters.clientFilters.map(c => ({
-                                  name: c.name,
-                                  versions: c.versions ?? null,
-                                }))
-                              : undefined,
-                          from: filter.filters.dateRange?.from,
-                          to: filter.filters.dateRange?.to,
-                          viewId: filter.id,
-                        }}
+                        search={savedFilterToSearchParams(filter)}
                       />
                     }
                   >
