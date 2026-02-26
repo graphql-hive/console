@@ -1005,10 +1005,42 @@ impl RouterPlugin for APQPlugin {
 
 ### OpenTelemetry Traces 
 
-TODO
+Hive Router is using the [`tracing` Crate](https://docs.rs/tracing/latest/tracing/) for it collecting, processing and exporting OpenTelemetry trace information.
+
+You may use `tracing` API to [create spans](https://docs.rs/tracing/latest/tracing/index.html#spans) and enrich the exported information with custom spans:
+
+```rust
+use tracing::{debug};
+
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    // First, create the span 
+    let my_span = span!(Level::INFO, "my_plugin_on_http_request");
+    // Now, start it. The returned guard will make sure to finalize
+    // and end the span when you hook function ends
+    let _guard = my_span.enter();
+    
+    payload.proceed()
+}
+```
 
 ### Logging
 
 Hive Router is using the [`tracing` Crate](https://docs.rs/tracing/latest/tracing/) for its internal logging. Logs emitted from plugin are correlated with the request it's processing.
 
 You may use the built-in macros (such as `debug!(...)`, `info!(...)`, `warn!(...)` and `error!(...)`), and the log lines will appear based on the Router's logger configuration.
+
+```rust
+use tracing::{debug};
+
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    debug!("on_http_request is called now!");
+    
+    payload.proceed()
+}
+```
