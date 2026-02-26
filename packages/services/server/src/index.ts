@@ -8,9 +8,7 @@ import {
 } from 'supertokens-node/framework/fastify/index.js';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
-import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
-import { createPubSub } from 'graphql-yoga';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import { createHivePubSub } from '@graphql-hive/pubsub';
@@ -25,7 +23,6 @@ import {
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
-import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
