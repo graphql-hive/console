@@ -26,7 +26,7 @@ enables you to add new capabilities or modify existing ones to better suit your 
 First, ensure you have the necessary development environment set up for
 [Rust](https://rust-lang.org/tools/install/).
 
-Then, start by creating a new Rust project for your custom router:
+Next, create a new Rust project for your custom router:
 
 ```bash
 cargo new --bin my_custom_router
@@ -152,15 +152,15 @@ impl RouterPlugin for MyPlugin {
 }
 ```
 
-The plugin above uses the [Plugin System Hooks API](../extensibility/plugin_system#hooks), and hooks
-into `on_graphql_params` phase, to print the received GraphQL operation to the log.
+The plugin above uses the [Plugin System Hooks API](../extensibility/plugin_system#hooks) and hooks
+into the `on_graphql_params` phase to print the received GraphQL operation to the log.
 
 > You can find a plugin template in the
 > [Router GitHub repository](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs).
 
 ### Register your plugin
 
-Now, register your plugin in the `main.rs`:
+Now, register your plugin in `main.rs`:
 
 ```diff
 use hive_router::{
@@ -237,7 +237,7 @@ it as-is.
 
 ### Distribute your custom Router
 
-We recommend wrapping your custom Router with a Docker image, and build it using a `Dockerfile`:
+We recommend wrapping your custom Router in a Docker image and building it using a `Dockerfile`:
 
 ```dockerfile name="Dockerfile"
 # Use the official Rust image as the base image
