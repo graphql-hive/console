@@ -1,0 +1,1645 @@
+---
+title: 'Plugin System'
+---
+
+import { RouterHookSection } from '../../../components/router-plugin-system/hook-section'
+
+# Plugin System
+
+## Overview
+
+Hive Router provides a plugin system that allows developers to extend its functionality with custom
+plugins. Plugins can be used to add new features, modify existing behavior, or integrate with
+external services.
+
+Just like the Hive Router itself, custom plugins are written in Rust, which allows for high
+performance and safety. To ease the development process, Hive Router is also published to
+[Crates.io](https://crates.io/crates/hive-router) as a single package `hive-router` that contains
+everything you need to focus on building your plugin, without having to configure or rebuild other
+parts of the service.
+
+This page documents the API, hooks, and different implementation options that are available for
+plugin developers. If you are looking for a guide on how to write, test and distribute a custom
+plugin, please refer to [Extending the Router guide](../guides/extending-the-router).
+
+## `hive-router` Crate
+
+The [`hive-router`](https://crates.io/crates/hive-router) crate provides everything a plugin
+developer needs to implement a custom plugin.
+
+To simplify the dependency tree and versioning, this crate also re-exports internal Router
+dependencies, traits, and structs, making plugin development easier and keeping the Router core
+version up to date.
+
+Refer to
+[the crate's `lib.rs` entrypoint](https://github.com/graphql-hive/router/blob/main/bin/router/src/lib.rs)
+to see what is exported and available for extending the Router.
+
+## `trait RouterPlugin`
+
+The primary interface for the plugin system is `RouterPlugin`. To implement a custom plugin, you'll
+need to `impl` the `RouterPlugin` for your custom plugin's `struct`. Due to the async nature of the
+plugin system, the `#[async_trait]` attribute is also required.
+
+```rust
+use hive_router::plugins::plugin_trait::RouterPlugin;
+use hive_router::async_trait;
+
+struct MyPlugin;
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = ();
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+}
+```
+
+The plugin above will be instantiated using the following Router YAML config:
+
+```yaml
+plugins:
+  my_plugin:
+    enabled: true
+```
+
+A plugin can implement one or more hooks, and leverage the following concepts:
+
+### Configuration
+
+The `RouterPlugin` trait accepts a generic type parameter for plugin configuration.
+
+The configuration type must implement `DeserializeOwned + Sync`, as the Router is responsible for
+loading and deserializing the configuration from the Router config file.
+
+The [`on_plugin_init`](#on_plugin_init) hook provides access to the plugin's configuration.
+
+```rust
+use hive_router::plugins::plugin_trait::RouterPlugin;
+use hive_router::async_trait;
+use serde::Deserialize;
+
+struct MyPlugin;
+
+#[derive(Deserialize)]
+struct MyPluginConfig {
+    some_field: bool
+}
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = MyPluginConfig;
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+
+    fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+        payload.initialize_plugin(Self { some_field: payload.config()?.some_field })
+    }
+}
+```
+
+The plugin above will be instantiated using the following Router YAML config:
+
+```yaml
+plugins:
+  my_plugin:
+    enabled: true
+    config:
+      some_field: true
+```
+
+### Hooks
+
+A plugin can implement one or more hooks to participate in different stages of the Router execution
+and lifecycle.
+
+Hooks allow plugins to participate in the control flow and change the behavior of the router by
+returning different types from the hook function.
+
+As a plugin developer, you can hook into the router execution flow in the following areas:
+
+- HTTP request handling
+- GraphQL operation lookup and extraction from the HTTP request
+- GraphQL operation parsing
+- GraphQL operation validation
+- Federation query planner
+- Query plan execution
+- Subgraph request execution
+- HTTP calls to subgraph
+- Supergraph reload notification
+
+The following chart describes the execution order and available hooks. Each hook can have a
+**start**/**end** phase, where you can control different parts of the execution flow.
+
+```mermaid
+flowchart TB
+    subgraph "Router Lifecycle"
+      direction LR
+      SL([on_supergraph_load])
+      ON([on_shutdown])
+    end
+
+    subgraph "Plugin Lifecycle"
+      direction TB
+      PI([on_plugin_init])
+    end
+
+    subgraph "Request Lifecycle"
+      direction TB
+      A([on_http_request]) --> B([on_graphql_params])
+      B --> D([on_graphql_parse])
+      D --> F([on_graphql_validation])
+      F --> H([on_query_plan])
+      H --> J([on_execute])
+      J -.->|"per error"| GE([on_graphql_error])
+      J -->|"per subgraph call"| K([on_subgraph_execute])
+      K --> L([on_subgraph_http_request])
+      L --> K
+      K --> J
+      J -->|"response"| A
+
+      click A href "#on_http_request"
+      click B href "#on_graphql_params"
+      click D href "#on_graphql_parse"
+      click F href "#on_graphql_validation"
+      click H href "#on_query_plan"
+      click J href "#on_execute"
+      click K href "#on_subgraph_execute"
+      click L href "#on_subgraph_http_request"
+      click SL href "#on_supergraph_load"
+      click PI href "#on_plugin_init"
+      click ON href "#on_shutdown"
+      click GE href "#on_graphql_error"
+    end
+```
+
+### Shared State
+
+A plugin can maintain state directly on its `struct` and access it using `self` in hooks. The state
+must be thread-safe, as it may be shared across multiple threads handling concurrent HTTP requests.
+Please refer to
+[Rust's Interior Mutability](https://doc.rust-lang.org/reference/interior-mutability.html) guide for
+more information about how to implement mutable state.
+
+```rust
+use hive_router::plugins::plugin_trait::RouterPlugin;
+use hive_router::async_trait;
+
+struct MyPlugin {
+    state: Mutex<Vec<String>>,
+}
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = ();
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+
+    // In hooks, you can use `self.state`
+    fn on_http_request<'req>(
+        &'req self,
+        payload: OnHttpRequestHookPayload<'req>,
+    ) -> OnHttpRequestHookResult<'req> {
+        // For the sake of the demo, this plugin only stores the paths for all requests
+        self.state.lock().unwrap().push(payload.request.uri().path().to_string());
+
+        payload.proceed()
+    }
+}
+```
+
+### Context Data Sharing
+
+In cases where you need to share data between hooks, you can use a custom context struct. Define a
+custom struct to hold the data you would like to share between hooks, and use the hooks' payload to
+access the `context` field.
+
+For example, you can store some data in the context during the `on_graphql_params` hook and retrieve
+it later in the `on_subgraph_execute` hook.
+
+```rust
+pub struct ContextData {
+    incoming_data: &'static str,
+}
+
+#[async_trait::async_trait]
+impl RouterPlugin for ContextDataPlugin {
+    async fn on_graphql_params<'exec>(
+        &'exec self,
+        payload: OnGraphQLParamsStartHookPayload<'exec>,
+    ) -> OnGraphQLParamsStartHookResult<'exec> {
+        let context_data = ContextData {
+            incoming_data: "world",
+        };
+
+        payload.context.insert(context_data);
+    }
+
+    async fn on_subgraph_execute<'exec>(
+        &'exec self,
+        mut payload: OnSubgraphExecuteStartHookPayload<'exec>,
+    ) -> OnSubgraphExecuteStartHookResult<'exec> {
+        // Get immutable reference from the context
+        let context_data_entry = payload.context.get_ref::<ContextData>();
+        if let Some(ref context_data_entry) = context_data_entry {
+            tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
+        }
+    }
+}
+```
+
+The `payload.context` API is simple:
+
+- `insert<T>(&self, data: T)` - Inserts data of type `T` into the context.
+- `get_ref<T>(&self) -> Option<&T>` - Retrieves a reference to the data of type `T` from the
+  context.
+- `get_mut<T>(&mut self) -> Option<&mut T>` - Retrieves a mutable reference to the data of type `T`
+  from the context.
+
+> [See `context_data` example for a full implementation](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs)
+
+## A Simple Plugin Example
+
+The following snippet shows the simplest example of creating a custom plugin, registering it, and
+configuring it with Hive Router:
+
+```rust filename="main.rs"
+use hive_router::{
+    configure_global_allocator, error::RouterInitError, init_rustls_crypto_provider, ntex,
+    router_entrypoint, PluginRegistry, RouterGlobalAllocator,
+};
+use hive_router::plugins::plugin_trait::RouterPlugin;
+
+// Configure the global allocator required for Hive Router runtime
+configure_global_allocator!();
+
+// Declare and implement a simple plugin with no configuration and no hooks.
+struct MyPlugin;
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    // You can override this and add a custom config to your plugin
+    type Config = ();
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+
+    // Your hooks implementation goes here...
+}
+
+// This is the main entrypoint of the Router
+#[hive_router::main]
+async fn main() -> Result<(), RouterInitError> {
+    // Configure Hive Router to use the OS's default certificate store
+    init_rustls_crypto_provider();
+
+    // Start and run the router entrypoint with your plugin
+    router_entrypoint(
+        PluginRegistry::new().register::<MyPlugin>(),
+    )
+    .await
+}
+```
+
+## Plugin Lifecycle Hooks
+
+<RouterHookSection>
+
+### `on_plugin_init`
+
+This hook is called exactly once during Router initialization, when the plugin is first loaded.
+
+You can use this hook to access the plugin configuration, create the initial state of the plugin,
+and register background tasks to be handled by the router.
+
+```rust
+fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self>
+```
+
+<details>
+
+<summary>Access the plugin configuration</summary>
+
+Use `payload.config()` to read the plugin's configuration from the Router YAML. The `?` propagates
+initialization errors back to the router.
+
+```rust
+fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+    let config = payload.config()?;
+
+    payload.initialize_plugin_with_defaults()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Customize plugin instance</summary>
+
+Build the plugin's initial state from the parsed configuration before the router starts serving
+requests.
+
+```rust
+fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+    payload.initialize_plugin(Self {
+        my_thing: payload.config()?.my_config_flag,
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Register background tasks</summary>
+
+Spawn long-running work tied to the router lifecycle. The `CancellationToken` is signaled when the
+router shuts down.
+
+```rust
+use hive_router::background_tasks::BackgroundTask;
+
+#[async_trait]
+impl BackgroundTask for MyBackgroundTask {
+    fn id(&self) -> &str {
+        "my_task"
+    }
+
+    async fn run(&self, token: CancellationToken) {
+        // Check token.is_cancelled() to handle graceful shutdown
+    }
+}
+
+fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+    payload.bg_tasks_manager.register_task(MyBackgroundTask::new());
+    payload.initialize_plugin_with_defaults()
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnPluginInitPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_plugin_init.rs#:~:text=struct%20OnPluginInitPayload)
+
+#### Plugin Examples
+
+- [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_plugin_init)
+- [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_plugin_init)
+
+</RouterHookSection>
+
+## Request Lifecycle Hooks
+
+<RouterHookSection>
+
+### `on_http_request`
+
+This hook is called immediately after the router receives an HTTP request. It allows you to inspect
+or modify the HTTP request before any further processing occurs. At this point, the Router doesn't
+know yet if the request is a GraphQL request or not.
+
+```rust
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>
+  ) -> OnHttpRequestHookResult<'req>
+```
+
+> The `'req` lifetime parameter represents the lifetime of the HTTP request. It is used to ensure
+> that the payload and result are valid for the duration of the request.
+
+With this hook, you can add custom authentication and authorization logic based on HTTP headers,
+method, path, and similar request properties. You can also implement custom restrictions, HTTP
+validations, short-circuit responses, or serve static assets.
+
+#### Usage Examples
+
+<details>
+
+<summary>Reject unauthenticated requests</summary>
+
+Check for required HTTP headers in the start phase and short-circuit with an error before any
+GraphQL processing begins.
+
+```rust
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    if payload.router_http_request.headers().get("authorization").is_none() {
+        return payload.end_with_graphql_error(
+            GraphQLError::from_message_and_code("Unauthorized", "UNAUTHORIZED"),
+            StatusCode::UNAUTHORIZED,
+        );
+    }
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Add a response header</summary>
+
+Use `on_end` with `map_response` to attach custom headers to every outgoing HTTP response.
+
+```rust
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    payload.on_end(|payload| {
+        payload.map_response(|mut response| {
+            response.response_mut().headers_mut().insert(
+                "x-served-by",
+                "hive-router".parse().unwrap(),
+            );
+            response
+        }).proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Override the HTTP response status</summary>
+
+Use `map_response` in `on_end` to rewrite the status code on the outgoing response, for example, to
+normalize all successful responses to `200 OK`.
+
+```rust
+use hive_router::http::StatusCode;
+
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    payload.on_end(|end_payload| {
+        end_payload.map_response(|mut response| {
+            *response.response_mut().status_mut() = StatusCode::OK;
+            response
+        })
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Propagate subgraph status codes</summary>
+
+Read context data written by a downstream hook (e.g., `on_subgraph_http_request`) and apply it to
+the final HTTP response status.
+
+```rust
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    payload.on_end(|payload| {
+        let ctx = payload.context.get_ref::<PropagateStatusCodeCtx>();
+        if let Some(ctx) = ctx {
+            return payload.map_response(|mut response| {
+                *response.response_mut().status_mut() = ctx.status_code;
+                response
+            }).proceed();
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnHttpRequestHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_http_request.rs#:~:text=struct%20OnHttpRequestHookPayload)
+- [`OnHttpResponseHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_http_request.rs#:~:text=struct%20OnHttpResponseHookPayload)
+
+#### Plugin Examples
+
+- [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_http_request)
+- [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_http_request)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_graphql_params`
+
+This hook is called after the router has determined that the incoming request is a GraphQL request,
+and it decides to parse the GraphQL parameters (query, variables, operation name, etc.).
+
+This hook allows you to customize how GraphQL request parameters are detected and extracted. You can
+also prevent execution of the GraphQL request if certain conditions are met.
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>
+  ) -> OnGraphQLParamsStartHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Read extracted GraphQL parameters</summary>
+
+Use the `on_end` callback to access the fully extracted GraphQL parameters: `query`,
+`operation_name`, `variables`, and `extensions` are all available here.
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let maybe_operation_name = &end_payload.graphql_params.operation_name.as_ref();
+        let maybe_query = &end_payload.graphql_params.query.as_ref();
+        let variables = &end_payload.graphql_params.variables;
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Modify extracted GraphQL parameters</summary>
+
+Mutate the extracted GraphQL parameters inside `on_end` to override the query, operation name, or
+variables before execution continues.
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|mut end_payload| {
+        end_payload.graphql_params.query = Some("query { overridingTheOperation }".to_string());
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Reject anonymous operations</summary>
+
+Return a GraphQL error from `on_end` to short-circuit the request when a condition on the parsed
+parameters is not met.
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|payload| {
+        if payload.graphql_params.operation_name.is_none() {
+            return payload.end_with_graphql_error(
+                GraphQLError::from_message_and_code(
+                    "Anonymous operations are not allowed",
+                    "ANONYMOUS_OPERATION",
+                ),
+                StatusCode::BAD_REQUEST,
+            );
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Resolve a query from extensions (Persisted Queries)</summary>
+
+Read from `extensions` in `on_end` and rewrite `graphql_params.query` to implement patterns like
+Automatic Persisted Queries (APQ).
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|mut payload| {
+        let hash = payload
+            .graphql_params
+            .extensions
+            .as_ref()
+            .and_then(|ext| ext.get("persistedQuery"))
+            .and_then(|pq| pq.as_object())
+            .and_then(|obj| obj.get(&"sha256Hash"))
+            .and_then(|h| h.as_str());
+
+        if let Some(hash) = hash {
+            if let Some(cached_query) = self.cache.get(hash) {
+                payload.graphql_params.query = Some(cached_query.value().to_string());
+            } else {
+                return payload.end_with_graphql_error(
+                    GraphQLError::from_message_and_code(
+                        "PersistedQueryNotFound",
+                        "PERSISTED_QUERY_NOT_FOUND",
+                    ),
+                    StatusCode::BAD_REQUEST,
+                );
+            }
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnGraphQLParamsStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_params.rs#:~:text=struct%20OnGraphQLParamsStartHookPayload)
+- [`OnGraphQLParamsEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_params.rs#:~:text=struct%20OnGraphQLParamsEndHookPayload)
+
+#### Plugin Examples
+
+- [`forbid_anonymous_operations`](https://github.com/graphql-hive/router/blob/main/plugin_examples/forbid_anonymous_operations/src/plugin.rs#:~:text=fn%20on_graphql_params)
+- [`apq`](https://github.com/graphql-hive/router/blob/main/plugin_examples/apq/src/plugin.rs#:~:text=fn%20on_graphql_params)
+- [`multipart`](https://github.com/graphql-hive/router/blob/main/plugin_examples/multipart/src/lib.rs#:~:text=fn%20on_graphql_params)
+- [`async_auth`](https://github.com/graphql-hive/router/blob/main/plugin_examples/async_auth/src/plugin.rs#:~:text=fn%20on_graphql_params)
+- [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_graphql_params)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_graphql_parse`
+
+This hook is called after the request has been deserialized, and before the router parses the
+GraphQL request body as specified by the
+[GraphQL-over-HTTP spec](https://graphql.github.io/graphql-over-http/).
+
+```rust
+async fn on_graphql_parse<'exec>(
+        &'exec self,
+        payload: OnGraphQLParseStartHookPayload<'exec>,
+    ) -> OnGraphQLParseHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Read the raw query string</summary>
+
+The start phase has access to the raw `GraphQLParams`, including the unparsed query string, before
+the router parses it into a document.
+
+```rust
+async fn on_graphql_parse<'exec>(
+    &'exec self,
+    payload: OnGraphQLParseStartHookPayload<'exec>,
+) -> OnGraphQLParseHookResult<'exec> {
+    let raw_query = &payload.graphql_params.query;
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Access the parsed document (AST)</summary>
+
+Use `on_end` to access the fully parsed `Document` AST after the router has completed parsing the
+operation.
+
+```rust
+async fn on_graphql_parse<'exec>(
+    &'exec self,
+    payload: OnGraphQLParseStartHookPayload<'exec>,
+) -> OnGraphQLParseHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let document = &end_payload.document;
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnGraphQLParseStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_parse.rs#:~:text=struct%20OnGraphQLParseStartHookPayload)
+- [`OnGraphQLParseEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_parse.rs#:~:text=struct%20OnGraphQLParseEndHookPayload)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_graphql_validation`
+
+This hook is called during the GraphQL validation phase of the Router. At this stage, the GraphQL
+operation has been extracted and parsed from the incoming request, and validation rules are being
+applied against the GraphQL schema.
+
+Plugins can use this hook to add custom validation rules, skip validation entirely, or modify the
+operation prior to validation.
+
+```rust
+async fn on_graphql_validation<'exec>(
+        &'exec self,
+        payload: OnGraphQLValidationStartHookPayload<'exec>,
+    ) -> OnGraphQLValidationStartHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Add a custom validation rule</summary>
+
+Implement `ValidationRule` and register it with `payload.with_validation_rule()` to enforce custom
+constraints on every incoming operation.
+
+```rust
+impl ValidationRule for MyCustomValidationRule {
+    fn error_code<'a>(&self) -> &'a str {
+        "MAX_ALIASES_EXCEEDED"
+    }
+
+    fn validate(
+        &self,
+        ctx: &mut OperationVisitorContext<'_>,
+        error_collector: &mut ValidationErrorContext,
+    ) {
+        // ...
+    }
+}
+
+async fn on_graphql_validation<'exec>(
+    &'exec self,
+    payload: OnGraphQLValidationStartHookPayload<'exec>,
+) -> OnGraphQLValidationStartHookResult<'exec> {
+    payload.with_validation_rule(MyCustomValidationRule::new()).proceed()
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnGraphQLValidationStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_validation.rs#:~:text=struct%20OnGraphQLValidationStartHookPayload)
+- [`OnGraphQLValidationEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_validation.rs#:~:text=struct%20OnGraphQLValidationEndHookPayload)
+
+#### Plugin Examples
+
+- [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_graphql_validation)
+- [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_graphql_validation)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_query_plan`
+
+This hook is invoked during the Federation query planning process. At this stage, the Router has
+already extracted, parsed, and validated the GraphQL operation and is ready to plan how to execute
+it across subgraphs.
+
+This hook gives plugins access to the Router's internal query planning process, allowing them to
+modify the operation being planned or inspect and modify the resulting plan.
+
+```rust
+async fn on_query_plan<'exec>(
+    &'exec self,
+    payload: OnQueryPlanStartHookPayload<'exec>,
+  ) -> OnQueryPlanStartHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Inspect the query plan</summary>
+
+Use `on_end` to access the constructed `QueryPlan` after the planner has completed. This runs after
+operation parsing and validation.
+
+```rust
+async fn on_query_plan<'exec>(
+    &'exec self,
+    payload: OnQueryPlanStartHookPayload<'exec>,
+) -> OnQueryPlanStartHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let query_plan = &end_payload.query_plan;
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Reject based on query plan content</summary>
+
+Inspect the plan in `on_end` and short-circuit with an error if the operation exceeds a policy - for
+example, too many root fields.
+
+```rust
+async fn on_query_plan<'exec>(
+    &'exec self,
+    payload: OnQueryPlanStartHookPayload<'exec>,
+) -> OnQueryPlanStartHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let root_field_count = count_root_fields(&end_payload.query_plan);
+        if root_field_count > self.max_root_fields {
+            return end_payload.end_with_graphql_error(
+                GraphQLError::from_message_and_code(
+                    "Query exceeds the maximum number of root fields",
+                    "TOO_MANY_ROOT_FIELDS",
+                ),
+                StatusCode::PAYLOAD_TOO_LARGE,
+            );
+        }
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnQueryPlanStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_query_plan.rs#:~:text=struct%20OnQueryPlanStartHookPayload)
+- [`OnQueryPlanEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_query_plan.rs#:~:text=struct%20OnQueryPlanEndHookPayload)
+
+#### Plugin Examples
+
+- [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_query_plan)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_execute`
+
+This hook is invoked during the Federation query execution process. At this stage, the Router has
+already extracted, parsed, and validated the GraphQL operation, and a query plan has been
+constructed and is ready to be executed.
+
+Plugins can use this hook to observe the execution process or implement solutions such as response
+caching that bypass it entirely.
+
+```rust
+async fn on_execute<'exec>(
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+  ) -> OnExecuteStartHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Return a cached response</summary>
+
+Bypass the execution pipeline entirely and return a pre-built response - useful for response
+caching, where a cached result can be served without querying any subgraphs.
+
+```rust
+async fn on_execute<'exec>(
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+) -> OnExecuteStartHookResult<'exec> {
+    if let Some(cached) = self.cache.get(&cache_key) {
+        return payload.end_with_response(cached);
+    }
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Inspect the GraphQL response</summary>
+
+Use `on_end` to read the executed `data` and `errors` before they are serialized and sent to the
+client - useful for caching the result or collecting metrics.
+
+```rust
+async fn on_execute<'exec>(
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+) -> OnExecuteStartHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let data = &end_payload.data;
+        let errors = &end_payload.errors;
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Capture the operation for usage reporting</summary>
+
+Read `operation_for_plan` in the start phase to record the query string and operation name for
+telemetry or analytics before execution proceeds.
+
+```rust
+async fn on_execute<'exec>(
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+) -> OnExecuteStartHookResult<'exec> {
+    self.reports.lock().await.push(UsageReport {
+        query: payload.operation_for_plan.to_string(),
+        operation_name: payload.operation_for_plan.name.clone(),
+    });
+
+    payload.proceed()
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnExecuteStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_execute.rs#:~:text=struct%20OnExecuteStartHookPayload)
+- [`OnExecuteEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_execute.rs#:~:text=struct%20OnExecuteEndHookPayload)
+
+#### Plugin Examples
+
+- [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_execute)
+- [`response_cache`](https://github.com/graphql-hive/router/blob/main/plugin_examples/response_cache/src/lib.rs#:~:text=fn%20on_execute)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_subgraph_execute`
+
+This hook is called during the preparation process of every subgraph request, based on the query
+plan. At this stage, the subgraph name, the execution request to be sent, and other contextual
+information are available.
+
+Plugins can use this hook to control the planning process of subgraph requests, replace or modify a
+subgraph response, pass custom data to subgraphs, and handle custom execution transports.
+
+Unlike the `on_subgraph_http_request` hook, this hook does not yet have the complete HTTP request to
+be sent to the subgraph.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+        &'exec self,
+        payload: OnSubgraphExecuteStartHookPayload<'exec>,
+    ) -> OnSubgraphExecuteStartHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Add a header to the subgraph request</summary>
+
+Mutate `payload.execution_request.headers` to inject custom headers into every request sent to a
+subgraph before it is dispatched.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+    &'exec self,
+    mut payload: OnSubgraphExecuteStartHookPayload<'exec>,
+) -> OnSubgraphExecuteStartHookResult<'exec> {
+    payload.execution_request.headers.insert(
+        "x-internal-token",
+        http::HeaderValue::from_static("secret"),
+    );
+
+    payload.on_end(|payload| payload.proceed())
+}
+```
+
+</details>
+
+<details>
+
+<summary>Filter by subgraph name</summary>
+
+Use `payload.subgraph_name` to apply logic selectively to specific subgraphs.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+    &'exec self,
+    payload: OnSubgraphExecuteStartHookPayload<'exec>,
+) -> OnSubgraphExecuteStartHookResult<'exec> {
+    if payload.subgraph_name == "products" {
+        tracing::info!("Dispatching request to the products subgraph");
+    }
+
+    payload.on_end(|payload| payload.proceed())
+}
+```
+
+</details>
+
+<details>
+
+<summary>Count subgraph calls per request</summary>
+
+Use context to track how many subgraph calls were made during a single GraphQL request and log the
+total in `on_end`.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+    &'exec self,
+    payload: OnSubgraphExecuteStartHookPayload<'exec>,
+) -> OnSubgraphExecuteStartHookResult<'exec> {
+    payload.on_end(|payload| {
+        let count = payload.context.get_mut::<SubgraphCallCount>();
+        if let Some(mut count) = count {
+            count.value += 1;
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnSubgraphExecuteStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_subgraph_execute.rs#:~:text=struct%20OnSubgraphExecuteStartHookPayload)
+- [`OnSubgraphExecuteEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_subgraph_execute.rs#:~:text=struct%20OnSubgraphExecuteEndHookPayload)
+
+#### Plugin Examples
+
+- [`context_data`](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs#:~:text=fn%20on_subgraph_execute)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_subgraph_http_request`
+
+This hook is called during the actual HTTP call made to the subgraph. In this hook, you have access
+to the full HTTP request that will be sent to the subgraph.
+
+Plugins using this hook can extend or modify the HTTP request, HTTP headers, path and other aspects
+of communicating with the subgraph.
+
+You can also use this hook to capture or forward data returned from subgraphs.
+
+```rust
+async fn on_subgraph_http_request<'exec>(
+        &'exec self,
+        payload: OnSubgraphHttpRequestStartHookPayload<'exec>,
+    ) -> OnSubgraphHttpRequestStartHookResult<'exec>
+```
+
+> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
+> ensure that the payload and result are valid for the duration of the GraphQL execution.
+
+#### Usage Examples
+
+<details>
+
+<summary>Track the subgraph response status</summary>
+
+Use `on_end` to capture the HTTP response status from each subgraph call and store it in context for
+use in a later hook (e.g., `on_http_request`).
+
+```rust
+async fn on_subgraph_http_request<'exec>(
+    &'exec self,
+    payload: OnSubgraphHttpRequestHookPayload<'exec>,
+) -> OnSubgraphHttpRequestHookResult<'exec> {
+    payload.on_end(|payload| {
+        let status = payload.response.status;
+        if self.watched_codes.contains(&status) {
+            payload.context.insert(SubgraphStatus { code: status });
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Replace the subgraph HTTP request</summary>
+
+Bypass the default HTTP transport entirely and send a custom request.
+
+```rust
+async fn on_subgraph_http_request<'exec>(
+    &'exec self,
+    payload: OnSubgraphHttpRequestHookPayload<'exec>,
+) -> OnSubgraphHttpRequestHookResult<'exec> {
+    let response = self.client
+        .post(payload.endpoint.to_string())
+        .body(payload.body.clone())
+        .send()
+        .await
+        .unwrap();
+
+    payload.end_with_response(SubgraphHttpResponse {
+        status: response.status(),
+        headers: response.headers().clone().into(),
+        body: response.bytes().await.unwrap(),
+    })
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnSubgraphHttpRequestHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_subgraph_http_request.rs#:~:text=struct%20OnSubgraphHttpRequestHookPayload)
+- [`OnSubgraphHttpResponseHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_subgraph_http_request.rs#:~:text=struct%20OnSubgraphHttpResponseHookPayload)
+
+#### Plugin Examples
+
+- [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_subgraph_http_request)
+- [`multipart`](https://github.com/graphql-hive/router/blob/main/plugin_examples/multipart/src/lib.rs#:~:text=fn%20on_subgraph_http_request)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_graphql_error`
+
+This hook is called whenever a GraphQL error is about to be sent to the client during plan
+execution. Use it to inspect or modify the error before it reaches the client.
+
+You can use this hook to implement custom error handling logic, such as masking certain error
+details, adding additional information to the error response, or transforming the error into a
+different format.
+
+```rust
+    fn on_graphql_error(
+        &self,
+        payload: OnGraphQLErrorHookPayload
+    ) -> OnGraphQLErrorHookResult;
+```
+
+#### Usage Examples
+
+<details>
+
+<summary>Collect errors for monitoring</summary>
+
+Intercept errors before they reach the client and record them for analytics, alerting, or structured
+logging.
+
+```rust
+fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
+    payload.collected_errors.push(payload.error.message.clone());
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Mask sensitive error details</summary>
+
+Sanitize error output by replacing the message and clearing fields like `path` before the error is
+sent to the client.
+
+```rust
+fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
+    payload.error.message = "An internal error occurred".to_string();
+    payload.error.path = None;
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Remap error codes and HTTP status</summary>
+
+Map known error codes to different codes or HTTP status codes based on plugin configuration - useful
+for normalizing errors from subgraphs.
+
+```rust
+fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
+    if let Some(code) = &payload.error.extensions.code {
+        if let Some(mapping) = self.config.get(code) {
+            if let Some(new_code) = &mapping.code {
+                payload.error.extensions.code = Some(new_code.clone());
+            }
+            if let Some(status) = mapping.status_code {
+                if let Ok(status_code) = StatusCode::from_u16(status) {
+                    payload.status_code = status_code;
+                }
+            }
+        }
+    }
+    payload.proceed()
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnGraphQLErrorHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_error.rs#:~:text=struct%20OnGraphQLErrorHookPayload)
+
+#### Plugin Examples
+
+- [`error_mapping`](https://github.com/graphql-hive/router/blob/main/plugin_examples/error_mapping/src/plugin.rs#:~:text=fn%20on_graphql_error)
+
+</RouterHookSection>
+
+## Router Lifecycle
+
+<RouterHookSection>
+
+### `on_shutdown`
+
+This hook is called when the router is shutting down.
+
+Plugins can use this hook to implement cleanup and flush logic.
+
+```rust
+async fn on_shutdown<'exec>(&'exec self)
+```
+
+#### Usage Examples
+
+<details>
+
+<summary>Flush buffered data before exit</summary>
+
+Collect and send any in-memory data (e.g., usage reports or metrics) to an external service before
+the router process exits.
+
+```rust
+async fn on_shutdown<'exec>(&'exec self) {
+    let reports = self.reports.lock().await;
+    let _ = reqwest::Client::new()
+        .post(&self.endpoint)
+        .json(reports.as_slice())
+        .send()
+        .await;
+}
+```
+
+</details>
+
+#### Plugin Examples
+
+- [`usage_reporting`](https://github.com/graphql-hive/router/blob/main/plugin_examples/usage_reporting/src/lib.rs#:~:text=fn%20on_shutdown)
+
+</RouterHookSection>
+
+<RouterHookSection>
+
+### `on_supergraph_load`
+
+This hook is called whenever the supergraph is loaded or reloaded. This occurs at startup and any
+time the supergraph is reloaded.
+
+Plugins can use this hook to clear or reset caches and state that depends on the schema structure.
+
+This hook is guaranteed to be called at least once for a healthy router instance during startup. If
+the Router is configured to poll for schema updates, it will be called each time the schema is
+reloaded.
+
+```rust
+fn on_supergraph_reload<'exec>(
+        &'exec self,
+        start_payload: OnSupergraphLoadStartHookPayload,
+    ) -> OnSupergraphLoadStartHookResult<'exec>
+```
+
+#### Usage Examples
+
+<details>
+
+<summary>Scan the schema for directives</summary>
+
+Inspect the incoming `new_ast` to extract schema metadata, for example, collecting all types
+annotated with a custom directive and caching them for use in later hooks.
+
+```rust
+fn on_supergraph_reload<'exec>(
+    &'exec self,
+    start_payload: OnSupergraphLoadStartHookPayload,
+) -> OnSupergraphLoadStartHookResult<'exec> {
+    let tagged_types: Vec<String> = start_payload.new_ast
+        .definitions
+        .iter()
+        .filter(|def| has_directive(def, "myDirective"))
+        .filter_map(|def| type_name(def))
+        .collect();
+
+    self.tagged_types.store(Arc::new(tagged_types));
+    start_payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Invalidate caches on schema reload</summary>
+
+Clear any schema-dependent state whenever the supergraph is reloaded, so stale entries don't leak
+across schema versions.
+
+```rust
+fn on_supergraph_reload<'exec>(
+    &'exec self,
+    start_payload: OnSupergraphLoadStartHookPayload,
+) -> OnSupergraphLoadStartHookResult<'exec> {
+    self.cache.clear();
+    println!("Supergraph reloaded! cache invalidated!");
+
+    start_payload.proceed()
+}
+```
+
+</details>
+
+#### Payload API Reference
+
+- [`OnSupergraphLoadStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_supergraph_load.rs#:~:text=struct%20OnSupergraphLoadStartHookPayload)
+- [`OnSupergraphLoadEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_supergraph_load.rs#:~:text=struct%20OnSupergraphLoadEndHookPayload)
+
+#### Plugin Examples
+
+- [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_supergraph_reload)
+- [`response_cache`](https://github.com/graphql-hive/router/blob/main/plugin_examples/response_cache/src/lib.rs#:~:text=fn%20on_supergraph_reload)
+
+</RouterHookSection>
+
+## Control Flow
+
+### Short-Circuit Responses
+
+In many of the hooks mentioned above, you can short-circuit the request processing by providing a
+custom response.
+
+For example, to return an early error response in certain conditions:
+
+```rust
+return payload.end_with_response(
+    Response::with_body(
+        StatusCode::BAD_REQUEST,
+        body.to_string().into(),
+    )
+);
+```
+
+The `end_with_response` method on `payload` provides a custom HTTP response. Several helper methods
+are also available to simplify creating early responses.
+
+#### Helpers for early responses
+
+To make it easier to create early responses, Hive Router provides some helper methods on the hook
+payloads.
+
+- `end_with_response(response: Response)` - Accepts a `serde`-serializable body, automatically
+  serializes it to JSON, and sets the appropriate headers. To simplify the above example:
+
+```rust
+                let body = json!({
+                    "errors": [
+                        {
+                            "message": "Anonymous operations are not allowed",
+                            "extensions": {
+                                "code": "ANONYMOUS_OPERATION"
+                            }
+                        }
+                    ]
+                });
+
+                // Here we short-circuit the request processing by returning an early response
+                return payload.end_with_response(
+                    Response::with_body(
+                        StatusCode::BAD_REQUEST,
+                        body.to_string().into(),
+                    )
+                );
+```
+
+- `end_with_graphql_error(error: GraphQLError, status: StatusCode)` - Accepts a `GraphQLError`
+  directly and constructs the appropriate GraphQL error response.
+
+```rust
+                let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
+                // Here we short-circuit the request processing by returning an early response
+                return payload.end_with_graphql_error(
+                    graphql_error,
+                    StatusCode::BAD_REQUEST,
+                );
+```
+
+### Overriding Default Behavior
+
+Rather than short-circuiting the entire request and returning an early response, you may want to
+override the default behavior at a specific stage.
+
+For example, when implementing automatic persisted queries (APQ), you need to replace the `query`
+field in the `GraphQLParams` struct with the actual query string, resolved from the hash provided by
+the client.
+
+```rust
+#[async_trait::async_trait]
+impl RouterPlugin for APQPlugin {
+    async fn on_graphql_params<'exec>(
+        &'exec self,
+        payload: OnGraphQLParamsStartHookPayload<'exec>,
+    ) -> OnGraphQLParamsStartHookResult<'exec> {
+        payload.on_end(|mut payload| {
+            let persisted_query_ext = payload
+                .graphql_params
+                .extensions
+                .as_ref()
+                .and_then(|ext| ext.get("persistedQuery"))
+                .and_then(|pq| pq.as_object());
+
+            // Get the original query string from the map using the hash from the extensions
+            let query = get_persisted_query(persisted_query_ext);
+            payload.graphql_params.query = Some(query);
+
+            payload.proceed()
+        })
+    }
+}
+```
+
+## Integrate with the Router
+
+### Performance Considerations
+
+When creating custom plugins, it's important to understand that your plugin will be part of the
+request's hot path. The hot path refers to the critical path that affects the performance of the
+router.
+
+When implementing hooks in your plugin, you should be mindful of the performance implications of
+your code.
+
+Avoid performing heavy computations or blocking operations in request lifecycle hooks, as they can
+significantly impact the latency of your GraphQL requests.
+
+Prefer [loading data in the background](#background-tasks) and caching it when possible, instead of
+fetching it during a GraphQL request.
+
+### Background Tasks
+
+Hive Router provides a simple mechanism to run background tasks using the
+[`tokio` runtime](https://docs.rs/tokio/latest/tokio/).
+
+As a plugin developer, you don't need to deal with threads or async runtimes - you can use the Hive
+Router core runtime to register and manage the lifecycle of your background tasks.
+
+Background tasks can be registered during the [`on_plugin_init` hook](#on_plugin_init). Here is a
+simple example of a background task that runs periodically:
+
+```rust
+use hive_router::background_tasks::BackgroundTask;
+use tokio_util::sync::CancellationToken;
+use std::time::Duration;
+
+struct MyBackgroundTask;
+
+impl MyBackgroundTask {
+    fn new() -> Self {
+        Self {}
+    }
+
+    async fn do_something_periodically(&self) {
+        // Do something periodically
+    }
+}
+
+#[async_trait]
+impl BackgroundTask for MyBackgroundTask {
+    fn id(&self) -> &str {
+        "my_bg_task"
+    }
+
+    async fn run(&self, token: CancellationToken) {
+        let interval = Duration::from_secs(10);
+        let mut tokio_interval = tokio::time::interval(*interval);
+
+        loop {
+            tokio::select! {
+                _ = tokio_interval.tick() => { self.do_something_periodically().await }
+                _ = token.cancelled() => { println!("Background task stopped"); return; }
+            }
+        }
+    }
+}
+
+struct MyPlugin;
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    // ...
+    fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+        //
+        payload.bg_tasks_manager.register_task(MyBackgroundTask::new());
+
+        payload.initialize_plugin_with_defaults()
+    }
+}
+
+```
+
+### Logging
+
+Hive Router uses the [`tracing` crate](https://docs.rs/tracing/latest/tracing/) for its internal
+logging. Logs emitted from plugins are correlated with the request being processed.
+
+Use the built-in macros (`debug!(...)`, `info!(...)`, `warn!(...)`, and `error!(...)`) to emit log
+lines, which will appear based on the Router's logger configuration.
+
+```rust
+use tracing::{debug};
+
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    debug!("on_http_request is called now!");
+
+    payload.proceed()
+}
+```
+
+### OpenTelemetry Traces
+
+Hive Router [supports OpenTelemetry at its core](../observability/tracing), and uses the
+[`tracing` crate](https://docs.rs/tracing/latest/tracing/) for collecting, processing, and exporting
+OpenTelemetry trace information.
+
+Use the `tracing` API to [create spans](https://docs.rs/tracing/latest/tracing/index.html#spans) and
+enrich the exported trace data with custom spans:
+
+```rust
+use tracing::{debug};
+
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    // Create and enter the span; the guard finalizes it when the function returns
+    let my_span = span!(Level::INFO, "my_plugin_on_http_request");
+    let _guard = my_span.enter();
+
+    payload.proceed()
+}
+```
