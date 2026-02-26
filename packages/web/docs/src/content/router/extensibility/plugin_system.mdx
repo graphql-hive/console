@@ -121,28 +121,28 @@ The following chart describes the execution order and available hooks. Each hook
 flowchart TB
     subgraph "Router Lifecycle"
       direction LR
-      on_supergraph_load
-      on_shutdown
+      SL([on_supergraph_load])
+      ON([on_shutdown])
     end
     
     subgraph "Plugin Lifecycle"
       direction TB
-      on_plugin_init
+      PI([on_plugin_init])
     end
     
     subgraph "Request Lifecycle"
       direction TB
-      A[on_http_request] --> B[on_graphql_params]
-      B --> D[on_graphql_parse]
-      D --> F[on_graphql_validation]
-      F --> H[on_query_plan]
-      H --> J[on_execute]
-      J --> on_graphql_error
-      J --> K[on_subgraph_execute]
-      K --> L[on_subgraph_http_request]
+      A([on_http_request]) --> B([on_graphql_params])
+      B --> D([on_graphql_parse])
+      D --> F([on_graphql_validation])
+      F --> H([on_query_plan])
+      H --> J([on_execute])
+      J -.->|"per error"| GE([on_graphql_error])
+      J -->|"per subgraph call"| K([on_subgraph_execute])
+      K --> L([on_subgraph_http_request])
       L --> K
       K --> J
-      J --> A
+      J -->|"response"| A
       
       click A href "#on_http_request"
       click B href "#on_graphql_params"
@@ -152,10 +152,10 @@ flowchart TB
       click J href "#on_execute"
       click K href "#on_subgraph_execute"
       click L href "#on_subgraph_http_request"
-      click on_supergraph_load href "#on_supergraph_load"
-      click on_plugin_init href "#on_plugin_init"
-      click on_shutdown href "#on_shutdown"
-      click on_graphql_error href "#on_graphql_error"
+      click SL href "#on_supergraph_load"
+      click PI href "#on_plugin_init"
+      click ON href "#on_shutdown"
+      click GE href "#on_graphql_error"
     end
 ```
 
