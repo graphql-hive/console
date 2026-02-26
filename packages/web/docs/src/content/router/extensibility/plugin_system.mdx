@@ -344,18 +344,20 @@ With this hook, you can add custom authentication and authorization logic based 
 
 <details>
 
-<summary>Access HTTP request</summary>
+<summary>Early request rejection</summary>
 
 ```rust
 fn on_http_request<'req>(
     &'req self,
     payload: OnHttpRequestHookPayload<'req>,
 ) -> OnHttpRequestHookResult<'req> {
-    // Here you may access the incoming HTTP request
-    let path = payload.router_http_request.path();
-
-    // Call and return `payload.proceed()` in order to
-    // signal the router to continue execution 
+    if payload.router_http_request.headers().get("authorization").is_none() {
+        return payload.end_with_graphql_error(
+            GraphQLError::from_message_and_code("Unauthorized", "UNAUTHORIZED"),
+            StatusCode::UNAUTHORIZED,
+        );
+    }
+    
     payload.proceed()
 }
 ```
@@ -364,23 +366,23 @@ fn on_http_request<'req>(
 
 <details>
 
-<summary>Access HTTP response</summary>
+<summary>Add custom header to response</summary>
 
 ```rust
 fn on_http_request<'req>(
-    &'req self,
-    payload: OnHttpRequestHookPayload<'req>,
-) -> OnHttpRequestHookResult<'req> {
-    // Call and return `payload.on_end()` with a callback,
-    // to have access to the "end" stage of the hook
-    payload.on_end(|end_payload| {
-        let status = payload.response.status();
-        
-        // Call and return `end_payload.proceed()` in order to
-        // signal the router to continue
-        end_payload.proceed()
-    })
-}
+     &'req self,
+     payload: OnHttpRequestHookPayload<'req>,
+ ) -> OnHttpRequestHookResult<'req> {
+     payload.on_end(|payload| {
+         payload.map_response(|mut response| {
+             response.response_mut().headers_mut().insert(
+                 "x-served-by",
+                 "hive-router".parse().unwrap(),
+             );
+             response
+         }).proceed()
+     })
+ }
 ```
 
 </details>
