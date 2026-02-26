@@ -28,8 +28,8 @@ The [`hive-router`](https://crates.io/crates/hive-router) crate provides everyth
 developer needs to implement a custom plugin.
 
 To simplify the dependency tree and versioning, this crate also re-exports internal Router
-dependencies, traits, and structs, to simplify plugin development and keep the Router core version
-up to date.
+dependencies, traits, and structs, making plugin development easier and keeping the Router core
+version up to date.
 
 Refer to
 [the crate's `lib.rs` entrypoint](https://github.com/graphql-hive/router/blob/main/bin/router/src/lib.rs)
@@ -183,7 +183,7 @@ A plugin can maintain state directly on its `struct` and access it using `self` 
 must be thread-safe, as it may be shared across multiple threads handling concurrent HTTP requests.
 Please refer to
 [Rust's Interior Mutability](https://doc.rust-lang.org/reference/interior-mutability.html) guide for
-more information about how to implement a mutable state.
+more information about how to implement mutable state.
 
 ```rust
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -264,9 +264,9 @@ The `payload.context` API is simple:
 
 > [See `context_data` example for a full implementation](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs)
 
-## A simple plugin example
+## A Simple Plugin Example
 
-The following snippet shows the simplest example of creating a custom plugin, register it, and configure it with Hive Router: 
+The following snippet shows the simplest example of creating a custom plugin, registering it, and configuring it with Hive Router:
 
 ```rust filename="main.rs"
 use hive_router::{
@@ -299,7 +299,7 @@ async fn main() -> Result<(), RouterInitError> {
     // Configure Hive Router to use the OS's default certificate store
     init_rustls_crypto_provider();
 
-    // Start and run the router entrypoing with your plugin
+    // Start and run the router entrypoint with your plugin
     router_entrypoint(
         PluginRegistry::new().register::<MyPlugin>(),
     )
@@ -476,7 +476,7 @@ fn on_http_request<'req>(
 
 <summary>Override the HTTP response status</summary>
 
-Use `map_response` in `on_end` to rewrite the status code on the outgoing response — for example, to
+Use `map_response` in `on_end` to rewrite the status code on the outgoing response, for example, to
 normalize all successful responses to `200 OK`.
 
 ```rust
@@ -562,7 +562,7 @@ async fn on_graphql_params<'exec>(
 
 <summary>Read extracted GraphQL parameters</summary>
 
-Use the `on_end` callback to access the fully extracted GraphQL parameters — `query`,
+Use the `on_end` callback to access the fully extracted GraphQL parameters: `query`,
 `operation_name`, `variables`, and `extensions` are all available here.
 
 ```rust
@@ -694,8 +694,8 @@ async fn on_graphql_params<'exec>(
 
 ### `on_graphql_parse`
 
-This hook is called after the deserialization of the request, and before the router has parsed the
-GraphQL parameters body expected by
+This hook is called after the request has been deserialized, and before the router parses the
+GraphQL request body as specified by the
 [GraphQL-over-HTTP spec](https://graphql.github.io/graphql-over-http/).
 
 ```rust
@@ -830,9 +830,9 @@ async fn on_graphql_validation<'exec>(
 
 ### `on_query_plan`
 
-This hook is invoked during the Federation query planning process. At this stage, the Router already
-extracted, parsed and validated the GraphQL operation, and it is ready to plan how to execute the
-operation across subgraphs.
+This hook is invoked during the Federation query planning process. At this stage, the Router has
+already extracted, parsed, and validated the GraphQL operation and is ready to plan how to execute
+it across subgraphs.
 
 This hook gives plugins access to the Router's internal query planning process, allowing them to
 modify the operation being planned or inspect and modify the resulting plan.
@@ -875,7 +875,7 @@ async fn on_query_plan<'exec>(
 
 <summary>Reject based on query plan content</summary>
 
-Inspect the plan in `on_end` and short-circuit with an error if the operation exceeds a policy — for
+Inspect the plan in `on_end` and short-circuit with an error if the operation exceeds a policy - for
 example, too many root fields.
 
 ```rust
@@ -916,8 +916,8 @@ async fn on_query_plan<'exec>(
 
 ### `on_execute`
 
-This hook is invoked during the Federation query execution process. At this stage, the Router
-already extracted, parsed and validated the GraphQL operation. Also, a query plan has been
+This hook is invoked during the Federation query execution process. At this stage, the Router has
+already extracted, parsed, and validated the GraphQL operation, and a query plan has been
 constructed and is ready to be executed.
 
 Plugins can use this hook to observe the execution process or implement solutions such as response
@@ -939,7 +939,7 @@ async fn on_execute<'exec>(
 
 <summary>Return a cached response</summary>
 
-Bypass the execution pipeline entirely and return a pre-built response — useful for response
+Bypass the execution pipeline entirely and return a pre-built response - useful for response
 caching, where a cached result can be served without querying any subgraphs.
 
 ```rust
@@ -962,7 +962,7 @@ async fn on_execute<'exec>(
 <summary>Inspect the GraphQL response</summary>
 
 Use `on_end` to read the executed `data` and `errors` before they are serialized and sent to the
-client — useful for caching the result or collecting metrics.
+client - useful for caching the result or collecting metrics.
 
 ```rust
 async fn on_execute<'exec>(
@@ -1267,7 +1267,7 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 
 <summary>Remap error codes and HTTP status</summary>
 
-Map known error codes to different codes or HTTP status codes based on plugin configuration — useful
+Map known error codes to different codes or HTTP status codes based on plugin configuration - useful
 for normalizing errors from subgraphs.
 
 ```rust
@@ -1368,7 +1368,7 @@ fn on_supergraph_reload<'exec>(
 
 <summary>Scan the schema for directives</summary>
 
-Inspect the incoming `new_ast` to extract schema metadata — for example, collecting all types
+Inspect the incoming `new_ast` to extract schema metadata, for example, collecting all types
 annotated with a custom directive and caching them for use in later hooks.
 
 ```rust
@@ -1403,7 +1403,7 @@ fn on_supergraph_reload<'exec>(
     start_payload: OnSupergraphLoadStartHookPayload,
 ) -> OnSupergraphLoadStartHookResult<'exec> {
     self.cache.clear();
-    tracing::info!("Supergraph reloaded — cache invalidated");
+    println!("Supergraph reloaded! cache invalidated!");
 
     start_payload.proceed()
 }
@@ -1521,21 +1521,21 @@ impl RouterPlugin for APQPlugin {
 
 ### Performance Considerations
 
-When creating custom plugins, it's important to understand that your plugin will be part of the request's hotpath.  The hotpath refers to the critical path that affects the performance of the router.
+When creating custom plugins, it's important to understand that your plugin will be part of the request's hot path. The hot path refers to the critical path that affects the performance of the router.
 
-When implementing hooks in your plugin, you should be mindful of the performance implications of your code. 
+When implementing hooks in your plugin, you should be mindful of the performance implications of your code.
 
-Avoid doing heavy computations or blocking operations in request lifecycle hooks, if possible, as they can significantly impact the latency of your GraphQL requests.
+Avoid performing heavy computations or blocking operations in request lifecycle hooks, as they can significantly impact the latency of your GraphQL requests.
 
-Prefer [loading data in background](#background-tasks) and cache it if possible, instead of fetching during a GraphQL request workflow.
+Prefer [loading data in the background](#background-tasks) and caching it when possible, instead of fetching it during a GraphQL request.
 
 ### Background Tasks
 
-Hive Router provides a simple mechanism to run background tasks, using the [`tokio` runtime](https://docs.rs/tokio/latest/tokio/). 
+Hive Router provides a simple mechanism to run background tasks using the [`tokio` runtime](https://docs.rs/tokio/latest/tokio/).
 
-As a plugin developer, you don't need to deal with threads or async runtimes - you can use the Hive Router core runtime in order to register and manage the lifecycle of your background tasks and threads. 
+As a plugin developer, you don't need to deal with threads or async runtimes - you can use the Hive Router core runtime to register and manage the lifecycle of your background tasks.
 
-Background tasks can be registered during the [`on_plugin_init` hook](#on_plugin_init). Here's a simple example for a background tasks that runs periodically: 
+Background tasks can be registered during the [`on_plugin_init` hook](#on_plugin_init). Here is a simple example of a background task that runs periodically:
 
 ```rust 
 use hive_router::background_tasks::BackgroundTask;
