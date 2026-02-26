@@ -10,21 +10,21 @@ import { RouterHookSection } from '../../../components/router-plugin-system/hook
 
 Hive Router provides a plugin system that allows developers to extend its functionality with custom plugins. Plugins can be used to add new features, modify existing behavior, or integrate with external services.
 
-Just like the Hive Router itself, custom plugins are written in Rust, which allows for high performance and safety. To ease the development process, Hive Router is also published to [Crates.io](https://crates.io/crates/hive-router) as a single package `hive-router` that contains everything you need in order to focus on building your plugin, without configuring or re-building other parts of the service.
+Just like the Hive Router itself, custom plugins are written in Rust, which allows for high performance and safety. To ease the development process, Hive Router is also published to [Crates.io](https://crates.io/crates/hive-router) as a single package `hive-router` that contains everything you need to focus on building your plugin, without having to configure or rebuild other parts of the service.
 
 This page documents the API, hooks, and different implementation options that are available for plugin developers. If you are looking for a guide on how to write, test and distribute a custom plugin, please refer to [Extending the Router guide](../guides/extending-the-router).
 
 ## `hive-router` Crate
 
-The [`hive-router`](https://crates.io/crates/hive-router) Crate provides everything a plugin developer needs in order to implement a custom plugin. 
+The [`hive-router`](https://crates.io/crates/hive-router) crate provides everything a plugin developer needs to implement a custom plugin.
 
-To simplify the dependency tree and versioning, this crate also re-exports internal Router dependencies, traits, and structs, in order to make it simpler for developers to implement plugins and keep their Router core version up to date. 
+To simplify the dependency tree and versioning, this crate also re-exports internal Router dependencies, traits, and structs, to simplify plugin development and keep the Router core version up to date.
 
-Please refer to [the Crate's `lib.rs` entrypoint](https://github.com/graphql-hive/router/blob/main/bin/router/src/lib.rs) to find out what's being exported and can be re-used for extending the Router. 
+Refer to [the crate's `lib.rs` entrypoint](https://github.com/graphql-hive/router/blob/main/bin/router/src/lib.rs) to see what is exported and available for extending the Router.
 
 ## `trait RouterPlugin`
 
-The basic interface that exposes the plugin system is called `RouterPlugin`. To implement a custom plugin, you'll need to `impl` the `RouterPlugin` for your custom plugin's `struct`. Due to the async nature of the plugin system, a usage of `#[async_trait]` is also needed. 
+The primary interface for the plugin system is `RouterPlugin`. To implement a custom plugin, you'll need to `impl` the `RouterPlugin` for your custom plugin's `struct`. Due to the async nature of the plugin system, the `#[async_trait]` attribute is also required.
 
 ```rust
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -51,15 +51,15 @@ plugins:
 ```
 
 
-A plugin may implement one or more hooks, and have the following concepts implemented: 
+A plugin can implement one or more hooks, and leverage the following concepts:
 
 ### Configuration
 
-The `RouterPlugin` trait also accepts a generic type for the configuration of the plugin. 
+The `RouterPlugin` trait accepts a generic type parameter for plugin configuration.
 
-The configuration type requires to implement `DeserializeOwned + Sync` since the Router will be in charge of loading and deserializing the configuration from the Router config file. 
+The configuration type must implement `DeserializeOwned + Sync`, as the Router is responsible for loading and deserializing the configuration from the Router config file.
 
-The [`on_plugin_init`](#on_plugin_init) can help you to access the plugin's configuration.
+The [`on_plugin_init`](#on_plugin_init) hook provides access to the plugin's configuration.
 
 ```rust
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -99,11 +99,11 @@ plugins:
 
 ### Hooks
 
-A plugin may implement one or more hooks, and take part in different parts of the Router execution and lifecycle. 
+A plugin can implement one or more hooks to participate in different stages of the Router execution and lifecycle.
 
-Hooks allow the developer to be part of the control-flow and change the behavior of the router, by returning different return types from the hook function.
+Hooks allow plugins to participate in the control flow and change the behavior of the router by returning different types from the hook function.
 
-As a plugin developer, you can use the plugin system API in order to hook into the router execution flow, in the following areas of the Router: 
+As a plugin developer, you can hook into the router execution flow in the following areas:
 
 * HTTP request handling
 * GraphQL operation lookup and extraction from the HTTP request
@@ -161,7 +161,7 @@ flowchart TB
 
 ### Shared State
 
-A plugin may implement a state on the plugin `struct` itself, and access it using `self` in hooks. The state needs to be thread-safe, as it could be used and shared across multiple threads and HTTP requests that are being handled at the same time. Please refer to [Rust's Interior Mutability](https://doc.rust-lang.org/reference/interior-mutability.html) guide for more information about how to implement a mutable state.
+A plugin can maintain state directly on its `struct` and access it using `self` in hooks. The state must be thread-safe, as it may be shared across multiple threads handling concurrent HTTP requests. Please refer to [Rust's Interior Mutability](https://doc.rust-lang.org/reference/interior-mutability.html) guide for more information about how to implement a mutable state.
 
 ```rust
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -245,7 +245,7 @@ The `payload.context` API is simple:
 
 ### `on_plugin_init`
 
-This hook is called only once when the plugin is initialized, during the initialization process of the Router.
+This hook is called exactly once during Router initialization, when the plugin is first loaded.
 
 You can use this hook to access the plugin configuration, create the initial state of the plugin, and register background tasks to be handled by the router.
 
@@ -295,7 +295,7 @@ impl BackgroundTask for MyBackgroundTask {
     }
 
     async fn run(&self, token: CancellationToken) {
-        // do whatever you need here, this will run in background, in a separate thread
+        // Long-running work goes here; this task runs in a background thread
     }
 }
 
@@ -338,7 +338,7 @@ fn on_http_request<'req>(
 
 > The `'req` lifetime parameter represents the lifetime of the HTTP request. It is used to ensure that the payload and result are valid for the duration of the request.
 
-With this hook, you can implement custom handling of HTTP requests, such as implementing custom authentication and authorization logic based on HTTP headers, method, path, etc. You may also implement custom restrictions or HTTP validations, short-circuit, or serve static assets.
+With this hook, you can add custom authentication and authorization logic based on HTTP headers, method, path, and similar request properties. You can also implement custom restrictions, HTTP validations, short-circuit responses, or serve static assets.
 
 #### Usage Examples
 
@@ -431,7 +431,7 @@ fn on_http_request<'req>(
 This hook is called after the router has determined that the incoming request is a GraphQL request,
 and it decides to parse the GraphQL parameters (query, variables, operation name, etc.). 
 
-This hook allows you to implement different strategies for handling the detection and the extraction of the GraphQL request parameters. You may also prevent the execution of the GraphQL request if certain conditions are met.
+This hook allows you to customize how GraphQL request parameters are detected and extracted. You can also prevent execution of the GraphQL request if certain conditions are met.
 
 ```rust
 async fn on_graphql_params<'exec>(
@@ -452,7 +452,7 @@ async fn on_graphql_params<'exec>(
 async fn on_graphql_params<'exec>(
     &'exec self,
     payload: OnGraphQLParamsStartHookPayload<'exec>) -> OnGraphQLParamsStartHookResult<'exec> {
-    // This scope represents the "before" or params parsing,
+    // This scope represents the "before" phase of params parsing,
     // so we might not have the GraphQL parameters yet. 
     
     // But, inside the on_end callback, extraction process is already
@@ -479,7 +479,7 @@ async fn on_graphql_params<'exec>(
     &'exec self,
     payload: OnGraphQLParamsStartHookPayload<'exec>) -> OnGraphQLParamsStartHookResult<'exec> {
         payload.on_end(|mut end_payload| {
-            // Here we can access the GraphQL parameters and modify it as mutable
+            // Here we can access and mutate the GraphQL parameters
             end_payload.query = Some("query { overridingTheOperation }".to_string());
             
             return end_payload.proceed();
@@ -550,9 +550,9 @@ async fn on_graphql_parse<'exec>(
 
 ### `on_graphql_validation`
 
-This hook is called during the GraphQL validation phase of the Router. At this stage, the GraphQL operation was extracted and parsed from the incoming request, and GraphQL validation rules are checking the validity of the GraphQL operation against the GraphQL schema.
+This hook is called during the GraphQL validation phase of the Router. At this stage, the GraphQL operation has been extracted and parsed from the incoming request, and validation rules are being applied against the GraphQL schema.
 
-Plugins can use this hook to add or modify validation rules, skip validation, or modify the operation before it's being validated. 
+Plugins can use this hook to add custom validation rules, skip validation entirely, or modify the operation prior to validation.
 
 ```rust
 async fn on_graphql_validation<'exec>(
@@ -614,7 +614,7 @@ async fn on_graphql_validation<'exec>(
 
 This hook is invoked during the Federation query planning process. At this stage, the Router already extracted, parsed and validated the GraphQL operation, and it is ready to plan how to execute the operation across subgraphs.
 
-Plugins using this hook can have access to the Router internal process of query planning, modify the operation to plan, access the full plan, and modify it.
+This hook gives plugins access to the Router's internal query planning process, allowing them to modify the operation being planned or inspect and modify the resulting plan.
 
 ```rust
 async fn on_query_plan<'exec>(
@@ -663,7 +663,7 @@ async fn on_query_plan<'exec>(
 
 This hook is invoked during the Federation query execution process. At this stage, the Router already extracted, parsed and validated the GraphQL operation. Also, a query plan has been constructed and is ready to be executed. 
 
-Plugins using this hook can have access to the Router's execution process, implement solutions like caching and other flows that replace the execution process as a whole. 
+Plugins can use this hook to observe the execution process or implement solutions such as response caching that bypass it entirely.
 
 ```rust
 async fn on_execute<'exec>(
@@ -733,12 +733,11 @@ async fn on_execute<'exec>(
 ### `on_subgraph_execute`
 
 This hook is called during the preparation process of every subgraph request, based on the query plan.
-At this stage, we have the subgraph name, the execution request that would be sent to the subgraph,
-and other contextual information.
+At this stage, the subgraph name, the execution request to be sent, and other contextual information are available.
 
-Plugins using this hook can have control over the planning process of subgraph requests, replace/modify a subgraph response, pass custom data to subgraphs, and handle custom execution transports.
+Plugins can use this hook to control the planning process of subgraph requests, replace or modify a subgraph response, pass custom data to subgraphs, and handle custom execution transports.
 
-Unlike `on_subgraph_http_request` hook, this hook still doesn't have the complete HTTP request that needs to be sent to the subgraph. 
+Unlike the `on_subgraph_http_request` hook, this hook does not yet have the complete HTTP request to be sent to the subgraph.
 
 ```rust
 async fn on_subgraph_execute<'exec>(
@@ -768,7 +767,7 @@ This hook is called during the actual HTTP call made to the subgraph. In this ho
 
 Plugins using this hook can extend or modify the HTTP request, HTTP headers, path and other aspects of communicating with the subgraph. 
 
-In addition, you can use this hook for passing along or storing information and data that comes from subgraphs. 
+You can also use this hook to capture or forward data returned from subgraphs.
 
 ```rust
 async fn on_subgraph_http_request<'exec>(
@@ -795,11 +794,9 @@ async fn on_subgraph_http_request<'exec>(
 
 ### `on_graphql_error`
 
-This hook is called whenever a GraphQL error is about to be sent to the client, during plan execution. This hook allows you to
-inspect or modify the error before it is sent. 
+This hook is called whenever a GraphQL error is about to be sent to the client during plan execution. Use it to inspect or modify the error before it reaches the client.
 
-You can use this hook to implement custom error handling logic, such as masking certain error details, adding additional information to the error
-response, or even transforming the error into a different format.
+You can use this hook to implement custom error handling logic, such as masking certain error details, adding additional information to the error response, or transforming the error into a different format.
 
 ```rust
     fn on_graphql_error(
@@ -814,8 +811,7 @@ response, or even transforming the error into a different format.
 
 ```rust
 fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
-    // You may use, access and collect the "payload.error.message" error Here
-    // A custom plugin can collect and later process and handle the error in any way
+    // Collect the error message before it is sent to the client
     payload.collected_errors.push(payload.error.message);
     
     payload.proceed()
@@ -857,7 +853,7 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 
 This hook is called when the router is shutting down.
 
-Plugins can use this hook in order to implement cleanup/flush logic.
+Plugins can use this hook to implement cleanup and flush logic.
 
 ```rust
 async fn on_shutdown<'exec>(&'exec self)
@@ -873,11 +869,11 @@ async fn on_shutdown<'exec>(&'exec self)
 
 ### `on_supergraph_load`
 
-This hook is called whenever the supergraph is loaded or reloaded. This can happen at startup or when the supergraph is being reloaded from any source.
+This hook is called whenever the supergraph is loaded or reloaded. This occurs at startup and any time the supergraph is reloaded.
 
-Plugins can use this hook to clear/reset caches, or to restart their state, in cases where they depend on the GraphQL schema structure.
+Plugins can use this hook to clear or reset caches and state that depends on the schema structure.
 
-This hook will be called at least once for a healthy router instance, as the supergraph is being loaded at startup. If the Router configuration also uses polling to reload the GraphQL schema, then it might get called more than one time. 
+This hook is guaranteed to be called at least once for a healthy router instance during startup. If the Router is configured to poll for schema updates, it will be called each time the schema is reloaded.
 
 ```rust
 fn on_supergraph_reload<'exec>(
@@ -902,10 +898,9 @@ fn on_supergraph_reload<'exec>(
 
 ### Short-Circuit Responses
 
-In many of the hooks mentioned above, you have the ability to short-circuit the request processing
-by providing a custom response.
+In many of the hooks mentioned above, you can short-circuit the request processing by providing a custom response.
 
-Let's say you want to implement a plugin that returns an early error response in some cases;
+For example, to return an early error response in certain conditions:
 
 ```rust
 return payload.end_with_response(
@@ -916,22 +911,15 @@ return payload.end_with_response(
 );
 ```
 
-Here we use `end_with_response` method on the `payload` to provide a custom HTTP response. But there
-are some helper methods to make it easier to create early responses.
+The `end_with_response` method on `payload` provides a custom HTTP response. Several helper methods are also available to simplify creating early responses.
 
-You can see
-[forbid_anonymous_operations](https://github.com/graphql-hive/router/blob/main/plugin_examples/forbid_anonymous_operations/src/plugin.rs#L40)
-example to see a full example.
 
 #### Helpers for early responses
 
 To make it easier to create early responses, Hive Router provides some helper methods on the hook
 payloads.
 
-- `end_with_response_body(body: Serialize, status_code: StatusCode)` - This method allows you to
-  provide a response body that is serializable using `serde`. It automatically serializes the body
-  to JSON and sets the appropriate headers. So if we want to write less code for the above example,
-  we can do the following;
+- `end_with_response_body(body: Serialize, status_code: StatusCode)` - Accepts a `serde`-serializable body, automatically serializes it to JSON, and sets the appropriate headers. To simplify the above example:
 
 ```rust filename="src/forbid_anon_ops.rs" {33-52}
                 let body = json!({
@@ -951,9 +939,7 @@ payloads.
                 );
 ```
 
-- `end_with_graphql_error(error: GraphQLError, status: StatusCode)` - This method allows you to
-  provide a `GraphQLError` directly, and it constructs the appropriate GraphQL error response for
-  you.
+- `end_with_graphql_error(error: GraphQLError, status: StatusCode)` - Accepts a `GraphQLError` directly and constructs the appropriate GraphQL error response.
 
 ```rust filename="src/forbid_anon_ops.rs" {33-52}
                 let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
@@ -966,13 +952,9 @@ payloads.
 
 ### Overriding Default Behavior
 
-Instead of short-circuiting the entire HTTP request, and returning an early HTTP response, you might
-want to override default behavior in certain stages.
+Rather than short-circuiting the entire request and returning an early response, you may want to override the default behavior at a specific stage.
 
-For example, in case of automatic persisted queries, you basically need to manipulate the parsed
-request body received from the client. In this case, you need to modify the `query` field in the
-`GraphQLParams` struct to put the actual query string into it based on the hash received from the
-client.
+For example, when implementing automatic persisted queries (APQ), you need to replace the `query` field in the `GraphQLParams` struct with the actual query string, resolved from the hash provided by the client.
 
 ```rust
 #[async_trait::async_trait]
@@ -999,15 +981,13 @@ impl RouterPlugin for APQPlugin {
 }
 ```
 
-[See `apq` example for a full implementation](https://github.com/graphql-hive/router/blob/main/plugin_examples/apq/src/plugin.rs#L29)
-
 ## Integrations
 
 ### OpenTelemetry Traces 
 
-Hive Router is using the [`tracing` Crate](https://docs.rs/tracing/latest/tracing/) for collecting, processing and exporting OpenTelemetry trace information.
+Hive Router [supports OpenTelemetry at its core](../observability/tracing), and uses the [`tracing` crate](https://docs.rs/tracing/latest/tracing/) for collecting, processing, and exporting OpenTelemetry trace information.
 
-You may use `tracing` API to [create spans](https://docs.rs/tracing/latest/tracing/index.html#spans) and enrich the exported information with custom spans:
+Use the `tracing` API to [create spans](https://docs.rs/tracing/latest/tracing/index.html#spans) and enrich the exported trace data with custom spans:
 
 ```rust
 use tracing::{debug};
@@ -1016,10 +996,8 @@ fn on_http_request<'req>(
     &'req self,
     payload: OnHttpRequestHookPayload<'req>,
 ) -> OnHttpRequestHookResult<'req> {
-    // First, create the span 
+    // Create and enter the span; the guard finalizes it when the function returns
     let my_span = span!(Level::INFO, "my_plugin_on_http_request");
-    // Now, start it. The returned guard will make sure to finalize
-    // and end the span when you hook function ends
     let _guard = my_span.enter();
     
     payload.proceed()
@@ -1028,9 +1006,9 @@ fn on_http_request<'req>(
 
 ### Logging
 
-Hive Router is using the [`tracing` Crate](https://docs.rs/tracing/latest/tracing/) for its internal logging. Logs emitted from plugin are correlated with the request it's processing.
+Hive Router uses the [`tracing` crate](https://docs.rs/tracing/latest/tracing/) for its internal logging. Logs emitted from plugins are correlated with the request being processed.
 
-You may use the built-in macros (such as `debug!(...)`, `info!(...)`, `warn!(...)` and `error!(...)`), and the log lines will appear based on the Router's logger configuration.
+Use the built-in macros (`debug!(...)`, `info!(...)`, `warn!(...)`, and `error!(...)`) to emit log lines, which will appear based on the Router's logger configuration.
 
 ```rust
 use tracing::{debug};
