@@ -7,11 +7,11 @@ import { Steps } from '@theguild/components'
 # Extending the Router
 
 Hive Router is designed to be flexible and extensible, allowing you to customize its behavior to fit
-your specific needs. This guide demonstrate how to extend the router's functionality using
+your specific needs. This guide demonstrates how to extend the router's functionality using
 [custom plugins written in Rust](../extensibility/plugin_system).
 
-Refer also to the
-[technical documentation and the API reference of the Router plugin system](../extensibility/plugin_system).
+For technical details and API reference, see the
+[Router Plugin System documentation](../extensibility/plugin_system).
 
 ## Creating a Custom Plugin
 
@@ -35,7 +35,7 @@ cd my_custom_router
 
 ### Install Dependencies
 
-Install `hive-router` and `serde` as a dependency by adding it to your `Cargo.toml` file:
+Add `hive-router` and `serde` as dependencies in your `Cargo.toml` file:
 
 ```toml
 [dependencies]
@@ -76,10 +76,10 @@ To use the Router, you'll need to create a `router.config.yaml` file in the root
 This file will contain the configuration for your router, including the supergraph source and any
 plugins you want to use.
 
-Also, this configuration file needs to point to a valid, composed, Supergraph file.
+This configuration file must also point to a valid, composed Supergraph file.
 
-If you already have your own Supergraph that can be used for testing, then place it in your
-development directory. Alternatively, you can use our example supergraph as a starting point:
+If you already have a Supergraph available for testing, place it in your project directory.
+Alternatively, you can use the example supergraph as a starting point:
 
 ```bash
 curl -sSL https://federation-demo.theguild.workers.dev/supergraph.graphql > supergraph.graphql
@@ -93,8 +93,8 @@ supergraph:
   path: ./supergraph.graphql
 ```
 
-> Hive Router allows you to load the Supergraph for additional source, refer to
-> [Supergraph Sources documentation page](https://the-guild.dev/graphql/hive/docs/router/supergraph).
+> Hive Router supports loading the Supergraph from additional sources. See the
+> [Supergraph Sources documentation](https://the-guild.dev/graphql/hive/docs/router/supergraph) for details.
 
 ### Run your custom router
 
@@ -104,9 +104,9 @@ At this point, you should be able to run your router by executing the following 
 cargo run
 ```
 
-The Router default configuration is to serve at port `4000`, so go ahead and try to open
-[`http://localhost:4000/graphql`](http://localhost:4000/graphql) in your browser to see the GraphQL
-interactive playground.
+By default, the Router serves on port `4000`. Open
+[`http://localhost:4000/graphql`](http://localhost:4000/graphql) in your browser to access the
+interactive GraphQL playground.
 
 ### Create a custom plugin
 
@@ -185,8 +185,8 @@ async fn main() -> Result<(), RouterInitError> {
 
 ### Enable and configure your plugin
 
-Now that you have registered your plugin, the Router can start using it, and as a user of the
-router, you'll need to enabled configure your plugin in the `router.config.yaml` file:
+With the plugin registered, the Router is ready to use it. Enable and configure your plugin in the
+`router.config.yaml` file:
 
 ```yaml filename="router.config.yaml"
 supergraph:
@@ -205,18 +205,18 @@ You can now compile and run your Router again:
 cargo run
 ```
 
-And use the interactive GraphQL playground at
-[`http://localhost:4000/graphql`](http://localhost:4000/graphql) to run any query. If your plugin is
-registered, configured an enabled correctly, running any GraphQL operation will print a log message
-as defined in `on_graphql_params` hook of the custom plugin.
+Use the interactive GraphQL playground at
+[`http://localhost:4000/graphql`](http://localhost:4000/graphql) to run a query. If your plugin is
+registered, configured, and enabled correctly, any GraphQL operation will print a log message as
+defined in the `on_graphql_params` hook of the custom plugin.
 
-> This simplest GraphQL operation you can run that doesn't require subgraphs runnning is:
+> The simplest GraphQL operation you can run without requiring any subgraphs to be running is:
 > `query { __typename }`.
 
 ### Build your Router
 
-Now that you have a custom plugin that extends the Router behavior, you'll need to compile it in
-Release mode in order to be able to use is in production.
+Now that you have a custom plugin that extends the Router's behavior, you'll need to compile it in
+release mode to use it in production.
 
 To do that, verify that your `Cargo.toml` file has a defined binary and entrypoint:
 
@@ -226,9 +226,9 @@ name = "hive_router_with_my_plugin" # Name of the binary
 path = "src/main.rs"
 ```
 
-And then use Rust compiler in release mode:
+Then build using the Rust compiler in release mode:
 
-```rust
+```bash
 cargo build --release
 ```
 
@@ -280,8 +280,8 @@ docker run \
 
 ## Additional Resources
 
-We've collected a links and examples that can help you to implement custom plugins and extend the
-Router in different ways.
+The following links and examples can help you implement custom plugins and extend the Router in
+different ways.
 
 - [Plugin System documentation and API Reference](../extensibility/plugin_system)
 - [Example plugins](https://github.com/graphql-hive/router/tree/main/plugin_examples)
