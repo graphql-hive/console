@@ -154,6 +154,9 @@
       "seroval@<1.4.1": "^1.4.1",
       "fast-xml-parser@<5.3.6": "^5.3.6",
       "minimatch@10.x.x": "^10.2.2",
+      "minimatch@9.x.x": "^9.0.6",
+      "minimatch@3.x.x": "^3.1.3",
+      "minimatch@4.x.x": "^4.2.4",
       "qs@<6.14.2": "^6.14.2"
     },
     "patchedDependencies": {
