@@ -6,7 +6,11 @@ import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { MetadataFilter, SchemaVariantFilter } from '@/components/target/explorer/filter';
+import {
+  MetadataFilter,
+  SchemaVariantFilter,
+  ServiceNameFilter,
+} from '@/components/target/explorer/filter';
 import { SchemaExplorerProvider } from '@/components/target/explorer/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -187,6 +191,7 @@ const DeprecatedSchemaExplorer_DeprecatedSchemaQuery = graphql(`
             name
             values
           }
+          ...SchemaExplorerTypes_ServiceNamesFragment
         }
         deprecatedSchema(period: { absoluteRange: $period }) {
           ...DeprecatedSchemaView_DeprecatedSchemaExplorerFragment
@@ -254,6 +259,7 @@ function DeprecatedSchemaExplorer(props: {
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
+          <ServiceNameFilter explorer={latestValidSchemaVersion?.explorer} />
           <SchemaVariantFilter
             organizationSlug={props.organizationSlug}
             projectSlug={props.projectSlug}

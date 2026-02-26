@@ -6,7 +6,7 @@ import {
   GraphQLFieldsSkeleton,
   GraphQLTypeCardSkeleton,
 } from '@/components/target/explorer/common';
-import { SchemaVariantFilter } from '@/components/target/explorer/filter';
+import { SchemaVariantFilter, ServiceNameFilter } from '@/components/target/explorer/filter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -237,6 +237,9 @@ const UnusedSchemaExplorer_UnusedSchemaQuery = graphql(`
       latestValidSchemaVersion {
         __typename
         id
+        explorer(usage: { period: $period }) {
+          ...SchemaExplorerTypes_ServiceNamesFragment
+        }
         unusedSchema(period: { absoluteRange: $period }) {
           ...UnusedSchemaView_UnusedSchemaExplorerFragment
         }
@@ -317,6 +320,7 @@ function UnusedSchemaExplorer({
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
           />
+          <ServiceNameFilter explorer={latestValidSchemaVersion?.explorer} />
           <SchemaVariantFilter
             organizationSlug={organizationSlug}
             projectSlug={projectSlug}
