@@ -257,10 +257,12 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
 
 <summary>Access the plugin configuration</summary>
 
+Use `payload.config()` to read the plugin's configuration from the Router YAML. The `?` propagates initialization errors back to the router.
+
 ```rust
 fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
     let config = payload.config()?;
-    
+
     payload.initialize_plugin_with_defaults()
 }
 ```
@@ -269,7 +271,9 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
 
 <details>
 
-<summary>Customize plugin instance/state</summary>
+<summary>Customize plugin instance</summary>
+
+Build the plugin's initial state from the parsed configuration before the router starts serving requests.
 
 ```rust
 fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
@@ -285,6 +289,8 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
 
 <summary>Register background tasks</summary>
 
+Spawn long-running work tied to the router lifecycle. The `CancellationToken` is signaled when the router shuts down.
+
 ```rust
 use hive_router::background_tasks::BackgroundTask;
 
@@ -295,14 +301,12 @@ impl BackgroundTask for MyBackgroundTask {
     }
 
     async fn run(&self, token: CancellationToken) {
-        // Long-running work goes here; this task runs in a background thread
+        // Check token.is_cancelled() to handle graceful shutdown
     }
 }
 
-
 fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
     payload.bg_tasks_manager.register_task(MyBackgroundTask::new());
-    
     payload.initialize_plugin_with_defaults()
 }
 ```
@@ -344,7 +348,9 @@ With this hook, you can add custom authentication and authorization logic based 
 
 <details>
 
-<summary>Early request rejection</summary>
+<summary>Reject unauthenticated requests</summary>
+
+Check for required HTTP headers in the start phase and short-circuit with an error before any GraphQL processing begins.
 
 ```rust
 fn on_http_request<'req>(
@@ -357,7 +363,7 @@ fn on_http_request<'req>(
             StatusCode::UNAUTHORIZED,
         );
     }
-    
+
     payload.proceed()
 }
 ```
@@ -366,30 +372,34 @@ fn on_http_request<'req>(
 
 <details>
 
-<summary>Add custom header to response</summary>
+<summary>Add a response header</summary>
+
+Use `on_end` with `map_response` to attach custom headers to every outgoing HTTP response.
 
 ```rust
 fn on_http_request<'req>(
-     &'req self,
-     payload: OnHttpRequestHookPayload<'req>,
- ) -> OnHttpRequestHookResult<'req> {
-     payload.on_end(|payload| {
-         payload.map_response(|mut response| {
-             response.response_mut().headers_mut().insert(
-                 "x-served-by",
-                 "hive-router".parse().unwrap(),
-             );
-             response
-         }).proceed()
-     })
- }
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    payload.on_end(|payload| {
+        payload.map_response(|mut response| {
+            response.response_mut().headers_mut().insert(
+                "x-served-by",
+                "hive-router".parse().unwrap(),
+            );
+            response
+        }).proceed()
+    })
+}
 ```
 
 </details>
 
 <details>
 
-<summary>Modify HTTP response status</summary>
+<summary>Override the HTTP response status</summary>
+
+Use `map_response` in `on_end` to rewrite the status code on the outgoing response — for example, to normalize all successful responses to `200 OK`.
 
 ```rust
 use hive_router::http::StatusCode;
@@ -398,16 +408,37 @@ fn on_http_request<'req>(
     &'req self,
     payload: OnHttpRequestHookPayload<'req>,
 ) -> OnHttpRequestHookResult<'req> {
-    // Call and return `payload.on_end()` with a callback,
-    // to have access to the "end" stage of the hook
     payload.on_end(|end_payload| {
-        // Call and return `end_payload.map_response()` in order to access
-        // a mutable reference to the response, and modify it
-        return end_payload.map_response(|mut response| {
+        end_payload.map_response(|mut response| {
             *response.response_mut().status_mut() = StatusCode::OK;
-            
             response
         })
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Propagate subgraph status codes</summary>
+
+Read context data written by a downstream hook (e.g., `on_subgraph_http_request`) and apply it to the final HTTP response status.
+
+```rust
+fn on_http_request<'req>(
+    &'req self,
+    payload: OnHttpRequestHookPayload<'req>,
+) -> OnHttpRequestHookResult<'req> {
+    payload.on_end(|payload| {
+        let ctx = payload.context.get_ref::<PropagateStatusCodeCtx>();
+        if let Some(ctx) = ctx {
+            return payload.map_response(|mut response| {
+                *response.response_mut().status_mut() = ctx.status_code;
+                response
+            }).proceed();
+        }
+        payload.proceed()
     })
 }
 ```
@@ -594,18 +625,40 @@ async fn on_graphql_parse<'exec>(
 
 <details>
 
-<summary>Access the parsed GraphQL operation</summary>
+<summary>Read the raw query string</summary>
+
+The start phase has access to the raw `GraphQLParams`, including the unparsed query string, before the router parses it into a document.
 
 ```rust
 async fn on_graphql_parse<'exec>(
-        &'exec self,
-        payload: OnGraphQLParseStartHookPayload<'exec>,
-    ) -> OnGraphQLParseHookResult<'exec> {
-        // At this point, the GraphQL operation was extracted and parsed from the incoming request.
-        let parsed_document = &payload.graphql_params.query;
-        
-        payload.proceed()
-    }
+    &'exec self,
+    payload: OnGraphQLParseStartHookPayload<'exec>,
+) -> OnGraphQLParseHookResult<'exec> {
+    let raw_query = &payload.graphql_params.query;
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Access the parsed document (AST)</summary>
+
+Use `on_end` to access the fully parsed `Document` AST after the router has completed parsing the operation.
+
+```rust
+async fn on_graphql_parse<'exec>(
+    &'exec self,
+    payload: OnGraphQLParseStartHookPayload<'exec>,
+) -> OnGraphQLParseHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let document = &end_payload.document;
+
+        end_payload.proceed()
+    })
+}
 ```
 
 </details>
@@ -638,10 +691,12 @@ async fn on_graphql_validation<'exec>(
 
 <details>
 
-<summary>Add validation rules</summary>
+<summary>Add a custom validation rule</summary>
+
+Implement `ValidationRule` and register it with `payload.with_validation_rule()` to enforce custom constraints on every incoming operation.
 
 ```rust
-impl ValidationRule for MaxAliasesRule {
+impl ValidationRule for MyCustomValidationRule {
     fn error_code<'a>(&self) -> &'a str {
         "MAX_ALIASES_EXCEEDED"
     }
@@ -656,13 +711,11 @@ impl ValidationRule for MaxAliasesRule {
 }
 
 async fn on_graphql_validation<'exec>(
-        &'exec self,
-        payload: OnGraphQLValidationStartHookPayload<'exec>,
-    ) -> OnGraphQLValidationStartHookResult<'exec> {
-        let rule = MyCustomValidationRule::new()
-
-        payload.with_validation_rule(rule).proceed()
-    }
+    &'exec self,
+    payload: OnGraphQLValidationStartHookPayload<'exec>,
+) -> OnGraphQLValidationStartHookResult<'exec> {
+    payload.with_validation_rule(MyCustomValidationRule::new()).proceed()
+}
 ```
 
 </details>
@@ -700,7 +753,9 @@ async fn on_query_plan<'exec>(
 
 <details>
 
-<summary>Access the query plan</summary>
+<summary>Inspect the query plan</summary>
+
+Use `on_end` to access the constructed `QueryPlan` after the planner has completed. This runs after operation parsing and validation.
 
 ```rust
 async fn on_query_plan<'exec>(
@@ -708,8 +763,37 @@ async fn on_query_plan<'exec>(
     payload: OnQueryPlanStartHookPayload<'exec>,
 ) -> OnQueryPlanStartHookResult<'exec> {
     payload.on_end(|end_payload| {
-        let query_plan = end_payload.query_plan;
-        
+        let query_plan = &end_payload.query_plan;
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Reject based on query plan content</summary>
+
+Inspect the plan in `on_end` and short-circuit with an error if the operation exceeds a policy — for example, too many root fields.
+
+```rust
+async fn on_query_plan<'exec>(
+    &'exec self,
+    payload: OnQueryPlanStartHookPayload<'exec>,
+) -> OnQueryPlanStartHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let root_field_count = count_root_fields(&end_payload.query_plan);
+        if root_field_count > self.max_root_fields {
+            return end_payload.end_with_graphql_error(
+                GraphQLError::from_message_and_code(
+                    "Query exceeds the maximum number of root fields",
+                    "TOO_MANY_ROOT_FIELDS",
+                ),
+                StatusCode::PAYLOAD_TOO_LARGE,
+            );
+        }
         end_payload.proceed()
     })
 }
@@ -749,40 +833,65 @@ async fn on_execute<'exec>(
 
 <details>
 
-<summary>Replace execution with custom response</summary>
+<summary>Return a cached response</summary>
+
+Bypass the execution pipeline entirely and return a pre-built response — useful for response caching, where a cached result can be served without querying any subgraphs.
 
 ```rust
 async fn on_execute<'exec>(
-        &'exec self,
-        payload: OnExecuteStartHookPayload<'exec>,
-    ) -> OnExecuteStartHookResult<'exec> {
-        return payload.end_with_response(PlanExecutionOutput {
-            body: "...",
-            error_count: 0,
-            response_headers_aggregator: None,
-            status_code: StatusCode::OK,
-        });
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+) -> OnExecuteStartHookResult<'exec> {
+    if let Some(cached) = self.cache.get(&cache_key) {
+        return payload.end_with_response(cached);
     }
+
+    payload.proceed()
+}
 ```
 
 </details>
 
 <details>
 
-<summary>Access the GraphQL response</summary>
+<summary>Inspect the GraphQL response</summary>
+
+Use `on_end` to read the executed `data` and `errors` before they are serialized and sent to the client — useful for caching the result or collecting metrics.
 
 ```rust
 async fn on_execute<'exec>(
-        &'exec self,
-        payload: OnExecuteStartHookPayload<'exec>,
-    ) -> OnExecuteStartHookResult<'exec> {
-        return payload.on_end(|end_payload| {
-            let graphql_result = end_payload.data;
-            let errors_vec = end_payload.errors;
-            
-            end_payload.proceed()
-        });
-    }
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+) -> OnExecuteStartHookResult<'exec> {
+    payload.on_end(|end_payload| {
+        let data = &end_payload.data;
+        let errors = &end_payload.errors;
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Capture the operation for usage reporting</summary>
+
+Read `operation_for_plan` in the start phase to record the query string and operation name for telemetry or analytics before execution proceeds.
+
+```rust
+async fn on_execute<'exec>(
+    &'exec self,
+    payload: OnExecuteStartHookPayload<'exec>,
+) -> OnExecuteStartHookResult<'exec> {
+    self.reports.lock().await.push(UsageReport {
+        query: payload.operation_for_plan.to_string(),
+        operation_name: payload.operation_for_plan.name.clone(),
+    });
+
+    payload.proceed()
+}
 ```
 
 </details>
@@ -819,6 +928,74 @@ async fn on_subgraph_execute<'exec>(
 
 > The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to ensure that the payload and result are valid for the duration of the GraphQL execution.
 
+#### Usage Examples
+
+<details>
+
+<summary>Add a header to the subgraph request</summary>
+
+Mutate `payload.execution_request.headers` to inject custom headers into every request sent to a subgraph before it is dispatched.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+    &'exec self,
+    mut payload: OnSubgraphExecuteStartHookPayload<'exec>,
+) -> OnSubgraphExecuteStartHookResult<'exec> {
+    payload.execution_request.headers.insert(
+        "x-internal-token",
+        http::HeaderValue::from_static("secret"),
+    );
+
+    payload.on_end(|payload| payload.proceed())
+}
+```
+
+</details>
+
+<details>
+
+<summary>Filter by subgraph name</summary>
+
+Use `payload.subgraph_name` to apply logic selectively to specific subgraphs.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+    &'exec self,
+    payload: OnSubgraphExecuteStartHookPayload<'exec>,
+) -> OnSubgraphExecuteStartHookResult<'exec> {
+    if payload.subgraph_name == "products" {
+        tracing::info!("Dispatching request to the products subgraph");
+    }
+
+    payload.on_end(|payload| payload.proceed())
+}
+```
+
+</details>
+
+<details>
+
+<summary>Count subgraph calls per request</summary>
+
+Use context to track how many subgraph calls were made during a single GraphQL request and log the total in `on_end`.
+
+```rust
+async fn on_subgraph_execute<'exec>(
+    &'exec self,
+    payload: OnSubgraphExecuteStartHookPayload<'exec>,
+) -> OnSubgraphExecuteStartHookResult<'exec> {
+    payload.on_end(|payload| {
+        let count = payload.context.get_mut::<SubgraphCallCount>();
+        if let Some(mut count) = count {
+            count.value += 1;
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
 #### Payload API Reference
 
 * [`OnSubgraphExecuteStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_subgraph_execute.rs#:~:text=struct%20OnSubgraphExecuteStartHookPayload)
@@ -849,6 +1026,59 @@ async fn on_subgraph_http_request<'exec>(
 
 > The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to ensure that the payload and result are valid for the duration of the GraphQL execution.
 
+#### Usage Examples
+
+<details>
+
+<summary>Track the subgraph response status</summary>
+
+Use `on_end` to capture the HTTP response status from each subgraph call and store it in context for use in a later hook (e.g., `on_http_request`).
+
+```rust
+async fn on_subgraph_http_request<'exec>(
+    &'exec self,
+    payload: OnSubgraphHttpRequestHookPayload<'exec>,
+) -> OnSubgraphHttpRequestHookResult<'exec> {
+    payload.on_end(|payload| {
+        let status = payload.response.status;
+        if self.watched_codes.contains(&status) {
+            payload.context.insert(SubgraphStatus { code: status });
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Replace the subgraph HTTP request</summary>
+
+Bypass the default HTTP transport entirely and send a custom request.
+
+```rust
+async fn on_subgraph_http_request<'exec>(
+    &'exec self,
+    payload: OnSubgraphHttpRequestHookPayload<'exec>,
+) -> OnSubgraphHttpRequestHookResult<'exec> {
+    let response = self.client
+        .post(payload.endpoint.to_string())
+        .body(payload.body.clone())
+        .send()
+        .await
+        .unwrap();
+
+    payload.end_with_response(SubgraphHttpResponse {
+        status: response.status(),
+        headers: response.headers().clone().into(),
+        body: response.bytes().await.unwrap(),
+    })
+}
+```
+
+</details>
+
 #### Payload API Reference
 
 * [`OnSubgraphHttpRequestHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_subgraph_http_request.rs#:~:text=struct%20OnSubgraphHttpRequestHookPayload)
@@ -876,15 +1106,18 @@ You can use this hook to implement custom error handling logic, such as masking 
     ) -> OnGraphQLErrorHookResult;
 ```
 
+#### Usage Examples
+
 <details>
 
-<summary>Custom error handling</summary>
+<summary>Collect errors for monitoring</summary>
+
+Intercept errors before they reach the client and record them for analytics, alerting, or structured logging.
 
 ```rust
 fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
-    // Collect the error message before it is sent to the client
-    payload.collected_errors.push(payload.error.message);
-    
+    payload.collected_errors.push(payload.error.message.clone());
+
     payload.proceed()
 }
 ```
@@ -893,13 +1126,41 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 
 <details>
 
-<summary>Error masking</summary>
+<summary>Mask sensitive error details</summary>
+
+Sanitize error output by replacing the message and clearing fields like `path` before the error is sent to the client.
 
 ```rust
 fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
-    payload.error.message = "An error occurred".to_string();
+    payload.error.message = "An internal error occurred".to_string();
     payload.error.path = None;
-    
+
+    payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Remap error codes and HTTP status</summary>
+
+Map known error codes to different codes or HTTP status codes based on plugin configuration — useful for normalizing errors from subgraphs.
+
+```rust
+fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLErrorHookResult {
+    if let Some(code) = &payload.error.extensions.code {
+        if let Some(mapping) = self.config.get(code) {
+            if let Some(new_code) = &mapping.code {
+                payload.error.extensions.code = Some(new_code.clone());
+            }
+            if let Some(status) = mapping.status_code {
+                if let Ok(status_code) = StatusCode::from_u16(status) {
+                    payload.status_code = status_code;
+                }
+            }
+        }
+    }
     payload.proceed()
 }
 ```
@@ -930,6 +1191,27 @@ Plugins can use this hook to implement cleanup and flush logic.
 async fn on_shutdown<'exec>(&'exec self)
 ```
 
+#### Usage Examples
+
+<details>
+
+<summary>Flush buffered data before exit</summary>
+
+Collect and send any in-memory data (e.g., usage reports or metrics) to an external service before the router process exits.
+
+```rust
+async fn on_shutdown<'exec>(&'exec self) {
+    let reports = self.reports.lock().await;
+    let _ = reqwest::Client::new()
+        .post(&self.endpoint)
+        .json(reports.as_slice())
+        .send()
+        .await;
+}
+```
+
+</details>
+
 #### Plugin Examples
 
 * [`usage_reporting`](https://github.com/graphql-hive/router/blob/main/plugin_examples/usage_reporting/src/lib.rs#:~:text=fn%20on_shutdown)
@@ -952,6 +1234,53 @@ fn on_supergraph_reload<'exec>(
         start_payload: OnSupergraphLoadStartHookPayload,
     ) -> OnSupergraphLoadStartHookResult<'exec>
 ```
+
+#### Usage Examples
+
+<details>
+
+<summary>Scan the schema for directives</summary>
+
+Inspect the incoming `new_ast` to extract schema metadata — for example, collecting all types annotated with a custom directive and caching them for use in later hooks.
+
+```rust
+fn on_supergraph_reload<'exec>(
+    &'exec self,
+    start_payload: OnSupergraphLoadStartHookPayload,
+) -> OnSupergraphLoadStartHookResult<'exec> {
+    let tagged_types: Vec<String> = start_payload.new_ast
+        .definitions
+        .iter()
+        .filter(|def| has_directive(def, "myDirective"))
+        .filter_map(|def| type_name(def))
+        .collect();
+
+    self.tagged_types.store(Arc::new(tagged_types));
+    start_payload.proceed()
+}
+```
+
+</details>
+
+<details>
+
+<summary>Invalidate caches on schema reload</summary>
+
+Clear any schema-dependent state whenever the supergraph is reloaded, so stale entries don't leak across schema versions.
+
+```rust
+fn on_supergraph_reload<'exec>(
+    &'exec self,
+    start_payload: OnSupergraphLoadStartHookPayload,
+) -> OnSupergraphLoadStartHookResult<'exec> {
+    self.cache.clear();
+    tracing::info!("Supergraph reloaded — cache invalidated");
+
+    start_payload.proceed()
+}
+```
+
+</details>
 
 #### Payload API Reference
 
