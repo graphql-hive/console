@@ -448,24 +448,21 @@ async fn on_graphql_params<'exec>(
 
 <details>
 
-<summary>Access GraphQL parameters</summary>
+<summary>Read extracted GraphQL parameters</summary>
+
+Use the `on_end` callback to access the fully extracted GraphQL parameters — `query`, `operation_name`, `variables`, and `extensions` are all available here.
 
 ```rust
 async fn on_graphql_params<'exec>(
     &'exec self,
-    payload: OnGraphQLParamsStartHookPayload<'exec>) -> OnGraphQLParamsStartHookResult<'exec> {
-    // This scope represents the "before" phase of params parsing,
-    // so we might not have the GraphQL parameters yet. 
-    
-    // But, inside the on_end callback, extraction process is already
-    // done, so we can access the GraphQL parameters 
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
     payload.on_end(|end_payload| {
-        // Here we can access the GraphQL parameters
         let maybe_operation_name = &end_payload.graphql_params.operation_name.as_ref();
         let maybe_query = &end_payload.graphql_params.query.as_ref();
-        let variables = &payload.graphql_params.variables;
-        
-        return end_payload.proceed();
+        let variables = &end_payload.graphql_params.variables;
+
+        end_payload.proceed()
     })
 }
 ```
@@ -474,18 +471,89 @@ async fn on_graphql_params<'exec>(
 
 <details>
 
-<summary>Modify GraphQL parameters</summary>
+<summary>Modify extracted GraphQL parameters</summary>
+
+Mutate the extracted GraphQL parameters inside `on_end` to override the query, operation name, or variables before execution continues.
 
 ```rust
 async fn on_graphql_params<'exec>(
     &'exec self,
-    payload: OnGraphQLParamsStartHookPayload<'exec>) -> OnGraphQLParamsStartHookResult<'exec> {
-        payload.on_end(|mut end_payload| {
-            // Here we can access and mutate the GraphQL parameters
-            end_payload.query = Some("query { overridingTheOperation }".to_string());
-            
-            return end_payload.proceed();
-        })
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|mut end_payload| {
+        end_payload.graphql_params.query = Some("query { overridingTheOperation }".to_string());
+
+        end_payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Reject anonymous operations</summary>
+
+Return a GraphQL error from `on_end` to short-circuit the request when a condition on the parsed parameters is not met.
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|payload| {
+        if payload.graphql_params.operation_name.is_none() {
+            return payload.end_with_graphql_error(
+                GraphQLError::from_message_and_code(
+                    "Anonymous operations are not allowed",
+                    "ANONYMOUS_OPERATION",
+                ),
+                StatusCode::BAD_REQUEST,
+            );
+        }
+        payload.proceed()
+    })
+}
+```
+
+</details>
+
+<details>
+
+<summary>Resolve a query from extensions (Persisted Queries)</summary>
+
+Read from `extensions` in `on_end` and rewrite `graphql_params.query` to implement patterns like Automatic Persisted Queries (APQ).
+
+```rust
+async fn on_graphql_params<'exec>(
+    &'exec self,
+    payload: OnGraphQLParamsStartHookPayload<'exec>,
+) -> OnGraphQLParamsStartHookResult<'exec> {
+    payload.on_end(|mut payload| {
+        let hash = payload
+            .graphql_params
+            .extensions
+            .as_ref()
+            .and_then(|ext| ext.get("persistedQuery"))
+            .and_then(|pq| pq.as_object())
+            .and_then(|obj| obj.get(&"sha256Hash"))
+            .and_then(|h| h.as_str());
+
+        if let Some(hash) = hash {
+            if let Some(cached_query) = self.cache.get(hash) {
+                payload.graphql_params.query = Some(cached_query.value().to_string());
+            } else {
+                return payload.end_with_graphql_error(
+                    GraphQLError::from_message_and_code(
+                        "PersistedQueryNotFound",
+                        "PERSISTED_QUERY_NOT_FOUND",
+                    ),
+                    StatusCode::BAD_REQUEST,
+                );
+            }
+        }
+        payload.proceed()
+    })
 }
 ```
 
@@ -502,6 +570,7 @@ async fn on_graphql_params<'exec>(
 * [`apq`](https://github.com/graphql-hive/router/blob/main/plugin_examples/apq/src/plugin.rs#:~:text=fn%20on_graphql_params)
 * [`multipart`](https://github.com/graphql-hive/router/blob/main/plugin_examples/multipart/src/lib.rs#:~:text=fn%20on_graphql_params)
 * [`async_auth`](https://github.com/graphql-hive/router/blob/main/plugin_examples/async_auth/src/plugin.rs#:~:text=fn%20on_graphql_params)
+* [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_graphql_params)
 
 </RouterHookSection>
 
