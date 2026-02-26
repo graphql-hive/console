@@ -266,7 +266,8 @@ The `payload.context` API is simple:
 
 ## A Simple Plugin Example
 
-The following snippet shows the simplest example of creating a custom plugin, registering it, and configuring it with Hive Router:
+The following snippet shows the simplest example of creating a custom plugin, registering it, and
+configuring it with Hive Router:
 
 ```rust filename="main.rs"
 use hive_router::{
@@ -278,18 +279,18 @@ use hive_router::plugins::plugin_trait::RouterPlugin;
 // Configure the global allocator required for Hive Router runtime
 configure_global_allocator!();
 
-// Declare and implement a simple plugin with no configuration and no hooks. 
+// Declare and implement a simple plugin with no configuration and no hooks.
 struct MyPlugin;
 
 #[async_trait]
 impl RouterPlugin for MyPlugin {
     // You can override this and add a custom config to your plugin
     type Config = ();
-    
+
     fn plugin_name() -> &'static str {
         "my_plugin"
     }
-    
+
     // Your hooks implementation goes here...
 }
 
@@ -1521,23 +1522,31 @@ impl RouterPlugin for APQPlugin {
 
 ### Performance Considerations
 
-When creating custom plugins, it's important to understand that your plugin will be part of the request's hot path. The hot path refers to the critical path that affects the performance of the router.
+When creating custom plugins, it's important to understand that your plugin will be part of the
+request's hot path. The hot path refers to the critical path that affects the performance of the
+router.
 
-When implementing hooks in your plugin, you should be mindful of the performance implications of your code.
+When implementing hooks in your plugin, you should be mindful of the performance implications of
+your code.
 
-Avoid performing heavy computations or blocking operations in request lifecycle hooks, as they can significantly impact the latency of your GraphQL requests.
+Avoid performing heavy computations or blocking operations in request lifecycle hooks, as they can
+significantly impact the latency of your GraphQL requests.
 
-Prefer [loading data in the background](#background-tasks) and caching it when possible, instead of fetching it during a GraphQL request.
+Prefer [loading data in the background](#background-tasks) and caching it when possible, instead of
+fetching it during a GraphQL request.
 
 ### Background Tasks
 
-Hive Router provides a simple mechanism to run background tasks using the [`tokio` runtime](https://docs.rs/tokio/latest/tokio/).
+Hive Router provides a simple mechanism to run background tasks using the
+[`tokio` runtime](https://docs.rs/tokio/latest/tokio/).
 
-As a plugin developer, you don't need to deal with threads or async runtimes - you can use the Hive Router core runtime to register and manage the lifecycle of your background tasks.
+As a plugin developer, you don't need to deal with threads or async runtimes - you can use the Hive
+Router core runtime to register and manage the lifecycle of your background tasks.
 
-Background tasks can be registered during the [`on_plugin_init` hook](#on_plugin_init). Here is a simple example of a background task that runs periodically:
+Background tasks can be registered during the [`on_plugin_init` hook](#on_plugin_init). Here is a
+simple example of a background task that runs periodically:
 
-```rust 
+```rust
 use hive_router::background_tasks::BackgroundTask;
 use tokio_util::sync::CancellationToken;
 use std::time::Duration;
@@ -1548,22 +1557,22 @@ impl MyBackgroundTask {
     fn new() -> Self {
         Self {}
     }
-    
+
     async fn do_something_periodically(&self) {
         // Do something periodically
     }
 }
- 
+
 #[async_trait]
 impl BackgroundTask for MyBackgroundTask {
     fn id(&self) -> &str {
         "my_bg_task"
     }
- 
+
     async fn run(&self, token: CancellationToken) {
         let interval = Duration::from_secs(10);
         let mut tokio_interval = tokio::time::interval(*interval);
-        
+
         loop {
             tokio::select! {
                 _ = tokio_interval.tick() => { self.do_something_periodically().await }
@@ -1572,16 +1581,16 @@ impl BackgroundTask for MyBackgroundTask {
         }
     }
 }
- 
+
 struct MyPlugin;
- 
+
 #[async_trait]
 impl RouterPlugin for MyPlugin {
-    // ... 
+    // ...
     fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
-        // 
+        //
         payload.bg_tasks_manager.register_task(MyBackgroundTask::new());
-        
+
         payload.initialize_plugin_with_defaults()
     }
 }
