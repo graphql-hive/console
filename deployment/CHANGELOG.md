@@ -1,5 +1,149 @@
 # hive
 
+## 9.5.0
+
+### Minor Changes
+
+- [#7699](https://github.com/graphql-hive/console/pull/7699)
+  [`5f88ce8`](https://github.com/graphql-hive/console/commit/5f88ce8bd8c68ea198fcec3c6f17ac957436b5e7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add experimental support for running without
+  `supertokens` service.
+
+  ## Instructions
+
+  ### Prerequisites
+
+  Adjust your docker compose file like the following:
+
+  - Remove `services.supertokens` from your `docker-compose.community.yml` file
+  - Remove the following environment variables from the `services.server.environment`
+    - `SUPERTOKENS_CONNECTION_URI=`
+    - `SUPERTOKENS_API_KEY=`
+  - Set the following environment variables for `services.server.environment`
+    - `SUPERTOKENS_AT_HOME=1`
+    - `SUPERTOKENS_REFRESH_TOKEN_KEY=`
+    - `SUPERTOKENS_ACCESS_TOKEN_KEY=`
+  - Set the following environment variables for `services.migrations.environment`
+    - `SUPERTOKENS_AT_HOME=1`
+
+  ### Set the refresh token key
+
+  #### Extract from existing `supertokens` deployment
+
+  This method works if you use supertokens before and want to have existing user sessions to
+  continue working. If you want to avoid messing with the database, you can also create a new
+  refresh token key from scratch, the drawback is that users are forced to login again.
+
+  Extract the refresh token key from the supertokens database
+
+  ```sql
+  SELECT
+    "value"
+  FROM
+    "supertokens_key_value"
+  WHERE
+    "name" = 'refresh_token_key';
+  ```
+
+  The key should look similar to this:
+  `1000:15e5968d52a9a48921c1c63d88145441a8099b4a44248809a5e1e733411b3eeb80d87a6e10d3390468c222f6a91fef3427f8afc8b91ea1820ab10c7dfd54a268:39f72164821e08edd6ace99f3bd4e387f45fa4221fe3cd80ecfee614850bc5d647ac2fddc14462a00647fff78c22e8d01bc306a91294f5b889a90ba891bf0aa0`
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment
+  variable value to this string.
+
+  #### Create from scratch
+
+  Run the following command to create a new refresh key from scratch:
+
+  ```sh
+  echo "1000:$(openssl rand -hex 64):$(openssl rand -hex 64)"
+  ```
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_REFRESH_TOKEN_KEY` environment
+  variable value to this string.
+
+  ### Set the access token key
+
+  Generate a new access token key using the following instructions:
+
+  ```sh
+  # 1. Generate a unique key name. 'uuidgen' is great for this.
+  #    You can replace this with any string you like, e.g., KEY_NAME="my-app-key-1"
+  KEY_NAME=$(uuidgen)
+  # 2. Generate a 2048-bit RSA private key in PEM format, held in memory.
+  PRIVATE_KEY_PEM=$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048)
+  # 3. Extract the corresponding public key from the private key, also held in memory.
+  PUBLIC_KEY_PEM=$(echo "$PRIVATE_KEY_PEM" | openssl rsa -pubout)
+  # 4. Strip the headers/footers and newlines from the private key PEM
+  #    to get just the raw Base64 data.
+  PRIVATE_KEY_DATA=$(echo "$PRIVATE_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 5. Do the same for the public key PEM.
+  PUBLIC_KEY_DATA=$(echo "$PUBLIC_KEY_PEM" | awk 'NF {if (NR!=1 && $0!~/-----END/) print}' | tr -d '\n')
+  # 6. Echo the final formatted string to the console.
+  echo "${KEY_NAME}|${PUBLIC_KEY_DATA}|${PRIVATE_KEY_DATA}"
+  ```
+
+  Update the docker compose `services.server.environment.SUPERTOKENS_ACCESS_TOKEN_KEY` environment
+  variable value to the formatted string output.
+
+  ## Conclusion
+
+  After performing this updates you can run Hive Console without the need for the `supertokens`
+  service. All the relevant authentication logic resides within the `server` container instead.
+
+  Existing users in the supertokens system will continue to exist when running without the
+  `supertokens` service.
+
+- [#7706](https://github.com/graphql-hive/console/pull/7706)
+  [`9357d39`](https://github.com/graphql-hive/console/commit/9357d3964624cfe963b95d437113a6b26a03934b)
+  Thanks [@jdolle](https://github.com/jdolle)! - We continue to build and expand the features of
+  schema proposals. In this change, a background composition job was added to allow asynchronous
+  updates to the composition state of a proposal. This composition job uses the schema service's
+  composer but is unique from checks in that it takes the latest state of all subgraphs that are a
+  part of a schema proposal.
+
+  ### Additional environment variables for `workflows` service:
+
+  The `workflow` service calls the `schema` service's composeAndValidate TRPC endpoint and requires
+  the `schema` service endpoint. And the shared instance of Redis, used as a pubsub in the `server`
+  and `api` services, is also now used by `workflows` to update
+  `Subscription.schemaProposalComposition`.
+
+  For self hosters, make sure to provide the following environment variables to the `workflows`
+  service:
+
+  - SCHEMA_ENDPOINT
+  - REDIS_HOST
+  - REDIS_PORT
+  - REDIS_PASSWORD
+
+### Patch Changes
+
+- [#7700](https://github.com/graphql-hive/console/pull/7700)
+  [`d777e32`](https://github.com/graphql-hive/console/commit/d777e3252ae54f2b2ee10bb431a73e3a9489e590)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Add server-side sorting to app
+  deployments table (Created, Activated, Last Used).
+
+- [#7677](https://github.com/graphql-hive/console/pull/7677)
+  [`c3cb1ac`](https://github.com/graphql-hive/console/commit/c3cb1acc5c13522ace544aceb240bb54df2c7917)
+  Thanks [@jdolle](https://github.com/jdolle)! - Increase service keepAliveTimeout from 72s to 905s
+
+- [#7746](https://github.com/graphql-hive/console/pull/7746)
+  [`ade45f5`](https://github.com/graphql-hive/console/commit/ade45f5a70727df55402125cf73779009253962a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - fix unexpected error for support tickets in case
+  the user already exists within zendesk.
+
+- [#7673](https://github.com/graphql-hive/console/pull/7673)
+  [`f8aac8b`](https://github.com/graphql-hive/console/commit/f8aac8b98c5d65d3507597e2cc223a4e1f484887)
+  Thanks [@adambenhassen](https://github.com/adambenhassen)! - Handle OIDC token exchange errors
+  gracefully instead of returning 500. Classifies OAuth 2.0 error codes into user-safe messages
+  without leaking sensitive provider details. Fix OIDC debug log modal not displaying the log area.
+
+- [#7732](https://github.com/graphql-hive/console/pull/7732)
+  [`3567483`](https://github.com/graphql-hive/console/commit/3567483fbd4ddc51ddddd4c4886cc12d251cdbca)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - fix: correct RPM chart Y-axis
+  scale to match actual values
+
 ## 9.4.1
 
 ### Patch Changes
