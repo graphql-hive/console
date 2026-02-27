@@ -253,13 +253,17 @@ function SavedFilterRow({
     });
   }, [deleteSavedFilter, filter.id, organizationSlug, projectSlug, targetSlug, toast]);
 
+  const canManage = filter.viewerCanUpdate || filter.viewerCanDelete;
   const ChevronIcon = expanded ? ChevronDown : ChevronRight;
 
   return (
     <>
-      <TableRow className="cursor-pointer" onClick={onToggleExpand}>
+      <TableRow
+        className={canManage ? 'cursor-pointer' : 'hover:bg-transparent'}
+        onClick={canManage ? onToggleExpand : undefined}
+      >
         <TableCell className="w-8">
-          <ChevronIcon className="text-neutral-10 size-4" />
+          {canManage && <ChevronIcon className="text-neutral-10 size-4" />}
         </TableCell>
         <TableCell
           className="font-medium"
@@ -319,52 +323,50 @@ function SavedFilterRow({
             e.stopPropagation();
           }}
         >
-          {(filter.viewerCanUpdate || filter.viewerCanDelete) && (
-            <Menu
-              trigger={
-                <Button variant="ghost" className="flex size-8 p-0">
-                  <MoreVertical className="size-4" />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              }
-              align="end"
-              sections={[
-                [
+          <Menu
+            trigger={
+              <Button variant="ghost" className="flex size-8 p-0">
+                <MoreVertical className="size-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            }
+            align="end"
+            sections={[
+              [
+                <MenuItem
+                  key="view"
+                  render={
+                    <Link
+                      to="/$organizationSlug/$projectSlug/$targetSlug/insights"
+                      params={{ organizationSlug, projectSlug, targetSlug }}
+                      search={savedFilterToSearchParams(filter)}
+                    />
+                  }
+                >
+                  View in Insights
+                </MenuItem>,
+                filter.viewerCanUpdate && (
                   <MenuItem
-                    key="view"
-                    render={
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-                        params={{ organizationSlug, projectSlug, targetSlug }}
-                        search={savedFilterToSearchParams(filter)}
-                      />
-                    }
+                    key="rename"
+                    onClick={() => {
+                      setRenameValue(filter.name);
+                      setIsRenaming(true);
+                    }}
                   >
-                    View in Insights
-                  </MenuItem>,
-                  filter.viewerCanUpdate && (
-                    <MenuItem
-                      key="rename"
-                      onClick={() => {
-                        setRenameValue(filter.name);
-                        setIsRenaming(true);
-                      }}
-                    >
-                      Rename
-                    </MenuItem>
-                  ),
-                  filter.viewerCanDelete && (
-                    <MenuItem key="delete" variant="destructiveAction" onClick={handleDelete}>
-                      Delete
-                    </MenuItem>
-                  ),
-                ],
-              ]}
-            />
-          )}
+                    Rename
+                  </MenuItem>
+                ),
+                filter.viewerCanDelete && (
+                  <MenuItem key="delete" variant="destructiveAction" onClick={handleDelete}>
+                    Delete
+                  </MenuItem>
+                ),
+              ],
+            ]}
+          />
         </TableCell>
       </TableRow>
-      {expanded && (
+      {canManage && expanded && (
         <TableRow>
           <TableCell colSpan={7} className="px-10 py-4">
             <SavedFilterRowFilters

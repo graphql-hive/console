@@ -1,8 +1,6 @@
-import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
-import { format } from 'date-fns';
+import { ReactElement, useCallback, useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import { useForm } from 'react-hook-form';
-import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { z } from 'zod';
@@ -30,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
+import { VirtualLogList } from '@/components/ui/virtual-log-list';
 import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
@@ -1414,13 +1413,6 @@ function DebugOIDCIntegrationModal(props: {
   const [isSubscribing, setIsSubscribing] = useResetState(true, [props.isOpen]);
 
   const [logs, setLogs] = useResetState<Array<OIDCLogEventType>>([], [props.isOpen]);
-  const ref = useRef<VirtuosoHandle>(null);
-  useEffect(() => {
-    ref.current?.scrollToIndex({
-      index: logs.length - 1,
-      behavior: 'smooth',
-    });
-  }, [logs]);
 
   useEffect(() => {
     if (isSubscribing && props.oidcIntegrationId && props.isOpen) {
@@ -1467,23 +1459,7 @@ function DebugOIDCIntegrationModal(props: {
             Here you can listen to the live logs for debugging your OIDC integration.
           </DialogDescription>
         </DialogHeader>
-        <Virtuoso
-          ref={ref}
-          className="h-[300px]"
-          initialTopMostItemIndex={logs.length - 1}
-          followOutput
-          data={logs}
-          itemContent={(_, logRow) => {
-            return (
-              <div className="flex px-2 pb-1 font-mono text-xs">
-                <time dateTime={logRow.timestamp} className="pr-4">
-                  {format(logRow.timestamp, 'HH:mm:ss')}
-                </time>
-                {logRow.message}
-              </div>
-            );
-          }}
-        />
+        <VirtualLogList logs={logs} className="h-[300px]" />
         <DialogFooter>
           <Button type="button" onClick={props.close} tabIndex={0} variant="destructive">
             Close
