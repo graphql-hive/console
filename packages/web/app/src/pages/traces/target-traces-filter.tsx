@@ -15,8 +15,8 @@ import {
 import { addDays, formatDate, setHours, setMinutes } from 'date-fns';
 import debounce from 'lodash.debounce';
 import { CalendarIcon, ChevronRightIcon, CircleXIcon, PlusIcon } from 'lucide-react';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
 import type { DateRange } from 'react-day-picker';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
