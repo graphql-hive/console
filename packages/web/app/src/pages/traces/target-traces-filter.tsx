@@ -14,14 +14,8 @@ import {
 } from 'react';
 import { addDays, formatDate, setHours, setMinutes } from 'date-fns';
 import debounce from 'lodash.debounce';
-import {
-  CalendarIcon,
-  CheckIcon,
-  ChevronRightIcon,
-  CircleXIcon,
-  MinusIcon,
-  PlusIcon,
-} from 'lucide-react';
+import { CalendarIcon, ChevronRightIcon, CircleXIcon, PlusIcon } from 'lucide-react';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -189,26 +183,32 @@ export const MultiInputFilter = memo(
             </Button>
           </form>
           {props.selectedValues.map(value => (
-            <SidebarMenuButton
+            <MultiInputFilterValue
               key={value}
-              onClick={() => props.onChange(props.selectedValues.filter(val => val !== value))}
-              className="group/trace-id hover:bg-neutral-5/50"
-            >
-              <div
-                data-active
-                className="text-neutral-12 border-neutral-11 group-hover/trace-id:border-neutral-5 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border bg-blue-500 group-hover/trace-id:bg-transparent"
-              >
-                <CheckIcon className="block size-3 group-hover/trace-id:hidden" />
-                <MinusIcon className="hidden size-3 group-hover/trace-id:block" />
-              </div>
-              {value}
-            </SidebarMenuButton>
+              value={value}
+              onRemove={() => props.onChange(props.selectedValues.filter(val => val !== value))}
+            />
           ))}
         </FilterContent>
       </Filter>
     );
   },
 );
+
+function MultiInputFilterValue(props: { value: string; onRemove(): void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <SidebarMenuButton
+      onClick={props.onRemove}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="hover:bg-neutral-5/50"
+    >
+      <Checkbox visual checked indeterminate={hovered} size="sm" />
+      {props.value}
+    </SidebarMenuButton>
+  );
+}
 
 export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
   name: string;
@@ -301,12 +301,7 @@ function FilterOption(props: {
       className="hover:bg-neutral-5/50 flex-row items-center justify-between"
     >
       <div className="flex items-center gap-2 overflow-hidden">
-        <div
-          data-active={props.selected}
-          className="group/filter-item border-neutral-5 text-neutral-12 data-[active=true]:border-neutral-11 data-[active=true]:bg-neutral-11 flex aspect-square size-4 shrink-0 items-center justify-center rounded-sm border"
-        >
-          <CheckIcon className="hidden size-3 group-data-[active=true]/filter-item:block" />
-        </div>
+        <Checkbox visual checked={props.selected} size="sm" />
         {props.children}
       </div>
       {props.count ? (
