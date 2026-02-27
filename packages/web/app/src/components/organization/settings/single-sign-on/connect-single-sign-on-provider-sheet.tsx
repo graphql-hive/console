@@ -290,7 +290,9 @@ export function ConnectSingleSignOnProviderSheet(
           <Button variant="secondary" onClick={props.onClose}>
             Abort
           </Button>
-          <Button onClick={form.handleSubmit(onSubmit)}>Save</Button>
+          <Button onClick={form.handleSubmit(onSubmit)} variant="primary">
+            Save
+          </Button>
         </Sheet.SheetFooter>
       </Sheet.SheetContent>
     </Sheet.Sheet>

@@ -718,7 +718,8 @@ export class OIDCIntegrationsProvider {
       };
     }
 
-    if (!records.some(record => record === challenge.value)) {
+    // At least one record needs to match for the challenge to succeed
+    if (!records.find(record => record === challenge.value)) {
       return {
         type: 'error' as const,
         message: 'Invalid TXT record value.',
