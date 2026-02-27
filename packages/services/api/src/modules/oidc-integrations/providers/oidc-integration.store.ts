@@ -148,6 +148,8 @@ export class OIDCIntegrationStore {
       domainId,
     );
 
+    // The NOT EXISTS statement is to avoid verifying the domain twice for two different otganizations
+    // only one org can own a domain
     const query = sql`
       UPDATE
         "oidc_integration_domains"
@@ -155,9 +157,12 @@ export class OIDCIntegrationStore {
         "verified_at" = NOW()
       WHERE
         "id" = ${domainId}
-      ON CONFLICT
-        ON CONSTRAINT "only_one_verified_domain_name_idx"
-        DO NOTHING
+      AND NOT EXISTS (
+        SELECT 1
+        FROM "oidc_integration_domains" "x"
+        WHERE "x"."domain_name" = "oidc_integration_domains".domain_name
+        AND "x"."verified_at" IS NOT NULL
+      )
       RETURNING
         ${oidcIntegrationDomainsFields}
     `;

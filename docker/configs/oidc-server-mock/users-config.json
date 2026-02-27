@@ -32,5 +32,22 @@
         "ValueType": "string"
       }
     ]
+  },
+  {
+    "SubjectId": "3",
+    "Username": "test-user-3",
+    "Password": "password",
+    "Claims": [
+      {
+        "Type": "name",
+        "Value": "Hive Bro",
+        "ValueType": "string"
+      },
+      {
+        "Type": "email",
+        "Value": "hive.bro@buzzcheck.dev",
+        "ValueType": "string"
+      }
+    ]
   }
 ]
