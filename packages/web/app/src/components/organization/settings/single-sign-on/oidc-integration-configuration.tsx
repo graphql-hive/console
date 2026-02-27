@@ -363,7 +363,7 @@ export function OIDCIntegrationConfiguration(props: {
         </div>
         <div className="mt-2">
           <OIDCDefaultResourceSelector
-            oidcIntegrationId={organization.id}
+            oidcIntegrationId={oidcIntegration.id}
             organization={organization}
             resourceAssignment={oidcIntegration.defaultResourceAssignment ?? {}}
             disabled={!isAdmin}
