@@ -347,6 +347,9 @@ export function createUsage(config: {
         buffer.add(report);
       },
     ),
+    starting() {
+      return status === Status.Waiting;
+    },
     readiness() {
       return status === Status.Ready;
     },
