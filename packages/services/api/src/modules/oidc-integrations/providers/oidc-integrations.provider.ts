@@ -16,6 +16,15 @@ import { Storage } from '../../shared/providers/storage';
 import { OIDCIntegrationDomain, OIDCIntegrationStore } from './oidc-integration.store';
 import { OIDC_INTEGRATIONS_ENABLED } from './tokens';
 
+const dnsList = [
+  // Google
+  '8.8.8.8',
+  '8.8.4.4',
+  // Cloudflare
+  '1.1.1.1',
+  '1.0.0.1',
+];
+
 @Injectable({
   global: true,
   scope: Scope.Operation,
@@ -675,19 +684,32 @@ export class OIDCIntegrationsProvider {
       };
     }
 
-    let txtResult;
+    let records: Array<string>;
+
+    const recordName = challenge.recordName + '.' + domain.domainName;
 
     try {
-      txtResult = await dns.resolveTxt(challenge.recordName + '.' + domain.domainName);
+      records = (
+        await Promise.all(
+          dnsList.map(async provider => {
+            const resolver = new dns.Resolver({ timeout: 10_000 });
+            resolver.setServers([provider]);
+            return await resolver.resolveTxt(recordName).catch(err => {
+              this.logger.debug(`failed lookup record on '%s': %e`, provider, String(err));
+              return [] as string[][];
+            });
+          }),
+        )
+      )
+        .flatMap(record => record)
+        .flatMap(record => record);
     } catch (err) {
-      console.log(err);
+      this.logger.debug(`failed lookup record: %s`, String(err));
       return {
         type: 'error' as const,
         message: 'Failed to lookup record.',
       };
     }
-
-    const records = txtResult.flatMap(record => record);
 
     if (!records) {
       return {
