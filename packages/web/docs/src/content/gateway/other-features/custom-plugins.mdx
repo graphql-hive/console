@@ -678,7 +678,7 @@ This hook is mostly used for monitoring and tracing purposes.
 | `supergraph`               | The GraphQL schema of the supergraph.                                                                                        |
 | `subgraph`                 | The name of the subgraph.                                                                                                    |
 | `sourceSubschema`          | The schema of the subgraph.                                                                                                  |
-| `typeName`                 | The name of the type being planned.                                                                                           |
+| `typeName`                 | The name of the type being planned.                                                                                          |
 | `variables`                | The variables provided in the client request.                                                                                |
 | `fragments`                | The fragments provided in the client request.                                                                                |
 | `fieldNodes`               | The field nodes of selection set being planned.                                                                              |
@@ -973,8 +973,8 @@ a `Promise` if `wrapped()` returned a `Promise`.
 Wraps the parsing of the request phase to extract grapqhl params. This include all the plugins
 `onRequestParse` hooks.
 
-This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to
-return a `Promise` if `wrapped()` returns a `Promise`.
+This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to return
+a `Promise` if `wrapped()` returns a `Promise`.
 
 #### `operation`
 
