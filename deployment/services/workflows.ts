@@ -1,10 +1,12 @@
 import * as pulumi from '@pulumi/pulumi';
+import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
 import { Docker } from './docker';
 import { Environment } from './environment';
 import { Observability } from './observability';
 import { Postgres } from './postgres';
+import { Schema } from './schema';
 import { Sentry } from './sentry';
 
 export class PostmarkSecret extends ServiceSecret<{
@@ -22,6 +24,7 @@ export function deployWorkflows({
   postgres,
   observability,
   postmarkSecret,
+  schema,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -31,6 +34,7 @@ export function deployWorkflows({
   heartbeat?: string;
   sentry: Sentry;
   postmarkSecret: PostmarkSecret;
+  schema: Schema;
 }) {
   return (
     new ServiceDeployment(
@@ -47,6 +51,7 @@ export function deployWorkflows({
               ? observability.tracingEndpoint
               : '',
           LOG_JSON: '1',
+          SCHEMA_ENDPOINT: serviceLocalEndpoint(schema.service),
         },
         readinessProbe: '/_readiness',
         livenessProbe: '/_health',

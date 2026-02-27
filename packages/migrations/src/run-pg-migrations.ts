@@ -189,5 +189,6 @@ export const runPGMigrations = async (args: { slonik: DatabasePool; runTo?: stri
       ...(env.useSupertokensAtHome
         ? [await import('./actions/2026.02.18T00-00-00.ensure-supertokens-tables')]
         : []),
+      await import('./actions/2026.02.24T00-00-00.proposal-composition'),
     ],
   });

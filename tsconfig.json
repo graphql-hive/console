@@ -74,7 +74,8 @@
       ],
       "@graphql-hive/plugin-opentelemetry/setup": [
         "./node_modules/@graphql-hive/plugin-opentelemetry/dist/setup.d.ts"
-      ]
+      ],
+      "@hive/pubsub": ["./packages/libraries/pubsub/src/index.ts"]
     }
   },
   "include": ["packages", "tsup.config.node.ts"],

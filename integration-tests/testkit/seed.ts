@@ -766,6 +766,7 @@ export function initSeed() {
                         commit: string;
                       },
                       contextId?: string,
+                      schemaProposalId?: string,
                     ) {
                       return await checkSchema(
                         {
@@ -773,6 +774,7 @@ export function initSeed() {
                           service,
                           meta,
                           contextId,
+                          schemaProposalId,
                         },
                         secret,
                       );

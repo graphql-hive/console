@@ -8,9 +8,7 @@ import {
 } from 'supertokens-node/framework/fastify/index.js';
 import cors from '@fastify/cors';
 import type { FastifyCorsOptionsDelegateCallback } from '@fastify/cors';
-import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
 import 'reflect-metadata';
-import { createPubSub } from 'graphql-yoga';
 import { z } from 'zod';
 import formDataPlugin from '@fastify/formbody';
 import {
@@ -24,7 +22,6 @@ import {
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
-import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { TargetsByIdCache } from '@hive/api/modules/target/providers/targets-by-id-cache';
@@ -34,6 +31,7 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
+import { createHivePubSub } from '@hive/pubsub';
 import {
   configureTracing,
   createServer,
@@ -184,16 +182,14 @@ export async function main() {
 
   const redis = createRedisClient('Redis', env.redis, server.log.child({ source: 'Redis' }));
 
-  const pubSub = createPubSub({
-    eventTarget: createRedisEventTarget({
-      publishClient: redis,
-      subscribeClient: createRedisClient(
-        'subscriber',
-        env.redis,
-        server.log.child({ source: 'RedisSubscribe' }),
-      ),
-    }),
-  }) as HivePubSub;
+  const pubSub = createHivePubSub({
+    publisher: redis,
+    subscriber: createRedisClient(
+      'subscriber',
+      env.redis,
+      server.log.child({ source: 'RedisSubscribe' }),
+    ),
+  });
 
   registerShutdown({
     logger: server.log,
