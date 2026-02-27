@@ -586,7 +586,7 @@ function OrganizationPolicySettings(props: {
 }
 
 const OrganizationSettingsPageQuery = graphql(`
-  query OrganizatioOIDCIntegrationSectionnSettingsPageQuery($organizationSlug: String!) {
+  query OrganizationSettingsPageQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       ...SettingsPageRenderer_OrganizationFragment
       ...OrganizationPolicySettings_OrganizationFragment
