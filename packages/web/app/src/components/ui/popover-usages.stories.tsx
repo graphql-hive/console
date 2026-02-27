@@ -8,6 +8,7 @@ import {
   ChevronUp,
   X,
 } from 'lucide-react';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverArrow, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/v2';
 import { cn } from '@/lib/utils';
 import type { Story, StoryDefault } from '@ladle/react';
 
@@ -990,8 +990,8 @@ export const Proposals_UserFilter: Story = () => {
                     }}
                     className="cursor-pointer truncate"
                   >
-                    <div className="flex w-[270px] min-w-0 flex-row items-center truncate">
-                      <Checkbox className="mr-[6px]" checked={selectedUsers.includes(user.id)} />
+                    <div className="flex w-[270px] min-w-0 flex-row items-center gap-1.5 truncate">
+                      <Checkbox size="sm" checked={selectedUsers.includes(user.id)} />
                       <span className="truncate">{user.displayName}</span>
                     </div>
                   </CommandItem>
@@ -1042,9 +1042,9 @@ export const Proposals_StageFilter: Story = () => {
                   }}
                   className="cursor-pointer truncate border-b"
                 >
-                  <div className="flex flex-row items-center">
+                  <div className="flex flex-row items-center gap-1.5">
                     <Checkbox
-                      className="mr-[6px]"
+                      size="sm"
                       checked={MOCK_PROPOSAL_STAGES.every(s => selectedStages.includes(s))}
                     />
                     <div className="max-w-[350px] grow flex-col truncate">All</div>
@@ -1065,8 +1065,8 @@ export const Proposals_StageFilter: Story = () => {
                     }}
                     className="cursor-pointer truncate"
                   >
-                    <div className="flex flex-row items-center">
-                      <Checkbox className="mr-[6px]" checked={selectedStages.includes(stage)} />
+                    <div className="flex flex-row items-center gap-1.5">
+                      <Checkbox size="sm" checked={selectedStages.includes(stage)} />
                       <div className="max-w-[350px] grow flex-col truncate">{stage}</div>
                     </div>
                   </CommandItem>
