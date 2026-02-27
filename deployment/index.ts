@@ -200,6 +200,7 @@ deployWorkflows({
   sentry,
   heartbeat: heartbeatsConfig.get('webhooks'),
   schema,
+  redis,
 });
 
 const supertokens = deploySuperTokens(postgres, { dependencies: [dbMigrations] }, environment);

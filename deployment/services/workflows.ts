@@ -6,6 +6,7 @@ import { Docker } from './docker';
 import { Environment } from './environment';
 import { Observability } from './observability';
 import { Postgres } from './postgres';
+import { Redis } from './redis';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
 
@@ -25,6 +26,7 @@ export function deployWorkflows({
   observability,
   postmarkSecret,
   schema,
+  redis,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -35,6 +37,7 @@ export function deployWorkflows({
   sentry: Sentry;
   postmarkSecret: PostmarkSecret;
   schema: Schema;
+  redis: Redis;
 }) {
   return (
     new ServiceDeployment(
@@ -60,7 +63,7 @@ export function deployWorkflows({
         image,
         replicas: environment.podsConfig.general.replicas,
       },
-      [],
+      [redis.deployment, redis.service],
     )
       // PG
       .withSecret('POSTGRES_HOST', postgres.pgBouncerSecret, 'host')
@@ -73,6 +76,10 @@ export function deployWorkflows({
       .withSecret('EMAIL_PROVIDER_POSTMARK_TOKEN', postmarkSecret, 'token')
       .withSecret('EMAIL_PROVIDER_POSTMARK_MESSAGE_STREAM', postmarkSecret, 'messageStream')
       .withConditionalSecret(sentry.enabled, 'SENTRY_DSN', sentry.secret, 'dsn')
+      // Redis
+      .withSecret('REDIS_HOST', redis.secret, 'host')
+      .withSecret('REDIS_PORT', redis.secret, 'port')
+      .withSecret('REDIS_PASSWORD', redis.secret, 'password')
       .deploy()
   );
 }
