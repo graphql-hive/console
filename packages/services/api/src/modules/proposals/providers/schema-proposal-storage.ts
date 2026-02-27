@@ -1,15 +1,15 @@
 /**
  * This wraps the database calls for schema proposals and required validation
  */
-import { makeWorkerUtils, WorkerUtils } from 'graphile-worker';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { sql, type DatabasePool } from 'slonik';
 import { z } from 'zod';
-import { bridgeGraphileLogger } from '@hive/pubsub';
 import {
   decodeCreatedAtAndUUIDIdBasedCursor,
   encodeCreatedAtAndUUIDIdBasedCursor,
 } from '@hive/storage';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { SchemaProposalCompositionTask } from '@hive/workflows/tasks/schema-proposal-composition';
 import { SchemaProposalStage } from '../../../__generated__/types';
 import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
@@ -40,7 +40,8 @@ export class SchemaProposalStorage {
     logger: Logger,
     @Inject(PG_POOL_CONFIG) private pool: DatabasePool,
     private storage: Storage,
-    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean, // @todo
+    @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: Boolean,
+    private taskScheduler: TaskScheduler,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalStorage' });
   }
@@ -55,11 +56,7 @@ export class SchemaProposalStorage {
     };
     native: boolean;
   }) {
-    const tools: WorkerUtils = await makeWorkerUtils({
-      pgPool: this.pool.pool,
-      logger: bridgeGraphileLogger(this.logger),
-    });
-    await tools.addJob('schemaProposalComposition', { input });
+    await this.taskScheduler.scheduleTask(SchemaProposalCompositionTask, input);
   }
 
   private async assertSchemaProposalsEnabled(args: {
