@@ -261,9 +261,10 @@ export default gql`
     compositionStatusReason: String
   }
 
-  enum ProposalCompositionStatus =
-    | ERROR
-    | SUCCESS
+  enum ProposalCompositionStatus {
+    ERROR
+    SUCCESS
+  }
 
   input SchemaProposalChecksInput {
     """

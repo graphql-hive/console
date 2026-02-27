@@ -481,7 +481,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 </div>
               </div>
               <div className="mb-6 mt-2">
-                <div className="w-full border-l-2 p-4">{proposal.description}</div>
+                {proposal.description ? (
+                  <div className="w-full border-l-2 p-4">{proposal.description}</div>
+                ) : null}
                 <div className="text-neutral-10 mt-4 pr-2 text-right text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
