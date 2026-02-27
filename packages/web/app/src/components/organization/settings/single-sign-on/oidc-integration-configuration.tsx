@@ -524,6 +524,9 @@ function OIDCDomainConfiguration(props: {
             </Table.TableRow>
           ))}
         </Table.TableBody>
+        {oidcIntegration.registeredDomains.length === 0 && (
+          <Table.TableCaption>No Domains registered</Table.TableCaption>
+        )}
       </Table.Table>
     </div>
   );

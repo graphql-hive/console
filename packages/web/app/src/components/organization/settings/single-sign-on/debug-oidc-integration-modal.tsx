@@ -74,7 +74,8 @@ export function DebugOIDCIntegrationModal(props: { close: () => void; oidcIntegr
         <DialogHeader>
           <DialogTitle>Debug OpenID Connect Integration</DialogTitle>
           <DialogDescription>
-            Here you can listen to the live logs for debugging your OIDC integration.
+            Here you can see to the live logs of users attempting to sign in. It can help
+            identifying issues with the OpenID Connect configuration.
           </DialogDescription>
         </DialogHeader>
         <VirtualLogList logs={logs} className="h-[300px]" />
