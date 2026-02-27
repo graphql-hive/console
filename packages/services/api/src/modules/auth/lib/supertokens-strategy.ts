@@ -6,6 +6,7 @@ import type { FastifyReply, FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import { AccessError, HiveError, OIDCRequiredError } from '../../../shared/errors';
 import { isUUID } from '../../../shared/is-uuid';
+import { OIDCIntegrationStore } from '../../oidc-integrations/providers/oidc-integration.store';
 import { OrganizationMembers } from '../../organization/providers/organization-members';
 import { Logger } from '../../shared/providers/logger';
 import type { Storage } from '../../shared/providers/storage';
@@ -164,12 +165,12 @@ export class SuperTokensCookieBasedSession extends Session {
 }
 
 export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCookieBasedSession> {
-  private logger: Logger;
   private organizationMembers: OrganizationMembers;
   private storage: Storage;
   private supertokensStore: SuperTokensStore;
   private emailVerification: EmailVerification | null;
   private accessTokenKey: AccessTokenKeyContainer | null;
+  private oidcIntegrationStore: OIDCIntegrationStore;
 
   constructor(deps: {
     logger: Logger;
@@ -177,17 +178,21 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     organizationMembers: OrganizationMembers;
     emailVerification: EmailVerification | null;
     accessTokenKey: AccessTokenKeyContainer | null;
+    oidcIntegrationStore: OIDCIntegrationStore;
   }) {
     super();
-    this.logger = deps.logger.child({ module: 'SuperTokensUserAuthNStrategy' });
     this.organizationMembers = deps.organizationMembers;
     this.storage = deps.storage;
     this.emailVerification = deps.emailVerification;
     this.supertokensStore = new SuperTokensStore(deps.storage.pool, deps.logger);
     this.accessTokenKey = deps.accessTokenKey;
+    this.oidcIntegrationStore = deps.oidcIntegrationStore;
   }
 
-  private async _verifySuperTokensCoreSession(args: { req: FastifyRequest; reply: FastifyReply }) {
+  private async _verifySuperTokensCoreSession(args: {
+    req: FastifyRequest;
+    reply: FastifyReply;
+  }): Promise<SuperTokensSessionPayloadV2 | null> {
     let session: SessionNode.SessionContainer | undefined;
 
     try {
@@ -196,9 +201,9 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
         antiCsrfCheck: false,
         checkDatabase: true,
       });
-      this.logger.debug('Session resolution ended successfully');
+      args.req.log.debug('Session resolution ended successfully');
     } catch (error) {
-      this.logger.debug('Session resolution failed');
+      args.req.log.debug('Session resolution failed');
       if (SessionNode.Error.isErrorFromSuperTokens(error)) {
         if (
           error.type === SessionNode.Error.TRY_REFRESH_TOKEN ||
@@ -212,7 +217,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
         }
       }
 
-      this.logger.error('Error while resolving user');
+      args.req.log.error('Error while resolving user');
       console.log(error);
       captureException(error);
 
@@ -220,7 +225,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     }
 
     if (!session) {
-      this.logger.debug('No session found');
+      args.req.log.debug('No session found');
       return null;
     }
 
@@ -229,15 +234,24 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     const result = SuperTokensSessionPayloadModel.safeParse(payload);
 
     if (result.success === false) {
-      this.logger.error('SuperTokens session payload is invalid');
-      this.logger.debug('SuperTokens session payload: %s', JSON.stringify(payload));
-      this.logger.debug(
+      args.req.log.error('SuperTokens session payload is invalid');
+      args.req.log.debug('SuperTokens session payload: %s', JSON.stringify(payload));
+      args.req.log.debug(
         'SuperTokens session parsing errors: %s',
         JSON.stringify(result.error.flatten().fieldErrors),
       );
       throw new HiveError('Invalid access token provided', {
         extensions: {
           code: 'UNAUTHENTICATED',
+        },
+      });
+    }
+
+    if (result.data.version === '1') {
+      args.req.log.debug('legacy session detected, require session refresh');
+      throw new HiveError('Invalid session.', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
         },
       });
     }
@@ -251,7 +265,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       reply: FastifyReply;
     },
     accessTokenKey: AccessTokenKeyContainer,
-  ) {
+  ): Promise<SuperTokensSessionPayloadV2 | null> {
     let session: SessionInfo | null = null;
 
     args.req.log.debug('attempt parsing access token from cookie');
@@ -315,7 +329,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       );
 
       // old access token in use, there was alreadya refresh
-      throw new HiveError('Invalid session.', {
+      throw new HiveError('Expired session.', {
         extensions: {
           code: 'NEEDS_REFRESH',
         },
@@ -325,9 +339,9 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     const result = SuperTokensSessionPayloadModel.safeParse(JSON.parse(session.sessionData));
 
     if (result.success === false) {
-      this.logger.error('SuperTokens session payload is invalid');
-      this.logger.debug('SuperTokens session payload: %s', session.sessionData);
-      this.logger.debug(
+      args.req.log.error('SuperTokens session payload is invalid');
+      args.req.log.debug('SuperTokens session payload: %s', session.sessionData);
+      args.req.log.debug(
         'SuperTokens session parsing errors: %s',
         JSON.stringify(result.error.flatten().fieldErrors),
       );
@@ -338,17 +352,49 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       });
     }
 
+    if (result.data.version === '1') {
+      throw new HiveError('Expired session.', {
+        extensions: {
+          code: 'NEEDS_REFRESH',
+        },
+      });
+    }
+
     return result.data;
+  }
+
+  private async requireEmailVerification(
+    sessionData: SuperTokensSessionPayloadV2,
+    logger: Logger,
+  ): Promise<boolean> {
+    if (!sessionData.oidcIntegrationId) {
+      logger.debug('email verification is required.');
+      return true;
+    }
+
+    const [domainName] = sessionData.email.split('@');
+    const record = await this.oidcIntegrationStore.findDomainByOIDCIntegrationIdAndDomainName(
+      sessionData.oidcIntegrationId,
+      domainName,
+    );
+
+    if (record) {
+      logger.debug('no email verification is required, as the domain is verified.');
+      return false;
+    }
+
+    logger.debug('email verification is required, as the domain is not verified.');
+    return true;
   }
 
   private async verifySuperTokensSession(args: {
     req: FastifyRequest;
     reply: FastifyReply;
   }): Promise<SuperTokensSessionPayload | null> {
-    this.logger.debug('Attempt verifying SuperTokens session');
+    args.req.log.debug('Attempt verifying SuperTokens session');
 
     if (args.req.headers['ignore-session']) {
-      this.logger.debug('Ignoring session due to header');
+      args.req.log.debug('Ignoring session due to header');
       return null;
     }
 
@@ -357,11 +403,15 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       : await this._verifySuperTokensCoreSession(args);
 
     if (!sessionData) {
-      this.logger.debug('No session found');
+      args.req.log.debug('No session found');
       return null;
     }
 
-    if (this.emailVerification) {
+    if (
+      this.emailVerification &&
+      (await this.requireEmailVerification(sessionData, args.req.log))
+    ) {
+      args.req.log.debug('check if email is verified');
       // Check whether the email is already verified.
       // If it is not then we need to redirect to the email verification page - which will trigger the email sending.
       const { verified } = await this.emailVerification.checkUserEmailVerified({
@@ -370,6 +420,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       });
 
       if (!verified) {
+        args.req.log.debug('email is not yet verified');
         throw new HiveError('Your account is not verified. Please verify your email address.', {
           extensions: {
             code: 'VERIFY_EMAIL',
@@ -378,7 +429,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       }
     }
 
-    this.logger.debug('SuperTokens session resolved.');
+    args.req.log.debug('SuperTokens session resolved.');
     return sessionData;
   }
 
@@ -391,7 +442,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return null;
     }
 
-    this.logger.debug('SuperTokens session resolved successfully');
+    args.req.log.debug('SuperTokens session resolved successfully');
 
     return new SuperTokensCookieBasedSession(sessionPayload, {
       storage: this.storage,
@@ -409,7 +460,6 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
 const SuperTokensSessionPayloadV1Model = zod.object({
   version: zod.literal('1'),
   superTokensUserId: zod.string(),
-  email: zod.string(),
 });
 
 const SuperTokensSessionPayloadV2Model = zod.object({
@@ -426,3 +476,4 @@ const SuperTokensSessionPayloadModel = zod.union([
 ]);
 
 type SuperTokensSessionPayload = zod.TypeOf<typeof SuperTokensSessionPayloadModel>;
+type SuperTokensSessionPayloadV2 = zod.TypeOf<typeof SuperTokensSessionPayloadV2Model>;

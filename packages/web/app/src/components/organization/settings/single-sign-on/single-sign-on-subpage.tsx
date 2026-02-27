@@ -33,7 +33,10 @@ const SingleSignOnSubpage_CreateOIDCIntegrationMutation = graphql(`
     createOIDCIntegration(input: $input) {
       ok {
         organization {
-          ...OIDCIntegrationSection_OrganizationFragment
+          id
+          oidcIntegration {
+            ...OIDCIntegrationConfiguration_OIDCIntegration
+          }
         }
       }
       error {

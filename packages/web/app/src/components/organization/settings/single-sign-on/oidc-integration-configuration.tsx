@@ -1,12 +1,5 @@
 import { ReactElement, useState } from 'react';
-import {
-  AlertOctagonIcon,
-  BugPlayIcon,
-  CheckIcon,
-  PlusIcon,
-  SettingsIcon,
-  TriangleAlertIcon,
-} from 'lucide-react';
+import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
@@ -437,7 +430,7 @@ export function OIDCIntegrationConfiguration(props: {
             });
 
             if (result.data?.updateOIDCIntegration.error) {
-              const { error } = result.data?.updateOIDCIntegration;
+              const { error } = result.data.updateOIDCIntegration;
 
               return {
                 type: 'error',
@@ -535,12 +528,12 @@ function OIDCDomainConfiguration(props: {
           <Table.TableRow>
             <Table.TableHead>Domain</Table.TableHead>
             <Table.TableHead>Status</Table.TableHead>
-            <Table.TableHead></Table.TableHead>
+            <Table.TableHead />
           </Table.TableRow>
         </Table.TableHeader>
         <Table.TableBody>
           {oidcIntegration.registeredDomains.map(domain => (
-            <Table.TableRow>
+            <Table.TableRow key={domain.id}>
               <Table.TableCell className="font-mono font-medium">
                 {domain.domainName}
               </Table.TableCell>
@@ -618,7 +611,10 @@ const RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation = graphql(`
     deleteOIDCIntegration(input: $input) {
       ok {
         organization {
-          ...OIDCIntegrationSection_OrganizationFragment
+          id
+          oidcIntegration {
+            id
+          }
         }
       }
       error {

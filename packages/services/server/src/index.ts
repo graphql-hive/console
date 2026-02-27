@@ -24,6 +24,7 @@ import {
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
+import { OIDCIntegrationStore } from '@hive/api/modules/oidc-integrations/providers/oidc-integration.store';
 import { HivePubSub } from '@hive/api/modules/shared/providers/pub-sub';
 import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
@@ -403,6 +404,7 @@ export async function main() {
                 env.supertokens.type === 'atHome'
                   ? new AccessTokenKeyContainer(env.supertokens.secrets.accessTokenKey)
                   : null,
+              oidcIntegrationStore: new OIDCIntegrationStore(storage.pool, redis, logger),
             }),
           organizationAccessTokenStrategy,
           (logger: Logger) =>

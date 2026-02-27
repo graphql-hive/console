@@ -457,7 +457,3 @@ const OIDCMetadataSchema = z.object({
     })
     .url('Authorization endpoint must be a valid URL'),
 });
-
-function FormError({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm text-red-500">{children}</div>;
-}

@@ -1,4 +1,4 @@
-import dns, { Resolver } from 'node:dns/promises';
+import dns from 'node:dns/promises';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import zod from 'zod';
 import { maskToken } from '@hive/service-common';
@@ -598,6 +598,7 @@ export class OIDCIntegrationsProvider {
     const parsedId = zod.string().uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
+      this.logger.debug('the provided domain ID is invalid.');
       return {
         type: 'error' as const,
         message: 'Domain not found.',
@@ -606,8 +607,15 @@ export class OIDCIntegrationsProvider {
 
     let domain = await this.oidcIntegrationStore.findDomainById(parsedId.data);
 
+    if (!domain) {
+      this.logger.debug('the domain does not exist.');
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
+
     if (
-      !domain ||
       !(await this.session.canPerformAction({
         organizationId: domain.organizationId,
         action: 'oidc:modify',
@@ -616,6 +624,7 @@ export class OIDCIntegrationsProvider {
         },
       }))
     ) {
+      this.logger.debug('insuffidient permissions for accessing the domain.');
       return {
         type: 'error' as const,
         message: 'Domain not found.',
@@ -623,6 +632,7 @@ export class OIDCIntegrationsProvider {
     }
 
     if (domain.verifiedAt) {
+      this.logger.debug('the domain was already verified.');
       return {
         type: 'error' as const,
         message: 'Domain is already verified.',
@@ -632,6 +642,7 @@ export class OIDCIntegrationsProvider {
     let challenge = await this.oidcIntegrationStore.getDomainChallenge(domain.id);
 
     if (challenge) {
+      this.logger.debug('a challenge for this domain already exists.');
       return {
         type: 'error' as const,
         message: 'A challenge already exists.',
@@ -639,6 +650,8 @@ export class OIDCIntegrationsProvider {
     }
 
     challenge = await this.oidcIntegrationStore.createDomainChallenge(domain.id);
+
+    this.logger.debug('a new challenge for this domain was created.');
 
     return {
       type: 'success' as const,
@@ -648,9 +661,11 @@ export class OIDCIntegrationsProvider {
   }
 
   async verifyDomainChallenge(args: { domainId: string }) {
+    this.logger.debug('attempt to verify the domain challenge.');
     const parsedId = zod.string().uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
+      this.logger.debug('invalid it provided.');
       return {
         type: 'error' as const,
         message: 'Domain not found.',
@@ -658,17 +673,24 @@ export class OIDCIntegrationsProvider {
     }
 
     let domain = await this.oidcIntegrationStore.findDomainById(parsedId.data);
+    if (!domain) {
+      this.logger.debug('the domain does not exist.');
+      return {
+        type: 'error' as const,
+        message: 'Domain not found.',
+      };
+    }
 
     if (
-      !domain ||
-      (await this.session.canPerformAction({
+      !(await this.session.canPerformAction({
         organizationId: domain.organizationId,
         action: 'oidc:modify',
         params: {
           organizationId: domain.organizationId,
         },
-      })) === false
+      }))
     ) {
+      this.logger.debug('insufficient permissions.');
       return {
         type: 'error' as const,
         message: 'Domain not found.',
@@ -678,6 +700,7 @@ export class OIDCIntegrationsProvider {
     const challenge = await this.oidcIntegrationStore.getDomainChallenge(domain.id);
 
     if (!challenge) {
+      this.logger.debug('no challenge was found for this domain.');
       return {
         type: 'error' as const,
         message: 'Pending challenge not found.',
@@ -707,28 +730,31 @@ export class OIDCIntegrationsProvider {
       this.logger.debug(`failed lookup record: %s`, String(err));
       return {
         type: 'error' as const,
-        message: 'Failed to lookup record.',
+        message: 'Failed to lookup the TXT record.',
       };
     }
 
     if (!records) {
+      this.logger.debug('no records could be resolved.');
       return {
         type: 'error' as const,
-        message: 'Could not resolve TXT record.',
+        message: 'The TXT record could not be resolved.',
       };
     }
 
     // At least one record needs to match for the challenge to succeed
     if (!records.find(record => record === challenge.value)) {
+      this.logger.debug('no records match the expected value.');
       return {
         type: 'error' as const,
-        message: 'Invalid TXT record value.',
+        message: 'The resolved TXT record value is incorrect.',
       };
     }
 
     domain = await this.oidcIntegrationStore.updateDomainVerifiedAt(domain.id);
 
     if (!domain) {
+      this.logger.debug('the domain no longer exists.');
       return {
         type: 'error' as const,
         message: 'Domain not found.',
@@ -736,6 +762,7 @@ export class OIDCIntegrationsProvider {
     }
 
     await this.oidcIntegrationStore.deleteDomainChallenge(domain.id);
+    this.logger.debug('the domain challenge was completed sucessfully.');
 
     return {
       type: 'success' as const,
