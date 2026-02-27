@@ -579,11 +579,30 @@ export class OIDCIntegrationsProvider {
       };
     }
 
+    const existingVerifiedDomain = await this.oidcIntegrationStore.findVerifiedDomainByName(
+      fqdnResult.data,
+    );
+
+    if (existingVerifiedDomain) {
+      return {
+        type: 'error' as const,
+        message: 'This domain has already been verified with another organization.',
+      };
+    }
+
     const domain = await this.oidcIntegrationStore.createDomain(
       integration.linkedOrganizationId,
       integration.id,
-      args.domain,
+      fqdnResult.data,
     );
+
+    if (!domain) {
+      return {
+        type: 'error' as const,
+        message: 'This domain has already been registered for this organization.',
+      };
+    }
+
     const challenge = await this.oidcIntegrationStore.createDomainChallenge(domain.id);
 
     return {
@@ -754,10 +773,10 @@ export class OIDCIntegrationsProvider {
     domain = await this.oidcIntegrationStore.updateDomainVerifiedAt(domain.id);
 
     if (!domain) {
-      this.logger.debug('the domain no longer exists.');
+      this.logger.debug('the domain has already been verified with another organization.');
       return {
         type: 'error' as const,
-        message: 'Domain not found.',
+        message: 'This domain has already been verified for another organization.',
       };
     }
 

@@ -77,11 +77,13 @@ export class OIDCIntegrationStore {
         , ${oidcIntegrationId}
         , ${domainName}
       )
+      ON CONFLICT ("oidc_integration_id", "domain_name")
+        DO NOTHING
       RETURNING
         ${oidcIntegrationDomainsFields}
     `;
 
-    return this.pool.one(query).then(OIDCIntegrationDomainModel.parse);
+    return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
   }
 
   async deleteDomain(domainId: string) {
@@ -106,6 +108,20 @@ export class OIDCIntegrationStore {
         "oidc_integration_domains"
       WHERE
         "id" = ${domainId}
+    `;
+
+    return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
+  }
+
+  async findVerifiedDomainByName(domainName: string) {
+    const query = sql`
+      SELECT
+        ${oidcIntegrationDomainsFields}
+      FROM
+        "oidc_integration_domains"
+      WHERE
+        "domain_name" = ${domainName}
+        AND "verified_at" IS NOT NULL
     `;
 
     return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
@@ -139,6 +155,9 @@ export class OIDCIntegrationStore {
         "verified_at" = NOW()
       WHERE
         "id" = ${domainId}
+      ON CONFLICT
+        ON CONSTRAINT "only_one_verified_domain_name_idx"
+        DO NOTHING
       RETURNING
         ${oidcIntegrationDomainsFields}
     `;

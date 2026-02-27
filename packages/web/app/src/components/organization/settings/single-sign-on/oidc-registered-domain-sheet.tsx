@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import z from 'zod';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import {
@@ -162,10 +163,8 @@ export function OIDCRegisteredDomainSheet(props: {
     }
 
     if (result.data?.registerOIDCDomain.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: result.data.registerOIDCDomain.error.message,
+      form.setError('domainName', {
+        message: result.data.registerOIDCDomain.error.message,
       });
       return;
     }
@@ -225,6 +224,7 @@ export function OIDCRegisteredDomainSheet(props: {
     props.onClose();
   }
 
+  // eslint-disable-next-line react/hook-use-state
   const [Stepper] = useState(() =>
     defineStepper(
       {
@@ -246,7 +246,14 @@ export function OIDCRegisteredDomainSheet(props: {
     <Sheet.Sheet open onOpenChange={props.onClose}>
       <Sheet.SheetContent className="flex max-h-screen min-w-[700px] flex-col overflow-y-scroll">
         <Sheet.SheetHeader>
-          <Sheet.SheetTitle>Register Domain {domain?.domainName}</Sheet.SheetTitle>
+          <Sheet.SheetTitle>
+            Register Domain{' '}
+            {domain?.domainName && (
+              <Badge variant="default" className="font-mono">
+                {domain?.domainName}
+              </Badge>
+            )}
+          </Sheet.SheetTitle>
         </Sheet.SheetHeader>
         <Stepper.StepperProvider
           variant="horizontal"
