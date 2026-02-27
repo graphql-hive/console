@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { PlusIcon, SettingsIcon } from 'lucide-react';
+import { ReactElement, useState } from 'react';
+import { AlertTriangleIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heading } from '@/components/ui/heading';
 import { Switch } from '@/components/ui/switch';
 import * as Table from '@/components/ui/table';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
+import { Tag } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
@@ -19,7 +21,6 @@ import { cn } from '@/lib/utils';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
 import { OIDCDefaultRoleSelector } from './oidc-default-role-selector';
-import { ConnectSingleSignOnProviderState } from './single-sign-on-subpage';
 
 const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
   mutation UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation(
@@ -117,6 +118,14 @@ const OIDCIntegrationConfiguration_Organization = graphql(`
   }
 `);
 
+const enum ModalState {
+  closed,
+  openSettings,
+  openDelete,
+  /** show confirmation dialog to ditch draft state of new access token */
+  closing,
+}
+
 export function OIDCIntegrationConfiguration(props: {
   organization: FragmentType<typeof OIDCIntegrationConfiguration_Organization>;
   oidcIntegration: FragmentType<typeof OIDCIntegrationConfiguration_OIDCIntegration>;
@@ -134,7 +143,7 @@ export function OIDCIntegrationConfiguration(props: {
   const [_, updateOIDCIntegrationMutate] = useMutation(
     UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation,
   );
-  const [modalState, setModalState] = useState(ConnectSingleSignOnProviderState.closed);
+  const [modalState, setModalState] = useState(ModalState.closed);
 
   const onOidcRestrictionChange = async (
     name: 'oidcUserJoinOnly' | 'oidcUserAccessOnly' | 'requireInvitation',
@@ -236,7 +245,7 @@ export function OIDCIntegrationConfiguration(props: {
                 <Button
                   size="icon-sm"
                   className="ml-auto"
-                  onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
+                  onClick={() => setModalState(ModalState.openSettings)}
                 >
                   <SettingsIcon size="12" />{' '}
                 </Button>
@@ -373,11 +382,13 @@ export function OIDCIntegrationConfiguration(props: {
       <div className="space-y-2">
         <Heading size="lg">Remove OIDC Provider</Heading>
         <p>Completly disconnect the OIDC provider and all configuration.</p>
-        <Button variant="destructive">Delete OIDC Provider</Button>
+        <Button variant="destructive" onClick={() => setModalState(ModalState.openDelete)}>
+          Delete OIDC Provider
+        </Button>
       </div>
-      {modalState === ConnectSingleSignOnProviderState.open && (
+      {modalState === ModalState.openSettings && (
         <ConnectSingleSignOnProviderSheet
-          onClose={() => setModalState(ConnectSingleSignOnProviderState.closed)}
+          onClose={() => setModalState(ModalState.closed)}
           initialValues={{
             additionalScopes: oidcIntegration.additionalScopes.join(' '),
             clientId: oidcIntegration.clientId,
@@ -422,6 +433,12 @@ export function OIDCIntegrationConfiguration(props: {
               type: 'success',
             };
           }}
+        />
+      )}
+      {modalState === ModalState.openDelete && (
+        <RemoveOIDCIntegrationModal
+          close={() => setModalState(ModalState.closed)}
+          oidcIntegrationId={oidcIntegration.id}
         />
       )}
     </div>
@@ -485,5 +502,80 @@ function OIDCDomainConfiguration(props: {
         </Table.TableBody>
       </Table.Table>
     </div>
+  );
+}
+
+const RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation = graphql(`
+  mutation RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation(
+    $input: DeleteOIDCIntegrationInput!
+  ) {
+    deleteOIDCIntegration(input: $input) {
+      ok {
+        organization {
+          ...OIDCIntegrationSection_OrganizationFragment
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
+function RemoveOIDCIntegrationModal(props: {
+  close: () => void;
+  oidcIntegrationId: null | string;
+}): ReactElement {
+  const [mutation, mutate] = useMutation(RemoveOIDCIntegrationModal_DeleteOIDCIntegrationMutation);
+  const { oidcIntegrationId } = props;
+
+  return (
+    <Dialog open onOpenChange={props.close}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Remove OpenID Connect Integration</DialogTitle>
+        </DialogHeader>
+        {mutation.data?.deleteOIDCIntegration.ok ? (
+          <>
+            <p>The OIDC integration has been removed successfully.</p>
+            <div className="text-right">
+              <Button onClick={props.close}>Close</Button>
+            </div>
+          </>
+        ) : oidcIntegrationId === null ? (
+          <>
+            <p>This organization does not have an OIDC integration.</p>
+            <div className="text-right">
+              <Button onClick={props.close}>Close</Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <Tag color="yellow" className="px-4 py-2.5">
+              <p>
+                This action is not reversible and revoke access to all users that have signed in
+                with this OIDC integration.
+              </p>
+            </Tag>
+            <p>Do you really want to proceed?</p>
+
+            <div className="space-x-2 text-right">
+              <Button variant="outline" onClick={props.close}>
+                Close
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={mutation.fetching}
+                onClick={async () => {
+                  await mutate({ input: { oidcIntegrationId } });
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

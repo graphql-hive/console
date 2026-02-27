@@ -51,7 +51,7 @@ const SingleSignOnSubpage_CreateOIDCIntegrationMutation = graphql(`
   }
 `);
 
-export const enum ConnectSingleSignOnProviderState {
+const enum ConnectSingleSignOnProviderState {
   closed,
   open,
   /** show confirmation dialog to ditch draft state of new access token */
