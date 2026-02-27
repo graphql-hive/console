@@ -737,7 +737,7 @@ export class OIDCIntegrationsProvider {
             const resolver = new dns.Resolver({ timeout: 10_000 });
             resolver.setServers([provider]);
             return await resolver.resolveTxt(recordName).catch(err => {
-              this.logger.debug(`failed lookup record on '%s': %e`, provider, String(err));
+              this.logger.debug(`failed lookup record on '%s': %s`, provider, String(err));
               return [] as string[][];
             });
           }),

@@ -372,7 +372,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       return true;
     }
 
-    const [domainName] = sessionData.email.split('@');
+    const [, domainName] = sessionData.email.split('@');
     const record = await this.oidcIntegrationStore.findDomainByOIDCIntegrationIdAndDomainName(
       sessionData.oidcIntegrationId,
       domainName,
