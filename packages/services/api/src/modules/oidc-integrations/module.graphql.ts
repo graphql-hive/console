@@ -136,8 +136,8 @@ export default gql`
   type OIDCIntegrationDomain {
     id: ID!
     domainName: String!
-    createdAt: Date!
-    verifiedAt: Date
+    createdAt: DateTime!
+    verifiedAt: DateTime
     challenge: OIDCIntegrationDomainChallenge
   }
 

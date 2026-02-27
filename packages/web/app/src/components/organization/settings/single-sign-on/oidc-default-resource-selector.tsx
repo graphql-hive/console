@@ -3,8 +3,7 @@ import { useMutation } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { CheckIcon, XIcon } from '@/components/ui/icon';
 import { Spinner } from '@/components/ui/spinner';
-import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { OidcIntegrationSection_OrganizationFragmentFragmentDoc } from '@/gql/graphql';
+import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   createResourceSelectionFromResourceAssignment,
   ResourceSelection,

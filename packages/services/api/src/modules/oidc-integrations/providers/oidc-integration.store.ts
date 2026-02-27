@@ -111,6 +111,21 @@ export class OIDCIntegrationStore {
     return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
   }
 
+  async findDomainByOIDCIntegrationIdAndDomainName(oidcIntegrationId: string, domainName: string) {
+    const query = sql`
+      SELECT
+        ${oidcIntegrationDomainsFields}
+      FROM
+        "oidc_integration_domains"
+      WHERE
+        "oidc_integration_id" = ${oidcIntegrationId}
+        AND "domain_name" = ${domainName}
+        AND "verified_at" IS NOT NULL
+    `;
+
+    return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
+  }
+
   async updateDomainVerifiedAt(domainId: string) {
     this.logger.debug(
       'set verified at date for domain on oidc integration. (oidcIntegrationId=%s)',

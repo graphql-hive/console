@@ -13,13 +13,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { CopyIcon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import * as Sheet from '@/components/ui/sheet';
 import { defineStepper } from '@/components/ui/stepper';
 import * as Table from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
+import { Tag } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 const OIDCRegisteredDomainSheet_RegisteredDomain = graphql(`
@@ -49,7 +50,7 @@ const OIDCRegisteredDomainSheet_RegisterDomainMutation = graphql(`
         }
       }
       error {
-        __typename
+        message
       }
     }
   }
@@ -120,6 +121,7 @@ export function OIDCRegisteredDomainSheet(props: {
   oidcIntegrationId: string;
 }): React.ReactElement {
   const domain = useFragment(OIDCRegisteredDomainSheet_RegisteredDomain, props.domain);
+
   const [registerDomainMutationState, registerDomainMutation] = useMutation(
     OIDCRegisteredDomainSheet_RegisterDomainMutation,
   );
@@ -128,6 +130,9 @@ export function OIDCRegisteredDomainSheet(props: {
   );
   const [deleteDomainMutationState, deleteDomainMutation] = useMutation(
     OIDCRegisteredDomainSheet_DeleteDomainMutation,
+  );
+  const [requestDomainChallengeMutationState, requestDomainChallengeMutation] = useMutation(
+    OIDCRegisteredDomainSheet_RequestDomainChallengeMutation,
   );
 
   const { toast } = useToast();
@@ -290,7 +295,9 @@ export function OIDCRegisteredDomainSheet(props: {
                       challenge.
                     </p>
                     <p>Within your hosted zone create the following DNS record.</p>
-                    <Table.Table>
+                    <Table.Table
+                      className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}
+                    >
                       <Table.TableHeader>
                         <Table.TableRow>
                           <Table.TableHead>Property</Table.TableHead>
@@ -330,6 +337,31 @@ export function OIDCRegisteredDomainSheet(props: {
                         </Table.TableRow>
                       </Table.TableBody>
                     </Table.Table>
+                    {domain && !domain.challenge && (
+                      <>
+                        <Tag color="yellow" className="text-primary px-4 py-2.5">
+                          <p>This challenge has expired.</p>
+                        </Tag>
+                        <div className="text-red-500">
+                          {requestDomainChallengeMutationState.error?.message ??
+                            requestDomainChallengeMutationState.data?.requestOIDCDomainChallenge
+                              .error?.message}
+                        </div>
+                        <Button
+                          onClick={() =>
+                            requestDomainChallengeMutation({
+                              input: {
+                                oidcDomainId: domain.id,
+                              },
+                            })
+                          }
+                          variant="primary"
+                          disabled={requestDomainChallengeMutationState.fetching}
+                        >
+                          Request new challenge
+                        </Button>
+                      </>
+                    )}
                   </>
                 ),
                 'step-3-complete': () => (
@@ -381,7 +413,9 @@ export function OIDCRegisteredDomainSheet(props: {
                         variant="primary"
                         onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
                         disabled={
-                          verifyDomainMutationState.fetching || deleteDomainMutationState.fetching
+                          verifyDomainMutationState.fetching ||
+                          deleteDomainMutationState.fetching ||
+                          !domain?.challenge
                         }
                       >
                         Next: Complete
