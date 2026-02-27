@@ -6,14 +6,26 @@ import { Logger } from '../../shared/providers/logger';
 import { PG_POOL_CONFIG } from '../../shared/providers/pg-pool';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
-const OIDCIntegrationDomainModel = z.object({
+const SharedOIDCIntegrationDomainFieldsModel = z.object({
   id: z.string().uuid(),
   organizationId: z.string().uuid(),
   oidcIntegrationId: z.string().uuid(),
   domainName: z.string(),
   createdAt: z.string(),
-  verifiedAt: z.string().nullable(),
 });
+
+const PendingOIDCIntegrationDomainModel = SharedOIDCIntegrationDomainFieldsModel.extend({
+  verifiedAt: z.null(),
+});
+
+const ValidatedOIDCIntegrationDomainModel = SharedOIDCIntegrationDomainFieldsModel.extend({
+  verifiedAt: z.string(),
+});
+
+const OIDCIntegrationDomainModel = z.union([
+  PendingOIDCIntegrationDomainModel,
+  ValidatedOIDCIntegrationDomainModel,
+]);
 
 export type OIDCIntegrationDomain = z.TypeOf<typeof OIDCIntegrationDomainModel>;
 
@@ -127,7 +139,10 @@ export class OIDCIntegrationStore {
     return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
   }
 
-  async findDomainByOIDCIntegrationIdAndDomainName(oidcIntegrationId: string, domainName: string) {
+  async findVerifiedDomainByOIDCIntegrationIdAndDomainName(
+    oidcIntegrationId: string,
+    domainName: string,
+  ) {
     const query = sql`
       SELECT
         ${oidcIntegrationDomainsFields}
@@ -139,7 +154,7 @@ export class OIDCIntegrationStore {
         AND "verified_at" IS NOT NULL
     `;
 
-    return this.pool.maybeOne(query).then(OIDCIntegrationDomainModel.nullable().parse);
+    return this.pool.maybeOne(query).then(ValidatedOIDCIntegrationDomainModel.nullable().parse);
   }
 
   async updateDomainVerifiedAt(domainId: string) {

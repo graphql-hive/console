@@ -373,10 +373,11 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     }
 
     const [, domainName] = sessionData.email.split('@');
-    const record = await this.oidcIntegrationStore.findDomainByOIDCIntegrationIdAndDomainName(
-      sessionData.oidcIntegrationId,
-      domainName,
-    );
+    const record =
+      await this.oidcIntegrationStore.findVerifiedDomainByOIDCIntegrationIdAndDomainName(
+        sessionData.oidcIntegrationId,
+        domainName,
+      );
 
     if (record) {
       logger.debug('no email verification is required, as the domain is verified.');
