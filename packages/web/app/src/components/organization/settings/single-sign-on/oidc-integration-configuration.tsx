@@ -1,5 +1,12 @@
 import { ReactElement, useState } from 'react';
-import { AlertTriangleIcon, BugPlayIcon, PlusIcon, SettingsIcon } from 'lucide-react';
+import {
+  AlertOctagonIcon,
+  BugPlayIcon,
+  CheckIcon,
+  PlusIcon,
+  SettingsIcon,
+  TriangleAlertIcon,
+} from 'lucide-react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
@@ -22,6 +29,7 @@ import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provi
 import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
 import { OIDCDefaultRoleSelector } from './oidc-default-role-selector';
+import { OIDCRegisteredDomainSheet } from './oidc-registered-domain-sheet';
 
 const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
   mutation UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation(
@@ -477,6 +485,7 @@ const OIDCDomainConfiguration_OIDCIntegrationFragment = graphql(`
       domainName
       createdAt
       verifiedAt
+      ...OIDCRegisteredDomainSheet_RegisteredDomain
     }
   }
 `);
@@ -489,6 +498,18 @@ function OIDCDomainConfiguration(props: {
     props.oidcIntegration,
   );
 
+  const [state, setState] = useState(
+    null as
+      | null
+      | {
+          type: 'create';
+        }
+      | {
+          type: 'manage';
+          domainId: string;
+        },
+  );
+
   return (
     <div className="space-y-2">
       <div className="flex">
@@ -496,7 +517,11 @@ function OIDCDomainConfiguration(props: {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button size="icon-sm" className="ml-auto" onClick={() => {}}>
+              <Button
+                size="icon-sm"
+                className="ml-auto"
+                onClick={() => setState({ type: 'create' })}
+              >
                 <PlusIcon size="12" />{' '}
               </Button>
             </TooltipTrigger>
@@ -519,8 +544,44 @@ function OIDCDomainConfiguration(props: {
               <Table.TableCell className="font-mono font-medium">
                 {domain.domainName}
               </Table.TableCell>
-              <Table.TableCell>{domain.verifiedAt ? 'Verified' : 'Pending'}</Table.TableCell>
-              <Table.TableCell className="text-right"></Table.TableCell>
+              <Table.TableCell>
+                {domain.verifiedAt ? (
+                  <>
+                    Verified <CheckIcon size="12" className="inline-block" />
+                  </>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0} disableHoverableContent>
+                      <TooltipTrigger>
+                        Pending <AlertOctagonIcon size="12" className="inline-block" />
+                      </TooltipTrigger>
+                      <TooltipContent className="text-xs">
+                        The domain ownership challenge has not been completed.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </Table.TableCell>
+              <Table.TableCell className="text-right">
+                <TooltipProvider>
+                  <Tooltip delayDuration={0} disableHoverableContent>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() =>
+                        setState({
+                          domainId: domain.id,
+                          type: 'manage',
+                        })
+                      }
+                      className="ml-auto"
+                    >
+                      <SettingsIcon size="10" />
+                    </Button>
+                    <TooltipContent className="text-xs">Manage</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Table.TableCell>
             </Table.TableRow>
           ))}
         </Table.TableBody>
@@ -528,6 +589,24 @@ function OIDCDomainConfiguration(props: {
           <Table.TableCaption>No Domains registered</Table.TableCaption>
         )}
       </Table.Table>
+      {state && (
+        <OIDCRegisteredDomainSheet
+          key={state.type}
+          oidcIntegrationId={oidcIntegration.id}
+          domain={
+            (state.type === 'manage'
+              ? oidcIntegration.registeredDomains.find(domain => domain.id === state.domainId)
+              : null) ?? null
+          }
+          onClose={() => setState(null)}
+          onRegisterDomainSuccess={domainId =>
+            setState({
+              type: 'manage',
+              domainId,
+            })
+          }
+        />
+      )}
     </div>
   );
 }

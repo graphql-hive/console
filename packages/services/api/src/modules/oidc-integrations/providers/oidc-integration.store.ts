@@ -11,12 +11,11 @@ const OIDCIntegrationDomainModel = z.object({
   organizationId: z.string().uuid(),
   oidcIntegrationId: z.string().uuid(),
   domainName: z.string(),
-  createdAt: z.string().transform(date => new Date(date)),
-  verifiedAt: z
-    .string()
-    .transform(date => new Date(date))
-    .nullable(),
+  createdAt: z.string(),
+  verifiedAt: z.string().nullable(),
 });
+
+export type OIDCIntegrationDomain = z.TypeOf<typeof OIDCIntegrationDomainModel>;
 
 const oidcIntegrationDomainsFields = sql`
   "id"
@@ -62,7 +61,7 @@ export class OIDCIntegrationStore {
     return this.pool.any(query).then(OIDCIntegrationDomainListModel.parse);
   }
 
-  async createDomain(oidcIntegrationId: string, domainName: string) {
+  async createDomain(organizationId: string, oidcIntegrationId: string, domainName: string) {
     this.logger.debug(
       'create domain on oidc integration. (oidcIntegrationId=%s)',
       oidcIntegrationId,
@@ -70,10 +69,12 @@ export class OIDCIntegrationStore {
 
     const query = sql`
       INSERT INTO "oidc_integration_domains" (
-        "oidc_integration_id"
+        "organization_id"
+        , "oidc_integration_id"
         , "domain_name"
       ) VALUES (
-        ${oidcIntegrationId}
+        ${organizationId}
+        , ${oidcIntegrationId}
         , ${domainName}
       )
       RETURNING
@@ -136,6 +137,7 @@ export class OIDCIntegrationStore {
     const key = `hive:oidcDomainChallenge:${domainId}`;
     await this.redis.set(key, JSON.stringify(challenge));
     await this.redis.expire(key, 60 * 60 * 24);
+    return challenge;
   }
 
   async deleteDomainChallenge(domainId: string) {

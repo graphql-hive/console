@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'urql';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import * as Sheet from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation as useRQMutation } from '@tanstack/react-query';
 
