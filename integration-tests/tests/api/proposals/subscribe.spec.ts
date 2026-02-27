@@ -109,7 +109,7 @@ describe('Schema Proposals', () => {
         .then(r => r.expectNoGraphQLErrors());
       expect(checkResultErrors.schemaCheck.__typename).toBe(`SchemaCheckSuccess`);
       const { value } = await query.next();
-      expect(value.data.schemaProposalComposition.status).toBe(`success`);
+      expect(value.data.schemaProposalComposition.status).toBe(`SUCCESS`);
       await expect(query.return?.()).resolves.toMatchObject({ done: true });
     },
   );
