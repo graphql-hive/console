@@ -346,7 +346,7 @@ export function OIDCRegisteredDomainSheet(props: {
                     </Table.Table>
                     {domain && !domain.challenge && (
                       <>
-                        <Tag color="yellow" className="text-primary px-4 py-2.5">
+                        <Tag color="yellow" className="text-neutral-11 px-4 py-2.5">
                           <p>This challenge has expired.</p>
                         </Tag>
                         <div className="text-red-500">

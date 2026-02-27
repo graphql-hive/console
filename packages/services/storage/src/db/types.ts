@@ -536,6 +536,7 @@ export interface DBTables {
   email_verifications: email_verifications;
   graphile_worker_deduplication: graphile_worker_deduplication;
   migration: migration;
+  oidc_integration_domains: oidc_integration_domains;
   oidc_integrations: oidc_integrations;
   organization_access_tokens: organization_access_tokens;
   organization_invitations: organization_invitations;
