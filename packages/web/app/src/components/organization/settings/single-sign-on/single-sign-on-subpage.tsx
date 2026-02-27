@@ -100,6 +100,7 @@ export function SingleSignOnSubpage(props: SingleSignOnSubPageProps): React.Reac
           />
         ) : (
           <>
+            <p>Your organization has currently no Open ID Connect provider configured.</p>
             <Button onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}>
               <KeyIcon className="mr-2" />
               Connect Open ID Connect Provider
