@@ -14,7 +14,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  CopyIcon,
   Link as LinkLucide,
   PieChart,
   Play,
@@ -28,6 +27,7 @@ import { Page, TargetLayout } from '@/components/layouts/target';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
+import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
@@ -1737,32 +1737,6 @@ function AttributeRow(props: AttributeRowProps) {
       </div>
       {!isExpanded && actionsNode}
     </div>
-  );
-}
-
-type CopyIconButtonProps = {
-  label: string;
-  value: string;
-};
-
-export function CopyIconButton(props: CopyIconButtonProps) {
-  const clipboard = useClipboard();
-  return (
-    <TooltipProvider>
-      <Tooltip delayDuration={0} disableHoverableContent>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => clipboard(props.value)}
-            className="ml-auto"
-          >
-            <CopyIcon size="10" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="text-xs">{props.label}</TooltipContent>
-      </Tooltip>{' '}
-    </TooltipProvider>
   );
 }
 

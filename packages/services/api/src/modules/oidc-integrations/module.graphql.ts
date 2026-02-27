@@ -23,6 +23,10 @@ export default gql`
     requireInvitation: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
+    """
+    List of domains registered with this OIDC integration.
+    """
+    registeredDomains: [OIDCIntegrationDomain!]!
   }
 
   extend type Mutation {
@@ -36,6 +40,111 @@ export default gql`
     updateOIDCDefaultResourceAssignment(
       input: UpdateOIDCDefaultResourceAssignmentInput!
     ): UpdateOIDCDefaultResourceAssignmentResult!
+    """
+    Register a domain for the OIDC provider for a verification challenge.
+    """
+    registerOIDCDomain(input: RegisterOIDCDomainInput!): RegisterOIDCDomainResult!
+    """
+    Remove a domain from the OIDC provider list.
+    """
+    deleteOIDCDomain(input: DeleteOIDCDomainInput!): DeleteOIDCDomainResult!
+    """
+    Verify the domain verification challenge
+    """
+    verifyOIDCDomainChallenge(
+      input: VerifyOIDCDomainChallengeInput!
+    ): VerifyOIDCDomainChallengeResult!
+    """
+    Request a new domain verification challenge
+    """
+    requestOIDCDomainChallenge(
+      input: RequestOIDCDomainChallengeInput!
+    ): RequestOIDCDomainChallengeResult!
+  }
+
+  input RegisterOIDCDomainInput {
+    oidcIntegrationId: ID!
+    domainName: String!
+  }
+
+  type RegisterOIDCDomainResult {
+    ok: RegisterOIDCDomainResultOk
+    error: RegisterOIDCDomainResultError
+  }
+
+  type RegisterOIDCDomainResultOk {
+    createdOIDCIntegrationDomain: OIDCIntegrationDomain!
+    oidcIntegration: OIDCIntegration!
+  }
+
+  type RegisterOIDCDomainResultError {
+    message: String!
+  }
+
+  input DeleteOIDCDomainInput {
+    oidcDomainId: ID!
+  }
+
+  type DeleteOIDCDomainResult {
+    ok: DeleteOIDCDomainOk
+    error: DeleteOIDCDomainError
+  }
+
+  type DeleteOIDCDomainOk {
+    deletedOIDCIntegrationId: ID!
+    oidcIntegration: OIDCIntegration
+  }
+
+  type DeleteOIDCDomainError {
+    message: String!
+  }
+
+  input VerifyOIDCDomainChallengeInput {
+    oidcDomainId: ID!
+  }
+
+  type VerifyOIDCDomainChallengeResult {
+    ok: VerifyOIDCDomainChallengeOk
+    error: VerifyOIDCDomainChallengeError
+  }
+
+  type VerifyOIDCDomainChallengeOk {
+    verifiedOIDCIntegrationDomain: OIDCIntegrationDomain!
+  }
+
+  type VerifyOIDCDomainChallengeError {
+    message: String!
+  }
+
+  input RequestOIDCDomainChallengeInput {
+    oidcDomainId: ID!
+  }
+
+  type RequestOIDCDomainChallengeResult {
+    ok: RequestOIDCDomainChallengeResultOk
+    error: RequestOIDCDomainChallengeResultError
+  }
+
+  type RequestOIDCDomainChallengeResultOk {
+    oidcIntegrationDomain: OIDCIntegrationDomain
+  }
+
+  type RequestOIDCDomainChallengeResultError {
+    message: String!
+  }
+
+  type OIDCIntegrationDomain {
+    id: ID!
+    domainName: String!
+    createdAt: DateTime!
+    verifiedAt: DateTime
+    challenge: OIDCIntegrationDomainChallenge
+  }
+
+  type OIDCIntegrationDomainChallenge {
+    recordName: String!
+    recordType: String!
+    recordValue: String!
   }
 
   """

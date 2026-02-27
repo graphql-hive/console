@@ -7,8 +7,8 @@ import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { OrganizationLayout, Page } from '@/components/layouts/organization';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { AccessTokensSubPage } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
-import { OIDCIntegrationSection } from '@/components/organization/settings/oidc-integration-section';
 import { PersonalAccessTokensSubPage } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-sub-page';
+import { SingleSignOnSubpage } from '@/components/organization/settings/single-sign-on/single-sign-on-subpage';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
@@ -315,33 +315,6 @@ const OrganizationSettingsContent = (props: {
         </Form>
       )}
 
-      {organization.viewerCanManageOIDCIntegration && (
-        <SubPageLayout>
-          <SubPageLayoutHeader
-            subPageTitle="Single Sign On Provider"
-            description={
-              <>
-                <CardDescription>
-                  Link your Hive organization to a single-sign-on provider such as Okta or Microsoft
-                  Entra ID via OpenID Connect.
-                </CardDescription>
-                <CardDescription>
-                  <DocsLink
-                    className="text-neutral-10 text-sm"
-                    href="/management/sso-oidc-provider"
-                  >
-                    Instructions for connecting your provider.
-                  </DocsLink>
-                </CardDescription>
-              </>
-            }
-          />
-          <div className="text-neutral-10">
-            <OIDCIntegrationSection organizationSlug={organization.slug} />
-          </div>
-        </SubPageLayout>
-      )}
-
       {organization.viewerCanModifySlackIntegration && (
         <SubPageLayout>
           <SubPageLayoutHeader
@@ -620,12 +593,14 @@ const OrganizationSettingsPageQuery = graphql(`
       viewerCanAccessSettings
       viewerCanManageAccessTokens
       viewerCanManagePersonalAccessTokens
+      viewerCanManageOIDCIntegration
     }
   }
 `);
 
 export const OrganizationSettingsPageEnum = z.enum([
   'general',
+  'sso',
   'policy',
   'access-tokens',
   'personal-access-tokens',
@@ -663,6 +638,13 @@ function SettingsPageContent(props: {
       key: 'policy',
       title: 'Policy',
     });
+
+    if (currentOrganization?.viewerCanManageOIDCIntegration) {
+      pages.push({
+        key: 'sso',
+        title: 'Single Sign On',
+      });
+    }
 
     if (currentOrganization?.viewerCanManageAccessTokens) {
       pages.push({
@@ -736,6 +718,9 @@ function SettingsPageContent(props: {
                 organizationSlug={props.organizationSlug}
                 organization={currentOrganization}
               />
+            ) : null}
+            {resolvedPage.key === 'sso' ? (
+              <SingleSignOnSubpage organizationSlug={props.organizationSlug} />
             ) : null}
             {resolvedPage.key === 'policy' ? (
               <OrganizationPolicySettings organization={currentOrganization} />
