@@ -159,6 +159,15 @@ export interface migration {
   name: string;
 }
 
+export interface oidc_integration_domains {
+  created_at: Date;
+  domain_name: string;
+  id: string;
+  oidc_integration_id: string;
+  organization_id: string;
+  verified_at: Date | null;
+}
+
 export interface oidc_integrations {
   additional_scopes: Array<string> | null;
   authorization_endpoint: string | null;
