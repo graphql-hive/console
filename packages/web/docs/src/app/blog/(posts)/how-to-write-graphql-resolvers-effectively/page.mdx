@@ -122,7 +122,7 @@ flowchart LR
 ```
 
 <Callout type="info" emoji="💡">
-  There are four positonal arguments of a resolver function:
+  There are four positional arguments of a resolver function:
   - `parent`: the value returned by the parent resolver.
     - For root-level resolvers like `Query.movie`, `parent` is always `undefined`.
     - For other object-type resolvers like `Movie.id` and `Movie.name`, `parent` is the value returned by parent resolvers like `Query.movie`

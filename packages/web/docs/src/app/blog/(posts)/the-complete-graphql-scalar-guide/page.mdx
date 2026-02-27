@@ -266,7 +266,7 @@ config is used for these cases, we don't have to manually convert the ID to a `s
 sending it to the server.
 
 <Callout type="info">
-  Starting from `typescript` and `typescript-operations` plugin v4, all depedent client plugins
+  Starting from `typescript` and `typescript-operations` plugin v4, all dependent client plugins
   (e.g. Apollo Client, React Request, urql, etc.) must update to use the new input/output format. If
   you find issues in these client plugins, create an issue in the [community
   repo](https://github.com/dotansimha/graphql-code-generator-community).
@@ -353,7 +353,7 @@ would have to create custom mappers or manually convert the number to string to 
 typecheck.
 
 <Callout type="info">
-  The recommeded setup is suitable for the most common use cases. It does not cover some edge cases that may make writing resolvers awkward.
+  The recommended setup is suitable for the most common use cases. It does not cover some edge cases that may make writing resolvers awkward.
 
 For example, `Int`'s output is technically `string | number | boolean` but it is typed as `number`
 by default because most resolvers would never return `string` or `boolean`.
