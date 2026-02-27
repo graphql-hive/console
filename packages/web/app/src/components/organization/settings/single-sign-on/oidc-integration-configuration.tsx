@@ -1,5 +1,5 @@
 import { ReactElement, useState } from 'react';
-import { AlertTriangleIcon, PlusIcon, SettingsIcon } from 'lucide-react';
+import { AlertTriangleIcon, BugPlayIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
@@ -19,6 +19,7 @@ import {
 } from '@/laboratory/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
+import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
 import { OIDCDefaultRoleSelector } from './oidc-default-role-selector';
 
@@ -122,6 +123,7 @@ const enum ModalState {
   closed,
   openSettings,
   openDelete,
+  openDebugLogs,
   /** show confirmation dialog to ditch draft state of new access token */
   closing,
 }
@@ -199,7 +201,23 @@ export function OIDCIntegrationConfiguration(props: {
   return (
     <div className="space-y-10">
       <div className="space-y-2">
-        <Heading size="lg">Overview</Heading>
+        <div className="flex">
+          <Heading size="lg">Overview</Heading>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  className="ml-auto"
+                  onClick={() => setModalState(ModalState.openDebugLogs)}
+                >
+                  <BugPlayIcon size="12" />{' '}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Debug OIDC Integration</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <p>Endpoints for configuring the OIDC provider.</p>
         <Table.Table>
           <Table.TableHeader>
@@ -437,6 +455,12 @@ export function OIDCIntegrationConfiguration(props: {
       )}
       {modalState === ModalState.openDelete && (
         <RemoveOIDCIntegrationModal
+          close={() => setModalState(ModalState.closed)}
+          oidcIntegrationId={oidcIntegration.id}
+        />
+      )}
+      {modalState === ModalState.openDebugLogs && (
+        <DebugOIDCIntegrationModal
           close={() => setModalState(ModalState.closed)}
           oidcIntegrationId={oidcIntegration.id}
         />
