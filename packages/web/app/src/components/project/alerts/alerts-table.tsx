@@ -1,4 +1,5 @@
-import { Checkbox, Table, TBody, Td, Tr } from '@/components/v2';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
+import { Table, TBody, Td, Tr } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 
 export const AlertsTable_AlertFragment = graphql(`
