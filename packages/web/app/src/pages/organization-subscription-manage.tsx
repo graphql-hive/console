@@ -379,16 +379,18 @@ function Inner(props: {
                     <div className="mt-5 pl-2.5">
                       <Slider
                         min={1}
-                        max={300}
+                        max={5000}
                         disabled={isFetching}
                         value={[operationsRateLimit]}
                         onValueChange={onOperationsRateLimitChange}
                       />
                       <div className="flex justify-between">
                         <span>1M</span>
-                        <span>100M</span>
-                        <span>200M</span>
-                        <span>300M</span>
+                        <span>1B</span>
+                        <span>2B</span>
+                        <span>3B</span>
+                        <span>4B</span>
+                        <span>5B</span>
                       </div>
                     </div>
                   </div>
