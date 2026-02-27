@@ -66,9 +66,9 @@ export const task = implementTask(SchemaProposalCompositionTask, async args => {
       },
     );
 
-    const payload: { timestamp: string; status: 'error' | 'success'; reason: string | null } = {
+    const payload: { timestamp: string; status: 'ERROR' | 'SUCCESS'; reason: string | null } = {
       timestamp: new Date().toISOString(),
-      status: result.errors.length ? 'error' : 'success',
+      status: result.errors.length ? 'ERROR' : 'SUCCESS',
       reason: result.errors.length ? result.errors.map(e => e.message).join('\n') : null,
     };
     await args.context.schema.updateSchemaProposalComposition({

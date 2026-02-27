@@ -129,7 +129,7 @@ export default gql`
   }
 
   type SchemaProposalCompositionEvent {
-    status: String!
+    status: ProposalCompositionStatus!
     timestamp: String!
   }
 
@@ -256,10 +256,14 @@ export default gql`
       fromCursor: String
     ): String
 
-    compositionStatus: String
+    compositionStatus: ProposalCompositionStatus
     compositionTimestamp: DateTime
     compositionStatusReason: String
   }
+
+  enum ProposalCompositionStatus =
+    | ERROR
+    | SUCCESS
 
   input SchemaProposalChecksInput {
     """

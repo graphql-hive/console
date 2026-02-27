@@ -207,7 +207,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       proposalId: string;
       timestamp: string;
       reason: string | null;
-      status: 'error' | 'success' | 'fail';
+      status: 'ERROR' | 'SUCCESS';
       pool: DatabasePool;
     }) {
       const { pool, ...state } = args;

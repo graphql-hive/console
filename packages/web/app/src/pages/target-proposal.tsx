@@ -435,15 +435,15 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   <TooltipProvider delayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger>
-                        {proposal?.compositionStatus === 'error' ? (
+                        {proposal?.compositionStatus === 'ERROR' ? (
                           <XIcon className="text-red-600" />
                         ) : null}
-                        {proposal?.compositionStatus === 'success' ? (
+                        {proposal?.compositionStatus === 'SUCCESS' ? (
                           <CheckIcon className="text-emerald-500" />
                         ) : null}
                       </TooltipTrigger>
                       <TooltipContent align="start">
-                        {proposal?.compositionStatus === 'error' ? (
+                        {proposal?.compositionStatus === 'ERROR' ? (
                           <>
                             Composition Error{' '}
                             {proposal.compositionTimestamp ? (
@@ -456,7 +456,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                               .map((e, i) => <div key={i}>- {e}</div>) ?? 'Unknown cause.'}{' '}
                           </>
                         ) : null}
-                        {proposal?.compositionStatus === 'success' ? 'Composes Successfully' : null}
+                        {proposal?.compositionStatus === 'SUCCESS' ? 'Composes Successfully' : null}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
