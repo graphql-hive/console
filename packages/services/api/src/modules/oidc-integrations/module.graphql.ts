@@ -26,7 +26,7 @@ export default gql`
     """
     List of domains registered with this OIDC integration.
     """
-    registeredDomains: [OIDCIntergrationDomain!]!
+    registeredDomains: [OIDCIntegrationDomain!]!
   }
 
   extend type Mutation {
@@ -54,6 +54,12 @@ export default gql`
     verifyOIDCDomainChallenge(
       input: VerifyOIDCDomainChallengeInput!
     ): VerifyOIDCDomainChallengeResult!
+    """
+    Request a new domain verification challenge
+    """
+    requestOIDCDomainChallenge(
+      input: RequestOIDCDomainChallengeInput!
+    ): RequestOIDCDomainChallengeResult!
   }
 
   input RegisterOIDCDomainInput {
@@ -67,7 +73,8 @@ export default gql`
   }
 
   type RegisterOIDCDomainResultOk {
-    createdOIDCIntegrationDomain: OIDCIntergrationDomain!
+    createdOIDCIntegrationDomain: OIDCIntegrationDomain!
+    oidcIntegration: OIDCIntegration!
   }
 
   type RegisterOIDCDomainResultError {
@@ -85,6 +92,7 @@ export default gql`
 
   type DeleteOIDCDomainOk {
     deletedOIDCIntegrationId: ID!
+    oidcIntegration: OIDCIntegration
   }
 
   type DeleteOIDCDomainError {
@@ -101,18 +109,42 @@ export default gql`
   }
 
   type VerifyOIDCDomainChallengeOk {
-    verifiedOIDCIntegrationDomain: OIDCIntergrationDomain!
+    verifiedOIDCIntegrationDomain: OIDCIntegrationDomain!
   }
 
   type VerifyOIDCDomainChallengeError {
     message: String!
   }
 
-  type OIDCIntergrationDomain {
+  input RequestOIDCDomainChallengeInput {
+    oidcDomainId: ID!
+  }
+
+  type RequestOIDCDomainChallengeResult {
+    ok: RequestOIDCDomainChallengeResultOk
+    error: RequestOIDCDomainChallengeResultError
+  }
+
+  type RequestOIDCDomainChallengeResultOk {
+    oidcIntegrationDomain: OIDCIntegrationDomain
+  }
+
+  type RequestOIDCDomainChallengeResultError {
+    message: String!
+  }
+
+  type OIDCIntegrationDomain {
     id: ID!
     domainName: String!
     createdAt: Date!
     verifiedAt: Date
+    challenge: OIDCIntegrationDomainChallenge
+  }
+
+  type OIDCIntegrationDomainChallenge {
+    recordName: String!
+    recordType: String!
+    recordValue: String!
   }
 
   """

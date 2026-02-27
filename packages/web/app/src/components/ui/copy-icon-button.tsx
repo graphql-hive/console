@@ -24,7 +24,7 @@ export function CopyIconButton(props: CopyIconButtonProps) {
           </Button>
         </TooltipTrigger>
         <TooltipContent className="text-xs">{props.label}</TooltipContent>
-      </Tooltip>{' '}
+      </Tooltip>
     </TooltipProvider>
   );
 }

@@ -21,6 +21,7 @@ export const deleteOIDCDomain: NonNullable<MutationResolvers['deleteOIDCDomain']
   return {
     ok: {
       deletedOIDCIntegrationId: args.input.oidcDomainId,
+      oidcIntegration: result.integration,
     },
   };
 };

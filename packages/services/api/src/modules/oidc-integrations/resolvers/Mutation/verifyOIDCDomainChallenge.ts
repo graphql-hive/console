@@ -4,7 +4,7 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const verifyOIDCDomainChallenge: NonNullable<
   MutationResolvers['verifyOIDCDomainChallenge']
 > = async (_parent, args, ctx) => {
-  const result = await ctx.injector.get(OIDCIntegrationsProvider).verifyChallenge({
+  const result = await ctx.injector.get(OIDCIntegrationsProvider).verifyDomainChallenge({
     domainId: args.input.oidcDomainId,
   });
 

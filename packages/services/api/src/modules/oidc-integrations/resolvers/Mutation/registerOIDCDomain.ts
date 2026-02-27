@@ -22,6 +22,7 @@ export const registerOIDCDomain: NonNullable<MutationResolvers['registerOIDCDoma
   return {
     ok: {
       createdOIDCIntegrationDomain: result.domain,
+      oidcIntegration: result.integration,
     },
   };
 };
