@@ -7,7 +7,7 @@ import { Callout } from '@theguild/components'
 # Hive Gateway Configuration Reference
 
 An overview of all the configuration options for the Hive Gateway, both CLI and
-[Progammatic Usage](/docs/gateway/deployment#programmatic-usage).
+[Programmatic Usage](/docs/gateway/deployment#programmatic-usage).
 
 ## Default CLI Config Files
 
@@ -198,7 +198,7 @@ export const gatewayConfig = defineConfig({
 })
 ```
 
-If a subgraph mathes multiple transport entries, the configurations are merged with priority for the
+If a subgraph matches multiple transport entries, the configurations are merged with priority for the
 most specific matcher (`subgraphName` > `*.transportKind` > `*`).
 
 ### `kind`
@@ -238,7 +238,7 @@ the specific documentation of each transport.
 
 ### `options.subscriptions`
 
-A special case of the `option` fields is `subcriptions`. It allows to override the transport options
+A special case of the `option` fields is `subscriptions`. It allows to override the transport options
 (including the kind) only for subscripions. Please see
 [Subscriptions page](/docs/gateway/subscriptions) for more details.
 

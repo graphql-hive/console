@@ -140,7 +140,7 @@ class User extends OfflineFirstWithGraphqlModel {}
 final users = await repository.get<User>();
 ```
 
-These can also be overriden per request but subfields don't need to be declared because they're
+These can also be overridden per request but subfields don't need to be declared because they're
 generated based on the model:
 
 ```dart
@@ -170,7 +170,7 @@ StreamBuilder<List<User>>(
 )
 ```
 
-Even if your GraphQL server doesn't utilize susbcriptions, you can still use `subscribe`. Events
+Even if your GraphQL server doesn't utilize subscriptions, you can still use `subscribe`. Events
 will be triggered every time data is inserted into the local SQLite database.
 
 <Callout type="warning">

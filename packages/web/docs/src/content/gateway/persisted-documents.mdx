@@ -89,7 +89,7 @@ export const gatewayConfig = defineConfig({
 
 ### Enabling Arbitrary Documents
 
-After enabling persisted documents on your Hive Gateway, any arbitary GraphQL documents that don't
+After enabling persisted documents on your Hive Gateway, any arbitrary GraphQL documents that don't
 contain a `documentId` will be rejected. If you still want to allow executing arbitrary documents,
 you can set `allowArbitraryDocuments` to `true` in the configuration.
 
@@ -158,7 +158,7 @@ send the full operation document.
 
 If you now sent a normal GraphQL operation that is not within the store, it will be rejected.
 
-```bash filename="Arbitary GraphQL operation"
+```bash filename="Arbitrary GraphQL operation"
 curl -X POST -H 'Content-Type: application/json' http://localhost:4000/graphql \
   -d '{"query": "{__typename}"}'
 

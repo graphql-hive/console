@@ -28,7 +28,7 @@ making it easier to understand and use.
 #### Context
 
 The context object passed to plugins and hooks will always have the relevant logger instance
-provided throug the `log` property. Same goes for all of the transports' contexts. Each of the
+provided through the `log` property. Same goes for all of the transports' contexts. Each of the
 transport contexts now has a `log` prop.
 
 ##### Plugin Setup Function
@@ -171,8 +171,8 @@ Lets write a plugin that toggles the `debug` log level when a secure HTTP reques
 
 <Callout>
 
-Please be very carefuly with securing your logger. Changing the log level from an HTTP request can
-be a security risk and should be avoided in production environments. **Use this feature with caution
+Please be very careful with securing your logger. Changing the log level from an HTTP request can be
+a security risk and should be avoided in production environments. **Use this feature with caution
 and proper security measures.**
 
 </Callout>
@@ -321,7 +321,7 @@ export class DailyFileLogWriter implements LogWriter {
 }
 ```
 
-And using it as simple as pluging it into an instance of Hive Logger to the `logging` option:
+And using it as simple as plugging it into an instance of Hive Logger to the `logging` option:
 
 ```ts filename="gateway.config.ts"
 import { defineConfig, JSONLogWriter, Logger } from '@graphql-hive/gateway'
@@ -351,7 +351,7 @@ logs.
 npm i pino pino-pretty
 ```
 
-Since we're using a custom log writter, you have to install the Hive Logger package too:
+Since we're using a custom log writer, you have to install the Hive Logger package too:
 
 ```sh npm2yarn
 npm i @graphql-hive/logger
@@ -387,7 +387,7 @@ Logger's logs.
 npm i winston
 ```
 
-Since we're using a custom log writter, you have to install the Hive Logger package too:
+Since we're using a custom log writer, you have to install the Hive Logger package too:
 
 ```sh npm2yarn
 npm i @graphql-hive/logger
