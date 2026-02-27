@@ -259,7 +259,7 @@ function SavedFilterRow({
   return (
     <>
       <TableRow
-        className={canManage ? 'cursor-pointer' : undefined}
+        className={canManage ? 'cursor-pointer' : 'hover:bg-transparent'}
         onClick={canManage ? onToggleExpand : undefined}
       >
         <TableCell className="w-8">
