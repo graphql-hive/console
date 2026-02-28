@@ -53,6 +53,8 @@ const ProjectLayoutQuery = graphql(`
         viewerCanModifySchemaPolicy
         viewerCanCreateTarget
         viewerCanModifyAlerts
+        viewerCanModifySettings
+        viewerCanManageProjectAccessTokens
       }
       ...UserMenu_OrganizationFragment
     }
@@ -141,17 +143,20 @@ export function ProjectLayout({
                         </Link>
                       </TabsTrigger>
                     )}
-                    <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/view/settings"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                        }}
-                      >
-                        Settings
-                      </Link>
-                    </TabsTrigger>
+                    {(currentProject.viewerCanModifySettings ||
+                      currentProject.viewerCanManageProjectAccessTokens) && (
+                      <TabsTrigger variant="menu" value={Page.Settings} asChild>
+                        <Link
+                          to="/$organizationSlug/$projectSlug/view/settings"
+                          params={{
+                            organizationSlug: props.organizationSlug,
+                            projectSlug: props.projectSlug,
+                          }}
+                        >
+                          Settings
+                        </Link>
+                      </TabsTrigger>
+                    )}
                   </TabsList>
                 </Tabs>
               ) : (

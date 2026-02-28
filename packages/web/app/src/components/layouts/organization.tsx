@@ -65,6 +65,9 @@ const OrganizationLayoutQuery = graphql(`
       viewerCanManageSupportTickets
       viewerCanDescribeBilling
       viewerCanSeeMembers
+      viewerCanAccessSettings
+      viewerCanManageAccessTokens
+      viewerCanManagePersonalAccessTokens
       ...UserMenu_OrganizationFragment
       ...ProPlanBilling_OrganizationFragment
       ...RateLimitWarn_OrganizationFragment
@@ -149,14 +152,18 @@ export function OrganizationLayout({
                     </Link>
                   </TabsTrigger>
                 )}
-                <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                  <Link
-                    to="/$organizationSlug/view/settings"
-                    params={{ organizationSlug: currentOrganization.slug }}
-                  >
-                    Settings
-                  </Link>
-                </TabsTrigger>
+                {(currentOrganization.viewerCanAccessSettings ||
+                  currentOrganization.viewerCanManageAccessTokens ||
+                  currentOrganization.viewerCanManagePersonalAccessTokens) && (
+                  <TabsTrigger variant="menu" value={Page.Settings} asChild>
+                    <Link
+                      to="/$organizationSlug/view/settings"
+                      params={{ organizationSlug: currentOrganization.slug }}
+                    >
+                      Settings
+                    </Link>
+                  </TabsTrigger>
+                )}
                 {currentOrganization.viewerCanManageSupportTickets && (
                   <TabsTrigger variant="menu" value={Page.Support} asChild>
                     <Link
