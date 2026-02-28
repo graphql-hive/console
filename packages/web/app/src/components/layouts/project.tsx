@@ -64,7 +64,8 @@ export function ProjectLayout({
   children,
   page,
   className,
-  ...props
+  organizationSlug,
+  projectSlug,
 }: {
   page: Page;
   organizationSlug: string;
@@ -72,14 +73,13 @@ export function ProjectLayout({
   className?: string;
   children: ReactNode;
 }) {
+  const params = { organizationSlug, projectSlug };
+
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
     query: ProjectLayoutQuery,
     requestPolicy: 'cache-first',
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-    },
+    variables: params,
   });
 
   const me = query.data?.me;
@@ -94,8 +94,8 @@ export function ProjectLayout({
         <div className="flex flex-row items-center gap-4">
           <HiveLink className="size-8" />
           <ProjectSelector
-            currentOrganizationSlug={props.organizationSlug}
-            currentProjectSlug={props.projectSlug}
+            currentOrganizationSlug={organizationSlug}
+            currentProjectSlug={projectSlug}
             organizations={query.data?.organizations ?? null}
           />
         </div>
@@ -123,20 +123,14 @@ export function ProjectLayout({
                       value: Page.Targets,
                       label: 'Targets',
                       to: '/$organizationSlug/$projectSlug',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Alerts,
                       label: 'Alerts',
                       visible: currentProject.viewerCanModifyAlerts,
                       to: '/$organizationSlug/$projectSlug/view/alerts',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Settings,
@@ -145,10 +139,7 @@ export function ProjectLayout({
                         currentProject.viewerCanModifySettings ||
                         currentProject.viewerCanManageProjectAccessTokens,
                       to: '/$organizationSlug/$projectSlug/view/settings',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                      },
+                      params,
                     },
                   ]
                 : []
@@ -162,8 +153,8 @@ export function ProjectLayout({
                   </Button>
                 ) : null}
                 <CreateTargetModal
-                  organizationSlug={props.organizationSlug}
-                  projectSlug={props.projectSlug}
+                  organizationSlug={organizationSlug}
+                  projectSlug={projectSlug}
                   isOpen={isModalOpen}
                   toggleModalOpen={toggleModalOpen}
                 />

@@ -82,7 +82,8 @@ export function OrganizationLayout({
   children,
   page,
   className,
-  ...props
+  organizationSlug,
+  minimal,
 }: {
   page?: Page;
   className?: string;
@@ -94,8 +95,8 @@ export function OrganizationLayout({
   const [query] = useQuery({
     query: OrganizationLayoutQuery,
     variables: {
-      organizationSlug: props.organizationSlug,
-      minimal: props.minimal ?? false,
+      organizationSlug,
+      minimal: minimal ?? false,
     },
     requestPolicy: 'cache-first',
   });
@@ -104,12 +105,12 @@ export function OrganizationLayout({
   useLastVisitedOrganizationWriter(currentOrganization?.slug);
 
   if (query.error) {
-    return <QueryError error={query.error} organizationSlug={props.organizationSlug} />;
+    return <QueryError error={query.error} organizationSlug={organizationSlug} />;
   }
 
   // Only show the null state state if the query has finished fetching and data is not stale
   // This prevents showing null state when switching between orgs with cached data
-  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization && !props.minimal;
+  const shouldShowNoOrg = !query.fetching && !query.stale && !currentOrganization && !minimal;
 
   return (
     <>
@@ -117,7 +118,7 @@ export function OrganizationLayout({
         <div className="flex flex-row items-center gap-4">
           <HiveLink className="size-8" />
           <OrganizationSelector
-            currentOrganizationSlug={props.organizationSlug}
+            currentOrganizationSlug={organizationSlug}
             organizations={query.data?.organizations ?? null}
           />
         </div>
@@ -168,8 +169,7 @@ export function OrganizationLayout({
                 {
                   value: Page.Subscription,
                   label: 'Subscription',
-                  visible:
-                    getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
+                  visible: getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
                   to: '/$organizationSlug/view/subscription',
                   params: { organizationSlug: currentOrganization.slug },
                 },
@@ -184,7 +184,7 @@ export function OrganizationLayout({
                 New project
               </Button>
               <CreateProjectModal
-                organizationSlug={props.organizationSlug}
+                organizationSlug={organizationSlug}
                 isOpen={isModalOpen}
                 toggleModalOpen={toggleModalOpen}
                 // reset the form every time it is closed

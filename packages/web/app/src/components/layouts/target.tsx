@@ -122,7 +122,9 @@ export const TargetLayout = ({
   children,
   page,
   className,
-  ...props
+  organizationSlug,
+  projectSlug,
+  targetSlug,
 }: {
   page: Page;
   organizationSlug: string;
@@ -131,15 +133,17 @@ export const TargetLayout = ({
   className?: string;
   children: ReactNode;
 }): ReactElement | null => {
+  const params = {
+    organizationSlug,
+    projectSlug,
+    targetSlug,
+  };
+
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
     query: TargetLayoutQuery,
     requestPolicy: 'cache-first',
-    variables: {
-      organizationSlug: props.organizationSlug,
-      projectSlug: props.projectSlug,
-      targetSlug: props.targetSlug,
-    },
+    variables: params,
   });
 
   const me = query.data?.me;
@@ -154,18 +158,18 @@ export const TargetLayout = ({
 
   return (
     <TargetReferenceProvider
-      organizationSlug={props.organizationSlug}
-      projectSlug={props.projectSlug}
-      targetSlug={props.targetSlug}
+      organizationSlug={organizationSlug}
+      projectSlug={projectSlug}
+      targetSlug={targetSlug}
     >
       <Header>
         <div className="flex flex-row items-center gap-4">
           <HiveLink className="size-8" />
           <TargetSelector
             organizations={query.data?.organizations ?? null}
-            currentOrganizationSlug={props.organizationSlug}
-            currentProjectSlug={props.projectSlug}
-            currentTargetSlug={props.targetSlug}
+            currentOrganizationSlug={organizationSlug}
+            currentProjectSlug={projectSlug}
+            currentTargetSlug={targetSlug}
           />
         </div>
         <div>
@@ -194,40 +198,26 @@ export const TargetLayout = ({
                       value: Page.Schema,
                       label: 'Schema',
                       to: '/$organizationSlug/$projectSlug/$targetSlug',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Checks,
                       label: 'Checks',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Explorer,
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.History,
                       label: 'History',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
                       params: {
-                        organizationSlug: currentOrganization.slug,
-                        projectSlug: currentProject.slug,
-                        targetSlug: currentTarget.slug,
+                        ...params,
                         versionId: latestSchemaVersion ?? '',
                       },
                     },
@@ -235,11 +225,7 @@ export const TargetLayout = ({
                       value: Page.Insights,
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                       search: {},
                     },
                     {
@@ -247,55 +233,35 @@ export const TargetLayout = ({
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Apps,
                       label: 'Apps',
                       visible: currentTarget.viewerCanViewAppDeployments,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Laboratory,
                       label: 'Laboratory',
                       visible: currentTarget.viewerCanViewLaboratory,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Proposals,
                       label: 'Proposals',
                       visible: currentTarget.viewerCanViewSchemaProposals,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                     {
                       value: Page.Settings,
                       label: 'Settings',
                       visible: currentTarget.viewerCanAccessSettings,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
-                      params: {
-                        organizationSlug: props.organizationSlug,
-                        projectSlug: props.projectSlug,
-                        targetSlug: props.targetSlug,
-                      },
+                      params,
                     },
                   ]
                 : []
@@ -312,9 +278,9 @@ export const TargetLayout = ({
                     Connect to CDN
                   </Button>
                   <ConnectSchemaModal
-                    organizationSlug={props.organizationSlug}
-                    projectSlug={props.projectSlug}
-                    targetSlug={props.targetSlug}
+                    organizationSlug={organizationSlug}
+                    projectSlug={projectSlug}
+                    targetSlug={targetSlug}
                     isOpen={isModalOpen}
                     toggleModalOpen={toggleModalOpen}
                   />
