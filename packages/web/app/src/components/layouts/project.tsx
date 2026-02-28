@@ -145,20 +145,20 @@ export function ProjectLayout({
                 : []
             }
             actions={
-              <>
-                {currentProject?.viewerCanCreateTarget ? (
+              currentProject?.viewerCanCreateTarget ? (
+                <>
                   <Button onClick={toggleModalOpen} variant="link">
                     <PlusIcon size={16} className="mr-2" />
                     New target
                   </Button>
-                ) : null}
-                <CreateTargetModal
-                  organizationSlug={organizationSlug}
-                  projectSlug={projectSlug}
-                  isOpen={isModalOpen}
-                  toggleModalOpen={toggleModalOpen}
-                />
-              </>
+                  <CreateTargetModal
+                    organizationSlug={organizationSlug}
+                    projectSlug={projectSlug}
+                    isOpen={isModalOpen}
+                    toggleModalOpen={toggleModalOpen}
+                  />
+                </>
+              ) : null
             }
           />
           <div className="min-h-(--content-height) container pb-7">
