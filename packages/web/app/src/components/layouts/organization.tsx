@@ -35,13 +35,12 @@ import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Slot } from '@radix-ui/react-slot';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
 import { RateLimitWarn } from '../organization/billing/RateLimitWarn';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
 import { QueryError } from '../ui/query-error';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { OrganizationSelector } from './organization-selectors';
 
 export enum Page {
@@ -128,72 +127,57 @@ export function OrganizationLayout({
           organizations={query.data?.organizations ?? null}
         />
       </Header>
-      <SecondaryNavigation>
-        <div className="container flex items-center justify-between">
-          {currentOrganization ? (
-            <Tabs value={page} className="min-w-[600px]">
-              <TabsList variant="menu">
-                <TabsTrigger variant="menu" value={Page.Overview} asChild>
-                  <Link
-                    to="/$organizationSlug"
-                    params={{ organizationSlug: currentOrganization.slug }}
-                  >
-                    Overview
-                  </Link>
-                </TabsTrigger>
-                {currentOrganization.viewerCanSeeMembers && (
-                  <TabsTrigger variant="menu" value={Page.Members} asChild>
-                    <Link
-                      to="/$organizationSlug/view/members"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                      search={{ page: 'list' }}
-                    >
-                      Members
-                    </Link>
-                  </TabsTrigger>
-                )}
-                {(currentOrganization.viewerCanAccessSettings ||
-                  currentOrganization.viewerCanManageAccessTokens ||
-                  currentOrganization.viewerCanManagePersonalAccessTokens) && (
-                  <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                    <Link
-                      to="/$organizationSlug/view/settings"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Settings
-                    </Link>
-                  </TabsTrigger>
-                )}
-                {currentOrganization.viewerCanManageSupportTickets && (
-                  <TabsTrigger variant="menu" value={Page.Support} asChild>
-                    <Link
-                      to="/$organizationSlug/view/support"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Support
-                    </Link>
-                  </TabsTrigger>
-                )}
-                {getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling && (
-                  <TabsTrigger variant="menu" value={Page.Subscription} asChild>
-                    <Link
-                      to="/$organizationSlug/view/subscription"
-                      params={{ organizationSlug: currentOrganization.slug }}
-                    >
-                      Subscription
-                    </Link>
-                  </TabsTrigger>
-                )}
-              </TabsList>
-            </Tabs>
-          ) : (
-            <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-              <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-              <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-              <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-            </div>
-          )}
-          {currentOrganization?.viewerCanCreateProject ? (
+      <SecondaryNavigation
+        page={page}
+        loading={!currentOrganization}
+        className="min-w-[600px]"
+        links={
+          currentOrganization
+            ? [
+                {
+                  value: Page.Overview,
+                  label: 'Overview',
+                  to: '/$organizationSlug',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+                {
+                  value: Page.Members,
+                  label: 'Members',
+                  visible: currentOrganization.viewerCanSeeMembers,
+                  to: '/$organizationSlug/view/members',
+                  params: { organizationSlug: currentOrganization.slug },
+                  search: { page: 'list' },
+                },
+                {
+                  value: Page.Settings,
+                  label: 'Settings',
+                  visible:
+                    currentOrganization.viewerCanAccessSettings ||
+                    currentOrganization.viewerCanManageAccessTokens ||
+                    currentOrganization.viewerCanManagePersonalAccessTokens,
+                  to: '/$organizationSlug/view/settings',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+                {
+                  value: Page.Support,
+                  label: 'Support',
+                  visible: currentOrganization.viewerCanManageSupportTickets,
+                  to: '/$organizationSlug/view/support',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+                {
+                  value: Page.Subscription,
+                  label: 'Subscription',
+                  visible:
+                    getIsStripeEnabled() && currentOrganization.viewerCanDescribeBilling,
+                  to: '/$organizationSlug/view/subscription',
+                  params: { organizationSlug: currentOrganization.slug },
+                },
+              ]
+            : []
+        }
+        actions={
+          currentOrganization?.viewerCanCreateProject ? (
             <>
               <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
                 <PlusIcon size={16} className="mr-2" />
@@ -207,9 +191,9 @@ export function OrganizationLayout({
                 key={String(isModalOpen)}
               />
             </>
-          ) : null}
-        </div>
-      </SecondaryNavigation>
+          ) : null
+        }
+      />
       <div className="min-h-(--content-height) container pb-7">
         {currentOrganization ? (
           <>

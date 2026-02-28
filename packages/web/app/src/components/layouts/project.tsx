@@ -21,11 +21,10 @@ import { graphql } from '@/gql';
 import { useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from '@tanstack/react-router';
+import { useRouter } from '@tanstack/react-router';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { HiveLink } from '../ui/hive-link';
 import { PlusIcon } from '../ui/icon';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { ProjectSelector } from './project-selector';
 
 export enum Page {
@@ -114,72 +113,63 @@ export function ProjectLayout({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <SecondaryNavigation>
-            <div className="container flex items-center justify-between">
-              {currentOrganization && currentProject ? (
-                <Tabs value={page}>
-                  <TabsList variant="menu">
-                    <TabsTrigger variant="menu" value={Page.Targets} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                        }}
-                      >
-                        Targets
-                      </Link>
-                    </TabsTrigger>
-                    {currentProject.viewerCanModifyAlerts && (
-                      <TabsTrigger variant="menu" value={Page.Alerts} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/view/alerts"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                          }}
-                        >
-                          Alerts
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                    {(currentProject.viewerCanModifySettings ||
-                      currentProject.viewerCanManageProjectAccessTokens) && (
-                      <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/view/settings"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                          }}
-                        >
-                          Settings
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                  </TabsList>
-                </Tabs>
-              ) : (
-                <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-                </div>
-              )}
-              {currentProject?.viewerCanCreateTarget ? (
-                <Button onClick={toggleModalOpen} variant="link">
-                  <PlusIcon size={16} className="mr-2" />
-                  New target
-                </Button>
-              ) : null}
-              <CreateTargetModal
-                organizationSlug={props.organizationSlug}
-                projectSlug={props.projectSlug}
-                isOpen={isModalOpen}
-                toggleModalOpen={toggleModalOpen}
-              />
-            </div>
-          </SecondaryNavigation>
+          <SecondaryNavigation
+            page={page}
+            loading={!currentOrganization || !currentProject}
+            links={
+              currentOrganization && currentProject
+                ? [
+                    {
+                      value: Page.Targets,
+                      label: 'Targets',
+                      to: '/$organizationSlug/$projectSlug',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                      },
+                    },
+                    {
+                      value: Page.Alerts,
+                      label: 'Alerts',
+                      visible: currentProject.viewerCanModifyAlerts,
+                      to: '/$organizationSlug/$projectSlug/view/alerts',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                      },
+                    },
+                    {
+                      value: Page.Settings,
+                      label: 'Settings',
+                      visible:
+                        currentProject.viewerCanModifySettings ||
+                        currentProject.viewerCanManageProjectAccessTokens,
+                      to: '/$organizationSlug/$projectSlug/view/settings',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                      },
+                    },
+                  ]
+                : []
+            }
+            actions={
+              <>
+                {currentProject?.viewerCanCreateTarget ? (
+                  <Button onClick={toggleModalOpen} variant="link">
+                    <PlusIcon size={16} className="mr-2" />
+                    New target
+                  </Button>
+                ) : null}
+                <CreateTargetModal
+                  organizationSlug={props.organizationSlug}
+                  projectSlug={props.projectSlug}
+                  isOpen={isModalOpen}
+                  toggleModalOpen={toggleModalOpen}
+                />
+              </>
+            }
+          />
           <div className="min-h-(--content-height) container pb-7">
             <div className={className}>{children}</div>
           </div>

@@ -29,7 +29,6 @@ import { useToggle } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
 import { ResourceNotFoundComponent } from '../resource-not-found';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -184,153 +183,125 @@ export const TargetLayout = ({
         <ResourceNotFoundComponent title="404 - This project does not seem to exist." />
       ) : (
         <>
-          <SecondaryNavigation>
-            <div className="container flex items-center justify-between">
-              {currentOrganization && currentProject && currentTarget ? (
-                <Tabs className="flex h-full grow flex-col" value={page}>
-                  <TabsList variant="menu">
-                    <TabsTrigger variant="menu" value={Page.Schema} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Schema
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Checks} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/checks"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Checks
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Explorer} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/explorer"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                      >
-                        Explorer
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.History} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
-                        params={{
-                          organizationSlug: currentOrganization.slug,
-                          projectSlug: currentProject.slug,
-                          targetSlug: currentTarget.slug,
-                          versionId: latestSchemaVersion ?? '',
-                        }}
-                      >
-                        History
-                      </Link>
-                    </TabsTrigger>
-                    <TabsTrigger variant="menu" value={Page.Insights} asChild>
-                      <Link
-                        to="/$organizationSlug/$projectSlug/$targetSlug/insights"
-                        params={{
-                          organizationSlug: props.organizationSlug,
-                          projectSlug: props.projectSlug,
-                          targetSlug: props.targetSlug,
-                        }}
-                        search={{}}
-                      >
-                        Insights
-                      </Link>
-                    </TabsTrigger>
-                    {currentTarget.viewerCanAccessTraces && (
-                      <TabsTrigger variant="menu" value={Page.Traces} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/traces"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                          }}
-                        >
-                          Traces
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                    {currentTarget.viewerCanViewAppDeployments && (
-                      <TabsTrigger variant="menu" value={Page.Apps} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/apps"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                          }}
-                        >
-                          Apps
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                    {currentTarget.viewerCanViewLaboratory && (
-                      <TabsTrigger variant="menu" value={Page.Laboratory} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                          }}
-                        >
-                          Laboratory
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                    {currentTarget.viewerCanViewSchemaProposals && (
-                      <TabsTrigger variant="menu" value={Page.Proposals} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                          }}
-                        >
-                          Proposals
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                    {currentTarget.viewerCanAccessSettings && (
-                      <TabsTrigger variant="menu" value={Page.Settings} asChild>
-                        <Link
-                          to="/$organizationSlug/$projectSlug/$targetSlug/settings"
-                          params={{
-                            organizationSlug: props.organizationSlug,
-                            projectSlug: props.projectSlug,
-                            targetSlug: props.targetSlug,
-                          }}
-                        >
-                          Settings
-                        </Link>
-                      </TabsTrigger>
-                    )}
-                  </TabsList>
-                </Tabs>
-              ) : (
-                <div className="flex flex-row gap-x-8 border-b-2 border-b-transparent px-4 py-3">
-                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-                  <div className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
-                </div>
-              )}
-              {currentTarget && isCDNEnabled && (
+          <SecondaryNavigation
+            page={page}
+            loading={!currentOrganization || !currentProject || !currentTarget}
+            className="flex h-full grow flex-col"
+            links={
+              currentOrganization && currentProject && currentTarget
+                ? [
+                    {
+                      value: Page.Schema,
+                      label: 'Schema',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.Checks,
+                      label: 'Checks',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/checks',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.Explorer,
+                      label: 'Explorer',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.History,
+                      label: 'History',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
+                      params: {
+                        organizationSlug: currentOrganization.slug,
+                        projectSlug: currentProject.slug,
+                        targetSlug: currentTarget.slug,
+                        versionId: latestSchemaVersion ?? '',
+                      },
+                    },
+                    {
+                      value: Page.Insights,
+                      label: 'Insights',
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                      search: {},
+                    },
+                    {
+                      value: Page.Traces,
+                      label: 'Traces',
+                      visible: currentTarget.viewerCanAccessTraces,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.Apps,
+                      label: 'Apps',
+                      visible: currentTarget.viewerCanViewAppDeployments,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.Laboratory,
+                      label: 'Laboratory',
+                      visible: currentTarget.viewerCanViewLaboratory,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/laboratory',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.Proposals,
+                      label: 'Proposals',
+                      visible: currentTarget.viewerCanViewSchemaProposals,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                    {
+                      value: Page.Settings,
+                      label: 'Settings',
+                      visible: currentTarget.viewerCanAccessSettings,
+                      to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
+                      params: {
+                        organizationSlug: props.organizationSlug,
+                        projectSlug: props.projectSlug,
+                        targetSlug: props.targetSlug,
+                      },
+                    },
+                  ]
+                : []
+            }
+            actions={
+              currentTarget && isCDNEnabled ? (
                 <>
                   <Button
                     onClick={toggleModalOpen}
@@ -348,9 +319,9 @@ export const TargetLayout = ({
                     toggleModalOpen={toggleModalOpen}
                   />
                 </>
-              )}
-            </div>
-          </SecondaryNavigation>
+              ) : null
+            }
+          />
           <div className={cn('min-h-(--content-height) container pb-7', className)}>{children}</div>
         </>
       )}
