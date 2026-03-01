@@ -1,9 +1,18 @@
+import { readFile } from 'node:fs/promises';
 import type { FastifyBaseLogger } from 'fastify';
 import type { FastifyRequest } from 'supertokens-node/lib/build/framework/fastify/framework';
 import type { ProviderInput } from 'supertokens-node/recipe/thirdparty/types';
 import type { TypeInput as ThirdPartEmailPasswordTypeInput } from 'supertokens-node/recipe/thirdpartyemailpassword/types';
 import zod from 'zod';
 import { createInternalApiCaller } from '../api';
+
+/**
+ * The file path for the Azure Workload Identity federated token.
+ * This is the default path used by Azure Workload Identity in Kubernetes.
+ * Can be overridden via the AZURE_FEDERATED_TOKEN_FILE environment variable.
+ */
+const AZURE_FEDERATED_TOKEN_FILE =
+  process.env['AZURE_FEDERATED_TOKEN_FILE'] ?? '/var/run/secrets/azure/tokens/azure-identity-token';
 
 const couldNotResolveOidcIntegrationSymbol = Symbol('could_not_resolve_oidc_integration');
 
@@ -64,7 +73,9 @@ export const createOIDCSuperTokensProvider = (args: {
         return {
           thirdPartyId: 'oidc',
           clientId: config.clientId,
-          clientSecret: config.clientSecret,
+          // SuperTokens requires a clientSecret; for federated identity we provide a
+          // placeholder since the actual token exchange is handled in our override below.
+          clientSecret: config.useFederatedIdentity ? 'federated-identity' : (config.clientSecret ?? ''),
           authorizationEndpoint: config.authorizationEndpoint,
           userInfoEndpoint: config.userinfoEndpoint,
           tokenEndpoint: config.tokenEndpoint,
@@ -116,6 +127,15 @@ export const createOIDCSuperTokensProvider = (args: {
         );
 
         try {
+          if (config.useFederatedIdentity) {
+            const result = await exchangeAuthCodeWithFederatedIdentity(config, input, logger);
+            args.broadcastLog(
+              config.id,
+              `successfully exchanged auth code for tokens using federated identity on endpoint ${config.tokenEndpoint}`,
+            );
+            return result;
+          }
+
           // TODO: we should probably have our own custom implementation of this that uses fetch API.
           // that way we can also do timeouts, retries and more detailed logging.
           const result = await originalImplementation.exchangeAuthCodeForOAuthTokens(input);
@@ -248,11 +268,12 @@ export const createOIDCSuperTokensProvider = (args: {
 type OIDCConfig = {
   id: string;
   clientId: string;
-  clientSecret: string;
+  clientSecret: string | null;
   tokenEndpoint: string;
   userinfoEndpoint: string;
   authorizationEndpoint: string;
   additionalScopes: string[];
+  useFederatedIdentity: boolean;
 };
 
 const OIDCProfileInfoSchema = zod.object({
@@ -361,6 +382,73 @@ export function describeOIDCSignInError(error: unknown): string {
   }
 
   return 'An unexpected error occurred while authenticating with your OIDC provider. Please verify your OIDC integration configuration or contact your administrator.';
+}
+
+/**
+ * Exchange an authorization code for OAuth tokens using Azure Federated Identity.
+ *
+ * Instead of authenticating with a client secret, this reads a Kubernetes service account
+ * token from the filesystem and sends it as a JWT client assertion
+ * (client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer).
+ * This is the mechanism used by Azure Workload Identity when running in Kubernetes.
+ *
+ * @internal Exported for unit testing only.
+ */
+export async function exchangeAuthCodeWithFederatedIdentity(
+  config: OIDCConfig,
+  input: { redirectURIInfo: { redirectURIOnProviderDashboard: string; redirectURIQueryParams: { code: string } } },
+  logger: FastifyBaseLogger,
+  tokenFilePath: string = AZURE_FEDERATED_TOKEN_FILE,
+): Promise<{ access_token: string; [key: string]: unknown }> {
+  let clientAssertion: string;
+  try {
+    clientAssertion = (await readFile(tokenFilePath, 'utf-8')).trim();
+  } catch (err) {
+    logger.error(
+      'Failed to read Azure federated identity token file "%s": %s',
+      tokenFilePath,
+      err,
+    );
+    throw new Error(
+      `Failed to read Azure federated identity token from "${tokenFilePath}". ` +
+        'Ensure the pod is configured with Azure Workload Identity.',
+    );
+  }
+
+  const params = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: input.redirectURIInfo.redirectURIQueryParams.code,
+    redirect_uri: input.redirectURIInfo.redirectURIOnProviderDashboard,
+    client_id: config.clientId,
+    client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+    client_assertion: clientAssertion,
+  });
+
+  const response = await fetch(config.tokenEndpoint, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+      accept: 'application/json',
+    },
+    body: params.toString(),
+  });
+
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      `Received response with status ${response.status} and body ${body}`,
+    );
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    throw new Error('Could not parse JSON response from token endpoint.');
+  }
+
+  return parsed as { access_token: string; [key: string]: unknown };
 }
 
 const fetchOIDCConfig = async (

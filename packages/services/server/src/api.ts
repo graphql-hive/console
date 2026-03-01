@@ -66,11 +66,14 @@ export const internalApiRouter = t.router({
       return {
         id: result.id,
         clientId: result.clientId,
-        clientSecret: ctx.crypto.decrypt(result.encryptedClientSecret),
+        clientSecret: result.encryptedClientSecret
+          ? ctx.crypto.decrypt(result.encryptedClientSecret)
+          : null,
         tokenEndpoint: result.tokenEndpoint,
         userinfoEndpoint: result.userinfoEndpoint,
         authorizationEndpoint: result.authorizationEndpoint,
         additionalScopes: result.additionalScopes,
+        useFederatedIdentity: result.useFederatedIdentity,
       };
     }),
 });

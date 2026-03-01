@@ -1,4 +1,7 @@
-import { describeOIDCSignInError } from './oidc-provider';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { writeFile } from 'node:fs/promises';
+import { describeOIDCSignInError, exchangeAuthCodeWithFederatedIdentity } from './oidc-provider';
 
 describe('describeOIDCSignInError', () => {
   test('invalid_client error (e.g. expired client secret)', () => {
@@ -140,5 +143,112 @@ describe('describeOIDCSignInError', () => {
     expect(message).not.toContain('aka.ms');
     expect(message).not.toContain('Trace ID');
     expect(message).not.toContain('Correlation ID');
+  });
+});
+
+describe('exchangeAuthCodeWithFederatedIdentity', () => {
+  const mockConfig = {
+    id: 'test-oidc-id',
+    clientId: 'test-client-id',
+    clientSecret: null,
+    tokenEndpoint: 'https://login.microsoftonline.com/tenant/oauth2/v2.0/token',
+    userinfoEndpoint: 'https://graph.microsoft.com/oidc/userinfo',
+    authorizationEndpoint: 'https://login.microsoftonline.com/tenant/oauth2/v2.0/authorize',
+    additionalScopes: [],
+    useFederatedIdentity: true,
+  };
+
+  const mockInput = {
+    redirectURIInfo: {
+      redirectURIOnProviderDashboard: 'https://example.com/auth/callback/oidc',
+      redirectURIQueryParams: { code: 'auth-code-123' },
+    },
+  };
+
+  const mockLogger = {
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+  } as any;
+
+  test('successfully exchanges auth code using a federated token file', async () => {
+    const tokenFile = join(tmpdir(), `test-azure-token-${Date.now()}.txt`);
+    await writeFile(tokenFile, '  eyJhbGciOiJSUzI1NiJ9.test-service-account-token  ');
+
+    const mockResponse = { access_token: 'ya29.mock-access-token', token_type: 'Bearer' };
+
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      text: async () => JSON.stringify(mockResponse),
+    } as Response);
+
+    const result = await exchangeAuthCodeWithFederatedIdentity(
+      mockConfig,
+      mockInput,
+      mockLogger,
+      tokenFile,
+    );
+
+    expect(result).toEqual(mockResponse);
+
+    // Verify the correct parameters were sent to the token endpoint
+    const fetchCall = (global.fetch as ReturnType<typeof vi.spyOn>).mock.calls[0];
+    expect(fetchCall[0]).toBe(mockConfig.tokenEndpoint);
+    const body = new URLSearchParams((fetchCall[1] as RequestInit).body as string);
+    expect(body.get('grant_type')).toBe('authorization_code');
+    expect(body.get('client_id')).toBe('test-client-id');
+    expect(body.get('code')).toBe('auth-code-123');
+    expect(body.get('client_assertion_type')).toBe(
+      'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+    );
+    expect(body.get('client_assertion')).toBe('eyJhbGciOiJSUzI1NiJ9.test-service-account-token');
+    expect(body.has('client_secret')).toBe(false);
+
+    vi.restoreAllMocks();
+  });
+
+  test('throws a descriptive error when the federated token file does not exist', async () => {
+    await expect(
+      exchangeAuthCodeWithFederatedIdentity(
+        mockConfig,
+        mockInput,
+        mockLogger,
+        '/nonexistent/path/to/azure-token',
+      ),
+    ).rejects.toThrow('Failed to read Azure federated identity token from');
+  });
+
+  test('throws on non-200 response from token endpoint', async () => {
+    const tokenFile = join(tmpdir(), `test-azure-token-error-${Date.now()}.txt`);
+    await writeFile(tokenFile, 'test-token');
+
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      text: async () => '{"error":"invalid_client"}',
+    } as Response);
+
+    await expect(
+      exchangeAuthCodeWithFederatedIdentity(mockConfig, mockInput, mockLogger, tokenFile),
+    ).rejects.toThrow('Received response with status 401');
+
+    vi.restoreAllMocks();
+  });
+
+  test('throws on non-JSON response from token endpoint', async () => {
+    const tokenFile = join(tmpdir(), `test-azure-token-json-${Date.now()}.txt`);
+    await writeFile(tokenFile, 'test-token');
+
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      text: async () => 'not valid json',
+    } as Response);
+
+    await expect(
+      exchangeAuthCodeWithFederatedIdentity(mockConfig, mockInput, mockLogger, tokenFile),
+    ).rejects.toThrow('Could not parse JSON response from token endpoint.');
+
+    vi.restoreAllMocks();
   });
 });

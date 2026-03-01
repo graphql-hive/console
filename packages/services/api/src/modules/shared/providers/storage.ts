@@ -633,21 +633,23 @@ export interface Storage {
   createOIDCIntegrationForOrganization(_: {
     organizationId: string;
     clientId: string;
-    encryptedClientSecret: string;
+    encryptedClientSecret: string | null;
     tokenEndpoint: string;
     userinfoEndpoint: string;
     authorizationEndpoint: string;
     additionalScopes: readonly string[];
+    useFederatedIdentity: boolean;
   }): Promise<{ type: 'ok'; oidcIntegration: OIDCIntegration } | { type: 'error'; reason: string }>;
 
   updateOIDCIntegration(_: {
     oidcIntegrationId: string;
     clientId: string | null;
-    encryptedClientSecret: string | null;
+    encryptedClientSecret: string | null | undefined;
     tokenEndpoint: string | null;
     userinfoEndpoint: string | null;
     authorizationEndpoint: string | null;
     additionalScopes: readonly string[] | null;
+    useFederatedIdentity: boolean | null;
   }): Promise<OIDCIntegration>;
 
   deleteOIDCIntegration(_: { oidcIntegrationId: string }): Promise<void>;
