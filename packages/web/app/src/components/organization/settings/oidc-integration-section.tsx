@@ -465,6 +465,7 @@ function CreateOIDCIntegrationForm(props: {
       clientId: '',
       clientSecret: '',
       additionalScopes: '',
+      useFederatedIdentity: false,
     },
     async onSubmit(values) {
       const result = await mutate({
@@ -474,8 +475,9 @@ function CreateOIDCIntegrationForm(props: {
           userinfoEndpoint: values.userinfoEndpoint,
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
-          clientSecret: values.clientSecret,
+          clientSecret: values.useFederatedIdentity ? undefined : values.clientSecret,
           additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
+          useFederatedIdentity: values.useFederatedIdentity,
         },
       });
 
@@ -570,19 +572,39 @@ function CreateOIDCIntegrationForm(props: {
             <FormError>{mutation.data?.createOIDCIntegration.error?.details.clientId}</FormError>
           </div>
 
-          <div>
-            <Label htmlFor="clientSecret">Client Secret</Label>
-            <Input
-              placeholder="Client Secret"
-              id="clientSecret"
-              name="clientSecret"
-              onChange={formik.handleChange}
-              value={formik.values.clientSecret}
+          <div className="flex items-center justify-between space-x-4 py-1">
+            <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+              <Label htmlFor="useFederatedIdentity">Use Azure Federated Identity</Label>
+              <p className="text-neutral-10 text-xs font-normal leading-snug">
+                Authenticate using a Kubernetes service account token (Azure Workload Identity)
+                instead of a client secret. Requires the pod to be configured with Azure Workload
+                Identity.
+              </p>
+            </div>
+            <Switch
+              id="useFederatedIdentity"
+              checked={formik.values.useFederatedIdentity}
+              onCheckedChange={checked =>
+                void formik.setFieldValue('useFederatedIdentity', checked)
+              }
             />
-            <FormError>
-              {mutation.data?.createOIDCIntegration.error?.details.clientSecret}
-            </FormError>
           </div>
+
+          {!formik.values.useFederatedIdentity && (
+            <div>
+              <Label htmlFor="clientSecret">Client Secret</Label>
+              <Input
+                placeholder="Client Secret"
+                id="clientSecret"
+                name="clientSecret"
+                onChange={formik.handleChange}
+                value={formik.values.clientSecret}
+              />
+              <FormError>
+                {mutation.data?.createOIDCIntegration.error?.details.clientSecret}
+              </FormError>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="additionalScopes">Additional Scopes</Label>
@@ -871,6 +893,7 @@ const UpdateOIDCIntegration_OIDCIntegrationFragment = graphql(`
     oidcUserJoinOnly
     oidcUserAccessOnly
     requireInvitation
+    useFederatedIdentity
     defaultMemberRole {
       id
       ...OIDCDefaultRoleSelector_MemberRoleFragment
@@ -895,6 +918,7 @@ const UpdateOIDCIntegrationForm_UpdateOIDCIntegrationMutation = graphql(`
           clientId
           clientSecretPreview
           additionalScopes
+          useFederatedIdentity
         }
       }
       error {
@@ -956,6 +980,7 @@ function UpdateOIDCIntegrationForm(props: {
       clientId: props.oidcIntegration.clientId,
       clientSecret: '',
       additionalScopes: props.oidcIntegration.additionalScopes.join(' '),
+      useFederatedIdentity: props.oidcIntegration.useFederatedIdentity,
     },
     async onSubmit(values) {
       const result = await oidcUpdateMutate({
@@ -965,8 +990,12 @@ function UpdateOIDCIntegrationForm(props: {
           userinfoEndpoint: values.userinfoEndpoint,
           authorizationEndpoint: values.authorizationEndpoint,
           clientId: values.clientId,
-          clientSecret: values.clientSecret === '' ? undefined : values.clientSecret,
+          clientSecret:
+            values.useFederatedIdentity || values.clientSecret === ''
+              ? undefined
+              : values.clientSecret,
           additionalScopes: values.additionalScopes ? values.additionalScopes.split(' ') : [],
+          useFederatedIdentity: values.useFederatedIdentity,
         },
       });
 
@@ -1239,25 +1268,46 @@ function UpdateOIDCIntegrationForm(props: {
                   </FormError>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="clientSecret">Client Secret</Label>
-                  <Input
-                    placeholder={
-                      'Keep old value. (Ending with ' +
-                      props.oidcIntegration.clientSecretPreview.substring(
-                        props.oidcIntegration.clientSecretPreview.length - 4,
-                      ) +
-                      ')'
+                <div className="flex items-center justify-between space-x-4 py-1">
+                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                    <Label htmlFor="useFederatedIdentity">Use Azure Federated Identity</Label>
+                    <p className="text-neutral-10 text-xs font-normal leading-snug">
+                      Authenticate using a Kubernetes service account token (Azure Workload
+                      Identity) instead of a client secret.
+                    </p>
+                  </div>
+                  <Switch
+                    id="useFederatedIdentity"
+                    checked={formik.values.useFederatedIdentity}
+                    onCheckedChange={checked =>
+                      void formik.setFieldValue('useFederatedIdentity', checked)
                     }
-                    id="clientSecret"
-                    name="clientSecret"
-                    onChange={formik.handleChange}
-                    value={formik.values.clientSecret}
                   />
-                  <FormError>
-                    {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.clientSecret}
-                  </FormError>
                 </div>
+
+                {!formik.values.useFederatedIdentity && (
+                  <div className="space-y-2">
+                    <Label htmlFor="clientSecret">Client Secret</Label>
+                    <Input
+                      placeholder={
+                        props.oidcIntegration.clientSecretPreview
+                          ? 'Keep old value. (Ending with ' +
+                            props.oidcIntegration.clientSecretPreview.substring(
+                              props.oidcIntegration.clientSecretPreview.length - 4,
+                            ) +
+                            ')'
+                          : 'Enter new client secret'
+                      }
+                      id="clientSecret"
+                      name="clientSecret"
+                      onChange={formik.handleChange}
+                      value={formik.values.clientSecret}
+                    />
+                    <FormError>
+                      {oidcUpdateMutation.data?.updateOIDCIntegration.error?.details.clientSecret}
+                    </FormError>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="additionalScopes">Additional Scopes</Label>

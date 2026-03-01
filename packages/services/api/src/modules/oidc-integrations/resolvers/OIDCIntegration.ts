@@ -11,6 +11,7 @@ export const OIDCIntegration: OidcIntegrationResolvers = {
   clientId: oidcIntegration => oidcIntegration.clientId,
   clientSecretPreview: (oidcIntegration, _, { injector }) =>
     injector.get(OIDCIntegrationsProvider).getClientSecretPreview(oidcIntegration),
+  useFederatedIdentity: oidcIntegration => oidcIntegration.useFederatedIdentity,
   /**
    * Fallbacks to Viewer if default member role is not set
    */

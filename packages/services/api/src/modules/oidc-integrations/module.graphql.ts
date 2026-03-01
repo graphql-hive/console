@@ -23,6 +23,7 @@ export default gql`
     requireInvitation: Boolean!
     defaultMemberRole: MemberRole!
     defaultResourceAssignment: ResourceAssignment
+    useFederatedIdentity: Boolean!
   }
 
   extend type Mutation {
@@ -79,11 +80,12 @@ export default gql`
   input CreateOIDCIntegrationInput {
     organizationId: ID!
     clientId: ID!
-    clientSecret: String!
+    clientSecret: String
     tokenEndpoint: String!
     userinfoEndpoint: String!
     authorizationEndpoint: String!
     additionalScopes: [String!]!
+    useFederatedIdentity: Boolean
   }
 
   type CreateOIDCIntegrationResult {
@@ -118,6 +120,7 @@ export default gql`
     userinfoEndpoint: String
     authorizationEndpoint: String
     additionalScopes: [String!]
+    useFederatedIdentity: Boolean
   }
 
   type UpdateOIDCIntegrationResult {
