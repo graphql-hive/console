@@ -126,9 +126,13 @@ export class OIDCIntegrationsProvider {
     }
 
     const clientIdResult = OIDCIntegrationClientIdModel.safeParse(args.clientId);
-    const clientSecretResult = args.useFederatedIdentity
-      ? ({ success: true, data: null } as const)
+    const clientSecretValidation = args.useFederatedIdentity
+      ? null
       : OIDCClientSecretModel.safeParse(args.clientSecret);
+    const clientSecretResult = clientSecretValidation ?? ({ success: true, data: null } as const);
+    const clientSecretError = clientSecretValidation?.success === false
+      ? clientSecretValidation.error.issues[0].message
+      : null;
     const tokenEndpointResult = OAuthAPIUrlModel.safeParse(args.tokenEndpoint);
     const userinfoEndpointResult = OAuthAPIUrlModel.safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = OAuthAPIUrlModel.safeParse(args.authorizationEndpoint);
@@ -187,10 +191,7 @@ export class OIDCIntegrationsProvider {
       reason: null,
       fieldErrors: {
         clientId: clientIdResult.success ? null : clientIdResult.error.issues[0].message,
-        clientSecret:
-          clientSecretResult.success || args.useFederatedIdentity
-            ? null
-            : (clientSecretResult as { success: false; error: { issues: Array<{ message: string }> } }).error.issues[0].message,
+        clientSecret: clientSecretError,
         tokenEndpoint: tokenEndpointResult.success
           ? null
           : tokenEndpointResult.error.issues[0].message,
@@ -252,9 +253,13 @@ export class OIDCIntegrationsProvider {
       args.useFederatedIdentity !== null ? args.useFederatedIdentity : integration.useFederatedIdentity;
 
     const clientIdResult = maybe(OIDCIntegrationClientIdModel).safeParse(args.clientId);
-    const clientSecretResult = willUseFederatedIdentity
-      ? ({ success: true, data: null } as const)
+    const clientSecretValidation = willUseFederatedIdentity
+      ? null
       : maybe(OIDCClientSecretModel).safeParse(args.clientSecret);
+    const clientSecretResult = clientSecretValidation ?? ({ success: true, data: null } as const);
+    const clientSecretError = clientSecretValidation?.success === false
+      ? clientSecretValidation.error.issues[0].message
+      : null;
     const tokenEndpointResult = maybe(OAuthAPIUrlModel).safeParse(args.tokenEndpoint);
     const userinfoEndpointResult = maybe(OAuthAPIUrlModel).safeParse(args.userinfoEndpoint);
     const authorizationEndpointResult = maybe(OAuthAPIUrlModel).safeParse(
@@ -326,10 +331,7 @@ export class OIDCIntegrationsProvider {
       message: "Couldn't update integration.",
       fieldErrors: {
         clientId: clientIdResult.success ? null : clientIdResult.error.issues[0].message,
-        clientSecret:
-          clientSecretResult.success || willUseFederatedIdentity
-            ? null
-            : (clientSecretResult as { success: false; error: { issues: Array<{ message: string }> } }).error.issues[0].message,
+        clientSecret: clientSecretError,
         tokenEndpoint: tokenEndpointResult.success
           ? null
           : tokenEndpointResult.error.issues[0].message,

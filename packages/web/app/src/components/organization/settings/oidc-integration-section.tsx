@@ -1296,7 +1296,7 @@ function UpdateOIDCIntegrationForm(props: {
                               props.oidcIntegration.clientSecretPreview.length - 4,
                             ) +
                             ')'
-                          : 'Enter client secret'
+                          : 'Enter new client secret'
                       }
                       id="clientSecret"
                       name="clientSecret"
