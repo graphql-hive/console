@@ -3248,6 +3248,7 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
+          , "use_federated_identity"
         FROM
           "oidc_integrations"
         WHERE
@@ -3279,6 +3280,7 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
+          , "use_federated_identity"
         FROM
           "oidc_integrations"
         WHERE
@@ -3326,7 +3328,8 @@ export async function createStorage(
             "token_endpoint",
             "userinfo_endpoint",
             "authorization_endpoint",
-            "additional_scopes"
+            "additional_scopes",
+            "use_federated_identity"
           )
           VALUES (
             ${args.organizationId},
@@ -3335,7 +3338,8 @@ export async function createStorage(
             ${args.tokenEndpoint},
             ${args.userinfoEndpoint},
             ${args.authorizationEndpoint},
-            ${sql.array(args.additionalScopes, 'text')}
+            ${sql.array(args.additionalScopes, 'text')},
+            ${args.useFederatedIdentity}
           )
           RETURNING
             "id"
@@ -3352,6 +3356,7 @@ export async function createStorage(
             , "default_role_id"
             , "default_assigned_resources"
             , "require_invitation"
+            , "use_federated_identity"
         `);
 
         return {
@@ -3377,7 +3382,7 @@ export async function createStorage(
         UPDATE "oidc_integrations"
         SET
           "client_id" = ${args.clientId ?? sql`"client_id"`}
-          , "client_secret" = ${args.encryptedClientSecret ?? sql`"client_secret"`}
+          , "client_secret" = ${args.encryptedClientSecret !== undefined ? args.encryptedClientSecret : sql`"client_secret"`}
           , "token_endpoint" = ${
             args.tokenEndpoint ??
             /** update existing columns to the old legacy values if not yet stored */
@@ -3394,6 +3399,7 @@ export async function createStorage(
             sql`COALESCE("authorization_endpoint", CONCAT("oauth_api_url", "/authorize"))`
           }
           , "additional_scopes" = ${args.additionalScopes ? sql.array(args.additionalScopes, 'text') : sql`"additional_scopes"`}
+          , "use_federated_identity" = ${args.useFederatedIdentity ?? sql`"use_federated_identity"`}
           , "oauth_api_url" = NULL
         WHERE
           "id" = ${args.oidcIntegrationId}
@@ -3412,6 +3418,7 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
+          , "use_federated_identity"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3441,6 +3448,7 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
+          , "use_federated_identity"
       `);
 
       return decodeOktaIntegrationRecord(result);
@@ -3469,6 +3477,7 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
+          , "use_federated_identity"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -3512,6 +3521,7 @@ export async function createStorage(
           , "default_role_id"
           , "default_assigned_resources"
           , "require_invitation"
+          , "use_federated_identity"
         `);
 
         return decodeOktaIntegrationRecord(result);
@@ -5069,7 +5079,7 @@ const OktaIntegrationBaseModel = zod.object({
   id: zod.string(),
   linked_organization_id: zod.string(),
   client_id: zod.string(),
-  client_secret: zod.string(),
+  client_secret: zod.string().nullable(),
   additional_scopes: zod
     .array(zod.string())
     .nullable()
@@ -5079,6 +5089,7 @@ const OktaIntegrationBaseModel = zod.object({
   default_role_id: zod.string().nullable(),
   default_assigned_resources: zod.any().nullable(),
   require_invitation: zod.boolean(),
+  use_federated_identity: zod.boolean(),
 });
 
 const OktaIntegrationLegacyModel = zod.intersection(
@@ -5118,6 +5129,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
       requireInvitation: rawRecord.require_invitation,
       defaultMemberRoleId: rawRecord.default_role_id,
       defaultResourceAssignment: rawRecord.default_assigned_resources,
+      useFederatedIdentity: rawRecord.use_federated_identity,
     };
   }
 
@@ -5135,6 +5147,7 @@ const decodeOktaIntegrationRecord = (result: unknown): OIDCIntegration => {
     requireInvitation: rawRecord.require_invitation,
     defaultMemberRoleId: rawRecord.default_role_id,
     defaultResourceAssignment: rawRecord.default_assigned_resources,
+    useFederatedIdentity: rawRecord.use_federated_identity,
   };
 };
 
