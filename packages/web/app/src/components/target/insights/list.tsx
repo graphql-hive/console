@@ -11,9 +11,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Sortable, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { DateRangeInput } from '@/gql/graphql';
+import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { useDecimal, useFormattedDuration, useFormattedNumber } from '@/lib/hooks';
-import { pick } from '@/lib/object';
 import { ChevronUpIcon, ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import {
   createColumnHelper,
@@ -24,7 +23,7 @@ import {
   PaginationState,
   useReactTable,
 } from '@tanstack/react-table';
-import { OperationsFallback } from './Fallback';
+import { OperationsFallback } from './fallback';
 
 interface Operation {
   id: string;
@@ -79,11 +78,10 @@ function OperationRow({
                   operationName: operation.name,
                   operationHash: operation.hash,
                 }}
-                search={searchParams => ({
-                  ...pick(searchParams, ['clients']),
+                search={{
                   from: selectedPeriod?.from ? encodeURIComponent(selectedPeriod.from) : undefined,
                   to: selectedPeriod?.to ? encodeURIComponent(selectedPeriod.to) : undefined,
-                })}
+                }}
               >
                 {operation.name}
               </Link>
@@ -231,8 +229,6 @@ function OperationsTable({
 
   const { headers } = tableInstance.getHeaderGroups()[0];
 
-  const sortedColumnsById = tableInstance.getState().sorting.map(s => s.id);
-
   return (
     <div
       className={clsx(
@@ -260,7 +256,6 @@ function OperationsTable({
                       <Sortable
                         sortOrder={header.column.getIsSorted()}
                         onClick={header.column.getToggleSortingHandler()}
-                        otherColumnSorted={sortedColumnsById.some(id => id !== header.id)}
                       >
                         {name}
                       </Sortable>
@@ -501,8 +496,7 @@ export function OperationsList({
   projectSlug,
   targetSlug,
   period,
-  operationsFilter = [],
-  clientNamesFilter = [],
+  filter,
   selectedPeriod,
 }: {
   className?: string;
@@ -510,9 +504,7 @@ export function OperationsList({
   projectSlug: string;
   targetSlug: string;
   period: DateRangeInput;
-  /** Operation IDs to filter on */
-  operationsFilter: string[];
-  clientNamesFilter: string[];
+  filter: OperationStatsFilterInput;
   selectedPeriod: null | { to: string; from: string };
 }): ReactElement {
   const [clientFilter, setClientFilter] = useState<string | null>(null);
@@ -525,10 +517,7 @@ export function OperationsList({
         targetSlug,
       },
       period,
-      filter: {
-        operationIds: operationsFilter,
-        clientNames: clientNamesFilter,
-      },
+      filter,
     },
   });
 
@@ -538,7 +527,7 @@ export function OperationsList({
     if (!query.fetching) {
       refetch();
     }
-  }, [period]);
+  }, [period, filter]);
 
   return (
     <OperationsFallback

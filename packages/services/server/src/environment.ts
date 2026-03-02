@@ -106,6 +106,7 @@ const SuperTokensModel = zod.union([
     SUPERTOKENS_API_KEY: zod.string(),
     SUPERTOKENS_RATE_LIMIT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
     SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME: emptyString(zod.string().optional()),
+    SUPERTOKENS_RATE_LIMIT_BYPASS_KEY: emptyString(zod.string().optional()),
   }),
   zod.object({
     SUPERTOKENS_AT_HOME: zod.literal('1'),
@@ -113,6 +114,7 @@ const SuperTokensModel = zod.union([
     SUPERTOKENS_ACCESS_TOKEN_KEY: zod.string(),
     SUPERTOKENS_RATE_LIMIT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
     SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME: emptyString(zod.string().optional()),
+    SUPERTOKENS_RATE_LIMIT_BYPASS_KEY: emptyString(zod.string().optional()),
   }),
 ]);
 
@@ -455,6 +457,7 @@ export const env = {
               : {
                   ipHeaderName:
                     supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
+                  bypassKey: supertokens.SUPERTOKENS_RATE_LIMIT_BYPASS_KEY ?? null,
                 },
         }
       : {
@@ -467,6 +470,7 @@ export const env = {
               : {
                   ipHeaderName:
                     supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
+                  bypassKey: supertokens.SUPERTOKENS_RATE_LIMIT_BYPASS_KEY ?? null,
                 },
         },
   auth: {

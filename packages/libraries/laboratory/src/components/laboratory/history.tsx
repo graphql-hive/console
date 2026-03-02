@@ -1,13 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
-import { format } from "date-fns";
-import {
-  ClockIcon,
-  FolderClockIcon,
-  FolderOpenIcon,
-  HistoryIcon,
-  TrashIcon,
-} from "lucide-react";
-import { useLaboratory } from "@/components/laboratory/context";
+import { useCallback, useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { ClockIcon, FolderClockIcon, FolderOpenIcon, HistoryIcon, TrashIcon } from 'lucide-react';
+import type { LaboratoryHistory, LaboratoryHistoryRequest } from '../../lib/history';
+import { cn } from '../../lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,40 +13,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type {
-  LaboratoryHistory,
-  LaboratoryHistoryRequest,
-} from "@/lib/history";
-import { cn } from "@/lib/utils";
+} from '../ui/alert-dialog';
+import { Button } from '../ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { useLaboratory } from './context';
 
-export const HistoryOperationItem = (props: {
-  historyItem: LaboratoryHistoryRequest;
-}) => {
+export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequest }) => {
   const { activeTab, addTab, setActiveTab, deleteHistory } = useLaboratory();
 
   const isActive = useMemo(() => {
     return (
-      activeTab?.type === "history" &&
+      activeTab?.type === 'history' &&
       (activeTab.data as LaboratoryHistoryRequest).id === props.historyItem.id
     );
   }, [activeTab, props.historyItem]);
@@ -64,8 +39,7 @@ export const HistoryOperationItem = (props: {
     return (
       props.historyItem.status < 200 ||
       props.historyItem.status >= 300 ||
-      ("response" in props.historyItem &&
-        JSON.parse(props.historyItem.response).errors)
+      ('response' in props.historyItem && JSON.parse(props.historyItem.response).errors)
     );
   }, [props.historyItem]);
 
@@ -73,36 +47,31 @@ export const HistoryOperationItem = (props: {
     <Button
       variant="ghost"
       size="sm"
-      className={cn(
-        "bg-background group sticky top-0 w-full justify-start px-2",
-        {
-          "bg-accent/50": isActive,
-        }
-      )}
+      className={cn('bg-background group sticky top-0 w-full justify-start px-2', {
+        'bg-accent/50': isActive,
+      })}
       onClick={() => {
         setActiveTab(
           addTab({
-            type: "history",
+            type: 'history',
             data: props.historyItem,
             readOnly: true,
-          })
+          }),
         );
       }}
     >
       <HistoryIcon
-        className={cn("size-4 text-indigo-400", {
-          "text-green-500":
+        className={cn('size-4 text-indigo-400', {
+          'text-green-500':
             !props.historyItem.status ||
             (props.historyItem.status >= 200 && props.historyItem.status < 300),
-          "text-red-500": isError,
+          'text-red-500': isError,
         })}
       />
       <span className="text-muted-foreground">
-        {format(new Date(props.historyItem.createdAt), "HH:mm")}
+        {format(new Date(props.historyItem.createdAt), 'HH:mm')}
       </span>
-      <div className="truncate">
-        {props.historyItem.operation.name || "Untitled"}
-      </div>
+      <div className="truncate">{props.historyItem.operation.name || 'Untitled'}</div>
       <div className="ml-auto flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -111,7 +80,7 @@ export const HistoryOperationItem = (props: {
                 <Button
                   variant="link"
                   className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                   }}
                 >
@@ -120,9 +89,7 @@ export const HistoryOperationItem = (props: {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Are you sure you want to delete history?
-                  </AlertDialogTitle>
+                  <AlertDialogTitle>Are you sure you want to delete history?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This history operation will be permanently deleted.
                   </AlertDialogDescription>
@@ -132,7 +99,7 @@ export const HistoryOperationItem = (props: {
                   <AlertDialogAction asChild>
                     <Button
                       variant="destructive"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         deleteHistory(props.historyItem.id);
                       }}
@@ -151,9 +118,7 @@ export const HistoryOperationItem = (props: {
   );
 };
 
-export const HistoryGroup = (props: {
-  group: { date: string; items: LaboratoryHistory[] };
-}) => {
+export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHistory[] } }) => {
   const { deleteHistoryByDay } = useLaboratory();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -178,7 +143,7 @@ export const HistoryGroup = (props: {
                   <Button
                     variant="link"
                     className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                     }}
                   >
@@ -187,12 +152,9 @@ export const HistoryGroup = (props: {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Are you sure you want to delete history?
-                    </AlertDialogTitle>
+                    <AlertDialogTitle>Are you sure you want to delete history?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      All history for {props.group.date} will be permanently
-                      deleted.
+                      All history for {props.group.date} will be permanently deleted.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -200,7 +162,7 @@ export const HistoryGroup = (props: {
                     <AlertDialogAction asChild>
                       <Button
                         variant="destructive"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           deleteHistoryByDay(props.group.date);
                         }}
@@ -216,16 +178,9 @@ export const HistoryGroup = (props: {
           </Tooltip>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent
-        className={cn("border-border ml-4 flex flex-col gap-1 border-l pl-2")}
-      >
-        {props.group.items.map((h) => {
-          return (
-            <HistoryOperationItem
-              key={h.id}
-              historyItem={h as LaboratoryHistoryRequest}
-            />
-          );
+      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
+        {props.group.items.map(h => {
+          return <HistoryOperationItem key={h.id} historyItem={h as LaboratoryHistoryRequest} />;
         })}
       </CollapsibleContent>
     </Collapsible>
@@ -233,21 +188,19 @@ export const HistoryGroup = (props: {
 };
 
 export const History = () => {
-  const { history, deleteAllHistory, tabs, setTabs, setActiveTab } =
-    useLaboratory();
+  const { history, deleteAllHistory, tabs, setTabs, setActiveTab } = useLaboratory();
 
   const historyItems = useMemo(() => {
     return history.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, [history]);
 
   const goupedByDate = useMemo(() => {
     return historyItems.reduce(
       (acc, h) => {
-        const date = format(new Date(h.createdAt), "dd MMM yyyy");
-        let item = acc.find((i) => i.date === date);
+        const date = format(new Date(h.createdAt), 'dd MMM yyyy');
+        let item = acc.find(i => i.date === date);
 
         if (!item) {
           item = { date, items: [] };
@@ -259,15 +212,15 @@ export const History = () => {
 
         return acc;
       },
-      [] as { date: string; items: LaboratoryHistory[] }[]
+      [] as { date: string; items: LaboratoryHistory[] }[],
     );
   }, [historyItems]);
 
   const handleDeleteAllHistory = useCallback(() => {
     deleteAllHistory();
-    setTabs(tabs.filter((t) => t.type !== "history"));
+    setTabs(tabs.filter(t => t.type !== 'history'));
 
-    const newTab = tabs.find((t) => t.type !== "history");
+    const newTab = tabs.find(t => t.type !== 'history');
 
     if (newTab) {
       setActiveTab(newTab);
@@ -306,7 +259,7 @@ export const History = () => {
                     <AlertDialogAction asChild>
                       <Button
                         variant="destructive"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           handleDeleteAllHistory();
                         }}
@@ -326,7 +279,7 @@ export const History = () => {
         <ScrollArea className="size-full">
           <div className="flex flex-col gap-1 p-3">
             {goupedByDate.length > 0 ? (
-              goupedByDate.map((group) => {
+              goupedByDate.map(group => {
                 return <HistoryGroup key={group.date} group={group} />;
               })
             ) : (
@@ -337,8 +290,7 @@ export const History = () => {
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No history yet</EmptyTitle>
                   <EmptyDescription className="text-xs">
-                    You haven't run any operations yet. Get started by running
-                    your first operation.
+                    You haven't run any operations yet. Get started by running your first operation.
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>

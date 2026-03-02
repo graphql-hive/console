@@ -1,12 +1,5 @@
-import { Fragment, useEffect, useState } from "react";
-import {
-  FilePlus2Icon,
-  FolderPlusIcon,
-  PlayIcon,
-  RefreshCcwIcon,
-  ServerIcon,
-} from "lucide-react";
-import { useLaboratory } from "@/components/laboratory/context";
+import { Fragment, useEffect, useState } from 'react';
+import { FilePlus2Icon, FolderPlusIcon, PlayIcon, RefreshCcwIcon, ServerIcon } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -16,12 +9,10 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command";
+} from '../ui/command';
+import { useLaboratory } from './context';
 
-export function Command(props: {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-}) {
+export function Command(props: { open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const {
     endpoint,
     openAddCollectionDialog,
@@ -44,7 +35,7 @@ export function Command(props: {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === "j" && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'j' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         const newOpen = !open;
         setOpen(newOpen);
@@ -52,15 +43,15 @@ export function Command(props: {
       }
     };
 
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
   }, [open, props]);
 
   return (
     <>
       <CommandDialog
         open={open}
-        onOpenChange={(newOpen) => {
+        onOpenChange={newOpen => {
           setOpen(newOpen);
           props.onOpenChange?.(newOpen);
         }}
@@ -83,14 +74,14 @@ export function Command(props: {
             <CommandItem
               onSelect={() => {
                 const newOperation = addOperation({
-                  name: "",
-                  query: "",
-                  variables: "",
-                  headers: "",
-                  extensions: "",
+                  name: '',
+                  query: '',
+                  variables: '',
+                  headers: '',
+                  extensions: '',
                 });
                 const tab = addTab({
-                  type: "operation",
+                  type: 'operation',
                   data: newOperation,
                 });
 
@@ -140,9 +131,9 @@ export function Command(props: {
             <CommandItem
               onSelect={() => {
                 const tab =
-                  tabs.find((t) => t.type === "env") ??
+                  tabs.find(t => t.type === 'env') ??
                   addTab({
-                    type: "env",
+                    type: 'env',
                     data: env ?? { variables: {} },
                   });
 
@@ -156,10 +147,10 @@ export function Command(props: {
             <CommandItem
               onSelect={() => {
                 const tab =
-                  tabs.find((t) => t.type === "preflight") ??
+                  tabs.find(t => t.type === 'preflight') ??
                   addTab({
-                    type: "preflight",
-                    data: preflight ?? { script: "" },
+                    type: 'preflight',
+                    data: preflight ?? { script: '' },
                   });
 
                 setActiveTab(tab);
@@ -171,8 +162,8 @@ export function Command(props: {
             </CommandItem>
           </CommandGroup>
           {plugins
-            .filter((plugin) => !!plugin.commands?.length)
-            .map((plugin) => (
+            .filter(plugin => !!plugin.commands?.length)
+            .map(plugin => (
               <Fragment key={plugin.name}>
                 <CommandSeparator />
                 <CommandGroup heading={plugin.name}>
@@ -184,11 +175,11 @@ export function Command(props: {
                         setOpen(false);
                       }}
                     >
-                      {typeof command.icon === "function"
+                      {typeof command.icon === 'function'
                         ? command.icon(laboratory, {})
                         : command.icon}
                       <span>
-                        {typeof command.name === "function"
+                        {typeof command.name === 'function'
                           ? command.name(laboratory, {})
                           : command.name}
                       </span>

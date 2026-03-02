@@ -1,25 +1,13 @@
-import { z } from "zod";
-import { useLaboratory } from "@/components/laboratory/context";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useForm } from "@tanstack/react-form";
+import { z } from 'zod';
+import { useForm } from '@tanstack/react-form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Field, FieldGroup, FieldLabel } from '../ui/field';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useLaboratory } from './context';
 
 const settingsFormSchema = z.object({
   fetch: z.object({
-    credentials: z.enum(["include", "omit", "same-origin"]),
+    credentials: z.enum(['include', 'omit', 'same-origin']),
   }),
 });
 
@@ -47,16 +35,13 @@ export const Settings = () => {
         <Card>
           <CardHeader>
             <CardTitle>Fetch</CardTitle>
-            <CardDescription>
-              Configure the fetch options for the laboratory.
-            </CardDescription>
+            <CardDescription>Configure the fetch options for the laboratory.</CardDescription>
           </CardHeader>
           <CardContent>
             <FieldGroup>
               <form.Field name="fetch.credentials">
-                {(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
+                {field => {
+                  const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
                   return (
                     <Field data-invalid={isInvalid}>
@@ -64,10 +49,8 @@ export const Settings = () => {
                       <Select
                         name={field.name}
                         value={field.state.value}
-                        onValueChange={(value) =>
-                          field.handleChange(
-                            value as "include" | "omit" | "same-origin"
-                          )
+                        onValueChange={value =>
+                          field.handleChange(value as 'include' | 'omit' | 'same-origin')
                         }
                       >
                         <SelectTrigger id={field.name} aria-invalid={isInvalid}>
@@ -76,9 +59,7 @@ export const Settings = () => {
                         <SelectContent>
                           <SelectItem value="include">Include</SelectItem>
                           <SelectItem value="omit">Omit</SelectItem>
-                          <SelectItem value="same-origin">
-                            Same-origin
-                          </SelectItem>
+                          <SelectItem value="same-origin">Same-origin</SelectItem>
                         </SelectContent>
                       </Select>
                     </Field>

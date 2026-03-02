@@ -1,25 +1,22 @@
 import { ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import laboratoryStyles from '../../index.css?inline';
 import { FileIcon, FoldersIcon, HistoryIcon, SettingsIcon } from 'lucide-react';
 import monacoStyles from 'monaco-editor/min/vs/editor/editor.main.css?inline';
 import * as z from 'zod';
-import { Collections } from '@/components/laboratory/collections';
-import { Command } from '@/components/laboratory/command';
-import {
-  LaboratoryPermission,
-  LaboratoryPermissions,
-  LaboratoryProvider,
-  useLaboratory,
-  type LaboratoryApi,
-} from '@/components/laboratory/context';
-import { Env } from '@/components/laboratory/env';
-import { History } from '@/components/laboratory/history';
-import { HistoryItem } from '@/components/laboratory/history-item';
-import { Operation } from '@/components/laboratory/operation';
-import { Preflight } from '@/components/laboratory/preflight';
-import { Settings } from '@/components/laboratory/settings';
-import { Tabs } from '@/components/laboratory/tabs';
-import { Button } from '@/components/ui/button';
+import { useForm } from '@tanstack/react-form';
+import { useCollections } from '../../lib/collections';
+import { useEndpoint } from '../../lib/endpoint';
+import { useEnv } from '../../lib/env';
+import { useHistory } from '../../lib/history';
+import { useOperations } from '../../lib/operations';
+import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
+import { usePreflight } from '../../lib/preflight';
+import { useSettings } from '../../lib/settings';
+import { LaboratoryTabCustom, useTabs } from '../../lib/tabs';
+import { useTests } from '../../lib/tests';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
 import {
   Dialog,
   DialogClose,
@@ -28,7 +25,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from '../ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '../ui/dropdown-menu';
 import {
   Empty,
   EmptyContent,
@@ -45,25 +42,28 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from '@/components/ui/empty';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { Toaster } from '@/components/ui/sonner';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import laboratoryStyles from '@/index.css?inline';
-import { useCollections } from '@/lib/collections';
-import { useEndpoint } from '@/lib/endpoint';
-import { useEnv } from '@/lib/env';
-import { useHistory } from '@/lib/history';
-import { useOperations } from '@/lib/operations';
-import { LaboratoryPluginTab, usePlugins } from '@/lib/plugins';
-import { usePreflight } from '@/lib/preflight';
-import { useSettings } from '@/lib/settings';
-import { LaboratoryTabCustom, useTabs } from '@/lib/tabs';
-import { useTests } from '@/lib/tests';
-import { cn } from '@/lib/utils';
-import { useForm } from '@tanstack/react-form';
+} from '../ui/empty';
+import { Field, FieldError, FieldGroup, FieldLabel } from '../ui/field';
+import { Input } from '../ui/input';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
+import { Toaster } from '../ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Collections } from './collections';
+import { Command } from './command';
+import {
+  LaboratoryPermission,
+  LaboratoryPermissions,
+  LaboratoryProvider,
+  useLaboratory,
+  type LaboratoryApi,
+} from './context';
+import { Env } from './env';
+import { History } from './history';
+import { HistoryItem } from './history-item';
+import { Operation } from './operation';
+import { Preflight } from './preflight';
+import { Settings } from './settings';
+import { Tabs } from './tabs';
 
 const ShadowRootContainer = (props: { children: ReactNode }) => {
   const hostRef = useRef<HTMLDivElement | null>(null);

@@ -4,7 +4,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     // ensure that nobody can accidentally use this config for a build
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx"
   },
   "include": [
     "deployment",

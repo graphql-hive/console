@@ -149,6 +149,19 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'saved-filters',
+    title: 'Saved Filters',
+    permissions: [
+      {
+        id: 'sharedSavedFilter:modify',
+        title: 'Manage shared saved filters',
+        description:
+          'Member can create, update, and delete shared saved filters. All members can manage their own private filters.',
+        dependsOn: 'project:describe',
+      },
+    ],
+  },
+  {
     id: 'schema-linting',
     title: 'Schema Linting',
     permissions: [

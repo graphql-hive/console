@@ -1,5 +1,5 @@
-import { useLaboratory } from "@/components/laboratory/context";
-import { Editor } from "@/components/laboratory/editor";
+import { useLaboratory } from './context';
+import { Editor } from './editor';
 
 export const Env = () => {
   const { env, setEnv } = useLaboratory();
@@ -9,25 +9,25 @@ export const Env = () => {
       <Editor
         defaultValue={Object.entries(env?.variables ?? {})
           .map(([key, value]) => `${key}=${value}`)
-          .join("\n")}
-        onChange={(value) => {
+          .join('\n')}
+        onChange={value => {
           setEnv({
             variables: Object.fromEntries(
               value
-                ?.split("\n")
-                .filter((line) => line.trim() && !line.trim().startsWith("#"))
-                .map((line) => {
+                ?.split('\n')
+                .filter(line => line.trim() && !line.trim().startsWith('#'))
+                .map(line => {
                   const parts = line.split(/=(.*)/s);
 
-                  return [parts[0].trim(), (parts[1] ?? "").trim()];
-                }) ?? []
+                  return [parts[0].trim(), (parts[1] ?? '').trim()];
+                }) ?? [],
             ),
           });
         }}
         language="dotenv"
         options={{
           scrollbar: {
-            horizontal: "hidden",
+            horizontal: 'hidden',
           },
         }}
       />

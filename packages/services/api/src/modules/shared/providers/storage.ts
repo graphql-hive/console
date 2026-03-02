@@ -413,7 +413,6 @@ export interface Storage {
     first: number | null;
     cursor: null | string;
   }): Promise<PaginatedSchemaVersionConnection>;
-  // @todo consider moving to proposals provider
   getPaginatedSchemaChecksForSchemaProposal<
     TransformedSchemaCheck extends SchemaCheck = SchemaCheck,
   >(_: {

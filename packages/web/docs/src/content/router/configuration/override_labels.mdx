@@ -102,7 +102,7 @@ Within the `expression`, you have access to the following context:
 override_labels:
   # This label will be active for 5% of the traffic
   use-fulfillment-service:
-    expession: 'random_float(0.0, 100.0) < 5.0'
+    expression: 'random_float(0.0, 100.0) < 5.0'
 
   activate-beta-feature:
     expression: '.request.headers."x-user-group" == "beta"'

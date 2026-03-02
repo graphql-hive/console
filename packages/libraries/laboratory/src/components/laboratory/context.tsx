@@ -5,32 +5,36 @@ import {
   type LaboratoryCollectionOperation,
   type LaboratoryCollectionsActions,
   type LaboratoryCollectionsState,
-} from '@/lib/collections';
-import { type LaboratoryEndpointActions, type LaboratoryEndpointState } from '@/lib/endpoint';
-import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
+} from '../../lib/collections';
+import { type LaboratoryEndpointActions, type LaboratoryEndpointState } from '../../lib/endpoint';
+import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '../../lib/env';
 import type {
   LaboratoryHistory,
   LaboratoryHistoryActions,
   LaboratoryHistoryState,
-} from '@/lib/history';
+} from '../../lib/history';
 import {
   type LaboratoryOperation,
   type LaboratoryOperationsActions,
   type LaboratoryOperationsState,
-} from '@/lib/operations';
-import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } from '@/lib/plugins';
+} from '../../lib/operations';
+import {
+  LaboratoryPlugin,
+  LaboratoryPluginsActions,
+  LaboratoryPluginsState,
+} from '../../lib/plugins';
 import type {
   LaboratoryPreflight,
   LaboratoryPreflightActions,
   LaboratoryPreflightState,
-} from '@/lib/preflight';
+} from '../../lib/preflight';
 import type {
   LaboratorySettings,
   LaboratorySettingsActions,
   LaboratorySettingsState,
-} from '@/lib/settings';
-import type { LaboratoryTab, LaboratoryTabsActions, LaboratoryTabsState } from '@/lib/tabs';
-import type { LaboratoryTest, LaboratoryTestActions, LaboratoryTestState } from '@/lib/tests';
+} from '../../lib/settings';
+import type { LaboratoryTab, LaboratoryTabsActions, LaboratoryTabsState } from '../../lib/tabs';
+import type { LaboratoryTest, LaboratoryTestActions, LaboratoryTestState } from '../../lib/tests';
 
 type LaboratoryContextState = LaboratoryCollectionsState &
   LaboratoryEndpointState &

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
 import { z } from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { SubPageNavigationLink } from '@/components/navigation/sub-page-navigation-link';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -14,7 +15,6 @@ import { CreateAccessTokenModal } from '@/components/target/settings/registry-ac
 import { SchemaContracts } from '@/components/target/settings/schema-contracts';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,

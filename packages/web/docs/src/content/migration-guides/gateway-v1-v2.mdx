@@ -333,7 +333,7 @@ the log level to "warn".
 
 #### Logging in JSON Format
 
-Previously, the Hive Gateway used two different environment variables to trigger loggin in JSON
+Previously, the Hive Gateway used two different environment variables to trigger logging in JSON
 format:
 
 - `LOG_FORMAT=json`
@@ -553,7 +553,7 @@ logs.
 npm i pino pino-pretty
 ```
 
-Since we're using a custom log writter, you have to install the Hive Logger package too:
+Since we're using a custom log writer, you have to install the Hive Logger package too:
 
 ```sh npm2yarn
 npm i @graphql-hive/logger
@@ -591,7 +591,7 @@ Logger's logs.
 npm i winston
 ```
 
-Since we're using a custom log writter, you have to install the Hive Logger package too:
+Since we're using a custom log writer, you have to install the Hive Logger package too:
 
 ```sh npm2yarn
 npm i @graphql-hive/logger
@@ -621,7 +621,7 @@ export const gatewayConfig = defineConfig({
 ## OpenTelemetry
 
 OpenTelemetry integration have been re-worked to offer better traces, custom attributes and spans,
-and overall compatiblity with standard OTEL API.
+and overall compatibility with standard OTEL API.
 
 For this features to be possible, we had to break the configuration API of the old plugin and
 release a brand new one `@graphql-**hive**/plugin-opentelemetry`. Everyone that has used the plugin
@@ -658,7 +658,7 @@ hive-gateway supergraph supergraph.graphql \
 ### SDK Setup
 
 The OpenTelemetry SDK setup used to be automatically done by the plugin it self, it is no longer the
-case. You have the choice to either setup it yourself using official `@opentelemetry/*` pacakges
+case. You have the choice to either setup it yourself using official `@opentelemetry/*` packages
 (like official Node SDK `@opentelemetry/sdk-node`), or to use our cross-plateform setup helper
 (recommended).
 
@@ -698,8 +698,8 @@ Due to internal changes, the information available at span filtering time has be
 include (depending on the span) the GraphQL `context`, the HTTP `request` and the Upstream
 `executionRequest`.
 
-Please refere to [Request Spans documentation](/docs/gateway/monitoring-tracing#request-spans) for
-details of what is availbe for each span filter.
+Please refer to [Request Spans documentation](/docs/gateway/monitoring-tracing#request-spans) for
+details of what is available for each span filter.
 
 ### Span parenting
 

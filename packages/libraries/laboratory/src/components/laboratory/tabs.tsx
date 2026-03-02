@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { capitalize } from "lodash";
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { capitalize } from 'lodash';
 import {
   CirclePlus,
   FileIcon,
@@ -12,33 +12,29 @@ import {
   ScrollTextIcon,
   SettingsIcon,
   XIcon,
-} from "lucide-react";
-import { GraphQLIcon } from "@/components/icons";
-import { useLaboratory } from "@/components/laboratory/context";
-import { Button } from "@/components/ui/button";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import * as Sortable from "@/components/ui/sortable";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getOperationName, getOperationType } from "@/lib/operations.utils";
-import { LaboratoryPluginTab } from "@/lib/plugins";
+} from 'lucide-react';
+import { getOperationName, getOperationType } from '../../lib/operations.utils';
+import { LaboratoryPluginTab } from '../../lib/plugins';
 import type {
   LaboratoryTab,
   LaboratoryTabHistory,
   LaboratoryTabOperation,
   LaboratoryTabTest,
-} from "@/lib/tabs";
-import { cn } from "@/lib/utils";
+} from '../../lib/tabs';
+import { cn } from '../../lib/utils';
+import { GraphQLIcon } from '../icons';
+import { Button } from '../ui/button';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '../ui/context-menu';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import * as Sortable from '../ui/sortable';
+import { Spinner } from '../ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { useLaboratory } from './context';
 
 export const Tab = (props: {
   item: LaboratoryTab;
@@ -65,10 +61,10 @@ export const Tab = (props: {
       bypassMouseDownRef.current = false;
     }
 
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, []);
 
@@ -77,35 +73,29 @@ export const Tab = (props: {
   }, [props.activeTab, props.item]);
 
   const historyItem = useMemo(() => {
-    if (props.item.type !== "history") {
+    if (props.item.type !== 'history') {
       return null;
     }
 
     return history.find(
-      (h) =>
-        props.item.type === "history" &&
-        h.id === (props.item.data as LaboratoryTabHistory).id
+      h => props.item.type === 'history' && h.id === (props.item.data as LaboratoryTabHistory).id,
     );
   }, [history, props.item]);
 
   const operation = useMemo(() => {
-    if (props.item.type !== "operation") {
+    if (props.item.type !== 'operation') {
       return null;
     }
 
-    return operations.find(
-      (o) => o.id === (props.item.data as LaboratoryTabOperation).id
-    );
+    return operations.find(o => o.id === (props.item.data as LaboratoryTabOperation).id);
   }, [props.item, operations]);
 
   const test = useMemo(() => {
-    if (props.item.type !== "test") {
+    if (props.item.type !== 'test') {
       return null;
     }
 
-    return tests.find(
-      (t) => t.id === (props.item.data as LaboratoryTabTest).id
-    );
+    return tests.find(t => t.id === (props.item.data as LaboratoryTabTest).id);
   }, [props.item, tests]);
 
   const isError = useMemo(() => {
@@ -114,9 +104,9 @@ export const Tab = (props: {
     }
 
     return (
-      ("status" in historyItem && historyItem.status! < 200) ||
-      ("status" in historyItem && historyItem.status! >= 300) ||
-      ("response" in historyItem && JSON.parse(historyItem.response).errors)
+      ('status' in historyItem && historyItem.status! < 200) ||
+      ('status' in historyItem && historyItem.status! >= 300) ||
+      ('response' in historyItem && JSON.parse(historyItem.response).errors)
     );
   }, [historyItem]);
 
@@ -133,16 +123,11 @@ export const Tab = (props: {
   }, [props]);
 
   const tabName = useMemo(() => {
-    if (props.item.type === "operation") {
-      const name =
-        operation?.name ||
-        getOperationName(operation?.query || "") ||
-        "Untitled";
+    if (props.item.type === 'operation') {
+      const name = operation?.name || getOperationName(operation?.query || '') || 'Untitled';
 
-      if (name === "Untitled") {
-        const type = capitalize(
-          getOperationType(operation?.query || "") || "query"
-        );
+      if (name === 'Untitled') {
+        const type = capitalize(getOperationType(operation?.query || '') || 'query');
 
         return name + type;
       }
@@ -150,16 +135,14 @@ export const Tab = (props: {
       return name;
     }
 
-    if (props.item.type === "history") {
+    if (props.item.type === 'history') {
       const name =
         historyItem?.operation.name ||
-        getOperationName(historyItem?.operation.query || "") ||
-        "Untitled";
+        getOperationName(historyItem?.operation.query || '') ||
+        'Untitled';
 
-      if (name === "Untitled") {
-        const type = capitalize(
-          getOperationType(historyItem?.operation.query || "") || "query"
-        );
+      if (name === 'Untitled') {
+        const type = capitalize(getOperationType(historyItem?.operation.query || '') || 'query');
 
         return name + type;
       }
@@ -167,20 +150,20 @@ export const Tab = (props: {
       return name;
     }
 
-    if (props.item.type === "preflight") {
-      return "Preflight";
+    if (props.item.type === 'preflight') {
+      return 'Preflight';
     }
 
-    if (props.item.type === "env") {
-      return "Environment Variables";
+    if (props.item.type === 'env') {
+      return 'Environment Variables';
     }
 
-    if (props.item.type === "settings") {
-      return "Settings";
+    if (props.item.type === 'settings') {
+      return 'Settings';
     }
 
-    if (props.item.type === "test") {
-      return test?.name || "Untitled";
+    if (props.item.type === 'test') {
+      return test?.name || 'Untitled';
     }
 
     let customTab: LaboratoryPluginTab<Record<string, unknown>> | null = null;
@@ -195,45 +178,45 @@ export const Tab = (props: {
     }
 
     if (customTab) {
-      if (typeof customTab.name === "function") {
+      if (typeof customTab.name === 'function') {
         return customTab.name(laboratory, {});
       }
 
       return customTab.name;
     }
 
-    return "Untitled";
+    return 'Untitled';
   }, [props.item, historyItem, operation, test]);
 
   const tabIcon = useMemo(() => {
-    if (props.item.type === "operation") {
+    if (props.item.type === 'operation') {
       return <GraphQLIcon className="size-4 text-pink-500" />;
     }
 
-    if (props.item.type === "preflight") {
+    if (props.item.type === 'preflight') {
       return <ScrollTextIcon className="size-4 text-teal-400" />;
     }
 
-    if (props.item.type === "env") {
+    if (props.item.type === 'env') {
       return <GlobeIcon className="size-4 text-blue-400" />;
     }
 
-    if (props.item.type === "history") {
+    if (props.item.type === 'history') {
       return (
         <HistoryIcon
-          className={cn("size-4 text-indigo-400", {
-            "text-green-500": !isError,
-            "text-red-500": isError,
+          className={cn('size-4 text-indigo-400', {
+            'text-green-500': !isError,
+            'text-red-500': isError,
           })}
         />
       );
     }
 
-    if (props.item.type === "settings") {
+    if (props.item.type === 'settings') {
       return <SettingsIcon className="size-4 text-gray-400" />;
     }
 
-    if (props.item.type === "test") {
+    if (props.item.type === 'test') {
       return <FlaskConicalIcon className="size-4 text-lime-400" />;
     }
 
@@ -249,7 +232,7 @@ export const Tab = (props: {
     }
 
     if (customTab) {
-      if (typeof customTab.icon === "function") {
+      if (typeof customTab.icon === 'function') {
         return customTab.icon(laboratory, {});
       }
 
@@ -266,13 +249,13 @@ export const Tab = (props: {
           value={props.item.id}
           asHandle
           className={cn(
-            "data-dragging:opacity-0 flex h-12 w-max items-stretch",
-            props.isOverlay && "bg-background",
-            props.isOverlay && !isActive && "h-12"
+            'data-dragging:opacity-0 flex h-12 w-max items-stretch',
+            props.isOverlay && 'bg-background',
+            props.isOverlay && !isActive && 'h-12',
           )}
         >
           <div
-            onMouseDown={(e) => {
+            onMouseDown={e => {
               if (bypassMouseDownRef.current) {
                 return;
               }
@@ -286,18 +269,17 @@ export const Tab = (props: {
                 bypassMouseDownRef.current = true;
 
                 event.currentTarget.dispatchEvent(
-                  new MouseEvent("mousedown", {
+                  new MouseEvent('mousedown', {
                     ...(event as unknown as MouseEventInit),
-                  })
+                  }),
                 );
               }, 200);
             }}
           >
             <div
               className={cn(
-                "text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all",
-                props.activeTab?.id === props.item.id &&
-                  "border-primary bg-card text-foreground"
+                'text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
+                props.activeTab?.id === props.item.id && 'border-primary bg-card text-foreground',
               )}
               onClick={() => {
                 props.setActiveTab(props.item);
@@ -313,18 +295,14 @@ export const Tab = (props: {
             >
               {tabIcon}
               {tabName}
-              {props.isOperationLoading(props.item.id) && (
-                <Spinner className="size-3" />
-              )}
-              {props.item.readOnly && (
-                <LockIcon className="size-3 text-gray-400" />
-              )}
+              {props.isOperationLoading(props.item.id) && <Spinner className="size-3" />}
+              {props.item.readOnly && <LockIcon className="size-3 text-gray-400" />}
               <XIcon
                 className="text-muted-foreground size-3"
-                onMouseDown={(e) => {
+                onMouseDown={e => {
                   e.stopPropagation();
                 }}
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   props.handleDeleteTab(props.item.id);
                 }}
@@ -363,15 +341,15 @@ export const Tabs = ({ className }: { className?: string }) => {
 
   const handleAddOperation = useCallback(() => {
     const newOperation = addOperation({
-      name: "",
-      query: "",
-      variables: "",
-      headers: "",
-      extensions: "",
+      name: '',
+      query: '',
+      variables: '',
+      headers: '',
+      extensions: '',
     });
 
     const tab = addTab({
-      type: "operation",
+      type: 'operation',
       data: newOperation,
     });
 
@@ -380,7 +358,7 @@ export const Tabs = ({ className }: { className?: string }) => {
 
   const handleDeleteTab = useCallback(
     (tabId: string) => {
-      const tabIndex = tabs.findIndex((t) => t.id === tabId);
+      const tabIndex = tabs.findIndex(t => t.id === tabId);
 
       if (tabIndex === -1) {
         return;
@@ -388,7 +366,7 @@ export const Tabs = ({ className }: { className?: string }) => {
 
       const tab = tabs[tabIndex];
 
-      if (tab.type === "operation") {
+      if (tab.type === 'operation') {
         deleteOperation((tab.data as LaboratoryTabOperation).id);
       }
 
@@ -402,7 +380,7 @@ export const Tabs = ({ className }: { className?: string }) => {
         setActiveTab(tabs[0] ?? null);
       }
     },
-    [tabs, deleteTab, deleteOperation, setActiveTab]
+    [tabs, deleteTab, deleteOperation, setActiveTab],
   );
 
   const handleDeleteAllTabs = useCallback(() => {
@@ -412,31 +390,26 @@ export const Tabs = ({ className }: { className?: string }) => {
 
   const handleDeleteOtherTabs = useCallback(
     (excludeTabId: string) => {
-      const newActiveTab = tabs.find((t) => t.id === excludeTabId);
+      const newActiveTab = tabs.find(t => t.id === excludeTabId);
 
       if (newActiveTab) {
-        const tabsToDelete = tabs.filter((t) => t.id !== excludeTabId);
+        const tabsToDelete = tabs.filter(t => t.id !== excludeTabId);
         const operationsToDelete = tabsToDelete
-          .filter((t) => t.type === "operation")
-          .map((t) => (t.data as LaboratoryTabOperation).id);
+          .filter(t => t.type === 'operation')
+          .map(t => (t.data as LaboratoryTabOperation).id);
 
-        setOperations(
-          operations.filter((o) => !operationsToDelete.includes(o.id))
-        );
+        setOperations(operations.filter(o => !operationsToDelete.includes(o.id)));
 
         setTabs([newActiveTab]);
         setActiveTab(newActiveTab);
       }
     },
-    [tabs, setOperations, operations, setTabs, setActiveTab]
+    [tabs, setOperations, operations, setTabs, setActiveTab],
   );
 
   return (
     <div
-      className={cn(
-        "relative z-10 grid size-full grid-cols-[1fr_auto] overflow-hidden",
-        className
-      )}
+      className={cn('relative z-10 grid size-full grid-cols-[1fr_auto] overflow-hidden', className)}
     >
       <div className="bg-border absolute bottom-0 left-0 -z-10 h-px w-full" />
       <div className="overflow-hidden">
@@ -449,7 +422,7 @@ export const Tabs = ({ className }: { className?: string }) => {
               orientation="horizontal"
             >
               <Sortable.Content className="flex w-max items-stretch">
-                {tabs.map((item) => {
+                {tabs.map(item => {
                   return (
                     <>
                       <Tab
@@ -467,8 +440,8 @@ export const Tabs = ({ className }: { className?: string }) => {
                 })}
               </Sortable.Content>
               <Sortable.Overlay>
-                {(activeItem) => {
-                  const tab = tabs.find((t) => t.id === activeItem.value);
+                {activeItem => {
+                  const tab = tabs.find(t => t.id === activeItem.value);
 
                   if (!tab) {
                     return null;

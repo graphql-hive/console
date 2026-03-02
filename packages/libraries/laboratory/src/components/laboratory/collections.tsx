@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   FolderIcon,
   FolderOpenIcon,
@@ -6,9 +6,11 @@ import {
   SearchIcon,
   TrashIcon,
   XIcon,
-} from "lucide-react";
-import { GraphQLIcon } from "@/components/icons";
-import { useLaboratory } from "@/components/laboratory/context";
+} from 'lucide-react';
+import { TooltipTrigger } from '@radix-ui/react-tooltip';
+import type { LaboratoryCollection, LaboratoryCollectionOperation } from '../../lib/collections';
+import { cn } from '../../lib/utils';
+import { GraphQLIcon } from '../icons';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,13 +21,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+} from '../ui/alert-dialog';
+import { Button } from '../ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import {
   Empty,
   EmptyContent,
@@ -33,16 +31,11 @@ import {
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
-import type {
-  LaboratoryCollection,
-  LaboratoryCollectionOperation,
-} from "@/lib/collections";
-import { cn } from "@/lib/utils";
-import { TooltipTrigger } from "@radix-ui/react-tooltip";
+} from '../ui/empty';
+import { Input } from '../ui/input';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { Tooltip, TooltipContent } from '../ui/tooltip';
+import { useLaboratory } from './context';
 
 export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
   const {
@@ -73,7 +66,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
             <FolderIcon className="text-muted-foreground size-4" />
           )}
           {props.collection.name}
-          {checkPermissions?.("collections:delete") && (
+          {checkPermissions?.('collections:delete') && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <AlertDialog>
@@ -81,7 +74,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                     <Button
                       variant="link"
                       className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                       }}
                     >
@@ -94,8 +87,8 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         Are you sure you want to delete collection?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        {props.collection.name} will be permanently deleted. All
-                        operations in this collection will be deleted as well.
+                        {props.collection.name} will be permanently deleted. All operations in this
+                        collection will be deleted as well.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -103,7 +96,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                       <AlertDialogAction asChild>
                         <Button
                           variant="destructive"
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             deleteCollection(props.collection.id);
                           }}
@@ -120,28 +113,26 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
           )}
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent
-        className={cn("border-border ml-4 flex flex-col gap-1 border-l pl-2")}
-      >
+      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
         {isOpen &&
-          props.collection.operations.map((operation) => {
+          props.collection.operations.map(operation => {
             const isActive = activeOperation?.id === operation.id;
 
             return (
               <Button
                 key={operation.name}
                 variant="ghost"
-                className={cn("group w-full justify-start gap-2 px-2", {
-                  "bg-accent/50": isActive,
+                className={cn('group w-full justify-start gap-2 px-2', {
+                  'bg-accent/50': isActive,
                 })}
                 size="sm"
                 onClick={() => {
-                  if (operations.some((o) => o.id === operation.id)) {
+                  if (operations.some(o => o.id === operation.id)) {
                     setActiveOperation(operation.id);
                   } else {
                     const newOperation = addOperation(operation);
                     const tab = addTab({
-                      type: "operation",
+                      type: 'operation',
                       data: newOperation,
                     });
 
@@ -151,7 +142,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
               >
                 <GraphQLIcon className="size-4 text-pink-500" />
                 {operation.name}
-                {checkPermissions?.("collectionsOperations:delete") && (
+                {checkPermissions?.('collectionsOperations:delete') && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <AlertDialog>
@@ -159,7 +150,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                           <Button
                             variant="link"
                             className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                             }}
                           >
@@ -169,8 +160,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              Are you sure you want to delete operation{" "}
-                              {operation.name}?
+                              Are you sure you want to delete operation {operation.name}?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
                               {operation.name} will be permanently deleted.
@@ -181,12 +171,9 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                             <AlertDialogAction asChild>
                               <Button
                                 variant="destructive"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
-                                  deleteOperationFromCollection(
-                                    props.collection.id,
-                                    operation.id
-                                  );
+                                  deleteOperationFromCollection(props.collection.id, operation.id);
                                 }}
                               >
                                 Delete
@@ -211,38 +198,30 @@ export interface CollectionsSearchResultItem extends LaboratoryCollectionOperati
   parent: LaboratoryCollection;
 }
 
-export const CollectionsSearchResult = (props: {
-  items: CollectionsSearchResultItem[];
-}) => {
-  const {
-    activeOperation,
-    operations,
-    addOperation,
-    setActiveOperation,
-    addTab,
-    setActiveTab,
-  } = useLaboratory();
+export const CollectionsSearchResult = (props: { items: CollectionsSearchResultItem[] }) => {
+  const { activeOperation, operations, addOperation, setActiveOperation, addTab, setActiveTab } =
+    useLaboratory();
 
   return (
     <div className="flex flex-col gap-1">
-      {props.items.map((operation) => {
+      {props.items.map(operation => {
         const isActive = activeOperation?.id === operation.id;
 
         return (
           <Button
             key={operation.name}
             variant="ghost"
-            className={cn("group w-full justify-start gap-2 px-2", {
-              "bg-accent/50": isActive,
+            className={cn('group w-full justify-start gap-2 px-2', {
+              'bg-accent/50': isActive,
             })}
             size="sm"
             onClick={() => {
-              if (operations.some((o) => o.id === operation.id)) {
+              if (operations.some(o => o.id === operation.id)) {
                 setActiveOperation(operation.id);
               } else {
                 const newOperation = addOperation(operation);
                 const tab = addTab({
-                  type: "operation",
+                  type: 'operation',
                   data: newOperation,
                 });
 
@@ -251,10 +230,8 @@ export const CollectionsSearchResult = (props: {
             }}
           >
             <GraphQLIcon className="size-4 text-pink-500" />
-            <span className="text-muted-foreground truncate">
-              {operation.parent.name}
-            </span>
-            <span className="text-muted-foreground">{" / "}</span>
+            <span className="text-muted-foreground truncate">{operation.parent.name}</span>
+            <span className="text-muted-foreground">{' / '}</span>
             {operation.name}
           </Button>
         );
@@ -264,22 +241,21 @@ export const CollectionsSearchResult = (props: {
 };
 
 export const Collections = () => {
-  const [search, setSearch] = useState("");
-  const { collections, openAddCollectionDialog, checkPermissions } =
-    useLaboratory();
+  const [search, setSearch] = useState('');
+  const { collections, openAddCollectionDialog, checkPermissions } = useLaboratory();
 
   const searchResults = useMemo(() => {
     return collections
       .reduce((acc, collection) => {
         return [
           ...acc,
-          ...collection.operations.map((operation) => ({
+          ...collection.operations.map(operation => ({
             ...operation,
             parent: collection,
           })),
         ];
       }, [] as CollectionsSearchResultItem[])
-      .filter((item) => {
+      .filter(item => {
         return item.name.toLowerCase().includes(search.toLowerCase());
       });
   }, [collections, search]);
@@ -290,7 +266,7 @@ export const Collections = () => {
         <div className="flex items-center gap-2 p-3 pb-0">
           <span className="text-base font-medium">Collections</span>
           <div className="ml-auto flex items-center gap-2">
-            {checkPermissions?.("collections:create") && (
+            {checkPermissions?.('collections:create') && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -312,16 +288,16 @@ export const Collections = () => {
           <Input
             type="text"
             placeholder="Search..."
-            className={cn("px-7")}
+            className={cn('px-7')}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
           />
           {search.length > 0 && (
             <Button
               variant="ghost"
               size="icon-sm"
               className="p-1! absolute right-5 top-1/2 size-6 -translate-y-1/2 rounded-sm"
-              onClick={() => setSearch("")}
+              onClick={() => setSearch('')}
             >
               <XIcon className="text-muted-foreground size-4" />
             </Button>
@@ -340,9 +316,7 @@ export const Collections = () => {
                     <EmptyMedia variant="icon">
                       <SearchIcon className="text-muted-foreground size-6" />
                     </EmptyMedia>
-                    <EmptyTitle className="text-base">
-                      No results found
-                    </EmptyTitle>
+                    <EmptyTitle className="text-base">No results found</EmptyTitle>
                     <EmptyDescription className="text-xs">
                       No collections found matching your search.
                     </EmptyDescription>
@@ -350,29 +324,21 @@ export const Collections = () => {
                 </Empty>
               )
             ) : collections.length > 0 ? (
-              collections.map((item) => (
-                <CollectionItem key={item.id} collection={item} />
-              ))
+              collections.map(item => <CollectionItem key={item.id} collection={item} />)
             ) : (
               <Empty className="px-0! w-full">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <FolderIcon className="text-muted-foreground size-6" />
                   </EmptyMedia>
-                  <EmptyTitle className="text-base">
-                    No collections yet
-                  </EmptyTitle>
+                  <EmptyTitle className="text-base">No collections yet</EmptyTitle>
                   <EmptyDescription className="text-xs">
-                    You haven't created any collections yet. Get started by
-                    adding your first collection.
+                    You haven't created any collections yet. Get started by adding your first
+                    collection.
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={openAddCollectionDialog}
-                  >
+                  <Button variant="secondary" size="sm" onClick={openAddCollectionDialog}>
                     Add collection
                   </Button>
                 </EmptyContent>

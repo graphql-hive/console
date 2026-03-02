@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   GraphQLEnumType,
   GraphQLObjectType,
@@ -6,8 +6,8 @@ import {
   GraphQLUnionType,
   type GraphQLArgument,
   type GraphQLField,
-} from "graphql";
-import { throttle } from "lodash";
+} from 'graphql';
+import { throttle } from 'lodash';
 import {
   BoxIcon,
   ChevronDownIcon,
@@ -15,44 +15,21 @@ import {
   CuboidIcon,
   FolderIcon,
   RotateCcwIcon,
-} from "lucide-react";
-import { GraphQLType } from "@/components/graphql-type";
-import { GraphQLIcon } from "@/components/icons";
-import { useLaboratory } from "@/components/laboratory/context";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type { LaboratoryOperation } from "@/lib/operations";
-import {
-  getOpenPaths,
-  isArgInQuery,
-  isPathInQuery,
-} from "@/lib/operations.utils";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import type { LaboratoryOperation } from '../../lib/operations';
+import { getOpenPaths, isArgInQuery, isPathInQuery } from '../../lib/operations.utils';
+import { cn } from '../../lib/utils';
+import { GraphQLType } from '../graphql-type';
+import { GraphQLIcon } from '../icons';
+import { Button } from '../ui/button';
+import { Checkbox } from '../ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '../ui/input-group';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { useLaboratory } from './context';
 
 export const BuilderArgument = (props: {
   field: GraphQLArgument;
@@ -73,43 +50,36 @@ export const BuilderArgument = (props: {
   }, [props.operation, activeOperation]);
 
   const path = useMemo(() => {
-    return props.path.join(".");
+    return props.path.join('.');
   }, [props.path]);
 
   const isInQuery = useMemo(() => {
-    return isArgInQuery(operation?.query ?? "", path, props.field.name);
+    return isArgInQuery(operation?.query ?? '', path, props.field.name);
   }, [operation?.query, path, props.field.name]);
 
   return (
     <Button
       key={props.field.name}
       variant="ghost"
-      className={cn("text-muted-foreground p-1! w-full justify-start text-xs", {
-        "text-foreground-primary": isInQuery,
+      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
+        'text-foreground-primary': isInQuery,
       })}
       size="sm"
     >
       <div className="size-4" />
       <Checkbox
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         checked={isInQuery}
-        disabled={activeTab?.type !== "operation" || props.isReadOnly}
-        onCheckedChange={(checked) => {
+        disabled={activeTab?.type !== 'operation' || props.isReadOnly}
+        onCheckedChange={checked => {
           if (!schema) {
             return;
           }
 
           if (checked) {
-            addArgToActiveOperation(
-              props.path.join("."),
-              props.field.name,
-              schema
-            );
+            addArgToActiveOperation(props.path.join('.'), props.field.name, schema);
           } else {
-            deleteArgFromActiveOperation(
-              props.path.join("."),
-              props.field.name
-            );
+            deleteArgFromActiveOperation(props.path.join('.'), props.field.name);
           }
         }}
       />
@@ -127,38 +97,34 @@ export const BuilderScalarField = (props: {
   isReadOnly?: boolean;
   operation?: LaboratoryOperation | null;
 }) => {
-  const {
-    activeOperation,
-    addPathToActiveOperation,
-    deletePathFromActiveOperation,
-    activeTab,
-  } = useLaboratory();
+  const { activeOperation, addPathToActiveOperation, deletePathFromActiveOperation, activeTab } =
+    useLaboratory();
 
   const operation = useMemo(() => {
     return props.operation ?? activeOperation ?? null;
   }, [props.operation, activeOperation]);
 
   const isOpen = useMemo(() => {
-    return props.openPaths.includes(props.path.join("."));
+    return props.openPaths.includes(props.path.join('.'));
   }, [props.openPaths, props.path]);
 
   const setIsOpen = useCallback(
     (isOpen: boolean) => {
       props.setOpenPaths(
         isOpen
-          ? [...props.openPaths, props.path.join(".")]
-          : props.openPaths.filter((path) => path !== props.path.join("."))
+          ? [...props.openPaths, props.path.join('.')]
+          : props.openPaths.filter(path => path !== props.path.join('.')),
       );
     },
-    [props]
+    [props],
   );
 
   const path = useMemo(() => {
-    return props.path.join(".");
+    return props.path.join('.');
   }, [props.path]);
 
   const isInQuery = useMemo(() => {
-    return isPathInQuery(operation?.query ?? "", path);
+    return isPathInQuery(operation?.query ?? '', path);
   }, [operation?.query, path]);
 
   const args = useMemo(() => {
@@ -166,26 +132,20 @@ export const BuilderScalarField = (props: {
   }, [props.field]);
 
   const hasArgs = useMemo(() => {
-    return args.some((arg) =>
-      isArgInQuery(operation?.query ?? "", path, arg.name)
-    );
+    return args.some(arg => isArgInQuery(operation?.query ?? '', path, arg.name));
   }, [operation?.query, args, path]);
 
   if (args.length > 0) {
     return (
-      <Collapsible
-        key={props.field.name}
-        open={isOpen}
-        onOpenChange={setIsOpen}
-      >
+      <Collapsible key={props.field.name} open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
             className={cn(
-              "text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs",
+              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
               {
-                "text-foreground-primary": isInQuery,
-              }
+                'text-foreground-primary': isInQuery,
+              },
             )}
             style={{
               top: `${(props.path.length - 2) * 32}px`,
@@ -195,15 +155,15 @@ export const BuilderScalarField = (props: {
             <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
             <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
             <ChevronDownIcon
-              className={cn("text-muted-foreground size-4 transition-all", {
-                "-rotate-90": !isOpen,
+              className={cn('text-muted-foreground size-4 transition-all', {
+                '-rotate-90': !isOpen,
               })}
             />
             <Checkbox
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
               checked={isInQuery}
-              disabled={activeTab?.type !== "operation" || props.isReadOnly}
-              onCheckedChange={(checked) => {
+              disabled={activeTab?.type !== 'operation' || props.isReadOnly}
+              onCheckedChange={checked => {
                 if (checked) {
                   setIsOpen(true);
                   addPathToActiveOperation(path);
@@ -225,10 +185,10 @@ export const BuilderScalarField = (props: {
                     <Button
                       variant="ghost"
                       className={cn(
-                        "text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs",
+                        'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                         {
-                          "text-foreground-primary": hasArgs,
-                        }
+                          'text-foreground-primary': hasArgs,
+                        },
                       )}
                       style={{
                         top: `${(props.path.length - 1) * 32}px`,
@@ -236,24 +196,17 @@ export const BuilderScalarField = (props: {
                       size="sm"
                     >
                       <ChevronDownIcon
-                        className={cn(
-                          "text-muted-foreground size-4 transition-all",
-                          {
-                            "-rotate-90": !isOpen,
-                          }
-                        )}
+                        className={cn('text-muted-foreground size-4 transition-all', {
+                          '-rotate-90': !isOpen,
+                        })}
                       />
-                      <Checkbox
-                        onClick={(e) => e.stopPropagation()}
-                        checked={hasArgs}
-                        disabled
-                      />
+                      <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
                       <CuboidIcon className="size-4 text-rose-400" />
                       [arguments]
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="border-border ml-3 flex flex-col border-l pl-2">
-                    {args.map((arg) => (
+                    {args.map(arg => (
                       <BuilderArgument
                         key={arg.name}
                         field={arg}
@@ -276,21 +229,21 @@ export const BuilderScalarField = (props: {
     <Button
       key={props.field.name}
       variant="ghost"
-      className={cn("text-muted-foreground p-1! w-full justify-start text-xs", {
-        "text-foreground-primary": isInQuery,
+      className={cn('text-muted-foreground p-1! w-full justify-start text-xs', {
+        'text-foreground-primary': isInQuery,
       })}
       size="sm"
     >
       <div className="size-4" />
       <Checkbox
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         checked={isInQuery}
-        disabled={activeTab?.type !== "operation"}
-        onCheckedChange={(checked) => {
+        disabled={activeTab?.type !== 'operation'}
+        onCheckedChange={checked => {
           if (checked) {
-            addPathToActiveOperation(props.path.join("."));
+            addPathToActiveOperation(props.path.join('.'));
           } else {
-            deletePathFromActiveOperation(props.path.join("."));
+            deletePathFromActiveOperation(props.path.join('.'));
           }
         }}
       />
@@ -321,30 +274,28 @@ export const BuilderObjectField = (props: {
   }, [props.operation, activeOperation]);
 
   const isOpen = useMemo(() => {
-    return props.openPaths.includes(props.path.join("."));
+    return props.openPaths.includes(props.path.join('.'));
   }, [props.openPaths, props.path]);
 
   const setIsOpen = useCallback(
     (isOpen: boolean) => {
       props.setOpenPaths(
         isOpen
-          ? [...props.openPaths, props.path.join(".")]
-          : props.openPaths.filter((path) => path !== props.path.join("."))
+          ? [...props.openPaths, props.path.join('.')]
+          : props.openPaths.filter(path => path !== props.path.join('.')),
       );
     },
-    [props]
+    [props],
   );
 
   const fields = useMemo(
     () =>
       Object.values(
         (
-          schema?.getType(
-            props.field.type.toString().replace(/\[|\]|!/g, "")
-          ) as GraphQLObjectType
-        )?.getFields?.() ?? {}
+          schema?.getType(props.field.type.toString().replace(/\[|\]|!/g, '')) as GraphQLObjectType
+        )?.getFields?.() ?? {},
       ),
-    [schema, props.field.type]
+    [schema, props.field.type],
   );
 
   const args = useMemo(() => {
@@ -352,17 +303,15 @@ export const BuilderObjectField = (props: {
   }, [props.field]);
 
   const hasArgs = useMemo(() => {
-    return args.some((arg) =>
-      isArgInQuery(operation?.query ?? "", props.path.join("."), arg.name)
-    );
+    return args.some(arg => isArgInQuery(operation?.query ?? '', props.path.join('.'), arg.name));
   }, [operation?.query, args, props.path]);
 
   const path = useMemo(() => {
-    return props.path.join(".");
+    return props.path.join('.');
   }, [props.path]);
 
   const isInQuery = useMemo(() => {
-    return isPathInQuery(operation?.query ?? "", path);
+    return isPathInQuery(operation?.query ?? '', path);
   }, [operation?.query, path]);
 
   return (
@@ -371,10 +320,10 @@ export const BuilderObjectField = (props: {
         <Button
           variant="ghost"
           className={cn(
-            "text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs",
+            'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
             {
-              "text-foreground-primary": isInQuery,
-            }
+              'text-foreground-primary': isInQuery,
+            },
           )}
           style={{
             top: `${(props.path.length - 2) * 32}px`,
@@ -384,15 +333,15 @@ export const BuilderObjectField = (props: {
           <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
           <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
           <ChevronDownIcon
-            className={cn("text-muted-foreground size-4 transition-all", {
-              "-rotate-90": !isOpen,
+            className={cn('text-muted-foreground size-4 transition-all', {
+              '-rotate-90': !isOpen,
             })}
           />
           <Checkbox
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
             checked={isInQuery}
-            disabled={activeTab?.type !== "operation" || props.isReadOnly}
-            onCheckedChange={(checked) => {
+            disabled={activeTab?.type !== 'operation' || props.isReadOnly}
+            onCheckedChange={checked => {
               if (checked) {
                 setIsOpen(true);
                 addPathToActiveOperation(path);
@@ -414,10 +363,10 @@ export const BuilderObjectField = (props: {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs",
+                      'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
                       {
-                        "text-foreground-primary": hasArgs,
-                      }
+                        'text-foreground-primary': hasArgs,
+                      },
                     )}
                     style={{
                       top: `${(props.path.length - 1) * 32}px`,
@@ -425,24 +374,17 @@ export const BuilderObjectField = (props: {
                     size="sm"
                   >
                     <ChevronDownIcon
-                      className={cn(
-                        "text-muted-foreground size-4 transition-all",
-                        {
-                          "-rotate-90": !isOpen,
-                        }
-                      )}
+                      className={cn('text-muted-foreground size-4 transition-all', {
+                        '-rotate-90': !isOpen,
+                      })}
                     />
-                    <Checkbox
-                      onClick={(e) => e.stopPropagation()}
-                      checked={hasArgs}
-                      disabled
-                    />
+                    <Checkbox onClick={e => e.stopPropagation()} checked={hasArgs} disabled />
                     <CuboidIcon className="size-4 text-rose-400" />
                     [arguments]
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="border-border ml-4 flex flex-col border-l pl-1">
-                  {args.map((arg) => (
+                  {args.map(arg => (
                     <BuilderArgument
                       key={arg.name}
                       field={arg}
@@ -453,7 +395,7 @@ export const BuilderObjectField = (props: {
                 </CollapsibleContent>
               </Collapsible>
             )}
-            {fields?.map((child) => (
+            {fields?.map(child => (
               <BuilderField
                 key={child.name}
                 field={child}
@@ -481,9 +423,7 @@ export const BuilderField = (props: {
 }) => {
   const { schema } = useLaboratory();
 
-  const type = schema?.getType(
-    props.field.type.toString().replace(/\[|\]|!/g, "")
-  );
+  const type = schema?.getType(props.field.type.toString().replace(/\[|\]|!/g, ''));
 
   if (
     !type ||
@@ -519,10 +459,9 @@ export const Builder = (props: {
   operation?: LaboratoryOperation | null;
   isReadOnly?: boolean;
 }) => {
-  const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } =
-    useLaboratory();
+  const { schema, activeOperation, endpoint, setEndpoint, defaultEndpoint } = useLaboratory();
 
-  const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? "");
+  const [endpointValue, setEndpointValue] = useState<string>(endpoint ?? '');
   const [openPaths, setOpenPaths] = useState<string[]>([]);
 
   const operation = useMemo(() => {
@@ -531,7 +470,7 @@ export const Builder = (props: {
 
   useEffect(() => {
     if (schema) {
-      const newOpenPaths = getOpenPaths(operation?.query ?? "");
+      const newOpenPaths = getOpenPaths(operation?.query ?? '');
 
       if (newOpenPaths.length > 0) {
         setOpenPaths(newOpenPaths);
@@ -542,27 +481,27 @@ export const Builder = (props: {
 
   const queryFields = useMemo(
     () => Object.values(schema?.getQueryType()?.getFields?.() ?? {}),
-    [schema]
+    [schema],
   );
 
   const mutationFields = useMemo(
     () => Object.values(schema?.getMutationType()?.getFields?.() ?? {}),
-    [schema]
+    [schema],
   );
 
   const subscriptionFields = useMemo(
     () => Object.values(schema?.getSubscriptionType()?.getFields?.() ?? {}),
-    [schema]
+    [schema],
   );
 
-  const [tabValue, setTabValue] = useState<string>("query");
+  const [tabValue, setTabValue] = useState<string>('query');
 
   const throttleSetEndpoint = useMemo(
     () =>
       throttle((endpoint: string) => {
         setEndpoint(endpoint);
       }, 1000),
-    [setEndpoint]
+    [setEndpoint],
   );
 
   useEffect(() => {
@@ -570,8 +509,8 @@ export const Builder = (props: {
   }, [endpointValue, throttleSetEndpoint]);
 
   const restoreEndpoint = useCallback(() => {
-    setEndpointValue(endpoint ?? "");
-    setEndpoint(defaultEndpoint ?? "");
+    setEndpointValue(endpoint ?? '');
+    setEndpoint(defaultEndpoint ?? '');
   }, [defaultEndpoint, setEndpointValue]);
 
   return (
@@ -600,18 +539,14 @@ export const Builder = (props: {
           <InputGroupInput
             placeholder="Enter endpoint"
             value={endpointValue}
-            onChange={(e) => setEndpointValue(e.currentTarget.value)}
+            onChange={e => setEndpointValue(e.currentTarget.value)}
           />
           <InputGroupAddon>
             <GraphQLIcon />
           </InputGroupAddon>
           {defaultEndpoint && (
             <InputGroupAddon align="inline-end">
-              <InputGroupButton
-                className="rounded-full"
-                size="icon-xs"
-                onClick={restoreEndpoint}
-              >
+              <InputGroupButton className="rounded-full" size="icon-xs" onClick={restoreEndpoint}>
                 <Tooltip>
                   <TooltipTrigger>
                     <RotateCcwIcon className="size-4" />
@@ -633,11 +568,7 @@ export const Builder = (props: {
           >
             <div className="border-border flex items-center border-b p-3">
               <TabsList className="w-full">
-                <TabsTrigger
-                  value="query"
-                  disabled={queryFields.length === 0}
-                  className="text-xs"
-                >
+                <TabsTrigger value="query" disabled={queryFields.length === 0} className="text-xs">
                   Query
                 </TabsTrigger>
                 <TabsTrigger
@@ -660,11 +591,11 @@ export const Builder = (props: {
               <ScrollArea className="h-full font-mono">
                 <div className="p-3">
                   <TabsContent value="query">
-                    {queryFields?.map((field) => (
+                    {queryFields?.map(field => (
                       <BuilderField
                         key={field.name}
                         field={field}
-                        path={["query", field.name]}
+                        path={['query', field.name]}
                         openPaths={openPaths}
                         setOpenPaths={setOpenPaths}
                         isReadOnly={props.isReadOnly}
@@ -673,11 +604,11 @@ export const Builder = (props: {
                     ))}
                   </TabsContent>
                   <TabsContent value="mutation">
-                    {mutationFields?.map((field) => (
+                    {mutationFields?.map(field => (
                       <BuilderField
                         key={field.name}
                         field={field}
-                        path={["mutation", field.name]}
+                        path={['mutation', field.name]}
                         openPaths={openPaths}
                         setOpenPaths={setOpenPaths}
                         isReadOnly={props.isReadOnly}
@@ -686,11 +617,11 @@ export const Builder = (props: {
                     ))}
                   </TabsContent>
                   <TabsContent value="subscription">
-                    {subscriptionFields?.map((field) => (
+                    {subscriptionFields?.map(field => (
                       <BuilderField
                         key={field.name}
                         field={field}
-                        path={["subscription", field.name]}
+                        path={['subscription', field.name]}
                         openPaths={openPaths}
                         setOpenPaths={setOpenPaths}
                         isReadOnly={props.isReadOnly}
@@ -710,12 +641,9 @@ export const Builder = (props: {
               <EmptyMedia variant="icon">
                 <FolderIcon className="text-muted-foreground size-6" />
               </EmptyMedia>
-              <EmptyTitle className="text-base">
-                No endpoint selected
-              </EmptyTitle>
+              <EmptyTitle className="text-base">No endpoint selected</EmptyTitle>
               <EmptyDescription className="text-xs">
-                You haven't selected any endpoint yet. Get started by selecting
-                an endpoint.
+                You haven't selected any endpoint yet. Get started by selecting an endpoint.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

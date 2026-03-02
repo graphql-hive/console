@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { LaboratoryOperation } from "@/lib/operations";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { LaboratoryOperation } from './operations';
 
 export interface LaboratoryTestTaskBase {
   id: string;
@@ -7,18 +7,16 @@ export interface LaboratoryTestTaskBase {
 }
 
 export interface LaboratoryTestTaskOperation extends LaboratoryTestTaskBase {
-  type: "operation";
-  data: Pick<LaboratoryOperation, "id">;
+  type: 'operation';
+  data: Pick<LaboratoryOperation, 'id'>;
 }
 
 export interface LaboratoryTestTaskUtlity extends LaboratoryTestTaskBase {
-  type: "utility";
+  type: 'utility';
   data: unknown;
 }
 
-export type LaboratoryTestTask =
-  | LaboratoryTestTaskOperation
-  | LaboratoryTestTaskUtlity;
+export type LaboratoryTestTask = LaboratoryTestTaskOperation | LaboratoryTestTaskUtlity;
 
 export interface LaboratoryTest {
   id: string;
@@ -33,13 +31,8 @@ export interface LaboratoryTestState {
 }
 
 export interface LaboratoryTestActions {
-  addTest: (
-    test: Omit<LaboratoryTest, "id" | "createdAt" | "tasks">
-  ) => LaboratoryTest;
-  addTaskToTest: (
-    testId: string,
-    task: Pick<LaboratoryTestTask, "type" | "data">
-  ) => void;
+  addTest: (test: Omit<LaboratoryTest, 'id' | 'createdAt' | 'tasks'>) => LaboratoryTest;
+  addTaskToTest: (testId: string, task: Pick<LaboratoryTestTask, 'type' | 'data'>) => void;
   deleteTaskFromTest: (testId: string, taskId: string) => void;
   deleteTest: (testId: string) => void;
 }
@@ -48,9 +41,7 @@ export const useTests = (props: {
   defaultTests?: LaboratoryTest[];
   onTestsChange?: (test: LaboratoryTest[]) => void;
 }): LaboratoryTestState & LaboratoryTestActions => {
-  const [tests, setTests] = useState<LaboratoryTest[]>(
-    props.defaultTests ?? []
-  );
+  const [tests, setTests] = useState<LaboratoryTest[]>(props.defaultTests ?? []);
 
   const testRef = useRef<LaboratoryTest[]>(tests);
 
@@ -59,7 +50,7 @@ export const useTests = (props: {
   }, [tests]);
 
   const addTest = useCallback(
-    (item: Omit<LaboratoryTest, "id" | "createdAt" | "tasks">) => {
+    (item: Omit<LaboratoryTest, 'id' | 'createdAt' | 'tasks'>) => {
       const newItem: LaboratoryTest = {
         ...item,
         id: crypto.randomUUID(),
@@ -74,46 +65,46 @@ export const useTests = (props: {
 
       return newItem;
     },
-    [tests, props]
+    [tests, props],
   );
 
   const deleteTest = useCallback(
     (testId: string) => {
-      const newTest = testRef.current.filter((item) => item.id !== testId);
+      const newTest = testRef.current.filter(item => item.id !== testId);
       setTests(newTest);
       props.onTestsChange?.(newTest);
     },
-    [props]
+    [props],
   );
 
   const addTaskToTest = useCallback(
-    (testId: string, task: Pick<LaboratoryTestTask, "type" | "data">) => {
+    (testId: string, task: Pick<LaboratoryTestTask, 'type' | 'data'>) => {
       const newTask: LaboratoryTestTask = {
         ...task,
         id: crypto.randomUUID(),
         next: null,
       } as LaboratoryTestTask;
 
-      const newTest = testRef.current.map((item) =>
-        item.id === testId ? { ...item, tasks: [...item.tasks, newTask] } : item
+      const newTest = testRef.current.map(item =>
+        item.id === testId ? { ...item, tasks: [...item.tasks, newTask] } : item,
       );
       setTests(newTest);
       props.onTestsChange?.(newTest);
     },
-    [props]
+    [props],
   );
 
   const deleteTaskFromTest = useCallback(
     (testId: string, taskId: string) => {
-      const newTest = testRef.current.map((item) =>
+      const newTest = testRef.current.map(item =>
         item.id === testId
-          ? { ...item, tasks: item.tasks.filter((task) => task.id !== taskId) }
-          : item
+          ? { ...item, tasks: item.tasks.filter(task => task.id !== taskId) }
+          : item,
       );
       setTests(newTest);
       props.onTestsChange?.(newTest);
     },
-    [props]
+    [props],
   );
 
   return {

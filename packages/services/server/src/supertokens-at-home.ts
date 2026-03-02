@@ -20,6 +20,7 @@ import {
   SuperTokensStore,
 } from '@hive/api/modules/auth/providers/supertokens-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
+import type { OIDCIntegration } from '@hive/api/shared/entities';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
@@ -103,14 +104,14 @@ export async function registerSupertokensAtHome(
         parsedBody.data.formFields.find(field => field.id === 'firstName')?.value ?? null;
       const lastName =
         parsedBody.data.formFields.find(field => field.id === 'lastName')?.value ?? null;
-      const email = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
+      const rawEmail = parsedBody.data.formFields.find(field => field.id === 'email')?.value ?? '';
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
-      const emailRegex = /^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/gim;
+      const emailResult = z.string().email().safeParse(rawEmail);
 
       // Verify email
-      if (!emailRegex.test(email)) {
+      if (!emailResult.success) {
         return rep.send({
           status: 'GENERAL_ERROR',
           message: 'Invalid email provided.',
@@ -118,7 +119,7 @@ export async function registerSupertokensAtHome(
       }
 
       // Lookup user
-      let user = await supertokensStore.lookupEmailUserByEmail(email);
+      let user = await supertokensStore.lookupEmailUserByEmail(rawEmail);
 
       if (user) {
         return rep.send({
@@ -151,13 +152,13 @@ export async function registerSupertokensAtHome(
 
       // create user
       user = await supertokensStore.createEmailPasswordUser({
-        email,
+        email: emailResult.data,
         passwordHash,
       });
 
       const ensureUserResult = await storage.ensureUserExists({
         superTokensUserId: user.userId,
-        email,
+        email: emailResult.data,
         oidcIntegration: null,
         firstName,
         lastName,
@@ -459,7 +460,7 @@ export async function registerSupertokensAtHome(
         return rep.status(401).send();
       }
 
-      const refreshToken = req.cookies['sRefreshToken'] ?? null;
+      const refreshToken = req.cookies?.['sRefreshToken'] ?? null;
 
       if (!refreshToken) {
         req.log.debug('No refresh token provided.');
@@ -811,6 +812,7 @@ export async function registerSupertokensAtHome(
 
       let supertokensUser: EmailPasswordOrThirdPartyUser;
       let hiveUser: User;
+      let oidcIntegration: OIDCIntegration | null = null;
 
       if (parsedBody.data.thirdPartyId === 'github') {
         if (!env.auth.github) {
@@ -1214,7 +1216,7 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const oidcIntegration = await storage.getOIDCIntegrationById({
+        oidcIntegration = await storage.getOIDCIntegrationById({
           oidcIntegrationId: cacheRecord.oidIntegrationId,
         });
 
@@ -1428,7 +1430,7 @@ export async function registerSupertokensAtHome(
         supertokensStore,
         {
           hiveUser: hiveUser,
-          oidcIntegrationId: null,
+          oidcIntegrationId: oidcIntegration?.id ?? null,
           superTokensUserId: supertokensUser.userId,
         },
         {

@@ -3,10 +3,10 @@ import { useFormik } from 'formik';
 import { Check, MoreHorizontal, X } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import * as Yup from 'yup';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import {
   Dialog,

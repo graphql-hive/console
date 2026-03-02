@@ -58,6 +58,7 @@
       "@graphql-hive/external-composition": [
         "./packages/libraries/external-composition/src/index.ts"
       ],
+      "@graphql-hive/laboratory": ["./packages/libraries/laboratory/src/index.tsx"],
       "@graphql-hive/core": ["./packages/libraries/core/src/index.ts"],
       "@graphql-hive/core/src/client/collect-schema-coordinates": [
         "./packages/libraries/core/src/client/collect-schema-coordinates.ts"
@@ -74,7 +75,8 @@
       ],
       "@graphql-hive/plugin-opentelemetry/setup": [
         "./node_modules/@graphql-hive/plugin-opentelemetry/dist/setup.d.ts"
-      ]
+      ],
+      "@hive/pubsub": ["./packages/libraries/pubsub/src/index.ts"]
     }
   },
   "include": ["packages", "tsup.config.node.ts"],

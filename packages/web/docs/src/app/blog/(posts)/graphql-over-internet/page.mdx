@@ -184,7 +184,7 @@ SSE is HTTP/1. HTTP/1 powered servers are limited to
 meaning you can only have 6 concurrently active subscriptions (compared to HTTP/2 powered servers
 that are by default limited to 100+ active connection per domain).
 
-The "singe connection mode" creates a single connection to the server which is used exclusively for
+The "single connection mode" creates a single connection to the server which is used exclusively for
 streaming events and messages. Then you issue separate HTTP requests to execute operations. This
 property makes it safe for HTTP/1 environments, but also for subscription heavy apps even in HTTP/2
 environments (simply because subscriptions are typically best when really granular and this can

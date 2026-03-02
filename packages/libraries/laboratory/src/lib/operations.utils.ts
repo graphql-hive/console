@@ -18,30 +18,23 @@ import {
   type OperationDefinitionNode,
   type SelectionNode,
   type VariableDefinitionNode,
-} from "graphql";
-import type { Maybe } from "graphql/jsutils/Maybe";
-import { get } from "lodash";
-import type { LaboratoryOperation } from "@/lib/operations";
+} from 'graphql';
+import type { Maybe } from 'graphql/jsutils/Maybe';
+import { get } from 'lodash';
+import type { LaboratoryOperation } from './operations';
 
 export function healQuery(query: string) {
-  return query.replace(/\{(\s+)?\}/g, "");
+  return query.replace(/\{(\s+)?\}/g, '');
 }
 
-export function isPathInQuery(
-  query: string,
-  path: string,
-  operationName?: string
-) {
+export function isPathInQuery(query: string, path: string, operationName?: string) {
   if (!query || !path) {
     return false;
   }
 
   query = healQuery(query);
 
-  const [operation, ...segments] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let doc: DocumentNode | undefined;
 
@@ -55,19 +48,17 @@ export function isPathInQuery(
     return false;
   }
 
-  const operationDefinition: OperationDefinitionNode = doc.definitions.find(
-    (v) => {
-      if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
-        if (operationName) {
-          return v.name?.value === operationName;
-        }
-
-        return true;
+  const operationDefinition: OperationDefinitionNode = doc.definitions.find(v => {
+    if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
+      if (operationName) {
+        return v.name?.value === operationName;
       }
 
-      return false;
+      return true;
     }
-  ) as OperationDefinitionNode;
+
+    return false;
+  }) as OperationDefinitionNode;
 
   if (!operationDefinition) {
     return false;
@@ -103,17 +94,10 @@ export function isPathInQuery(
   return found;
 }
 
-export function addPathToQuery(
-  query: string,
-  path: string,
-  operationName?: string
-) {
+export function addPathToQuery(query: string, path: string, operationName?: string) {
   query = healQuery(query);
 
-  const [operation, ...parts] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...parts] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let doc: DocumentNode | undefined;
 
@@ -131,7 +115,7 @@ export function addPathToQuery(
         operation,
         name: {
           kind: Kind.NAME,
-          value: "Untitled",
+          value: 'Untitled',
         },
         selectionSet: {
           kind: Kind.SELECTION_SET,
@@ -141,19 +125,17 @@ export function addPathToQuery(
     ],
   };
 
-  let operationDefinition: OperationDefinitionNode = doc.definitions.find(
-    (v) => {
-      if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
-        if (operationName) {
-          return v.name?.value === operationName;
-        }
-
-        return true;
+  let operationDefinition: OperationDefinitionNode = doc.definitions.find(v => {
+    if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
+      if (operationName) {
+        return v.name?.value === operationName;
       }
 
-      return false;
+      return true;
     }
-  ) as OperationDefinitionNode;
+
+    return false;
+  }) as OperationDefinitionNode;
 
   if (!operationDefinition) {
     operationDefinition = {
@@ -161,7 +143,7 @@ export function addPathToQuery(
       operation,
       name: {
         kind: Kind.NAME,
-        value: "Untitled",
+        value: 'Untitled',
       },
       selectionSet: {
         kind: Kind.SELECTION_SET,
@@ -174,15 +156,15 @@ export function addPathToQuery(
 
   if (parts.length === 0) {
     return print(doc)
-      .split("\n")
-      .map((v) => {
+      .split('\n')
+      .map(v => {
         if (v.includes(`${operation} Untitled`)) {
-          return v + " {}";
+          return v + ' {}';
         }
 
         return v;
       })
-      .join("\n");
+      .join('\n');
   }
 
   const currentPath: string[] = [];
@@ -198,10 +180,9 @@ export function addPathToQuery(
           selections: [],
         };
 
-        let fieldNode: FieldNode =
-          operationDefinition.selectionSet.selections.find((v) => {
-            return v.kind === Kind.FIELD && v.name.value === fieldName;
-          }) as FieldNode;
+        let fieldNode: FieldNode = operationDefinition.selectionSet.selections.find(v => {
+          return v.kind === Kind.FIELD && v.name.value === fieldName;
+        }) as FieldNode;
 
         if (!fieldNode) {
           fieldNode = {
@@ -212,9 +193,7 @@ export function addPathToQuery(
             },
           };
 
-          (operationDefinition.selectionSet.selections as SelectionNode[]).push(
-            fieldNode
-          );
+          (operationDefinition.selectionSet.selections as SelectionNode[]).push(fieldNode);
         }
       },
     },
@@ -235,11 +214,9 @@ export function addPathToQuery(
             selections: [],
           };
 
-          let fieldNode: FieldNode = field.selectionSet!.selections.find(
-            (v) => {
-              return v.kind === Kind.FIELD && v.name.value === fieldName;
-            }
-          ) as FieldNode;
+          let fieldNode: FieldNode = field.selectionSet!.selections.find(v => {
+            return v.kind === Kind.FIELD && v.name.value === fieldName;
+          }) as FieldNode;
 
           if (!fieldNode) {
             fieldNode = {
@@ -263,17 +240,10 @@ export function addPathToQuery(
   return print(doc);
 }
 
-export function deletePathFromQuery(
-  query: string,
-  path: string,
-  operationName?: string
-) {
+export function deletePathFromQuery(query: string, path: string, operationName?: string) {
   query = healQuery(query);
 
-  const [operation, ...segments] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let doc: DocumentNode | undefined;
 
@@ -287,19 +257,17 @@ export function deletePathFromQuery(
     return query;
   }
 
-  let operationDefinition: OperationDefinitionNode = doc.definitions.find(
-    (v) => {
-      if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
-        if (operationName) {
-          return v.name?.value === operationName;
-        }
-
-        return true;
+  let operationDefinition: OperationDefinitionNode = doc.definitions.find(v => {
+    if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
+      if (operationName) {
+        return v.name?.value === operationName;
       }
 
-      return false;
+      return true;
     }
-  ) as OperationDefinitionNode;
+
+    return false;
+  }) as OperationDefinitionNode;
 
   if (!operationDefinition) {
     return query;
@@ -316,12 +284,11 @@ export function deletePathFromQuery(
 
           if (operationDefinition.selectionSet) {
             operationDefinition.selectionSet.selections =
-              operationDefinition.selectionSet.selections.filter((v) => {
+              operationDefinition.selectionSet.selections.filter(v => {
                 return v.kind !== Kind.FIELD || v.name.value !== fieldName;
               });
 
-            isOperationSelectionSetEmpty =
-              operationDefinition.selectionSet.selections.length === 0;
+            isOperationSelectionSetEmpty = operationDefinition.selectionSet.selections.length === 0;
           }
         }
       },
@@ -337,10 +304,9 @@ export function deletePathFromQuery(
           const fieldName = segments[currentPath.length];
 
           if (field.selectionSet) {
-            field.selectionSet.selections =
-              field.selectionSet.selections.filter((v) => {
-                return v.kind !== Kind.FIELD || v.name.value !== fieldName;
-              });
+            field.selectionSet.selections = field.selectionSet.selections.filter(v => {
+              return v.kind !== Kind.FIELD || v.name.value !== fieldName;
+            });
           }
         }
       },
@@ -352,14 +318,14 @@ export function deletePathFromQuery(
 
   if (isOperationSelectionSetEmpty) {
     if (doc.definitions.length > 1) {
-      return `${print({ ...doc, definitions: doc.definitions.filter((v) => v !== operationDefinition) })}
+      return `${print({ ...doc, definitions: doc.definitions.filter(v => v !== operationDefinition) })}
 ${operation} ${operationDefinition.name?.value} {}`;
     }
 
     return `${operation} ${operationDefinition.name?.value} {}`;
   }
 
-  operationDefinition = doc.definitions.find((v) => {
+  operationDefinition = doc.definitions.find(v => {
     if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
       if (operationName) {
         return v.name?.value === operationName;
@@ -375,24 +341,22 @@ ${operation} ${operationDefinition.name?.value} {}`;
 }
 
 export async function getOperationHash(
-  operation: Pick<LaboratoryOperation, "query" | "variables">
+  operation: Pick<LaboratoryOperation, 'query' | 'variables'>,
 ) {
   try {
     console.log(operation.query, operation.variables);
 
     const canonicalQuery = print(parse(operation.query));
-    const canonicalVariables = "";
+    const canonicalVariables = '';
     const canonical = `${canonicalQuery}\n${canonicalVariables}`;
 
     const encoder = new TextEncoder();
     const data = encoder.encode(canonical);
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
 
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     return hashHex;
   } catch {
@@ -404,16 +368,12 @@ export async function getOperationHash(
 export function getOperationName(query: string) {
   try {
     const doc = parse(query);
-    const operationDefinition = doc.definitions.find(
-      (v) => v.kind === Kind.OPERATION_DEFINITION
-    );
+    const operationDefinition = doc.definitions.find(v => v.kind === Kind.OPERATION_DEFINITION);
     return operationDefinition?.name?.value;
   } catch {
     // console.error(error);
 
-    const match = query.match(
-      /(query|mutation|subscription)\s+([a-zA-Z0-9_]+)/
-    );
+    const match = query.match(/(query|mutation|subscription)\s+([a-zA-Z0-9_]+)/);
 
     return match ? match[2] : null;
   }
@@ -422,31 +382,21 @@ export function getOperationName(query: string) {
 export function getOperationType(query: string) {
   try {
     const doc = parse(query);
-    const operationDefinition = doc.definitions.find(
-      (v) => v.kind === Kind.OPERATION_DEFINITION
-    );
+    const operationDefinition = doc.definitions.find(v => v.kind === Kind.OPERATION_DEFINITION);
     return operationDefinition?.operation;
   } catch {
     return null;
   }
 }
 
-export function isArgInQuery(
-  query: string,
-  path: string,
-  argName: string,
-  operationName?: string
-) {
+export function isArgInQuery(query: string, path: string, argName: string, operationName?: string) {
   if (!query || !path) {
     return false;
   }
 
   query = healQuery(query);
 
-  const [operation, ...segments] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let doc: DocumentNode | undefined;
 
@@ -460,19 +410,17 @@ export function isArgInQuery(
     return false;
   }
 
-  const operationDefinition: OperationDefinitionNode = doc.definitions.find(
-    (v) => {
-      if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
-        if (operationName) {
-          return v.name?.value === operationName;
-        }
-
-        return true;
+  const operationDefinition: OperationDefinitionNode = doc.definitions.find(v => {
+    if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
+      if (operationName) {
+        return v.name?.value === operationName;
       }
 
-      return false;
+      return true;
     }
-  ) as OperationDefinitionNode;
+
+    return false;
+  }) as OperationDefinitionNode;
 
   if (!operationDefinition) {
     return false;
@@ -492,7 +440,7 @@ export function isArgInQuery(
           currentPath.every((v, i) => v === segments[i]) &&
           field.arguments
         ) {
-          found = field.arguments.some((v) => v.name.value === argName);
+          found = field.arguments.some(v => v.name.value === argName);
         }
       },
       leave() {
@@ -505,7 +453,7 @@ export function isArgInQuery(
 }
 
 export function extractOfType(
-  type: GraphQLOutputType
+  type: GraphQLOutputType,
 ): GraphQLObjectType | GraphQLScalarType | null {
   if (type instanceof GraphQLNonNull) {
     return extractOfType(type.ofType);
@@ -531,18 +479,15 @@ export function extractOfType(
 }
 
 export function findFieldInSchema(path: string, schema: GraphQLSchema) {
-  const [operation, ...segments] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let type: Maybe<GraphQLType>;
 
-  if (operation === "query") {
+  if (operation === 'query') {
     type = schema.getQueryType();
-  } else if (operation === "mutation") {
+  } else if (operation === 'mutation') {
     type = schema.getMutationType();
-  } else if (operation === "subscription") {
+  } else if (operation === 'subscription') {
     type = schema.getSubscriptionType();
   }
 
@@ -556,11 +501,7 @@ export function findFieldInSchema(path: string, schema: GraphQLSchema) {
     }
 
     if (type instanceof GraphQLObjectType) {
-      const field = type.getFields()[segments[i]] as GraphQLField<
-        unknown,
-        unknown,
-        unknown
-      >;
+      const field = type.getFields()[segments[i]] as GraphQLField<unknown, unknown, unknown>;
 
       if (!field) {
         return;
@@ -582,14 +523,11 @@ export function addArgToField(
   path: string,
   argName: string,
   schema: GraphQLSchema,
-  operationName?: string
+  operationName?: string,
 ) {
   query = healQuery(query);
 
-  const [operation, ...segments] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let doc: DocumentNode | undefined;
 
@@ -607,7 +545,7 @@ export function addArgToField(
         operation,
         name: {
           kind: Kind.NAME,
-          value: "NewOperation",
+          value: 'NewOperation',
         },
         selectionSet: {
           kind: Kind.SELECTION_SET,
@@ -617,19 +555,17 @@ export function addArgToField(
     ],
   };
 
-  let operationDefinition: OperationDefinitionNode = doc.definitions.find(
-    (v) => {
-      if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
-        if (operationName) {
-          return v.name?.value === operationName;
-        }
-
-        return true;
+  let operationDefinition: OperationDefinitionNode = doc.definitions.find(v => {
+    if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
+      if (operationName) {
+        return v.name?.value === operationName;
       }
 
-      return false;
+      return true;
     }
-  ) as OperationDefinitionNode;
+
+    return false;
+  }) as OperationDefinitionNode;
 
   if (!operationDefinition) {
     operationDefinition = {
@@ -637,7 +573,7 @@ export function addArgToField(
       operation,
       name: {
         kind: Kind.NAME,
-        value: "NewOperation",
+        value: 'NewOperation',
       },
       selectionSet: {
         kind: Kind.SELECTION_SET,
@@ -653,7 +589,7 @@ export function addArgToField(
   if (!isPathInQuery(query, path, operationName)) {
     doc = parse(addPathToQuery(query, path, operationName));
 
-    operationDefinition = doc.definitions.find((v) => {
+    operationDefinition = doc.definitions.find(v => {
       if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
         if (operationName) {
           return v.name?.value === operationName;
@@ -681,12 +617,12 @@ export function addArgToField(
 
           if (field.selectionSet) {
             const typeField = findFieldInSchema(
-              [operation, ...currentPath, fieldName].join("."),
-              schema
+              [operation, ...currentPath, fieldName].join('.'),
+              schema,
             );
 
             if (typeField?.args) {
-              const arg = typeField.args.find((v) => v.name === argName);
+              const arg = typeField.args.find(v => v.name === argName);
 
               if (arg) {
                 // @ts-expect-error temp
@@ -697,17 +633,15 @@ export function addArgToField(
                 let i = 2;
 
                 while (
-                  (
-                    operationDefinition.variableDefinitions as VariableDefinitionNode[]
-                  ).find((v) => v.variable.name.value === variableName)
+                  (operationDefinition.variableDefinitions as VariableDefinitionNode[]).find(
+                    v => v.variable.name.value === variableName,
+                  )
                 ) {
                   variableName = arg.name + i;
                   ++i;
                 }
 
-                (
-                  operationDefinition.variableDefinitions as VariableDefinitionNode[]
-                ).push({
+                (operationDefinition.variableDefinitions as VariableDefinitionNode[]).push({
                   kind: Kind.VARIABLE_DEFINITION,
                   variable: {
                     kind: Kind.VARIABLE,
@@ -725,11 +659,9 @@ export function addArgToField(
                   },
                 });
 
-                const fieldNode: FieldNode = field.selectionSet.selections.find(
-                  (v) => {
-                    return v.kind === Kind.FIELD && v.name.value === fieldName;
-                  }
-                ) as FieldNode;
+                const fieldNode: FieldNode = field.selectionSet.selections.find(v => {
+                  return v.kind === Kind.FIELD && v.name.value === fieldName;
+                }) as FieldNode;
 
                 if (fieldNode) {
                   // @ts-expect-error temp
@@ -767,12 +699,12 @@ export function addArgToField(
 
           if (operationDefinition.selectionSet) {
             const typeField = findFieldInSchema(
-              [operation, ...currentPath, fieldName].join("."),
-              schema
+              [operation, ...currentPath, fieldName].join('.'),
+              schema,
             );
 
             if (typeField?.args) {
-              const arg = typeField.args.find((v) => v.name === argName);
+              const arg = typeField.args.find(v => v.name === argName);
 
               if (arg) {
                 // @ts-expect-error temp
@@ -783,17 +715,15 @@ export function addArgToField(
                 let i = 2;
 
                 while (
-                  (
-                    operationDefinition.variableDefinitions as VariableDefinitionNode[]
-                  ).find((v) => v.variable.name.value === variableName)
+                  (operationDefinition.variableDefinitions as VariableDefinitionNode[]).find(
+                    v => v.variable.name.value === variableName,
+                  )
                 ) {
                   variableName = arg.name + i;
                   ++i;
                 }
 
-                (
-                  operationDefinition.variableDefinitions as VariableDefinitionNode[]
-                ).push({
+                (operationDefinition.variableDefinitions as VariableDefinitionNode[]).push({
                   kind: Kind.VARIABLE_DEFINITION,
                   variable: {
                     kind: Kind.VARIABLE,
@@ -811,10 +741,9 @@ export function addArgToField(
                   },
                 });
 
-                const fieldNode: FieldNode =
-                  operationDefinition.selectionSet.selections.find((v) => {
-                    return v.kind === Kind.FIELD && v.name.value === fieldName;
-                  }) as FieldNode;
+                const fieldNode: FieldNode = operationDefinition.selectionSet.selections.find(v => {
+                  return v.kind === Kind.FIELD && v.name.value === fieldName;
+                }) as FieldNode;
 
                 if (fieldNode) {
                   // @ts-expect-error temp
@@ -851,14 +780,11 @@ export function removeArgFromField(
   query: string,
   path: string,
   argName: string,
-  operationName?: string
+  operationName?: string,
 ) {
   query = healQuery(query);
 
-  const [operation, ...segments] = path.split(".") as [
-    OperationTypeNode,
-    ...string[],
-  ];
+  const [operation, ...segments] = path.split('.') as [OperationTypeNode, ...string[]];
 
   let doc: DocumentNode | undefined;
 
@@ -872,19 +798,17 @@ export function removeArgFromField(
     return query;
   }
 
-  const operationDefinition: OperationDefinitionNode = doc.definitions.find(
-    (v) => {
-      if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
-        if (operationName) {
-          return v.name?.value === operationName;
-        }
-
-        return true;
+  const operationDefinition: OperationDefinitionNode = doc.definitions.find(v => {
+    if (v.kind === Kind.OPERATION_DEFINITION && v.operation === operation) {
+      if (operationName) {
+        return v.name?.value === operationName;
       }
 
-      return false;
+      return true;
     }
-  ) as OperationDefinitionNode;
+
+    return false;
+  }) as OperationDefinitionNode;
 
   if (!operationDefinition) {
     return query;
@@ -904,15 +828,13 @@ export function removeArgFromField(
           const fieldName = segments[currentPath.length];
 
           if (field.selectionSet) {
-            const fieldNode: FieldNode = field.selectionSet.selections.find(
-              (v) => {
-                return v.kind === Kind.FIELD && v.name.value === fieldName;
-              }
-            ) as FieldNode;
+            const fieldNode: FieldNode = field.selectionSet.selections.find(v => {
+              return v.kind === Kind.FIELD && v.name.value === fieldName;
+            }) as FieldNode;
 
             if (fieldNode?.arguments) {
               // @ts-expect-error temp
-              fieldNode.arguments = fieldNode.arguments.filter((v) => {
+              fieldNode.arguments = fieldNode.arguments.filter(v => {
                 return v.kind !== Kind.ARGUMENT || v.name.value !== argName;
               });
             }
@@ -929,14 +851,13 @@ export function removeArgFromField(
           const fieldName = segments[0];
 
           if (operationDefinition.selectionSet) {
-            const fieldNode: FieldNode =
-              operationDefinition.selectionSet.selections.find((v) => {
-                return v.kind === Kind.FIELD && v.name.value === fieldName;
-              }) as FieldNode;
+            const fieldNode: FieldNode = operationDefinition.selectionSet.selections.find(v => {
+              return v.kind === Kind.FIELD && v.name.value === fieldName;
+            }) as FieldNode;
 
             if (fieldNode?.arguments) {
               // @ts-expect-error temp
-              fieldNode.arguments = fieldNode.arguments.filter((v) => {
+              fieldNode.arguments = fieldNode.arguments.filter(v => {
                 return v.kind !== Kind.ARGUMENT || v.name.value !== argName;
               });
             }
@@ -956,16 +877,13 @@ export function extractPaths(query: string): string[][] {
       [
         ast.definitions[0].kind === Kind.OPERATION_DEFINITION
           ? ast.definitions[0].operation
-          : "query",
+          : 'query',
       ],
     ];
 
-    const traverse = (
-      selections: readonly SelectionNode[],
-      currentPath: string[] = []
-    ) => {
+    const traverse = (selections: readonly SelectionNode[], currentPath: string[] = []) => {
       for (const selection of selections) {
-        if (selection.kind === "Field") {
+        if (selection.kind === 'Field') {
           const newPath = [...currentPath, selection.name.value];
           paths.push(newPath);
 
@@ -977,7 +895,7 @@ export function extractPaths(query: string): string[][] {
     };
 
     for (const def of ast.definitions) {
-      if (def.kind === "OperationDefinition" && def.selectionSet) {
+      if (def.kind === 'OperationDefinition' && def.selectionSet) {
         traverse(def.selectionSet.selections, paths[0]);
       }
     }
@@ -989,7 +907,7 @@ export function extractPaths(query: string): string[][] {
 }
 
 export function getOpenPaths(query: string): string[] {
-  return extractPaths(query).map((v) => v.join("."));
+  return extractPaths(query).map(v => v.join('.'));
 }
 
 export function handleTemplate(query: string, env: Record<string, any>) {

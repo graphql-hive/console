@@ -94,6 +94,16 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Manage CDN access tokens',
         description: 'Allow managing access tokens for the CDN.',
       },
+      {
+        id: 'schemaProposal:modify',
+        title: 'Create and edit schema proposals',
+        description: 'Allow managing schema proposals.',
+      },
+      {
+        id: 'schemaProposal:describe',
+        title: 'View schema proposals',
+        description: 'Allow viewing schema proposals and adding comments.',
+      },
     ],
   },
   {

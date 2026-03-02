@@ -1,7 +1,7 @@
 import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { InfoIcon } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Markdown } from '@/components/v2/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';

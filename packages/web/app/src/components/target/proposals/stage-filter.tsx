@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ChevronsUpDown } from 'lucide-react';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Button } from '@/components/ui/button';
 import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/v2';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useRouter, useSearch } from '@tanstack/react-router';
 
@@ -49,11 +49,8 @@ export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) =>
                 }}
                 className="cursor-pointer truncate border-b"
               >
-                <div className="flex flex-row items-center">
-                  <Checkbox
-                    className="mr-[6px]"
-                    checked={stages.every(s => selectedStages.includes(s))}
-                  />
+                <div className="flex flex-row items-center gap-1.5">
+                  <Checkbox size="sm" checked={stages.every(s => selectedStages.includes(s))} />
                   <div className="max-w-[350px] grow flex-col truncate">All</div>
                 </div>
               </CommandItem>
@@ -78,8 +75,8 @@ export const StageFilter = ({ selectedStages }: { selectedStages: string[] }) =>
                   }}
                   className="cursor-pointer truncate"
                 >
-                  <div className="flex flex-row items-center">
-                    <Checkbox className="mr-[6px]" checked={selectedStages.includes(stage)} />
+                  <div className="flex flex-row items-center gap-1.5">
+                    <Checkbox size="sm" checked={selectedStages.includes(stage)} />
                     <div className="max-w-[350px] grow flex-col truncate">{stage}</div>
                   </div>
                 </CommandItem>

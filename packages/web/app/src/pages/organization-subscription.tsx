@@ -86,7 +86,7 @@ function SubscriptionPageContent(props: { organizationSlug: string }) {
 
   const organization = useFragment(SubscriptionPage_OrganizationFragment, currentOrganization);
   const queryForBilling = useFragment(SubscriptionPage_QueryFragment, query.data);
-  const styles = useChartStyles();
+  const { styles } = useChartStyles();
 
   const monthlyUsage = query.data?.monthlyUsage ?? [];
   const monthlyUsagePoints: [string, number][] = useMemo(

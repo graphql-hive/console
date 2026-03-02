@@ -236,7 +236,7 @@
   :root {
     color-scheme: light dark;
 
-    @apply font-sans;
+    @apply font-sans subpixel-antialiased;
 
     --header-height: 84px;
     --tabs-navbar-height: 47px;
@@ -257,8 +257,13 @@
 
     --accent: 206 96% 35%;
 
-    --chart-1: 173 58% 39%;
-    --chart-2: 12 76% 61%;
+    --chart-1: 45 93% 47%;
+    --chart-2: 0 86% 60%;
+    --chart-3: 160 82% 39%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 258 90% 66%;
+    --chart-6: 330 81% 60%;
+    --chart-grid: 0 0% 35%;
 
     --ring: 216 58% 49%;
   }
@@ -279,8 +284,13 @@
 
     --accent: 48 100% 83%;
 
-    --chart-1: 220 70% 50%;
-    --chart-2: 340 75% 55%;
+    --chart-1: 45 93% 52%;
+    --chart-2: 0 86% 65%;
+    --chart-3: 160 82% 49%;
+    --chart-4: 199 89% 58%;
+    --chart-5: 258 90% 72%;
+    --chart-6: 330 81% 68%;
+    --chart-grid: 0 0% 45%;
   }
 
   :root {

@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
-import type { LaboratoryOperation } from "@/lib/operations";
-import type { LaboratoryTabsActions, LaboratoryTabsState } from "@/lib/tabs";
+import { useCallback, useState } from 'react';
+import type { LaboratoryOperation } from './operations';
+import type { LaboratoryTabsActions, LaboratoryTabsState } from './tabs';
 
 export interface LaboratoryCollectionOperation extends LaboratoryOperation {
   id: string;
@@ -19,25 +19,22 @@ export interface LaboratoryCollection {
 
 export interface LaboratoryCollectionsActions {
   addCollection: (
-    collection: Omit<LaboratoryCollection, "id" | "createdAt" | "operations">
+    collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>,
   ) => void;
   addOperationToCollection: (
     collectionId: string,
-    operation: Omit<LaboratoryCollectionOperation, "createdAt">
+    operation: Omit<LaboratoryCollectionOperation, 'createdAt'>,
   ) => void;
   deleteCollection: (collectionId: string) => void;
-  deleteOperationFromCollection: (
-    collectionId: string,
-    operationId: string
-  ) => void;
+  deleteOperationFromCollection: (collectionId: string, operationId: string) => void;
   updateCollection: (
     collectionId: string,
-    collection: Omit<LaboratoryCollection, "id" | "createdAt">
+    collection: Omit<LaboratoryCollection, 'id' | 'createdAt'>,
   ) => void;
   updateOperationInCollection: (
     collectionId: string,
     operationId: string,
-    operation: Omit<LaboratoryCollectionOperation, "id" | "createdAt">
+    operation: Omit<LaboratoryCollectionOperation, 'id' | 'createdAt'>,
   ) => void;
 }
 
@@ -51,15 +48,15 @@ export interface LaboratoryCollectionsCallbacks {
   onCollectionDelete?: (collection: LaboratoryCollection) => void;
   onCollectionOperationCreate?: (
     collection: LaboratoryCollection,
-    operation: LaboratoryCollectionOperation
+    operation: LaboratoryCollectionOperation,
   ) => void;
   onCollectionOperationUpdate?: (
     collection: LaboratoryCollection,
-    operation: LaboratoryCollectionOperation
+    operation: LaboratoryCollectionOperation,
   ) => void;
   onCollectionOperationDelete?: (
     collection: LaboratoryCollection,
-    operation: LaboratoryCollectionOperation
+    operation: LaboratoryCollectionOperation,
   ) => void;
 }
 
@@ -68,16 +65,14 @@ export const useCollections = (
     defaultCollections?: LaboratoryCollection[];
     onCollectionsChange?: (collections: LaboratoryCollection[]) => void;
     tabsApi?: LaboratoryTabsState & LaboratoryTabsActions;
-  } & LaboratoryCollectionsCallbacks
+  } & LaboratoryCollectionsCallbacks,
 ): LaboratoryCollectionsState & LaboratoryCollectionsActions => {
   const [collections, setCollections] = useState<LaboratoryCollection[]>(
-    props.defaultCollections ?? []
+    props.defaultCollections ?? [],
   );
 
   const addCollection = useCallback(
-    (
-      collection: Omit<LaboratoryCollection, "id" | "createdAt" | "operations">
-    ) => {
+    (collection: Omit<LaboratoryCollection, 'id' | 'createdAt' | 'operations'>) => {
       const newCollection: LaboratoryCollection = {
         ...collection,
         id: crypto.randomUUID(),
@@ -89,65 +84,56 @@ export const useCollections = (
       props.onCollectionsChange?.(newCollections);
       props.onCollectionCreate?.(newCollection);
     },
-    [collections, props]
+    [collections, props],
   );
 
   const addOperation = useCallback(
-    (
-      collectionId: string,
-      operation: Omit<LaboratoryCollectionOperation, "createdAt">
-    ) => {
+    (collectionId: string, operation: Omit<LaboratoryCollectionOperation, 'createdAt'>) => {
       const newOperation: LaboratoryCollectionOperation = {
         ...operation,
         createdAt: new Date().toISOString(),
       };
-      const newCollections = collections.map((collection) =>
+      const newCollections = collections.map(collection =>
         collection.id === collectionId
           ? {
               ...collection,
               operations: [...collection.operations, newOperation],
             }
-          : collection
+          : collection,
       );
 
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
-      const updatedCollection = newCollections.find(
-        (collection) => collection.id === collectionId
-      );
+      const updatedCollection = newCollections.find(collection => collection.id === collectionId);
       if (updatedCollection) {
         props.onCollectionUpdate?.(updatedCollection);
         props.onCollectionOperationCreate?.(updatedCollection, newOperation);
       }
     },
-    [collections, props]
+    [collections, props],
   );
 
   const deleteCollection = useCallback(
     (collectionId: string) => {
-      const collectionToDelete = collections.find(
-        (collection) => collection.id === collectionId
-      );
-      const newCollections = collections.filter(
-        (collection) => collection.id !== collectionId
-      );
+      const collectionToDelete = collections.find(collection => collection.id === collectionId);
+      const newCollections = collections.filter(collection => collection.id !== collectionId);
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
       if (collectionToDelete) {
         props.onCollectionDelete?.(collectionToDelete);
       }
     },
-    [collections, props]
+    [collections, props],
   );
 
   const deleteOperation = useCallback(
     (collectionId: string, operationId: string) => {
       let operationToDelete: LaboratoryCollectionOperation | undefined;
-      const newCollections = collections.map((collection) =>
+      const newCollections = collections.map(collection =>
         collection.id === collectionId
           ? {
               ...collection,
-              operations: collection.operations.filter((operation) => {
+              operations: collection.operations.filter(operation => {
                 if (operation.id === operationId) {
                   operationToDelete = operation;
                   return false;
@@ -155,61 +141,51 @@ export const useCollections = (
                 return true;
               }),
             }
-          : collection
+          : collection,
       );
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
-      const updatedCollection = newCollections.find(
-        (collection) => collection.id === collectionId
-      );
+      const updatedCollection = newCollections.find(collection => collection.id === collectionId);
       if (updatedCollection) {
         props.onCollectionUpdate?.(updatedCollection);
         if (operationToDelete) {
-          props.onCollectionOperationDelete?.(
-            updatedCollection,
-            operationToDelete
-          );
+          props.onCollectionOperationDelete?.(updatedCollection, operationToDelete);
         }
       }
     },
-    [collections, props]
+    [collections, props],
   );
 
   const updateCollection = useCallback(
-    (
-      collectionId: string,
-      collection: Omit<LaboratoryCollection, "id" | "createdAt">
-    ) => {
-      const newCollections = collections.map((c) =>
-        c.id === collectionId ? { ...c, ...collection } : c
+    (collectionId: string, collection: Omit<LaboratoryCollection, 'id' | 'createdAt'>) => {
+      const newCollections = collections.map(c =>
+        c.id === collectionId ? { ...c, ...collection } : c,
       );
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
-      const updatedCollection = newCollections.find(
-        (collection) => collection.id === collectionId
-      );
+      const updatedCollection = newCollections.find(collection => collection.id === collectionId);
       if (updatedCollection) {
         props.onCollectionUpdate?.(updatedCollection);
       }
     },
-    [collections, props]
+    [collections, props],
   );
 
   const updateOperation = useCallback(
     (
       collectionId: string,
       operationId: string,
-      operation: Omit<LaboratoryCollectionOperation, "id" | "createdAt">
+      operation: Omit<LaboratoryCollectionOperation, 'id' | 'createdAt'>,
     ) => {
       let updatedOperation: LaboratoryCollectionOperation | undefined;
-      const newCollections = collections.map((c) => {
+      const newCollections = collections.map(c => {
         if (c.id !== collectionId) {
           return c;
         }
 
         return {
           ...c,
-          operations: c.operations.map((o) => {
+          operations: c.operations.map(o => {
             if (o.id === operationId) {
               updatedOperation = { ...o, ...operation };
               return updatedOperation;
@@ -221,20 +197,15 @@ export const useCollections = (
       });
       setCollections(newCollections);
       props.onCollectionsChange?.(newCollections);
-      const updatedCollection = newCollections.find(
-        (collection) => collection.id === collectionId
-      );
+      const updatedCollection = newCollections.find(collection => collection.id === collectionId);
       if (updatedCollection) {
         props.onCollectionUpdate?.(updatedCollection);
         if (updatedOperation) {
-          props.onCollectionOperationUpdate?.(
-            updatedCollection,
-            updatedOperation
-          );
+          props.onCollectionOperationUpdate?.(updatedCollection, updatedOperation);
         }
       }
     },
-    [collections, props]
+    [collections, props],
   );
 
   return {

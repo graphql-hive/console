@@ -1,9 +1,8 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef } from 'react';
-import color from 'color';
 import * as monaco from 'monaco-editor';
 import { initializeMode } from 'monaco-graphql/initializeMode';
-import { useLaboratory } from '@/components/laboratory/context';
 import MonacoEditor, { loader } from '@monaco-editor/react';
+import { useLaboratory } from './context';
 
 if (typeof window !== 'undefined') {
   (window as Window & typeof globalThis & { monaco: typeof monaco }).monaco = monaco;
@@ -114,16 +113,17 @@ monaco.languages.setMonarchTokensProvider('dotenv', {
   },
 });
 
-export const Editor = forwardRef<
-  {
-    setValue: (value: string) => void;
-  },
-  React.ComponentProps<typeof MonacoEditor> & {
-    uri?: monaco.Uri;
-    variablesUri?: monaco.Uri;
-    extraLibs?: string[];
-  }
->((props, ref) => {
+export type EditorHandle = {
+  setValue: (value: string) => void;
+};
+
+export type EditorProps = React.ComponentProps<typeof MonacoEditor> & {
+  uri?: monaco.Uri;
+  variablesUri?: monaco.Uri;
+  extraLibs?: string[];
+};
+
+const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const { introspection, endpoint, theme } = useLaboratory();
@@ -219,3 +219,7 @@ export const Editor = forwardRef<
     </div>
   );
 });
+
+// Expose Editor as a plain callable component type to keep it compatible
+// across projects that resolve different React type majors.
+export const Editor = EditorInner as unknown as (props: EditorProps) => JSX.Element;

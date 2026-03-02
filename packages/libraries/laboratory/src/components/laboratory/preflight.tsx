@@ -1,23 +1,13 @@
-import { useCallback } from "react";
-import { HistoryIcon, PlayIcon } from "lucide-react";
-import { useLaboratory } from "@/components/laboratory/context";
-import { Editor } from "@/components/laboratory/editor";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { runIsolatedLabScript } from "@/lib/preflight";
-import { cn } from "@/lib/utils";
+import { useCallback } from 'react';
+import { HistoryIcon, PlayIcon } from 'lucide-react';
+import { runIsolatedLabScript } from '../../lib/preflight';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../ui/resizable';
+import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import { useLaboratory } from './context';
+import { Editor } from './editor';
 
 export const Preflight = () => {
   const {
@@ -39,21 +29,21 @@ export const Preflight = () => {
     }
 
     const result = await runIsolatedLabScript(
-      preflight?.script ?? "",
+      preflight?.script ?? '',
       env ?? { variables: {} },
       (placeholder, defaultValue) => {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           openPreflightPromptModal?.({
             placeholder,
             defaultValue,
-            onSubmit: (value) => {
+            onSubmit: value => {
               resolve(value);
             },
           });
         });
       },
       plugins,
-      pluginsState
+      pluginsState,
     );
 
     setEnv(result?.env ?? { variables: {} });
@@ -68,12 +58,7 @@ export const Preflight = () => {
           <div className="border-border flex w-full items-center gap-2 border-b p-3">
             <span className="text-base font-medium">Preflight</span>
             <div className="ml-auto flex items-center gap-2">
-              <Button
-                variant="default"
-                size="sm"
-                className="h-6 rounded-sm"
-                onClick={run}
-              >
+              <Button variant="default" size="sm" className="h-6 rounded-sm" onClick={run}>
                 <PlayIcon className="size-4" />
                 <span>Test</span>
               </Button>
@@ -81,11 +66,11 @@ export const Preflight = () => {
           </div>
           <div className="size-full">
             <Editor
-              value={preflight?.script ?? ""}
-              onChange={(value) => {
+              value={preflight?.script ?? ''}
+              onChange={value => {
                 setPreflight({
-                  ...(preflight ?? { script: "", enabled: true }),
-                  script: value ?? "",
+                  ...(preflight ?? { script: '', enabled: true }),
+                  script: value ?? '',
                 });
               }}
               language="typescript"
@@ -104,9 +89,9 @@ export const Preflight = () => {
                     CryptoJS: typeof CryptoJS;
                     plugins: {
                       ${plugins
-                        .filter((plugin) => plugin.preflight?.lab?.definition)
-                        .map((plugin) => plugin.preflight?.lab?.definition)
-                        .join("\n")}
+                        .filter(plugin => plugin.preflight?.lab?.definition)
+                        .map(plugin => plugin.preflight?.lab?.definition)
+                        .join('\n')}
                     }
                   }
 
@@ -249,7 +234,7 @@ export const Preflight = () => {
                   `,
               ]}
               options={{
-                readOnly: !checkPermissions?.("preflight:update"),
+                readOnly: !checkPermissions?.('preflight:update'),
               }}
             />
           </div>
@@ -257,8 +242,7 @@ export const Preflight = () => {
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel minSize={10} defaultSize={50} className="bg-card">
-        {preflight?.lastTestResult?.logs &&
-        preflight?.lastTestResult?.logs.length > 0 ? (
+        {preflight?.lastTestResult?.logs && preflight?.lastTestResult?.logs.length > 0 ? (
           <div className="grid size-full grid-rows-[auto_1fr] pb-0">
             <div className="border-border flex h-12 w-full items-center gap-2 border-b p-3">
               <span className="text-base font-medium">Logs</span>
@@ -268,21 +252,19 @@ export const Preflight = () => {
               <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
                 {preflight?.lastTestResult?.logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
-                    <span className="text-muted-foreground text-xs">
-                      {log.createdAt}
-                    </span>{" "}
+                    <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
                     <span
-                      className={cn("text-xs font-medium", {
-                        "text-blue-400": log.level === "info",
-                        "text-green-400": log.level === "log",
-                        "text-yellow-400": log.level === "warn",
-                        "text-red-400": log.level === "error",
-                        "text-gray-400": log.level === "system",
+                      className={cn('text-xs font-medium', {
+                        'text-blue-400': log.level === 'info',
+                        'text-green-400': log.level === 'log',
+                        'text-yellow-400': log.level === 'warn',
+                        'text-red-400': log.level === 'error',
+                        'text-gray-400': log.level === 'system',
                       })}
                     >
                       {log.level.toUpperCase()}
-                    </span>{" "}
-                    <span className="text-xs">{log.message.join(" ")}</span>
+                    </span>{' '}
+                    <span className="text-xs">{log.message.join(' ')}</span>
                   </div>
                 ))}
               </div>

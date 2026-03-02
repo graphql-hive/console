@@ -31,6 +31,7 @@
     "@graphql-yoga/redis-event-target": "3.0.3",
     "@hive/api": "workspace:*",
     "@hive/cdn-script": "workspace:*",
+    "@hive/pubsub": "workspace:*",
     "@hive/schema": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",

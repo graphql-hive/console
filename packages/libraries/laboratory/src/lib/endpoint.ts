@@ -25,7 +25,6 @@ export const useEndpoint = (props: {
   onEndpointChange?: (endpoint: string | null) => void;
   defaultSchemaIntrospection?: IntrospectionQuery | null;
 }): LaboratoryEndpointState & LaboratoryEndpointActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [endpoint, _setEndpoint] = useState<string | null>(props.defaultEndpoint ?? null);
   const [introspection, setIntrospection] = useState<IntrospectionQuery | null>(null);
 

@@ -1,3 +1,4 @@
+import type { SVGProps } from 'react';
 import type { LucideProps } from 'lucide-react';
 
 export const GraphQLIcon = (props: LucideProps) => {
@@ -8,7 +9,7 @@ export const GraphQLIcon = (props: LucideProps) => {
       viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      {...props}
+      {...(props as SVGProps<SVGSVGElement>)}
     >
       <path
         fillRule="evenodd"

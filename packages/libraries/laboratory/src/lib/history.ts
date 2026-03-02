@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { format } from "date-fns";
-import type { LaboratoryOperation } from "@/lib/operations";
-import type { LaboratoryPreflightLog } from "@/lib/preflight";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { format } from 'date-fns';
+import type { LaboratoryOperation } from './operations';
+import type { LaboratoryPreflightLog } from './preflight';
 
 export interface LaboratoryHistoryRequest {
   id: string;
@@ -26,16 +26,14 @@ export interface LaboratoryHistorySubscription {
   createdAt: string;
 }
 
-export type LaboratoryHistory =
-  | LaboratoryHistoryRequest
-  | LaboratoryHistorySubscription;
+export type LaboratoryHistory = LaboratoryHistoryRequest | LaboratoryHistorySubscription;
 
 export interface LaboratoryHistoryState {
   history: LaboratoryHistory[];
 }
 
 export interface LaboratoryHistoryActions {
-  addHistory: (history: Omit<LaboratoryHistory, "id">) => LaboratoryHistory;
+  addHistory: (history: Omit<LaboratoryHistory, 'id'>) => LaboratoryHistory;
   addResponseToHistory: (historyId: string, response: string) => void;
   deleteHistory: (historyId: string) => void;
   deleteHistoryByDay: (day: string) => void;
@@ -52,11 +50,9 @@ export const useHistory = (
   props: {
     defaultHistory?: LaboratoryHistory[];
     onHistoryChange?: (history: LaboratoryHistory[]) => void;
-  } & LaboratoryHistoryCallbacks
+  } & LaboratoryHistoryCallbacks,
 ): LaboratoryHistoryState & LaboratoryHistoryActions => {
-  const [history, setHistory] = useState<LaboratoryHistory[]>(
-    props.defaultHistory ?? []
-  );
+  const [history, setHistory] = useState<LaboratoryHistory[]>(props.defaultHistory ?? []);
 
   const historyRef = useRef<LaboratoryHistory[]>(history);
 
@@ -65,7 +61,7 @@ export const useHistory = (
   }, [history]);
 
   const addHistory = useCallback(
-    (item: Omit<LaboratoryHistory, "id">) => {
+    (item: Omit<LaboratoryHistory, 'id'>) => {
       const newItem: LaboratoryHistory = {
         ...item,
         id: crypto.randomUUID(),
@@ -78,20 +74,18 @@ export const useHistory = (
 
       return newItem;
     },
-    [history, props]
+    [history, props],
   );
 
   const addResponseToHistory = useCallback(
     (historyId: string, response: string) => {
-      const historyItem = historyRef.current.find(
-        (item) => item.id === historyId
-      );
+      const historyItem = historyRef.current.find(item => item.id === historyId);
 
       if (!historyItem) {
         return;
       }
 
-      if ("responses" in historyItem) {
+      if ('responses' in historyItem) {
         const newResponses = [
           ...historyItem.responses,
           {
@@ -104,32 +98,28 @@ export const useHistory = (
           ...historyItem,
           responses: newResponses,
         };
-        const newHistory = historyRef.current.map((item) =>
-          item.id === historyId ? updatedHistoryItem : item
+        const newHistory = historyRef.current.map(item =>
+          item.id === historyId ? updatedHistoryItem : item,
         );
         setHistory(newHistory);
         props.onHistoryChange?.(newHistory);
         props.onHistoryUpdate?.(updatedHistoryItem);
       }
     },
-    [props]
+    [props],
   );
 
   const deleteHistory = useCallback(
     (historyId: string) => {
-      const historyToDelete = historyRef.current.find(
-        (item) => item.id === historyId
-      );
-      const newHistory = historyRef.current.filter(
-        (item) => item.id !== historyId
-      );
+      const historyToDelete = historyRef.current.find(item => item.id === historyId);
+      const newHistory = historyRef.current.filter(item => item.id !== historyId);
       setHistory(newHistory);
       props.onHistoryChange?.(newHistory);
       if (historyToDelete) {
         props.onHistoryDelete?.(historyToDelete);
       }
     },
-    [props]
+    [props],
   );
 
   const deleteAllHistory = useCallback(() => {
@@ -146,10 +136,10 @@ export const useHistory = (
   const deleteHistoryByDay = useCallback(
     (day: string) => {
       const removedItems = historyRef.current.filter(
-        (item) => format(new Date(item.createdAt), "dd MMM yyyy") === day
+        item => format(new Date(item.createdAt), 'dd MMM yyyy') === day,
       );
       const newHistory = historyRef.current.filter(
-        (item) => format(new Date(item.createdAt), "dd MMM yyyy") !== day
+        item => format(new Date(item.createdAt), 'dd MMM yyyy') !== day,
       );
       setHistory(newHistory);
       props.onHistoryChange?.(newHistory);
@@ -159,7 +149,7 @@ export const useHistory = (
         }
       }
     },
-    [props]
+    [props],
   );
 
   return {

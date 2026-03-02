@@ -7,8 +7,8 @@ import { Callout, Tabs } from '@theguild/components'
 
 # Using the GraphQL API
 
-Interact programatically interact with your Hive Organization via the public Hive Console GraphQL
-API. You can manage users, projects, and targets, and retrieve information about your schema usage.
+Interact programmatically with your Hive Organization via the public Hive Console GraphQL API. You
+can manage users, projects, and targets, and retrieve information about your schema usage.
 
 The GraphQL API can be interacted with from any language that supports sending HTTP requests.
 
@@ -169,11 +169,11 @@ inserted).
 
 The GraphQL API models expected errors as part of the GraphQL schema. The type of a mutation field
 is always a object type with both a `ok` and `error` property. We recommend always selecting both
-fields within the mutation selection sets. In case expected mutation behaviour suceeds, the `ok`
-property is non-null and contains the mutation result, while the `error` peroperty is `null`. In
-case the mutation fails (e.g. due to a input validation error), the `ok` field is `null` and the
-`error` field is non-null containing an error message and often additional information on the source
-of the error.
+fields within the mutation selection sets. In case expected mutation behaviour succeeds, the `ok`
+property is non-null and contains the mutation result, while the `error` property is `null`. In case
+the mutation fails (e.g. due to a input validation error), the `ok` field is `null` and the `error`
+field is non-null containing an error message and often additional information on the source of the
+error.
 
 ```graphql filename="Example: Create project mutation"
 mutation CreateProjectMutation($input: CreateProjectInput!) {

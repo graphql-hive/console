@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import cryptoJsSource from 'crypto-js/crypto-js.js?raw';
-import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
-import { LaboratoryPlugin } from '@/lib/plugins';
+import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from './env';
+import { LaboratoryPlugin } from './plugins';
 
 export interface LaboratoryPreflightLog {
   level: 'log' | 'warn' | 'error' | 'info' | 'system';
@@ -42,7 +42,6 @@ export const usePreflight = (props: {
   onPreflightChange?: (preflight: LaboratoryPreflight | null) => void;
   envApi: LaboratoryEnvState & LaboratoryEnvActions;
 }): LaboratoryPreflightState & LaboratoryPreflightActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [preflight, _setPreflight] = useState<LaboratoryPreflight | null>(
     props.defaultPreflight ?? null,
   );
