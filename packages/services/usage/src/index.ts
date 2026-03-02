@@ -179,8 +179,7 @@ async function main() {
       method: ['GET', 'HEAD'],
       url: '/_health',
       async handler(_, res) {
-        const isStarted = !usage.starting();
-        await res.status(isStarted ? 200 : 400).send();
+        await res.status(200).send();
       },
     });
 

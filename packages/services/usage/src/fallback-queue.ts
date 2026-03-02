@@ -6,11 +6,17 @@ import * as Sentry from '@sentry/node';
 // 1000 messages = 800mb
 const MAX_QUEUE_SIZE = 1000;
 
+enum FallbackStatus {
+  PAUSED,
+  READY,
+}
+
 export function createFallbackQueue(config: {
   send: (msgValue: Buffer<ArrayBufferLike>, numOfOperations: number) => Promise<void>;
   logger: ServiceLogger;
 }) {
   const queue: [Buffer<ArrayBufferLike>, number][] = [];
+  let state: FallbackStatus = FallbackStatus.READY;
 
   async function flushSingle() {
     const msg = queue.shift();
@@ -34,6 +40,9 @@ export function createFallbackQueue(config: {
         'Failed to flush message, adding back to fallback queue',
       );
       queue.push(msg);
+    }
+    if (queue.length === 0) {
+      state = FallbackStatus.READY;
     }
   }
 
@@ -85,12 +94,22 @@ export function createFallbackQueue(config: {
       if (queue.length >= MAX_QUEUE_SIZE) {
         config.logger.error('Queue is full, dropping oldest message');
         queue.shift();
+        state = FallbackStatus.PAUSED;
+      }
+      if (state === FallbackStatus.PAUSED) {
+        config.logger.error('Fallback queue is behind. Rejecting message.');
+        throw new Error(
+          'Fallback queue is not accepting more messages until entire queue is processed.',
+        );
       }
 
       queue.push([msgValue, numOfOperations]);
     },
     size() {
       return queue.length;
+    },
+    get isPaused() {
+      return state === FallbackStatus.PAUSED;
     },
   };
 }

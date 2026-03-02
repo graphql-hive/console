@@ -243,8 +243,6 @@ export function createUsage(config: {
         }
       } catch (error: any) {
         rawOperationFailures.inc(numOfOperations);
-
-        changeStatus(Status.Unhealthy);
         logger.error(
           `Failed to flush. Adding to fallback queue (id=%s, error=%s)`,
           batchId,
@@ -281,7 +279,6 @@ export function createUsage(config: {
 
       if (fallback.size() === 0) {
         logger.info('Fallback queue flushed');
-        changeStatus(Status.Ready);
       }
     },
     logger: logger.child({ component: 'fallback' }),
@@ -347,19 +344,17 @@ export function createUsage(config: {
         buffer.add(report);
       },
     ),
-    starting() {
-      return status === Status.Waiting;
-    },
     readiness() {
-      return status === Status.Ready;
+      // fail readiness if the fallback is paused to allow it to catch up
+      return status === Status.Ready && !fallback.isPaused;
     },
     async start() {
       logger.info('Starting Kafka producer');
       await producer.connect();
       buffer.start();
-      changeStatus(Status.Ready);
       logger.info('Kafka producer is ready');
       fallback.start();
+      changeStatus(Status.Ready);
     },
     stop,
   };
