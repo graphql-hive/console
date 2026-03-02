@@ -29,7 +29,7 @@ import { Logger } from '@graphql-hive/logger'
 
 const log = new Logger()
 
-log.debug('I wont be logged by default')
+log.debug("I won't be logged by default")
 
 log.info({ some: 'attributes' }, 'Hello %s!', 'world')
 
@@ -224,12 +224,12 @@ import { Logger } from '@graphql-hive/logger'
 const log = new Logger({ level: 'debug' })
 
 log.trace(
-  // you can suply "lazy" attributes which wont be evaluated unless the log level allows logging
+  // you can supply "lazy" attributes which won't be evaluated unless the log level allows logging
   () => ({
     wont: 'be evaluated',
     some: expensiveOperation()
   }),
-  'Wont be logged and attributes wont be evaluated'
+  "Won't be logged and attributes won't be evaluated"
 )
 
 log.debug('Hello world!')
@@ -315,13 +315,13 @@ const log = new Logger({
   }
 })
 
-log.debug('isDebug is false, so this wont be logged')
+log.debug("isDebug is false, so this won't be logged")
 
 log.info('Hello world!')
 
 const child = log.child('[scoped] ')
 
-child.debug('Child loggers inherit the parent log level function, so this wont be logged either')
+child.debug("Child loggers inherit the parent log level function, so this won't be logged either")
 
 // enable debug mode
 isDebug = true
@@ -664,7 +664,7 @@ class HTTPLogWriter implements LogWriter {
 }
 
 const log = new Logger({
-  // send logs both to the HTTP loggging service and output them to the console
+  // send logs both to the HTTP logging service and output them to the console
   writers: [new HTTPLogWriter(), new ConsoleLogWriter()]
 })
 
@@ -735,7 +735,7 @@ class HTTPLogWriter implements LogWriter {
 
 {
   await using log = new Logger({
-    // send logs both to the HTTP loggging service and output them to the console
+    // send logs both to the HTTP logging service and output them to the console
     writers: [new HTTPLogWriter(), new ConsoleLogWriter()]
   })
 

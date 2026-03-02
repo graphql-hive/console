@@ -128,10 +128,10 @@ npm i -D @graphql-hive/cli@0.50.1
 ### Git Integration
 
 If you are running `hive` command line in a directory that has a Git repository configured (`.git`),
-the CLI willl automatically extract the values for the author and commit for the certain commands
+the CLI will automatically extract the values for the author and commit for the certain commands
 (e.g. schema publish and schema check.
 
-You may override these values by excplicitly passing the `--author` and `--commit` flags to the CLI.
+You may override these values by explicitly passing the `--author` and `--commit` flags to the CLI.
 
 If your project does not have a Git repository configured with a user name and email, you are
 required to pass the `--author` and `--commit` flags to the CLI.
@@ -285,7 +285,7 @@ hive schema:publish \
   token](/docs/management/access-tokens).
 </Callout>
 
-Checking a GraphQL schema is the form of checking the compatbility of an upcoming schema, compared
+Checking a GraphQL schema is the form of checking the compatibility of an upcoming schema, compared
 to the latest published version.
 
 This process of checking a schema needs to be done before **publishing** a new schema version. This
@@ -509,7 +509,7 @@ This command will fetch subgraph's schema from the provided URL, replace the ori
 subgraph from the Registry with the local one, and compose a supergraph. The outcome will be saved
 in the `supergraph.graphql` file.
 
-The `products` subgraph will stay untoched, meaing that the gateway will route requests to its
+The `products` subgraph will stay untouched, meaning that the gateway will route requests to its
 remote endpoint.
 
 > The `--watch` flag will keep the process running and update the supergraph whenever the local

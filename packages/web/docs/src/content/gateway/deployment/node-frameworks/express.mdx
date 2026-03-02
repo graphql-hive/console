@@ -89,7 +89,7 @@ const app = express()
 
 const serveRuntime = createGatewayRuntime(/* Your configuration */)
 const hiveGWRouter = express.Router()
-// GraphiQL specefic CSP configuration
+// GraphiQL specific CSP configuration
 hiveGWRouter.use(
   helmet({
     contentSecurityPolicy: {

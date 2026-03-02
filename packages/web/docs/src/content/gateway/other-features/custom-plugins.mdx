@@ -678,7 +678,7 @@ This hook is mostly used for monitoring and tracing purposes.
 | `supergraph`               | The GraphQL schema of the supergraph.                                                                                        |
 | `subgraph`                 | The name of the subgraph.                                                                                                    |
 | `sourceSubschema`          | The schema of the subgraph.                                                                                                  |
-| `typeName`                 | The name of the type being planed.                                                                                           |
+| `typeName`                 | The name of the type being planned.                                                                                          |
 | `variables`                | The variables provided in the client request.                                                                                |
 | `fragments`                | The fragments provided in the client request.                                                                                |
 | `fieldNodes`               | The field nodes of selection set being planned.                                                                              |
@@ -943,7 +943,7 @@ const useMyTracer = () =>
 #### Instrumentation composition
 
 If multiple plugins have `instrumentation`, they are composed in the same order they are defined the
-plugin array (the first is outtermost call, the last is inner most call).
+plugin array (the first is outermost call, the last is inner most call).
 
 It is possible to customize this composition if it doesn't suite your need (ie. you need hooks and
 instrumentation to have a different oreder of execution).
@@ -957,7 +957,7 @@ const { instrumentation: instrumentation2, ...plugin2 } = usePlugin2()
 const instrumentation = composeInstrumentation([instrumentation2, instrumentation1])
 
 const getEnveloped = envelop({
-  plugin: [{ insturments }, plugin1, plugin2]
+  plugin: [{ instruments }, plugin1, plugin2]
 })
 ```
 
@@ -965,7 +965,7 @@ const getEnveloped = envelop({
 
 Wraps the HTTP request handling. This includes all the plugins `onRequest` and `onResponse` hooks.
 
-This instrument can be asynchronous, the wrapped funcion **can be** asynchronous. Be sure to return
+This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to return
 a `Promise` if `wrapped()` returned a `Promise`.
 
 #### `requestParse`
@@ -973,16 +973,16 @@ a `Promise` if `wrapped()` returned a `Promise`.
 Wraps the parsing of the request phase to extract grapqhl params. This include all the plugins
 `onRequestParse` hooks.
 
-This insturment can be asynchronous, the wrapped function **can be** asynchrounous. Be sure to
-return a `Promise` if `wrapped()` returns a `Promise`.
+This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to return
+a `Promise` if `wrapped()` returns a `Promise`.
 
 #### `operation`
 
 Wraps the Graphql operation execution pipeline. This is called for each graphql operation, meaning
-it can be called mutliple time for the same HTTP request if batching is enabled.
+it can be called multiple time for the same HTTP request if batching is enabled.
 
 This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sur to return
-a `Promise` if `wrapped()` returnd a `Promise`.
+a `Promise` if `wrapped()` returned a `Promise`.
 
 #### `init`
 
@@ -1024,10 +1024,10 @@ Note that `wrapped` is not guaranteed to return a promise.
 #### `subscribe`
 
 Wraps the subscribe phase. This includes all the plugins `onSubscribe` hooks. Note that it doesn't
-wrap the entire lifetime of the subscription, but only it's intialisation.
+wrap the entire lifetime of the subscription, but only it's initialisation.
 
 This instrument can be asynchronous, the wrapped function **can be** asynchronous. Be sure to
-`await` or use `.then` on the result of the `wrapped` function to run code after the `subsribe`
+`await` or use `.then` on the result of the `wrapped` function to run code after the `subscribe`
 phase.
 
 Note that `wrapped` is not guaranteed to return a promise.

@@ -18,7 +18,6 @@ export const useSettings = (props: {
   defaultSettings?: LaboratorySettings | null;
   onSettingsChange?: (settings: LaboratorySettings | null) => void;
 }): LaboratorySettingsState & LaboratorySettingsActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [settings, _setSettings] = useState<LaboratorySettings>(
     props.defaultSettings ?? {
       fetch: {

@@ -75,7 +75,7 @@ If you are in the Kubernetes world, you also have a lot of ingress controllers l
 The first thing would be the entry point of all your GraphQL requests. Since GraphQL exposes a
 single endpoint e.g. `/graphql` this becomes the single entry point for all your operations.
 
-But, I highly wouldn't recommend directly exposing your service to client since it can be unsecure,
+But, I highly wouldn't recommend directly exposing your service to client since it can be insecure,
 difficult to manage things like rate-limiting, load balancing and so on.
 
 Rather, it is always recommended to expose it via an API Gateway of your choice. Be it Ambassador,
@@ -220,7 +220,7 @@ This applies not just to the GraphQL ecosystem, but anything you choose for that
 - Does it have a clear roadmap for the future? If so, what are the milestones?
 - What are the other alternatives? How does it compare to them?
 - How is the documentation? Does it have tests? Does it have examples which I can refer to?
-- Does it follow standards and is free of Vendor Lockin?
+- Does it follow standards and is free of Vendor Lock-in?
 - Are there any security concerns which this tool or library might create?
 
 While not all of these questions might have been addressed by the library or tool well, what I see

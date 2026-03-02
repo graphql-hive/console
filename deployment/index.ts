@@ -136,17 +136,6 @@ const tokens = deployTokens({
   observability,
 });
 
-deployWorkflows({
-  image: docker.factory.getImageId('workflows', imagesTag),
-  docker,
-  environment,
-  postgres,
-  postmarkSecret,
-  observability,
-  sentry,
-  heartbeat: heartbeatsConfig.get('webhooks'),
-});
-
 const commerce = deployCommerce({
   image: docker.factory.getImageId('commerce', imagesTag),
   docker,
@@ -199,6 +188,19 @@ const schemaPolicy = deploySchemaPolicy({
   environment,
   sentry,
   observability,
+});
+
+deployWorkflows({
+  image: docker.factory.getImageId('workflows', imagesTag),
+  docker,
+  environment,
+  postgres,
+  postmarkSecret,
+  observability,
+  sentry,
+  heartbeat: heartbeatsConfig.get('webhooks'),
+  schema,
+  redis,
 });
 
 const supertokens = deploySuperTokens(postgres, { dependencies: [dbMigrations] }, environment);

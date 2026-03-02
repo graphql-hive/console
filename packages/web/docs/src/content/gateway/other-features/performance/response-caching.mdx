@@ -59,7 +59,7 @@ Total time:0.007571%
 ## Configuration
 
 The behaviour of this plugin can be configured by passing an object at the gateway level or by using
-`@cacheControl` directive at schema defintion level.
+`@cacheControl` directive at schema definition level.
 
 The `@cacheControl` directive can be used to give to subgraphs the control over the cache behavior
 for the fields and types they are defining. You can add this directive during composition.
@@ -283,7 +283,7 @@ an user id within the encoded access token.
   Don't forget to validate the authentication token before using it as a session key.
   Allowing cached responses to be returned with unverified tokens can lead to data leaks.
 
-Please see the [Authorization/Auhtentication](/docs/gateway/authorization-authentication) section
+Please see the [Authorization/Authentication](/docs/gateway/authorization-authentication) section
 for more information.
 
 </Callout>
@@ -307,7 +307,7 @@ the `scope` to indicate that the cache should only be used if a session is prese
 This can be useful to prevent exposure of sensitive data to unauthorized users.
 
 <Tabs items={[
-  "Programatically using options",
+  "Programmatically using options",
   <span>Declaratively using <Code>@cacheControl</Code></span>
 ]}>
   <Tabs.Tab>
@@ -370,7 +370,7 @@ If a query operation result contains multiple objects of the same or different t
 is picked.
 
 <Tabs items={[
-  "Programatically using options",
+  "Programmatically using options",
   <span>Declaratively using <Code>@cacheControl</Code></span>
 ]}>
   <Tabs.Tab>
@@ -409,7 +409,7 @@ is picked.
 
 By default, all successful operations influences the cache.
 
-You can globaly disable caching using the `enabled` option. This can be useful for local
+You can globally disable caching using the `enabled` option. This can be useful for local
 development.
 
 ```ts filename="Disabling caching"
@@ -421,7 +421,7 @@ defineConfig({
 })
 ```
 
-### Ingore a specific request
+### Ignore a specific request
 
 You can entirely disable caching (both caching and invalidation) for a specific request by using the
 `enabled` option.
@@ -448,10 +448,10 @@ the response from being cached, but will not prevent cache invalidation for othe
 in the response.
 
 <Tabs items={[
-  "Programatically using options",
+  "Programmatically using options",
   <span>Declaratively using <Code>@cacheControl</Code></span>
 ]}>
-  <Tabs.Tab title="Programatically using options">
+  <Tabs.Tab title="Programmatically using options">
     ```ts filename="Disabling caching for a specific type"
 defineConfig({
   responseCaching: {

@@ -42,8 +42,6 @@ import {
 } from '@graphql-hive/laboratory';
 import { Link as RouterLink } from '@tanstack/react-router';
 
-// import { LaboratoryApi } from '../../../../libraries/laboratory';
-
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
   const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
     const value = localStorage.getItem('hive:laboratory-tab-value');

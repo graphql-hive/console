@@ -4,8 +4,7 @@ import { useQuery } from 'urql';
 import { Section } from '@/components/common';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { Page, TargetLayout } from '@/components/layouts/target';
-import { ClientsFilterTrigger } from '@/components/target/insights/Filters';
-import { OperationsStats } from '@/components/target/insights/Stats';
+import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
@@ -16,7 +15,6 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 
 const GraphQLOperationBody_OperationFragment = graphql(`
   fragment GraphQLOperationBody_OperationFragment on Operation {
@@ -67,8 +65,7 @@ function OperationView({
     dataRetentionInDays,
     defaultPreset: presetLast1Day,
   });
-  const [selectedClients, setSelectedClients] = useSearchParamsFilter<string[]>('clients', []);
-  const operationsList = useMemo(() => [operationHash], [operationHash]);
+  const operationFilter = useMemo(() => ({ operationIds: [operationHash] }), [operationHash]);
 
   const [result] = useQuery({
     query: Operation_View_OperationBodyQuery,
@@ -95,15 +92,6 @@ function OperationView({
         </div>
         {!result.fetching && isNotNoQueryOrMutation === false && (
           <div className="flex justify-end gap-x-2">
-            <ClientsFilterTrigger
-              period={dateRangeController.resolvedRange}
-              selected={selectedClients}
-              selectedOperationIds={[operationHash]}
-              onFilter={setSelectedClients}
-              organizationSlug={organizationSlug}
-              projectSlug={projectSlug}
-              targetSlug={targetSlug}
-            />
             <DateRangePicker
               validUnits={['y', 'M', 'w', 'd', 'h']}
               selectedRange={dateRangeController.selectedPreset.range}
@@ -124,8 +112,7 @@ function OperationView({
           targetSlug={targetSlug}
           period={dateRangeController.resolvedRange}
           dateRangeText={dateRangeController.selectedPreset.label}
-          operationsFilter={operationsList}
-          clientNamesFilter={selectedClients}
+          filter={operationFilter}
           mode="operation-page"
           resolution={dateRangeController.resolution}
         />

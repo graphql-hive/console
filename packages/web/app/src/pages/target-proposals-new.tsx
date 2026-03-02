@@ -2,6 +2,7 @@ import { ReactElement, useCallback, useContext, useEffect, useMemo, useState } f
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import { Page, TargetLayout } from '@/components/layouts/target';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import {
@@ -28,7 +29,7 @@ import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox, Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
+import { Modal, Table, TBody, Td, Th, THead, Tr } from '@/components/v2';
 import { graphql } from '@/gql';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { cn } from '@/lib/utils';
@@ -220,14 +221,16 @@ function ConfirmationModal(props: {
             return (
               <Tr key={idx}>
                 <Td>
-                  <Checkbox
-                    className="mx-auto"
-                    checked={confirmed[idx]}
-                    onClick={_ => {
-                      confirmed[idx] = !confirmed[idx];
-                      setConfirmed([...confirmed]);
-                    }}
-                  />
+                  <div className="flex justify-center">
+                    <Checkbox
+                      size="sm"
+                      checked={confirmed[idx]}
+                      onClick={_ => {
+                        confirmed[idx] = !confirmed[idx];
+                        setConfirmed([...confirmed]);
+                      }}
+                    />
+                  </div>
                 </Td>
                 <Td className="truncate">{c.name}</Td>
                 <Td className="break-normal">{c.reason}</Td>

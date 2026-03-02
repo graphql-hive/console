@@ -1,21 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { GraphQLSchema } from "graphql";
-import { createClient } from "graphql-ws";
-import { decompressFromEncodedURIComponent } from "lz-string";
-import {
-  LaboratoryPermission,
-  LaboratoryPermissions,
-} from "@/components/laboratory/context";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { GraphQLSchema } from 'graphql';
+import { createClient } from 'graphql-ws';
+import { decompressFromEncodedURIComponent } from 'lz-string';
+import { LaboratoryPermission, LaboratoryPermissions } from '@/components/laboratory/context';
 import type {
   LaboratoryCollectionOperation,
   LaboratoryCollectionsActions,
   LaboratoryCollectionsState,
-} from "@/lib/collections";
-import type {
-  LaboratoryEnv,
-  LaboratoryEnvActions,
-  LaboratoryEnvState,
-} from "@/lib/env";
+} from '@/lib/collections';
+import type { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
 import {
   addArgToField,
   addPathToQuery,
@@ -23,25 +16,15 @@ import {
   getOperationName,
   handleTemplate,
   removeArgFromField,
-} from "@/lib/operations.utils";
-import {
-  LaboratoryPlugin,
-  LaboratoryPluginsActions,
-  LaboratoryPluginsState,
-} from "@/lib/plugins";
-import type {
-  LaboratoryPreflightActions,
-  LaboratoryPreflightState,
-} from "@/lib/preflight";
-import type {
-  LaboratorySettingsActions,
-  LaboratorySettingsState,
-} from "@/lib/settings";
+} from '@/lib/operations.utils';
+import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } from '@/lib/plugins';
+import type { LaboratoryPreflightActions, LaboratoryPreflightState } from '@/lib/preflight';
+import type { LaboratorySettingsActions, LaboratorySettingsState } from '@/lib/settings';
 import type {
   LaboratoryTabOperation,
   LaboratoryTabsActions,
   LaboratoryTabsState,
-} from "@/lib/tabs";
+} from '@/lib/tabs';
 
 export interface LaboratoryOperation {
   id: string;
@@ -60,20 +43,14 @@ export interface LaboratoryOperationsState {
 export interface LaboratoryOperationsActions {
   setActiveOperation: (operationId: string) => void;
   addOperation: (
-    operation: Omit<LaboratoryOperation, "id"> & { id?: string }
+    operation: Omit<LaboratoryOperation, 'id'> & { id?: string },
   ) => LaboratoryOperation;
   setOperations: (operations: LaboratoryOperation[]) => void;
-  updateActiveOperation: (
-    operation: Partial<Omit<LaboratoryOperation, "id">>
-  ) => void;
+  updateActiveOperation: (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => void;
   deleteOperation: (operationId: string) => void;
   addPathToActiveOperation: (path: string) => void;
   deletePathFromActiveOperation: (path: string) => void;
-  addArgToActiveOperation: (
-    path: string,
-    argName: string,
-    schema: GraphQLSchema
-  ) => void;
+  addArgToActiveOperation: (path: string, argName: string, schema: GraphQLSchema) => void;
   deleteArgFromActiveOperation: (path: string, argName: string) => void;
   runActiveOperation: (
     endpoint: string,
@@ -81,7 +58,7 @@ export interface LaboratoryOperationsActions {
       env?: LaboratoryEnv;
       headers?: Record<string, string>;
       onResponse?: (response: string) => void;
-    }
+    },
   ) => Promise<Response | null>;
   stopActiveOperation: (() => void) | null;
   isActiveOperationLoading: boolean;
@@ -99,7 +76,7 @@ export interface LaboratoryOperationsCallbacks {
 export const useOperations = (
   props: {
     checkPermissions: (
-      permission: `${keyof LaboratoryPermissions & string}:${keyof LaboratoryPermission & string}`
+      permission: `${keyof LaboratoryPermissions & string}:${keyof LaboratoryPermission & string}`,
     ) => boolean;
     defaultOperations?: LaboratoryOperation[];
     defaultActiveOperationId?: string;
@@ -111,11 +88,10 @@ export const useOperations = (
     preflightApi?: LaboratoryPreflightState & LaboratoryPreflightActions;
     settingsApi?: LaboratorySettingsState & LaboratorySettingsActions;
     pluginsApi?: LaboratoryPluginsState & LaboratoryPluginsActions;
-  } & LaboratoryOperationsCallbacks
+  } & LaboratoryOperationsCallbacks,
 ): LaboratoryOperationsState & LaboratoryOperationsActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [operations, _setOperations] = useState<LaboratoryOperation[]>(
-    props.defaultOperations ?? []
+    props.defaultOperations ?? [],
   );
 
   const activeOperation = useMemo(() => {
@@ -125,12 +101,8 @@ export const useOperations = (
       return null;
     }
 
-    if (tab.type === "operation") {
-      return (
-        operations.find(
-          (o) => o.id === (tab.data as LaboratoryTabOperation).id
-        ) ?? null
-      );
+    if (tab.type === 'operation') {
+      return operations.find(o => o.id === (tab.data as LaboratoryTabOperation).id) ?? null;
     }
 
     return null;
@@ -140,9 +112,7 @@ export const useOperations = (
     (operationId: string) => {
       const tab =
         props.tabsApi?.tabs.find(
-          (t) =>
-            t.type === "operation" &&
-            (t.data as LaboratoryTabOperation).id === operationId
+          t => t.type === 'operation' && (t.data as LaboratoryTabOperation).id === operationId,
         ) ?? null;
 
       if (!tab) {
@@ -151,7 +121,7 @@ export const useOperations = (
 
       props.tabsApi?.setActiveTab(tab);
     },
-    [props.tabsApi]
+    [props.tabsApi],
   );
 
   const setOperations = useCallback(
@@ -159,11 +129,11 @@ export const useOperations = (
       _setOperations(operations);
       props.onOperationsChange?.(operations);
     },
-    [props]
+    [props],
   );
 
   const addOperation = useCallback(
-    (operation: Omit<LaboratoryOperation, "id"> & { id?: string }) => {
+    (operation: Omit<LaboratoryOperation, 'id'> & { id?: string }) => {
       const newOperation = { id: crypto.randomUUID(), ...operation };
       const newOperations = [...operations, newOperation];
       _setOperations(newOperations);
@@ -173,12 +143,12 @@ export const useOperations = (
 
       return newOperation;
     },
-    [operations, props]
+    [operations, props],
   );
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const share = urlParams.get("share");
+    const share = urlParams.get('share');
 
     if (share) {
       const payload = decompressFromEncodedURIComponent(share);
@@ -195,7 +165,7 @@ export const useOperations = (
         });
 
         const tab = props.tabsApi?.addTab({
-          type: "operation",
+          type: 'operation',
           data: operation,
         });
 
@@ -204,18 +174,18 @@ export const useOperations = (
         }
 
         const searchParams = new URLSearchParams(window.location.search);
-        searchParams.delete("share");
+        searchParams.delete('share');
         window.history.replaceState(
           null,
-          "",
-          window.location.pathname + "?" + searchParams.toString()
+          '',
+          window.location.pathname + '?' + searchParams.toString(),
         );
       }
     }
   }, []);
 
   const updateActiveOperation = useCallback(
-    (operation: Partial<Omit<LaboratoryOperation, "id">>) => {
+    (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => {
       const updatedOperation = { ...activeOperation, ...operation };
 
       if (updatedOperation.query) {
@@ -226,10 +196,8 @@ export const useOperations = (
         }
       }
 
-      const newOperations = operations.map((o) =>
-        o.id === activeOperation?.id
-          ? (updatedOperation as LaboratoryOperation)
-          : o
+      const newOperations = operations.map(o =>
+        o.id === activeOperation?.id ? (updatedOperation as LaboratoryOperation) : o,
       );
 
       _setOperations(newOperations);
@@ -241,28 +209,28 @@ export const useOperations = (
 
       if (
         props.collectionsApi &&
-        props.checkPermissions?.("collectionsOperations:update") &&
+        props.checkPermissions?.('collectionsOperations:update') &&
         activeOperation?.id
       ) {
         const collectionId =
-          props.collectionsApi.collections.find((c) =>
-            c.operations.some((o) => o.id === activeOperation.id)
-          )?.id ?? "";
+          props.collectionsApi.collections.find(c =>
+            c.operations.some(o => o.id === activeOperation.id),
+          )?.id ?? '';
 
         props.collectionsApi.updateOperationInCollection(
           collectionId,
           activeOperation.id,
-          updatedOperation as LaboratoryCollectionOperation
+          updatedOperation as LaboratoryCollectionOperation,
         );
       }
     },
-    [activeOperation, operations, props.checkPermissions, props.collectionsApi]
+    [activeOperation, operations, props.checkPermissions, props.collectionsApi],
   );
 
   const deleteOperation = useCallback(
     (operationId: string) => {
-      const operationToDelete = operations.find((o) => o.id === operationId);
-      const newOperations = operations.filter((o) => o.id !== operationId);
+      const operationToDelete = operations.find(o => o.id === operationId);
+      const newOperations = operations.filter(o => o.id !== operationId);
       _setOperations(newOperations);
 
       props.onOperationsChange?.(newOperations);
@@ -271,10 +239,10 @@ export const useOperations = (
       }
 
       if (activeOperation?.id === operationId) {
-        setActiveOperation(newOperations[0]?.id ?? "");
+        setActiveOperation(newOperations[0]?.id ?? '');
       }
     },
-    [activeOperation, operations, props, setActiveOperation]
+    [activeOperation, operations, props, setActiveOperation],
   );
 
   const addPathToActiveOperation = useCallback(
@@ -288,7 +256,7 @@ export const useOperations = (
       };
       updateActiveOperation(newActiveOperation);
     },
-    [activeOperation, updateActiveOperation]
+    [activeOperation, updateActiveOperation],
   );
 
   const deletePathFromActiveOperation = useCallback(
@@ -303,7 +271,7 @@ export const useOperations = (
       };
       updateActiveOperation(newActiveOperation);
     },
-    [activeOperation, updateActiveOperation]
+    [activeOperation, updateActiveOperation],
   );
 
   const addArgToActiveOperation = useCallback(
@@ -318,7 +286,7 @@ export const useOperations = (
       };
       updateActiveOperation(newActiveOperation);
     },
-    [activeOperation, updateActiveOperation]
+    [activeOperation, updateActiveOperation],
   );
 
   const deleteArgFromActiveOperation = useCallback(
@@ -333,7 +301,7 @@ export const useOperations = (
       };
       updateActiveOperation(newActiveOperation);
     },
-    [activeOperation, updateActiveOperation]
+    [activeOperation, updateActiveOperation],
   );
 
   const [stopOperationsFunctions, setStopOperationsFunctions] = useState<
@@ -344,7 +312,7 @@ export const useOperations = (
     (operationId: string) => {
       return Object.keys(stopOperationsFunctions).includes(operationId);
     },
-    [stopOperationsFunctions]
+    [stopOperationsFunctions],
   );
 
   const isActiveOperationLoading = useMemo(() => {
@@ -360,7 +328,7 @@ export const useOperations = (
         onResponse?: (response: string) => void;
       },
       plugins: LaboratoryPlugin[] = props.pluginsApi?.plugins ?? [],
-      pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {}
+      pluginsState: Record<string, any> = props.pluginsApi?.pluginsState ?? {},
     ) => {
       if (!activeOperation?.query) {
         return null;
@@ -373,10 +341,7 @@ export const useOperations = (
         env = options.env;
         headers = options.headers ?? {};
       } else {
-        const preflightResult = await props.preflightApi?.runPreflight?.(
-          plugins,
-          pluginsState
-        );
+        const preflightResult = await props.preflightApi?.runPreflight?.(plugins, pluginsState);
         env = preflightResult?.env ?? { variables: {} };
         headers = preflightResult?.headers ?? {};
         pluginsState = preflightResult?.pluginsState ?? {};
@@ -394,7 +359,7 @@ export const useOperations = (
             handleTemplate(activeOperation.headers, {
               ...env.variables,
               plugins: pluginsState,
-            })
+            }),
           )
         : {};
 
@@ -408,7 +373,7 @@ export const useOperations = (
             handleTemplate(activeOperation.variables, {
               ...env.variables,
               plugins: pluginsState,
-            })
+            }),
           )
         : {};
       const extensions = activeOperation.extensions
@@ -416,32 +381,32 @@ export const useOperations = (
             handleTemplate(activeOperation.extensions, {
               ...env.variables,
               plugins: pluginsState,
-            })
+            }),
           )
         : {};
 
-      if (activeOperation.query.startsWith("subscription")) {
+      if (activeOperation.query.startsWith('subscription')) {
         const client = createClient({
-          url: endpoint.replace("http", "ws"),
+          url: endpoint.replace('http', 'ws'),
           connectionParams: {
             ...mergedHeaders,
           },
         });
 
-        client.on("connected", () => {
-          console.log("connected");
+        client.on('connected', () => {
+          console.log('connected');
         });
 
-        client.on("error", () => {
-          setStopOperationsFunctions((prev) => {
+        client.on('error', () => {
+          setStopOperationsFunctions(prev => {
             const newStopOperationsFunctions = { ...prev };
             delete newStopOperationsFunctions[activeOperation.id];
             return newStopOperationsFunctions;
           });
         });
 
-        client.on("closed", () => {
-          setStopOperationsFunctions((prev) => {
+        client.on('closed', () => {
+          setStopOperationsFunctions(prev => {
             const newStopOperationsFunctions = { ...prev };
             delete newStopOperationsFunctions[activeOperation.id];
             return newStopOperationsFunctions;
@@ -455,19 +420,19 @@ export const useOperations = (
             extensions,
           },
           {
-            next: (message) => {
+            next: message => {
               options?.onResponse?.(JSON.stringify(message ?? {}));
             },
             error: () => {},
             complete: () => {},
-          }
+          },
         );
 
-        setStopOperationsFunctions((prev) => ({
+        setStopOperationsFunctions(prev => ({
           ...prev,
           [activeOperation.id]: () => {
             void client.dispose();
-            setStopOperationsFunctions((prev) => {
+            setStopOperationsFunctions(prev => {
               const newStopOperationsFunctions = { ...prev };
               delete newStopOperationsFunctions[activeOperation.id];
               return newStopOperationsFunctions;
@@ -481,7 +446,7 @@ export const useOperations = (
       const abortController = new AbortController();
 
       const response = fetch(endpoint, {
-        method: "POST",
+        method: 'POST',
         credentials: props.settingsApi?.settings.fetch.credentials,
         body: JSON.stringify({
           query: activeOperation.query,
@@ -490,11 +455,11 @@ export const useOperations = (
         }),
         headers: {
           ...mergedHeaders,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         signal: abortController.signal,
       }).finally(() => {
-        setStopOperationsFunctions((prev) => {
+        setStopOperationsFunctions(prev => {
           const newStopOperationsFunctions = { ...prev };
           delete newStopOperationsFunctions[activeOperation.id];
 
@@ -502,22 +467,19 @@ export const useOperations = (
         });
       });
 
-      setStopOperationsFunctions((prev) => ({
+      setStopOperationsFunctions(prev => ({
         ...prev,
         [activeOperation.id]: () => abortController.abort(),
       }));
 
       return response;
     },
-    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi]
+    [activeOperation, props.preflightApi, props.envApi, props.pluginsApi],
   );
 
-  const isOperationSubscription = useCallback(
-    (operation: LaboratoryOperation) => {
-      return operation.query?.startsWith("subscription") ?? false;
-    },
-    []
-  );
+  const isOperationSubscription = useCallback((operation: LaboratoryOperation) => {
+    return operation.query?.startsWith('subscription') ?? false;
+  }, []);
 
   const isActiveOperationSubscription = useMemo(() => {
     return activeOperation ? isOperationSubscription(activeOperation) : false;
@@ -537,7 +499,7 @@ export const useOperations = (
     addArgToActiveOperation,
     deleteArgFromActiveOperation,
     isActiveOperationLoading,
-    stopActiveOperation: stopOperationsFunctions[activeOperation?.id ?? ""],
+    stopActiveOperation: stopOperationsFunctions[activeOperation?.id ?? ''],
     isActiveOperationSubscription,
     isOperationSubscription,
     isOperationLoading,

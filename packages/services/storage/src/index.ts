@@ -4100,6 +4100,7 @@ export async function createStorage(
 
       return DocumentCollectionDocumentModel.parse(result);
     },
+
     async createSchemaCheck(args) {
       const result = await tracedTransaction('createSchemaCheck', pool, async trx => {
         const sdlStoreInserts: Array<Promise<unknown>> = [];
@@ -4995,6 +4996,45 @@ export function decodeCreatedAtAndUUIDIdBasedCursor(cursor: string) {
     createdAt,
     id,
   };
+}
+
+export function encodeAppDeploymentSortCursor(cursor: {
+  sortField: string;
+  sortValue: string | null;
+  id: string;
+}) {
+  const value = cursor.sortValue ?? '';
+  return Buffer.from(`${cursor.sortField}:${value}|${cursor.id}`).toString('base64');
+}
+
+export function decodeAppDeploymentSortCursor(cursor: string) {
+  const decoded = Buffer.from(cursor, 'base64').toString('utf8');
+  const pipeIndex = decoded.lastIndexOf('|');
+  if (pipeIndex === -1) {
+    throw new Error('Invalid cursor');
+  }
+  const id = decoded.slice(pipeIndex + 1);
+  const fieldAndValue = decoded.slice(0, pipeIndex);
+  const colonIndex = fieldAndValue.indexOf(':');
+  if (colonIndex === -1) {
+    throw new Error('Invalid cursor');
+  }
+  const sortField = fieldAndValue.slice(0, colonIndex);
+  const validSortFields = ['CREATED_AT', 'ACTIVATED_AT', 'LAST_USED'];
+  if (!validSortFields.includes(sortField)) {
+    throw new Error('Invalid cursor: unknown sort field');
+  }
+
+  const sortValue = fieldAndValue.slice(colonIndex + 1) || null;
+  if (sortValue !== null && Number.isNaN(new Date(sortValue).getTime())) {
+    throw new Error('Invalid cursor: sortValue is not a valid date');
+  }
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    throw new Error('Invalid cursor');
+  }
+
+  return { sortField, sortValue, id };
 }
 
 export function encodeHashBasedCursor(cursor: { id: string }) {

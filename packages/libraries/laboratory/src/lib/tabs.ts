@@ -1,48 +1,48 @@
-import { useCallback, useState } from "react";
-import type { LaboratoryEnv } from "@/lib/env";
-import type { LaboratoryHistoryRequest } from "@/lib/history";
-import type { LaboratoryOperation } from "@/lib/operations";
-import type { LaboratoryPreflight } from "@/lib/preflight";
-import type { LaboratoryTest } from "@/lib/tests";
+import { useCallback, useState } from 'react';
+import type { LaboratoryEnv } from '@/lib/env';
+import type { LaboratoryHistoryRequest } from '@/lib/history';
+import type { LaboratoryOperation } from '@/lib/operations';
+import type { LaboratoryPreflight } from '@/lib/preflight';
+import type { LaboratoryTest } from '@/lib/tests';
 
 export interface LaboratoryTabOperation {
   id: string;
-  type: "operation";
-  data: Pick<LaboratoryOperation, "id" | "name">;
+  type: 'operation';
+  data: Pick<LaboratoryOperation, 'id' | 'name'>;
   readOnly?: boolean;
 }
 
 export interface LaboratoryTabHistory {
   id: string;
-  type: "history";
-  data: Pick<LaboratoryHistoryRequest, "id">;
+  type: 'history';
+  data: Pick<LaboratoryHistoryRequest, 'id'>;
   readOnly?: boolean;
 }
 
 export interface LaboratoryTabPreflight {
   id: string;
-  type: "preflight";
+  type: 'preflight';
   data: LaboratoryPreflight;
   readOnly?: boolean;
 }
 
 export interface LaboratoryTabEnv {
   id: string;
-  type: "env";
+  type: 'env';
   data: LaboratoryEnv;
   readOnly?: boolean;
 }
 
 export interface LaboratoryTabTest {
   id: string;
-  type: "test";
-  data: Pick<LaboratoryTest, "id" | "name">;
+  type: 'test';
+  data: Pick<LaboratoryTest, 'id' | 'name'>;
   readOnly?: boolean;
 }
 
 export interface LaboratoryTabSettings {
   id: string;
-  type: "settings";
+  type: 'settings';
   data: unknown;
   readOnly?: boolean;
 }
@@ -55,8 +55,8 @@ export interface LaboratoryTabCustom {
 }
 
 export type LaboratoryTabData =
-  | Pick<LaboratoryOperation, "id" | "name">
-  | Pick<LaboratoryHistoryRequest, "id">
+  | Pick<LaboratoryOperation, 'id' | 'name'>
+  | Pick<LaboratoryHistoryRequest, 'id'>
   | LaboratoryPreflight
   | LaboratoryEnv;
 
@@ -77,7 +77,7 @@ export interface LaboratoryTabsActions {
   activeTab: LaboratoryTab | null;
   setActiveTab: (tab: LaboratoryTab) => void;
   setTabs: (tabs: LaboratoryTab[]) => void;
-  addTab: (tab: Omit<LaboratoryTab, "id">) => LaboratoryTab;
+  addTab: (tab: Omit<LaboratoryTab, 'id'>) => LaboratoryTab;
   updateTab: (id: string, data: LaboratoryTabData) => void;
   deleteTab: (tabId: string) => void;
 }
@@ -88,14 +88,12 @@ export const useTabs = (props: {
   onTabsChange?: (tabs: LaboratoryTab[]) => void;
   onActiveTabIdChange?: (tabId: string | null) => void;
 }): LaboratoryTabsState & LaboratoryTabsActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [tabs, _setTabs] = useState<LaboratoryTab[]>(props.defaultTabs ?? []);
 
-  // eslint-disable-next-line react/hook-use-state
   const [activeTab, _setActiveTab] = useState<LaboratoryTab | null>(
-    props.defaultTabs?.find((t) => t.id === props.defaultActiveTabId) ??
+    props.defaultTabs?.find(t => t.id === props.defaultActiveTabId) ??
       props.defaultTabs?.[0] ??
-      null
+      null,
   );
 
   const setActiveTab = useCallback(
@@ -103,7 +101,7 @@ export const useTabs = (props: {
       _setActiveTab(tab);
       props.onActiveTabIdChange?.(tab?.id ?? null);
     },
-    [props]
+    [props],
   );
 
   const setTabs = useCallback(
@@ -111,11 +109,11 @@ export const useTabs = (props: {
       _setTabs(tabs);
       props.onTabsChange?.(tabs);
     },
-    [props]
+    [props],
   );
 
   const addTab = useCallback(
-    (tab: Omit<LaboratoryTab, "id">) => {
+    (tab: Omit<LaboratoryTab, 'id'>) => {
       const newTab = { ...tab, id: crypto.randomUUID() } as LaboratoryTab;
       const newTabs = [...(tabs ?? []), newTab] as LaboratoryTab[];
       _setTabs(newTabs);
@@ -123,27 +121,25 @@ export const useTabs = (props: {
 
       return newTab;
     },
-    [tabs, props]
+    [tabs, props],
   );
 
   const deleteTab = useCallback(
     (tabId: string) => {
-      const newTabs = tabs.filter((t) => t.id !== tabId);
+      const newTabs = tabs.filter(t => t.id !== tabId);
       _setTabs(newTabs);
       props.onTabsChange?.(newTabs);
     },
-    [tabs, props]
+    [tabs, props],
   );
 
   const updateTab = useCallback(
     (id: string, newData: LaboratoryTabData) => {
-      const newTabs = tabs.map((t) =>
-        t.id === id ? { ...t, data: newData } : t
-      ) as LaboratoryTab[];
+      const newTabs = tabs.map(t => (t.id === id ? { ...t, data: newData } : t)) as LaboratoryTab[];
       _setTabs(newTabs);
       props.onTabsChange?.(newTabs);
     },
-    [tabs, props]
+    [tabs, props],
   );
 
   return {

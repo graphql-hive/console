@@ -42,7 +42,6 @@ export const usePreflight = (props: {
   onPreflightChange?: (preflight: LaboratoryPreflight | null) => void;
   envApi: LaboratoryEnvState & LaboratoryEnvActions;
 }): LaboratoryPreflightState & LaboratoryPreflightActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [preflight, _setPreflight] = useState<LaboratoryPreflight | null>(
     props.defaultPreflight ?? null,
   );

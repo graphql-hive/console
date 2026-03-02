@@ -3,6 +3,7 @@ import { LockIcon, MoreHorizontalIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { z } from 'zod';
+import { Checkbox } from '@/components/base/checkbox/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,

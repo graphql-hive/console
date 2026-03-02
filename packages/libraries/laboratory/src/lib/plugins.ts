@@ -1,18 +1,16 @@
-import { useCallback, useState } from "react";
-import type { LaboratoryContextProps } from "@/components/laboratory/context";
-import { LaboratoryTabCustom } from "@/lib/tabs";
+import { useCallback, useState } from 'react';
+import type { LaboratoryContextProps } from '@/components/laboratory/context';
+import { LaboratoryTabCustom } from '@/lib/tabs';
 
 export interface LaboratoryPluginTab<State = Record<string, unknown>> {
   type: string;
   name: string | ((laboratory: LaboratoryContextProps, state: State) => string);
-  icon?:
-    | React.ReactNode
-    | ((laboratory: LaboratoryContextProps, state: State) => React.ReactNode);
+  icon?: React.ReactNode | ((laboratory: LaboratoryContextProps, state: State) => React.ReactNode);
   component: (
     tab: LaboratoryTabCustom,
     laboratory: LaboratoryContextProps,
     state: State,
-    setState: (state: State) => void
+    setState: (state: State) => void,
   ) => React.ReactNode;
 }
 
@@ -25,9 +23,7 @@ export interface LaboratoryPlugin<State = Record<string, unknown>> {
   onStateChange?: (state: State) => void;
   tabs?: LaboratoryPluginTab<State>[];
   commands?: {
-    name:
-      | string
-      | ((laboratory: LaboratoryContextProps, state: State) => string);
+    name: string | ((laboratory: LaboratoryContextProps, state: State) => string);
     icon?:
       | React.ReactNode
       | ((laboratory: LaboratoryContextProps, state: State) => React.ReactNode);
@@ -40,7 +36,7 @@ export interface LaboratoryPlugin<State = Record<string, unknown>> {
       object: (
         props: Record<string, string>,
         state: State,
-        setState: (state: State) => void
+        setState: (state: State) => void,
       ) => Record<string, unknown>;
     };
   };
@@ -60,14 +56,13 @@ export const usePlugins = (props: {
   defaultPluginsState?: Record<string, any>;
   onPluginsStateChange?: (state: Record<string, any>) => void;
 }): LaboratoryPluginsState & LaboratoryPluginsActions => {
-  // eslint-disable-next-line react/hook-use-state
   const [pluginsState, _setPluginsState] = useState<Record<string, any>>({
     ...props.plugins?.reduce(
       (acc, plugin) => {
         acc[plugin.id] = plugin.defaultState ?? {};
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, any>,
     ),
     ...props.defaultPluginsState,
   });
@@ -77,7 +72,7 @@ export const usePlugins = (props: {
       _setPluginsState(state);
       props.onPluginsStateChange?.(state);
     },
-    [props]
+    [props],
   );
 
   return {

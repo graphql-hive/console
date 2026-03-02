@@ -1,5 +1,4 @@
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef } from 'react';
-import color from 'color';
 import * as monaco from 'monaco-editor';
 import { initializeMode } from 'monaco-graphql/initializeMode';
 import { useLaboratory } from '@/components/laboratory/context';

@@ -10,18 +10,15 @@ import {
 } from '@/components/target/proposals';
 import { SaveProposalProvider } from '@/components/target/proposals/save-proposal-modal';
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
-import {
-  ProposalQuery_VersionsListFragment,
-  VersionSelect,
-} from '@/components/target/proposals/version-select';
 import { CardDescription } from '@/components/ui/card';
-import { DiffIcon, EditIcon, GraphQLIcon } from '@/components/ui/icon';
+import { CheckIcon, DiffIcon, EditIcon, GraphQLIcon, XIcon } from '@/components/ui/icon';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TimeAgo } from '@/components/v2';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -80,9 +77,9 @@ const ProposalQuery = graphql(/* GraphQL  */ `
       stage
       title
       description
-      versions: checks(after: null, input: {}) {
-        ...ProposalQuery_VersionsListFragment
-      }
+      compositionStatus
+      compositionTimestamp
+      compositionStatusReason
       checks(after: $version, input: {}) {
         ...ProposalOverview_ChecksFragment
       }
@@ -374,7 +371,6 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         services={services ?? []}
         reviews={proposal.reviews ?? {}}
         checks={proposal.checks ?? null}
-        versions={proposal.versions ?? null}
         isDistributedGraph={isDistributedGraph}
         proposal={proposal}
         target={query.data.target}
@@ -432,10 +428,42 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
         ) : (
           proposal && (
             <>
-              <div className="grid grid-cols-2">
-                <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} />
-                <div className="flex justify-end">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
+                <Title className="flex grow flex-row items-center gap-2 truncate">
+                  <div className="truncate">{proposal.title}</div>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        {proposal?.compositionStatus === 'ERROR' ? (
+                          <XIcon className="text-red-600" />
+                        ) : null}
+                        {proposal?.compositionStatus === 'SUCCESS' ? (
+                          <CheckIcon className="text-emerald-500" />
+                        ) : null}
+                      </TooltipTrigger>
+                      <TooltipContent align="start">
+                        {proposal?.compositionStatus === 'ERROR' ? (
+                          <>
+                            Composition Error{' '}
+                            {proposal.compositionTimestamp ? (
+                              <>
+                                (<TimeAgo date={proposal.compositionTimestamp} />)
+                              </>
+                            ) : null}
+                            {proposal.compositionStatusReason
+                              ?.split('\n')
+                              .map((e, i) => <div key={i}>- {e}</div>) ?? 'Unknown cause.'}{' '}
+                          </>
+                        ) : null}
+                        {proposal?.compositionStatus === 'SUCCESS' ? 'Composes Successfully' : null}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Title>
+                <div className="flex-col justify-end">
                   <StageTransitionSelect
+                    className="w-full sm:w-auto"
                     stage={proposal.stage}
                     onSelect={async stage => {
                       const _review = await reviewSchemaProposal({
@@ -452,12 +480,13 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   />
                 </div>
               </div>
-              <div className="p-4 py-8">
-                <Title>{proposal.title}</Title>
-                <div className="text-neutral-10 text-xs">
+              <div className="mb-6 mt-2">
+                {proposal.description ? (
+                  <div className="w-full border-l-2 p-4">{proposal.description}</div>
+                ) : null}
+                <div className="text-neutral-10 mt-4 pr-2 text-right text-xs">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
-                <div className="w-full p-2 pt-4">{proposal.description}</div>
               </div>
             </>
           )
@@ -478,7 +507,6 @@ function TabbedContent(props: {
   services: ServiceProposalDetails[];
   reviews: FragmentType<typeof Proposal_ReviewsFragment>;
   checks: FragmentType<typeof ProposalOverview_ChecksFragment> | null;
-  versions: FragmentType<typeof ProposalQuery_VersionsListFragment> | null;
   proposal: FragmentType<typeof Proposals_EditProposalProposalFragment>;
   target: FragmentType<typeof Proposals_EditProposalTargetFragment>;
   me: FragmentType<typeof Proposals_EditProposalMeFragment> | null;
@@ -486,7 +514,7 @@ function TabbedContent(props: {
 }) {
   return (
     <Tabs value={props.page} defaultValue={Tab.DETAILS}>
-      <TabsList variant="menu" className="w-full">
+      <TabsList variant="menu" className="border-b-1 w-full">
         <TabsTrigger variant="menu" value={Tab.DETAILS} asChild>
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId"

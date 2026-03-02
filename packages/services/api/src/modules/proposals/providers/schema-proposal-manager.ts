@@ -1,13 +1,14 @@
 /**
  * This wraps the higher level logic with schema proposals.
  */
-import { Injectable, Scope } from 'graphql-modules';
+import { Inject, Injectable, Scope } from 'graphql-modules';
 import { TargetReferenceInput } from 'packages/libraries/core/src/client/__generated__/types';
 import type { SchemaProposalStage } from '../../../__generated__/types';
 import { HiveError } from '../../../shared/errors';
 import { Session } from '../../auth/lib/authz';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
+import { PUB_SUB_CONFIG, type HivePubSub } from '../../shared/providers/pub-sub';
 import { Storage } from '../../shared/providers/storage';
 import { SchemaProposalStorage } from './schema-proposal-storage';
 
@@ -23,8 +24,39 @@ export class SchemaProposalManager {
     private storage: Storage,
     private session: Session,
     private idTranslator: IdTranslator,
+    @Inject(PUB_SUB_CONFIG) private pubSub: HivePubSub,
   ) {
     this.logger = logger.child({ source: 'SchemaProposalsManager' });
+  }
+
+  async subscribeToSchemaProposalCompositions(args: { proposalId: string }) {
+    const proposal = await this.proposalStorage.getProposalTargetId({
+      id: args.proposalId,
+    });
+
+    if (!proposal) {
+      this.session.raise('schemaProposal:describe');
+    }
+
+    const selector = await this.idTranslator.resolveTargetReference({
+      reference: {
+        byId: proposal.targetId,
+      },
+    });
+
+    if (!selector) {
+      this.session.raise('schemaProposal:describe');
+    }
+
+    await this.session.assertPerformAction({
+      organizationId: selector.organizationId,
+      action: 'schemaProposal:describe',
+      params: selector,
+    });
+
+    this.logger.info(`Subscribed to "schemaProposalComposition" (id=${args.proposalId})`);
+
+    return this.pubSub.subscribe('schemaProposalComposition', args.proposalId);
   }
 
   async proposeSchema(args: {
@@ -38,6 +70,12 @@ export class SchemaProposalManager {
     if (selector === null) {
       this.session.raise('schemaProposal:modify');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:modify',
+      organizationId: selector.organizationId,
+      params: selector,
+    });
 
     const createProposalResult = await this.proposalStorage.createProposal({
       organizationId: selector.organizationId,
@@ -79,7 +117,24 @@ export class SchemaProposalManager {
   }
 
   async getProposal(args: { id: string }) {
-    return this.proposalStorage.getProposal(args);
+    const proposal = await this.proposalStorage.getProposal(args);
+
+    if (proposal) {
+      const selector = await this.idTranslator.resolveTargetReference({
+        reference: {
+          byId: proposal.targetId,
+        },
+      });
+      if (selector === null) {
+        this.session.raise('schemaProposal:describe');
+      }
+      await this.session.assertPerformAction({
+        action: 'schemaProposal:describe',
+        organizationId: selector.organizationId,
+        params: selector,
+      });
+    }
+    return proposal;
   }
 
   async getPaginatedReviews(args: {
@@ -90,6 +145,23 @@ export class SchemaProposalManager {
     authors: string[];
   }) {
     this.logger.debug('Get paginated reviews (target=%s, after=%s)', args.proposalId, args.after);
+    const proposal = await this.proposalStorage.getProposalTargetId({ id: args.proposalId });
+
+    if (proposal) {
+      const selector = await this.idTranslator.resolveTargetReference({
+        reference: {
+          byId: proposal.targetId,
+        },
+      });
+      if (selector === null) {
+        this.session.raise('schemaProposal:describe');
+      }
+      await this.session.assertPerformAction({
+        action: 'schemaProposal:describe',
+        organizationId: selector.organizationId,
+        params: selector,
+      });
+    }
 
     return this.proposalStorage.getPaginatedReviews(args);
   }
@@ -110,8 +182,14 @@ export class SchemaProposalManager {
       reference: args.target,
     });
     if (selector === null) {
-      this.session.raise('schemaProposal:modify');
+      this.session.raise('schemaProposal:describe');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:describe',
+      organizationId: selector.organizationId,
+      params: selector,
+    });
 
     return this.proposalStorage.getPaginatedProposals({
       targetId: selector.targetId,
@@ -129,14 +207,28 @@ export class SchemaProposalManager {
   }) {
     this.logger.debug(`Reviewing proposal (proposal=%s, stage=%s)`, args.proposalId, args.stage);
 
-    // @todo check permissions for user
-    const proposal = await this.proposalStorage.getProposal({ id: args.proposalId });
+    const proposal = await this.proposalStorage.getProposalTargetId({ id: args.proposalId });
+
+    if (!proposal) {
+      throw new HiveError('Proposal target lookup failed.');
+    }
+
     const user = await this.session.getViewer();
     const target = await this.storage.getTargetById(proposal.targetId);
 
     if (!target) {
       throw new HiveError('Proposal target lookup failed.');
     }
+
+    await this.session.assertPerformAction({
+      action: 'schemaProposal:describe',
+      organizationId: target.orgId,
+      params: {
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: proposal.targetId,
+      },
+    });
 
     if (args.stage) {
       const review = await this.proposalStorage.manuallyTransitionProposal({
