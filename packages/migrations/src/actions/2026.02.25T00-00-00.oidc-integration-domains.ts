@@ -14,16 +14,16 @@ export default {
       , UNIQUE ("oidc_integration_id", "domain_name")
     );
 
-    CREATE INDEX "oidc_integration_domains_oidc_integration_id_idx"
+    CREATE INDEX IF NOT EXISTS "oidc_integration_domains_oidc_integration_id_idx"
       ON "oidc_integration_domains" ("oidc_integration_id")
     ;
-    CREATE INDEX "oidc_integration_domains_organization_id_idx"
+    CREATE INDEX IF NOT EXISTS "oidc_integration_domains_organization_id_idx"
       ON "oidc_integration_domains" ("organization_id")
     ;
-    CREATE INDEX "oidc_integration_domains_domain_name_idx"
+    CREATE INDEX IF NOT EXISTS "oidc_integration_domains_domain_name_idx"
       ON "oidc_integration_domains" ("domain_name")
     ;
-    CREATE UNIQUE INDEX "only_one_verified_domain_name_idx"
+    CREATE UNIQUE INDEX IF NOT EXISTS "only_one_verified_domain_name_idx"
       ON "oidc_integration_domains" ("domain_name")
     WHERE "verified_at" IS NOT NULL;
   `,
