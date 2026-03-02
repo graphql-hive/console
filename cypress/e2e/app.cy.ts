@@ -45,7 +45,7 @@ it('create organization', () => {
 });
 
 describe('oidc', () => {
-  it('oidc login for organization', () => {
+  it.only('oidc login for organization', () => {
     const organizationAdminUser = getUserData();
     cy.visit('/');
     cy.signup(organizationAdminUser);

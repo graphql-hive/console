@@ -697,6 +697,7 @@ function SettingsPageContent(props: {
           {subPages.map(subPage => {
             return (
               <SubPageNavigationLink
+                dataCy={`link-${subPage.key}`}
                 key={subPage.key}
                 isActive={resolvedPage.key === subPage.key}
                 onClick={() => {

@@ -231,21 +231,28 @@ export function OIDCIntegrationConfiguration(props: {
             <Table.TableRow>
               <Table.TableCell className="font-medium">Sign-in redirect URI</Table.TableCell>
               <Table.TableCell>
-                {`${env.appBaseUrl}/auth/callback/oidc `}
+                <span
+                  data-oidc-property-sign-in-redirect-uri
+                >{`${env.appBaseUrl}/auth/callback/oidc`}</span>
+                {` `}
                 <CopyIconButton label="Copy" value={`${env.appBaseUrl}/auth/callback/oidc`} />
               </Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Sign-out redirect URI</Table.TableCell>
               <Table.TableCell>
-                {`${env.appBaseUrl}/logout `}
+                <span data-oidc-property-sign-out-redirect-uri>{`${env.appBaseUrl}/logout`}</span>
+                {` `}
                 <CopyIconButton label="Copy" value={`${env.appBaseUrl}/logout`} />
               </Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Sign-in URL</Table.TableCell>
               <Table.TableCell>
-                {`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id} `}
+                <span
+                  data-oidc-property-sign-in-url
+                >{`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}</span>
+                {` `}
                 <CopyIconButton
                   label="Copy"
                   value={`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}

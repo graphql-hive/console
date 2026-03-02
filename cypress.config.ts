@@ -56,5 +56,8 @@ export default defineConfig({
         }
       });
     },
+    env: {
+      RUN_AGAINST_LOCAL_SERVICES: process.env.RUN_AGAINST_LOCAL_SERVICES ?? '0',
+    },
   },
 });

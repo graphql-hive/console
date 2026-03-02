@@ -124,7 +124,7 @@ export function ConnectSingleSignOnProviderSheet(
 
   const formNode = (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)} data-form-oidc>
         <FormField
           control={form.control}
           name="authorization_endpoint"
@@ -259,10 +259,20 @@ export function ConnectSingleSignOnProviderSheet(
         </Sheet.SheetHeader>
         <Tabs value={state}>
           <TabsList variant="content" className="mt-1">
-            <TabsTrigger variant="content" value="discovery" onClick={() => setState('discovery')}>
+            <TabsTrigger
+              variant="content"
+              value="discovery"
+              onClick={() => setState('discovery')}
+              data-button-oidc-discovery
+            >
               Discovery Document
             </TabsTrigger>
-            <TabsTrigger variant="content" value="manual" onClick={() => setState('manual')}>
+            <TabsTrigger
+              variant="content"
+              value="manual"
+              onClick={() => setState('manual')}
+              data-button-oidc-manual
+            >
               Manual
             </TabsTrigger>
           </TabsList>
@@ -290,7 +300,12 @@ export function ConnectSingleSignOnProviderSheet(
           <Button variant="secondary" onClick={props.onClose}>
             Abort
           </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} variant="primary">
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            variant="primary"
+            type="submit"
+            data-button-oidc-save
+          >
             Save
           </Button>
         </Sheet.SheetFooter>
