@@ -345,8 +345,8 @@ export function createUsage(config: {
       },
     ),
     readiness() {
-      // fail readiness if the fallback is paused to allow it to catch up
-      return status === Status.Ready && !fallback.isPaused;
+      // fail readiness if the fallback is BUSY to allow it to catch up
+      return status === Status.Ready && !fallback.isBusy;
     },
     async start() {
       logger.info('Starting Kafka producer');

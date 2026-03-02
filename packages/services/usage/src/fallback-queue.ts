@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node';
 const MAX_QUEUE_SIZE = 1000;
 
 enum FallbackStatus {
-  PAUSED,
+  BUSY,
   READY,
 }
 
@@ -94,9 +94,9 @@ export function createFallbackQueue(config: {
       if (queue.length >= MAX_QUEUE_SIZE) {
         config.logger.error('Queue is full, dropping oldest message');
         queue.shift();
-        state = FallbackStatus.PAUSED;
+        state = FallbackStatus.BUSY;
       }
-      if (state === FallbackStatus.PAUSED) {
+      if (state === FallbackStatus.BUSY) {
         config.logger.error('Fallback queue is behind. Rejecting message.');
         throw new Error(
           'Fallback queue is not accepting more messages until entire queue is processed.',
@@ -108,8 +108,8 @@ export function createFallbackQueue(config: {
     size() {
       return queue.length;
     },
-    get isPaused() {
-      return state === FallbackStatus.PAUSED;
+    get isBusy() {
+      return state === FallbackStatus.BUSY;
     },
   };
 }
