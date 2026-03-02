@@ -109,6 +109,8 @@ module.exports = {
               'packages/migrations/**',
               // We bundle it all anyway, so there are no node_modules
               'packages/web/app/**',
+              // We bundle it all anyway, so there are no node_modules
+              'packages/libraries/laboratory/**',
               '**/*.spec.ts',
               '**/*.test.ts',
               '**/*.e2e.ts',

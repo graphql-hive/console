@@ -1,5 +1,6 @@
-import { GlobeIcon } from 'lucide-react';
-import { Editor, LaboratoryPlugin } from '@graphql-hive/laboratory';
+import { GlobeIcon } from "lucide-react";
+import { Editor } from "@/components/laboratory/editor";
+import { LaboratoryPlugin } from "@/lib/plugins";
 
 export const TargetEnvPlugin = (props: {
   organizationSlug: string;
@@ -9,9 +10,9 @@ export const TargetEnvPlugin = (props: {
   const targetId = `${props.organizationSlug}/${props.projectSlug}/${props.targetSlug}`;
 
   return {
-    id: 'targetEnv',
-    name: 'Target Environment',
-    description: 'Environment variables for the target',
+    id: "targetEnv",
+    name: "Target Environment",
+    description: "Environment variables for the target",
     preflight: {
       lab: {
         definition: `
@@ -53,13 +54,13 @@ export const TargetEnvPlugin = (props: {
     },
     commands: [
       {
-        name: 'Open Target Environment Variables',
+        name: "Open Target Environment Variables",
         icon: <GlobeIcon />,
-        onClick: laboratory => {
+        onClick: (laboratory) => {
           const tab =
-            laboratory.tabs.find(t => t.type === 'target-env') ??
+            laboratory.tabs.find((t) => t.type === "target-env") ??
             laboratory.addTab({
-              type: 'target-env',
+              type: "target-env",
               data: {},
             });
 
@@ -69,34 +70,36 @@ export const TargetEnvPlugin = (props: {
     ],
     tabs: [
       {
-        type: 'target-env',
-        name: 'Target Environment Variables',
+        type: "target-env",
+        name: "Target Environment Variables",
         icon: <GlobeIcon className="size-4 text-orange-400" />,
         component: (_tab, _laboratory, state, setState) => {
           return (
             <Editor
               defaultValue={Object.entries(state?.[targetId] ?? {})
                 .map(([key, value]) => `${key}=${value}`)
-                .join('\n')}
-              onChange={value => {
+                .join("\n")}
+              onChange={(value) => {
                 setState({
                   ...state,
                   [targetId]: Object.fromEntries(
                     value
-                      ?.split('\n')
-                      .filter(line => line.trim() && !line.trim().startsWith('#'))
-                      .map(line => {
+                      ?.split("\n")
+                      .filter(
+                        (line) => line.trim() && !line.trim().startsWith("#")
+                      )
+                      .map((line) => {
                         const parts = line.split(/=(.*)/s);
 
-                        return [parts[0].trim(), (parts[1] ?? '').trim()];
-                      }) ?? [],
+                        return [parts[0].trim(), (parts[1] ?? "").trim()];
+                      }) ?? []
                   ),
                 });
               }}
               language="dotenv"
               options={{
                 scrollbar: {
-                  horizontal: 'hidden',
+                  horizontal: "hidden",
                 },
               }}
             />

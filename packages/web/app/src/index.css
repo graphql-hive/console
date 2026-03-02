@@ -293,10 +293,48 @@
     --chart-grid: 0 0% 45%;
   }
 
-  .hive-laboratory {
-    --primary: 40 89% 60%;
-    --background: 223 70% 4%;
-    --card: 220 21.43% 5.49%;
+  :root {
+    --hive-laboratory-radius: var(--radius);
+    --hive-laboratory-background: var(--neutral-2);
+    --hive-laboratory-foreground: var(--neutral-11);
+    --hive-laboratory-card: var(--neutral-1);
+    --hive-laboratory-card-foreground: var(--neutral-11);
+    --hive-laboratory-popover: var(--neutral-3);
+    --hive-laboratory-popover-foreground: var(--neutral-11);
+    --hive-laboratory-primary: var(--accent);
+    --hive-laboratory-primary-foreground: var(--neutral-1);
+    --hive-laboratory-secondary: var(--neutral-3);
+    --hive-laboratory-secondary-foreground: var(--neutral-11);
+    --hive-laboratory-muted: var(--neutral-3);
+    --hive-laboratory-muted-foreground: var(--neutral-11);
+    --hive-laboratory-accent: var(--accent);
+    --hive-laboratory-accent-foreground: var(--neutral-11);
+    --hive-laboratory-destructive: var(--red-500);
+    --hive-laboratory-border: var(--neutral-5);
+    --hive-laboratory-input: var(--neutral-5);
+    --hive-laboratory-ring: var(--ring);
+  }
+
+  .dark {
+    --hive-laboratory-radius: var(--radius);
+    --hive-laboratory-background: var(--neutral-1);
+    --hive-laboratory-foreground: var(--neutral-11);
+    --hive-laboratory-card: var(--neutral-2);
+    --hive-laboratory-card-foreground: var(--neutral-11);
+    --hive-laboratory-popover: var(--neutral-3);
+    --hive-laboratory-popover-foreground: var(--neutral-11);
+    --hive-laboratory-primary: var(--accent);
+    --hive-laboratory-primary-foreground: var(--neutral-1);
+    --hive-laboratory-secondary: var(--neutral-3);
+    --hive-laboratory-secondary-foreground: var(--neutral-11);
+    --hive-laboratory-muted: var(--neutral-3);
+    --hive-laboratory-muted-foreground: var(--neutral-11);
+    --hive-laboratory-accent: var(--accent);
+    --hive-laboratory-accent-foreground: var(--neutral-11);
+    --hive-laboratory-destructive: var(--red-500);
+    --hive-laboratory-border: var(--neutral-5);
+    --hive-laboratory-input: var(--neutral-5);
+    --hive-laboratory-ring: var(--ring);
   }
 }
 
