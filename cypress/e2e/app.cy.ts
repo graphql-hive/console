@@ -45,7 +45,7 @@ it('create organization', () => {
 });
 
 describe('oidc', () => {
-  it.only('oidc login for organization', () => {
+  it('oidc login for organization', () => {
     const organizationAdminUser = getUserData();
     cy.visit('/');
     cy.signup(organizationAdminUser);
@@ -63,7 +63,15 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get(`a[href="/${slug}"]`).should('exist');
+      cy.contains('Verify your email address');
+
+      const email = 'sam.tailor@gmail.com';
+      return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+        cy.visit(url);
+        cy.contains('Success!');
+        cy.get('[data-button-verify-email-continue]').click();
+        cy.get(`a[href="/${slug}"]`).should('exist');
+      });
     });
   });
 
@@ -89,7 +97,15 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get(`a[href="/${slug}"]`).should('exist');
+      cy.contains('Verify your email address');
+
+      const email = 'sam.tailor@gmail.com';
+      return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+        cy.visit(url);
+        cy.contains('Success!');
+        cy.get('[data-button-verify-email-continue]').click();
+        cy.get(`a[href="/${slug}"]`).should('exist');
+      });
     });
   });
 
@@ -115,7 +131,15 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get(`a[href="/${slug}"]`).should('exist');
+      cy.contains('Verify your email address');
+
+      const email = 'tom.sailor@gmail.com';
+      return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+        cy.visit(url);
+        cy.contains('Success!');
+        cy.get('[data-button-verify-email-continue]').click();
+        cy.get(`a[href="/${slug}"]`).should('exist');
+      });
     });
   });
 
@@ -144,9 +168,17 @@ describe('oidc', () => {
     cy.get('input[id="Input_Password"]').type('password');
     cy.get('button[value="login"]').click();
 
-    cy.get(`a[href="/${slug}"]`).should('exist');
-    // Check if the user has the Admin role by checking if the Members tab is visible
-    cy.get(`a[href^="/${slug}/view/members"]`).should('exist');
+    cy.contains('Verify your email address');
+    const email = 'tom.sailor@gmail.com';
+    return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+      cy.visit(url);
+      cy.contains('Success!');
+      cy.get('[data-button-verify-email-continue]').click();
+
+      cy.get(`a[href="/${slug}"]`).should('exist');
+      // Check if the user has the Admin role by checking if the Members tab is visible
+      cy.get(`a[href^="/${slug}/view/members"]`).should('exist');
+    });
   });
 
   it('emailpassword account linking with existing oidc user', () => {
@@ -170,33 +202,48 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      cy.get(`a[href="/${slug}"]`).should('exist');
+      cy.contains('Verify your email address');
+      const email = 'tom.sailor@gmail.com';
+      return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+        cy.visit(url);
+        cy.contains('Success!');
+        cy.get('[data-button-verify-email-continue]').click();
 
-      cy.visit('/logout');
-      cy.clearAllCookies();
-      cy.clearAllLocalStorage();
-      cy.clearAllSessionStorage();
+        cy.get(`a[href="/${slug}"]`).should('exist');
 
-      // Sign up/in through emailpassword, with email address used previously in OIDC
-      const memberData = {
-        ...getUserData(),
-        email: 'tom.sailor@gmail.com', // see docker/configs/oidc-server-mock/users-config.json
-      };
-      cy.visit('/auth/sign-up');
-      cy.fillSignUpFormAndSubmit(memberData);
-      cy.wait(500);
+        cy.visit('/logout');
+        cy.clearAllCookies();
+        cy.clearAllLocalStorage();
+        cy.clearAllSessionStorage();
 
-      // Sign up can fail if the account already exists (due to using a fixed email address)
-      // Therefore sign out and re-sign in
-      cy.visit('/logout');
-      cy.clearAllCookies();
-      cy.clearAllLocalStorage();
-      cy.clearAllSessionStorage();
-      cy.visit('/auth/sign-in');
-      cy.fillSignInFormAndSubmit(memberData);
-      cy.wait(500);
+        // Sign up/in through emailpassword, with email address used previously in OIDC
+        const memberData = {
+          ...getUserData(),
+          email: 'tom.sailor@gmail.com', // see docker/configs/oidc-server-mock/users-config.json
+        };
+        cy.visit('/auth/sign-up');
+        cy.fillSignUpFormAndSubmit(memberData);
+        cy.wait(500);
 
-      cy.get(`a[href="/${slug}"]`).should('exist');
+        cy.contains('Verify your email address');
+        return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+          cy.visit(url);
+          cy.contains('Success!');
+          cy.get('[data-button-verify-email-continue]').click();
+
+          // Sign up can fail if the account already exists (due to using a fixed email address)
+          // Therefore sign out and re-sign in
+          cy.visit('/logout');
+          cy.clearAllCookies();
+          cy.clearAllLocalStorage();
+          cy.clearAllSessionStorage();
+          cy.visit('/auth/sign-in');
+          cy.fillSignInFormAndSubmit(memberData);
+          cy.wait(500);
+
+          cy.get(`a[href="/${slug}"]`).should('exist');
+        });
+      });
     });
   });
 
@@ -239,9 +286,16 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      // Check if OIDC authentication failed as intended
-      cy.get(`a[href="/${slug}"]`).should('not.exist');
-      cy.contains('not invited');
+      const email = 'tom.sailor@gmail.com';
+      return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+        cy.visit(url);
+        cy.contains('Success!');
+        cy.get('[data-button-verify-email-continue]').click();
+
+        // Check if OIDC authentication failed as intended
+        cy.get(`a[href="/${slug}"]`).should('not.exist');
+        cy.contains('not invited');
+      });
     });
 
     it('oidc user can join the org with an invitation', () => {
@@ -270,13 +324,20 @@ describe('oidc', () => {
       cy.get('input[id="Input_Password"]').type('password');
       cy.get('button[value="login"]').click();
 
-      // Check if user joined successfully
-      cy.get(`a[href="/${slug}"]`).should('exist');
-      cy.contains('not invited').should('not.exist');
+      const email = 'tom.sailor@gmail.com';
+      return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+        cy.visit(url);
+        cy.contains('Success!');
+        cy.get('[data-button-verify-email-continue]').click();
 
-      // Check if user has admin role
-      cy.visit(`/${slug}/view/members?page=list`);
-      cy.contains('tr', 'tom.sailor@gmail.com').contains('Admin');
+        // Check if user joined successfully
+        cy.get(`a[href="/${slug}"]`).should('exist');
+        cy.contains('not invited').should('not.exist');
+
+        // Check if user has admin role
+        cy.visit(`/${slug}/view/members?page=list`);
+        cy.contains('tr', 'tom.sailor@gmail.com').contains('Admin');
+      });
     });
   });
 });

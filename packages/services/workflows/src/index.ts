@@ -117,7 +117,14 @@ if (context.email.id === 'mock') {
   server.route({
     method: ['GET'],
     url: '/_history',
-    handler(_, res) {
+    handler(req, res) {
+      const query = new URLSearchParams(req.query as any);
+      const after = query.get('after');
+      if (after) {
+        return void res
+          .status(200)
+          .send(context.email.history.filter(h => h.date > new Date(after)));
+      }
       void res.status(200).send(context.email.history);
     },
   });

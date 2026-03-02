@@ -111,7 +111,15 @@ Cypress.Commands.add('signup', user => {
   cy.get('a[data-auth-link="sign-up"]').click();
   cy.fillSignUpFormAndSubmit(user);
 
-  cy.contains('Create Organization');
+  cy.contains('Verify your email address');
+
+  const email = user.email;
+  return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+    cy.visit(url);
+    cy.contains('Success!');
+    cy.get('[data-button-verify-email-continue]').click();
+    cy.contains('Create Organization');
+  });
 });
 
 Cypress.Commands.add('login', user => {

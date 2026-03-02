@@ -143,7 +143,9 @@ function AuthVerifyEmail() {
           <AuthCardContent>
             <AuthCardStack>
               <Button className="w-full" asChild>
-                <Link to="/">Continue</Link>
+                <Link to="/" data-button-verify-email-continue>
+                  Continue
+                </Link>
               </Button>
             </AuthCardStack>
           </AuthCardContent>

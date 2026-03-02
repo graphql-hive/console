@@ -45,6 +45,13 @@ jobs:
             yq -i '.services.server.environment.SUPERTOKENS_RATE_LIMIT = "0"'
             docker/docker-compose.community.yml
 
+      - name: enable email verification
+        uses: mikefarah/yq@4839dbbf80445070a31c7a9c1055da527db2d5ee # v4.44.6
+        with:
+          cmd:
+            yq -i '.services.server.environment.AUTH_REQUIRE_EMAIL_VERIFICATION = "1"'
+            docker/docker-compose.community.yml
+
       - name: run containers
         timeout-minutes: 10
         run: |

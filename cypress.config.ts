@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import * as fs from 'node:fs';
+import asyncRetry from 'async-retry';
 // eslint-disable-next-line import/no-extraneous-dependencies -- cypress SHOULD be a dev dependency
 import { defineConfig } from 'cypress';
 import { initSeed } from './integration-tests/testkit/seed';
@@ -40,6 +41,41 @@ export default defineConfig({
             refreshToken: owner.ownerRefreshToken,
             email: owner.ownerEmail,
           };
+        },
+        async getEmailConfirmationLink(email: string) {
+          const now = new Date(Date.now() - 10_000).toISOString();
+          const url = new URL(
+            process.env.RUN_AGAINST_LOCAL_SERVICES == '1'
+              ? 'http://localhost:3014/_history'
+              : 'http://workflows/:3014/_history',
+          );
+          url.searchParams.set('after', now);
+
+          return await asyncRetry(
+            async () => {
+              const emails = await fetch(url.toString())
+                .then(res => res.json())
+                .then(emails => emails.filter(e => e.to === email));
+
+              if (emails.length === 0) {
+                throw new Error('Could not find email');
+              }
+
+              // take the latest one
+              const result = emails[emails.length - 1];
+
+              const urlMatch = result.body.match(/href=\"(http:\/\/[^\s"]+)/);
+              if (!urlMatch) throw new Error('No URL found in email');
+
+              const confirmUrl = new URL(urlMatch[1]);
+              return confirmUrl.pathname + confirmUrl.search;
+            },
+            {
+              retries: 10,
+              minTimeout: 1000,
+              maxTimeout: 10000,
+            },
+          );
         },
       });
 
