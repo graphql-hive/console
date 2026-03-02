@@ -2,4 +2,5 @@
 'hive': patch
 ---
 
-Adjust usage service liveness and startup probe logic. Fix usage service being sent traffic before the kafka producer is connected and ready to start sending messages. Track usage fallback client state as a separate variable to avoid a race condition that could leave it unhealthy.
+Adjust usage service's fallback client so that it impacts liveness only if the fallback queue fills up.
+This should cause far fewer interruptions (spikes in 503s) due to kafka blips.
