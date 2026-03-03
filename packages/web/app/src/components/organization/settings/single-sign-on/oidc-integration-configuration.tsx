@@ -233,16 +233,14 @@ export function OIDCIntegrationConfiguration(props: {
               <Table.TableCell>
                 <span
                   data-oidc-property-sign-in-redirect-uri
-                >{`${env.appBaseUrl}/auth/callback/oidc`}</span>
-                {` `}
+                >{`${env.appBaseUrl}/auth/callback/oidc`}</span>{' '}
                 <CopyIconButton label="Copy" value={`${env.appBaseUrl}/auth/callback/oidc`} />
               </Table.TableCell>
             </Table.TableRow>
             <Table.TableRow>
               <Table.TableCell className="font-medium">Sign-out redirect URI</Table.TableCell>
               <Table.TableCell>
-                <span data-oidc-property-sign-out-redirect-uri>{`${env.appBaseUrl}/logout`}</span>
-                {` `}
+                <span data-oidc-property-sign-out-redirect-uri>{`${env.appBaseUrl}/logout`}</span>{' '}
                 <CopyIconButton label="Copy" value={`${env.appBaseUrl}/logout`} />
               </Table.TableCell>
             </Table.TableRow>
@@ -251,8 +249,7 @@ export function OIDCIntegrationConfiguration(props: {
               <Table.TableCell>
                 <span
                   data-oidc-property-sign-in-url
-                >{`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}</span>
-                {` `}
+                >{`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}</span>{' '}
                 <CopyIconButton
                   label="Copy"
                   value={`${env.appBaseUrl}/auth/oidc?id=${oidcIntegration.id}`}
@@ -518,6 +515,7 @@ function OIDCDomainConfiguration(props: {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                data-button-add-new-domain
                 size="icon-sm"
                 className="ml-auto"
                 onClick={() => setState({ type: 'create' })}

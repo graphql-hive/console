@@ -391,6 +391,7 @@ export function OIDCRegisteredDomainSheet(props: {
                         variant="primary"
                         onClick={form.handleSubmit(onCreateDomain)}
                         disabled={registerDomainMutationState.fetching}
+                        data-button-next-verify-domain-ownership
                       >
                         Next: Verify Domain Ownership
                       </Button>
@@ -417,6 +418,7 @@ export function OIDCRegisteredDomainSheet(props: {
                         Close
                       </Button>
                       <Button
+                        data-button-next-complete
                         variant="primary"
                         onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
                         disabled={
