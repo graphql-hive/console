@@ -212,6 +212,8 @@ describe('oidc', () => {
           cy.clearAllLocalStorage();
           cy.clearAllSessionStorage();
 
+          const now = Date.now();
+
           // Sign up/in through emailpassword, with email address used previously in OIDC
           const memberData = {
             ...getUserData(),
@@ -219,10 +221,9 @@ describe('oidc', () => {
           };
           cy.visit('/auth/sign-up');
           cy.fillSignUpFormAndSubmit(memberData);
-          cy.wait(500);
-
           cy.contains('Verify your email address');
-          return cy.task('getEmailConfirmationLink', email).then((url: string) => {
+
+          return cy.task('getEmailConfirmationLink', { email, now }).then((url: string) => {
             cy.visit(url);
             cy.contains('Success!');
             cy.get('[data-button-verify-email-continue]').click();

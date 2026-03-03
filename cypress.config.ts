@@ -60,8 +60,11 @@ export default defineConfig({
             email: owner.ownerEmail,
           };
         },
-        async getEmailConfirmationLink(email: string) {
-          const now = new Date(Date.now() - 10_000).toISOString();
+        async getEmailConfirmationLink(input: string | { email: string; now: number }) {
+          const email = typeof input === 'string' ? input : input.email;
+          const now = new Date(
+            typeof input === 'string' ? Date.now() - 10_000 : input.now,
+          ).toISOString();
           const url = new URL('http://localhost:3014/_history');
           url.searchParams.set('after', now);
 
