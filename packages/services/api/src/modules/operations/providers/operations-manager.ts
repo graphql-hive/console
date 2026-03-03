@@ -139,11 +139,15 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   } & TargetSelector) {
     this.logger.info('Counting unique operations (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -161,6 +165,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -248,11 +254,15 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   } & Listify<TargetSelector, 'targetId'>) {
     this.logger.info('Counting requests and failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -271,6 +281,8 @@ export class OperationsManager {
         operations,
         clients,
         clientVersionFilters,
+        excludeOperations,
+        excludeClientVersionFilters,
       })
       .then(r => r.total);
   }
@@ -327,11 +339,15 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   } & TargetSelector) {
     this.logger.info('Counting failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -349,6 +365,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -445,12 +463,16 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info('Reading operations stats (period=%o, target=%s)', period, target);
@@ -470,6 +492,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
       schemaCoordinate,
     });
   }
@@ -584,6 +608,8 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
@@ -591,6 +617,8 @@ export class OperationsManager {
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info(
@@ -615,6 +643,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
       schemaCoordinate,
     });
   }
@@ -628,12 +658,16 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   } & TargetSelector) {
     this.logger.info(
       'Reading failures over time (period=%o, resolution=%s, target=%s)',
@@ -657,6 +691,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -669,12 +705,16 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   } & TargetSelector) {
     this.logger.info(
       'Reading duration over time (period=%o, resolution=%s, target=%s)',
@@ -698,6 +738,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -709,11 +751,15 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
   } & TargetSelector) {
     this.logger.info('Reading overall duration percentiles (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -731,6 +777,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
     });
   }
 
@@ -743,12 +791,16 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info(
@@ -772,6 +824,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
       schemaCoordinate,
     });
   }
@@ -784,12 +838,16 @@ export class OperationsManager {
     operations,
     clients,
     clientVersionFilters,
+    excludeOperations,
+    excludeClientVersionFilters,
     schemaCoordinate,
   }: {
     period: DateRange;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
+    excludeOperations?: boolean;
+    excludeClientVersionFilters?: boolean;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info('Counting unique clients (period=%o, target=%s)', period, target);
@@ -808,6 +866,8 @@ export class OperationsManager {
       operations,
       clients,
       clientVersionFilters,
+      excludeOperations,
+      excludeClientVersionFilters,
       schemaCoordinate,
     });
   }

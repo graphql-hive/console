@@ -38,6 +38,8 @@ const InsightsFilterConfigurationModel = zod.object({
     })
     .nullish()
     .transform(v => v ?? null),
+  excludeOperations: zod.boolean().optional().default(false),
+  excludeClientFilters: zod.boolean().optional().default(false),
 });
 
 // Transform GraphQL uppercase enum values to lowercase for database storage
@@ -155,6 +157,8 @@ export class SavedFiltersProvider {
         operationHashes?: string[] | null;
         clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
         dateRange?: { from: string; to: string } | null;
+        excludeOperations?: boolean;
+        excludeClientFilters?: boolean;
       } | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
@@ -211,6 +215,8 @@ export class SavedFiltersProvider {
           versions: cf.versions ?? null,
         })) ?? [],
       dateRange: data.insightsFilter?.dateRange ?? null,
+      excludeOperations: data.insightsFilter?.excludeOperations ?? false,
+      excludeClientFilters: data.insightsFilter?.excludeClientFilters ?? false,
     };
 
     const savedFilter = await this.savedFiltersStorage.createSavedFilter({
@@ -250,6 +256,8 @@ export class SavedFiltersProvider {
         operationHashes?: string[] | null;
         clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
         dateRange?: { from: string; to: string } | null;
+        excludeOperations?: boolean;
+        excludeClientFilters?: boolean;
       } | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
@@ -328,6 +336,8 @@ export class SavedFiltersProvider {
               versions: cf.versions ?? null,
             })) ?? [],
           dateRange: data.insightsFilter.dateRange ?? null,
+          excludeOperations: data.insightsFilter.excludeOperations ?? false,
+          excludeClientFilters: data.insightsFilter.excludeClientFilters ?? false,
         }
       : null;
 

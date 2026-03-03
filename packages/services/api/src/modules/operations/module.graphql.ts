@@ -42,6 +42,14 @@ export default gql`
     More precise than clientNames - allows filtering to specific versions.
     """
     clientVersionFilters: [ClientVersionFilterInput!] @tag(name: "public")
+    """
+    When true, the operationIds filter is negated — matching operations are excluded instead of included.
+    """
+    excludeOperations: Boolean @tag(name: "public")
+    """
+    When true, the clientVersionFilters filter is negated — matching clients are excluded instead of included.
+    """
+    excludeClientVersionFilters: Boolean @tag(name: "public")
   }
 
   extend type Target {

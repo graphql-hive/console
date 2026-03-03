@@ -33,6 +33,8 @@ const SavedFilterModel = zod.object({
         to: zod.string(),
       })
       .nullable(),
+    excludeOperations: zod.boolean().optional().default(false),
+    excludeClientFilters: zod.boolean().optional().default(false),
   }),
   visibility: zod.enum(['private', 'shared']),
   viewsCount: zod.number(),
