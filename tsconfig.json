@@ -58,7 +58,6 @@
       "@graphql-hive/external-composition": [
         "./packages/libraries/external-composition/src/index.ts"
       ],
-      "@graphql-hive/laboratory": ["./packages/libraries/laboratory/src/index.tsx"],
       "@graphql-hive/core": ["./packages/libraries/core/src/index.ts"],
       "@graphql-hive/core/src/client/collect-schema-coordinates": [
         "./packages/libraries/core/src/client/collect-schema-coordinates.ts"

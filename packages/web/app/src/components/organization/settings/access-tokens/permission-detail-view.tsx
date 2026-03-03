@@ -89,8 +89,8 @@ export function PermissionDetailView(props: {
           ))}
           <div className="w-full space-y-1">
             {group.resolvedResourceIds == null ? (
-              <p className="text-neutral-10">
-                Granted on all {permissionLevelToResourceName(group.level)}
+              <p className="text-red-500">
+                Not granted on any {permissionLevelToResourceName(group.level).slice(0, -1)}.
               </p>
             ) : (
               <>
