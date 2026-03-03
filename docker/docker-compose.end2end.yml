@@ -47,6 +47,10 @@ services:
     environment:
       EMAIL_PROVIDER: mock
 
+  redis:
+    ports:
+      - '6379:6379'
+
   server:
     environment:
       SUPERTOKENS_RATE_LIMIT: '0'
