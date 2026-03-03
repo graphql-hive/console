@@ -486,7 +486,7 @@ function DeleteDomainConfirmationDialogue(props: { onClose: () => void; onConfir
           <AlertDialog.AlertDialogCancel onClick={props.onClose}>
             Cancel
           </AlertDialog.AlertDialogCancel>
-          <AlertDialog.AlertDialogAction onClick={props.onConfirm} variant="destructive">
+          <AlertDialog.AlertDialogAction onClick={props.onConfirm}>
             Delete Domain
           </AlertDialog.AlertDialogAction>
         </AlertDialog.AlertDialogFooter>
