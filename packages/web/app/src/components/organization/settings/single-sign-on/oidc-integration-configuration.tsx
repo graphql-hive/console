@@ -424,12 +424,14 @@ export function OIDCIntegrationConfiguration(props: {
             const result = await updateOIDCIntegrationMutate({
               input: {
                 oidcIntegrationId: oidcIntegration.id,
-                clientId: args.clientId || null,
-                clientSecret: args.clientSecret || null,
-                additionalScopes: args.additionalScopes?.split(' ') || null,
-                authorizationEndpoint: args.authorizationEndpoint || null,
-                tokenEndpoint: args.tokenEndpoint || null,
-                userinfoEndpoint: args.userinfoEndpoint || null,
+                clientId: args.clientId || undefined,
+                clientSecret: args.clientSecret || undefined,
+                additionalScopes: args.additionalScopes?.trim()
+                  ? args.additionalScopes.trim().split(' ')
+                  : undefined,
+                authorizationEndpoint: args.authorizationEndpoint || undefined,
+                tokenEndpoint: args.tokenEndpoint || undefined,
+                userinfoEndpoint: args.userinfoEndpoint || undefined,
               },
             });
 

@@ -726,32 +726,22 @@ export class OIDCIntegrationsProvider {
       };
     }
 
-    let records: Array<string>;
-
     const recordName = challenge.recordName + '.' + domain.domainName;
 
-    try {
-      records = (
-        await Promise.all(
-          dnsList.map(async provider => {
-            const resolver = new dns.Resolver({ timeout: 10_000 });
-            resolver.setServers([provider]);
-            return await resolver.resolveTxt(recordName).catch(err => {
-              this.logger.debug(`failed lookup record on '%s': %s`, provider, String(err));
-              return [] as string[][];
-            });
-          }),
-        )
+    const records = (
+      await Promise.all(
+        dnsList.map(async provider => {
+          const resolver = new dns.Resolver({ timeout: 10_000 });
+          resolver.setServers([provider]);
+          return await resolver.resolveTxt(recordName).catch(err => {
+            this.logger.debug(`failed lookup record on '%s': %s`, provider, String(err));
+            return [] as string[][];
+          });
+        }),
       )
-        .flatMap(record => record)
-        .flatMap(record => record);
-    } catch (err) {
-      this.logger.debug(`failed lookup record: %s`, String(err));
-      return {
-        type: 'error' as const,
-        message: 'Failed to lookup the TXT record.',
-      };
-    }
+    )
+      .flatMap(record => record)
+      .flatMap(record => record);
 
     if (!records) {
       this.logger.debug('no records could be resolved.');
@@ -761,12 +751,22 @@ export class OIDCIntegrationsProvider {
       };
     }
 
-    // At least one record needs to match for the challenge to succeed
-    if (!records.find(record => record === challenge.value)) {
-      this.logger.debug('no records match the expected value.');
+    if (records.length === 0) {
+      this.logger.debug('no records were found.');
       return {
         type: 'error' as const,
-        message: 'The resolved TXT record value is incorrect.',
+        message:
+          'No TXT record value was found for that domain. The propagation of the DNS record could take some time. Please try again later.',
+      };
+    }
+
+    // At least one record needs to match for the challenge to succeed
+    if (!records.find(record => record === challenge.value)) {
+      this.logger.debug('no records match the expected value were found.');
+      return {
+        type: 'error' as const,
+        message:
+          'A TXT record with the provided value was not found. Please make sure you set the correct value. The propagation of the DNS record can take some time, so please try again later.',
       };
     }
 
