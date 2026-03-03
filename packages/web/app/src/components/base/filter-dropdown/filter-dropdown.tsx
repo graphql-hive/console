@@ -1,7 +1,6 @@
-import { forwardRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { X } from 'lucide-react';
 import { Menu, MenuItem } from '@/components/base/menu/menu';
-import { TriggerButton } from '@/components/base/trigger-button';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
@@ -26,6 +25,19 @@ export type FilterDropdownProps = {
   onExcludeModeChange?: (exclude: boolean) => void;
 };
 
+const chipClass =
+  'inline-flex items-center rounded-sm border text-xs font-medium bg-neutral-2 border-neutral-5 text-neutral-9 dark:text-neutral-11 dark:bg-neutral-3 dark:border-neutral-4';
+
+const segmentSeparator = 'border-l [border-left-color:inherit]';
+
+const segmentButton =
+  'px-2.5 py-1.5 text-[13px] transition-colors cursor-pointer hover:bg-neutral-4/50 hover:text-neutral-12';
+
+function pluralize(count: number, singular: string): string {
+  const lower = singular.toLowerCase();
+  return `${count} ${count === 1 ? lower : `${lower}s`}`;
+}
+
 export function FilterDropdown({
   label,
   items,
@@ -37,147 +49,94 @@ export function FilterDropdown({
   excludeMode,
   onExcludeModeChange,
 }: FilterDropdownProps) {
-  const [open, setOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const selectedCount = selectedItems.length;
 
-  const trigger = onExcludeModeChange ? (
-    <FilterDropdownTrigger
-      label={label}
-      selectedCount={selectedCount}
-      excludeMode={excludeMode ?? false}
-      onExcludeModeChange={onExcludeModeChange}
-      disabled={disabled}
-    />
-  ) : (
-    <TriggerButton
-      accessoryInformation={selectedCount > 0 ? selectedCount.toString() : undefined}
-      disabled={disabled}
-      label={label}
-      rightIcon={{ icon: ChevronDown, withSeparator: true }}
-    />
-  );
-
   return (
-    <Menu
-      trigger={trigger}
-      open={open}
-      onOpenChange={setOpen}
-      modal={false}
-      lockScroll
-      side="bottom"
-      align="start"
-      maxWidth="lg"
-      stableWidth
-      sections={[
-        <FilterContent
-          key="content"
-          label={label}
-          items={items}
-          selectedItems={selectedItems}
-          onChange={onChange}
-          valuesLabel={valuesLabel}
-          excludeMode={excludeMode}
-          onExcludeModeChange={onExcludeModeChange}
-        />,
-        <MenuItem
-          key="remove"
-          variant="destructiveAction"
-          onClick={() => {
-            onRemove();
-            setOpen(false);
-          }}
-        >
-          Remove filter
-        </MenuItem>,
-      ]}
-    />
-  );
-}
-
-/**
- * Custom trigger that renders the label, an inline "is" / "is not" operator toggle,
- * the count badge, and the chevron — all in a single chip.
- */
-const FilterDropdownTrigger = forwardRef<
-  HTMLButtonElement,
-  {
-    label: string;
-    selectedCount: number;
-    excludeMode: boolean;
-    onExcludeModeChange: (exclude: boolean) => void;
-    disabled?: boolean;
-  }
->(function FilterDropdownTrigger(
-  { label, selectedCount, excludeMode, onExcludeModeChange, disabled, ...domProps },
-  ref,
-) {
-  const [operatorOpen, setOperatorOpen] = useState(false);
-
-  return (
-    <button
-      ref={ref}
-      disabled={disabled}
+    <div
+      role="group"
+      aria-label={`${label} filter`}
+      className={chipClass}
       style={disabled ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
-      className="group inline-flex items-center rounded-sm border text-xs font-medium transition-colors bg-neutral-2 border-neutral-5 hover:bg-neutral-1 hover:border-neutral-5 text-neutral-9 hover:text-neutral-11 dark:text-neutral-11 dark:bg-neutral-3 dark:border-neutral-4 dark:hover:bg-neutral-4 dark:hover:border-neutral-5"
-      {...domProps}
     >
-      <span className="px-3 py-1.5 text-[13px]">{label}</span>
-      <span className="border-l [border-left-color:inherit]">
+      {/* Label — static */}
+      <span className="px-2.5 py-1.5 text-[13px]">{label}</span>
+
+      {/* Operator — dropdown for "is" / "is not" */}
+      {onExcludeModeChange && (
+        <span className={segmentSeparator}>
+          <Menu
+            trigger={
+              <button
+                type="button"
+                className={segmentButton}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                {excludeMode ? 'is not' : 'is'}
+              </button>
+            }
+            modal={false}
+            side="bottom"
+            align="start"
+            maxWidth="sm"
+            minWidth="none"
+            sections={[
+              [
+                <MenuItem key="is" onClick={() => onExcludeModeChange(false)}>
+                  is
+                </MenuItem>,
+                <MenuItem key="is-not" onClick={() => onExcludeModeChange(true)}>
+                  is not
+                </MenuItem>,
+              ],
+            ]}
+          />
+        </span>
+      )}
+
+      {/* Count — opens the main filter dropdown */}
+      <span className={segmentSeparator}>
         <Menu
           trigger={
-            <button
-              type="button"
-              className="px-2 py-1.5 text-[13px] hover:text-neutral-12 transition-colors cursor-pointer"
-              onPointerDown={e => {
-                e.stopPropagation();
-              }}
-              onClick={e => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              {excludeMode ? 'is not' : 'is'}
+            <button type="button" className={segmentButton}>
+              {pluralize(selectedCount, label)}
             </button>
           }
-          open={operatorOpen}
-          onOpenChange={setOperatorOpen}
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
           modal={false}
+          lockScroll
           side="bottom"
           align="start"
-          maxWidth="sm"
+          maxWidth="lg"
+          stableWidth
           sections={[
-            [
-              <MenuItem
-                key="is"
-                onClick={() => {
-                  onExcludeModeChange(false);
-                  setOperatorOpen(false);
-                }}
-              >
-                is
-              </MenuItem>,
-              <MenuItem
-                key="is-not"
-                onClick={() => {
-                  onExcludeModeChange(true);
-                  setOperatorOpen(false);
-                }}
-              >
-                is not
-              </MenuItem>,
-            ],
+            <FilterContent
+              key="content"
+              label={label}
+              items={items}
+              selectedItems={selectedItems}
+              onChange={onChange}
+              valuesLabel={valuesLabel}
+            />,
           ]}
         />
       </span>
-      {selectedCount > 0 && (
-        <span className="border-l [border-left-color:inherit] px-3 py-1.5">
-          {selectedCount}
-        </span>
-      )}
-      <span className="border-l [border-left-color:inherit] text-neutral-8 group-hover:text-neutral-12 flex items-center px-2 py-1.5 transition-colors">
-        <ChevronDown className="size-4" />
-      </span>
-    </button>
+
+      {/* Remove button */}
+      <button
+        type="button"
+        className={`${segmentSeparator} text-neutral-8 hover:text-neutral-12 flex cursor-pointer items-center px-2 py-1.5 transition-colors`}
+        aria-label={`Remove ${label} filter`}
+        onClick={onRemove}
+      >
+        <X className="size-3.5" />
+      </button>
+    </div>
   );
-});
+}

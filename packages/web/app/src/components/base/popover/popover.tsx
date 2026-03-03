@@ -88,7 +88,7 @@ export function Popover(props: PopoverProps) {
     inner = (
       <div className={cn(widthClass, 'p-4')}>
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-medium">{props.title}</span>
+          <span className="text-neutral-12 text-sm">{props.title}</span>
           {!props.hideCloseButton && (
             <button
               onClick={() => onOpenChange?.(false)}

@@ -35,10 +35,6 @@ export type FilterContentProps = {
   onChange: (value: FilterSelection[]) => void;
   /** Label for the sub-values (e.g. "versions", "endpoints"). Used in accessibility labels. */
   valuesLabel?: string;
-  /** When true, selected items are excluded instead of included */
-  excludeMode?: boolean;
-  /** Called when the exclude mode changes */
-  onExcludeModeChange?: (exclude: boolean) => void;
 };
 
 export function FilterContent({
@@ -47,8 +43,6 @@ export function FilterContent({
   selectedItems,
   onChange,
   valuesLabel = 'values',
-  excludeMode,
-  onExcludeModeChange,
 }: FilterContentProps) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -119,32 +113,6 @@ export function FilterContent({
 
   return (
     <div role="group">
-      {onExcludeModeChange && (
-        <div className="flex gap-1 px-3 pt-2 pb-1">
-          <button
-            type="button"
-            className={`rounded-sm px-2 py-0.5 text-xs font-medium transition-colors ${
-              !excludeMode
-                ? 'bg-neutral-5 text-neutral-12'
-                : 'text-neutral-9 hover:text-neutral-11'
-            }`}
-            onClick={() => onExcludeModeChange(false)}
-          >
-            is
-          </button>
-          <button
-            type="button"
-            className={`rounded-sm px-2 py-0.5 text-xs font-medium transition-colors ${
-              excludeMode
-                ? 'bg-neutral-5 text-neutral-12'
-                : 'text-neutral-9 hover:text-neutral-11'
-            }`}
-            onClick={() => onExcludeModeChange(true)}
-          >
-            is not
-          </button>
-        </div>
-      )}
       <FilterListSearch label={label} onSearch={setSearch} value={search} />
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (

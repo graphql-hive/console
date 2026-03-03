@@ -56,6 +56,23 @@ export type CurrentFilters = {
   excludeClientFilters: boolean;
 };
 
+function normalizeClients(arr: Array<{ name: string; versions: string[] | null }>) {
+  return JSON.stringify(
+    arr
+      .map(c => ({ name: c.name, versions: c.versions }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  );
+}
+
+export function hasUnsavedChanges(activeView: SavedFilterView, currentFilters: CurrentFilters) {
+  if (JSON.stringify([...currentFilters.operations].sort()) !== JSON.stringify([...activeView.filters.operationHashes].sort())) return true;
+  if (normalizeClients(currentFilters.clients) !== normalizeClients(activeView.filters.clientFilters)) return true;
+  if (currentFilters.dateRange.from !== activeView.filters.dateRange?.from || currentFilters.dateRange.to !== activeView.filters.dateRange?.to) return true;
+  if (currentFilters.excludeOperations !== activeView.filters.excludeOperations) return true;
+  if (currentFilters.excludeClientFilters !== activeView.filters.excludeClientFilters) return true;
+  return false;
+}
+
 type SaveFilterButtonProps = {
   activeView: SavedFilterView | null;
   viewerCanCreate: boolean;
@@ -79,6 +96,11 @@ export function SaveFilterButton({
   onSaved,
   onUpdated,
 }: SaveFilterButtonProps) {
+  // When viewing a saved filter without modifications, don't show any save UI.
+  if (activeView && !hasUnsavedChanges(activeView, currentFilters)) {
+    return null;
+  }
+
   if (activeView?.viewerCanUpdate) {
     return (
       <div className="flex items-center gap-x-2">
@@ -91,7 +113,7 @@ export function SaveFilterButton({
           onUpdated={onUpdated}
         />
         {viewerCanCreate && (
-          <SaveFilterPopover
+          <CreateFilterButton
             viewerCanShare={viewerCanShare}
             currentFilters={currentFilters}
             organizationSlug={organizationSlug}
@@ -106,7 +128,7 @@ export function SaveFilterButton({
 
   if (viewerCanCreate) {
     return (
-      <SaveFilterPopover
+      <CreateFilterButton
         viewerCanShare={viewerCanShare}
         currentFilters={currentFilters}
         organizationSlug={organizationSlug}
@@ -120,7 +142,7 @@ export function SaveFilterButton({
   return null;
 }
 
-function SaveFilterPopover({
+function CreateFilterButton({
   viewerCanShare,
   currentFilters,
   organizationSlug,
