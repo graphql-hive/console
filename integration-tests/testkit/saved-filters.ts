@@ -18,6 +18,8 @@ export const GetSavedFilterQuery = graphql(`
             from
             to
           }
+          excludeOperations
+          excludeClientFilters
         }
         visibility
         viewsCount
@@ -93,6 +95,8 @@ export const CreateSavedFilterMutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
           visibility
           viewsCount
@@ -129,6 +133,8 @@ export const UpdateSavedFilterMutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
           visibility
           viewsCount
