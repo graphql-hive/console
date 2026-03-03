@@ -39,6 +39,8 @@ const InsightsCreateSavedFilter_Mutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
         }
       }
@@ -50,6 +52,8 @@ export type CurrentFilters = {
   operations: string[];
   clients: Array<{ name: string; versions: string[] | null }>;
   dateRange: { from: string; to: string };
+  excludeOperations: boolean;
+  excludeClientFilters: boolean;
 };
 
 type SaveFilterButtonProps = {
@@ -77,14 +81,26 @@ export function SaveFilterButton({
 }: SaveFilterButtonProps) {
   if (activeView?.viewerCanUpdate) {
     return (
-      <UpdateFilterButton
-        activeView={activeView}
-        currentFilters={currentFilters}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        onUpdated={onUpdated}
-      />
+      <div className="flex items-center gap-x-2">
+        <UpdateFilterButton
+          activeView={activeView}
+          currentFilters={currentFilters}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          onUpdated={onUpdated}
+        />
+        {viewerCanCreate && (
+          <SaveFilterPopover
+            viewerCanShare={viewerCanShare}
+            currentFilters={currentFilters}
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
+            onSaved={onSaved}
+          />
+        )}
+      </div>
     );
   }
 
@@ -146,6 +162,8 @@ function SaveFilterPopover({
             from: currentFilters.dateRange.from,
             to: currentFilters.dateRange.to,
           },
+          excludeOperations: currentFilters.excludeOperations,
+          excludeClientFilters: currentFilters.excludeClientFilters,
         },
       },
     });

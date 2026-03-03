@@ -13,6 +13,8 @@ export type SavedFilterView = {
     operationHashes: string[];
     clientFilters: Array<{ name: string; versions: string[] | null }>;
     dateRange: { from: string; to: string } | null;
+    excludeOperations: boolean;
+    excludeClientFilters: boolean;
   };
 };
 

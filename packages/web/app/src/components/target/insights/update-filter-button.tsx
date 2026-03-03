@@ -30,6 +30,8 @@ const InsightsUpdateSavedFilter_Mutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
         }
       }
@@ -81,6 +83,9 @@ export function UpdateFilterButton({
     if (currentFilters.dateRange.from !== savedFrom || currentFilters.dateRange.to !== savedTo)
       return true;
 
+    if (currentFilters.excludeOperations !== activeView.filters.excludeOperations) return true;
+    if (currentFilters.excludeClientFilters !== activeView.filters.excludeClientFilters) return true;
+
     return false;
   }, [activeView, currentFilters]);
 
@@ -99,6 +104,8 @@ export function UpdateFilterButton({
             from: currentFilters.dateRange.from,
             to: currentFilters.dateRange.to,
           },
+          excludeOperations: currentFilters.excludeOperations,
+          excludeClientFilters: currentFilters.excludeClientFilters,
         },
       },
     });
@@ -142,7 +149,7 @@ export function UpdateFilterButton({
       align="start"
       title="Update saved filter"
       description={`This will overwrite the current configuration of "${activeView.name}" with your current filter selections.`}
-      trigger={<TriggerButton label={`Update "${activeView.name}" filter`} variant="action" />}
+      trigger={<TriggerButton label={`Update "${activeView.name}"`} variant="default" />}
       content={
         <div className="flex gap-2">
           <Button
