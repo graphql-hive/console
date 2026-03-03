@@ -41,5 +41,15 @@ services:
     ports:
       - '5432:5432'
 
+  workflows:
+    ports:
+      - '3014:3014'
+    environment:
+      EMAIL_PROVIDER: mock
+
+  server:
+    environment:
+      SUPERTOKENS_RATE_LIMIT: '0'
+      AUTH_REQUIRE_EMAIL_VERIFICATION: '1'
 networks:
   stack: {}

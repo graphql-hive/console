@@ -62,11 +62,7 @@ export default defineConfig({
         },
         async getEmailConfirmationLink(email: string) {
           const now = new Date(Date.now() - 10_000).toISOString();
-          const url = new URL(
-            process.env.RUN_AGAINST_LOCAL_SERVICES == '1'
-              ? 'http://localhost:3014/_history'
-              : 'http://workflows/:3014/_history',
-          );
+          const url = new URL('http://localhost:3014/_history');
           url.searchParams.set('after', now);
 
           return await asyncRetry(
@@ -113,7 +109,7 @@ export default defineConfig({
       });
     },
     env: {
-      RUN_AGAINST_LOCAL_SERVICES: process.env.RUN_AGAINST_LOCAL_SERVICES ?? '0',
+      RUN_AGAINST_LOCAL_SERVICES: process.env.RUN_AGAINST_LOCAL_SERVICES || '0',
     },
   },
 });
