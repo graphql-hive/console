@@ -82,6 +82,7 @@ test('rate limit approaching and reached for organization', async () => {
 
   expect(sent).toContainEqual({
     to: ownerEmail,
+    data: expect.any(String),
     subject: `GraphQL-Hive operations quota for ${organization.slug} exceeded`,
     body: expect.any(String),
   });
