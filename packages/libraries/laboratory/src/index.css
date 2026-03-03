@@ -82,7 +82,7 @@
   --secondary: var(--hive-laboratory-secondary, var(--color-neutral-3));
   --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-11));
 
-  --accent: var(--hive-laboratory-accent, var(--color-accent));
+  --accent: var(--hive-laboratory-accent, var(--color-neutral-4));
   --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));
 
   --destructive: var(--hive-laboratory-destructive, var(--red-500));
@@ -129,7 +129,7 @@
   --secondary: var(--hive-laboratory-secondary, var(--color-neutral-3));
   --secondary-foreground: var(--hive-laboratory-secondary-foreground, var(--color-neutral-11));
 
-  --accent: var(--hive-laboratory-accent, var(--color-accent));
+  --accent: var(--hive-laboratory-accent, var(--color-neutral-6));
   --accent-foreground: var(--hive-laboratory-accent-foreground, var(--color-neutral-11));
 
   --destructive: var(--hive-laboratory-destructive, var(--red-500));

@@ -74,9 +74,12 @@ type LaboratoryContextActions = LaboratoryCollectionsActions &
     ) => boolean;
   };
 
-const LaboratoryContext = createContext<LaboratoryContextState & LaboratoryContextActions>(
-  {} as LaboratoryContextState & LaboratoryContextActions,
-);
+type LaboratoryContext = LaboratoryContextState &
+  LaboratoryContextActions & {
+    container: HTMLDivElement | null;
+  };
+
+const LaboratoryContext = createContext<LaboratoryContext>({} as LaboratoryContext);
 
 export const useLaboratory = () => {
   return useContext(LaboratoryContext);
@@ -163,7 +166,9 @@ export interface LaboratoryApi {
 
 export type LaboratoryContextProps = LaboratoryContextState &
   LaboratoryContextActions &
-  LaboratoryApi;
+  LaboratoryApi & {
+    container: HTMLDivElement | null;
+  };
 
 export const LaboratoryProvider = (props: React.PropsWithChildren<LaboratoryContextProps>) => {
   return (

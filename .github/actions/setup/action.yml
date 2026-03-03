@@ -54,6 +54,12 @@ runs:
       working-directory: ${{ inputs.workingDirectory }}
       run: pnpm install --frozen-lockfile
 
+    - name: build laboratory
+      shell: bash
+      if: ${{ inputs.buildLaboratory == 'true' }}
+      working-directory: ${{ inputs.workingDirectory }}
+      run: pnpm turbo build --filter=./packages/libraries/laboratory --color
+
     - name: generate graphql types
       if: ${{ inputs.codegen == 'true' }}
       shell: bash

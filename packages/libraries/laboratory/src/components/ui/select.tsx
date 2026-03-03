@@ -1,4 +1,5 @@
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
+import { useLaboratory } from '@/components/laboratory/context';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { cn } from '../../lib/utils';
 
@@ -47,8 +48,10 @@ function SelectContent({
   align = 'center',
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const { container } = useLaboratory();
+
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={container}>
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(

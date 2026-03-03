@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useId, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import * as monaco from 'monaco-editor';
 import { initializeMode } from 'monaco-graphql/initializeMode';
 import MonacoEditor, { loader } from '@monaco-editor/react';
@@ -127,6 +127,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   const id = useId();
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const { introspection, endpoint, theme } = useLaboratory();
+  const [typescriptReady, setTypescriptReady] = useState(!!monaco.languages.typescript);
 
   useEffect(() => {
     if (introspection) {
@@ -157,23 +158,46 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   }, [introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
-    if (props.extraLibs) {
-      for (const lib of props.extraLibs) {
-        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-          target: monaco.languages.typescript.ScriptTarget.ESNext, // supports top-level await
-          module: monaco.languages.typescript.ModuleKind.ESNext, // treat file as module
-          allowNonTsExtensions: true,
-          allowJs: true,
-          lib: ['esnext', 'webworker'], // if running in sandbox
-        });
-
-        monaco.languages.typescript.typescriptDefaults.addExtraLib(
-          lib,
-          `file:///hive-lab-globals-${id}.d.ts`,
-        );
+    (async function () {
+      if (!props.extraLibs?.length) {
+        return;
       }
-    }
-  }, []);
+
+      if (!monaco.languages.typescript) {
+        await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
+        setTypescriptReady(true);
+      }
+
+      const ts = monaco.languages.typescript;
+
+      if (!ts) {
+        return;
+      }
+
+      const extraLibs = Object.values(ts.typescriptDefaults.getExtraLibs()).map(lib => lib.content);
+
+      if (props.extraLibs.every(lib => extraLibs.includes(lib))) {
+        return;
+      }
+
+      const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      ts.typescriptDefaults.setCompilerOptions({
+        target: ts.ScriptTarget.ESNext,
+        module: ts.ModuleKind.ESNext,
+        allowNonTsExtensions: true,
+        allowJs: true,
+        lib: ['esnext', 'webworker'],
+      });
+
+      ts.typescriptDefaults.setExtraLibs(
+        props.extraLibs.map((content, index) => ({
+          content,
+          filePath: `file:///hive-lab-globals-${safeId}-${index}.d.ts`,
+        })),
+      );
+    })();
+  }, [id, props.extraLibs]);
 
   useImperativeHandle(
     ref,
@@ -187,8 +211,12 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
     [],
   );
 
+  if (!typescriptReady && props.language === 'typescript') {
+    return null;
+  }
+
   return (
-    <div className="size-full">
+    <div className="size-full overflow-hidden">
       <MonacoEditor
         className="size-full"
         {...props}
@@ -220,6 +248,4 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   );
 });
 
-// Expose Editor as a plain callable component type to keep it compatible
-// across projects that resolve different React type majors.
 export const Editor = EditorInner as unknown as (props: EditorProps) => JSX.Element;

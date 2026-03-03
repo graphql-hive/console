@@ -307,7 +307,7 @@
     --hive-laboratory-secondary-foreground: var(--neutral-11);
     --hive-laboratory-muted: var(--neutral-3);
     --hive-laboratory-muted-foreground: var(--neutral-11);
-    --hive-laboratory-accent: var(--accent);
+    --hive-laboratory-accent: var(--neutral-4);
     --hive-laboratory-accent-foreground: var(--neutral-11);
     --hive-laboratory-destructive: var(--red-500);
     --hive-laboratory-border: var(--neutral-5);
@@ -329,7 +329,7 @@
     --hive-laboratory-secondary-foreground: var(--neutral-11);
     --hive-laboratory-muted: var(--neutral-3);
     --hive-laboratory-muted-foreground: var(--neutral-11);
-    --hive-laboratory-accent: var(--accent);
+    --hive-laboratory-accent: var(--neutral-6);
     --hive-laboratory-accent-foreground: var(--neutral-11);
     --hive-laboratory-destructive: var(--red-500);
     --hive-laboratory-border: var(--neutral-5);

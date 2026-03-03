@@ -77,6 +77,18 @@ const ShadowRootContainer = (props: { children: ReactNode }) => {
     setShadowRoot(hostRef.current.attachShadow({ mode: 'open' }));
   }, [shadowRoot]);
 
+  useLayoutEffect(() => {
+    if (!shadowRoot) {
+      return;
+    }
+
+    document.head.querySelectorAll('style').forEach(style => {
+      if (style.textContent?.includes('[data-sonner-toaster]')) {
+        shadowRoot.append(style.cloneNode(true));
+      }
+    });
+  }, [shadowRoot]);
+
   return (
     <div ref={hostRef} className="hive-laboratory-host size-full">
       {shadowRoot ? createPortal(props.children, shadowRoot) : null}
@@ -632,7 +644,7 @@ export const Laboratory = (
         })}
         ref={containerRef}
       >
-        <Toaster richColors closeButton position="top-right" />
+        <Toaster richColors closeButton position="top-right" theme={props.theme} />
         <Dialog open={isUpdateEndpointDialogOpen} onOpenChange={setIsUpdateEndpointDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -797,6 +809,7 @@ export const Laboratory = (
           {...collectionsApi}
           {...operationsApi}
           {...historyApi}
+          container={containerRef.current}
           openAddCollectionDialog={openAddCollectionDialog}
           openUpdateEndpointDialog={openUpdateEndpointDialog}
           openAddTestDialog={openAddTestDialog}

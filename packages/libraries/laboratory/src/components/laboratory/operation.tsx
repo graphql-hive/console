@@ -204,7 +204,7 @@ export const ResponseSubscription = ({
       </div>
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="flex flex-col">
+          <div className="flex flex-col overflow-hidden">
             {historyItem?.responses
               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
               .map((response, i) => {
@@ -312,13 +312,13 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
           </div>
         ) : null}
       </TabsList>
-      <TabsContent value="response">
+      <TabsContent value="response" className="overflow-hidden">
         <ResponseBody historyItem={historyItem} />
       </TabsContent>
-      <TabsContent value="headers">
+      <TabsContent value="headers" className="overflow-hidden">
         <ResponseHeaders historyItem={historyItem} />
       </TabsContent>
-      <TabsContent value="preflight">
+      <TabsContent value="preflight" className="overflow-hidden">
         <ResponsePreflight historyItem={historyItem} />
       </TabsContent>
     </Tabs>
@@ -525,7 +525,7 @@ export const Query = (props: {
   );
 
   return (
-    <div className="grid size-full grid-rows-[auto_1fr] pb-0">
+    <div className="grid size-full grid-rows-[auto_1fr] overflow-hidden pb-0">
       <Dialog open={isSaveToCollectionDialogOpen} onOpenChange={setIsSaveToCollectionDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -583,7 +583,7 @@ export const Query = (props: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="border-border flex w-full items-center gap-2 border-b p-3">
+      <div className="border-border flex w-full items-center gap-2 overflow-hidden border-b p-3">
         <span className="text-base font-medium">Operation</span>
         {checkPermissions?.('collectionsOperations:create') && (
           <Toggle
@@ -691,23 +691,21 @@ export const Query = (props: {
           )}
         </div>
       </div>
-      <div className="size-full">
-        <Editor
-          uri={monaco.Uri.file(`operation_${endpoint}.graphql`)}
-          variablesUri={variablesUri}
-          value={operation?.query ?? ''}
-          onChange={value => {
-            updateActiveOperation({
-              query: value ?? '',
-            });
-          }}
-          language="graphql"
-          theme="hive-laboratory"
-          options={{
-            readOnly: props.isReadOnly,
-          }}
-        />
-      </div>
+      <Editor
+        uri={monaco.Uri.file(`operation_${endpoint}.graphql`)}
+        variablesUri={variablesUri}
+        value={operation?.query ?? ''}
+        onChange={value => {
+          updateActiveOperation({
+            query: value ?? '',
+          });
+        }}
+        language="graphql"
+        theme="hive-laboratory"
+        options={{
+          readOnly: props.isReadOnly,
+        }}
+      />
     </div>
   );
 };
@@ -749,7 +747,7 @@ export const Operation = (props: {
               <Query operation={operation} isReadOnly={isReadOnly} />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={30} className="overflow-visible!">
+            <ResizablePanel minSize={10} defaultSize={30}>
               <Tabs className="grid size-full grid-rows-[auto_1fr]" defaultValue="variables">
                 <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
                   <TabsTrigger value="variables" className="grow-0 rounded-sm">
@@ -762,13 +760,13 @@ export const Operation = (props: {
                     Extensions
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="variables">
+                <TabsContent value="variables" className="overflow-hidden">
                   <Variables operation={operation} isReadOnly={isReadOnly} />
                 </TabsContent>
-                <TabsContent value="headers">
+                <TabsContent value="headers" className="overflow-hidden">
                   <Headers operation={operation} isReadOnly={isReadOnly} />
                 </TabsContent>
-                <TabsContent value="extensions">
+                <TabsContent value="extensions" className="overflow-hidden">
                   <Extensions operation={operation} isReadOnly={isReadOnly} />
                 </TabsContent>
               </Tabs>
