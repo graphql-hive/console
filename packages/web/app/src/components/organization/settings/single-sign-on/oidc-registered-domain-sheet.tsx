@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import z from 'zod';
 import * as AlertDialog from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import {
@@ -410,7 +409,7 @@ export function OIDCRegisteredDomainSheet(props: {
                     ),
                     'step-2-challenge': () => (
                       <>
-                        <div className="mb-10 mb-2 basis-full text-red-500">
+                        <div className="mb-10 basis-full text-red-500">
                           {deleteDomainMutationState.error?.message ??
                             deleteDomainMutationState.data?.deleteOIDCDomain.error?.message ??
                             verifyDomainMutationState.error?.message ??
@@ -467,9 +466,7 @@ export function OIDCRegisteredDomainSheet(props: {
       {showDeleteDomainConfirmation && (
         <DeleteDomainConfirmationDialogue
           onClose={() => setShowDeleteDomainConfirmation(false)}
-          onConfirm={() => {
-            onDeleteDomain();
-          }}
+          onConfirm={onDeleteDomain}
         />
       )}
     </>
