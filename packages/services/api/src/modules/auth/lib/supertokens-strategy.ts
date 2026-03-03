@@ -287,7 +287,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
     try {
       accessToken = parseAccessToken(rawAccessToken, accessTokenKey.publicKey);
     } catch (err) {
-      args.req.log.debug('Failed verifying the access token. Ask for refresh.');
+      args.req.log.debug('Failed verifying the access token. Ask for refresh. err=%s', String(err));
       throw new HiveError('Invalid session', {
         extensions: {
           code: 'NEEDS_REFRESH',

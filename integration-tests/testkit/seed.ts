@@ -1,6 +1,8 @@
 import { formatISO, subHours } from 'date-fns';
 import { humanId } from 'human-id';
 import { createPool, sql } from 'slonik';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
+import { createRedisClient } from '@hive/api/modules/shared/providers/redis';
 import type { Report } from '../../packages/libraries/core/src/client/usage.js';
 import { authenticate, userEmail } from './auth';
 import {
@@ -97,15 +99,55 @@ async function createDbConnection() {
 export function initSeed() {
   let sharedDBPoolPromise: ReturnType<typeof createDbConnection>;
 
-  async function doAuthenticate(email: string, oidcIntegrationId?: string) {
+  function getPool() {
     if (!sharedDBPoolPromise) {
       sharedDBPoolPromise = createDbConnection();
     }
-    const sharedPool = await sharedDBPoolPromise;
-    return await authenticate(sharedPool.pool, email, oidcIntegrationId);
+    return sharedDBPoolPromise.then(res => res.pool);
+  }
+
+  async function doAuthenticate(email: string, oidcIntegrationId?: string) {
+    return await authenticate(await getPool(), email, oidcIntegrationId);
   }
 
   return {
+    async purgeOIDCDomains() {
+      const pool = await getPool();
+      await pool.query(sql`
+        TRUNCATE "oidc_integration_domains"
+      `);
+    },
+    async forgeOIDCDNSChallenge(orgSlug: string) {
+      const pool = await getPool();
+
+      const domainChallengeId = await pool.oneFirst<string>(sql`
+      SELECT "oidc_integration_domains"."id"
+      FROM "oidc_integration_domains" INNER JOIN "organizations" ON "oidc_integration_domains"."organization_id" = "organizations"."id"
+      WHERE "organizations"."clean_id" = ${orgSlug}
+    `);
+      const key = `hive:oidcDomainChallenge:${domainChallengeId}`;
+
+      const challenge = {
+        id: domainChallengeId,
+        recordName: `_hive-challenge`,
+        // hardcoded value
+        value: 'a894723a5d52a30d73790752b0169835e6f81dd77d2737dba809bee7fde39092',
+      };
+
+      const redis = createRedisClient(
+        '',
+        {
+          host: ensureEnv('REDIS_HOST'),
+          password: ensureEnv('REDIS_PASSWORD'),
+          port: parseInt(ensureEnv('REDIS_PORT'), 10),
+          tlsEnabled: false,
+        },
+        new NoopLogger(),
+      );
+
+      await redis.set(key, JSON.stringify(challenge));
+      await redis.disconnect();
+    },
     createDbConnection,
     authenticate: doAuthenticate,
     generateEmail: () => userEmail(generateUnique()),
@@ -118,9 +160,18 @@ export function initSeed() {
         },
       ).then(res => res.json());
     },
-    async createOwner() {
+    async createOwner(verifyEmail: boolean = true) {
       const ownerEmail = userEmail(generateUnique());
       const auth = await doAuthenticate(ownerEmail);
+
+      if (verifyEmail) {
+        const pool = await getPool();
+        await pool.query(sql`
+          INSERT INTO "email_verifications" ("user_identity_id", "email", "verified_at")
+          VALUES (${auth.supertokensUserId}, ${ownerEmail}, NOW())
+        `);
+      }
+
       const ownerRefreshToken = auth.refresh_token;
       const ownerToken = auth.access_token;
 

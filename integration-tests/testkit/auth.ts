@@ -112,6 +112,7 @@ const createSessionAtHome = async (
   return {
     access_token: session.accessToken.token,
     refresh_token: session.refreshToken,
+    supertokensUserId: session.session.userId,
   };
 };
 
@@ -230,7 +231,7 @@ export async function authenticate(
   pool: DatabasePool,
   email: string,
   oidcIntegrationId?: string,
-): Promise<{ access_token: string; refresh_token: string }> {
+): Promise<{ access_token: string; refresh_token: string; supertokensUserId: string }> {
   if (process.env.SUPERTOKENS_AT_HOME === '1') {
     const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
     if (!tokenResponsePromise[email]) {
@@ -257,7 +258,8 @@ export async function authenticate(
     }));
   }
 
-  return tokenResponsePromise[email]!.then(data =>
-    createSession(data.userId, data.email, oidcIntegrationId ?? null),
-  );
+  return tokenResponsePromise[email]!.then(async data => ({
+    ...(await createSession(data.userId, data.email, oidcIntegrationId ?? null)),
+    supertokensUserId: data.userId,
+  }));
 }

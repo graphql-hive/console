@@ -31,6 +31,24 @@ export default defineConfig({
   e2e: {
     setupNodeEvents(on) {
       on('task', {
+        async seedOrg() {
+          const owner = await seed.createOwner();
+          const org = await owner.createOrg();
+
+          return {
+            slug: org.organization.slug,
+            refreshToken: owner.ownerRefreshToken,
+            email: owner.ownerEmail,
+          };
+        },
+        async purgeOIDCDomains() {
+          await seed.purgeOIDCDomains();
+          return {};
+        },
+        async forgeOIDCDNSChallenge(orgSlug: string) {
+          await seed.forgeOIDCDNSChallenge(orgSlug);
+          return {};
+        },
         async seedTarget() {
           const owner = await seed.createOwner();
           const org = await owner.createOrg();
@@ -55,7 +73,9 @@ export default defineConfig({
             async () => {
               const emails = await fetch(url.toString())
                 .then(res => res.json())
-                .then(emails => emails.filter(e => e.to === email));
+                .then(emails =>
+                  emails.filter(e => e.to === email && e.subject === 'Verify your email'),
+                );
 
               if (emails.length === 0) {
                 throw new Error('Could not find email');

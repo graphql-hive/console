@@ -701,12 +701,12 @@ export async function createStorage(
 
           let invitation: OrganizationInvitation | null = null;
 
-          if (oidcIntegration) {
+          if (oidcIntegration?.id) {
             const oidcConfig = await this.getOIDCIntegrationById({
               oidcIntegrationId: oidcIntegration.id,
             });
 
-            if (oidcConfig?.requireInvitation) {
+            if (oidcConfig) {
               invitation = await t
                 .maybeOne<unknown>(
                   sql`
@@ -726,18 +726,18 @@ export async function createStorage(
                   `,
                 )
                 .then(v => OrganizationInvitationModel.nullable().parse(v));
+            }
 
-              if (!invitation) {
-                const member = internalUser
-                  ? await this.getOrganizationMember({
-                      organizationId: oidcConfig.linkedOrganizationId,
-                      userId: internalUser.id,
-                    })
-                  : null;
+            if (oidcConfig?.requireInvitation && !invitation) {
+              const member = internalUser
+                ? await this.getOrganizationMember({
+                    organizationId: oidcConfig.linkedOrganizationId,
+                    userId: internalUser.id,
+                  })
+                : null;
 
-                if (!member) {
-                  throw new EnsureUserExistsError('User is not invited to the organization.');
-                }
+              if (!member) {
+                throw new EnsureUserExistsError('User is not invited to the organization.');
               }
             }
           }
