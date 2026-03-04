@@ -222,7 +222,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
               exclude: ['readiness'],
             }
           : false,
-        experimental__persistedDocuments: options.hivePersistedDocumentsConfig
+        persistedDocuments: options.hivePersistedDocumentsConfig
           ? {
               cdn: {
                 endpoint: options.hivePersistedDocumentsConfig.cdnEndpoint,

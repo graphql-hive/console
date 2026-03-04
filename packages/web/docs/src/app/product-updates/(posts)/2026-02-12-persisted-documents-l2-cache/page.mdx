@@ -38,7 +38,7 @@ await redis.connect()
 const yoga = createYoga({
   plugins: [
     useHive({
-      experimental__persistedDocuments: {
+      persistedDocuments: {
         cdn: {
           endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
           accessToken: '<cdn_access_token>'

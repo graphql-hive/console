@@ -31,7 +31,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
   const logger = resolveLoggerFromConfigOptions(options).child({ module: 'hive' });
   let enabled = options.enabled ?? true;
 
-  if (enabled === false && !options.experimental__persistedDocuments) {
+  if (enabled === false && !options.persistedDocuments) {
     logger.debug('Plugin is not enabled.');
   }
 
@@ -48,11 +48,11 @@ export function createHive(options: HivePluginOptions): HiveClient {
 
   const usage = createUsage(mergedOptions);
   const schemaReporter = createReporting(mergedOptions);
-  const persistedDocuments = options.experimental__persistedDocuments
+  const persistedDocuments = options.persistedDocuments
     ? createPersistedDocuments({
-        ...options.experimental__persistedDocuments,
+        ...options.persistedDocuments,
         logger,
-        fetch: options.experimental__persistedDocuments.fetch,
+        fetch: options.persistedDocuments.fetch,
       })
     : null;
 
@@ -243,7 +243,7 @@ export function createHive(options: HivePluginOptions): HiveClient {
     collectSubscriptionUsage: usage.collectSubscription,
     createInstrumentedSubscribe,
     createInstrumentedExecute,
-    experimental__persistedDocuments: persistedDocuments,
+    persistedDocuments,
   };
 }
 
