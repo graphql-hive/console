@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { UpdateFilterButton } from './update-filter-button';
+import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
 const InsightsCreateSavedFilter_Mutation = graphql(`
   mutation InsightsCreateSavedFilter($input: CreateSavedFilterInput!) {
@@ -47,42 +48,6 @@ const InsightsCreateSavedFilter_Mutation = graphql(`
     }
   }
 `);
-
-export type CurrentFilters = {
-  operations: string[];
-  clients: Array<{ name: string; versions: string[] | null }>;
-  dateRange: { from: string; to: string };
-  excludeOperations: boolean;
-  excludeClientFilters: boolean;
-};
-
-function normalizeClients(arr: Array<{ name: string; versions: string[] | null }>) {
-  return JSON.stringify(
-    arr
-      .map(c => ({ name: c.name, versions: c.versions }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  );
-}
-
-export function hasUnsavedChanges(activeView: SavedFilterView, currentFilters: CurrentFilters) {
-  if (
-    JSON.stringify([...currentFilters.operations].sort()) !==
-    JSON.stringify([...activeView.filters.operationHashes].sort())
-  )
-    return true;
-  if (
-    normalizeClients(currentFilters.clients) !== normalizeClients(activeView.filters.clientFilters)
-  )
-    return true;
-  if (
-    currentFilters.dateRange.from !== activeView.filters.dateRange?.from ||
-    currentFilters.dateRange.to !== activeView.filters.dateRange?.to
-  )
-    return true;
-  if (currentFilters.excludeOperations !== activeView.filters.excludeOperations) return true;
-  if (currentFilters.excludeClientFilters !== activeView.filters.excludeClientFilters) return true;
-  return false;
-}
 
 type SaveFilterButtonProps = {
   activeView: SavedFilterView | null;
@@ -185,19 +150,7 @@ function CreateFilterButton({
         target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
         name: trimmed,
         visibility,
-        insightsFilter: {
-          operationHashes: currentFilters.operations,
-          clientFilters: currentFilters.clients.map(c => ({
-            name: c.name,
-            versions: c.versions,
-          })),
-          dateRange: {
-            from: currentFilters.dateRange.from,
-            to: currentFilters.dateRange.to,
-          },
-          excludeOperations: currentFilters.excludeOperations,
-          excludeClientFilters: currentFilters.excludeClientFilters,
-        },
+        insightsFilter: toInsightsFilterInput(currentFilters),
       },
     });
 

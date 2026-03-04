@@ -6,7 +6,7 @@ import { TriggerButton } from '@/components/base/trigger-button';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
-import { hasUnsavedChanges, type CurrentFilters } from './save-filter-button';
+import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
 const InsightsUpdateSavedFilter_Mutation = graphql(`
   mutation InsightsUpdateSavedFilter($input: UpdateSavedFilterInput!) {
@@ -70,19 +70,7 @@ export function UpdateFilterButton({
       input: {
         id: activeView.id,
         target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
-        insightsFilter: {
-          operationHashes: currentFilters.operations,
-          clientFilters: currentFilters.clients.map(c => ({
-            name: c.name,
-            versions: c.versions,
-          })),
-          dateRange: {
-            from: currentFilters.dateRange.from,
-            to: currentFilters.dateRange.to,
-          },
-          excludeOperations: currentFilters.excludeOperations,
-          excludeClientFilters: currentFilters.excludeClientFilters,
-        },
+        insightsFilter: toInsightsFilterInput(currentFilters),
       },
     });
 
