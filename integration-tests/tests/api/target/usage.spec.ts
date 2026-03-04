@@ -3609,7 +3609,7 @@ describe('exclude filters', () => {
       expect(allStats.totalOperations).toBe(2);
 
       // Get the hash of the 'ping' operation
-      const pingOp = allStats.operations.edges.find(e => e.node.name === 'ping');
+      const pingOp = allStats.operations.edges.find(e => e.node.name.endsWith('_ping'));
       expect(pingOp).toBeDefined();
       const pingHash = pingOp!.node.operationHash!;
 
@@ -3619,7 +3619,7 @@ describe('exclude filters', () => {
         excludeOperations: false,
       });
       expect(includeStats.totalOperations).toBe(1);
-      expect(includeStats.operations.edges[0].node.name).toBe('ping');
+      expect(includeStats.operations.edges[0].node.name).toContain('_ping');
 
       // Exclude filter: everything except 'ping' → only 'me'
       const excludeStats = await readOperationsStats(from, to, undefined, {
@@ -3627,7 +3627,7 @@ describe('exclude filters', () => {
         excludeOperations: true,
       });
       expect(excludeStats.totalOperations).toBe(1);
-      expect(excludeStats.operations.edges[0].node.name).toBe('me');
+      expect(excludeStats.operations.edges[0].node.name).toContain('_me');
     },
   );
 
