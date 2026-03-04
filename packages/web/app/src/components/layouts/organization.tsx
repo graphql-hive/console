@@ -130,7 +130,7 @@ export function OrganizationLayout({
       </Header>
       <SecondaryNavigation
         page={page}
-        loading={query.fetching}
+        loading={!currentOrganization}
         className="min-w-[600px]"
         links={
           currentOrganization
