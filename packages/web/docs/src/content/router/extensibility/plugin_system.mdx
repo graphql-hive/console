@@ -2,8 +2,6 @@
 title: 'Plugin System'
 ---
 
-import { RouterHookSection } from '../../../components/router-plugin-system/hook-section'
-
 # Plugin System
 
 ## Overview
@@ -239,6 +237,8 @@ impl RouterPlugin for ContextDataPlugin {
         };
 
         payload.context.insert(context_data);
+        
+        payload.proceed()
     }
 
     async fn on_subgraph_execute<'exec>(
@@ -250,6 +250,8 @@ impl RouterPlugin for ContextDataPlugin {
         if let Some(ref context_data_entry) = context_data_entry {
             tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
         }
+        
+         payload.proceed()
     }
 }
 ```
@@ -262,8 +264,6 @@ The `payload.context` API is simple:
 - `get_mut<T>(&mut self) -> Option<&mut T>` - Retrieves a mutable reference to the data of type `T`
   from the context.
 
-> [See `context_data` example for a full implementation](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs)
-
 ## A Simple Plugin Example
 
 The following snippet shows the simplest example of creating a custom plugin, registering it, and
@@ -271,7 +271,7 @@ configuring it with Hive Router:
 
 ```rust filename="main.rs"
 use hive_router::{
-    configure_global_allocator, error::RouterInitError, init_rustls_crypto_provider, ntex,
+    configure_global_allocator, error::RouterInitError, init_rustls_crypto_provider,
     router_entrypoint, PluginRegistry, RouterGlobalAllocator,
 };
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -310,7 +310,7 @@ async fn main() -> Result<(), RouterInitError> {
 
 ## Plugin Lifecycle Hooks
 
-<RouterHookSection>
+
 
 ### `on_plugin_init`
 
@@ -395,11 +395,7 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
 - [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_plugin_init)
 - [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_plugin_init)
 
-</RouterHookSection>
-
 ## Request Lifecycle Hooks
-
-<RouterHookSection>
 
 ### `on_http_request`
 
@@ -535,9 +531,9 @@ fn on_http_request<'req>(
 - [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_http_request)
 - [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_http_request)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_graphql_params`
 
@@ -689,9 +685,9 @@ async fn on_graphql_params<'exec>(
 - [`async_auth`](https://github.com/graphql-hive/router/blob/main/plugin_examples/async_auth/src/plugin.rs#:~:text=fn%20on_graphql_params)
 - [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_graphql_params)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_graphql_parse`
 
@@ -758,9 +754,9 @@ async fn on_graphql_parse<'exec>(
 - [`OnGraphQLParseStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_parse.rs#:~:text=struct%20OnGraphQLParseStartHookPayload)
 - [`OnGraphQLParseEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_parse.rs#:~:text=struct%20OnGraphQLParseEndHookPayload)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_graphql_validation`
 
@@ -825,9 +821,9 @@ async fn on_graphql_validation<'exec>(
 - [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_graphql_validation)
 - [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_graphql_validation)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_query_plan`
 
@@ -911,9 +907,9 @@ async fn on_query_plan<'exec>(
 
 - [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_query_plan)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_execute`
 
@@ -1014,9 +1010,9 @@ async fn on_execute<'exec>(
 - [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_execute)
 - [`response_cache`](https://github.com/graphql-hive/router/blob/main/plugin_examples/response_cache/src/lib.rs#:~:text=fn%20on_execute)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_subgraph_execute`
 
@@ -1119,9 +1115,9 @@ async fn on_subgraph_execute<'exec>(
 
 - [`context_data`](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs#:~:text=fn%20on_subgraph_execute)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_subgraph_http_request`
 
@@ -1207,9 +1203,9 @@ async fn on_subgraph_http_request<'exec>(
 - [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_subgraph_http_request)
 - [`multipart`](https://github.com/graphql-hive/router/blob/main/plugin_examples/multipart/src/lib.rs#:~:text=fn%20on_subgraph_http_request)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_graphql_error`
 
@@ -1299,11 +1295,11 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 
 - [`error_mapping`](https://github.com/graphql-hive/router/blob/main/plugin_examples/error_mapping/src/plugin.rs#:~:text=fn%20on_graphql_error)
 
-</RouterHookSection>
+
 
 ## Router Lifecycle
 
-<RouterHookSection>
+
 
 ### `on_shutdown`
 
@@ -1341,9 +1337,9 @@ async fn on_shutdown<'exec>(&'exec self) {
 
 - [`usage_reporting`](https://github.com/graphql-hive/router/blob/main/plugin_examples/usage_reporting/src/lib.rs#:~:text=fn%20on_shutdown)
 
-</RouterHookSection>
 
-<RouterHookSection>
+
+
 
 ### `on_supergraph_load`
 
@@ -1422,7 +1418,7 @@ fn on_supergraph_reload<'exec>(
 - [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_supergraph_reload)
 - [`response_cache`](https://github.com/graphql-hive/router/blob/main/plugin_examples/response_cache/src/lib.rs#:~:text=fn%20on_supergraph_reload)
 
-</RouterHookSection>
+
 
 ## Control Flow
 
@@ -1454,36 +1450,36 @@ payloads.
   serializes it to JSON, and sets the appropriate headers. To simplify the above example:
 
 ```rust
-                let body = json!({
-                    "errors": [
-                        {
-                            "message": "Anonymous operations are not allowed",
-                            "extensions": {
-                                "code": "ANONYMOUS_OPERATION"
-                            }
-                        }
-                    ]
-                });
+let body = json!({
+    "errors": [
+        {
+            "message": "Anonymous operations are not allowed",
+            "extensions": {
+                "code": "ANONYMOUS_OPERATION"
+            }
+        }
+    ]
+});
 
-                // Here we short-circuit the request processing by returning an early response
-                return payload.end_with_response(
-                    Response::with_body(
-                        StatusCode::BAD_REQUEST,
-                        body.to_string().into(),
-                    )
-                );
+// Here we short-circuit the request processing by returning an early response
+return payload.end_with_response(
+    Response::with_body(
+        StatusCode::BAD_REQUEST,
+        body.to_string().into(),
+    )
+);
 ```
 
 - `end_with_graphql_error(error: GraphQLError, status: StatusCode)` - Accepts a `GraphQLError`
   directly and constructs the appropriate GraphQL error response.
 
 ```rust
-                let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
-                // Here we short-circuit the request processing by returning an early response
-                return payload.end_with_graphql_error(
-                    graphql_error,
-                    StatusCode::BAD_REQUEST,
-                );
+let graphql_error = GraphQLError::from_message_and_code("Anonymous operations are not allowed", "ANONYMOUS_OPERATION");
+// Here we short-circuit the request processing by returning an early response
+return payload.end_with_graphql_error(
+    graphql_error,
+    StatusCode::BAD_REQUEST,
+);
 ```
 
 ### Overriding Default Behavior
@@ -1573,7 +1569,7 @@ impl BackgroundTask for MyBackgroundTask {
 
     async fn run(&self, token: CancellationToken) {
         let interval = Duration::from_secs(10);
-        let mut tokio_interval = tokio::time::interval(*interval);
+        let mut tokio_interval = tokio::time::interval(interval);
 
         loop {
             tokio::select! {
@@ -1630,7 +1626,7 @@ Use the `tracing` API to [create spans](https://docs.rs/tracing/latest/tracing/i
 enrich the exported trace data with custom spans:
 
 ```rust
-use tracing::{debug};
+use tracing::{debug, span, Level};
 
 fn on_http_request<'req>(
     &'req self,

@@ -2,6 +2,7 @@
 title: 'Extending the Router'
 ---
 
+import { Callout } from '#components/callout'
 import { Steps } from '@theguild/components'
 
 # Extending the Router
@@ -93,9 +94,13 @@ supergraph:
   path: ./supergraph.graphql
 ```
 
-> Hive Router supports loading the Supergraph from additional sources. See the
-> [Supergraph Sources documentation](https://the-guild.dev/graphql/hive/docs/router/supergraph) for
-> details.
+<Callout type="note" title="Additional ways to load your Supergraph">
+
+Hive Router supports loading the Supergraph from additional sources. See the
+[Supergraph Sources documentation](https://the-guild.dev/graphql/hive/docs/router/supergraph) for
+details.
+
+</Callout>
 
 ### Run your custom router
 
@@ -258,7 +263,7 @@ RUN cargo build --release
 EXPOSE 4000
 
 # Run the custom router binary
-CMD ["./target/release/hive_router_with_my_plugin"]
+ENTRYPOINT ["./target/release/hive_router_with_my_plugin"]
 ```
 
 Then, run the following Docker build command:
