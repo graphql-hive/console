@@ -189,7 +189,7 @@ export const TargetLayout = ({
         <>
           <SecondaryNavigation
             page={page}
-            loading={!currentOrganization || !currentProject || !currentTarget}
+            loading={query.fetching}
             className="flex h-full grow flex-col"
             links={
               currentOrganization && currentProject && currentTarget

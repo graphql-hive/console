@@ -115,7 +115,7 @@ export function ProjectLayout({
         <>
           <SecondaryNavigation
             page={page}
-            loading={!currentOrganization || !currentProject}
+            loading={query.fetching}
             links={
               currentOrganization && currentProject
                 ? [
