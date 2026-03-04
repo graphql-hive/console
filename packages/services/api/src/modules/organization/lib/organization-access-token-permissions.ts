@@ -146,6 +146,12 @@ export const permissionGroups: Array<PermissionGroup> = [
         title: 'Delete service',
         description: 'Deletes a service from the schema registry.',
       },
+      {
+        id: 'schemaCheck:approve',
+        title: 'Approve schema check',
+        description: 'Grant access to approve failed schema checks.',
+        dependsOn: 'project:describe',
+      },
     ],
   },
   {
