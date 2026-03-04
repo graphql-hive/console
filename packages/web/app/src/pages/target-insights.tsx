@@ -197,25 +197,6 @@ function OperationsView({
     return map;
   }, [operationFilterItems]);
 
-  const operationFilterSelections: FilterSelection[] = useMemo(
-    () =>
-      (search.operations ?? []).map(hash => ({
-        id: hash,
-        name: hashToNameMap.get(hash) ?? hash,
-        values: null,
-      })),
-    [search.operations, hashToNameMap],
-  );
-
-  const clientFilterSelections: FilterSelection[] = useMemo(
-    () =>
-      (search.clients ?? []).map(c => ({
-        name: c.name,
-        values: c.versions,
-      })),
-    [search.clients],
-  );
-
   const { privateSavedFilterViews, sharedSavedFilterViews } = useMemo(() => {
     const edges = pickerQuery.data?.target?.savedFilters?.edges ?? [];
     const privateSavedFilterViews: SavedFilterView[] = [];
@@ -279,6 +260,25 @@ function OperationsView({
       });
     }
   }, [search.viewId]);
+
+  const operationFilterSelections: FilterSelection[] = useMemo(
+    () =>
+      (search.operations ?? []).map(hash => ({
+        id: hash,
+        name: hashToNameMap.get(hash) ?? hash,
+        values: null,
+      })),
+    [search.operations, hashToNameMap],
+  );
+
+  const clientFilterSelections: FilterSelection[] = useMemo(
+    () =>
+      (search.clients ?? []).map(c => ({
+        name: c.name,
+        values: c.versions,
+      })),
+    [search.clients],
+  );
 
   const hasActiveFilters = useMemo(
     () =>
