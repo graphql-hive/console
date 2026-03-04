@@ -221,7 +221,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Plugin
               : undefined,
           });
       void hive.info();
-      const experimentalPersistedDocs = hive.experimental__persistedDocuments;
+      const experimentalPersistedDocs = hive.persistedDocuments;
       if (experimentalPersistedDocs) {
         addPlugin(
           usePersistedOperations({

@@ -7,13 +7,6 @@ import { Callout, ContactTextLink, Tabs } from '@theguild/components'
 
 # App Deployments
 
-<Callout>
-  <div>
-    App deployments are currently in preview. If you would like to try them out, please{' '}
-    <ContactTextLink>reach out to us</ContactTextLink>
-  </div>
-</Callout>
-
 App deployments are a way to group and publish your GraphQL operations as a single app version to
 the Hive Registry. This allows you to keep track of your different app versions, their operations
 usage, and performance.
@@ -444,7 +437,7 @@ const yoga = createYoga({
   plugins: [
     useHive({
       enabled: false,
-      experimental__persistedDocuments: {
+      persistedDocuments: {
         cdn: {
           // replace <target_id> and <cdn_access_token> with your values
           endpoint: [
@@ -482,7 +475,7 @@ const yoga = createYoga({
   plugins: [
     useHive({
       enabled: false,
-      experimental__persistedDocuments: {
+      persistedDocuments: {
         cdn: {
           endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
           accessToken: '<cdn_access_token>'
@@ -533,7 +526,7 @@ const server = new ApolloServer({
   schema,
   plugins: [
     useHive({
-      experimental__persistedDocuments: {
+      persistedDocuments: {
         cdn: {
           // replace <target_id> and <cdn_access_token> with your values
           endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
@@ -567,7 +560,7 @@ const server = new ApolloServer({
   schema,
   plugins: [
     useHive({
-      experimental__persistedDocuments: {
+      persistedDocuments: {
         cdn: {
           endpoint: 'https://cdn.graphql-hive.com/artifacts/v1/<target_id>',
           accessToken: '<cdn_access_token>'
