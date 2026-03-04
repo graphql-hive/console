@@ -447,18 +447,17 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                       const toWithoutWhitespace = toValue.trim();
                       const resolvedRange = resolveRange(fromValue, toValue);
                       if (resolvedRange) {
-                        const preset =
-                          findMatchingPreset(
-                            {
-                              from: fromWithoutWhitespace,
-                              to: toWithoutWhitespace,
-                            },
-                            availablePresets,
-                          ) ?? {
-                            name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
-                            label: buildDateRangeString(resolvedRange),
-                            range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
-                          };
+                        const preset = findMatchingPreset(
+                          {
+                            from: fromWithoutWhitespace,
+                            to: toWithoutWhitespace,
+                          },
+                          availablePresets,
+                        ) ?? {
+                          name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
+                          label: buildDateRangeString(resolvedRange),
+                          range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
+                        };
                         setActivePreset(preset);
                         setShowCalendar(false);
                         setQuickRangeFilter('');

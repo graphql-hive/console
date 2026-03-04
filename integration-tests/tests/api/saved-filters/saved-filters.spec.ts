@@ -433,81 +433,76 @@ describe('Saved Filters', () => {
   });
 
   describe('Exclude filters', () => {
-    test.concurrent(
-      'create and retrieve saved filter with exclude fields',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject } = await createOrg();
-        const { createSavedFilter, getSavedFilter } = await createProject(ProjectType.Single);
+    test.concurrent('create and retrieve saved filter with exclude fields', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter, getSavedFilter } = await createProject(ProjectType.Single);
 
-        const createResult = await createSavedFilter({
-          name: 'External Clients Only',
-          visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: {
-            clientFilters: [{ name: 'internal-bot' }],
-            excludeOperations: false,
-            excludeClientFilters: true,
-          },
-        });
+      const createResult = await createSavedFilter({
+        name: 'External Clients Only',
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: {
+          clientFilters: [{ name: 'internal-bot' }],
+          excludeOperations: false,
+          excludeClientFilters: true,
+        },
+      });
 
-        expect(createResult.error).toBeNull();
-        expect(createResult.ok?.savedFilter.filters.excludeOperations).toBe(false);
-        expect(createResult.ok?.savedFilter.filters.excludeClientFilters).toBe(true);
-        expect(createResult.ok?.savedFilter.filters.clientFilters).toEqual([
-          { name: 'internal-bot', versions: null },
-        ]);
+      expect(createResult.error).toBeNull();
+      expect(createResult.ok?.savedFilter.filters.excludeOperations).toBe(false);
+      expect(createResult.ok?.savedFilter.filters.excludeClientFilters).toBe(true);
+      expect(createResult.ok?.savedFilter.filters.clientFilters).toEqual([
+        { name: 'internal-bot', versions: null },
+      ]);
 
-        // Verify persisted via fetch
-        const filterId = createResult.ok?.savedFilter.id!;
-        const fetched = await getSavedFilter({ filterId });
-        expect(fetched?.filters.excludeOperations).toBe(false);
-        expect(fetched?.filters.excludeClientFilters).toBe(true);
-      },
-    );
+      // Verify persisted via fetch
+      const filterId = createResult.ok?.savedFilter.id!;
+      const fetched = await getSavedFilter({ filterId });
+      expect(fetched?.filters.excludeOperations).toBe(false);
+      expect(fetched?.filters.excludeClientFilters).toBe(true);
+    });
 
-    test.concurrent(
-      'update saved filter exclude fields',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject } = await createOrg();
-        const { createSavedFilter, updateSavedFilter, getSavedFilter } =
-          await createProject(ProjectType.Single);
+    test.concurrent('update saved filter exclude fields', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter, updateSavedFilter, getSavedFilter } = await createProject(
+        ProjectType.Single,
+      );
 
-        // Create without exclude
-        const createResult = await createSavedFilter({
-          name: 'My Filter',
-          visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: {
-            operationHashes: ['op1'],
-            excludeOperations: false,
-            excludeClientFilters: false,
-          },
-        });
+      // Create without exclude
+      const createResult = await createSavedFilter({
+        name: 'My Filter',
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: {
+          operationHashes: ['op1'],
+          excludeOperations: false,
+          excludeClientFilters: false,
+        },
+      });
 
-        expect(createResult.ok?.savedFilter.filters.excludeOperations).toBe(false);
-        expect(createResult.ok?.savedFilter.filters.excludeClientFilters).toBe(false);
+      expect(createResult.ok?.savedFilter.filters.excludeOperations).toBe(false);
+      expect(createResult.ok?.savedFilter.filters.excludeClientFilters).toBe(false);
 
-        const filterId = createResult.ok?.savedFilter.id!;
+      const filterId = createResult.ok?.savedFilter.id!;
 
-        // Update to enable exclude
-        const updateResult = await updateSavedFilter({
-          filterId,
-          insightsFilter: {
-            operationHashes: ['op1'],
-            excludeOperations: true,
-            excludeClientFilters: false,
-          },
-        });
+      // Update to enable exclude
+      const updateResult = await updateSavedFilter({
+        filterId,
+        insightsFilter: {
+          operationHashes: ['op1'],
+          excludeOperations: true,
+          excludeClientFilters: false,
+        },
+      });
 
-        expect(updateResult.error).toBeNull();
-        expect(updateResult.ok?.savedFilter.filters.excludeOperations).toBe(true);
-        expect(updateResult.ok?.savedFilter.filters.excludeClientFilters).toBe(false);
+      expect(updateResult.error).toBeNull();
+      expect(updateResult.ok?.savedFilter.filters.excludeOperations).toBe(true);
+      expect(updateResult.ok?.savedFilter.filters.excludeClientFilters).toBe(false);
 
-        // Verify persisted
-        const fetched = await getSavedFilter({ filterId });
-        expect(fetched?.filters.excludeOperations).toBe(true);
-      },
-    );
+      // Verify persisted
+      const fetched = await getSavedFilter({ filterId });
+      expect(fetched?.filters.excludeOperations).toBe(true);
+    });
 
     test.concurrent(
       'existing filters without exclude fields default to false',

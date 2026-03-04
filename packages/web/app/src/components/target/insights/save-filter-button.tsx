@@ -65,9 +65,20 @@ function normalizeClients(arr: Array<{ name: string; versions: string[] | null }
 }
 
 export function hasUnsavedChanges(activeView: SavedFilterView, currentFilters: CurrentFilters) {
-  if (JSON.stringify([...currentFilters.operations].sort()) !== JSON.stringify([...activeView.filters.operationHashes].sort())) return true;
-  if (normalizeClients(currentFilters.clients) !== normalizeClients(activeView.filters.clientFilters)) return true;
-  if (currentFilters.dateRange.from !== activeView.filters.dateRange?.from || currentFilters.dateRange.to !== activeView.filters.dateRange?.to) return true;
+  if (
+    JSON.stringify([...currentFilters.operations].sort()) !==
+    JSON.stringify([...activeView.filters.operationHashes].sort())
+  )
+    return true;
+  if (
+    normalizeClients(currentFilters.clients) !== normalizeClients(activeView.filters.clientFilters)
+  )
+    return true;
+  if (
+    currentFilters.dateRange.from !== activeView.filters.dateRange?.from ||
+    currentFilters.dateRange.to !== activeView.filters.dateRange?.to
+  )
+    return true;
   if (currentFilters.excludeOperations !== activeView.filters.excludeOperations) return true;
   if (currentFilters.excludeClientFilters !== activeView.filters.excludeClientFilters) return true;
   return false;
