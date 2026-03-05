@@ -644,7 +644,11 @@ function PreflightModal({
     envEditorRef.current = editor;
   }, []);
 
-  const handleMonacoEditorBeforeMount = useCallback((monaco: Monaco) => {
+  const handleMonacoEditorBeforeMount = useCallback(async (monaco: Monaco) => {
+    if (monaco.languages.typescript) {
+      await import('monaco-editor/esm/vs/language/typescript/monaco.contribution');
+    }
+
     // Add custom typings for globalThis
     monaco.languages.typescript.javascriptDefaults.addExtraLib(
       `

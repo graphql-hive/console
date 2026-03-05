@@ -1,5 +1,26 @@
 # @graphql-hive/cli
 
+## 0.58.4
+
+### Patch Changes
+
+- [#7778](https://github.com/graphql-hive/console/pull/7778)
+  [`3c05b96`](https://github.com/graphql-hive/console/commit/3c05b96a10f24c11e24c724e2418eb1944a73b59)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Improve federation composition rules.
+
+  - Fix supergraph `@join__field` generation for `@override` + `@requires` migrations and add a
+    progressive override restriction.
+  - When a field with `@requires` is overridden, composition now ignores `@requires` usage coming
+    only from the overridden source field when deciding whether to keep
+    `@join__field(..., external: true)`. This prevents stale external annotations in the supergraph.
+  - Progressive override (`@override(..., label: ...)`) is now rejected when the overridden source
+    field uses `@requires` (error code: `OVERRIDE_COLLISION_WITH_ANOTHER_DIRECTIVE`).
+    Non-progressive override behavior is unchanged.
+
+- Updated dependencies
+  [[`ee2785c`](https://github.com/graphql-hive/console/commit/ee2785c4cc63922bbd45f2557cc6d1e5577c6cca)]:
+  - @graphql-hive/core@0.21.0
+
 ## 0.58.3
 
 ### Patch Changes

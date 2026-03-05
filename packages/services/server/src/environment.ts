@@ -38,7 +38,10 @@ const EnvironmentModel = zod.object({
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
-    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+    zod
+      .union([zod.literal('1'), zod.literal('0')])
+      .optional()
+      .default('1'),
   ),
   FEATURE_FLAGS_SCHEMA_PROPOSALS_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),

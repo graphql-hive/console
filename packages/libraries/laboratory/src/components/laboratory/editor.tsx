@@ -158,7 +158,7 @@ const EditorInner = forwardRef<EditorHandle, EditorProps>((props, ref) => {
   }, [introspection, props.uri?.toString(), props.variablesUri?.toString()]);
 
   useEffect(() => {
-    (async function () {
+    void (async function () {
       if (!props.extraLibs?.length) {
         return;
       }
