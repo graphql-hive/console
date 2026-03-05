@@ -303,6 +303,8 @@ export interface InsightsFilterData {
   operationHashes: string[];
   clientFilters: Array<{ name: string; versions: string[] | null }>;
   dateRange: { from: string; to: string } | null;
+  excludeOperations?: boolean;
+  excludeClientFilters?: boolean;
 }
 
 export interface SavedFilter {

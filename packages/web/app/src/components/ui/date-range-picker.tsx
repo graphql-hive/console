@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { endOfDay, endOfToday, formatDate, subMonths } from 'date-fns';
 import { CalendarDays } from 'lucide-react';
 import { DateRange, Matcher } from 'react-day-picker';
@@ -297,30 +297,6 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   const fromParsed = parse(fromValue);
   const toParsed = parse(toValue);
 
-  const lastPreset = useRef<Preset | null>(activePreset);
-
-  useEffect(() => {
-    if (!activePreset || !props.onUpdate) {
-      return;
-    }
-
-    const fromParsed = parse(activePreset.range.from);
-    const toParsed = parse(activePreset.range.to);
-
-    if (fromParsed && toParsed) {
-      const resolvedRange = resolveRange(fromValue, toValue);
-      if (resolvedRange && lastPreset.current?.name !== activePreset.name) {
-        props.onUpdate({
-          preset: activePreset,
-        });
-      }
-    }
-  }, [activePreset]);
-
-  useEffect(() => {
-    lastPreset.current = activePreset;
-  }, [activePreset]);
-
   const PresetButton = useMemo(
     () =>
       function PresetButton({ preset }: { preset: Preset }): React.ReactNode {
@@ -352,6 +328,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
               setRange(undefined);
               setShowCalendar(false);
               setQuickRangeFilter('');
+              props.onUpdate?.({ preset });
               props.onClose?.();
             }}
             disabled={isDisabled}
@@ -470,22 +447,21 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                       const toWithoutWhitespace = toValue.trim();
                       const resolvedRange = resolveRange(fromValue, toValue);
                       if (resolvedRange) {
-                        setActivePreset(
-                          () =>
-                            findMatchingPreset(
-                              {
-                                from: fromWithoutWhitespace,
-                                to: toWithoutWhitespace,
-                              },
-                              availablePresets,
-                            ) ?? {
-                              name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
-                              label: buildDateRangeString(resolvedRange),
-                              range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
-                            },
-                        );
+                        const preset = findMatchingPreset(
+                          {
+                            from: fromWithoutWhitespace,
+                            to: toWithoutWhitespace,
+                          },
+                          availablePresets,
+                        ) ?? {
+                          name: `${fromWithoutWhitespace}_${toWithoutWhitespace}`,
+                          label: buildDateRangeString(resolvedRange),
+                          range: { from: fromWithoutWhitespace, to: toWithoutWhitespace },
+                        };
+                        setActivePreset(preset);
                         setShowCalendar(false);
                         setQuickRangeFilter('');
+                        props.onUpdate?.({ preset });
                         props.onClose?.();
                       }
                     }}

@@ -172,55 +172,66 @@ const mockOperations: FilterItem[] = [
 export const InsightsFiltersDropdown: Story = () => {
   const [clientSelections, setClientSelections] = useState<FilterSelection[]>([]);
   const [operationSelections, setOperationSelections] = useState<FilterSelection[]>([]);
-  const allSelections = [
-    ...operationSelections.map(s => ({ ...s, category: 'Operation' })),
-    ...clientSelections.map(s => ({ ...s, category: 'Client' })),
-  ];
+  const [excludeOperations, setExcludeOperations] = useState(false);
+  const [excludeClients, setExcludeClients] = useState(false);
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <div className="text-neutral-8 mb-2 text-xs font-medium uppercase tracking-wider">
-          Active filters
-        </div>
-        {allSelections.length === 0 ? (
-          <div className="text-neutral-8 text-sm">No filters active</div>
-        ) : (
-          <ul className="space-y-1 text-sm">
-            {allSelections.map(selection => (
-              <li key={`${selection.category}:${selection.name}`} className="text-neutral-11">
-                <span className="text-neutral-9">{selection.category}:</span>{' '}
-                <span className="text-neutral-12 font-medium">{selection.name}</span>
-                {selection.values !== null && selection.values.length > 0 && (
-                  <>
-                    {' — '}
-                    <span className="text-neutral-9">{selection.values.join(', ')}</span>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+      <div className="flex flex-wrap items-center gap-2">
+        <InsightsFilters
+          clientFilterItems={mockClients}
+          clientFilterSelections={clientSelections}
+          operationFilterItems={mockOperations}
+          operationFilterSelections={operationSelections}
+          setClientSelections={setClientSelections}
+          setOperationSelections={setOperationSelections}
+          privateSavedFilterViews={[
+            {
+              id: '1',
+              name: 'My production filter',
+              viewerCanUpdate: true,
+              filters: {
+                operationHashes: [],
+                clientFilters: [],
+                dateRange: null,
+                excludeOperations: false,
+                excludeClientFilters: false,
+              },
+            },
+          ]}
+          sharedSavedFilterViews={[]}
+          onApplySavedFilters={() => {}}
+        />
+        {operationSelections.length > 0 && (
+          <FilterDropdown
+            label="Operation"
+            items={mockOperations}
+            selectedItems={operationSelections}
+            onChange={setOperationSelections}
+            onRemove={() => {
+              setOperationSelections([]);
+              setExcludeOperations(false);
+            }}
+            excludeMode={excludeOperations}
+            onExcludeModeChange={setExcludeOperations}
+          />
+        )}
+        {clientSelections.length > 0 && (
+          <FilterDropdown
+            label="Client"
+            items={mockClients}
+            selectedItems={clientSelections}
+            onChange={setClientSelections}
+            onRemove={() => {
+              setClientSelections([]);
+              setExcludeClients(false);
+            }}
+            valuesLabel="versions"
+            excludeMode={excludeClients}
+            onExcludeModeChange={setExcludeClients}
+          />
         )}
       </div>
-
-      <InsightsFilters
-        clientFilterItems={mockClients}
-        clientFilterSelections={clientSelections}
-        operationFilterItems={mockOperations}
-        operationFilterSelections={operationSelections}
-        setClientSelections={setClientSelections}
-        setOperationSelections={setOperationSelections}
-        privateSavedFilterViews={[
-          {
-            id: '1',
-            name: 'My production filter',
-            viewerCanUpdate: true,
-            filters: { operationHashes: [], clientFilters: [], dateRange: null },
-          },
-        ]}
-        sharedSavedFilterViews={[]}
-        onApplySavedFilters={() => {}}
-      />
     </div>
   );
 };

@@ -19,6 +19,9 @@ const triggerButtonVariants = cva(
           'border-dashed border-accent_30 text-accent_80 bg-accent_08',
           'hover:border-accent_80 hover:text-accent hover:bg-accent_10',
         ],
+        'muted-action': [
+          'border-dashed hover:bg-neutral-3 hover:border-neutral-7 hover:text-neutral-12',
+        ],
       },
     },
     defaultVariants: {

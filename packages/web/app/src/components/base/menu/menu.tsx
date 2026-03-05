@@ -26,7 +26,7 @@ const SubmenuTriggerContext = createContext<SubmenuTriggerContextValue>(null);
 // --- Styles ---
 
 const menuVariants = cva(
-  'px-2 pb-2 z-50 min-w-[12rem] text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
+  'px-2 pb-2 z-50 text-[13px] rounded-md border shadow-md shadow-neutral-1/30 outline-none bg-neutral-2 border-neutral-5 dark:bg-neutral-4 dark:border-neutral-5',
   {
     variants: {
       maxWidth: {
@@ -35,9 +35,14 @@ const menuVariants = cva(
         sm: 'max-w-60', // 240px
         lg: 'max-w-[380px]',
       },
+      minWidth: {
+        default: 'min-w-[12rem]',
+        none: 'min-w-0',
+      },
     },
     defaultVariants: {
       maxWidth: 'default',
+      minWidth: 'default',
     },
   },
 );
@@ -47,7 +52,7 @@ const menuItemVariants = cva(
   {
     variants: {
       variant: {
-        default: 'pl-2 text-neutral-10',
+        default: 'px-2 text-neutral-10',
         navigationLink: 'hover:text-accent text-accent_80 justify-end pr-2 hover:bg-transparent',
         action: 'pl-2 hover:bg-accent_10 hover:text-accent text-accent_80',
         destructiveAction: 'pl-2 text-red-400  hover:bg-red-300/10',
@@ -56,23 +61,15 @@ const menuItemVariants = cva(
         true: '',
         false: '',
       },
-      active: {
-        true: '',
-        false: '',
-      },
       disabled: {
         true: 'pointer-events-none opacity-50',
         false: '',
       },
     },
-    compoundVariants: [
-      { highlighted: true, className: 'bg-neutral-5 text-neutral-12' },
-      { active: true, className: 'bg-neutral-5 text-neutral-12' },
-    ],
+    compoundVariants: [{ highlighted: true, className: 'bg-neutral-5 text-neutral-12' }],
     defaultVariants: {
       variant: 'default',
       highlighted: false,
-      active: false,
       disabled: false,
     },
   },
@@ -83,10 +80,8 @@ const menuItemVariants = cva(
 function menuItemClassName(
   state: { highlighted: boolean; disabled: boolean },
   {
-    active,
     variant,
   }: {
-    active?: boolean;
     variant?: VariantProps<typeof menuItemVariants>['variant'];
   },
 ) {
@@ -94,7 +89,6 @@ function menuItemClassName(
     variant,
     highlighted: state.highlighted,
     disabled: state.disabled,
-    active: active ?? false,
   });
 }
 
@@ -168,6 +162,8 @@ type MenuProps = {
   sideOffset?: number;
   /** Controls the max-width of the popup. Defaults to 300px. */
   maxWidth?: 'default' | 'none' | 'sm' | 'lg';
+  /** Controls the min-width of the popup. Defaults to 12rem. Use 'none' for compact menus. */
+  minWidth?: 'default' | 'none';
   /** Open the submenu when the trigger is hovered (only relevant for nested menus) */
   openOnHover?: boolean;
   /** Delay in ms before the submenu opens on hover */
@@ -197,6 +193,7 @@ function Menu({
   align,
   sideOffset,
   maxWidth,
+  minWidth,
   openOnHover,
   delay,
   closeDelay,
@@ -247,7 +244,7 @@ function Menu({
             sideOffset={resolvedSideOffset}
             className="outline-none"
           >
-            <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth })}>
+            <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth, minWidth })}>
               {popupContent}
             </BaseMenu.Popup>
           </BaseMenu.Positioner>
@@ -266,7 +263,7 @@ function Menu({
           sideOffset={resolvedSideOffset}
           className="outline-none"
         >
-          <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth })}>
+          <BaseMenu.Popup ref={popupRef} className={menuVariants({ maxWidth, minWidth })}>
             {popupContent}
           </BaseMenu.Popup>
         </BaseMenu.Positioner>
@@ -278,19 +275,16 @@ function Menu({
 // --- MenuItem ---
 
 type MenuItemProps = Omit<BaseMenu.Item.Props, 'className'> & {
-  active?: boolean;
   variant?: VariantProps<typeof menuItemVariants>['variant'];
 };
 
-function MenuItem({ active, variant, children, ...props }: MenuItemProps) {
+function MenuItem({ variant, children, ...props }: MenuItemProps) {
   const submenuTriggerCtx = useContext(SubmenuTriggerContext);
 
   if (submenuTriggerCtx) {
     return (
       <BaseMenu.SubmenuTrigger
-        className={(state: BaseMenu.SubmenuTrigger.State) =>
-          menuItemClassName(state, { active, variant })
-        }
+        className={(state: BaseMenu.SubmenuTrigger.State) => menuItemClassName(state, { variant })}
         openOnHover={submenuTriggerCtx.openOnHover}
         delay={submenuTriggerCtx.delay}
         closeDelay={submenuTriggerCtx.closeDelay}
@@ -304,7 +298,7 @@ function MenuItem({ active, variant, children, ...props }: MenuItemProps) {
 
   return (
     <BaseMenu.Item
-      className={(state: BaseMenu.Item.State) => menuItemClassName(state, { active, variant })}
+      className={(state: BaseMenu.Item.State) => menuItemClassName(state, { variant })}
       {...(props as Omit<BaseMenu.Item.Props, 'className'>)}
     >
       {children}

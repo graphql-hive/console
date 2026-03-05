@@ -34,6 +34,8 @@ const InsightsClientFilter = z.object({
 export const InsightsFilterSearch = z.object({
   operations: z.array(z.string()).optional(),
   clients: z.array(InsightsClientFilter).optional(),
+  excludeOperations: z.boolean().optional(),
+  excludeClients: z.boolean().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
   viewId: z.string().optional(),
@@ -50,6 +52,8 @@ function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFilterInp
           versions: c.versions,
         }))
       : undefined,
+    excludeOperations: state.excludeOperations ?? undefined,
+    excludeClientVersionFilters: state.excludeClients ?? undefined,
   };
 }
 
@@ -97,6 +101,8 @@ const InsightsFilterPicker_Query = graphql(`
                 from
                 to
               }
+              excludeOperations
+              excludeClientFilters
             }
           }
         }
@@ -191,25 +197,6 @@ function OperationsView({
     return map;
   }, [operationFilterItems]);
 
-  const operationFilterSelections: FilterSelection[] = useMemo(
-    () =>
-      (search.operations ?? []).map(hash => ({
-        id: hash,
-        name: hashToNameMap.get(hash) ?? hash,
-        values: null,
-      })),
-    [search.operations, hashToNameMap],
-  );
-
-  const clientFilterSelections: FilterSelection[] = useMemo(
-    () =>
-      (search.clients ?? []).map(c => ({
-        name: c.name,
-        values: c.versions,
-      })),
-    [search.clients],
-  );
-
   const { privateSavedFilterViews, sharedSavedFilterViews } = useMemo(() => {
     const edges = pickerQuery.data?.target?.savedFilters?.edges ?? [];
     const privateSavedFilterViews: SavedFilterView[] = [];
@@ -228,6 +215,8 @@ function OperationsView({
             versions: c.versions ?? null,
           })),
           dateRange: node.filters.dateRange ?? null,
+          excludeOperations: node.filters.excludeOperations ?? false,
+          excludeClientFilters: node.filters.excludeClientFilters ?? false,
         },
       };
 
@@ -272,6 +261,25 @@ function OperationsView({
     }
   }, [search.viewId]);
 
+  const operationFilterSelections: FilterSelection[] = useMemo(
+    () =>
+      (search.operations ?? []).map(hash => ({
+        id: hash,
+        name: hashToNameMap.get(hash) ?? hash,
+        values: null,
+      })),
+    [search.operations, hashToNameMap],
+  );
+
+  const clientFilterSelections: FilterSelection[] = useMemo(
+    () =>
+      (search.clients ?? []).map(c => ({
+        name: c.name,
+        values: c.versions,
+      })),
+    [search.clients],
+  );
+
   const hasActiveFilters = useMemo(
     () =>
       (search.operations && search.operations.length > 0) ||
@@ -308,6 +316,8 @@ function OperationsView({
                     viewId: undefined,
                     operations: undefined,
                     clients: undefined,
+                    excludeOperations: undefined,
+                    excludeClients: undefined,
                     from: presetLast7Days.range.from,
                     to: presetLast7Days.range.to,
                   }),
@@ -356,7 +366,20 @@ function OperationsView({
                 }}
                 onRemove={() => {
                   void navigate({
-                    search: prev => ({ ...prev, operations: undefined }),
+                    search: prev => ({
+                      ...prev,
+                      operations: undefined,
+                      excludeOperations: undefined,
+                    }),
+                  });
+                }}
+                excludeMode={search.excludeOperations ?? false}
+                onExcludeModeChange={exclude => {
+                  void navigate({
+                    search: prev => ({
+                      ...prev,
+                      excludeOperations: exclude || undefined,
+                    }),
                   });
                 }}
               />
@@ -374,7 +397,20 @@ function OperationsView({
                 }}
                 onRemove={() => {
                   void navigate({
-                    search: prev => ({ ...prev, clients: undefined }),
+                    search: prev => ({
+                      ...prev,
+                      clients: undefined,
+                      excludeClients: undefined,
+                    }),
+                  });
+                }}
+                excludeMode={search.excludeClients ?? false}
+                onExcludeModeChange={exclude => {
+                  void navigate({
+                    search: prev => ({
+                      ...prev,
+                      excludeClients: exclude || undefined,
+                    }),
                   });
                 }}
               />
@@ -394,6 +430,8 @@ function OperationsView({
                     from: search.from ?? dateRangeController.selectedPreset.range.from,
                     to: search.to ?? dateRangeController.selectedPreset.range.to,
                   },
+                  excludeOperations: search.excludeOperations ?? false,
+                  excludeClientFilters: search.excludeClients ?? false,
                 }}
                 organizationSlug={organizationSlug}
                 projectSlug={projectSlug}

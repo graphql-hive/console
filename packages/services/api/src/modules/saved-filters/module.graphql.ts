@@ -25,6 +25,8 @@ export const typeDefs = gql`
     operationHashes: [String!]!
     clientFilters: [ClientFilter!]!
     dateRange: InsightsDateRange
+    excludeOperations: Boolean
+    excludeClientFilters: Boolean
   }
 
   type ClientFilter {
@@ -78,6 +80,8 @@ export const typeDefs = gql`
     operationHashes: [String!]
     clientFilters: [ClientFilterInput!]
     dateRange: InsightsDateRangeInput
+    excludeOperations: Boolean
+    excludeClientFilters: Boolean
   }
 
   input InsightsDateRangeInput {
