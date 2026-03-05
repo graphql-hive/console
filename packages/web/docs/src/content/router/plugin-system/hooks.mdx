@@ -71,9 +71,9 @@ and register background tasks to be handled by the router.
 fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self>
 ```
 
-<details>
+#### Usage Examples
 
-<summary>Access the plugin configuration</summary>
+**Access the plugin configuration**
 
 Use `payload.config()` to read the plugin's configuration from the Router YAML. The `?` propagates
 initialization errors back to the router.
@@ -86,11 +86,7 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Customize plugin instance</summary>
+**Customize plugin instance**
 
 Build the plugin's initial state from the parsed configuration before the router starts serving
 requests.
@@ -103,11 +99,7 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Register background tasks</summary>
+**Register background tasks**
 
 Spawn long-running work tied to the router lifecycle. The `CancellationToken` is signaled when the
 router shuts down.
@@ -131,8 +123,6 @@ fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self
     payload.initialize_plugin_with_defaults()
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -164,9 +154,7 @@ validations, short-circuit responses, or serve static assets.
 
 #### Usage Examples
 
-<details>
-
-<summary>Reject unauthenticated requests</summary>
+**Reject unauthenticated requests**
 
 Check for required HTTP headers in the start phase and short-circuit with an error before any
 GraphQL processing begins.
@@ -187,11 +175,7 @@ fn on_http_request<'req>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Add a response header</summary>
+**Add a response header**
 
 Use `on_end` with `map_response` to attach custom headers to every outgoing HTTP response.
 
@@ -212,11 +196,7 @@ fn on_http_request<'req>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Override the HTTP response status</summary>
+**Override the HTTP response status**
 
 Use `map_response` in `on_end` to rewrite the status code on the outgoing response, for example, to
 normalize all successful responses to `200 OK`.
@@ -237,11 +217,7 @@ fn on_http_request<'req>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Propagate subgraph status codes</summary>
+**Propagate subgraph status codes**
 
 Read context data written by a downstream hook (e.g., `on_subgraph_http_request`) and apply it to
 the final HTTP response status.
@@ -263,8 +239,6 @@ fn on_http_request<'req>(
     })
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -293,9 +267,7 @@ async fn on_graphql_params<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Read extracted GraphQL parameters</summary>
+**Read extracted GraphQL parameters**
 
 Use the `on_end` callback to access the fully extracted GraphQL parameters: `query`,
 `operation_name`, `variables`, and `extensions` are all available here.
@@ -315,11 +287,7 @@ async fn on_graphql_params<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Modify extracted GraphQL parameters</summary>
+**Modify extracted GraphQL parameters**
 
 Mutate the extracted GraphQL parameters inside `on_end` to override the query, operation name, or
 variables before execution continues.
@@ -337,11 +305,7 @@ async fn on_graphql_params<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Reject anonymous operations</summary>
+**Reject anonymous operations**
 
 Return a GraphQL error from `on_end` to short-circuit the request when a condition on the parsed
 parameters is not met.
@@ -366,11 +330,7 @@ async fn on_graphql_params<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Resolve a query from extensions (Persisted Queries)</summary>
+**Resolve a query from extensions (Persisted Queries)**
 
 Read from `extensions` in `on_end` and rewrite `graphql_params.query` to implement patterns like
 Automatic Persisted Queries (APQ).
@@ -408,8 +368,6 @@ async fn on_graphql_params<'exec>(
 }
 ```
 
-</details>
-
 #### Payload API Reference
 
 - [`OnGraphQLParamsStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_params.rs#:~:text=struct%20OnGraphQLParamsStartHookPayload)
@@ -438,9 +396,7 @@ async fn on_graphql_parse<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Read the raw query string</summary>
+**Read the raw query string**
 
 The start phase has access to the raw `GraphQLParams`, including the unparsed query string, before
 the router parses it into a document.
@@ -456,11 +412,7 @@ async fn on_graphql_parse<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Access the parsed document (AST)</summary>
+**Access the parsed document (AST)**
 
 Use `on_end` to access the fully parsed `Document` AST after the router has completed parsing the
 operation.
@@ -477,8 +429,6 @@ async fn on_graphql_parse<'exec>(
     })
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -503,9 +453,7 @@ async fn on_graphql_validation<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Add a custom validation rule</summary>
+**Add a custom validation rule**
 
 Implement `ValidationRule` and register it with `payload.with_validation_rule()` to enforce custom
 constraints on every incoming operation.
@@ -532,8 +480,6 @@ async fn on_graphql_validation<'exec>(
     payload.with_validation_rule(MyCustomValidationRule::new()).proceed()
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -563,9 +509,7 @@ async fn on_query_plan<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Inspect the query plan</summary>
+**Inspect the query plan**
 
 Use `on_end` to access the constructed `QueryPlan` after the planner has completed. This runs after
 operation parsing and validation.
@@ -583,11 +527,7 @@ async fn on_query_plan<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Reject based on query plan content</summary>
+**Reject based on query plan content**
 
 Inspect the plan in `on_end` and short-circuit with an error if the operation exceeds a policy - for
 example, too many root fields.
@@ -612,8 +552,6 @@ async fn on_query_plan<'exec>(
     })
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -642,9 +580,7 @@ async fn on_execute<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Return a cached response</summary>
+**Return a cached response**
 
 Bypass the execution pipeline entirely and return a pre-built response - useful for response
 caching, where a cached result can be served without querying any subgraphs.
@@ -662,11 +598,7 @@ async fn on_execute<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Inspect the GraphQL response</summary>
+**Inspect the GraphQL response**
 
 Use `on_end` to read the executed `data` and `errors` before they are serialized and sent to the
 client - useful for caching the result or collecting metrics.
@@ -685,11 +617,7 @@ async fn on_execute<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Capture the operation for usage reporting</summary>
+**Capture the operation for usage reporting**
 
 Read `operation_for_plan` in the start phase to record the query string and operation name for
 telemetry or analytics before execution proceeds.
@@ -707,8 +635,6 @@ async fn on_execute<'exec>(
     payload.proceed()
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -741,9 +667,7 @@ async fn on_subgraph_execute<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Add a header to the subgraph request</summary>
+**Add a header to the subgraph request**
 
 Mutate `payload.execution_request.headers` to inject custom headers into every request sent to a
 subgraph before it is dispatched.
@@ -762,11 +686,7 @@ async fn on_subgraph_execute<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Filter by subgraph name</summary>
+**Filter by subgraph name**
 
 Use `payload.subgraph_name` to apply logic selectively to specific subgraphs.
 
@@ -783,11 +703,7 @@ async fn on_subgraph_execute<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Count subgraph calls per request</summary>
+**Count subgraph calls per request**
 
 Use context to track how many subgraph calls were made during a single GraphQL request and log the
 total in `on_end`.
@@ -806,8 +722,6 @@ async fn on_subgraph_execute<'exec>(
     })
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -837,9 +751,7 @@ async fn on_subgraph_http_request<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Track the subgraph response status</summary>
+**Track the subgraph response status**
 
 Use `on_end` to capture the HTTP response status from each subgraph call and store it in context for
 use in a later hook (e.g., `on_http_request`).
@@ -859,11 +771,7 @@ async fn on_subgraph_http_request<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Replace the subgraph HTTP request</summary>
+**Replace the subgraph HTTP request**
 
 Bypass the default HTTP transport entirely and send a custom request.
 
@@ -886,8 +794,6 @@ async fn on_subgraph_http_request<'exec>(
     })
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -917,9 +823,7 @@ different format.
 
 #### Usage Examples
 
-<details>
-
-<summary>Collect errors for monitoring</summary>
+**Collect errors for monitoring**
 
 Intercept errors before they reach the client and record them for analytics, alerting, or structured
 logging.
@@ -932,11 +836,7 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Mask sensitive error details</summary>
+**Mask sensitive error details**
 
 Sanitize error output by replacing the message and clearing fields like `path` before the error is
 sent to the client.
@@ -950,11 +850,7 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Remap error codes and HTTP status</summary>
+**Remap error codes and HTTP status**
 
 Map known error codes to different codes or HTTP status codes based on plugin configuration - useful
 for normalizing errors from subgraphs.
@@ -976,8 +872,6 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
     payload.proceed()
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
@@ -1001,9 +895,7 @@ async fn on_shutdown<'exec>(&'exec self)
 
 #### Usage Examples
 
-<details>
-
-<summary>Flush buffered data before exit</summary>
+**Flush buffered data before exit**
 
 Collect and send any in-memory data (e.g., usage reports or metrics) to an external service before
 the router process exits.
@@ -1018,8 +910,6 @@ async fn on_shutdown<'exec>(&'exec self) {
         .await;
 }
 ```
-
-</details>
 
 #### Plugin Examples
 
@@ -1045,9 +935,7 @@ fn on_supergraph_reload<'exec>(
 
 #### Usage Examples
 
-<details>
-
-<summary>Scan the schema for directives</summary>
+**Scan the schema for directives**
 
 Inspect the incoming `new_ast` to extract schema metadata, for example, collecting all types
 annotated with a custom directive and caching them for use in later hooks.
@@ -1069,11 +957,7 @@ fn on_supergraph_reload<'exec>(
 }
 ```
 
-</details>
-
-<details>
-
-<summary>Invalidate caches on schema reload</summary>
+**Invalidate caches on schema reload**
 
 Clear any schema-dependent state whenever the supergraph is reloaded, so stale entries don't leak
 across schema versions.
@@ -1089,8 +973,6 @@ fn on_supergraph_reload<'exec>(
     start_payload.proceed()
 }
 ```
-
-</details>
 
 #### Payload API Reference
 
