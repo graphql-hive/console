@@ -64,13 +64,6 @@ const OrganizationMemberRow_DeleteMember = graphql(`
     deleteOrganizationMember(input: $input) {
       organization {
         id
-        members {
-          edges {
-            node {
-              ...OrganizationMemberRow_MemberFragment
-            }
-          }
-        }
       }
     }
   }
