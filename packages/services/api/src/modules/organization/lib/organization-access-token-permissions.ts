@@ -150,7 +150,6 @@ export const permissionGroups: Array<PermissionGroup> = [
         id: 'schemaCheck:approve',
         title: 'Approve schema check',
         description: 'Grant access to approve failed schema checks.',
-        dependsOn: 'project:describe',
       },
     ],
   },
