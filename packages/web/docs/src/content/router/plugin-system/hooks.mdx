@@ -49,6 +49,15 @@ flowchart TB
     end
 ```
 
+## Lifetimes
+
+Throughout the implementation of the plugin lifecycle hooks, you'll notice two named lifetimes:
+
+- `'req`: This lifetime is used for the HTTP request context and is valid for the duration of the
+  request.
+- `'exec`: This lifetime represents the lifetime of the GraphQL execution. It is used to ensure that
+  the payload and result are valid for the duration of the GraphQL execution.
+
 ## Plugin Lifecycle Hooks
 
 ### `on_plugin_init`
@@ -148,9 +157,6 @@ fn on_http_request<'req>(
     payload: OnHttpRequestHookPayload<'req>
   ) -> OnHttpRequestHookResult<'req>
 ```
-
-> The `'req` lifetime parameter represents the lifetime of the HTTP request. It is used to ensure
-> that the payload and result are valid for the duration of the request.
 
 With this hook, you can add custom authentication and authorization logic based on HTTP headers,
 method, path, and similar request properties. You can also implement custom restrictions, HTTP
@@ -284,9 +290,6 @@ async fn on_graphql_params<'exec>(
     payload: OnGraphQLParamsStartHookPayload<'exec>
   ) -> OnGraphQLParamsStartHookResult<'exec>
 ```
-
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
 
 #### Usage Examples
 
@@ -433,9 +436,6 @@ async fn on_graphql_parse<'exec>(
     ) -> OnGraphQLParseHookResult<'exec>
 ```
 
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
-
 #### Usage Examples
 
 <details>
@@ -501,9 +501,6 @@ async fn on_graphql_validation<'exec>(
     ) -> OnGraphQLValidationStartHookResult<'exec>
 ```
 
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
-
 #### Usage Examples
 
 <details>
@@ -563,9 +560,6 @@ async fn on_query_plan<'exec>(
     payload: OnQueryPlanStartHookPayload<'exec>,
   ) -> OnQueryPlanStartHookResult<'exec>
 ```
-
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
 
 #### Usage Examples
 
@@ -645,9 +639,6 @@ async fn on_execute<'exec>(
     payload: OnExecuteStartHookPayload<'exec>,
   ) -> OnExecuteStartHookResult<'exec>
 ```
-
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
 
 #### Usage Examples
 
@@ -748,9 +739,6 @@ async fn on_subgraph_execute<'exec>(
     ) -> OnSubgraphExecuteStartHookResult<'exec>
 ```
 
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
-
 #### Usage Examples
 
 <details>
@@ -846,9 +834,6 @@ async fn on_subgraph_http_request<'exec>(
         payload: OnSubgraphHttpRequestStartHookPayload<'exec>,
     ) -> OnSubgraphHttpRequestStartHookResult<'exec>
 ```
-
-> The `'exec` lifetime parameter represents the lifetime of the GraphQL execution. It is used to
-> ensure that the payload and result are valid for the duration of the GraphQL execution.
 
 #### Usage Examples
 
