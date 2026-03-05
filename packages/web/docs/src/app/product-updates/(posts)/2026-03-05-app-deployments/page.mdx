@@ -1,0 +1,57 @@
+---
+title: App Deployments General Availability
+description: App deployments are now generally available for all Hive Console organizations.
+date: 2026-03-05
+authors: [laurin]
+---
+
+After two years of extensive testing and collecting feedback from early adopters we are happy to
+share that app deployments are now available for every organization by default. We thank all the
+customers that gave us valuable feedback and helped us shape this feature!
+
+[Get started with our App Deployments documentation](/docs/schema-registry/app-deployments).
+
+## What is new?
+
+App deployments are our interpretation of how to do persisted documents (also known as trusted
+documents), observability and breaking change detection the right way when having many different
+clients and client versions.
+
+Adopting persisted documents brings many benefits to your GraphQL Gateway, such as:
+
+- Reduce payload size of your GraphQL requests (reduce client bandwidth usage)
+- Secure your GraphQL API by only allowing operations that are known and trusted
+
+Hive Console can now be used as the authority for publishing and serving persisted documents to your
+gateway of choice via [our high availability CDN](/docs/schema-registry/high-availability-cdn)
+mirrored on the Cloudflare global network and AWS network.
+
+![Active persisted document overview](./app-deployment-overview.png)
+
+## Conditional Breaking Changes
+
+On our platform app deployments complement the full development and GraphQL lifecycle loop.
+
+Active app deployment versions GraphQL documents are included within our breaking change detection
+in addition to the usage based breaking change detection reducing the risk of accidentally removing
+GraphQL schema fields and types with low or infrequent traffic.
+
+![Conditional Breaking Changes based on app deployments](./breaking-changes-based-on-app-deployments.png)
+
+## Upcoming Features
+
+While app deployments are now generally available for everyone (including the self-hosted Hive
+Console version), our vision is not yet fully complete.
+
+We are currently working several things that will become available soon that will improve the app
+deployments experience in the near future:
+
+- Improved upload speeds for persisted documents
+- Exposing app deployments as MCP tools via Hive Gateway
+- Exposing app deployments as REST endpoints via Hive Gateway
+
+We will share more updates on these as they become available!
+
+---
+
+- [Learn more about App Deployments](/docs/schema-registry/app-deployments)
