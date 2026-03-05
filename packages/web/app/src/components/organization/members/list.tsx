@@ -100,6 +100,7 @@ const OrganizationMemberRow_MemberFragment = graphql(`
 const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
   organization: FragmentType<typeof OrganizationMembers_OrganizationFragment>;
   member: FragmentType<typeof OrganizationMemberRow_MemberFragment>;
+  refetchMembers: UseQueryExecute;
 }) {
   const organization = useFragment(OrganizationMembers_OrganizationFragment, props.organization);
   const member = useFragment(OrganizationMemberRow_MemberFragment, props.member);
@@ -145,6 +146,7 @@ const OrganizationMemberRow = memo(function OrganizationMemberRow(props: {
                         description: `User ${member.user.email} is no longer a member of the organization`,
                       });
                       setOpen(false);
+                      props.refetchMembers({ requestPolicy: 'network-only' });
                     }
                   } catch (error) {
                     console.log('Failed to delete a member');
@@ -426,6 +428,7 @@ export function OrganizationMembers(props: {
                 key={node.id}
                 organization={props.organization}
                 member={node}
+                refetchMembers={props.refetchMembers}
               />
             ))
           )}
