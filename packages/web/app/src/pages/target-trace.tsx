@@ -1505,7 +1505,7 @@ function SpanSheet(props: SpanSheetProps) {
               {/* Percentage of Parent */}
               {props.computedSpanMetrics.percentageOfParentSpan && (
                 <div className="flex items-center space-x-2">
-                  <TreePine className="text-neutral-2 size-4" />
+                  <TreePine className="text-accent size-4" />
                   <div>
                     <p className="text-neutral-10 text-xs">% of Parent</p>
                     <p className="text-sm font-medium">

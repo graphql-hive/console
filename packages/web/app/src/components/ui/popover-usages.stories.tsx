@@ -154,7 +154,7 @@ export const ErrorsAndChanges_OperationHashLink: Story = () => (
                     {MOCK_OP_TARGETS.map((target, i) => (
                       <p key={i}>
                         <a
-                          className="text-neutral-2 hover:text-neutral-2"
+                          className="text-accent_80 hover:text-accent"
                           href="#"
                           onClick={e => e.preventDefault()}
                         >
