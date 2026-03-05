@@ -24,7 +24,7 @@ export const DocsNote = ({
     >
       {/* <div className="items-center align-middle pr-2 flex flex-row">
         {warn ? (
-          <ExclamationTriangleIcon className="text-neutral-2" />
+          <ExclamationTriangleIcon className="text-accent" />
         ) : (
           <InfoCircledIcon className="text-current" />
         )}

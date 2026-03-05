@@ -271,7 +271,7 @@ export function NativeCompositionSettings(props: {
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Unknown ? (
-              <FlaskConicalIcon className="text-neutral-2 size-10" />
+              <FlaskConicalIcon className="text-accent size-10" />
             ) : null}
           </div>
           <div>

@@ -80,7 +80,7 @@ export function PolicyListItem(props: {
                     </>
                   }
                 >
-                  <InfoIcon className="text-neutral-2 ml-2 inline-block size-4" />
+                  <InfoIcon className="text-accent ml-2 inline-block size-4" />
                 </Tooltip>
               </label>
             </div>
@@ -102,7 +102,7 @@ export function PolicyListItem(props: {
             ) : null}
             {props.overridingParentRule && enabled ? (
               <div className="text-neutral-10 mt-4 text-xs font-medium">
-                <p className="text-neutral-2 mr-2 inline-block text-sm font-medium">!</p>
+                <p className="text-accent mr-2 inline-block text-sm font-medium">!</p>
                 You are {severity === RuleInstanceSeverityLevel.Off ? 'disabling' : 'overriding'} a
                 rule configured at the organization level
               </div>
