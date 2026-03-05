@@ -25,7 +25,7 @@ namespace Cypress {
 Cypress.Commands.add('createOIDCIntegration', () => {
   const isLocal = Cypress.env('RUN_AGAINST_LOCAL_SERVICES') == '1';
 
-  cy.get('[data-link-settings]').click();
+  cy.contains('a', 'Settings').click();
   cy.get('[data-cy="link-sso"]').click();
   cy.get('button[data-button-connect-open-id-provider]').click();
   cy.get('button[data-button-oidc-manual]').click();
