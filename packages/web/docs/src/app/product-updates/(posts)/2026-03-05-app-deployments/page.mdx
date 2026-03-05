@@ -22,6 +22,20 @@ Adopting persisted documents brings many benefits to your GraphQL Gateway, such 
 - Reduce payload size of your GraphQL requests (reduce client bandwidth usage)
 - Secure your GraphQL API by only allowing operations that are known and trusted
 
+```mermaid
+flowchart LR
+    C["GraphQL API or Gateway"]
+    B["Hive CDN"]
+    D["App"]
+
+    B-- "Load persisted
+ documents" -->C
+    C-- "Report persisted
+ document usage" -->B
+    D-- "Send persisted
+ document request" -->C
+```
+
 Hive Console can now be used as the authority for publishing and serving persisted documents to your
 gateway of choice via [our high availability CDN](/docs/schema-registry/high-availability-cdn)
 mirrored on the Cloudflare global network and AWS network.
@@ -43,7 +57,7 @@ GraphQL schema fields and types with low or infrequent traffic.
 While app deployments are now generally available for everyone (including the self-hosted Hive
 Console version), our vision is not yet fully complete.
 
-We are currently working several things that will become available soon that will improve the app
+We are currently working on several things that will become available soon that will improve the app
 deployments experience in the near future:
 
 - Improved upload speeds for persisted documents
