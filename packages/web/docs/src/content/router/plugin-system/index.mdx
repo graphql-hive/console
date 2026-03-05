@@ -1,0 +1,274 @@
+---
+title: 'Plugin System'
+---
+
+import { Callout } from '#components/callout'
+
+## Overview
+
+Hive Router provides a plugin system that allows developers to extend its functionality with custom
+plugins. Plugins can be used to add new features, modify existing behavior, or integrate with
+external services.
+
+Just like the Hive Router itself, custom plugins are written in Rust, which allows for high
+performance and safety. To ease the development process, Hive Router is also published to
+[Crates.io](https://crates.io/crates/hive-router) as a single package `hive-router` that contains
+everything you need to focus on building your plugin, without having to configure or rebuild other
+parts of the service.
+
+This page documents the API, hooks, and different implementation options that are available for
+plugin developers. If you are looking for a guide on how to write, test and distribute a custom
+plugin, please refer to [Extending the Router guide](/docs/router/guides/extending-the-router).
+
+## `hive-router` Crate
+
+The [`hive-router`](https://crates.io/crates/hive-router) crate provides everything a plugin
+developer needs to implement a custom plugin.
+
+To simplify the dependency tree and versioning, this crate also re-exports internal Router
+dependencies, traits, and structs, making plugin development easier and keeping the Router core
+version up to date.
+
+Refer to
+[the crate's `lib.rs` entrypoint](https://github.com/graphql-hive/router/blob/main/bin/router/src/lib.rs)
+to see what is exported and available for extending the Router.
+
+## `trait RouterPlugin`
+
+The primary interface for the plugin system is `RouterPlugin`. To implement a custom plugin, you'll
+need to `impl` the `RouterPlugin` for your custom plugin's `struct`. Due to the async nature of the
+plugin system, the `#[async_trait]` attribute is also required.
+
+```rust
+use hive_router::plugins::plugin_trait::RouterPlugin;
+use hive_router::async_trait;
+
+struct MyPlugin;
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = ();
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+}
+```
+
+The plugin above will be instantiated using the following Router YAML config:
+
+```yaml
+plugins:
+  my_plugin:
+    enabled: true
+```
+
+A plugin can implement one or more hooks, and leverage the following concepts:
+
+### Configuration
+
+The `RouterPlugin` trait accepts a generic type parameter for plugin configuration.
+
+The configuration type must implement `DeserializeOwned + Sync`, as the Router is responsible for
+loading and deserializing the configuration from the Router config file.
+
+The [`on_plugin_init`](/docs/router/plugin-system/hooks#on_plugin_init) hook provides access to the
+plugin's configuration.
+
+```rust
+use hive_router::plugins::plugin_trait::RouterPlugin;
+use hive_router::async_trait;
+use serde::Deserialize;
+
+struct MyPlugin;
+
+#[derive(Deserialize)]
+struct MyPluginConfig {
+    some_field: bool
+}
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = MyPluginConfig;
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+
+    fn on_plugin_init(payload: OnPluginInitPayload<Self>) -> OnPluginInitResult<Self> {
+        payload.initialize_plugin(Self { some_field: payload.config()?.some_field })
+    }
+}
+```
+
+The plugin above will be instantiated using the following Router YAML config:
+
+```yaml
+plugins:
+  my_plugin:
+    enabled: true
+    config:
+      some_field: true
+```
+
+### Hooks
+
+A plugin can implement one or more hooks to participate in different stages of the Router execution
+and lifecycle.
+
+Hooks allow plugins to participate in the control flow and change the behavior of the router by
+returning different types from the hook function.
+
+As a plugin developer, you can hook into the router execution flow in the following areas:
+
+- HTTP request handling
+- GraphQL operation lookup and extraction from the HTTP request
+- GraphQL operation parsing
+- GraphQL operation validation
+- Federation query planner
+- Query plan execution
+- Subgraph request execution
+- HTTP calls to subgraph
+- Supergraph reload notification
+
+Refer to the
+[Plugin System Hooks page for the complete API and usage examples of each hook](/docs/router/plugin-system/hooks)
+
+### Shared State
+
+A plugin can maintain state directly on its `struct` and access it using `self` in hooks. The state
+must be thread-safe, as it may be shared across multiple threads handling concurrent HTTP requests.
+Please refer to
+[Rust's Interior Mutability](https://doc.rust-lang.org/reference/interior-mutability.html) guide for
+more information about how to implement mutable state.
+
+```rust
+use hive_router::plugins::plugin_trait::RouterPlugin;
+use hive_router::async_trait;
+
+struct MyPlugin {
+    state: Mutex<Vec<String>>,
+}
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    type Config = ();
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+
+    // In hooks, you can use `self.state`
+    fn on_http_request<'req>(
+        &'req self,
+        payload: OnHttpRequestHookPayload<'req>,
+    ) -> OnHttpRequestHookResult<'req> {
+        // For the sake of the demo, this plugin only stores the paths for all requests
+        self.state.lock().unwrap().push(payload.request.uri().path().to_string());
+
+        payload.proceed()
+    }
+}
+```
+
+### Context Data Sharing
+
+In cases where you need to share data between hooks, you can use a custom context struct. Define a
+custom struct to hold the data you would like to share between hooks, and use the hooks' payload to
+access the `context` field.
+
+For example, you can store some data in the context during the `on_graphql_params` hook and retrieve
+it later in the `on_subgraph_execute` hook.
+
+```rust
+pub struct ContextData {
+    incoming_data: &'static str,
+}
+
+#[async_trait::async_trait]
+impl RouterPlugin for ContextDataPlugin {
+    async fn on_graphql_params<'exec>(
+        &'exec self,
+        payload: OnGraphQLParamsStartHookPayload<'exec>,
+    ) -> OnGraphQLParamsStartHookResult<'exec> {
+        let context_data = ContextData {
+            incoming_data: "world",
+        };
+
+        payload.context.insert(context_data);
+
+        payload.proceed()
+    }
+
+    async fn on_subgraph_execute<'exec>(
+        &'exec self,
+        mut payload: OnSubgraphExecuteStartHookPayload<'exec>,
+    ) -> OnSubgraphExecuteStartHookResult<'exec> {
+        // Get immutable reference from the context
+        let context_data_entry = payload.context.get_ref::<ContextData>();
+        if let Some(ref context_data_entry) = context_data_entry {
+            tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
+        }
+
+         payload.proceed()
+    }
+}
+```
+
+The `payload.context` API is simple:
+
+- `insert<T>(&self, data: T)` - Inserts data of type `T` into the context.
+- `get_ref<T>(&self) -> Option<&T>` - Retrieves a reference to the data of type `T` from the
+  context.
+- `get_mut<T>(&mut self) -> Option<&mut T>` - Retrieves a mutable reference to the data of type `T`
+  from the context.
+
+## A Simple Plugin Example
+
+The following snippet shows the simplest example of creating a custom plugin, registering it, and
+configuring it with Hive Router:
+
+```rust filename="main.rs"
+use hive_router::{
+    configure_global_allocator, error::RouterInitError, init_rustls_crypto_provider,
+    router_entrypoint, PluginRegistry, RouterGlobalAllocator,
+};
+use hive_router::plugins::plugin_trait::RouterPlugin;
+
+// Configure the global allocator required for Hive Router runtime
+configure_global_allocator!();
+
+// Declare and implement a simple plugin with no configuration and no hooks.
+struct MyPlugin;
+
+#[async_trait]
+impl RouterPlugin for MyPlugin {
+    // You can override this and add a custom config to your plugin
+    type Config = ();
+
+    fn plugin_name() -> &'static str {
+        "my_plugin"
+    }
+
+    // Your hooks implementation goes here...
+}
+
+// This is the main entrypoint of the Router
+#[hive_router::main]
+async fn main() -> Result<(), RouterInitError> {
+    // Configure Hive Router to use the OS's default certificate store
+    init_rustls_crypto_provider();
+
+    // Start and run the router entrypoint with your plugin
+    router_entrypoint(
+        PluginRegistry::new().register::<MyPlugin>(),
+    )
+    .await
+}
+```
+
+## Further Reading
+
+- [Getting Started Guide](/docs/router/guides/extending-the-router)
+- [Plugin Hooks](/docs/router/plugin-system/hooks)
+- [Plugin Execution and Lifecycle](/docs/router/plugin-system/execution-and-lifecycle)
