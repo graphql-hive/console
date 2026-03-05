@@ -9,10 +9,10 @@ import { Steps } from '@theguild/components'
 
 Hive Router is designed to be flexible and extensible, allowing you to customize its behavior to fit
 your specific needs. This guide demonstrates how to extend the router's functionality using
-[custom plugins written in Rust](../extensibility/plugin_system).
+[custom plugins written in Rust](../plugin-system).
 
 For technical details and API reference, see the
-[Router Plugin System documentation](../extensibility/plugin_system).
+[Router Plugin System documentation](../plugin-system).
 
 ## Creating a Custom Plugin
 
@@ -117,7 +117,7 @@ interactive GraphQL playground.
 ### Create a custom plugin
 
 Now you can create a custom plugin by implementing the
-[`RouterPlugin` trait](../extensibility/plugin_system).
+[`RouterPlugin` trait](/docs/router/plugin-system#trait-routerplugin).
 
 Then, create a `src/plugin.rs` file with the following template:
 
@@ -158,11 +158,14 @@ impl RouterPlugin for MyPlugin {
 }
 ```
 
-The plugin above uses the [Plugin System Hooks API](../extensibility/plugin_system#hooks) and hooks
+The plugin above uses the [Plugin System Hooks API](/docs/router/plugin-system/hooks) and hooks
 into the `on_graphql_params` phase to print the received GraphQL operation to the log.
 
-> You can find a plugin template in the
-> [Router GitHub repository](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs).
+<Callout type="note" title="Looking for a complete plugin template?">
+
+You can find a complete plugin template in the [Router GitHub repository](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs).
+
+</Callout>
 
 ### Register your plugin
 
@@ -216,8 +219,18 @@ Use the interactive GraphQL playground at
 registered, configured, and enabled correctly, any GraphQL operation will print a log message as
 defined in the `on_graphql_params` hook of the custom plugin.
 
-> The simplest GraphQL operation you can run without requiring any subgraphs to be running is:
-> `query { __typename }`.
+<Callout type="note" title="Easy testing">
+
+The simplest GraphQL operation you can run without requiring any subgraphs to be running is:
+
+```graphql
+query testQuery {
+    __typename
+}
+```
+
+</Callout>
+
 
 ### Build your Router
 
@@ -289,6 +302,6 @@ docker run \
 The following links and examples can help you implement custom plugins and extend the Router in
 different ways.
 
-- [Plugin System documentation and API Reference](../extensibility/plugin_system)
+- [Plugin System documentation and API Reference](/docs/router/plugin-system)
 - [Example plugins](https://github.com/graphql-hive/router/tree/main/plugin_examples)
 - [Plugin template](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs)

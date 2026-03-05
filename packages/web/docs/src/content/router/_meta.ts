@@ -6,5 +6,5 @@ export default {
   guides: 'Guides',
   configuration: 'Configuration',
   observability: 'Observability',
-  extensibility: 'Extensibility',
+  'plugin-system': 'Plugin System',
 };
