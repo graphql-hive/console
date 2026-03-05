@@ -1,8 +1,8 @@
 ---
 title: Hive Router Plugin System
 description:
-  Hive Router v0.0.40 introduces a plugin system that lets you extend and customize the router
-  using native Rust plugins.
+  Hive Router v0.0.40 introduces a plugin system that lets you extend and customize the router using
+  native Rust plugins.
 date: 2026-03-05
 authors: [arda, dotan]
 ---
@@ -33,29 +33,40 @@ hive-router = "0.0.40"
 
 ```rust filename="src/plugin.rs"
 use hive_router::plugins::plugin_trait::RouterPlugin;
-use hive_router::async_trait;
 
+// Declare and implement a simple plugin with no configuration and no hooks.
 struct MyPlugin;
 
 #[async_trait]
 impl RouterPlugin for MyPlugin {
+    // You can override this and add a custom config to your plugin
     type Config = ();
 
     fn plugin_name() -> &'static str {
         "my_plugin"
     }
 
-    // Add hooks here. For example, inspect every incoming HTTP request:
-    // async fn on_http_request(&self, payload: &mut HttpRequestPayload) { ... }
+    // Your hooks implementation goes here...
 }
 ```
 
 ### 3. Register the plugin
 
 ```rust filename="src/main.rs"
+use hive_router::{
+    configure_global_allocator, error::RouterInitError, init_rustls_crypto_provider,
+    router_entrypoint, PluginRegistry, RouterGlobalAllocator,
+};
+
+configure_global_allocator!();
+
+// This is the main entrypoint of the Router
 #[hive_router::main]
 async fn main() -> Result<(), RouterInitError> {
+    // Configure Hive Router to use the OS's default certificate store
     init_rustls_crypto_provider();
+
+    // Start and run the router entrypoint with your plugin
     router_entrypoint(
         PluginRegistry::new().register::<MyPlugin>(),
     )
@@ -75,20 +86,20 @@ plugins:
 
 Plugins can intercept any stage of the request and router lifecycle:
 
-| Hook | When it fires |
-|---|---|
-| `on_plugin_init` | Router startup: initialize state, register background tasks |
-| `on_http_request` | Incoming HTTP request: auth, header inspection |
-| `on_graphql_params` | GraphQL params extracted: modify query/variables |
-| `on_graphql_parse` | Before AST parsing |
-| `on_graphql_validation` | Schema validation: add custom rules |
-| `on_query_plan` | Federation query planning |
-| `on_execute` | Query execution: caching, result inspection |
-| `on_subgraph_execute` | Subgraph request preparation |
-| `on_subgraph_http_request` | HTTP call to a subgraph: modify headers, track responses |
-| `on_graphql_error` | Per-error hook before sending to client: error masking/transformation |
-| `on_supergraph_load` | Supergraph load/reload: cache invalidation, schema inspection |
-| `on_shutdown` | Router shutdown: cleanup, flush data |
+| Hook                       | When it fires                                                         |
+| -------------------------- | --------------------------------------------------------------------- |
+| `on_plugin_init`           | Router startup: initialize state, register background tasks           |
+| `on_http_request`          | Incoming HTTP request: auth, header inspection                        |
+| `on_graphql_params`        | GraphQL params extracted: modify query/variables                      |
+| `on_graphql_parse`         | Before AST parsing                                                    |
+| `on_graphql_validation`    | Schema validation: add custom rules                                   |
+| `on_query_plan`            | Federation query planning                                             |
+| `on_execute`               | Query execution: caching, result inspection                           |
+| `on_subgraph_execute`      | Subgraph request preparation                                          |
+| `on_subgraph_http_request` | HTTP call to a subgraph: modify headers, track responses              |
+| `on_graphql_error`         | Per-error hook before sending to client: error masking/transformation |
+| `on_supergraph_load`       | Supergraph load/reload: cache invalidation, schema inspection         |
+| `on_shutdown`              | Router shutdown: cleanup, flush data                                  |
 
 ## Learn more
 
