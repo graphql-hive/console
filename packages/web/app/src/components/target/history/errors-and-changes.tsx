@@ -231,7 +231,7 @@ function ChangeItem(
             <div
               className={clsx(
                 'text-left',
-                (change.approval && 'text-neutral-2') ||
+                (change.approval && 'text-accent') ||
                   (severityLevelMapping[change.severityLevel] ?? 'text-red-400'),
               )}
             >
@@ -322,7 +322,7 @@ function ChangeItem(
                         ) : (
                           <Link
                             key={index}
-                            className="text-neutral-2 hover:text-neutral-2"
+                            className="text-accent_80 hover:text-accent"
                             to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                             params={{
                               organizationSlug: props.organizationSlug,
@@ -371,7 +371,7 @@ function ChangeItem(
                                     target.target ? (
                                       <p key={i}>
                                         <Link
-                                          className="text-neutral-2 hover:text-neutral-2"
+                                          className="text-accent_80 hover:text-accent"
                                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                                           params={{
                                             organizationSlug: props.organizationSlug,
@@ -733,7 +733,7 @@ function SchemaChangeApproval(props: {
           approved by {approvalName} in this schema check on {approvalDate}.
         </>
       ) : (
-        <a href={schemaCheckPath} className="text-neutral-2 hover:underline">
+        <a href={schemaCheckPath} className="text-accent hover:underline">
           approved by {approvalName} on {approvalDate}.
         </a>
       )}
