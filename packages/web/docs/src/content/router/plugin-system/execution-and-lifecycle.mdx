@@ -125,8 +125,9 @@ Hive Router provides a simple mechanism to run background tasks using the
 As a plugin developer, you don't need to deal with threads or async runtimes - you can use the Hive
 Router core runtime to register and manage the lifecycle of your background tasks.
 
-Background tasks can be registered during the [`on_plugin_init` hook](/docs/router/plugin-system/hooks#on_plugin_init). Here is a
-simple example of a background task that runs periodically:
+Background tasks can be registered during the
+[`on_plugin_init` hook](/docs/router/plugin-system/hooks#on_plugin_init). Here is a simple example
+of a background task that runs periodically:
 
 ```rust
 use hive_router::background_tasks::BackgroundTask;

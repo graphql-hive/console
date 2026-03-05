@@ -270,10 +270,6 @@ fn on_http_request<'req>(
 - [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_http_request)
 - [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_http_request)
 
-
-
-
-
 ### `on_graphql_params`
 
 This hook is called after the router has determined that the incoming request is a GraphQL request,
@@ -424,10 +420,6 @@ async fn on_graphql_params<'exec>(
 - [`async_auth`](https://github.com/graphql-hive/router/blob/main/plugin_examples/async_auth/src/plugin.rs#:~:text=fn%20on_graphql_params)
 - [`incoming_request_deduplication`](https://github.com/graphql-hive/router/blob/main/plugin_examples/incoming_request_deduplication/src/plugin.rs#:~:text=fn%20on_graphql_params)
 
-
-
-
-
 ### `on_graphql_parse`
 
 This hook is called after the request has been deserialized, and before the router parses the
@@ -493,10 +485,6 @@ async fn on_graphql_parse<'exec>(
 - [`OnGraphQLParseStartHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_parse.rs#:~:text=struct%20OnGraphQLParseStartHookPayload)
 - [`OnGraphQLParseEndHookPayload`](https://github.com/graphql-hive/router/blob/main/lib/executor/src/plugins/hooks/on_graphql_parse.rs#:~:text=struct%20OnGraphQLParseEndHookPayload)
 
-
-
-
-
 ### `on_graphql_validation`
 
 This hook is called during the GraphQL validation phase of the Router. At this stage, the GraphQL
@@ -559,10 +547,6 @@ async fn on_graphql_validation<'exec>(
 
 - [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_graphql_validation)
 - [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_graphql_validation)
-
-
-
-
 
 ### `on_query_plan`
 
@@ -645,10 +629,6 @@ async fn on_query_plan<'exec>(
 #### Plugin Examples
 
 - [`root_field_limit`](https://github.com/graphql-hive/router/blob/main/plugin_examples/root_field_limit/src/lib.rs#:~:text=fn%20on_query_plan)
-
-
-
-
 
 ### `on_execute`
 
@@ -748,10 +728,6 @@ async fn on_execute<'exec>(
 
 - [`one_of`](https://github.com/graphql-hive/router/blob/main/plugin_examples/one_of/src/lib.rs#:~:text=fn%20on_execute)
 - [`response_cache`](https://github.com/graphql-hive/router/blob/main/plugin_examples/response_cache/src/lib.rs#:~:text=fn%20on_execute)
-
-
-
-
 
 ### `on_subgraph_execute`
 
@@ -854,10 +830,6 @@ async fn on_subgraph_execute<'exec>(
 
 - [`context_data`](https://github.com/graphql-hive/router/blob/main/plugin_examples/context_data/src/plugin.rs#:~:text=fn%20on_subgraph_execute)
 
-
-
-
-
 ### `on_subgraph_http_request`
 
 This hook is called during the actual HTTP call made to the subgraph. In this hook, you have access
@@ -941,10 +913,6 @@ async fn on_subgraph_http_request<'exec>(
 
 - [`propagate_status_code`](https://github.com/graphql-hive/router/blob/main/plugin_examples/propagate_status_code/src/lib.rs#:~:text=fn%20on_subgraph_http_request)
 - [`multipart`](https://github.com/graphql-hive/router/blob/main/plugin_examples/multipart/src/lib.rs#:~:text=fn%20on_subgraph_http_request)
-
-
-
-
 
 ### `on_graphql_error`
 
@@ -1034,11 +1002,7 @@ fn on_graphql_error(&self, mut payload: OnGraphQLErrorHookPayload) -> OnGraphQLE
 
 - [`error_mapping`](https://github.com/graphql-hive/router/blob/main/plugin_examples/error_mapping/src/plugin.rs#:~:text=fn%20on_graphql_error)
 
-
-
 ## Router Lifecycle
-
-
 
 ### `on_shutdown`
 
@@ -1075,10 +1039,6 @@ async fn on_shutdown<'exec>(&'exec self) {
 #### Plugin Examples
 
 - [`usage_reporting`](https://github.com/graphql-hive/router/blob/main/plugin_examples/usage_reporting/src/lib.rs#:~:text=fn%20on_shutdown)
-
-
-
-
 
 ### `on_supergraph_load`
 

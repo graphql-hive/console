@@ -70,7 +70,8 @@ The `RouterPlugin` trait accepts a generic type parameter for plugin configurati
 The configuration type must implement `DeserializeOwned + Sync`, as the Router is responsible for
 loading and deserializing the configuration from the Router config file.
 
-The [`on_plugin_init`](/docs/router/plugin-system/hooks#on_plugin_init) hook provides access to the plugin's configuration.
+The [`on_plugin_init`](/docs/router/plugin-system/hooks#on_plugin_init) hook provides access to the
+plugin's configuration.
 
 ```rust
 use hive_router::plugins::plugin_trait::RouterPlugin;
@@ -128,7 +129,8 @@ As a plugin developer, you can hook into the router execution flow in the follow
 - HTTP calls to subgraph
 - Supergraph reload notification
 
-Refer to the [Plugin System Hooks page for the complete API and usage examples of each hook](/docs/router/plugin-system/hooks)
+Refer to the
+[Plugin System Hooks page for the complete API and usage examples of each hook](/docs/router/plugin-system/hooks)
 
 ### Shared State
 
@@ -192,7 +194,7 @@ impl RouterPlugin for ContextDataPlugin {
         };
 
         payload.context.insert(context_data);
-        
+
         payload.proceed()
     }
 
@@ -205,7 +207,7 @@ impl RouterPlugin for ContextDataPlugin {
         if let Some(ref context_data_entry) = context_data_entry {
             tracing::info!("hello {}", context_data_entry.incoming_data); // Hello world!
         }
-        
+
          payload.proceed()
     }
 }

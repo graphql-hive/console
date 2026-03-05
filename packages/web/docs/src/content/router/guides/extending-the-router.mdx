@@ -158,12 +158,13 @@ impl RouterPlugin for MyPlugin {
 }
 ```
 
-The plugin above uses the [Plugin System Hooks API](/docs/router/plugin-system/hooks) and hooks
-into the `on_graphql_params` phase to print the received GraphQL operation to the log.
+The plugin above uses the [Plugin System Hooks API](/docs/router/plugin-system/hooks) and hooks into
+the `on_graphql_params` phase to print the received GraphQL operation to the log.
 
 <Callout type="note" title="Looking for a complete plugin template?">
 
-You can find a complete plugin template in the [Router GitHub repository](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs).
+You can find a complete plugin template in the
+[Router GitHub repository](https://github.com/graphql-hive/router/blob/main/plugin_examples/plugin_template/src/plugin.rs).
 
 </Callout>
 
@@ -225,12 +226,11 @@ The simplest GraphQL operation you can run without requiring any subgraphs to be
 
 ```graphql
 query testQuery {
-    __typename
+  __typename
 }
 ```
 
 </Callout>
-
 
 ### Build your Router
 
