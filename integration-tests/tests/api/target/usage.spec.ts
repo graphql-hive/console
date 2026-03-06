@@ -3567,3 +3567,133 @@ test.concurrent('collect an operation from undefined client', async ({ expect })
     }
   `);
 });
+
+describe('exclude filters', () => {
+  test.concurrent(
+    'excludeOperations filters out matching operations from stats',
+    { timeout: 30_000 },
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, readOperationsStats, waitForOperationsCollected } =
+        await createProject(ProjectType.Single);
+      const token = await createTargetAccessToken({});
+
+      // Collect two different operations
+      const collectResult = await token.collectLegacyOperations([
+        {
+          timestamp: Date.now(),
+          operation: 'query ping { ping }',
+          operationName: 'ping',
+          fields: ['Query', 'Query.ping'],
+          execution: { ok: true, duration: 200_000_000, errorsTotal: 0 },
+          metadata: { client: { name: 'web', version: '1.0' } },
+        },
+        {
+          timestamp: Date.now(),
+          operation: 'query me { me }',
+          operationName: 'me',
+          fields: ['Query', 'Query.me'],
+          execution: { ok: true, duration: 100_000_000, errorsTotal: 0 },
+          metadata: { client: { name: 'web', version: '1.0' } },
+        },
+      ]);
+      expect(collectResult.status).toEqual(200);
+      await waitForOperationsCollected(2);
+
+      const from = formatISO(subHours(Date.now(), 6));
+      const to = formatISO(Date.now());
+
+      // Without filter: both operations present
+      const allStats = await readOperationsStats(from, to);
+      expect(allStats.totalOperations).toBe(2);
+
+      // Get the hash of the 'ping' operation
+      const pingOp = allStats.operations.edges.find(e => e.node.name.endsWith('_ping'));
+      expect(pingOp).toBeDefined();
+      const pingHash = pingOp!.node.operationHash!;
+
+      // Include filter: only 'ping' operation
+      const includeStats = await readOperationsStats(from, to, undefined, {
+        operationIds: [pingHash],
+        excludeOperations: false,
+      });
+      expect(includeStats.totalOperations).toBe(1);
+      expect(includeStats.operations.edges[0].node.name).toContain('_ping');
+
+      // Exclude filter: everything except 'ping' → only 'me'
+      const excludeStats = await readOperationsStats(from, to, undefined, {
+        operationIds: [pingHash],
+        excludeOperations: true,
+      });
+      expect(excludeStats.totalOperations).toBe(1);
+      expect(excludeStats.operations.edges[0].node.name).toContain('_me');
+    },
+  );
+
+  test.concurrent(
+    'excludeClientVersionFilters filters out matching clients from stats',
+    { timeout: 30_000 },
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, readOperationsStats, waitForRequestsCollected } =
+        await createProject(ProjectType.Single);
+      const token = await createTargetAccessToken({});
+
+      // Collect operations from three different clients
+      const collectResult = await token.collectLegacyOperations([
+        {
+          timestamp: Date.now(),
+          operation: 'query ping { ping }',
+          operationName: 'ping',
+          fields: ['Query', 'Query.ping'],
+          execution: { ok: true, duration: 200_000_000, errorsTotal: 0 },
+          metadata: { client: { name: 'web', version: '1.0' } },
+        },
+        {
+          timestamp: Date.now(),
+          operation: 'query ping { ping }',
+          operationName: 'ping',
+          fields: ['Query', 'Query.ping'],
+          execution: { ok: true, duration: 200_000_000, errorsTotal: 0 },
+          metadata: { client: { name: 'internal-bot', version: '2.0' } },
+        },
+        {
+          timestamp: Date.now(),
+          operation: 'query ping { ping }',
+          operationName: 'ping',
+          fields: ['Query', 'Query.ping'],
+          execution: { ok: true, duration: 200_000_000, errorsTotal: 0 },
+          metadata: { client: { name: 'mobile', version: '3.0' } },
+        },
+      ]);
+      expect(collectResult.status).toEqual(200);
+      await waitForRequestsCollected(3);
+
+      const from = formatISO(subHours(Date.now(), 6));
+      const to = formatISO(Date.now());
+
+      // Without filter: all 3 clients visible
+      const allStats = await readOperationsStats(from, to);
+      expect(allStats.clients.edges).toHaveLength(3);
+
+      // Include filter: only 'internal-bot' client
+      const includeStats = await readOperationsStats(from, to, undefined, {
+        clientVersionFilters: [{ clientName: 'internal-bot' }],
+        excludeClientVersionFilters: false,
+      });
+      expect(includeStats.clients.edges).toHaveLength(1);
+      expect(includeStats.clients.edges[0].node.name).toBe('internal-bot');
+
+      // Exclude filter: everything except 'internal-bot' → 'web' and 'mobile'
+      const excludeStats = await readOperationsStats(from, to, undefined, {
+        clientVersionFilters: [{ clientName: 'internal-bot' }],
+        excludeClientVersionFilters: true,
+      });
+      expect(excludeStats.clients.edges).toHaveLength(2);
+      const excludedClientNames = excludeStats.clients.edges.map(e => e.node.name).sort();
+      expect(excludedClientNames).toEqual(['mobile', 'web']);
+    },
+  );
+});

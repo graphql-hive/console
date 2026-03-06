@@ -6,7 +6,7 @@ import { TriggerButton } from '@/components/base/trigger-button';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
-import type { CurrentFilters } from './save-filter-button';
+import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
 const InsightsUpdateSavedFilter_Mutation = graphql(`
   mutation InsightsUpdateSavedFilter($input: UpdateSavedFilterInput!) {
@@ -30,6 +30,8 @@ const InsightsUpdateSavedFilter_Mutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
         }
       }
@@ -58,48 +60,17 @@ export function UpdateFilterButton({
   const [updateResult, updateSavedFilter] = useMutation(InsightsUpdateSavedFilter_Mutation);
   const { toast } = useToast();
 
-  const hasUnsavedChanges = useMemo(() => {
-    const savedOps = [...activeView.filters.operationHashes].sort();
-    const currentOps = [...currentFilters.operations].sort();
-
-    if (JSON.stringify(currentOps) !== JSON.stringify(savedOps)) return true;
-
-    const normalizeClients = (arr: Array<{ name: string; versions: string[] | null }>) =>
-      JSON.stringify(
-        arr
-          .map(c => ({ name: c.name, versions: c.versions }))
-          .sort((a, b) => a.name.localeCompare(b.name)),
-      );
-    if (
-      normalizeClients(currentFilters.clients) !==
-      normalizeClients(activeView.filters.clientFilters)
-    )
-      return true;
-
-    const savedFrom = activeView.filters.dateRange?.from;
-    const savedTo = activeView.filters.dateRange?.to;
-    if (currentFilters.dateRange.from !== savedFrom || currentFilters.dateRange.to !== savedTo)
-      return true;
-
-    return false;
-  }, [activeView, currentFilters]);
+  const hasChanges = useMemo(
+    () => hasUnsavedChanges(activeView, currentFilters),
+    [activeView, currentFilters],
+  );
 
   const handleUpdate = useCallback(async () => {
     const result = await updateSavedFilter({
       input: {
         id: activeView.id,
         target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
-        insightsFilter: {
-          operationHashes: currentFilters.operations,
-          clientFilters: currentFilters.clients.map(c => ({
-            name: c.name,
-            versions: c.versions,
-          })),
-          dateRange: {
-            from: currentFilters.dateRange.from,
-            to: currentFilters.dateRange.to,
-          },
-        },
+        insightsFilter: toInsightsFilterInput(currentFilters),
       },
     });
 
@@ -131,7 +102,7 @@ export function UpdateFilterButton({
     onUpdated,
   ]);
 
-  if (!hasUnsavedChanges) {
+  if (!hasChanges) {
     return null;
   }
 
@@ -142,7 +113,7 @@ export function UpdateFilterButton({
       align="start"
       title="Update saved filter"
       description={`This will overwrite the current configuration of "${activeView.name}" with your current filter selections.`}
-      trigger={<TriggerButton label={`Update "${activeView.name}" filter`} variant="action" />}
+      trigger={<TriggerButton label={`Update "${activeView.name}"`} variant="muted-action" />}
       content={
         <div className="flex gap-2">
           <Button

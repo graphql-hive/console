@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { UpdateFilterButton } from './update-filter-button';
+import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
 
 const InsightsCreateSavedFilter_Mutation = graphql(`
   mutation InsightsCreateSavedFilter($input: CreateSavedFilterInput!) {
@@ -39,18 +40,14 @@ const InsightsCreateSavedFilter_Mutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
         }
       }
     }
   }
 `);
-
-export type CurrentFilters = {
-  operations: string[];
-  clients: Array<{ name: string; versions: string[] | null }>;
-  dateRange: { from: string; to: string };
-};
 
 type SaveFilterButtonProps = {
   activeView: SavedFilterView | null;
@@ -75,22 +72,39 @@ export function SaveFilterButton({
   onSaved,
   onUpdated,
 }: SaveFilterButtonProps) {
+  // When viewing a saved filter without modifications, don't show any save UI.
+  if (activeView && !hasUnsavedChanges(activeView, currentFilters)) {
+    return null;
+  }
+
   if (activeView?.viewerCanUpdate) {
     return (
-      <UpdateFilterButton
-        activeView={activeView}
-        currentFilters={currentFilters}
-        organizationSlug={organizationSlug}
-        projectSlug={projectSlug}
-        targetSlug={targetSlug}
-        onUpdated={onUpdated}
-      />
+      <div className="flex items-center gap-x-2">
+        <UpdateFilterButton
+          activeView={activeView}
+          currentFilters={currentFilters}
+          organizationSlug={organizationSlug}
+          projectSlug={projectSlug}
+          targetSlug={targetSlug}
+          onUpdated={onUpdated}
+        />
+        {viewerCanCreate && (
+          <CreateFilterButton
+            viewerCanShare={viewerCanShare}
+            currentFilters={currentFilters}
+            organizationSlug={organizationSlug}
+            projectSlug={projectSlug}
+            targetSlug={targetSlug}
+            onSaved={onSaved}
+          />
+        )}
+      </div>
     );
   }
 
   if (viewerCanCreate) {
     return (
-      <SaveFilterPopover
+      <CreateFilterButton
         viewerCanShare={viewerCanShare}
         currentFilters={currentFilters}
         organizationSlug={organizationSlug}
@@ -104,7 +118,7 @@ export function SaveFilterButton({
   return null;
 }
 
-function SaveFilterPopover({
+function CreateFilterButton({
   viewerCanShare,
   currentFilters,
   organizationSlug,
@@ -136,17 +150,7 @@ function SaveFilterPopover({
         target: { bySelector: { organizationSlug, projectSlug, targetSlug } },
         name: trimmed,
         visibility,
-        insightsFilter: {
-          operationHashes: currentFilters.operations,
-          clientFilters: currentFilters.clients.map(c => ({
-            name: c.name,
-            versions: c.versions,
-          })),
-          dateRange: {
-            from: currentFilters.dateRange.from,
-            to: currentFilters.dateRange.to,
-          },
-        },
+        insightsFilter: toInsightsFilterInput(currentFilters),
       },
     });
 

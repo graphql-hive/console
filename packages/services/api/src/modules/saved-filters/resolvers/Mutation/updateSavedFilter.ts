@@ -29,6 +29,8 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
                   to: input.insightsFilter.dateRange.to,
                 }
               : null,
+            excludeOperations: input.insightsFilter.excludeOperations ?? false,
+            excludeClientFilters: input.insightsFilter.excludeClientFilters ?? false,
           }
         : null,
     });

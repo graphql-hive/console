@@ -69,6 +69,8 @@ export const ManageFilters_SavedFiltersQuery = graphql(`
                 from
                 to
               }
+              excludeOperations
+              excludeClientFilters
             }
             createdBy {
               id
@@ -122,6 +124,8 @@ const ManageFilters_UpdateSavedFilterMutation = graphql(`
               from
               to
             }
+            excludeOperations
+            excludeClientFilters
           }
         }
       }
@@ -339,7 +343,14 @@ function SavedFilterRow({
                     <Link
                       to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                       params={{ organizationSlug, projectSlug, targetSlug }}
-                      search={savedFilterToSearchParams(filter)}
+                      search={savedFilterToSearchParams({
+                        ...filter,
+                        filters: {
+                          ...filter.filters,
+                          excludeOperations: filter.filters.excludeOperations ?? undefined,
+                          excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
+                        },
+                      })}
                     />
                   }
                 >
@@ -527,6 +538,12 @@ function SavedFilterRowFilters({
     useState<FilterSelection[]>(savedClientSelections);
   const [showOperationFilter, setShowOperationFilter] = useState(operationHashes.length > 0);
   const [showClientFilter, setShowClientFilter] = useState(clientFilters.length > 0);
+  const [excludeOperations, setExcludeOperations] = useState(
+    filter.filters.excludeOperations ?? false,
+  );
+  const [excludeClientFilters, setExcludeClientFilters] = useState(
+    filter.filters.excludeClientFilters ?? false,
+  );
 
   // Sync state when saved filter data changes (e.g. after mutation updates cache)
   const filterDataKey = JSON.stringify(filter.filters);
@@ -536,6 +553,8 @@ function SavedFilterRowFilters({
     setShowOperationFilter(operationHashes.length > 0);
     setShowClientFilter(clientFilters.length > 0);
     setDateRange(savedDateRange);
+    setExcludeOperations(filter.filters.excludeOperations ?? false);
+    setExcludeClientFilters(filter.filters.excludeClientFilters ?? false);
   }, [filterDataKey]);
 
   // Detect changes from saved state (compare by identifiers, not display names)
@@ -559,6 +578,9 @@ function SavedFilterRowFilters({
       );
     if (normalizeClients(clientSelections) !== normalizeClients(savedClientSelections)) return true;
 
+    if (excludeOperations !== (filter.filters.excludeOperations ?? false)) return true;
+    if (excludeClientFilters !== (filter.filters.excludeClientFilters ?? false)) return true;
+
     return false;
   }, [
     operationSelections,
@@ -571,6 +593,10 @@ function SavedFilterRowFilters({
     operationHashes,
     clientFilters,
     savedDateRange,
+    excludeOperations,
+    excludeClientFilters,
+    filter.filters.excludeOperations,
+    filter.filters.excludeClientFilters,
   ]);
 
   // Cancel → reset to saved state
@@ -580,12 +606,16 @@ function SavedFilterRowFilters({
     setShowOperationFilter(operationHashes.length > 0);
     setShowClientFilter(clientFilters.length > 0);
     setDateRange(savedDateRange);
+    setExcludeOperations(filter.filters.excludeOperations ?? false);
+    setExcludeClientFilters(filter.filters.excludeClientFilters ?? false);
   }, [
     savedOperationSelections,
     savedClientSelections,
     operationHashes,
     clientFilters,
     savedDateRange,
+    filter.filters.excludeOperations,
+    filter.filters.excludeClientFilters,
   ]);
 
   // Update mutation
@@ -616,6 +646,8 @@ function SavedFilterRowFilters({
           operationHashes: newOperationHashes,
           clientFilters: newClientFilters,
           dateRange: { from: dateRange.from, to: dateRange.to },
+          excludeOperations,
+          excludeClientFilters,
         },
       },
     }).then(result => {
@@ -640,6 +672,8 @@ function SavedFilterRowFilters({
     clientSelections,
     clientItems,
     dateRange,
+    excludeOperations,
+    excludeClientFilters,
     filter.id,
     organizationSlug,
     projectSlug,
@@ -676,8 +710,11 @@ function SavedFilterRowFilters({
             onRemove={() => {
               setShowOperationFilter(false);
               setOperationSelections([]);
+              setExcludeOperations(false);
             }}
             disabled={loading}
+            excludeMode={excludeOperations}
+            onExcludeModeChange={setExcludeOperations}
           />
         )}
         {showClientFilter && clientItems.length > 0 && (
@@ -689,9 +726,12 @@ function SavedFilterRowFilters({
             onRemove={() => {
               setShowClientFilter(false);
               setClientSelections([]);
+              setExcludeClientFilters(false);
             }}
             valuesLabel="versions"
             disabled={loading}
+            excludeMode={excludeClientFilters}
+            onExcludeModeChange={setExcludeClientFilters}
           />
         )}
         {loading && <Spinner />}

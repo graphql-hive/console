@@ -37,6 +37,8 @@ export interface OperationsStatsMapper {
   operations: readonly string[];
   clients: readonly string[];
   clientVersionFilters: readonly { clientName: string; versions: readonly string[] | null }[];
+  excludeOperations?: boolean;
+  excludeClientVersionFilters?: boolean;
 }
 export interface DurationValuesMapper {
   avg: number | null;

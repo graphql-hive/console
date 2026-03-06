@@ -1020,6 +1020,7 @@ export function initSeed() {
                   from: string,
                   to: string,
                   ttarget: TargetOverwrite = target,
+                  filter: GraphQLSchema.OperationStatsFilterInput = {},
                 ) {
                   const statsResult = await readOperationsStats(
                     { byId: ttarget.id },
@@ -1027,7 +1028,7 @@ export function initSeed() {
                       from,
                       to,
                     },
-                    {},
+                    filter,
                     ownerToken,
                   ).then(r => r.expectNoGraphQLErrors());
 

@@ -23,6 +23,8 @@ export const createSavedFilter: NonNullable<MutationResolvers['createSavedFilter
           dateRange: input.insightsFilter.dateRange
             ? { from: input.insightsFilter.dateRange.from, to: input.insightsFilter.dateRange.to }
             : null,
+          excludeOperations: input.insightsFilter.excludeOperations ?? false,
+          excludeClientFilters: input.insightsFilter.excludeClientFilters ?? false,
         }
       : null,
   });

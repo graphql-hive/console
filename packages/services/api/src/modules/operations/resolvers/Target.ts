@@ -90,6 +90,8 @@ export const Target: Pick<
           clientName: f.clientName === 'unknown' ? '' : f.clientName,
           versions: f.versions ? [...f.versions] : null,
         })) ?? [],
+      excludeOperations: args.filter?.excludeOperations ?? false,
+      excludeClientVersionFilters: args.filter?.excludeClientVersionFilters ?? false,
     };
   },
   schemaCoordinateStats: async (target, args, _ctx) => {

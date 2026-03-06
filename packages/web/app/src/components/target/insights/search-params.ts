@@ -23,6 +23,8 @@ export function savedFilterToSearchParams(filter: {
     operationHashes: string[];
     clientFilters: ReadonlyArray<{ name: string; versions?: string[] | null }>;
     dateRange?: { from: string; to: string } | null;
+    excludeOperations?: boolean;
+    excludeClientFilters?: boolean;
   };
 }) {
   return {
@@ -34,6 +36,8 @@ export function savedFilterToSearchParams(filter: {
             stripNullValues({ name: c.name, versions: c.versions ?? null }),
           )
         : undefined,
+    excludeOperations: filter.filters.excludeOperations || undefined,
+    excludeClients: filter.filters.excludeClientFilters || undefined,
     from: filter.filters.dateRange?.from,
     to: filter.filters.dateRange?.to,
     viewId: filter.id,
