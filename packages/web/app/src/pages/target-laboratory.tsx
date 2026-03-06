@@ -301,6 +301,7 @@ function LaboratoryPageContent(props: {
     projectSlug: props.projectSlug,
     targetSlug: props.targetSlug,
   });
+
   const userOperations = useMemo(() => {
     const operations = collections.flatMap(collection =>
       collection.operations.edges.map(o => o.node.id),

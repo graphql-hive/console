@@ -26,7 +26,9 @@ import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useRedirect } from '@/lib/access/common';
 import { useLocalStorage, useToggle } from '@/lib/hooks';
+import { useCurrentOperation } from '@/lib/hooks/laboratory/use-current-operation';
 import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-collections-plugin';
+import { useSyncOperationState } from '@/lib/hooks/laboratory/use-sync-operation-state';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import {
@@ -39,6 +41,7 @@ import {
   LaboratoryPreflight,
   LaboratorySettings,
   LaboratoryTab,
+  LaboratoryTabOperation,
 } from '@graphql-hive/laboratory';
 import { Link as RouterLink } from '@tanstack/react-router';
 
@@ -467,12 +470,70 @@ function useLaboratoryState(props: {
     [mutateUpdatePreflight, props.targetSlug, props.organizationSlug, props.projectSlug],
   );
 
+  const currentOperation = useCurrentOperation({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+  });
+
+  const { savedOperation } = useSyncOperationState({
+    organizationSlug: props.organizationSlug,
+    projectSlug: props.projectSlug,
+    targetSlug: props.targetSlug,
+  });
+
+  const defaultOperations = useMemo(() => {
+    if (currentOperation && savedOperation) {
+      return [
+        ...getLocalStorageState('operations', []),
+        {
+          id: currentOperation.id,
+          name: currentOperation.name,
+          query: savedOperation.query,
+          variables: savedOperation.variables ?? '{}',
+          headers: currentOperation.headers ?? '{}',
+          extensions: '{}',
+        } satisfies LaboratoryOperation,
+      ];
+    }
+
+    return getLocalStorageState('operations', []);
+  }, [currentOperation, savedOperation]);
+
+  const defaultTabs = useMemo(() => {
+    if (currentOperation && savedOperation) {
+      return [
+        ...getLocalStorageState('tabs', []),
+        {
+          id: currentOperation.id,
+          type: 'operation',
+          data: {
+            id: currentOperation.id,
+            type: 'operation',
+            data: {
+              id: currentOperation.id,
+              name: currentOperation.name,
+            },
+          } satisfies LaboratoryTabOperation,
+        },
+      ];
+    }
+
+    return getLocalStorageState('tabs', []);
+  }, [currentOperation, savedOperation]);
+
+  // useEffect(() => {
+  //   if (search.operation) {
+  //     window.history.pushState(null, '', `${location.pathname}`);
+  //   }
+  // }, [search.operation]);
+
   return {
     fetching,
     defaultCollections: collections,
-    defaultOperations: getLocalStorageState('operations', []),
+    defaultOperations,
     defaultHistory: getLocalStorageState('history', []),
-    defaultTabs: getLocalStorageState('tabs', []),
+    defaultTabs,
     defaultActiveTabId: getLocalStorageState('activeTabId', null),
     defaultSettings: getLocalStorageState('settings', {
       fetch: {
